@@ -1,0 +1,30 @@
+.env
+# Build and binary artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Go workspace state
+*.out
+cover.*
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependency/module caches (not vendored)
+/vendor/
+/node_modules/
+
+# Logs
+*.log
+
+# Generated
+internal/store/sqlc/
+.DS_Store
