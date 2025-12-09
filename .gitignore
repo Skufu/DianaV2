@@ -20,7 +20,25 @@ cover.*
 
 # Dependency/module caches (not vendored)
 /vendor/
-/node_modules/
+node_modules/
+frontend/node_modules/
+
+# Vite/Tailwind build outputs
+frontend/dist/
+frontend/.vite/
+frontend/.turbo/
+
+# Env files
+*.env
+*.env.local
+frontend/.env.local
+
+# Editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Logs
 *.log
