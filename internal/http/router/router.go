@@ -37,7 +37,13 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 	patientHandler := handlers.NewPatientsHandler(st)
 	patientHandler.Register(protected.Group("/patients"))
 
-	predictor := ml.NewMockPredictor()
+	timeout := time.Duration(cfg.ModelTimeoutMS) * time.Millisecond
+	var predictor ml.Predictor
+	if cfg.ModelURL != "" {
+		predictor = ml.NewHTTPPredictor(cfg.ModelURL, cfg.ModelVersion, timeout)
+	} else {
+		predictor = ml.NewMockPredictor()
+	}
 	assessmentHandler := handlers.NewAssessmentsHandler(st, predictor, cfg.ModelVersion)
 	assessmentHandler.Register(protected.Group("/patients"))
 

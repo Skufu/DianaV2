@@ -8,29 +8,36 @@ import (
 )
 
 type Config struct {
-	Port          string
-	Env           string
-	DBDSN         string
-	JWTSecret     string
-	CORSOrigins   []string
-	ModelURL      string
-	ModelVersion  string
-	ExportMaxRows int
+	Port           string
+	Env            string
+	DBDSN          string
+	JWTSecret      string
+	CORSOrigins    []string
+	ModelURL       string
+	ModelVersion   string
+	ModelTimeoutMS int
+	ExportMaxRows  int
 }
 
 func Load() Config {
 	cfg := Config{
-		Port:         getEnv("PORT", "8080"),
-		Env:          getEnv("ENV", "dev"),
-		DBDSN:        getEnv("DB_DSN", ""),
-		JWTSecret:    getEnv("JWT_SECRET", "dev-secret"),
-		ModelURL:     getEnv("MODEL_URL", ""),
-		ModelVersion: getEnv("MODEL_VERSION", "v0-placeholder"),
+		Port:           getEnv("PORT", "8080"),
+		Env:            getEnv("ENV", "dev"),
+		DBDSN:          getEnv("DB_DSN", ""),
+		JWTSecret:      getEnv("JWT_SECRET", "dev-secret"),
+		ModelURL:       getEnv("MODEL_URL", ""),
+		ModelVersion:   getEnv("MODEL_VERSION", "v0-placeholder"),
+		ModelTimeoutMS: 2000,
 	}
 	cfg.CORSOrigins = splitAndTrim(getEnv("CORS_ORIGINS", "http://localhost:3000"))
 	if v := os.Getenv("EXPORT_MAX_ROWS"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			cfg.ExportMaxRows = n
+		}
+	}
+	if v := os.Getenv("MODEL_TIMEOUT_MS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			cfg.ModelTimeoutMS = n
 		}
 	}
 	if cfg.ExportMaxRows == 0 {

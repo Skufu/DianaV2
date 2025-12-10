@@ -114,6 +114,50 @@ func validationStatus(a models.Assessment) string {
 			warnings = append(warnings, "hba1c_prediabetic_range")
 		}
 	}
+	if a.Cholesterol > 0 {
+		switch {
+		case a.Cholesterol >= 240:
+			warnings = append(warnings, "chol_high")
+		case a.Cholesterol >= 200:
+			warnings = append(warnings, "chol_borderline")
+		}
+	}
+	if a.LDL > 0 {
+		switch {
+		case a.LDL >= 160:
+			warnings = append(warnings, "ldl_high")
+		case a.LDL >= 130:
+			warnings = append(warnings, "ldl_borderline")
+		}
+	}
+	if a.HDL > 0 {
+		if a.HDL < 50 {
+			warnings = append(warnings, "hdl_low")
+		}
+	}
+	if a.Triglycerides > 0 {
+		switch {
+		case a.Triglycerides >= 200:
+			warnings = append(warnings, "triglycerides_high")
+		case a.Triglycerides >= 150:
+			warnings = append(warnings, "triglycerides_borderline")
+		}
+	}
+	if a.Systolic > 0 || a.Diastolic > 0 {
+		if a.Systolic >= 140 || a.Diastolic >= 90 {
+			warnings = append(warnings, "bp_high")
+		} else if a.Systolic >= 130 || a.Diastolic >= 80 {
+			warnings = append(warnings, "bp_elevated")
+		}
+	}
+	if a.BMI > 0 {
+		switch {
+		case a.BMI >= 30:
+			warnings = append(warnings, "bmi_obese")
+		case a.BMI >= 25:
+			warnings = append(warnings, "bmi_overweight")
+		}
+	}
 	if len(warnings) == 0 {
 		return "ok"
 	}
