@@ -1,3 +1,4 @@
+// Analytics: cohort-level clustering counts and biomarker trend summaries.
 import React, { useEffect, useState } from 'react';
 import { fetchClusterDistributionApi, fetchTrendAnalyticsApi } from '../api';
 

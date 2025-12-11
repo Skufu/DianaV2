@@ -1,3 +1,4 @@
+// Dashboard: cohort overview cards, biomarker trends, cluster distribution.
 import React, { useEffect, useMemo, useState } from 'react';
 import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight } from 'lucide-react';
 import { fetchClusterDistributionApi, fetchTrendAnalyticsApi } from '../api';
@@ -174,8 +175,8 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
         <div className="bg-white p-6 rounded-3xl shadow-sm flex flex-col border border-[#E0E5F2]">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xl font-bold text-[#1B2559]">Cluster Distribution</h3>
-            {loading && <span className="text-xs text-[#A3AED0]">Loading…</span>}
-            {error && !loading && <span className="text-xs text-[#EE5D50]">Failed to load</span>}
+            {analyticsLoading && <span className="text-xs text-[#A3AED0]">Loading…</span>}
+            {error && !analyticsLoading && <span className="text-xs text-[#EE5D50]">Failed to load</span>}
           </div>
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1 flex items-center justify-center relative">

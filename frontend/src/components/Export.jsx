@@ -1,3 +1,4 @@
+// Export: provides CSV download links for patients and assessments.
 import React from 'react';
 import { API_BASE } from '../api';
 import Button from './Button';

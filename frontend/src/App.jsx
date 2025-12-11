@@ -1,3 +1,4 @@
+// App: auth gate, tab routing, and data fetching for patients/assessments.
 import React, { useEffect, useState } from 'react';
 import {
   createAssessmentApi,

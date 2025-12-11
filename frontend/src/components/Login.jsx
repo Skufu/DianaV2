@@ -1,3 +1,4 @@
+// Login: minimal auth form to obtain API token.
 import React, { useEffect, useState } from 'react';
 import Button from './Button';
 

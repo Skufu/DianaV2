@@ -1,3 +1,4 @@
+// Sidebar: navigation shell and new assessment shortcut.
 import React from 'react';
 import { LayoutDashboard, Users, Activity, Download, Plus, LogOut } from 'lucide-react';
 import Button from './Button';

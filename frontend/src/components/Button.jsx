@@ -1,3 +1,4 @@
+// Button: shared styled button with variant/size helpers.
 import React from 'react';
 
 const Button = ({ children, variant = 'primary', className = '', onClick, icon: Icon, fullWidth, disabled }) => {

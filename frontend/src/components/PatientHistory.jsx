@@ -1,3 +1,4 @@
+// PatientHistory: list, profile, and assessment form for menopausal risk.
 import React, { useEffect, useState } from 'react';
 import { ChevronRight, ArrowLeft, Activity, Clipboard, FileText, CheckCircle, XCircle, Heart, TrendingUp, X, Users, Thermometer } from 'lucide-react';
 import Button from './Button';
