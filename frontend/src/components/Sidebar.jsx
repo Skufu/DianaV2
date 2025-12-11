@@ -11,7 +11,7 @@ const THEME = {
 const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout }) => {
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'patients', icon: Users, label: 'Patient History' },
+    { id: 'patients', icon: Users, label: 'Assessments' },
     { id: 'analytics', icon: Activity, label: 'Analytics' },
     { id: 'export', icon: Download, label: 'Export Data' },
   ];

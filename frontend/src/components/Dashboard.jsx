@@ -81,6 +81,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
         <div>
           <h4 className="text-[#707EAE] font-medium text-sm mb-1">Overview</h4>
           <h2 className="text-3xl font-bold text-[#1B2559]">Dashboard</h2>
+          <p className="text-[#A3AED0] text-sm mt-1">For menopausal women: review assessments, track trends, then consult your provider.</p>
         </div>
       </header>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
