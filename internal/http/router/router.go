@@ -44,7 +44,7 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 	} else {
 		predictor = ml.NewMockPredictor()
 	}
-	assessmentHandler := handlers.NewAssessmentsHandler(st, predictor, cfg.ModelVersion)
+	assessmentHandler := handlers.NewAssessmentsHandler(st, predictor, cfg.ModelVersion, cfg.DatasetHash)
 	assessmentHandler.Register(protected.Group("/patients"))
 
 	analyticsHandler := handlers.NewAnalyticsHandler(st)

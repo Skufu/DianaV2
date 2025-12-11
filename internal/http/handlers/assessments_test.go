@@ -80,7 +80,7 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 	defer modelSrv.Close()
 
 	repo := &fakeAssessmentRepo{}
-	h := NewAssessmentsHandler(&fakeStore{repo: repo}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1")
+	h := NewAssessmentsHandler(&fakeStore{repo: repo}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
 
 	r := gin.New()
 	r.POST("/:patientID/assessments", h.create)
@@ -109,7 +109,7 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 	defer modelSrv.Close()
 
 	repo := &fakeAssessmentRepo{}
-	h := NewAssessmentsHandler(&fakeStore{repo: repo}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1")
+	h := NewAssessmentsHandler(&fakeStore{repo: repo}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
 
 	r := gin.New()
 	r.POST("/:patientID/assessments", h.create)

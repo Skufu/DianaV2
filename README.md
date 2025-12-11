@@ -16,7 +16,7 @@ Quickstart (local)
 Requirements: Go 1.21+, Node 18+, Postgres running.
 
 1) Env: copy `env.example` to `.env` and adjust:
-- `DB_DSN` (Postgres URL), `JWT_SECRET`, `CORS_ORIGINS`, `MODEL_URL` (optional), `MODEL_VERSION`, `MODEL_TIMEOUT_MS`, `EXPORT_MAX_ROWS`.
+- `DB_DSN` (Postgres URL), `JWT_SECRET`, `CORS_ORIGINS`, `MODEL_URL` (optional), `MODEL_VERSION`, `MODEL_DATASET_HASH` (optional traceability tag), `MODEL_TIMEOUT_MS`, `EXPORT_MAX_ROWS`.
 
 2) Backend:
 - `go run ./cmd/server`

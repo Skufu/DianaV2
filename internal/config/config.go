@@ -15,6 +15,7 @@ type Config struct {
 	CORSOrigins    []string
 	ModelURL       string
 	ModelVersion   string
+	DatasetHash    string
 	ModelTimeoutMS int
 	ExportMaxRows  int
 }
@@ -27,6 +28,7 @@ func Load() Config {
 		JWTSecret:      getEnv("JWT_SECRET", "dev-secret"),
 		ModelURL:       getEnv("MODEL_URL", ""),
 		ModelVersion:   getEnv("MODEL_VERSION", "v0-placeholder"),
+		DatasetHash:    getEnv("MODEL_DATASET_HASH", ""),
 		ModelTimeoutMS: 2000,
 	}
 	cfg.CORSOrigins = splitAndTrim(getEnv("CORS_ORIGINS", "http://localhost:3000"))

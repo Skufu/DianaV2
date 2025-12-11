@@ -10,13 +10,19 @@ import (
 )
 
 type AssessmentsHandler struct {
-	store     store.Store
-	predictor ml.Predictor
-	modelVer  string
+	store       store.Store
+	predictor   ml.Predictor
+	modelVer    string
+	datasetHash string
 }
 
-func NewAssessmentsHandler(store store.Store, predictor ml.Predictor, modelVersion string) *AssessmentsHandler {
-	return &AssessmentsHandler{store: store, predictor: predictor, modelVer: modelVersion}
+func NewAssessmentsHandler(store store.Store, predictor ml.Predictor, modelVersion, datasetHash string) *AssessmentsHandler {
+	return &AssessmentsHandler{
+		store:       store,
+		predictor:   predictor,
+		modelVer:    modelVersion,
+		datasetHash: datasetHash,
+	}
 }
 
 func (h *AssessmentsHandler) Register(rg *gin.RouterGroup) {
@@ -69,6 +75,7 @@ func (h *AssessmentsHandler) create(c *gin.Context) {
 		HeartDisease:  req.HeartDisease,
 		BMI:           req.BMI,
 		ModelVersion:  h.modelVer,
+		DatasetHash:   h.datasetHash,
 	}
 	a.ValidationStatus = validationStatus(a)
 	cluster, risk := h.predictor.Predict(a)
