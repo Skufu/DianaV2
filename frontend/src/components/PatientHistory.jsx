@@ -52,6 +52,35 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
     return { label: 'Low risk', badge: 'bg-[#6AD2FF] text-[#1B2559]', value: numeric };
   };
 
+  const renderLoadingRows = () =>
+    Array.from({ length: 3 }).map((_, idx) => (
+      <tr key={`skeleton-${idx}`} className="animate-pulse">
+        <td className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-[#E0E5F2]" />
+            <div className="space-y-2">
+              <div className="h-3 w-28 bg-[#E0E5F2] rounded" />
+              <div className="h-2 w-16 bg-[#E0E5F2] rounded" />
+            </div>
+          </div>
+        </td>
+        <td className="p-6">
+          <div className="h-3 w-20 bg-[#E0E5F2] rounded mb-2" />
+          <div className="h-2 w-14 bg-[#E0E5F2] rounded" />
+        </td>
+        <td className="p-6">
+          <div className="h-3 w-32 bg-[#E0E5F2] rounded" />
+        </td>
+        <td className="p-6">
+          <div className="h-3 w-24 bg-[#E0E5F2] rounded mb-2" />
+          <div className="h-2 w-32 bg-[#E0E5F2] rounded" />
+        </td>
+        <td className="p-6">
+          <div className="w-8 h-8 rounded-full border border-[#E0E5F2] bg-[#F4F7FE]" />
+        </td>
+      </tr>
+    ));
+
   useEffect(() => {
     if (formData.weight && formData.height) {
       const heightM = formData.height / 100;
@@ -131,6 +160,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
   const PatientProfileView = ({ patient }) => {
     if (!patient) return null;
+    const riskMeta = getRiskMeta(patient.risk ?? patient.risk_score);
     return (
       <div className="animate-fade-in pb-8">
         <div className="flex items-center gap-4 mb-8">
@@ -142,7 +172,16 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
           </button>
           <div>
             <h2 className="text-3xl font-bold text-[#1B2559]">{patient.name}</h2>
-            <p className="text-[#A3AED0]">ID: {patient.id || patient.idNumber || 'N/A'} • {patient.status || patient.menopause_status}</p>
+          <p className="text-[#A3AED0]">ID: {patient.id || patient.idNumber || 'N/A'} • {patient.status || patient.menopause_status}</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <span className={`px-3 py-1 rounded-full text-xs font-bold border border-[#E0E5F2] ${riskMeta.badge}`}>{riskMeta.label}</span>
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#F4F7FE] text-[#1B2559] border border-[#E0E5F2]">
+              {clusterDescriptions[patient.cluster] || 'Cluster description unavailable'}
+            </span>
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#F4F7FE] text-[#1B2559] border border-[#E0E5F2]">
+              Doctor review pending
+            </span>
+          </div>
           </div>
         </div>
 
@@ -351,6 +390,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                       placeholder="mg/dL"
                       onChange={(e) => setFormData({ ...formData, fbs: e.target.value })}
                     />
+                    <p className="text-[11px] text-[#A3AED0]">Refer to lab ranges (FBS/OGTT) from study tables.</p>
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between">
@@ -364,6 +404,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                       placeholder="%"
                       onChange={(e) => setFormData({ ...formData, hba1c: e.target.value })}
                     />
+                    <p className="text-[11px] text-[#A3AED0]">Use recent lab value; long-term control indicator.</p>
                   </div>
                 </div>
                 <div className="bg-[#F4F7FE] p-6 rounded-2xl border border-[#E0E5F2]">
@@ -528,7 +569,9 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E0E5F2]">
-              {(patients && patients.length > 0) ? (
+              {patients === undefined || patients === null ? (
+                renderLoadingRows()
+              ) : (patients && patients.length > 0) ? (
                 patients.map((p) => {
                   const riskMeta = getRiskMeta(p.risk ?? p.risk_score);
                   return (
@@ -571,6 +614,9 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                           </span>
                           <div className="text-[11px] text-[#A3AED0] font-medium leading-snug">
                             {clusterDescriptions[p.cluster] || 'Cluster description unavailable'}
+                          </div>
+                          <div className="text-[11px] text-[#A3AED0] font-medium leading-snug">
+                            Doctor review pending
                           </div>
                         </div>
                       </td>
