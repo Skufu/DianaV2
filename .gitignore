@@ -44,5 +44,4 @@ frontend/.env.local
 *.log
 
 # Generated
-internal/store/sqlc/
 .DS_Store
