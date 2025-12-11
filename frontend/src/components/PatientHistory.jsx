@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronRight, ArrowLeft, Activity, Clipboard, FileText, CheckCircle, XCircle, Heart, TrendingUp } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Activity, Clipboard, FileText, CheckCircle, XCircle, Heart, TrendingUp, X, Users, Thermometer } from 'lucide-react';
 import Button from './Button';
 
 const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessments, onSubmitAssessment }) => {
@@ -13,10 +13,11 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
     hba1c: '',
     menopauseStatus: 'Perimenopause',
     yearsMenopause: 0,
-    history: false,
+    familyHistory: false,
+    physActivity: false,
     systolic: '',
     diastolic: '',
-    activity: 'Sedentary',
+    activity: 'No',
     cholesterol: '',
     ldl: '',
     hdl: '',
@@ -29,6 +30,27 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   const [cluster, setCluster] = useState(null);
   const [calculatedBMI, setCalculatedBMI] = useState(null);
   const [isComputing, setIsComputing] = useState(false);
+  const [formError, setFormError] = useState(null);
+
+  const clusterDescriptions = {
+    SOIRD: 'Severe obesity-related & insulin-resistant diabetes',
+    SIDD: 'Severe insulin-deficient diabetes',
+    MARD: 'Mild age-associated diabetes',
+    MIDD: 'Mild insulin-deficient diabetes',
+  };
+
+  const getRiskMeta = (score) => {
+    if (score === null || score === undefined || score === '') {
+      return { label: 'No risk available', badge: 'bg-[#EFF4FB] text-[#1B2559]', value: '--' };
+    }
+    const numeric = Number(score);
+    if (Number.isNaN(numeric)) {
+      return { label: 'No risk available', badge: 'bg-[#EFF4FB] text-[#1B2559]', value: '--' };
+    }
+    if (numeric >= 67) return { label: 'High risk', badge: 'bg-[#EE5D50] text-white', value: numeric };
+    if (numeric >= 34) return { label: 'Moderate risk', badge: 'bg-[#FFB547] text-[#1B2559]', value: numeric };
+    return { label: 'Low risk', badge: 'bg-[#6AD2FF] text-[#1B2559]', value: numeric };
+  };
 
   useEffect(() => {
     if (formData.weight && formData.height) {
@@ -41,6 +63,24 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   }, [formData.weight, formData.height]);
 
   const calculateRisk = async () => {
+    // Basic client-side validation for key fields
+    if (!formData.name.trim()) {
+      setFormError('Name is required.');
+      return;
+    }
+    if (!formData.age || Number(formData.age) <= 0) {
+      setFormError('Age is required.');
+      return;
+    }
+    if (!formData.fbs || Number(formData.fbs) <= 0) {
+      setFormError('FBS is required.');
+      return;
+    }
+    if (!formData.hba1c || Number(formData.hba1c) <= 0) {
+      setFormError('HbA1c is required.');
+      return;
+    }
+    setFormError(null);
     setIsComputing(true);
     setPrediction(null);
     setCluster(null);
@@ -145,7 +185,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             </div>
 
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
-              <h4 className="text-[#1B2559] font-bold mb-4 flex items_center gap-2">
+              <h4 className="text-[#1B2559] font-bold mb-4 flex items-center gap-2">
                 <FileText size={18} className="text-[#4318FF]" /> Doctor's Validation
               </h4>
               <div className="flex gap-2">
@@ -161,7 +201,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
-              <div className="flex justify_between items-center mb-8">
+              <div className="flex justify-between items-center mb-8">
                 <h3 className="text-[#1B2559] font-bold text-xl flex items-center gap-2">
                   <TrendingUp size={20} className="text-[#4318FF]" /> Historical Biomarker Trends
                 </h3>
@@ -186,7 +226,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                             {record.fbs} mg/dL
                           </div>
                         </div>
-                        <div className="absolute top_full mt-4 text-xs font-bold text-[#A3AED0] w-20 text-center -ml-4">{record.date}</div>
+                        <div className="absolute top-full mt-4 text-xs font-bold text-[#A3AED0] w-20 text-center -ml-4">{record.date}</div>
                       </div>
                     ))}
                   </div>
@@ -203,22 +243,30 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
   if (viewState === 'form') {
     return (
-      <div className="max-w-6xl mx-auto w-full animate-fade-in pb-8">
-        <header className="flex items-center gap-4 mb-8">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto p-6 lg:p-8 relative animate-scale-in">
           <button
             onClick={() => setViewState('list')}
-            className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-[#1B2559] hover:bg-[#F4F7FE] transition-colors border border-[#E0E5F2]"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#F4F7FE] text-[#1B2559] flex items-center justify-center hover:bg-[#E0E5F2] transition-colors"
           >
-            <ChevronRight className="rotate-180" />
+            <X size={18} />
           </button>
-          <div>
-            <h2 className="text-3xl font-bold text-[#1B2559]">New Assessment</h2>
-            <p className="text-[#A3AED0]">Complete biomarker data for Cluster-Based Identification.</p>
-          </div>
-        </header>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+          <header className="flex items-center gap-4 mb-8">
+            <button
+              onClick={() => setViewState('list')}
+              className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-[#1B2559] hover:bg-[#F4F7FE] transition-colors border border-[#E0E5F2]"
+            >
+              <ChevronRight className="rotate-180" />
+            </button>
+            <div>
+              <h2 className="text-3xl font-bold text-[#1B2559]">New Assessment</h2>
+              <p className="text-[#A3AED0]">Complete biomarker data for Cluster-Based Identification.</p>
+            </div>
+          </header>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+              {formError && <div className="mb-4 text-sm text-[#EE5D50] font-semibold">{formError}</div>}
               <div className="mb-8">
                 <h3 className="text-[#1B2559] text-lg font-bold mb-6 flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-[#4318FF]/10 text-[#4318FF] flex items-center justify-center">
@@ -247,7 +295,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                     <label className="text-[#1B2559] text-sm font-bold ml-1">Weight (kg)</label>
                     <input
                       type="number"
-                      className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline_none transition-all"
+                      className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
                       onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                     />
                   </div>
@@ -305,7 +353,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                     />
                   </div>
                   <div className="space-y-2">
-                    <div className="flex justify_between">
+                    <div className="flex justify-between">
                       <label className="text-[#1B2559] text-sm font-bold ml-1">HbA1c (%)</label>
                       <span className="text-[#A3AED0] text-xs">Normal: &lt;5.7%</span>
                     </div>
@@ -368,20 +416,26 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                     />
                   </div>
                   <div className="space-y-2 col-span-2">
-                    <label className="text-[#1B2559] text-sm font-bold ml-1">Physical Activity</label>
+                    <label className="text-[#1B2559] text-sm font-bold ml-1">Physical Activity (Yes/No)</label>
                     <select
                       className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] outline-none transition-all appearance-none"
-                      onChange={(e) => setFormData({ ...formData, activity: e.target.value })}
+                      value={formData.physActivity ? 'Yes' : 'No'}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          physActivity: e.target.value === 'Yes',
+                          activity: e.target.value,
+                        })
+                      }
                     >
-                      <option value="Sedentary">Sedentary</option>
-                      <option value="Moderate">Moderate</option>
-                      <option value="Active">Active</option>
+                      <option value="No">No</option>
+                      <option value="Yes">Yes</option>
                     </select>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
-                    { key: 'history', label: 'Family History of Diabetes' },
+                    { key: 'familyHistory', label: 'Family History of Diabetes' },
                     { key: 'smoking', label: 'Smoking History', checkboxVal: 'Yes', fallback: 'No' },
                     { key: 'hypertension', label: 'History of Hypertension', checkboxVal: 'Yes', fallback: 'No' },
                     { key: 'heartDisease', label: 'History of Heart Disease', checkboxVal: 'Yes', fallback: 'No' },
@@ -437,7 +491,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                     <h2 className="text-4xl font-bold text-[#4318FF] mb-2">{cluster}</h2>
                     <div
                       className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 ${
-                        prediction > 66 ? 'bg-[#EE5D50] text-white' : 'bg-[#6AD2FF] text_white'
+                        getRiskMeta(prediction).badge
                       }`}
                     >
                       {prediction}% Risk Probability
@@ -448,6 +502,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             </div>
           </div>
         </div>
+      </div>
       </div>
     );
   }
@@ -473,49 +528,77 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E0E5F2]">
-              {(patients.length ? patients : []).map((p) => (
-                <tr key={p.id} className="hover:bg-[#F4F7FE] transition-colors group cursor-pointer" onClick={() => handleViewProfile(p)}>
-                  <td className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-[#4318FF] text-white flex items_center justify-center font-bold shadow-md group-hover:scale-110 transition-transform">
-                        {p.name?.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="text-[#1B2559] font-bold text-sm group-hover:text-[#4318FF] transition-colors">{p.name}</div>
-                        <div className="text-[#A3AED0] text-xs font-medium">ID: {p.id}</div>
-                      </div>
+              {(patients && patients.length > 0) ? (
+                patients.map((p) => {
+                  const riskMeta = getRiskMeta(p.risk ?? p.risk_score);
+                  return (
+                    <tr key={p.id} className="hover:bg-[#F4F7FE] transition-colors group cursor-pointer" onClick={() => handleViewProfile(p)}>
+                      <td className="p-6">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-[#4318FF] text-white flex items-center justify-center font-bold shadow-md group-hover:scale-110 transition-transform">
+                            {p.name?.charAt(0) || '?'}
+                          </div>
+                          <div>
+                            <div className="text-[#1B2559] font-bold text-sm group-hover:text-[#4318FF] transition-colors">{p.name || 'Unnamed'}</div>
+                            <div className="text-[#A3AED0] text-xs font-medium">ID: {p.id || 'N/A'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-6">
+                        <span className="text-[#1B2559] font-medium text-sm">{p.menopause_status || 'N/A'}</span>
+                        <div className="text-[#A3AED0] text-xs">Age: {p.age || 'N/A'}</div>
+                        <div className="mt-2 inline-block px-2 py-1 rounded-full text-[11px] font-semibold border border-[#E0E5F2] text-[#1B2559] bg-[#F4F7FE]">
+                          {riskMeta.label}
+                        </div>
+                      </td>
+                      <td className="p-6">
+                        <div className="flex flex-wrap gap-2">
+                          <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">FBS: {p.fbs || '--'}</div>
+                          <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">A1c: {p.hba1c || '--'}%</div>
+                          <div className={`px-2 py-1 rounded text-xs font-bold border border-[#E0E5F2] ${riskMeta.badge}`}>
+                            {riskMeta.value === '--' ? '--' : `${riskMeta.value}%`}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-6">
+                        <div className="space-y-1">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              p.cluster === 'SOIRD' || p.cluster === 'SIDD' ? 'bg-[#111C44] text-white' : 'bg-[#6AD2FF]/20 text-[#1B2559]'
+                            }`}
+                          >
+                            {p.cluster || 'N/A'}
+                          </span>
+                          <div className="text-[11px] text-[#A3AED0] font-medium leading-snug">
+                            {clusterDescriptions[p.cluster] || 'Cluster description unavailable'}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-6">
+                        <button className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#4318FF] hover:border-[#4318FF] transition-colors bg-white">
+                          <ChevronRight size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-[#A3AED0]">
+                    No patients found. Start a new assessment to populate history.
+                    <div className="mt-4 flex justify-center">
+                      <Button onClick={() => setViewState('form')}>New Assessment</Button>
                     </div>
-                  </td>
-                  <td className="p-6">
-                    <span className="text-[#1B2559] font-medium text-sm">{p.menopause_status || 'N/A'}</span>
-                    <div className="text-[#A3AED0] text-xs">Age: {p.age || 'N/A'}</div>
-                  </td>
-                  <td className="p-6">
-                    <div className="flex gap-2">
-                      <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">FBS: {p.fbs || '--'}</div>
-                      <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">A1c: {p.hba1c || '--'}%</div>
-                    </div>
-                  </td>
-                  <td className="p-6">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        p.cluster === 'SOIRD' || p.cluster === 'SIDD' ? 'bg-[#111C44] text-white' : 'bg-[#6AD2FF]/20 text-[#1B2559]'
-                      }`}
-                    >
-                      {p.cluster || 'N/A'}
-                    </span>
-                  </td>
-                  <td className="p-6">
-                    <button className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items_center justify-center text-[#A3AED0] hover:text-[#4318FF] hover:border-[#4318FF] transition-colors bg-white">
-                      <ChevronRight size={16} />
-                    </button>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
       </div>
+      <p className="text-[#A3AED0] text-xs mt-4">
+        This tool supports cluster-based risk assessment for menopausal women; results should be interpreted alongside healthcare providers.
+      </p>
     </div>
   );
 };
