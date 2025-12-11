@@ -8,6 +8,7 @@ const Export = () => {
     <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2] animate-fade-in">
       <h2 className="text-2xl font-bold text-[#1B2559] mb-4">Export Data</h2>
       <p className="text-[#A3AED0] mb-6">Download CSVs to keep or share with your healthcare provider.</p>
+      <p className="text-[#A3AED0] text-sm mb-4">Patients CSV: name, age, menopause status, BP, activity, lipid panel. Assessments CSV: FBS, HbA1c, BMI, history flags, timestamps.</p>
       <div className="flex flex-col sm:flex-row gap-3">
         <Button variant="outline" onClick={openLink('/api/v1/export/patients.csv')} className="bg-white text-[#4318FF] hover:bg-[#F4F7FE]">
           Download Patients CSV

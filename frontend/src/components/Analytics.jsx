@@ -31,7 +31,7 @@ const Analytics = ({ token }) => {
         <div>
           <h4 className="text-[#707EAE] font-medium text-sm mb-1">Insights & Clustering</h4>
           <h2 className="text-3xl font-bold text-[#1B2559]">Analytics</h2>
-          <p className="text-[#A3AED0] text-sm mt-1">Informational trends to review with your provider.</p>
+          <p className="text-[#A3AED0] text-sm mt-1">Cohort-level, informational only; review with your provider.</p>
         </div>
         {loading && <span className="text-xs text-[#A3AED0]">Loading…</span>}
         {error && !loading && <span className="text-xs text-[#EE5D50]">{error}</span>}

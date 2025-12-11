@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight } from 'lucide-react';
 import { fetchClusterDistributionApi, fetchTrendAnalyticsApi } from '../api';
 
-const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssessment }) => {
+const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssessment, loading }) => {
   const [activeBiomarker, setActiveBiomarker] = useState('hba1c');
   const [clusterStats, setClusterStats] = useState([]);
   const [trends, setTrends] = useState([]);
@@ -95,7 +95,18 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
           <h3 className="font-bold text-lg">New Patient Assessment</h3>
           <p className="text-xs opacity-80 mt-2">Start a cluster-based analysis</p>
         </div>
-        {stats.map((stat, idx) => (
+        {loading
+          ? Array.from({ length: 4 }).map((_, idx) => (
+              <div key={`sk-${idx}`} className="lg:col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2] animate-pulse space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="w-10 h-10 rounded-full bg-[#E0E5F2]" />
+                  <div className="h-4 w-10 bg-[#E0E5F2] rounded" />
+                </div>
+                <div className="h-6 w-16 bg-[#E0E5F2] rounded" />
+                <div className="h-3 w-24 bg-[#E0E5F2] rounded" />
+              </div>
+            ))
+          : stats.map((stat, idx) => (
           <div
             key={idx}
             className="lg:col-span-1 bg-white p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between border border-[#E0E5F2] animate-slide-up"

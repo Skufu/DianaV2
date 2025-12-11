@@ -129,6 +129,7 @@ const App = () => {
             patientCount={patients.length}
             onNavigateToPatient={() => setActiveTab('patients')}
             onStartAssessment={handleStartAssessment}
+            loading={loadingPatients}
           />
         );
       case 'patients':
@@ -168,7 +169,15 @@ const App = () => {
     <div className="flex bg-[#F4F7FE]">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onStartAssessment={handleStartAssessment} onLogout={handleLogout} />
       <main className="flex-1 ml-20 lg:ml-72 p-6 lg:p-10">
-        {loadingPatients ? <div className="text-[#707EAE]">Loading patients...</div> : renderContent()}
+        {loadingPatients ? (
+          <div className="space-y-3 text-[#707EAE] animate-pulse">
+            <div className="h-4 w-24 bg-[#E0E5F2] rounded" />
+            <div className="h-4 w-48 bg-[#E0E5F2] rounded" />
+            <div className="h-4 w-32 bg-[#E0E5F2] rounded" />
+          </div>
+        ) : (
+          renderContent()
+        )}
       </main>
     </div>
   );

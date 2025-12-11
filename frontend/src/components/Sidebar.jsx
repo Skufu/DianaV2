@@ -21,7 +21,7 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout }) => {
       style={{ background: THEME.colors.sidebarGradient }}
     >
       <div className="p-8 flex items-center justify-center lg:justify-start gap-3 border-b border-white/10">
-        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0 shadow-lg">
+        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0 shadow-lg" aria-label="DIANA logo">
           <span className="text-[#0B1437] font-bold">D</span>
         </div>
         <span className="text-2xl text-white font-bold hidden lg:block tracking-wide">DIANA</span>
@@ -44,8 +44,9 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout }) => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all duration-200 group relative
+            className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all duration-200 group relative
                 ${isActive ? 'bg-white/10 text-white shadow-lg backdrop-blur-sm' : 'text-[#A3AED0] hover:text-white hover:bg-white/5'}`}
+            aria-label={item.label}
             >
               <Icon size={20} className={isActive ? 'text-white' : 'text-[#A3AED0] group-hover:text-white'} />
               <span className="hidden lg:block font-medium">{item.label}</span>
