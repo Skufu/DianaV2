@@ -5,7 +5,12 @@ const apiFetch = async (path, options = {}) => {
   if (!res.ok) {
     let msg = `Request failed ${res.status}`;
     try {
-      msg = await res.text();
+      const text = await res.text();
+      if (text && text.trim().toLowerCase().startsWith('<html')) {
+        msg = 'Backend responded with HTML. Verify API is running and VITE_API_BASE is set.';
+      } else if (text) {
+        msg = text;
+      }
     } catch (_) {
       /* ignore */
     }
