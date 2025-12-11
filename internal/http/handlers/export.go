@@ -1,3 +1,4 @@
+// ExportHandler: CSV export endpoints for patients, assessments, and dataset slices.
 package handlers
 
 import (

@@ -1,3 +1,4 @@
+-- patients.sql: sqlc queries for patient CRUD/listing used by the Postgres store.
 -- name: ListPatients :many
 SELECT id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
        activity, phys_activity, smoking, hypertension, heart_disease, family_history, chol, ldl, hdl, triglycerides,

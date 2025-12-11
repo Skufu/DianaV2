@@ -1,3 +1,4 @@
+// Domain models for users, patients, assessments, and analytics DTOs.
 package models
 
 import "time"

@@ -1,3 +1,4 @@
+// PostgresStore: pgx-backed repositories for users, patients, and assessments.
 package store
 
 import (

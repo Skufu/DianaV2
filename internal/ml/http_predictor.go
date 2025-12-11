@@ -1,3 +1,4 @@
+// HTTPPredictor: posts assessments to a remote model inference endpoint.
 package ml
 
 import (
