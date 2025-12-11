@@ -1,119 +1,116 @@
-Architecture Overview
-=====================
+System Architecture
+===================
 
-Purpose
--------
-End-to-end diabetes risk workflow: clinicians log in, manage patients, submit assessments, receive cluster/risk outputs (mocked or via HTTP model), view aggregates, and export data.
-
-System map
-----------
-- Backend (Go 1.21, Gin):
-  - `cmd/server`: loads env, builds pgx pool, wires router, graceful shutdown.
-  - `internal/http/router`: routes, CORS, auth middleware, handler registration.
-  - `internal/http/handlers`: domain endpoints (auth, patients, assessments, analytics, export, health).
-  - `internal/http/middleware/auth`: JWT bearer validation.
-  - `internal/store`: interfaces + Postgres implementation (sqlc-generated queries).
-  - `internal/ml`: predictor interface; HTTP-backed predictor or mock fallback.
-  - `internal/models`: API/domain structs.
-- Frontend (React 18, Vite + Tailwind):
-  - Single-page app with `Sidebar`, `Dashboard`, `PatientHistory` (list + form), `Analytics`, `Export`, `Login`.
-  - `src/api.js` centralizes fetch with `VITE_API_BASE`.
-
-Backend request flow
---------------------
-1) Client hits `/api/v1/*` (CORS enforced from `CORS_ORIGINS`).
-2) Public paths: `/healthz`, `/livez`, `/auth/login`.
-3) Protected paths: apply `Auth` middleware (`Authorization: Bearer <JWT>` signed with `JWT_SECRET`).
-4) Handler executes domain logic, persists via `store` (pgx/sqlc) against Postgres.
-5) Assessments: predictor invoked (mock or HTTP). Validation warnings computed server-side.
-6) Response serialized to JSON (or CSV for export).
-
-Config (env)
-------------
-- `PORT`, `ENV`
-- `DB_DSN`
-- `JWT_SECRET`
-- `CORS_ORIGINS` (comma-separated)
-- `MODEL_URL`, `MODEL_VERSION`, `MODEL_TIMEOUT_MS`
-- `EXPORT_MAX_ROWS`
-- Demo creds (seed): `DEMO_EMAIL`, `DEMO_PASSWORD`
-
-Data model (key fields)
------------------------
-- User: `id`, `email`, `password_hash`, `role`, timestamps.
-- Patient: `id`, `name`, `age`, `menopause_status`, `years_menopause`, `bmi`, `bp_systolic/diastolic`, lifestyle/comorbidity flags, lipid panel, timestamps.
-- Assessment: `id`, `patient_id`, biomarker panel (FBS, HbA1c, chol/ldl/hdl/tg, BP), lifestyle flags, `bmi`, `cluster`, `risk_score`, `model_version`, `dataset_hash`, `validation_status`, timestamps.
-- Analytics (derived): cluster counts, trend averages.
-
-Routing surface
+Purpose & Scope
 ---------------
-- Health: `GET /api/v1/healthz`, `GET /api/v1/livez`
-- Auth: `POST /api/v1/auth/login` -> JWT (`sub`, `role`, 24h exp)
-- Patients: `GET /api/v1/patients`, `POST /api/v1/patients`
-- Assessments: `GET /api/v1/patients/:id/assessments`, `POST /api/v1/patients/:id/assessments`
-- Analytics: `GET /api/v1/analytics/cluster-distribution`, `GET /api/v1/analytics/biomarker-trends`
-- Export: `GET /api/v1/export/patients.csv`, `GET /api/v1/export/assessments.csv`, `GET /api/v1/export/datasets/:slice`
+Clinical workflow for diabetes risk: clinicians log in, manage patients, submit assessments, receive cluster/risk outputs (HTTP model or mock), view aggregates, and export data. This document maps components, flows, data, runtime behavior, and operational levers.
 
-Handlers and behaviors
-----------------------
-- Auth: bcrypt password check, JWT HS256 with `scope=diana`.
-- Patients: list/create. Errors 500 on store failures; 400 on bad payload.
-- Assessments: binds JSON, attaches `model_version`, computes `validation_status` (ranges on FBS/HbA1c/lipids/BP/BMI). Predictor returns `cluster`, `risk_score`; stored with record.
-- Analytics: aggregates via store (`ClusterCounts`, `TrendAverages`).
-- Export: CSV streams limited by `EXPORT_MAX_ROWS`; dataset slice stub returns hash metadata.
-- Health: simple JSON ok/live.
+Topology (high level)
+---------------------
+- Client: React 18 SPA (Vite + Tailwind) served statically (Vercel/local).
+- API: Go 1.21 Gin service.
+- Data: Postgres (sqlc-generated queries).
+- ML: Pluggable predictor over HTTP; deterministic mock fallback.
+- Paths: Frontend -> API (`/api/v1/*`) -> Postgres; Assessments flow optionally -> ML endpoint.
 
-Predictor strategy
-------------------
-- If `MODEL_URL` is set: `HTTPPredictor` posts assessment JSON with `X-Model-Version`, timeout `MODEL_TIMEOUT_MS` ms; non-200/error -> `cluster="error", risk=0`.
-- If `MODEL_URL` empty: `MockPredictor` returns deterministic cluster/risk for stable dev/test.
-
-Store layer
------------
-- Interface in `internal/store/store.go`; Postgres implementation in `internal/store/postgres.go`.
-- sqlc queries in `internal/store/queries/*.sql`, generated code in `internal/store/sqlc`.
-- Requires Postgres connection (`DB_DSN`). If `DB_DSN` empty, store returns errors on access (handlers will 500).
-- Migrations: `migrations/0001_init.sql` (users, patients, assessments, model_runs, audit).
-
-Frontend composition
---------------------
-- `Login`: calls `/auth/login`, stores JWT in state; default creds from seed.
-- `App`: holds auth/token, active tab, patients cache; fetches patients after login; lazy fetch assessments per patient.
-- `PatientHistory`: renders list/form; computes BMI client-side; posts assessment then refreshes list.
-- `Dashboard`: static stats + links to patient/assessment flow.
-- `Analytics`: placeholder; wire to analytics endpoints as needed.
-- `Export`: links to CSV endpoints (uses `API_BASE`).
-- Styling: Tailwind (see `index.css`, `tailwind.config.cjs`); Vite dev server on 3000.
-
-Data flow (happy path)
-----------------------
-Login -> JWT -> set token -> fetch patients -> select/create patient -> submit assessment -> server validates + predicts + stores -> response with cluster/risk -> UI shows assessment history -> optional analytics/export fetches.
-
-Error and edge handling
+Backend components (Go)
 -----------------------
-- Auth: missing/invalid token -> 401; wrong creds -> 401.
-- DB missing/unreachable -> handlers 500.
-- Model errors/timeouts -> assessment stored with `cluster="error"`, `risk_score=0`.
-- Validation: `validation_status` prefixed `warning:` when biomarkers out-of-range; does not block creation.
-- Export: capped by `EXPORT_MAX_ROWS`.
-- CORS: must include frontend origin; otherwise browser blocks.
+- Entrypoint: `cmd/server` loads env, builds pgx pool, wires router, starts HTTP server with graceful shutdown.
+- Router: `internal/http/router` sets CORS, logging/recovery, mounts `/api/v1`, registers handlers, and guards protected routes with JWT middleware.
+- Middleware: `internal/http/middleware/auth` validates `Authorization: Bearer <JWT>` signed with `JWT_SECRET`.
+- Handlers (`internal/http/handlers`):
+  - Auth: `/auth/login` bcrypt check -> JWT (HS256, 24h, `scope=diana`, `role` claim).
+  - Patients: list/create.
+  - Assessments: create/list per patient; computes validation warnings; invokes predictor; persists.
+  - Analytics: cluster counts, biomarker trend averages.
+  - Export: CSV for patients/assessments; dataset slice stub.
+  - Health: liveness/readiness.
+- ML: `internal/ml`
+  - Predictor interface.
+  - `HTTPPredictor` posts assessment JSON to `MODEL_URL` with `X-Model-Version`; timeout `MODEL_TIMEOUT_MS`; any error/non-200 -> `cluster="error", risk=0`.
+  - `MockPredictor` deterministic clusters for stable dev/test when `MODEL_URL` is empty.
+- Store: `internal/store`
+  - Interfaces in `store.go`; Postgres impl in `postgres.go` using sqlc (`internal/store/sqlc`).
+  - If `DB_DSN` is unset, repos return errors on access (handlers surface 500).
+- Models: `internal/models` define User/Patient/Assessment/analytics DTOs.
 
-Dev and ops
------------
-- Run backend: `go run ./cmd/server`
-- Frontend: `cd frontend && npm run dev`
-- Combined: `./run-dev.sh`
-- Tests: `go test ./...` (integration needs `TEST_DB_DSN`).
-- Migrations: `make db_up` (requires goose installed).
-
-Deployment pointers
--------------------
-- Default: Render (API) + Neon (Postgres) + Vercel (frontend). Set envs accordingly; see `deployment.md`.
-- Frontend build: `npm run build`, serve `dist`, set `VITE_API_BASE` to deployed API `/api/v1`.
-
-Observability and ops notes
+Frontend components (React)
 ---------------------------
-- Logging: Gin logger + recovery. Consider structured logging and request IDs if extending.
-- Health: `/healthz` for readiness, `/livez` for liveness.
-- Security: keep `JWT_SECRET` strong; restrict CORS to expected origins; bcrypt for stored users.
+- App shell: `src/App.jsx` manages auth state, active tab, patient cache, and assessment cache.
+- API client: `src/api.js` wraps `fetch` with `API_BASE = VITE_API_BASE`, handles JSON/text.
+- Screens: `Login`, `Dashboard`, `PatientHistory` (list + form), `Analytics`, `Export`, `Sidebar`.
+- Flow: login -> store token -> fetch patients -> create patient -> submit assessment -> render history; optional analytics/export requests.
+
+Data model (persistent)
+-----------------------
+- Users: email, password_hash (bcrypt), role, timestamps.
+- Patients: demographics, menopause status, BMI, BP, activity/smoking/hypertension/heart disease, lipid panel, timestamps.
+- Assessments: patient_id, biomarker panel, lifestyle flags, BMI, cluster, risk_score, model_version, dataset_hash, validation_status, created_at.
+- Supporting tables: model_runs (version/hash notes), audit_events (generic audit hook).
+- Schema defined in `migrations/0001_init.sql`.
+
+Core request flows
+------------------
+- Auth: `POST /api/v1/auth/login` -> JWT; 401 on bad creds or missing payload.
+- Patients: `GET /patients` (list), `POST /patients` (create). 400 on bad payload; 500 on store errors.
+- Assessments:
+  - `POST /patients/:id/assessments`: parse payload, compute `validation_status` (ranges on FBS/HbA1c/lipids/BP/BMI), call predictor, persist with `model_version` + `dataset_hash`, return created row.
+  - `GET /patients/:id/assessments`: list by patient.
+- Analytics: `GET /analytics/cluster-distribution`, `GET /analytics/biomarker-trends`; aggregate via store.
+- Export: `GET /export/patients.csv`, `GET /export/assessments.csv`, `GET /export/datasets/:slice` (stubbed metadata). Rows capped by `EXPORT_MAX_ROWS`.
+- Health: `GET /healthz`, `GET /livez`.
+
+Configuration (env) and defaults
+--------------------------------
+- `PORT` (default `8080`), `ENV` (`dev` default).
+- `DB_DSN` (Postgres URL). If empty, handlers fail on DB access.
+- `JWT_SECRET` (default `dev-secret`).
+- `CORS_ORIGINS` (comma list; default `http://localhost:3000`).
+- `MODEL_URL` (optional), `MODEL_VERSION` (default `v0-placeholder`), `MODEL_DATASET_HASH` (optional), `MODEL_TIMEOUT_MS` (default `2000` ms).
+- `EXPORT_MAX_ROWS` (default `5000`).
+
+Runtime behaviors & failure modes
+---------------------------------
+- Startup: optional pgx pool connect/ping; logs warning when `DB_DSN` is unset (store will error on use).
+- Shutdown: graceful HTTP shutdown with 5s timeout; pgx pool close.
+- Auth errors: missing/invalid bearer -> 401.
+- Model failures/timeouts/non-200: stored as `cluster="error", risk=0`; request still succeeds (201).
+- Validation warnings: prefixed `warning:` and returned; does not block creation.
+- Export caps: CSV limited by `EXPORT_MAX_ROWS`.
+- CORS: enforced via configured origins.
+
+Security notes
+--------------
+- JWT HS256 signed with `JWT_SECRET`; token includes `role` but no role-based checks in handlers yet.
+- Passwords stored bcrypt-hashed.
+- CORS restricted to configured origins; ensure production origins set.
+- No PII encryption at rest; relies on Postgres and deployment environment controls.
+
+Deployment & environments
+-------------------------
+- Reference stack: Render (API) + Neon (Postgres) + Vercel (frontend). See `deployment.md`.
+- Backend build/run: `go build -o server ./cmd/server` then `./server`.
+- Frontend build: `npm install && npm run build` (outputs `dist`).
+- Env wiring: set `VITE_API_BASE` on frontend to deployed API `/api/v1`; set backend envs for DB/JWT/CORS/model/export.
+
+Local development & testing
+---------------------------
+- Backend: `go run ./cmd/server`.
+- Frontend: `cd frontend && npm run dev` (default port 3000).
+- Combined helper: `./run-dev.sh` (expects Postgres reachable at `DB_DSN`).
+- Migrations: `DB_DSN=<url> make db_up` (goose).
+- Tests: `go test ./...` (integration needs `TEST_DB_DSN` with schema applied).
+
+Observability & gaps
+--------------------
+- Logging: Gin logger + recovery only; no structured logging, tracing, or metrics yet.
+- Health endpoints present; consider request IDs and structured logs for production.
+- Model inference latency/availability not instrumented; add if needed.
+
+Extensibility pointers
+----------------------
+- Add RBAC by extending JWT claims and middleware checks.
+- Replace mock predictor by setting `MODEL_URL`; ensure timeouts tuned via `MODEL_TIMEOUT_MS`.
+- Expand exports by filling `datasetSlice` logic and adding filters.
+- Add analytics endpoints backed by new sqlc queries as domain evolves.
 

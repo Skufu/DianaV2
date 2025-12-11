@@ -8,7 +8,7 @@ const THEME = {
   },
 };
 
-const Sidebar = ({ activeTab, setActiveTab, onStartAssessment }) => {
+const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout }) => {
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'patients', icon: Users, label: 'Patient History' },
@@ -30,7 +30,7 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment }) => {
         <Button
           fullWidth
           onClick={onStartAssessment}
-          className="bg-white text-[#4318FF] hover:bg-[#F4F7FE] shadow-lg border-none py-4 transform hover:scale-105 transition-transform"
+          className="bg-[#4318FF] text-white hover:bg-[#2B3674] shadow-lg border-none py-4 transform hover:scale-105 transition-transform"
           icon={Plus}
         >
           <span className="hidden lg:inline">New Assessment</span>
@@ -55,7 +55,10 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment }) => {
         })}
       </nav>
       <div className="p-8">
-        <button className="w-full flex items-center gap-4 mt-8 text-[#A3AED0] hover:text-white transition-colors lg:pl-4">
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-4 mt-8 text-[#A3AED0] hover:text-white transition-colors lg:pl-4"
+        >
           <LogOut size={20} />
           <span className="hidden lg:block font-medium">Log Out</span>
         </button>

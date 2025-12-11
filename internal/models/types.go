@@ -21,9 +21,11 @@ type Patient struct {
 	BPSystolic      int       `json:"bp_systolic,omitempty"`
 	BPDiastolic     int       `json:"bp_diastolic,omitempty"`
 	Activity        string    `json:"activity,omitempty"`
+	PhysActivity    bool      `json:"phys_activity,omitempty"`
 	Smoking         string    `json:"smoking,omitempty"`
 	Hypertension    string    `json:"hypertension,omitempty"`
 	HeartDisease    string    `json:"heart_disease,omitempty"`
+	FamilyHistory   bool      `json:"family_history,omitempty"`
 	Chol            int       `json:"chol,omitempty"`
 	LDL             int       `json:"ldl,omitempty"`
 	HDL             int       `json:"hdl,omitempty"`

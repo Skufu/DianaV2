@@ -1,14 +1,80 @@
-import React, { useState } from 'react';
-import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight, PieChart } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight } from 'lucide-react';
+import { fetchClusterDistributionApi, fetchTrendAnalyticsApi } from '../api';
 
-const Dashboard = ({ onNavigateToPatient, onStartAssessment }) => {
+const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssessment }) => {
   const [activeBiomarker, setActiveBiomarker] = useState('hba1c');
-  const stats = [
-    { label: 'Total Patients', value: '1,248', icon: Users, trend: '+12%', iconColor: '#4318FF', bg: '#F4F7FE' },
-    { label: 'High Risk (SOIRD/SIDD)', value: '86', icon: AlertCircle, trend: '+4%', iconColor: '#EE5D50', bg: '#FFF5F5' },
-    { label: 'Avg HbA1c', value: '5.8%', icon: Droplet, trend: '-0.2%', iconColor: '#FFB547', bg: '#FFF9EB' },
-    { label: 'Avg FBS', value: '102', icon: Activity, trend: '+2.4%', iconColor: '#05CD99', bg: '#E6FBF5' },
-  ];
+  const [clusterStats, setClusterStats] = useState([]);
+  const [trends, setTrends] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!token) return;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const [clusters, trendData] = await Promise.all([
+          fetchClusterDistributionApi(token),
+          fetchTrendAnalyticsApi(token),
+        ]);
+        setClusterStats(clusters || []);
+        setTrends(trendData || []);
+      } catch (_) {
+        setError('Unable to load analytics data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [token]);
+
+  const stats = useMemo(() => {
+    const highRisk =
+      clusterStats
+        .filter((c) => ['SOIRD', 'SIDD'].includes((c.cluster || '').toUpperCase()))
+        .reduce((sum, c) => sum + (c.count || 0), 0) || 0;
+    const avgHbA1c = trends.length
+      ? (trends.reduce((s, t) => s + (t.hba1c || 0), 0) / trends.length).toFixed(1)
+      : '—';
+    const avgFBS = trends.length
+      ? Math.round(trends.reduce((s, t) => s + (t.fbs || 0), 0) / trends.length)
+      : '—';
+    return [
+      { label: 'Total Patients', value: patientCount || '0', icon: Users, trend: '', iconColor: '#4318FF', bg: '#F4F7FE' },
+      { label: 'High Risk (SOIRD/SIDD)', value: highRisk.toString(), icon: AlertCircle, trend: '', iconColor: '#EE5D50', bg: '#FFF5F5' },
+      { label: 'Avg HbA1c', value: `${avgHbA1c}%`, icon: Droplet, trend: '', iconColor: '#FFB547', bg: '#FFF9EB' },
+      { label: 'Avg FBS', value: avgFBS === '—' ? '—' : `${avgFBS}`, icon: Activity, trend: '', iconColor: '#05CD99', bg: '#E6FBF5' },
+    ];
+  }, [clusterStats, trends, patientCount]);
+
+  const trendBars = useMemo(() => {
+    if (!trends.length) return [40, 65, 55, 80, 45, 90];
+    const max = Math.max(...trends.map((t) => t.hba1c || 0), 1);
+    return trends.map((t) => Math.min(100, Math.round(((t.hba1c || 0) / max) * 100)));
+  }, [trends]);
+
+  const totalClusterCount = useMemo(
+    () => clusterStats.reduce((sum, c) => sum + (c.count || 0), 0),
+    [clusterStats],
+  );
+  const clusterColor = (label) => {
+    const key = (label || '').toUpperCase();
+    switch (key) {
+      case 'SOIRD':
+        return '#EE5D50';
+      case 'SIDD':
+        return '#FFB547';
+      case 'MARD':
+        return '#6AD2FF';
+      case 'MIDD':
+        return '#4318FF';
+      default:
+        return '#A3AED0';
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-in pb-8">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end pb-2">
@@ -31,7 +97,8 @@ const Dashboard = ({ onNavigateToPatient, onStartAssessment }) => {
         {stats.map((stat, idx) => (
           <div
             key={idx}
-            className="lg:col-span-1 bg-white p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between border border-[#E0E5F2]"
+            className="lg:col-span-1 bg-white p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between border border-[#E0E5F2] animate-slide-up"
+            style={{ animationDelay: `${idx * 70}ms` }}
           >
             <div className="flex justify-between items-start">
               <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: stat.bg, color: stat.iconColor }}>
@@ -66,7 +133,7 @@ const Dashboard = ({ onNavigateToPatient, onStartAssessment }) => {
           </div>
           <div className="h-64 w-full relative">
             <div className="absolute inset-0 flex items-end justify-between px-2">
-              {[40, 65, 55, 80, 45, 90, 70, 85, 60, 75, 50, 65].map((h, i) => (
+              {trendBars.map((h, i) => (
                 <div key={i} className="w-full mx-1 group relative">
                   <div
                     className="w-full rounded-t-lg transition-all duration-500 hover:opacity-80"
@@ -93,32 +160,38 @@ const Dashboard = ({ onNavigateToPatient, onStartAssessment }) => {
           </div>
         </div>
         <div className="bg-white p-6 rounded-3xl shadow-sm flex flex-col border border-[#E0E5F2]">
-          <h3 className="text-xl font-bold text-[#1B2559] mb-6">Cluster Distribution</h3>
-          <div className="flex-1 flex flex-col items-center justify-center relative">
-            <div
-              className="w-48 h-48 rounded-full border-[16px] border-[#F4F7FE] flex items-center justify-center relative overflow-hidden"
-              style={{
-                background: 'conic-gradient(#EE5D50 0% 15%, #FFB547 15% 45%, #6AD2FF 45% 75%, #4318FF 75% 100%)',
-              }}
-            >
-              <div className="w-24 h-24 bg-white rounded-full flex flex-col items-center justify-center z-10 shadow-inner">
-                <span className="text-2xl font-bold text-[#1B2559]">4</span>
-                <span className="text-[10px] uppercase text-[#A3AED0]">Clusters</span>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xl font-bold text-[#1B2559]">Cluster Distribution</h3>
+            {loading && <span className="text-xs text-[#A3AED0]">Loading…</span>}
+            {error && !loading && <span className="text-xs text-[#EE5D50]">Failed to load</span>}
+          </div>
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-1 flex items-center justify-center relative">
+              <div className="w-48 h-48 rounded-full border-[16px] border-[#F4F7FE] flex items-center justify-center relative overflow-hidden">
+                <div className="w-24 h-24 bg-white rounded-full flex flex-col items-center justify-center z-10 shadow-inner">
+                  <span className="text-2xl font-bold text-[#1B2559]">{totalClusterCount}</span>
+                  <span className="text-[10px] uppercase text-[#A3AED0]">Assessments</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-6">
-            <div className="flex items-center gap-2 text-xs text-[#1B2559] font-bold">
-              <div className="w-2 h-2 rounded-full bg-[#EE5D50]"></div> SOIRD (High)
-            </div>
-            <div className="flex items-center gap-2 text-xs text-[#1B2559] font-bold">
-              <div className="w-2 h-2 rounded-full bg-[#FFB547]"></div> SIDD (Severe)
-            </div>
-            <div className="flex items-center gap-2 text-xs text-[#1B2559] font-bold">
-              <div className="w-2 h-2 rounded-full bg-[#6AD2FF]"></div> MARD (Mild Age)
-            </div>
-            <div className="flex items-center gap-2 text-xs text-[#1B2559] font-bold">
-              <div className="w-2 h-2 rounded-full bg-[#4318FF]"></div> MIDD (Mild)
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {clusterStats.length ? (
+                clusterStats.map((c, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-xl border border-[#E0E5F2] animate-scale-in"
+                    style={{ animationDelay: `${idx * 60}ms` }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: clusterColor(c.cluster) }}></div>
+                      <span className="text-sm font-bold text-[#1B2559]">{c.cluster || 'Unknown'}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-[#4318FF]">{c.count ?? 0}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-[#A3AED0]">No cluster data yet.</div>
+              )}
             </div>
           </div>
           <button

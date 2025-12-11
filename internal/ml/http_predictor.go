@@ -69,3 +69,6 @@ func (p *HTTPPredictor) Predict(input models.Assessment) (string, int) {
 	}
 	return out.Cluster, out.RiskScore
 }
+
+
+

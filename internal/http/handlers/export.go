@@ -30,7 +30,7 @@ func (h *ExportHandler) patientsCSV(c *gin.Context) {
 	c.Header("Content-Type", "text/csv")
 	c.Header("Content-Disposition", "attachment; filename=\"patients.csv\"")
 	w := csv.NewWriter(c.Writer)
-	_ = w.Write([]string{"id", "name", "age", "menopause_status", "years_menopause", "bmi", "bp_systolic", "bp_diastolic", "activity", "smoking", "hypertension", "heart_disease", "chol", "ldl", "hdl", "triglycerides", "cluster"})
+	_ = w.Write([]string{"id", "name", "age", "menopause_status", "years_menopause", "bmi", "bp_systolic", "bp_diastolic", "activity", "phys_activity", "smoking", "hypertension", "heart_disease", "family_history", "chol", "ldl", "hdl", "triglycerides", "cluster"})
 	patients, err := h.store.Patients().ListAllLimited(c.Request.Context(), h.maxRows)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
@@ -47,9 +47,11 @@ func (h *ExportHandler) patientsCSV(c *gin.Context) {
 			intToStr(p.BPSystolic),
 			intToStr(p.BPDiastolic),
 			p.Activity,
+			boolToStr(p.PhysActivity),
 			p.Smoking,
 			p.Hypertension,
 			p.HeartDisease,
+			boolToStr(p.FamilyHistory),
 			intToStr(p.Chol),
 			intToStr(p.LDL),
 			intToStr(p.HDL),

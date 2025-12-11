@@ -1,0 +1,32 @@
+# VCS
+.git
+.gitignore
+
+# Build artifacts
+bin
+dist
+*.out
+*.exe
+*.test
+
+# Dependencies and modules cache
+vendor
+
+# Node/Frontend (if present)
+node_modules
+*.log
+
+# Editor/OS noise
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local env/secrets
+.env
+.env.*
+
+# Go build cache
+/tmp
+/cache
+/debug
+

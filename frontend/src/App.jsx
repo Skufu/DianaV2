@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { createAssessmentApi, createPatientApi, fetchAssessmentsApi, fetchPatientsApi, loginApi } from './api';
+import {
+  createAssessmentApi,
+  createPatientApi,
+  fetchAssessmentsApi,
+  fetchPatientsApi,
+  loginApi,
+} from './api';
 import Sidebar from './components/Sidebar';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
@@ -22,7 +28,24 @@ const App = () => {
     if (!res?.token) throw new Error('login failed');
     setToken(res.token);
     setIsAuthenticated(true);
+    localStorage.setItem('diana_token', res.token);
   };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setToken(null);
+    setPatients([]);
+    setAssessmentsCache({});
+    localStorage.removeItem('diana_token');
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem('diana_token');
+    if (saved) {
+      setToken(saved);
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -59,9 +82,11 @@ const App = () => {
       bp_systolic: parseInt(formData.systolic) || null,
       bp_diastolic: parseInt(formData.diastolic) || null,
       activity: formData.activity,
+      phys_activity: !!formData.physActivity,
       smoking: formData.smoking,
       hypertension: formData.hypertension,
       heart_disease: formData.heartDisease,
+      family_history: !!formData.familyHistory,
       chol: parseInt(formData.cholesterol) || null,
       ldl: parseInt(formData.ldl) || null,
       hdl: parseInt(formData.hdl) || null,
@@ -78,7 +103,7 @@ const App = () => {
       systolic: parseInt(formData.systolic) || null,
       diastolic: parseInt(formData.diastolic) || null,
       activity: formData.activity,
-      history_flag: !!formData.history,
+      history_flag: !!formData.familyHistory,
       smoking: formData.smoking,
       hypertension: formData.hypertension,
       heart_disease: formData.heartDisease,
@@ -98,7 +123,14 @@ const App = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard onNavigateToPatient={() => setActiveTab('patients')} onStartAssessment={handleStartAssessment} />;
+        return (
+          <Dashboard
+            token={token}
+            patientCount={patients.length}
+            onNavigateToPatient={() => setActiveTab('patients')}
+            onStartAssessment={handleStartAssessment}
+          />
+        );
       case 'patients':
         return (
           <>
@@ -113,11 +145,18 @@ const App = () => {
           </>
         );
       case 'analytics':
-        return <Analytics />;
+        return <Analytics token={token} />;
       case 'export':
         return <Export />;
       default:
-        return <Dashboard onNavigateToPatient={() => setActiveTab('patients')} onStartAssessment={handleStartAssessment} />;
+        return (
+          <Dashboard
+            token={token}
+            patientCount={patients.length}
+            onNavigateToPatient={() => setActiveTab('patients')}
+            onStartAssessment={handleStartAssessment}
+          />
+        );
     }
   };
 
@@ -127,8 +166,10 @@ const App = () => {
 
   return (
     <div className="flex bg-[#F4F7FE]">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onStartAssessment={handleStartAssessment} />
-      <main className="flex-1 ml-20 lg:ml-72 p-6 lg:p-10">{loadingPatients ? <div>Loading...</div> : renderContent()}</main>
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onStartAssessment={handleStartAssessment} onLogout={handleLogout} />
+      <main className="flex-1 ml-20 lg:ml-72 p-6 lg:p-10">
+        {loadingPatients ? <div className="text-[#707EAE]">Loading patients...</div> : renderContent()}
+      </main>
     </div>
   );
 };
