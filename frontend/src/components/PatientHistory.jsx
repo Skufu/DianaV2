@@ -31,6 +31,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   const [calculatedBMI, setCalculatedBMI] = useState(null);
   const [isComputing, setIsComputing] = useState(false);
   const [formError, setFormError] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const clusterDescriptions = {
     SOIRD: 'Severe obesity-related & insulin-resistant diabetes',
@@ -149,11 +150,14 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
     setSelectedPatient(patient);
     setViewState('profile');
     if (loadAssessments) {
+      setHistoryLoading(true);
       try {
         const history = await loadAssessments(patient.id);
         setSelectedPatient({ ...patient, history: history || [] });
       } catch (_) {
         /* ignore */
+      } finally {
+        setHistoryLoading(false);
       }
     }
   };
@@ -179,7 +183,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
               {clusterDescriptions[patient.cluster] || 'Cluster description unavailable'}
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#F4F7FE] text-[#1B2559] border border-[#E0E5F2]">
-              Doctor review pending
+              Patient self-check • discuss with provider
             </span>
           </div>
           </div>
@@ -224,15 +228,15 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             </div>
 
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
-              <h4 className="text-[#1B2559] font-bold mb-4 flex items-center gap-2">
-                <FileText size={18} className="text-[#4318FF]" /> Doctor's Validation
+              <h4 className="text-[#1B2559] font-bold mb-3 flex items-center gap-2">
+                <FileText size={18} className="text-[#4318FF]" /> Share with your provider
               </h4>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 border-[#05CD99] text-[#05CD99] hover:bg-[#05CD99] hover:text-white" icon={CheckCircle}>
-                  Agree
-                </Button>
-                <Button variant="outline" className="flex-1 border-[#EE5D50] text-[#EE5D50] hover:bg-[#EE5D50] hover:text-white" icon={XCircle}>
-                  Disagree
+              <p className="text-sm text-[#A3AED0] leading-relaxed">
+                This tool is informational for patients. Save these results and review them with your clinician for medical decisions.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => window.print()}>
+                  Download / Print Summary
                 </Button>
               </div>
             </div>
@@ -246,7 +250,9 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 </h3>
               </div>
               <div className="h-80 w-full relative border-l border-b border-[#E0E5F2] pl-2 pb-2">
-                {patient.history && patient.history.length > 0 ? (
+                {historyLoading ? (
+                  <div className="absolute inset-0 flex items-center justify-center text-[#A3AED0]">Loading history…</div>
+                ) : patient.history && patient.history.length > 0 ? (
                   <div className="absolute inset-0 flex items-end justify-between px-8">
                     <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-50">
                       {[1, 2, 3, 4, 5].map((i) => (
@@ -540,6 +546,9 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                   </div>
                 </div>
               )}
+              <div className="mt-6 text-[12px] text-[#A3AED0] leading-relaxed">
+                Next steps: keep these results, schedule a follow-up with your provider, and repeat labs as advised.
+              </div>
             </div>
           </div>
         </div>
@@ -614,9 +623,6 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                           </span>
                           <div className="text-[11px] text-[#A3AED0] font-medium leading-snug">
                             {clusterDescriptions[p.cluster] || 'Cluster description unavailable'}
-                          </div>
-                          <div className="text-[11px] text-[#A3AED0] font-medium leading-snug">
-                            Doctor review pending
                           </div>
                         </div>
                       </td>
