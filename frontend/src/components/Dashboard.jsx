@@ -2,17 +2,17 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight } from 'lucide-react';
 import { fetchClusterDistributionApi, fetchTrendAnalyticsApi } from '../api';
 
-const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssessment, loading }) => {
+const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssessment, loading: patientsLoading = false }) => {
   const [activeBiomarker, setActiveBiomarker] = useState('hba1c');
   const [clusterStats, setClusterStats] = useState([]);
   const [trends, setTrends] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!token) return;
     const load = async () => {
-      setLoading(true);
+      setAnalyticsLoading(true);
       setError(null);
       try {
         const [clusters, trendData] = await Promise.all([
@@ -24,7 +24,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
       } catch (_) {
         setError('Unable to load analytics data');
       } finally {
-        setLoading(false);
+        setAnalyticsLoading(false);
       }
     };
     load();
@@ -95,7 +95,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
           <h3 className="font-bold text-lg">New Patient Assessment</h3>
           <p className="text-xs opacity-80 mt-2">Start a cluster-based analysis</p>
         </div>
-        {loading
+        {analyticsLoading || patientsLoading
           ? Array.from({ length: 4 }).map((_, idx) => (
               <div key={`sk-${idx}`} className="lg:col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2] animate-pulse space-y-4">
                 <div className="flex justify-between items-start">
