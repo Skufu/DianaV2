@@ -6,11 +6,15 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/skufu/DianaV2/internal/config"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
+	// Load .env file if it exists
+	_ = godotenv.Load()
+
 	cfg := config.Load()
 	if cfg.DBDSN == "" {
 		log.Fatalf("DB_DSN is required for seeding")

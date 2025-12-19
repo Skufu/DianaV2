@@ -9,12 +9,18 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"github.com/skufu/DianaV2/internal/config"
 	"github.com/skufu/DianaV2/internal/http/router"
 	"github.com/skufu/DianaV2/internal/store"
 )
 
 func main() {
+	// Load .env file if it exists (not required in production)
+	if err := godotenv.Load(); err != nil {
+		log.Printf("No .env file found or error loading it: %v", err)
+	}
+
 	cfg := config.Load()
 
 	var pool *pgxpool.Pool

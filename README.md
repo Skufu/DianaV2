@@ -9,7 +9,7 @@ Repo layout
 - `internal/`: app code (config, HTTP router/handlers, middleware, store, ml, models).
 - `migrations/`: Postgres schema (goose).
 - `frontend/`: Vite React client (components, API helpers).
-- `plan.md`, `frontendplan.md`: historical plans; `deployment.md`: deployment notes.
+- `docs/`: central documentation hub (see `docs/architecture/PROJECT_STRUCTURE.md` for layout).
 
 Quickstart (local)
 ------------------
@@ -53,7 +53,7 @@ Key endpoints (auth required unless noted)
 
 Deployment (summary)
 --------------------
-Default path: Render (Go API) + Neon Postgres + Vercel (frontend). See `deployment.md` for commands and envs. Ensure CORS allows the frontend domain and set `VITE_API_BASE` to the deployed API.
+Default path: Render (Go API) + Neon Postgres + Vercel (frontend). See `docs/ops/deployment.md` for commands and envs. Ensure CORS allows the frontend domain and set `VITE_API_BASE` to the deployed API.
 
 Frontend at a glance
 --------------------
@@ -67,5 +67,5 @@ Troubleshooting
 - CORS errors: update `CORS_ORIGINS` in env to include frontend origin.
 - Model timeouts/errors: with no `MODEL_URL`, mock predictor is used; with `MODEL_URL`, increase `MODEL_TIMEOUT_MS` if needed.
 
-More detail: see `ARCHITECTURE.md` for flows, data model, and component interactions.
+More detail: see `docs/architecture/ARCHITECTURE.md` for flows, data model, and component interactions.
 

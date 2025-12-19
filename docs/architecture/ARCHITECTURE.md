@@ -88,7 +88,7 @@ Security notes
 
 Deployment & environments
 -------------------------
-- Reference stack: Render (API) + Neon (Postgres) + Vercel (frontend). See `deployment.md`.
+- Reference stack: Render (API) + Neon (Postgres) + Vercel (frontend). See `docs/ops/deployment.md`.
 - Backend build/run: `go build -o server ./cmd/server` then `./server`.
 - Frontend build: `npm install && npm run build` (outputs `dist`).
 - Env wiring: set `VITE_API_BASE` on frontend to deployed API `/api/v1`; set backend envs for DB/JWT/CORS/model/export.

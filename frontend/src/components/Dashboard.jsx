@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight } from 'lucide-react';
 import { fetchClusterDistributionApi, fetchTrendAnalyticsApi } from '../api';
+import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssessment, loading: patientsLoading = false }) => {
   const [activeBiomarker, setActiveBiomarker] = useState('hba1c');
@@ -49,12 +50,6 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
       { label: 'Avg FBS', value: avgFBS === '—' ? '—' : `${avgFBS}`, icon: Activity, trend: '', iconColor: '#05CD99', bg: '#E6FBF5' },
     ];
   }, [clusterStats, trends, patientCount]);
-
-  const trendBars = useMemo(() => {
-    if (!trends.length) return [40, 65, 55, 80, 45, 90];
-    const max = Math.max(...trends.map((t) => t.hba1c || 0), 1);
-    return trends.map((t) => Math.min(100, Math.round(((t.hba1c || 0) / max) * 100)));
-  }, [trends]);
 
   const totalClusterCount = useMemo(
     () => clusterStats.reduce((sum, c) => sum + (c.count || 0), 0),
@@ -128,10 +123,10 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-[#1B2559]">Biomarker Trends (Cohort)</h3>
             <div className="flex gap-2 bg-[#F4F7FE] p-1 rounded-lg">
-              {['hba1c', 'fbs', 'estradiol'].map((marker) => (
+              {['hba1c', 'fbs'].map((marker) => (
                 <button
                   key={marker}
                   onClick={() => setActiveBiomarker(marker)}
@@ -144,33 +139,72 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
               ))}
             </div>
           </div>
-          <div className="h-64 w-full relative">
-            <div className="absolute inset-0 flex items-end justify-between px-2">
-              {trendBars.map((h, i) => (
-                <div key={i} className="w-full mx-1 group relative">
-                  <div
-                    className="w-full rounded-t-lg transition-all duration-500 hover:opacity-80"
-                    style={{
-                      height: `${h}%`,
-                      backgroundColor: activeBiomarker === 'hba1c' ? '#4318FF' : activeBiomarker === 'fbs' ? '#6AD2FF' : '#FFB547',
-                    }}
-                  ></div>
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#1B2559] text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    {h / 10}%
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="w-full h-px bg-[#E0E5F2] border-t border-dashed border-[#E0E5F2]"></div>
-              ))}
-            </div>
-          </div>
-          <div className="flex justify-between mt-4 text-[#A3AED0] text-xs font-medium uppercase tracking-wider">
-            <span>Jan</span>
-            <span>Dec</span>
-          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            {trends.length > 0 ? (
+              <AreaChart
+                data={trends}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorHbA1c" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#4318FF" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#4318FF" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorFBS" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6AD2FF" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#6AD2FF" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E0E5F2" />
+                <XAxis
+                  dataKey="label"
+                  stroke="#A3AED0"
+                  style={{ fontSize: '12px', fontWeight: 600 }}
+                />
+                <YAxis
+                  stroke="#A3AED0"
+                  style={{ fontSize: '12px', fontWeight: 600 }}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1B2559',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: '#fff',
+                    fontSize: '12px',
+                    padding: '10px'
+                  }}
+                  labelStyle={{ color: '#A3AED0', marginBottom: '5px' }}
+                />
+                {activeBiomarker === 'hba1c' && (
+                  <Area
+                    type="monotone"
+                    dataKey="hba1c"
+                    stroke="#4318FF"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorHbA1c)"
+                    name="HbA1c (%)"
+                  />
+                )}
+                {activeBiomarker === 'fbs' && (
+                  <Area
+                    type="monotone"
+                    dataKey="fbs"
+                    stroke="#6AD2FF"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorFBS)"
+                    name="FBS (mg/dL)"
+                  />
+                )}
+              </AreaChart>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[#A3AED0] text-sm">
+                No trend data available
+              </div>
+            )}
+          </ResponsiveContainer>
         </div>
         <div className="bg-white p-6 rounded-3xl shadow-sm flex flex-col border border-[#E0E5F2]">
           <div className="flex items-center justify-between mb-3">
@@ -178,34 +212,60 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
             {analyticsLoading && <span className="text-xs text-[#A3AED0]">Loading…</span>}
             {error && !analyticsLoading && <span className="text-xs text-[#EE5D50]">Failed to load</span>}
           </div>
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className="flex-1 flex items-center justify-center relative">
-              <div className="w-48 h-48 rounded-full border-[16px] border-[#F4F7FE] flex items-center justify-center relative overflow-hidden">
-                <div className="w-24 h-24 bg-white rounded-full flex flex-col items-center justify-center z-10 shadow-inner">
-                  <span className="text-2xl font-bold text-[#1B2559]">{totalClusterCount}</span>
-                  <span className="text-[10px] uppercase text-[#A3AED0]">Assessments</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {clusterStats.length ? (
-                clusterStats.map((c, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3 rounded-xl border border-[#E0E5F2] animate-scale-in"
-                    style={{ animationDelay: `${idx * 60}ms` }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: clusterColor(c.cluster) }}></div>
-                      <span className="text-sm font-bold text-[#1B2559]">{c.cluster || 'Unknown'}</span>
+          <div className="flex flex-col items-center">
+            {clusterStats.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={240}>
+                  <PieChart>
+                    <Pie
+                      data={clusterStats.map(c => ({ name: c.cluster || 'Unknown', value: c.count || 0 }))}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={(entry) => `${entry.name}: ${entry.value}`}
+                      labelLine={{ stroke: '#A3AED0', strokeWidth: 1 }}
+                    >
+                      {clusterStats.map((c, idx) => (
+                        <Cell key={`cell-${idx}`} fill={clusterColor(c.cluster)} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1B2559',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#fff',
+                        fontSize: '12px'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="grid grid-cols-2 gap-3 mt-4 w-full">
+                  {clusterStats.map((c, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3 rounded-xl border border-[#E0E5F2] animate-scale-in"
+                      style={{ animationDelay: `${idx * 60}ms` }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: clusterColor(c.cluster) }}></div>
+                        <span className="text-sm font-bold text-[#1B2559]">{c.cluster || 'Unknown'}</span>
+                      </div>
+                      <span className="text-sm font-semibold text-[#4318FF]">{c.count ?? 0}</span>
                     </div>
-                    <span className="text-sm font-semibold text-[#4318FF]">{c.count ?? 0}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-sm text-[#A3AED0]">No cluster data yet.</div>
-              )}
-            </div>
+                  ))}
+                </div>
+                <div className="text-center mt-4">
+                  <span className="text-2xl font-bold text-[#1B2559]">{totalClusterCount}</span>
+                  <span className="text-xs uppercase text-[#A3AED0] ml-2">Total Assessments</span>
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-[#A3AED0] py-12">No cluster data yet.</div>
+            )}
           </div>
           <button
             className="w-full text-[#4318FF] font-bold flex items-center justify-center gap-2 mt-4 hover:underline"
