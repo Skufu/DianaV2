@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { ChevronRight, ArrowLeft, Activity, Clipboard, FileText, CheckCircle, XCircle, Heart, TrendingUp, X, Users, Thermometer, Edit2, Trash2, Eye } from 'lucide-react';
 import Button from './Button';
 import { updatePatientApi, deletePatientApi, updateAssessmentApi, deleteAssessmentApi } from '../api';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessments, onSubmitAssessment, onRefreshPatients, token }) => {
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -39,10 +40,13 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const clusterDescriptions = {
-    SOIRD: 'Severe obesity-related & insulin-resistant diabetes',
-    SIDD: 'Severe insulin-deficient diabetes',
-    MARD: 'Mild age-associated diabetes',
-    MIDD: 'Mild insulin-deficient diabetes',
+    SIDD: 'Severe Insulin-Deficient Diabetes',
+    SIRD: 'Severe Insulin-Resistant Diabetes',
+    MOD: 'Mild Obesity-Related Diabetes',
+    MARD: 'Mild Age-Related Diabetes',
+    // Legacy names for backward compatibility
+    SOIRD: 'Severe Obesity-Related & Insulin-Resistant Diabetes',
+    MIDD: 'Mild Insulin-Deficient Diabetes',
   };
 
   const getRiskMeta = (score) => {
@@ -297,7 +301,13 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
         <div
           className={`mb-8 p-8 rounded-3xl flex items-center justify-between text-white shadow-lg relative overflow-hidden ${
-            patient.cluster === 'SOIRD' || patient.cluster === 'SIDD' ? 'bg-[#111C44]' : 'bg-[#4318FF]'
+            patient.cluster === 'SIDD' || patient.cluster === 'SIRD'
+              ? 'bg-gradient-to-r from-[#EE5D50] to-[#FFB547]'
+              : patient.cluster === 'MOD'
+              ? 'bg-gradient-to-r from-[#6AD2FF] to-[#4318FF]'
+              : patient.cluster === 'MARD'
+              ? 'bg-gradient-to-r from-[#05CD99] to-[#6AD2FF]'
+              : 'bg-[#4318FF]'
           }`}
         >
           <div className="relative z-10">
@@ -306,10 +316,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             </div>
             <h2 className="text-4xl font-bold">{patient.cluster || 'N/A'}</h2>
             <p className="text-lg mt-2 opacity-90 max-w-xl">
-              {patient.cluster === 'SOIRD' && 'Severe Obesity-Related & Insulin-Resistant Diabetes'}
-              {patient.cluster === 'SIDD' && 'Severe Insulin-Deficient Diabetes'}
-              {patient.cluster === 'MARD' && 'Mild Age-Associated Diabetes'}
-              {patient.cluster === 'MIDD' && 'Mild Insulin-Deficient Diabetes'}
+              {clusterDescriptions[patient.cluster] || 'Cluster description unavailable'}
             </p>
           </div>
           <TrendingUp size={96} className="opacity-20 absolute right-8 -bottom-4" />
@@ -350,42 +357,143 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
-              <div className="flex justify-between items-center mb-8">
+              <div className="flex justify-between items-center mb-6">
                 <h3 className="text-[#1B2559] font-bold text-xl flex items-center gap-2">
                   <TrendingUp size={20} className="text-[#4318FF]" /> Historical Biomarker Trends
                 </h3>
               </div>
-              <div className="h-80 w-full relative border-l border-b border-[#E0E5F2] pl-2 pb-2">
+              <ResponsiveContainer width="100%" height={320}>
                 {historyLoading ? (
-                  <div className="absolute inset-0 flex items-center justify-center text-[#A3AED0]">Loading history…</div>
+                  <div className="w-full h-full flex items-center justify-center text-[#A3AED0]">Loading history…</div>
                 ) : patient.history && patient.history.length > 0 ? (
-                  <div className="absolute inset-0 flex items-end justify-between px-8">
-                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-50">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="w-full h-px bg-[#E0E5F2] border-t border-dashed"></div>
-                      ))}
-                    </div>
-                    {patient.history.map((record, i) => (
-                      <div key={i} className="relative h-full flex items-end group">
-                        <div className="w-8 bg-[#4318FF] rounded-t-md mx-1 hover:opacity-80 transition-all relative z-10 cursor-pointer" style={{ height: `${(record.hba1c / 10) * 100}%` }}>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 text-xs font-bold text-white bg-[#1B2559] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            {record.hba1c}%
-                          </div>
-                        </div>
-                        <div className="w-8 bg-[#6AD2FF] rounded-t-md mx-1 hover:opacity-80 transition-all relative z-10 cursor-pointer" style={{ height: `${(record.fbs / 200) * 100}%` }}>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 text-xs font-bold text-white bg-[#1B2559] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                            {record.fbs} mg/dL
-                          </div>
-                        </div>
-                        <div className="absolute top-full mt-4 text-xs font-bold text-[#A3AED0] w-20 text-center -ml-4">{record.date}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <AreaChart
+                    data={patient.history.map(h => ({
+                      date: h.date || new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                      HbA1c: parseFloat(h.hba1c) || 0,
+                      FBS: parseFloat(h.fbs) || 0,
+                      'Risk Score': parseInt(h.risk_score) || 0
+                    }))}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorHbA1c" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4318FF" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#4318FF" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorFBS" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6AD2FF" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#6AD2FF" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#EE5D50" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#EE5D50" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E0E5F2" />
+                    <XAxis
+                      dataKey="date"
+                      stroke="#A3AED0"
+                      style={{ fontSize: '12px', fontWeight: 600 }}
+                    />
+                    <YAxis
+                      stroke="#A3AED0"
+                      style={{ fontSize: '12px', fontWeight: 600 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1B2559',
+                        border: 'none',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        padding: '10px'
+                      }}
+                      labelStyle={{ color: '#A3AED0', marginBottom: '5px' }}
+                    />
+                    <Legend />
+                    <Area
+                      type="monotone"
+                      dataKey="HbA1c"
+                      stroke="#4318FF"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorHbA1c)"
+                      name="HbA1c (%)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="FBS"
+                      stroke="#6AD2FF"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorFBS)"
+                      name="FBS (mg/dL)"
+                    />
+                  </AreaChart>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-[#A3AED0]">No historical data available.</div>
+                  <div className="w-full h-full flex items-center justify-center text-[#A3AED0]">No historical data available.</div>
                 )}
-              </div>
+              </ResponsiveContainer>
             </div>
+
+            {/* Risk Score Trend Chart */}
+            {patient.history && patient.history.length > 0 && (
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-[#1B2559] font-bold text-xl flex items-center gap-2">
+                    <Activity size={20} className="text-[#EE5D50]" /> Risk Score Progression
+                  </h3>
+                </div>
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart
+                    data={patient.history.map(h => ({
+                      date: h.date || new Date(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                      'Risk Score': parseInt(h.risk_score) || 0,
+                      'BMI': parseFloat(h.bmi) || 0
+                    }))}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E0E5F2" />
+                    <XAxis
+                      dataKey="date"
+                      stroke="#A3AED0"
+                      style={{ fontSize: '12px', fontWeight: 600 }}
+                    />
+                    <YAxis
+                      stroke="#A3AED0"
+                      style={{ fontSize: '12px', fontWeight: 600 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#1B2559',
+                        border: 'none',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        fontSize: '12px',
+                        padding: '10px'
+                      }}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="Risk Score"
+                      stroke="#EE5D50"
+                      strokeWidth={3}
+                      dot={{ fill: '#EE5D50', r: 6 }}
+                      activeDot={{ r: 8 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="BMI"
+                      stroke="#FFB547"
+                      strokeWidth={2}
+                      dot={{ fill: '#FFB547', r: 4 }}
+                      strokeDasharray="5 5"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
 
             {patient.history && patient.history.length > 0 && (
               <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">

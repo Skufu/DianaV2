@@ -182,9 +182,9 @@ const App = () => {
           </>
         );
       case 'analytics':
-        return <Analytics token={token} />;
+        return <Analytics token={token} patients={patients} />;
       case 'export':
-        return <Export />;
+        return <Export token={token} />;
       default:
         return (
           <Dashboard
