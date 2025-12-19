@@ -70,3 +70,62 @@ export const createAssessmentApi = (token, patientId, payload) =>
     body: JSON.stringify(payload),
   });
 
+// Patient individual operations
+export const getPatientApi = (token, patientId) =>
+  apiFetch(`/api/v1/patients/${patientId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+export const updatePatientApi = (token, patientId, payload) =>
+  apiFetch(`/api/v1/patients/${patientId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+export const deletePatientApi = (token, patientId) =>
+  apiFetch(`/api/v1/patients/${patientId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+// Assessment individual operations
+export const getAssessmentApi = (token, patientId, assessmentId) =>
+  apiFetch(`/api/v1/patients/${patientId}/assessments/${assessmentId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+export const updateAssessmentApi = (token, patientId, assessmentId, payload) =>
+  apiFetch(`/api/v1/patients/${patientId}/assessments/${assessmentId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+export const deleteAssessmentApi = (token, patientId, assessmentId) =>
+  apiFetch(`/api/v1/patients/${patientId}/assessments/${assessmentId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+// Auth operations
+export const refreshTokenApi = (refreshToken) =>
+  apiFetch('/api/v1/auth/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+
+export const logoutApi = (refreshToken) =>
+  apiFetch('/api/v1/auth/logout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+

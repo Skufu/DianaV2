@@ -17,6 +17,7 @@ import Export from './components/Export';
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState(null);
+  const [refreshToken, setRefreshToken] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [patientViewState, setPatientViewState] = useState('list');
   const [patients, setPatients] = useState([]);
@@ -26,24 +27,41 @@ const App = () => {
 
   const handleLogin = async (email, password) => {
     const res = await loginApi(email, password);
-    if (!res?.token) throw new Error('login failed');
-    setToken(res.token);
+    if (!res?.access_token) throw new Error('login failed');
+    setToken(res.access_token);
+    setRefreshToken(res.refresh_token);
     setIsAuthenticated(true);
-    localStorage.setItem('diana_token', res.token);
+    localStorage.setItem('diana_token', res.access_token);
+    localStorage.setItem('diana_refresh_token', res.refresh_token);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setToken(null);
-    setPatients([]);
-    setAssessmentsCache({});
-    localStorage.removeItem('diana_token');
+  const handleLogout = async () => {
+    try {
+      // Call logout API to revoke refresh token
+      if (refreshToken) {
+        const { logoutApi } = await import('./api');
+        await logoutApi(refreshToken).catch(() => {
+          // Ignore errors - logout locally anyway
+        });
+      }
+    } finally {
+      // Always clear local state
+      setIsAuthenticated(false);
+      setToken(null);
+      setRefreshToken(null);
+      setPatients([]);
+      setAssessmentsCache({});
+      localStorage.removeItem('diana_token');
+      localStorage.removeItem('diana_refresh_token');
+    }
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem('diana_token');
-    if (saved) {
-      setToken(saved);
+    const savedToken = localStorage.getItem('diana_token');
+    const savedRefreshToken = localStorage.getItem('diana_refresh_token');
+    if (savedToken) {
+      setToken(savedToken);
+      setRefreshToken(savedRefreshToken);
       setIsAuthenticated(true);
     }
   }, []);
@@ -70,6 +88,21 @@ const App = () => {
     const data = await fetchAssessmentsApi(token, patientId);
     setAssessmentsCache((prev) => ({ ...prev, [patientId]: data || [] }));
     return data || [];
+  };
+
+  const refreshPatients = async () => {
+    if (!token) return;
+    setLoadingPatients(true);
+    setPatientsError(null);
+    try {
+      const data = await fetchPatientsApi(token);
+      setPatients(data || []);
+      setAssessmentsCache({});
+    } catch (err) {
+      setPatientsError('Failed to refresh patients.');
+    } finally {
+      setLoadingPatients(false);
+    }
   };
 
   const handleAssessmentSubmit = async (formData, bmi) => {
@@ -143,6 +176,8 @@ const App = () => {
               patients={patients}
               loadAssessments={loadAssessments}
               onSubmitAssessment={handleAssessmentSubmit}
+              token={token}
+              onRefreshPatients={refreshPatients}
             />
           </>
         );

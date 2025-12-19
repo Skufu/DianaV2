@@ -21,11 +21,23 @@ type Config struct {
 }
 
 func Load() Config {
+	// Require JWT_SECRET in production
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		env := getEnv("ENV", "dev")
+		if env == "production" || env == "prod" {
+			log.Fatal("JWT_SECRET is required in production")
+		}
+		// Only allow default in dev
+		jwtSecret = "dev-secret-change-in-production"
+		log.Println("WARNING: Using default JWT secret. Set JWT_SECRET environment variable!")
+	}
+
 	cfg := Config{
 		Port:           getEnv("PORT", "8080"),
 		Env:            getEnv("ENV", "dev"),
 		DBDSN:          getEnv("DB_DSN", ""),
-		JWTSecret:      getEnv("JWT_SECRET", "dev-secret"),
+		JWTSecret:      jwtSecret,
 		ModelURL:       getEnv("MODEL_URL", ""),
 		ModelVersion:   getEnv("MODEL_VERSION", "v0-placeholder"),
 		DatasetHash:    getEnv("MODEL_DATASET_HASH", ""),

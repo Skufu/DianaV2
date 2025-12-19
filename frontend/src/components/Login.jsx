@@ -10,8 +10,8 @@ const THEME = {
 
 const Login = ({ onLogin }) => {
   const [mounted, setMounted] = useState(false);
-  const [email, setEmail] = useState('clinician@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   useEffect(() => setMounted(true), []);

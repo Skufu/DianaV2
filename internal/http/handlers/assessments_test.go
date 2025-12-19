@@ -135,10 +135,11 @@ type fakeStore struct {
 	repo *fakeAssessmentRepo
 }
 
-func (f *fakeStore) Users() store.UserRepository             { return nil }
-func (f *fakeStore) Patients() store.PatientRepository       { return nil }
-func (f *fakeStore) Assessments() store.AssessmentRepository { return f.repo }
-func (f *fakeStore) Close()                                  {}
+func (f *fakeStore) Users() store.UserRepository                 { return nil }
+func (f *fakeStore) Patients() store.PatientRepository           { return nil }
+func (f *fakeStore) Assessments() store.AssessmentRepository     { return f.repo }
+func (f *fakeStore) RefreshTokens() store.RefreshTokenRepository { return nil }
+func (f *fakeStore) Close()                                      {}
 
 type fakeAssessmentRepo struct {
 	last models.Assessment
@@ -148,10 +149,22 @@ func (f *fakeAssessmentRepo) ListByPatient(ctx context.Context, patientID int64)
 	return nil, nil
 }
 
+func (f *fakeAssessmentRepo) Get(ctx context.Context, id int32) (*models.Assessment, error) {
+	return nil, nil
+}
+
 func (f *fakeAssessmentRepo) Create(ctx context.Context, a models.Assessment) (*models.Assessment, error) {
 	a.ID = 1
 	f.last = a
 	return &a, nil
+}
+
+func (f *fakeAssessmentRepo) Update(ctx context.Context, a models.Assessment) (*models.Assessment, error) {
+	return nil, nil
+}
+
+func (f *fakeAssessmentRepo) Delete(ctx context.Context, id int32) error {
+	return nil
 }
 
 func (f *fakeAssessmentRepo) ClusterCounts(ctx context.Context) ([]models.ClusterAnalytics, error) {

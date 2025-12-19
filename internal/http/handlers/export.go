@@ -28,11 +28,17 @@ func (h *ExportHandler) Register(rg *gin.RouterGroup) {
 }
 
 func (h *ExportHandler) patientsCSV(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
 	c.Header("Content-Type", "text/csv")
 	c.Header("Content-Disposition", "attachment; filename=\"patients.csv\"")
 	w := csv.NewWriter(c.Writer)
 	_ = w.Write([]string{"id", "name", "age", "menopause_status", "years_menopause", "bmi", "bp_systolic", "bp_diastolic", "activity", "phys_activity", "smoking", "hypertension", "heart_disease", "family_history", "chol", "ldl", "hdl", "triglycerides", "cluster"})
-	patients, err := h.store.Patients().ListAllLimited(c.Request.Context(), h.maxRows)
+	patients, err := h.store.Patients().ListAllLimited(c.Request.Context(), userID, h.maxRows)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return

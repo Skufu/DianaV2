@@ -1,4 +1,10 @@
+# Environment variables
 .env
+.env.local
+.env.*.local
+*.env
+frontend/.env.local
+
 # Build and binary artifacts
 bin/
 *.exe
@@ -7,41 +13,106 @@ bin/
 *.so
 *.dylib
 *.test
+diana-backend
 
 # Go workspace state
 *.out
+go.work
+go.work.sum
+
+# Go test coverage
 cover.*
+*.coverprofile
+coverage.txt
+coverage.html
 
 # IDE/editor
 .vscode/
 .idea/
+.claude/
+.cursor/
 *.swp
 *.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
 
-# Dependency/module caches (not vendored)
+# Dependency/module caches
 /vendor/
 node_modules/
 frontend/node_modules/
+.pnp
+.pnp.js
 
 # Vite/Tailwind build outputs
 frontend/dist/
 frontend/.vite/
 frontend/.turbo/
+frontend/.cache/
 
-# Env files
-*.env
-*.env.local
-frontend/.env.local
-
-# Editor
-.DS_Store
-.vscode/
-.idea/
-*.swp
-*.swo
+# Frontend build artifacts
+frontend/build/
+frontend/.next/
+frontend/out/
 
 # Logs
 *.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Generated
+# OS-specific files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# CI/CD
+.ci/
+.github/workflows/*.local.yml
+
+# Generated files
+*.generated.*
+sqlc/sqlc.yaml.local
+internal/store/sqlc/
+
+# Documentation/PDFs (non-source)
+*.pdf
+!docs/**/*.pdf
+
+# Miscellaneous
+*.pid
+*.seed
+*.pid.lock
+.cache/
+.temp/

@@ -16,6 +16,9 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
+	// Add security headers to all responses
+	r.Use(middleware.SecurityHeaders())
+
 	corsCfg := cors.Config{
 		AllowOrigins: cfg.CORSOrigins,
 		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -28,8 +31,14 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 
 	handlers.RegisterHealth(api)
 
+	// Create rate limiter: 5 requests per minute for auth endpoints
+	rateLimiter := middleware.NewRateLimiter(5, time.Minute)
+
+	// Auth endpoints with rate limiting
+	authGroup := api.Group("/auth")
+	authGroup.Use(middleware.RateLimit(rateLimiter))
 	authHandler := handlers.NewAuthHandler(cfg, st)
-	authHandler.Register(api.Group("/auth"))
+	authHandler.Register(authGroup)
 
 	protected := api.Group("")
 	protected.Use(middleware.Auth(cfg.JWTSecret))

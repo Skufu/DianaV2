@@ -1,28 +1,67 @@
 -- patients.sql: sqlc queries for patient CRUD/listing used by the Postgres store.
 -- name: ListPatients :many
-SELECT id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
+SELECT id, user_id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
        activity, phys_activity, smoking, hypertension, heart_disease, family_history, chol, ldl, hdl, triglycerides,
        created_at, updated_at
 FROM patients
+WHERE user_id = $1
 ORDER BY id DESC;
 
 -- name: ListPatientsLimited :many
-SELECT id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
+SELECT id, user_id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
        activity, phys_activity, smoking, hypertension, heart_disease, family_history, chol, ldl, hdl, triglycerides,
        created_at, updated_at
 FROM patients
+WHERE user_id = $1
 ORDER BY id DESC
-LIMIT $1;
+LIMIT $2;
 
 -- name: CreatePatient :one
 INSERT INTO patients (
-  name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
+  user_id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
   activity, phys_activity, smoking, hypertension, heart_disease, family_history, chol, ldl, hdl, triglycerides
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7,
-  $8, $9, $10, $11, $12, $13, $14, $15, $16
+  $1, $2, $3, $4, $5, $6, $7, $8,
+  $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
 )
-RETURNING id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
+RETURNING id, user_id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
           activity, phys_activity, smoking, hypertension, heart_disease, family_history, chol, ldl, hdl, triglycerides,
           created_at, updated_at;
+
+-- name: GetPatient :one
+SELECT id, user_id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
+       activity, phys_activity, smoking, hypertension, heart_disease, family_history, chol, ldl, hdl, triglycerides,
+       created_at, updated_at
+FROM patients
+WHERE id = $1 AND user_id = $2
+LIMIT 1;
+
+-- name: UpdatePatient :one
+UPDATE patients
+SET name = $3,
+    age = $4,
+    menopause_status = $5,
+    years_menopause = $6,
+    bmi = $7,
+    bp_systolic = $8,
+    bp_diastolic = $9,
+    activity = $10,
+    phys_activity = $11,
+    smoking = $12,
+    hypertension = $13,
+    heart_disease = $14,
+    family_history = $15,
+    chol = $16,
+    ldl = $17,
+    hdl = $18,
+    triglycerides = $19,
+    updated_at = NOW()
+WHERE id = $1 AND user_id = $2
+RETURNING id, user_id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
+          activity, phys_activity, smoking, hypertension, heart_disease, family_history, chol, ldl, hdl, triglycerides,
+          created_at, updated_at;
+
+-- name: DeletePatient :exec
+DELETE FROM patients
+WHERE id = $1 AND user_id = $2;
 

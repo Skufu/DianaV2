@@ -14,6 +14,7 @@ type User struct {
 
 type Patient struct {
 	ID              int64     `json:"id"`
+	UserID          int64     `json:"user_id,omitempty"`
 	Name            string    `json:"name"`
 	Age             int       `json:"age,omitempty"`
 	MenopauseStatus string    `json:"menopause_status,omitempty"`
@@ -58,6 +59,17 @@ type Assessment struct {
 	DatasetHash      string    `json:"dataset_hash,omitempty"`
 	ValidationStatus string    `json:"validation_status,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+type RefreshToken struct {
+	ID        int64     `json:"id"`
+	UserID    int64     `json:"user_id"`
+	TokenHash string    `json:"token_hash"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Revoked   bool      `json:"revoked"`
+	CreatedAt time.Time `json:"created_at"`
+	RevokedAt time.Time `json:"revoked_at,omitempty"`
 }
 
 type ClusterAnalytics struct {

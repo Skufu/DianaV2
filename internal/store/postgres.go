@@ -4,6 +4,7 @@ package store
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -42,6 +43,10 @@ func (s *PostgresStore) Assessments() AssessmentRepository {
 	return &pgAssessmentRepo{q: s.q}
 }
 
+func (s *PostgresStore) RefreshTokens() RefreshTokenRepository {
+	return &pgRefreshTokenRepo{q: s.q}
+}
+
 type pgUserRepo struct{ q *sqlcgen.Queries }
 
 func (r *pgUserRepo) FindByEmail(ctx context.Context, email string) (*models.User, error) {
@@ -62,17 +67,35 @@ func (r *pgUserRepo) FindByEmail(ctx context.Context, email string) (*models.Use
 	}, nil
 }
 
-type pgPatientRepo struct{ q *sqlcgen.Queries }
-
-func (r *pgPatientRepo) List(ctx context.Context) ([]models.Patient, error) {
+func (r *pgUserRepo) FindByID(ctx context.Context, id int32) (*models.User, error) {
 	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
-	rows, err := r.q.ListPatients(ctx)
+	row, err := r.q.FindUserByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return mapPatients(rows), nil
+	return &models.User{
+		ID:           int64(row.ID),
+		Email:        row.Email,
+		PasswordHash: row.PasswordHash,
+		Role:         row.Role,
+		CreatedAt:    row.CreatedAt.Time,
+		UpdatedAt:    row.UpdatedAt.Time,
+	}, nil
+}
+
+type pgPatientRepo struct{ q *sqlcgen.Queries }
+
+func (r *pgPatientRepo) List(ctx context.Context, userID int32) ([]models.Patient, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	rows, err := r.q.ListPatients(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return mapPatientRows(rows), nil
 }
 
 func (r *pgPatientRepo) Create(ctx context.Context, p models.Patient) (*models.Patient, error) {
@@ -80,6 +103,7 @@ func (r *pgPatientRepo) Create(ctx context.Context, p models.Patient) (*models.P
 		return nil, errors.New("db not configured")
 	}
 	row, err := r.q.CreatePatient(ctx, sqlcgen.CreatePatientParams{
+		UserID:          int32(p.UserID),
 		Name:            p.Name,
 		Age:             intToPgInt(p.Age),
 		MenopauseStatus: textToPg(p.MenopauseStatus),
@@ -101,19 +125,79 @@ func (r *pgPatientRepo) Create(ctx context.Context, p models.Patient) (*models.P
 	if err != nil {
 		return nil, err
 	}
-	res := mapPatient(row)
+	res := mapCreatePatientRow(row)
 	return &res, nil
 }
 
-func (r *pgPatientRepo) ListAllLimited(ctx context.Context, limit int) ([]models.Patient, error) {
+func (r *pgPatientRepo) Get(ctx context.Context, id int32, userID int32) (*models.Patient, error) {
 	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
-	rows, err := r.q.ListPatientsLimited(ctx, int32(limit))
+	row, err := r.q.GetPatient(ctx, sqlcgen.GetPatientParams{
+		ID:     int32(id),
+		UserID: userID,
+	})
 	if err != nil {
 		return nil, err
 	}
-	return mapPatients(rows), nil
+	res := mapGetPatientRow(row)
+	return &res, nil
+}
+
+func (r *pgPatientRepo) Update(ctx context.Context, p models.Patient) (*models.Patient, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	row, err := r.q.UpdatePatient(ctx, sqlcgen.UpdatePatientParams{
+		ID:              int32(p.ID),
+		UserID:          int32(p.UserID),
+		Name:            p.Name,
+		Age:             intToPgInt(p.Age),
+		MenopauseStatus: textToPg(p.MenopauseStatus),
+		YearsMenopause:  intToPgInt(p.YearsMenopause),
+		Bmi:             floatToNumeric(p.BMI),
+		BpSystolic:      intToPgInt(p.BPSystolic),
+		BpDiastolic:     intToPgInt(p.BPDiastolic),
+		Activity:        textToPg(p.Activity),
+		PhysActivity:    boolToPg(p.PhysActivity),
+		Smoking:         textToPg(p.Smoking),
+		Hypertension:    textToPg(p.Hypertension),
+		HeartDisease:    textToPg(p.HeartDisease),
+		FamilyHistory:   boolToPg(p.FamilyHistory),
+		Chol:            intToPgInt(p.Chol),
+		Ldl:             intToPgInt(p.LDL),
+		Hdl:             intToPgInt(p.HDL),
+		Triglycerides:   intToPgInt(p.Triglycerides),
+	})
+	if err != nil {
+		return nil, err
+	}
+	res := mapUpdatePatientRow(row)
+	return &res, nil
+}
+
+func (r *pgPatientRepo) Delete(ctx context.Context, id int32, userID int32) error {
+	if r.q == nil {
+		return errors.New("db not configured")
+	}
+	return r.q.DeletePatient(ctx, sqlcgen.DeletePatientParams{
+		ID:     int32(id),
+		UserID: userID,
+	})
+}
+
+func (r *pgPatientRepo) ListAllLimited(ctx context.Context, userID int32, limit int) ([]models.Patient, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	rows, err := r.q.ListPatientsLimited(ctx, sqlcgen.ListPatientsLimitedParams{
+		UserID: userID,
+		Limit:  int32(limit),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapPatientLimitedRows(rows), nil
 }
 
 type pgAssessmentRepo struct{ q *sqlcgen.Queries }
@@ -126,7 +210,7 @@ func (r *pgAssessmentRepo) ListByPatient(ctx context.Context, patientID int64) (
 	if err != nil {
 		return nil, err
 	}
-	return mapAssessments(rows), nil
+	return mapAssessmentsByPatientRows(rows), nil
 }
 
 func (r *pgAssessmentRepo) Create(ctx context.Context, a models.Assessment) (*models.Assessment, error) {
@@ -158,7 +242,7 @@ func (r *pgAssessmentRepo) Create(ctx context.Context, a models.Assessment) (*mo
 	if err != nil {
 		return nil, err
 	}
-	res := mapAssessment(row)
+	res := mapCreateAssessmentRow(row)
 	return &res, nil
 }
 
@@ -199,6 +283,59 @@ func (r *pgAssessmentRepo) TrendAverages(ctx context.Context) ([]models.TrendPoi
 	return res, nil
 }
 
+func (r *pgAssessmentRepo) Get(ctx context.Context, id int32) (*models.Assessment, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	row, err := r.q.GetAssessment(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	res := mapGetAssessmentRow(row)
+	return &res, nil
+}
+
+func (r *pgAssessmentRepo) Update(ctx context.Context, a models.Assessment) (*models.Assessment, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	row, err := r.q.UpdateAssessment(ctx, sqlcgen.UpdateAssessmentParams{
+		ID:               int32(a.ID),
+		PatientID:        int64ToPgInt(a.PatientID),
+		Fbs:              floatToNumeric(a.FBS),
+		Hba1c:            floatToNumeric(a.HbA1c),
+		Cholesterol:      intToPgInt(a.Cholesterol),
+		Ldl:              intToPgInt(a.LDL),
+		Hdl:              intToPgInt(a.HDL),
+		Triglycerides:    intToPgInt(a.Triglycerides),
+		Systolic:         intToPgInt(a.Systolic),
+		Diastolic:        intToPgInt(a.Diastolic),
+		Activity:         textToPg(a.Activity),
+		HistoryFlag:      boolToPg(a.HistoryFlag),
+		Smoking:          textToPg(a.Smoking),
+		Hypertension:     textToPg(a.Hypertension),
+		HeartDisease:     textToPg(a.HeartDisease),
+		Bmi:              floatToNumeric(a.BMI),
+		Cluster:          textToPg(a.Cluster),
+		RiskScore:        intToPgInt(a.RiskScore),
+		ModelVersion:     textToPg(a.ModelVersion),
+		DatasetHash:      textToPg(a.DatasetHash),
+		ValidationStatus: textToPg(a.ValidationStatus),
+	})
+	if err != nil {
+		return nil, err
+	}
+	res := mapUpdateAssessmentRow(row)
+	return &res, nil
+}
+
+func (r *pgAssessmentRepo) Delete(ctx context.Context, id int32) error {
+	if r.q == nil {
+		return errors.New("db not configured")
+	}
+	return r.q.DeleteAssessment(ctx, id)
+}
+
 func (r *pgAssessmentRepo) ListAllLimited(ctx context.Context, limit int) ([]models.Assessment, error) {
 	if r.q == nil {
 		return nil, errors.New("db not configured")
@@ -207,49 +344,233 @@ func (r *pgAssessmentRepo) ListAllLimited(ctx context.Context, limit int) ([]mod
 	if err != nil {
 		return nil, err
 	}
-	return mapAssessments(rows), nil
+	return mapAssessmentsLimitedRows(rows), nil
 }
 
-// mapping helpers
-func mapPatients(ps []sqlcgen.Patient) []models.Patient {
+type pgRefreshTokenRepo struct{ q *sqlcgen.Queries }
+
+func (r *pgRefreshTokenRepo) CreateRefreshToken(ctx context.Context, tokenHash string, userID int32, expiresAt time.Time) (*models.RefreshToken, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	row, err := r.q.CreateRefreshToken(ctx, sqlcgen.CreateRefreshTokenParams{
+		UserID:    userID,
+		TokenHash: tokenHash,
+		ExpiresAt: timeToPgTimestamp(expiresAt),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &models.RefreshToken{
+		ID:        int64(row.ID),
+		UserID:    int64(row.UserID),
+		TokenHash: row.TokenHash,
+		ExpiresAt: row.ExpiresAt.Time,
+		Revoked:   row.Revoked,
+		CreatedAt: row.CreatedAt.Time,
+		RevokedAt: timestampVal(row.RevokedAt),
+	}, nil
+}
+
+func (r *pgRefreshTokenRepo) FindRefreshToken(ctx context.Context, tokenHash string) (*models.RefreshToken, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	row, err := r.q.FindRefreshToken(ctx, tokenHash)
+	if err != nil {
+		return nil, err
+	}
+	return &models.RefreshToken{
+		ID:        int64(row.ID),
+		UserID:    int64(row.UserID),
+		TokenHash: row.TokenHash,
+		ExpiresAt: row.ExpiresAt.Time,
+		Revoked:   row.Revoked,
+		CreatedAt: row.CreatedAt.Time,
+		RevokedAt: timestampVal(row.RevokedAt),
+	}, nil
+}
+
+func (r *pgRefreshTokenRepo) RevokeRefreshToken(ctx context.Context, tokenHash string) error {
+	if r.q == nil {
+		return errors.New("db not configured")
+	}
+	return r.q.RevokeRefreshToken(ctx, tokenHash)
+}
+
+func (r *pgRefreshTokenRepo) RevokeAllUserTokens(ctx context.Context, userID int32) error {
+	if r.q == nil {
+		return errors.New("db not configured")
+	}
+	return r.q.RevokeAllUserTokens(ctx, userID)
+}
+
+// mapping helpers - patients
+func mapPatientRows(rows []sqlcgen.ListPatientsRow) []models.Patient {
 	var out []models.Patient
-	for _, p := range ps {
-		out = append(out, mapPatient(p))
+	for _, r := range rows {
+		out = append(out, models.Patient{
+			ID:              int64(r.ID),
+			UserID:          int64(r.UserID),
+			Name:            r.Name,
+			Age:             intVal(r.Age),
+			MenopauseStatus: textVal(r.MenopauseStatus),
+			YearsMenopause:  intVal(r.YearsMenopause),
+			BMI:             numericVal(r.Bmi),
+			BPSystolic:      intVal(r.BpSystolic),
+			BPDiastolic:     intVal(r.BpDiastolic),
+			Activity:        textVal(r.Activity),
+			PhysActivity:    boolVal(r.PhysActivity),
+			Smoking:         textVal(r.Smoking),
+			Hypertension:    textVal(r.Hypertension),
+			HeartDisease:    textVal(r.HeartDisease),
+			FamilyHistory:   boolVal(r.FamilyHistory),
+			Chol:            intVal(r.Chol),
+			LDL:             intVal(r.Ldl),
+			HDL:             intVal(r.Hdl),
+			Triglycerides:   intVal(r.Triglycerides),
+			CreatedAt:       r.CreatedAt.Time,
+			UpdatedAt:       r.UpdatedAt.Time,
+		})
 	}
 	return out
 }
 
-func mapPatient(p sqlcgen.Patient) models.Patient {
+func mapPatientLimitedRows(rows []sqlcgen.ListPatientsLimitedRow) []models.Patient {
+	var out []models.Patient
+	for _, r := range rows {
+		out = append(out, models.Patient{
+			ID:              int64(r.ID),
+			UserID:          int64(r.UserID),
+			Name:            r.Name,
+			Age:             intVal(r.Age),
+			MenopauseStatus: textVal(r.MenopauseStatus),
+			YearsMenopause:  intVal(r.YearsMenopause),
+			BMI:             numericVal(r.Bmi),
+			BPSystolic:      intVal(r.BpSystolic),
+			BPDiastolic:     intVal(r.BpDiastolic),
+			Activity:        textVal(r.Activity),
+			PhysActivity:    boolVal(r.PhysActivity),
+			Smoking:         textVal(r.Smoking),
+			Hypertension:    textVal(r.Hypertension),
+			HeartDisease:    textVal(r.HeartDisease),
+			FamilyHistory:   boolVal(r.FamilyHistory),
+			Chol:            intVal(r.Chol),
+			LDL:             intVal(r.Ldl),
+			HDL:             intVal(r.Hdl),
+			Triglycerides:   intVal(r.Triglycerides),
+			CreatedAt:       r.CreatedAt.Time,
+			UpdatedAt:       r.UpdatedAt.Time,
+		})
+	}
+	return out
+}
+
+func mapCreatePatientRow(r sqlcgen.CreatePatientRow) models.Patient {
 	return models.Patient{
-		ID:              int64(p.ID),
-		Name:            p.Name,
-		Age:             intVal(p.Age),
-		MenopauseStatus: textVal(p.MenopauseStatus),
-		YearsMenopause:  intVal(p.YearsMenopause),
-		BMI:             numericVal(p.Bmi),
-		BPSystolic:      intVal(p.BpSystolic),
-		BPDiastolic:     intVal(p.BpDiastolic),
-		Activity:        textVal(p.Activity),
-		PhysActivity:    boolVal(p.PhysActivity),
-		Smoking:         textVal(p.Smoking),
-		Hypertension:    textVal(p.Hypertension),
-		HeartDisease:    textVal(p.HeartDisease),
-		FamilyHistory:   boolVal(p.FamilyHistory),
-		Chol:            intVal(p.Chol),
-		LDL:             intVal(p.Ldl),
-		HDL:             intVal(p.Hdl),
-		Triglycerides:   intVal(p.Triglycerides),
-		CreatedAt:       p.CreatedAt.Time,
-		UpdatedAt:       p.UpdatedAt.Time,
+		ID:              int64(r.ID),
+		UserID:          int64(r.UserID),
+		Name:            r.Name,
+		Age:             intVal(r.Age),
+		MenopauseStatus: textVal(r.MenopauseStatus),
+		YearsMenopause:  intVal(r.YearsMenopause),
+		BMI:             numericVal(r.Bmi),
+		BPSystolic:      intVal(r.BpSystolic),
+		BPDiastolic:     intVal(r.BpDiastolic),
+		Activity:        textVal(r.Activity),
+		PhysActivity:    boolVal(r.PhysActivity),
+		Smoking:         textVal(r.Smoking),
+		Hypertension:    textVal(r.Hypertension),
+		HeartDisease:    textVal(r.HeartDisease),
+		FamilyHistory:   boolVal(r.FamilyHistory),
+		Chol:            intVal(r.Chol),
+		LDL:             intVal(r.Ldl),
+		HDL:             intVal(r.Hdl),
+		Triglycerides:   intVal(r.Triglycerides),
+		CreatedAt:       r.CreatedAt.Time,
+		UpdatedAt:       r.UpdatedAt.Time,
 	}
 }
 
-func mapAssessments(as []sqlcgen.Assessment) []models.Assessment {
+func mapGetPatientRow(r sqlcgen.GetPatientRow) models.Patient {
+	return models.Patient{
+		ID:              int64(r.ID),
+		UserID:          int64(r.UserID),
+		Name:            r.Name,
+		Age:             intVal(r.Age),
+		MenopauseStatus: textVal(r.MenopauseStatus),
+		YearsMenopause:  intVal(r.YearsMenopause),
+		BMI:             numericVal(r.Bmi),
+		BPSystolic:      intVal(r.BpSystolic),
+		BPDiastolic:     intVal(r.BpDiastolic),
+		Activity:        textVal(r.Activity),
+		PhysActivity:    boolVal(r.PhysActivity),
+		Smoking:         textVal(r.Smoking),
+		Hypertension:    textVal(r.Hypertension),
+		HeartDisease:    textVal(r.HeartDisease),
+		FamilyHistory:   boolVal(r.FamilyHistory),
+		Chol:            intVal(r.Chol),
+		LDL:             intVal(r.Ldl),
+		HDL:             intVal(r.Hdl),
+		Triglycerides:   intVal(r.Triglycerides),
+		CreatedAt:       r.CreatedAt.Time,
+		UpdatedAt:       r.UpdatedAt.Time,
+	}
+}
+
+func mapUpdatePatientRow(r sqlcgen.UpdatePatientRow) models.Patient {
+	return models.Patient{
+		ID:              int64(r.ID),
+		UserID:          int64(r.UserID),
+		Name:            r.Name,
+		Age:             intVal(r.Age),
+		MenopauseStatus: textVal(r.MenopauseStatus),
+		YearsMenopause:  intVal(r.YearsMenopause),
+		BMI:             numericVal(r.Bmi),
+		BPSystolic:      intVal(r.BpSystolic),
+		BPDiastolic:     intVal(r.BpDiastolic),
+		Activity:        textVal(r.Activity),
+		PhysActivity:    boolVal(r.PhysActivity),
+		Smoking:         textVal(r.Smoking),
+		Hypertension:    textVal(r.Hypertension),
+		HeartDisease:    textVal(r.HeartDisease),
+		FamilyHistory:   boolVal(r.FamilyHistory),
+		Chol:            intVal(r.Chol),
+		LDL:             intVal(r.Ldl),
+		HDL:             intVal(r.Hdl),
+		Triglycerides:   intVal(r.Triglycerides),
+		CreatedAt:       r.CreatedAt.Time,
+		UpdatedAt:       r.UpdatedAt.Time,
+	}
+}
+
+// mapping helpers - assessments
+func mapAssessmentsByPatientRows(rows []sqlcgen.Assessment) []models.Assessment {
 	var out []models.Assessment
-	for _, a := range as {
-		out = append(out, mapAssessment(a))
+	for _, r := range rows {
+		out = append(out, mapAssessment(r))
 	}
 	return out
+}
+
+func mapAssessmentsLimitedRows(rows []sqlcgen.Assessment) []models.Assessment {
+	var out []models.Assessment
+	for _, r := range rows {
+		out = append(out, mapAssessment(r))
+	}
+	return out
+}
+
+func mapCreateAssessmentRow(r sqlcgen.Assessment) models.Assessment {
+	return mapAssessment(r)
+}
+
+func mapGetAssessmentRow(r sqlcgen.Assessment) models.Assessment {
+	return mapAssessment(r)
+}
+
+func mapUpdateAssessmentRow(r sqlcgen.Assessment) models.Assessment {
+	return mapAssessment(r)
 }
 
 func mapAssessment(a sqlcgen.Assessment) models.Assessment {
@@ -276,6 +597,7 @@ func mapAssessment(a sqlcgen.Assessment) models.Assessment {
 		DatasetHash:      textVal(a.DatasetHash),
 		ValidationStatus: textVal(a.ValidationStatus),
 		CreatedAt:        a.CreatedAt.Time,
+		UpdatedAt:        a.UpdatedAt.Time,
 	}
 }
 
@@ -342,4 +664,15 @@ func boolVal(b pgtype.Bool) bool {
 
 func boolToPg(v bool) pgtype.Bool {
 	return pgtype.Bool{Bool: v, Valid: true}
+}
+
+func timestampVal(t pgtype.Timestamptz) time.Time {
+	if !t.Valid {
+		return time.Time{}
+	}
+	return t.Time
+}
+
+func timeToPgTimestamp(t time.Time) pgtype.Timestamptz {
+	return pgtype.Timestamptz{Time: t, Valid: true}
 }

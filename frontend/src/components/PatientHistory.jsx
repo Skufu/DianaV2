@@ -1,9 +1,10 @@
 // PatientHistory: list, profile, and assessment form for menopausal risk.
 import React, { useEffect, useState } from 'react';
-import { ChevronRight, ArrowLeft, Activity, Clipboard, FileText, CheckCircle, XCircle, Heart, TrendingUp, X, Users, Thermometer } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Activity, Clipboard, FileText, CheckCircle, XCircle, Heart, TrendingUp, X, Users, Thermometer, Edit2, Trash2, Eye } from 'lucide-react';
 import Button from './Button';
+import { updatePatientApi, deletePatientApi, updateAssessmentApi, deleteAssessmentApi } from '../api';
 
-const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessments, onSubmitAssessment }) => {
+const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessments, onSubmitAssessment, onRefreshPatients, token }) => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -33,6 +34,9 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   const [isComputing, setIsComputing] = useState(false);
   const [formError, setFormError] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [editingPatient, setEditingPatient] = useState(null);
+  const [editingAssessment, setEditingAssessment] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const clusterDescriptions = {
     SOIRD: 'Severe obesity-related & insulin-resistant diabetes',
@@ -163,6 +167,107 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
     }
   };
 
+  const handleEditPatient = (patient) => {
+    setEditingPatient({
+      ...patient,
+      menopauseStatus: patient.menopause_status || patient.menopauseStatus || 'Perimenopause',
+      yearsMenopause: patient.years_menopause || patient.yearsMenopause || 0,
+      familyHistory: patient.family_history || patient.familyHistory || false,
+      physActivity: patient.phys_activity || patient.physActivity || false,
+    });
+  };
+
+  const handleSavePatient = async () => {
+    if (!editingPatient || !token) return;
+    try {
+      const payload = {
+        name: editingPatient.name,
+        age: parseInt(editingPatient.age) || 0,
+        menopause_status: editingPatient.menopauseStatus || editingPatient.menopause_status,
+        years_menopause: parseInt(editingPatient.yearsMenopause || editingPatient.years_menopause) || 0,
+        bmi: parseFloat(editingPatient.bmi) || 0,
+        bp_systolic: parseInt(editingPatient.bp_systolic || editingPatient.systolic) || 0,
+        bp_diastolic: parseInt(editingPatient.bp_diastolic || editingPatient.diastolic) || 0,
+        activity: editingPatient.activity || 'No',
+        phys_activity: editingPatient.physActivity || editingPatient.phys_activity || false,
+        smoking: editingPatient.smoking || 'No',
+        hypertension: editingPatient.hypertension || 'No',
+        heart_disease: editingPatient.heartDisease || editingPatient.heart_disease || 'No',
+        family_history: editingPatient.familyHistory || editingPatient.family_history || false,
+        chol: parseInt(editingPatient.chol || editingPatient.cholesterol) || 0,
+        ldl: parseInt(editingPatient.ldl) || 0,
+        hdl: parseInt(editingPatient.hdl) || 0,
+        triglycerides: parseInt(editingPatient.triglycerides) || 0,
+      };
+      await updatePatientApi(token, editingPatient.id, payload);
+      setEditingPatient(null);
+      if (onRefreshPatients) await onRefreshPatients();
+    } catch (err) {
+      alert('Failed to update patient: ' + err.message);
+    }
+  };
+
+  const handleDeletePatient = async (patientId) => {
+    setDeleteConfirm({ type: 'patient', id: patientId });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm || !token) return;
+    try {
+      if (deleteConfirm.type === 'patient') {
+        await deletePatientApi(token, deleteConfirm.id);
+        if (onRefreshPatients) await onRefreshPatients();
+      } else if (deleteConfirm.type === 'assessment') {
+        await deleteAssessmentApi(token, deleteConfirm.patientId, deleteConfirm.id);
+        // Refresh the patient's assessment history
+        if (selectedPatient) {
+          const history = await loadAssessments(selectedPatient.id);
+          setSelectedPatient({ ...selectedPatient, history: history || [] });
+        }
+      }
+      setDeleteConfirm(null);
+    } catch (err) {
+      alert('Failed to delete: ' + err.message);
+    }
+  };
+
+  const handleEditAssessment = (assessment) => {
+    setEditingAssessment(assessment);
+  };
+
+  const handleSaveAssessment = async () => {
+    if (!editingAssessment || !token || !selectedPatient) return;
+    try {
+      const payload = {
+        fbs: parseFloat(editingAssessment.fbs) || 0,
+        hba1c: parseFloat(editingAssessment.hba1c) || 0,
+        cholesterol: parseInt(editingAssessment.cholesterol) || 0,
+        ldl: parseInt(editingAssessment.ldl) || 0,
+        hdl: parseInt(editingAssessment.hdl) || 0,
+        triglycerides: parseInt(editingAssessment.triglycerides) || 0,
+        systolic: parseInt(editingAssessment.systolic) || 0,
+        diastolic: parseInt(editingAssessment.diastolic) || 0,
+        activity: editingAssessment.activity || 'No',
+        history_flag: editingAssessment.history_flag || false,
+        smoking: editingAssessment.smoking || 'No',
+        hypertension: editingAssessment.hypertension || 'No',
+        heart_disease: editingAssessment.heart_disease || 'No',
+        bmi: parseFloat(editingAssessment.bmi) || 0,
+      };
+      await updateAssessmentApi(token, selectedPatient.id, editingAssessment.id, payload);
+      setEditingAssessment(null);
+      // Refresh the patient's assessment history
+      const history = await loadAssessments(selectedPatient.id);
+      setSelectedPatient({ ...selectedPatient, history: history || [] });
+    } catch (err) {
+      alert('Failed to update assessment: ' + err.message);
+    }
+  };
+
+  const handleDeleteAssessment = (assessment) => {
+    setDeleteConfirm({ type: 'assessment', id: assessment.id, patientId: selectedPatient.id });
+  };
+
   const PatientProfileView = ({ patient }) => {
     if (!patient) return null;
     const riskMeta = getRiskMeta(patient.risk ?? patient.risk_score);
@@ -281,6 +386,54 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 )}
               </div>
             </div>
+
+            {patient.history && patient.history.length > 0 && (
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+                <h3 className="text-[#1B2559] font-bold text-xl mb-6 flex items-center gap-2">
+                  <Clipboard size={20} className="text-[#4318FF]" /> Assessment History
+                </h3>
+                <div className="space-y-3">
+                  {patient.history.map((assessment, idx) => (
+                    <div key={assessment.id || idx} className="flex items-center justify-between p-4 bg-[#F4F7FE] rounded-xl border border-[#E0E5F2] hover:border-[#4318FF] transition-colors">
+                      <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <span className="text-[#A3AED0] text-xs">Date</span>
+                          <div className="text-[#1B2559] font-bold text-sm">{assessment.date || new Date(assessment.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div>
+                          <span className="text-[#A3AED0] text-xs">FBS / HbA1c</span>
+                          <div className="text-[#1B2559] font-bold text-sm">{assessment.fbs} / {assessment.hba1c}%</div>
+                        </div>
+                        <div>
+                          <span className="text-[#A3AED0] text-xs">Risk Score</span>
+                          <div className="text-[#1B2559] font-bold text-sm">{assessment.risk_score}%</div>
+                        </div>
+                        <div>
+                          <span className="text-[#A3AED0] text-xs">Cluster</span>
+                          <div className="text-[#1B2559] font-bold text-sm">{assessment.cluster}</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => handleEditAssessment(assessment)}
+                          className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#4318FF] hover:border-[#4318FF] transition-colors bg-white"
+                          title="Edit Assessment"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAssessment(assessment)}
+                          className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#EE5D50] hover:border-[#EE5D50] transition-colors bg-white"
+                          title="Delete Assessment"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -559,6 +712,158 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   }
 
   return (
+    <>
+      {/* Edit Patient Modal */}
+      {editingPatient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 relative animate-scale-in">
+            <button
+              onClick={() => setEditingPatient(null)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#F4F7FE] text-[#1B2559] flex items-center justify-center hover:bg-[#E0E5F2] transition-colors"
+            >
+              <X size={18} />
+            </button>
+            <h2 className="text-2xl font-bold text-[#1B2559] mb-6">Edit Patient</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#1B2559] mb-2">Name</label>
+                <input
+                  type="text"
+                  value={editingPatient.name || ''}
+                  onChange={(e) => setEditingPatient({ ...editingPatient, name: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#1B2559] mb-2">Age</label>
+                  <input
+                    type="number"
+                    value={editingPatient.age || ''}
+                    onChange={(e) => setEditingPatient({ ...editingPatient, age: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#1B2559] mb-2">Menopause Status</label>
+                  <select
+                    value={editingPatient.menopauseStatus || editingPatient.menopause_status || ''}
+                    onChange={(e) => setEditingPatient({ ...editingPatient, menopauseStatus: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                  >
+                    <option>Perimenopause</option>
+                    <option>Postmenopause</option>
+                    <option>Premenopause</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <Button variant="ghost" onClick={() => setEditingPatient(null)}>Cancel</Button>
+                <Button onClick={handleSavePatient}>Save Changes</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Assessment Modal */}
+      {editingAssessment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8 relative animate-scale-in">
+            <button
+              onClick={() => setEditingAssessment(null)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#F4F7FE] text-[#1B2559] flex items-center justify-center hover:bg-[#E0E5F2] transition-colors"
+            >
+              <X size={18} />
+            </button>
+            <h2 className="text-2xl font-bold text-[#1B2559] mb-6">Edit Assessment</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-[#1B2559] mb-2">FBS (mg/dL)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editingAssessment.fbs || ''}
+                  onChange={(e) => setEditingAssessment({ ...editingAssessment, fbs: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1B2559] mb-2">HbA1c (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editingAssessment.hba1c || ''}
+                  onChange={(e) => setEditingAssessment({ ...editingAssessment, hba1c: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1B2559] mb-2">Cholesterol</label>
+                <input
+                  type="number"
+                  value={editingAssessment.cholesterol || ''}
+                  onChange={(e) => setEditingAssessment({ ...editingAssessment, cholesterol: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1B2559] mb-2">LDL</label>
+                <input
+                  type="number"
+                  value={editingAssessment.ldl || ''}
+                  onChange={(e) => setEditingAssessment({ ...editingAssessment, ldl: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1B2559] mb-2">HDL</label>
+                <input
+                  type="number"
+                  value={editingAssessment.hdl || ''}
+                  onChange={(e) => setEditingAssessment({ ...editingAssessment, hdl: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#1B2559] mb-2">Triglycerides</label>
+                <input
+                  type="number"
+                  value={editingAssessment.triglycerides || ''}
+                  onChange={(e) => setEditingAssessment({ ...editingAssessment, triglycerides: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <Button variant="ghost" onClick={() => setEditingAssessment(null)}>Cancel</Button>
+              <Button onClick={handleSaveAssessment}>Save Changes</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-scale-in">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-[#EE5D50]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <XCircle size={32} className="text-[#EE5D50]" />
+              </div>
+              <h2 className="text-2xl font-bold text-[#1B2559] mb-2">Confirm Delete</h2>
+              <p className="text-[#A3AED0] mb-6">
+                Are you sure you want to delete this {deleteConfirm.type}? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <Button variant="ghost" fullWidth onClick={() => setDeleteConfirm(null)}>Cancel</Button>
+                <Button fullWidth onClick={confirmDelete} className="bg-[#EE5D50] hover:bg-[#EE5D50]/90">Delete</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     <div className="h-full flex flex-col animate-fade-in pb-8">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8">
         <div>
@@ -585,8 +890,8 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 patients.map((p) => {
                   const riskMeta = getRiskMeta(p.risk ?? p.risk_score);
                   return (
-                    <tr key={p.id} className="hover:bg-[#F4F7FE] transition-colors group cursor-pointer" onClick={() => handleViewProfile(p)}>
-                      <td className="p-6">
+                    <tr key={p.id} className="hover:bg-[#F4F7FE] transition-colors group">
+                      <td className="p-6 cursor-pointer" onClick={() => handleViewProfile(p)}>
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-[#4318FF] text-white flex items-center justify-center font-bold shadow-md group-hover:scale-110 transition-transform">
                             {p.name?.charAt(0) || '?'}
@@ -597,14 +902,14 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                           </div>
                         </div>
                       </td>
-                      <td className="p-6">
+                      <td className="p-6 cursor-pointer" onClick={() => handleViewProfile(p)}>
                         <span className="text-[#1B2559] font-medium text-sm">{p.menopause_status || 'N/A'}</span>
                         <div className="text-[#A3AED0] text-xs">Age: {p.age || 'N/A'}</div>
                         <div className="mt-2 inline-block px-2 py-1 rounded-full text-[11px] font-semibold border border-[#E0E5F2] text-[#1B2559] bg-[#F4F7FE]">
                           {riskMeta.label}
                         </div>
                       </td>
-                      <td className="p-6">
+                      <td className="p-6 cursor-pointer" onClick={() => handleViewProfile(p)}>
                         <div className="flex flex-wrap gap-2">
                           <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">FBS: {p.fbs || '--'}</div>
                           <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">A1c: {p.hba1c || '--'}%</div>
@@ -613,7 +918,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                           </div>
                         </div>
                       </td>
-                      <td className="p-6">
+                      <td className="p-6 cursor-pointer" onClick={() => handleViewProfile(p)}>
                         <div className="space-y-1">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -628,9 +933,38 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                         </div>
                       </td>
                       <td className="p-6">
-                        <button className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#4318FF] hover:border-[#4318FF] transition-colors bg-white">
-                          <ChevronRight size={16} />
-                        </button>
+                        <div className="flex gap-2 items-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewProfile(p);
+                            }}
+                            className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#4318FF] hover:border-[#4318FF] transition-colors bg-white"
+                            title="View Profile"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditPatient(p);
+                            }}
+                            className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#4318FF] hover:border-[#4318FF] transition-colors bg-white"
+                            title="Edit Patient"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeletePatient(p.id);
+                            }}
+                            className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#EE5D50] hover:border-[#EE5D50] transition-colors bg-white"
+                            title="Delete Patient"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -653,6 +987,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
         This tool supports cluster-based risk assessment for menopausal women; results should be interpreted alongside healthcare providers.
       </p>
     </div>
+    </>
   );
 };
 
