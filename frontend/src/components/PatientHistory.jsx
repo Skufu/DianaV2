@@ -39,6 +39,27 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   const [editingAssessment, setEditingAssessment] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
+  // Keep selectedPatient's summary fields in sync with the latest data
+  // from the /patients API (single source of truth on the backend).
+  useEffect(() => {
+    if (!selectedPatient || !patients || patients.length === 0) return;
+    const updated = patients.find((p) => p.id === selectedPatient.id);
+    if (!updated) return;
+    // Preserve any loaded history while updating summary fields.
+    setSelectedPatient((prev) =>
+      prev && prev.id === updated.id
+        ? { ...updated, history: prev.history || [] }
+        : prev
+    );
+  }, [patients, selectedPatient?.id]);
+
+  // Attach assessment history to patient for charts, without overriding
+  // summary fields that now come from the backend (single source of truth).
+  const attachHistoryToPatient = (patient, history = []) => ({
+    ...patient,
+    history: history || [],
+  });
+
   const clusterDescriptions = {
     SIDD: 'Severe Insulin-Deficient Diabetes',
     SIRD: 'Severe Insulin-Resistant Diabetes',
@@ -162,7 +183,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
       setHistoryLoading(true);
       try {
         const history = await loadAssessments(patient.id);
-        setSelectedPatient({ ...patient, history: history || [] });
+        setSelectedPatient(attachHistoryToPatient(patient, history || []));
       } catch (_) {
         /* ignore */
       } finally {
@@ -226,7 +247,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
         // Refresh the patient's assessment history
         if (selectedPatient) {
           const history = await loadAssessments(selectedPatient.id);
-          setSelectedPatient({ ...selectedPatient, history: history || [] });
+          setSelectedPatient(attachHistoryToPatient(selectedPatient, history || []));
         }
       }
       setDeleteConfirm(null);
@@ -262,7 +283,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
       setEditingAssessment(null);
       // Refresh the patient's assessment history
       const history = await loadAssessments(selectedPatient.id);
-      setSelectedPatient({ ...selectedPatient, history: history || [] });
+      setSelectedPatient(attachHistoryToPatient(selectedPatient, history || []));
     } catch (err) {
       alert('Failed to update assessment: ' + err.message);
     }
