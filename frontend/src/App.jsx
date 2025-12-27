@@ -7,12 +7,12 @@ import {
   fetchPatientsApi,
   loginApi,
 } from './api';
-import Sidebar from './components/Sidebar';
-import Login from './components/Login';
-import Dashboard from './components/Dashboard';
-import PatientHistory from './components/PatientHistory';
-import Analytics from './components/Analytics';
-import Export from './components/Export';
+import Sidebar from './components/layout/Sidebar';
+import Login from './components/auth/Login';
+import Dashboard from './components/dashboard/Dashboard';
+import PatientHistory from './components/patients/PatientHistory';
+import Analytics from './components/analytics/Analytics';
+import Export from './components/export/Export';
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

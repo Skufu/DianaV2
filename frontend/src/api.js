@@ -1,7 +1,72 @@
 export const API_BASE = import.meta.env.VITE_API_BASE || '';
 
-const apiFetch = async (path, options = {}) => {
+// Track if we're currently refreshing to prevent multiple refresh attempts
+let isRefreshing = false;
+let refreshPromise = null;
+
+const attemptTokenRefresh = async () => {
+  const refreshToken = localStorage.getItem('diana_refresh_token');
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+
+  if (!res.ok) {
+    // Refresh failed - clear tokens
+    localStorage.removeItem('diana_token');
+    localStorage.removeItem('diana_refresh_token');
+    throw new Error('Session expired. Please log in again.');
+  }
+
+  const data = await res.json();
+  localStorage.setItem('diana_token', data.access_token);
+  return data.access_token;
+};
+
+const apiFetch = async (path, options = {}, isRetry = false) => {
   const res = await fetch(`${API_BASE}${path}`, options);
+  
+  // Handle 401 - try to refresh token (but not for auth endpoints or retries)
+  if (res.status === 401 && !isRetry && !path.includes('/auth/')) {
+    // If already refreshing, wait for that to complete
+    if (isRefreshing) {
+      try {
+        await refreshPromise;
+        // Retry with new token
+        const newToken = localStorage.getItem('diana_token');
+        if (newToken && options.headers?.Authorization) {
+          options.headers.Authorization = `Bearer ${newToken}`;
+        }
+        return apiFetch(path, options, true);
+      } catch {
+        throw new Error('Session expired. Please log in again.');
+      }
+    }
+
+    // Start refresh
+    isRefreshing = true;
+    refreshPromise = attemptTokenRefresh();
+
+    try {
+      const newToken = await refreshPromise;
+      isRefreshing = false;
+      
+      // Retry original request with new token
+      if (options.headers?.Authorization) {
+        options.headers.Authorization = `Bearer ${newToken}`;
+      }
+      return apiFetch(path, options, true);
+    } catch (err) {
+      isRefreshing = false;
+      throw err;
+    }
+  }
+
   if (!res.ok) {
     let msg = `Request failed ${res.status}`;
     try {
