@@ -80,3 +80,39 @@ Example request:
 - Prefer returning meaningful 4xx/5xx on validation/server errors; the backend will map any non-200 to the failure behavior described above.
 - Keep latency within `MODEL_TIMEOUT_MS`; otherwise the backend will time out and record the failure mapping.
 
+## Cluster Definitions (per Research Paper)
+
+The model should return one of the following cluster assignments based on the research paper's diabetes subtype classification for menopausal women:
+
+| Cluster | Full Name | Characteristics | Risk Level |
+|---------|-----------|-----------------|------------|
+| **SIDD** | Severe Insulin-Deficient Diabetes | Low BMI, high HbA1c, insulin deficiency, younger onset | High |
+| **SIRD** | Severe Insulin-Resistant Diabetes | High BMI (≥30), insulin resistance, obesity-related, cardiovascular risk | High |
+| **MOD** | Mild Obesity-Related Diabetes | Moderate BMI elevation, mild glucose intolerance, generally favorable prognosis | Moderate |
+| **MARD** | Mild Age-Related Diabetes | Older onset, mild metabolic dysfunction, low complication rate | Low |
+
+### Cluster Assignment Hints (for mock/rule-based implementations)
+
+```
+IF BMI > 30 AND HbA1c > 6.0 → SIRD (risk_score: 80-90)
+IF HbA1c > 6.5 AND BMI < 27 → SIDD (risk_score: 85-95)
+IF Age > 60 AND HbA1c < 7.0 → MARD (risk_score: 30-50)
+ELSE → MOD (risk_score: 25-40)
+```
+
+## Input Validation
+
+The backend performs input validation before calling the model. The `validation_status` field in the request indicates:
+- `ok`: All biomarkers within normal ranges
+- `warning:<codes>`: Comma-separated warning codes (e.g., `fbs_prediabetic_range,hba1c_elevated`)
+
+Warning codes include:
+- `fbs_prediabetic_range` (FBS 100-125 mg/dL)
+- `fbs_diabetic_range` (FBS ≥126 mg/dL)
+- `hba1c_prediabetic` (HbA1c 5.7-6.4%)
+- `hba1c_diabetic` (HbA1c ≥6.5%)
+- `bp_elevated` (systolic 120-139 mmHg)
+- `bp_hypertensive` (systolic ≥140 mmHg)
+- `bmi_overweight` (BMI 25-29.9)
+- `bmi_obese` (BMI ≥30)
+- `cholesterol_high`, `ldl_elevated`, `hdl_low`, `triglycerides_high`

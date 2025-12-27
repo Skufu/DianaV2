@@ -35,7 +35,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   const stats = useMemo(() => {
     const highRisk =
       clusterStats
-        .filter((c) => ['SOIRD', 'SIDD'].includes((c.cluster || '').toUpperCase()))
+        .filter((c) => ['SIRD', 'SIDD'].includes((c.cluster || '').toUpperCase()))
         .reduce((sum, c) => sum + (c.count || 0), 0) || 0;
     const avgHbA1c = trends.length
       ? (trends.reduce((s, t) => s + (t.hba1c || 0), 0) / trends.length).toFixed(1)
@@ -58,13 +58,13 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   const clusterColor = (label) => {
     const key = (label || '').toUpperCase();
     switch (key) {
-      case 'SOIRD':
+      case 'SIRD': // Severe Insulin-Resistant Diabetes
         return '#EE5D50';
-      case 'SIDD':
+      case 'SIDD': // Severe Insulin-Deficient Diabetes
         return '#FFB547';
-      case 'MARD':
+      case 'MARD': // Mild Age-Related Diabetes
         return '#6AD2FF';
-      case 'MIDD':
+      case 'MOD': // Mild Obesity-Related Diabetes
         return '#4318FF';
       default:
         return '#A3AED0';

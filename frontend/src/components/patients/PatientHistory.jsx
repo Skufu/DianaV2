@@ -65,9 +65,6 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
     SIRD: 'Severe Insulin-Resistant Diabetes',
     MOD: 'Mild Obesity-Related Diabetes',
     MARD: 'Mild Age-Related Diabetes',
-    // Legacy names for backward compatibility
-    SOIRD: 'Severe Obesity-Related & Insulin-Resistant Diabetes',
-    MIDD: 'Mild Insulin-Deficient Diabetes',
   };
 
   const getRiskMeta = (score) => {
@@ -153,17 +150,14 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
       } else {
         const bmi = parseFloat(calculatedBMI) || 20;
         const hba1c = parseFloat(formData.hba1c) || 5.0;
-        let calculatedCluster = 'MIDD';
-        let riskScore = 20;
+        let calculatedCluster = 'MOD';
+        let riskScore = 30;
         if (bmi > 30 && hba1c > 6.0) {
-          calculatedCluster = 'SOIRD';
+          calculatedCluster = 'SIRD';
           riskScore = 85;
         } else if (hba1c > 6.5 && bmi < 27) {
           calculatedCluster = 'SIDD';
           riskScore = 92;
-        } else {
-          calculatedCluster = 'MIDD';
-          riskScore = 30;
         }
         setCluster(calculatedCluster);
         setPrediction(riskScore);
@@ -1047,7 +1041,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                         <td className="p-6 cursor-pointer" onClick={() => handleViewProfile(p)}>
                           <div className="space-y-1">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${p.cluster === 'SOIRD' || p.cluster === 'SIDD' ? 'bg-[#111C44] text-white' : 'bg-[#6AD2FF]/20 text-[#1B2559]'
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${p.cluster === 'SIRD' || p.cluster === 'SIDD' ? 'bg-[#111C44] text-white' : 'bg-[#6AD2FF]/20 text-[#1B2559]'
                                 }`}
                             >
                               {p.cluster || 'N/A'}

@@ -107,8 +107,8 @@ sqlc/sqlc.yaml.local
 internal/store/sqlc/
 
 # Documentation/PDFs (non-source)
-*.pdf
-!docs/**/*.pdf
+# *.pdf
+# !docs/**/*.pdf
 
 # Miscellaneous
 *.pid
