@@ -85,7 +85,7 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 
 	r := gin.New()
 	r.Use(mockAuthMiddleware())
-	r.POST("/:patientID/assessments", h.create)
+	r.POST("/:id/assessments", h.create)
 
 	body := bytes.NewBufferString(`{"fbs":110,"hba1c":6.1,"cholesterol":205}`)
 	req, _ := http.NewRequest(http.MethodPost, "/123/assessments", body)
@@ -115,7 +115,7 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 
 	r := gin.New()
 	r.Use(mockAuthMiddleware())
-	r.POST("/:patientID/assessments", h.create)
+	r.POST("/:id/assessments", h.create)
 
 	body := bytes.NewBufferString(`{"fbs":95}`)
 	req, _ := http.NewRequest(http.MethodPost, "/5/assessments", body)

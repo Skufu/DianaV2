@@ -1,19 +1,20 @@
 # DIANA ML Integration Guide
 
-## Quick Start
+## Quick Start (All-in-One)
 
-### 1. Start the ML Server
 ```bash
-# From project root
-python scripts/ml_server.py
-
-# Or use the startup script
-bash scripts/start-ml-server.sh
+# Run everything with one command
+bash scripts/start-ml.sh
 ```
 
-The ML server runs on port 5000 by default. Set `ML_PORT` env var to change.
+This script will:
+1. Check Python installation
+2. Install all ML dependencies
+3. Download NHANES data (if not present)
+4. Train models (if not trained)
+5. Start the ML server on port 5000
 
-### 2. Connect Go Backend
+## Manual Setup
 
 Set these environment variables for the Go backend:
 ```bash

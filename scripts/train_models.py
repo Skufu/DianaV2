@@ -1,16 +1,11 @@
 """
-DIANA Model Training Script
-Trains 3 supervised classifiers with full metrics per paper requirements.
+DIANA Model Training Script (Realistic Version)
+Trains 3 supervised classifiers with realistic metrics using proper validation.
 
-Models:
-- Logistic Regression
-- Random Forest
-- XGBoost
-
-Metrics:
-- Accuracy, Precision, Recall, F1-Score, AUC-ROC
-- Confusion Matrix (best model)
-- ROC Curve (best model)
+Key changes for realistic scores:
+- Uses leave-one-group-out CV by NHANES cycle
+- Trains on 4 cycles, tests on 1 cycle (held out)
+- This simulates real-world generalization
 
 Usage: python scripts/train_models.py
 """
@@ -24,7 +19,7 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
 
-from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold, LeaveOneGroupOut
 from sklearn.preprocessing import StandardScaler, label_binarize
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -52,7 +47,7 @@ TARGET = 'diabetes_label'
 CLASSES = ['Normal', 'Pre-diabetic', 'Diabetic']
 
 
-def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_scaled, y):
+def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_all, y_all):
     """Train a model and calculate all metrics."""
     print(f"\n[TRAIN] {model_name}...")
     
@@ -65,9 +60,9 @@ def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_sc
     
     # Basic metrics
     accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred, average='weighted')
-    recall = recall_score(y_test, y_pred, average='weighted')
-    f1 = f1_score(y_test, y_pred, average='weighted')
+    precision = precision_score(y_test, y_pred, average='weighted', zero_division=0)
+    recall = recall_score(y_test, y_pred, average='weighted', zero_division=0)
+    f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
     
     # AUC-ROC (one-vs-rest for multiclass)
     y_test_bin = label_binarize(y_test, classes=[0, 1, 2])
@@ -78,7 +73,7 @@ def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_sc
     
     # Cross-validation
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    cv_scores = cross_val_score(model, X_scaled, y, cv=cv, scoring='accuracy')
+    cv_scores = cross_val_score(model, X_all, y_all, cv=cv, scoring='accuracy')
     cv_mean = cv_scores.mean()
     cv_std = cv_scores.std()
     
@@ -174,7 +169,7 @@ def main():
     VIZ_DIR.mkdir(parents=True, exist_ok=True)
     
     print("=" * 60)
-    print("DIANA Model Training")
+    print("DIANA Model Training (Realistic Validation)")
     print("=" * 60)
     
     # Load data
@@ -183,37 +178,49 @@ def main():
     print(f"   Records: {len(df)}")
     
     # Prepare features
-    X = df[FEATURES].dropna()
-    y = df.loc[X.index, TARGET]
+    feature_cols = [f for f in FEATURES if f in df.columns]
+    X_df = df[feature_cols + ['cycle']].dropna()
+    df_clean = df.loc[X_df.index].copy()
+    
+    X = df_clean[feature_cols].values
+    y = df_clean[TARGET].values
+    groups = df_clean['cycle'].values
     
     print(f"   Complete records: {len(X)}")
-    print(f"   Class distribution: {dict(y.value_counts().sort_index())}")
+    print(f"   Class distribution: {dict(zip(*np.unique(y, return_counts=True)))}")
+    print(f"   NHANES cycles: {np.unique(groups)}")
     
     # Standardize
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    # Split 70/30 stratified
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_scaled, y, test_size=0.30, random_state=42, stratify=y
-    )
-    print(f"\n[SPLIT] Train: {len(X_train)}, Test: {len(X_test)} (70/30)")
+    # Use Leave-One-Group-Out CV for realistic evaluation
+    # Train on 4 cycles, test on 1 cycle (temporal validation)
+    print(f"\n[SPLIT] Using Leave-One-Cycle-Out validation...")
     
-    # Define models
+    logo = LeaveOneGroupOut()
+    
+    # Get first split for final evaluation
+    train_idx, test_idx = next(logo.split(X_scaled, y, groups))
+    X_train, X_test = X_scaled[train_idx], X_scaled[test_idx]
+    y_train, y_test = y[train_idx], y[test_idx]
+    
+    test_cycle = groups[test_idx][0]
+    print(f"   Train: {len(X_train)} (4 cycles), Test: {len(X_test)} ({test_cycle})")
+    
+    # Define models with regularization
     models = [
-        (LogisticRegression(max_iter=1000, solver='lbfgs',
+        (LogisticRegression(max_iter=1000, solver='lbfgs', C=0.5,
                            class_weight='balanced', random_state=42), "Logistic Regression"),
-        (RandomForestClassifier(n_estimators=100, max_depth=10, class_weight='balanced',
+        (RandomForestClassifier(n_estimators=100, max_depth=8, min_samples_leaf=5,
+                               min_samples_split=10, class_weight='balanced',
                                random_state=42), "Random Forest"),
     ]
     
     if HAS_XGBOOST:
-        # Calculate class weights for XGBoost
-        class_counts = y.value_counts().sort_index()
-        scale_pos_weight = class_counts[0] / class_counts[2]  # Normal/Diabetic ratio
-        
         models.append((
-            XGBClassifier(n_estimators=100, max_depth=5, learning_rate=0.1,
+            XGBClassifier(n_estimators=100, max_depth=4, learning_rate=0.05,
+                         min_child_weight=5, reg_alpha=0.1, reg_lambda=1.0,
                          eval_metric='mlogloss', verbosity=0, random_state=42),
             "XGBoost"
         ))
@@ -232,7 +239,12 @@ def main():
     if best['auc_roc'] >= 0.80:
         print(f"   [PASS] AUC-ROC >= 0.80 threshold met!")
     else:
-        print(f"   [WARN] AUC-ROC < 0.80 threshold. Consider data augmentation.")
+        print(f"   [WARN] AUC-ROC < 0.80 threshold.")
+    
+    # Retrain best model on full dataset for production
+    print(f"\n[FINAL] Retraining {best['name']} on full dataset for production...")
+    final_model = type(best['model'])(**best['model'].get_params())
+    final_model.fit(X_scaled, y)
     
     # Save all models
     print("\n[SAVE] Saving models...")
@@ -243,9 +255,9 @@ def main():
         joblib.dump(result['model'], MODELS_DIR / model_file)
         print(f"   {model_file}")
     
-    # Save best model copy
-    joblib.dump(best['model'], MODELS_DIR / "best_model.joblib")
-    print(f"   best_model.joblib ({best['name']})")
+    # Save best model (trained on full data)
+    joblib.dump(final_model, MODELS_DIR / "best_model.joblib")
+    print(f"   best_model.joblib ({best['name']} - full data)")
     
     # Create model comparison CSV
     comparison = []
@@ -269,7 +281,9 @@ def main():
     # Best model report
     report = {
         "best_model": best['name'],
-        "justification": f"Selected based on highest AUC-ROC score ({best['auc_roc']:.4f})",
+        "justification": f"Selected based on highest AUC-ROC score ({best['auc_roc']:.4f}) with Leave-One-Cycle-Out validation",
+        "validation_method": "Leave-One-Cycle-Out (temporal validation)",
+        "test_cycle": test_cycle,
         "metrics": {
             "accuracy": best['accuracy'],
             "precision": best['precision'],

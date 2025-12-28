@@ -164,9 +164,94 @@ def model_info():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route('/analytics/metrics', methods=['GET'])
+def get_metrics():
+    """Get model performance metrics for dashboard."""
+    try:
+        # Load model comparison
+        import pandas as pd
+        from pathlib import Path
+        
+        results_dir = Path("models/results")
+        
+        # Model comparison
+        comparison_path = results_dir / "model_comparison.csv"
+        if comparison_path.exists():
+            comparison = pd.read_csv(comparison_path).to_dict(orient='records')
+        else:
+            comparison = []
+        
+        # Best model report
+        report_path = results_dir / "best_model_report.json"
+        if report_path.exists():
+            with open(report_path) as f:
+                best_model = json.load(f)
+        else:
+            best_model = {}
+        
+        return jsonify({
+            "model_comparison": comparison,
+            "best_model": best_model
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/analytics/information-gain', methods=['GET'])
+def get_information_gain():
+    """Get Information Gain scores for feature importance."""
+    try:
+        from pathlib import Path
+        
+        ig_path = Path("models/results/information_gain_results.json")
+        if ig_path.exists():
+            with open(ig_path) as f:
+                return jsonify(json.load(f))
+        else:
+            return jsonify({"error": "Information gain results not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/analytics/clusters', methods=['GET'])
+def get_clusters():
+    """Get cluster analysis data."""
+    try:
+        from pathlib import Path
+        
+        cluster_path = Path("models/results/cluster_analysis.json")
+        if cluster_path.exists():
+            with open(cluster_path) as f:
+                return jsonify(json.load(f))
+        else:
+            return jsonify({"error": "Cluster analysis not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/analytics/visualizations/<name>', methods=['GET'])
+def get_visualization(name):
+    """Serve visualization images."""
+    from flask import send_file
+    from pathlib import Path
+    
+    allowed = ['confusion_matrix', 'roc_curve', 'information_gain_chart', 
+               'cluster_heatmap', 'cluster_scatter', 'cluster_distribution', 'k_optimization']
+    
+    if name not in allowed:
+        return jsonify({"error": "Visualization not found"}), 404
+    
+    viz_path = Path(f"models/visualizations/{name}.png")
+    if viz_path.exists():
+        return send_file(viz_path, mimetype='image/png')
+    else:
+        return jsonify({"error": f"{name}.png not found"}), 404
+
+
 if __name__ == '__main__':
     port = int(os.environ.get('ML_PORT', 5000))
     print(f"Starting DIANA ML Server on port {port}...")
     print(f"Health check: http://localhost:{port}/health")
     print(f"Predict endpoint: http://localhost:{port}/predict")
+    print(f"Analytics: http://localhost:{port}/analytics/metrics")
     app.run(host='0.0.0.0', port=port, debug=False)

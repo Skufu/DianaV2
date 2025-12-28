@@ -1,12 +1,15 @@
 // Analytics: comprehensive cohort-level analytics with multiple visualizations
 import React, { useEffect, useState, useMemo } from 'react';
-import { fetchClusterDistributionApi, fetchTrendAnalyticsApi, fetchPatientsApi, fetchAssessmentsApi } from '../../api';
+import {
+  fetchClusterDistributionApi, fetchTrendAnalyticsApi, fetchPatientsApi, fetchAssessmentsApi,
+  fetchMLMetricsApi, fetchMLInformationGainApi, fetchMLClustersApi, getMLVisualizationUrl
+} from '../../api';
 import {
   BarChart, Bar, ScatterChart, Scatter, PieChart, Pie, Cell,
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
-import { TrendingUp, Activity, Users, BarChart3 } from 'lucide-react';
+import { TrendingUp, Activity, Users, BarChart3, Brain, Target, Layers } from 'lucide-react';
 
 const Analytics = ({ token, patients = [] }) => {
   const [clusters, setClusters] = useState([]);
@@ -14,6 +17,12 @@ const Analytics = ({ token, patients = [] }) => {
   const [allAssessments, setAllAssessments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // ML Model state
+  const [mlMetrics, setMlMetrics] = useState(null);
+  const [mlIG, setMlIG] = useState(null);
+  const [mlClusters, setMlClusters] = useState(null);
+  const [mlLoading, setMlLoading] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -47,15 +56,48 @@ const Analytics = ({ token, patients = [] }) => {
     load();
   }, [token]);
 
-  // Calculate risk factor importance (mock data based on common T2DM risk factors)
-  const riskFactorImportance = useMemo(() => [
-    { factor: 'HbA1c', importance: 0.28, color: '#4318FF' },
-    { factor: 'FBS', importance: 0.25, color: '#6AD2FF' },
-    { factor: 'BMI', importance: 0.18, color: '#FFB547' },
-    { factor: 'Age', importance: 0.12, color: '#05CD99' },
-    { factor: 'Blood Pressure', importance: 0.10, color: '#EE5D50' },
-    { factor: 'Physical Activity', importance: 0.07, color: '#A3AED0' }
-  ], []);
+  // Load ML model data
+  useEffect(() => {
+    const loadML = async () => {
+      setMlLoading(true);
+      try {
+        const [metrics, ig, clusters] = await Promise.all([
+          fetchMLMetricsApi().catch(() => null),
+          fetchMLInformationGainApi().catch(() => null),
+          fetchMLClustersApi().catch(() => null)
+        ]);
+        setMlMetrics(metrics);
+        setMlIG(ig);
+        setMlClusters(clusters);
+      } catch (err) {
+        console.error('Failed to load ML data:', err);
+      } finally {
+        setMlLoading(false);
+      }
+    };
+    loadML();
+  }, []);
+
+  // Calculate risk factor importance from real IG data or fallback to mock
+  const riskFactorImportance = useMemo(() => {
+    if (mlIG && mlIG.feature_ranking) {
+      const colors = ['#4318FF', '#6AD2FF', '#FFB547', '#05CD99', '#EE5D50', '#A3AED0', '#7C3AED'];
+      return mlIG.feature_ranking.map((item, i) => ({
+        factor: item.feature.charAt(0).toUpperCase() + item.feature.slice(1),
+        importance: item.ig,
+        color: colors[i % colors.length]
+      }));
+    }
+    // Fallback mock data
+    return [
+      { factor: 'HbA1c', importance: 0.28, color: '#4318FF' },
+      { factor: 'FBS', importance: 0.25, color: '#6AD2FF' },
+      { factor: 'BMI', importance: 0.18, color: '#FFB547' },
+      { factor: 'Age', importance: 0.12, color: '#05CD99' },
+      { factor: 'Blood Pressure', importance: 0.10, color: '#EE5D50' },
+      { factor: 'Physical Activity', importance: 0.07, color: '#A3AED0' }
+    ];
+  }, [mlIG]);
 
   // BMI vs Glucose correlation data
   const bmiGlucoseData = useMemo(() => {
@@ -152,8 +194,116 @@ const Analytics = ({ token, patients = [] }) => {
               <BarChart3 className="text-[#05CD99]" size={24} />
             </div>
           </div>
-          <h3 className="text-3xl font-bold text-[#1B2559]">{clusters.length}</h3>
-          <p className="text-[#A3AED0] text-sm mt-1">T2DM Subgroups Identified</p>
+          <h3 className="text-3xl font-bold text-[#1B2559]">{mlClusters?.n_clusters || clusters.length || 3}</h3>
+          <p className="text-[#A3AED0] text-sm mt-1">Risk Clusters</p>
+        </div>
+      </div>
+
+      {/* ML Model Performance Dashboard */}
+      {mlMetrics && (
+        <div className="bg-gradient-to-br from-[#4318FF] to-[#7C3AED] p-8 rounded-3xl shadow-lg text-white">
+          <div className="flex items-center gap-3 mb-6">
+            <Brain size={28} />
+            <h3 className="text-2xl font-bold">ML Model Performance</h3>
+            {mlLoading && <span className="text-xs opacity-70">Loading...</span>}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
+              <p className="text-white/70 text-sm mb-1">Best Model</p>
+              <p className="text-xl font-bold">{mlMetrics.best_model?.best_model || 'Random Forest'}</p>
+            </div>
+            <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
+              <p className="text-white/70 text-sm mb-1">Accuracy</p>
+              <p className="text-xl font-bold">
+                {((mlMetrics.best_model?.metrics?.accuracy || 0) * 100).toFixed(1)}%
+              </p>
+            </div>
+            <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
+              <p className="text-white/70 text-sm mb-1">AUC-ROC</p>
+              <p className="text-xl font-bold">
+                {(mlMetrics.best_model?.metrics?.auc_roc || 0).toFixed(3)}
+              </p>
+            </div>
+            <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
+              <p className="text-white/70 text-sm mb-1">F1-Score</p>
+              <p className="text-xl font-bold">
+                {((mlMetrics.best_model?.metrics?.f1_score || 0) * 100).toFixed(1)}%
+              </p>
+            </div>
+          </div>
+
+          {/* Model Comparison Table */}
+          {mlMetrics.model_comparison && mlMetrics.model_comparison.length > 0 && (
+            <div className="mt-6 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-white/70 border-b border-white/20">
+                    <th className="text-left py-2">Model</th>
+                    <th className="text-right py-2">Accuracy</th>
+                    <th className="text-right py-2">Precision</th>
+                    <th className="text-right py-2">Recall</th>
+                    <th className="text-right py-2">AUC-ROC</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mlMetrics.model_comparison.map((m, i) => (
+                    <tr key={i} className="border-b border-white/10">
+                      <td className="py-2 font-medium">{m.Model}</td>
+                      <td className="text-right py-2">{(m.Accuracy * 100).toFixed(1)}%</td>
+                      <td className="text-right py-2">{(m.Precision * 100).toFixed(1)}%</td>
+                      <td className="text-right py-2">{(m.Recall * 100).toFixed(1)}%</td>
+                      <td className="text-right py-2">{m['AUC-ROC'].toFixed(3)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ML Visualizations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+          <h3 className="text-xl font-bold text-[#1B2559] mb-4">ROC Curve</h3>
+          <img
+            src={getMLVisualizationUrl('roc_curve')}
+            alt="ROC Curve"
+            className="w-full rounded-xl"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+        </div>
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+          <h3 className="text-xl font-bold text-[#1B2559] mb-4">Confusion Matrix</h3>
+          <img
+            src={getMLVisualizationUrl('confusion_matrix')}
+            alt="Confusion Matrix"
+            className="w-full rounded-xl"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+        </div>
+      </div>
+
+      {/* Cluster Visualizations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+          <h3 className="text-xl font-bold text-[#1B2559] mb-4">Cluster Heatmap</h3>
+          <img
+            src={getMLVisualizationUrl('cluster_heatmap')}
+            alt="Cluster Heatmap"
+            className="w-full rounded-xl"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+        </div>
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+          <h3 className="text-xl font-bold text-[#1B2559] mb-4">Cluster Distribution</h3>
+          <img
+            src={getMLVisualizationUrl('cluster_distribution')}
+            alt="Cluster Distribution"
+            className="w-full rounded-xl"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
         </div>
       </div>
 

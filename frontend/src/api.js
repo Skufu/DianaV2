@@ -30,7 +30,7 @@ const attemptTokenRefresh = async () => {
 
 const apiFetch = async (path, options = {}, isRetry = false) => {
   const res = await fetch(`${API_BASE}${path}`, options);
-  
+
   // Handle 401 - try to refresh token (but not for auth endpoints or retries)
   if (res.status === 401 && !isRetry && !path.includes('/auth/')) {
     // If already refreshing, wait for that to complete
@@ -55,7 +55,7 @@ const apiFetch = async (path, options = {}, isRetry = false) => {
     try {
       const newToken = await refreshPromise;
       isRefreshing = false;
-      
+
       // Retry original request with new token
       if (options.headers?.Authorization) {
         options.headers.Authorization = `Bearer ${newToken}`;
@@ -193,4 +193,29 @@ export const logoutApi = (refreshToken) =>
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
+
+// ============================================================
+// ML Server API (runs on port 5000)
+// ============================================================
+const ML_BASE = import.meta.env.VITE_ML_BASE || 'http://localhost:5000';
+
+const mlFetch = async (path) => {
+  const res = await fetch(`${ML_BASE}${path}`);
+  if (!res.ok) throw new Error(`ML API error: ${res.status}`);
+  const ct = res.headers.get('content-type') || '';
+  if (ct.includes('application/json')) {
+    return res.json();
+  }
+  return res.blob();
+};
+
+export const fetchMLHealthApi = () => mlFetch('/health');
+
+export const fetchMLMetricsApi = () => mlFetch('/analytics/metrics');
+
+export const fetchMLInformationGainApi = () => mlFetch('/analytics/information-gain');
+
+export const fetchMLClustersApi = () => mlFetch('/analytics/clusters');
+
+export const getMLVisualizationUrl = (name) => `${ML_BASE}/analytics/visualizations/${name}`;
 

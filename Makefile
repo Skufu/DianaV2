@@ -58,3 +58,14 @@ test-db:
 
 debug-neon:
 	./scripts/debug-neon.sh
+
+# ML targets
+ml:
+	python scripts/ml_server.py
+
+ml-train:
+	bash scripts/start-ml.sh
+
+# Start all services (ML + Backend + Frontend)
+start-all:
+	bash scripts/start-all.sh
