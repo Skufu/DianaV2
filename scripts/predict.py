@@ -287,12 +287,12 @@ class ClinicalPredictor:
             "model_type": "clinical",
             "predicted_status": predicted_status,
             "risk_cluster": risk_cluster,
-            "probability": round(diabetes_prob, 3),
-            "risk_score": risk_score,
-            "confidence": confidence,
+            "probability": float(round(diabetes_prob, 3)),
+            "risk_score": int(risk_score),
+            "confidence": float(confidence),
             "model_info": {
                 "classifier": self.metrics.get("best_model", "Unknown"),
-                "auc_roc": self.metrics.get("metrics", {}).get("auc_roc", 0),
+                "auc_roc": float(self.metrics.get("metrics", {}).get("auc_roc", 0)),
                 "features_used": CLINICAL_FEATURES,
                 "note": "Non-circular model (no HbA1c/FBS in features)"
             }
