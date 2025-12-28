@@ -97,12 +97,12 @@ def predict():
         
         # Format response to match Diana V2 backend expectations
         return jsonify({
-            "cluster": result["cluster_label"],
+            "medical_status": result["medical_status"],
+            "risk_cluster": result["risk_cluster"],
+            "probability": result["probability"],
             "risk_score": result["risk_score"],
-            "risk_level": result["risk_level"],
             "confidence": result["confidence"],
-            "description": result["description"],
-            "model_version": str(result["model_version"])
+            "model_info": result.get("model_info", {})
         })
         
     except Exception as e:

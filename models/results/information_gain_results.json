@@ -1,0 +1,55 @@
+{
+  "entropy": {
+    "target": "diabetes_status",
+    "value": 1.4596,
+    "interpretation": "Uncertainty in diabetes classification before using features"
+  },
+  "information_gain": {
+    "hba1c": 0.6837,
+    "fbs": 0.3576,
+    "bmi": 0.0825,
+    "triglycerides": 0.0579,
+    "ldl": 0.0262,
+    "hdl": 0.1024,
+    "age": 0.0178
+  },
+  "feature_ranking": [
+    {
+      "rank": 1,
+      "feature": "hba1c",
+      "ig": 0.6837
+    },
+    {
+      "rank": 2,
+      "feature": "fbs",
+      "ig": 0.3576
+    },
+    {
+      "rank": 3,
+      "feature": "hdl",
+      "ig": 0.1024
+    },
+    {
+      "rank": 4,
+      "feature": "bmi",
+      "ig": 0.0825
+    },
+    {
+      "rank": 5,
+      "feature": "triglycerides",
+      "ig": 0.0579
+    },
+    {
+      "rank": 6,
+      "feature": "ldl",
+      "ig": 0.0262
+    },
+    {
+      "rank": 7,
+      "feature": "age",
+      "ig": 0.0178
+    }
+  ],
+  "n_samples": 1111,
+  "n_bins_used": 10
+}

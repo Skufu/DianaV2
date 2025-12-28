@@ -1,0 +1,30 @@
+{
+  "best_model": "Random Forest",
+  "justification": "Selected based on highest AUC-ROC score (1.0000)",
+  "metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "auc_roc": 1.0,
+    "cv_score": 1.0
+  },
+  "auc_threshold_met": true,
+  "confusion_matrix": [
+    [
+      147,
+      0,
+      0
+    ],
+    [
+      0,
+      125,
+      0
+    ],
+    [
+      0,
+      0,
+      47
+    ]
+  ]
+}

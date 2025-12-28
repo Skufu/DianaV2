@@ -1,0 +1,65 @@
+{
+  "n_clusters": 3,
+  "silhouette_score": 0.1817,
+  "cluster_sizes": {
+    "High Risk": 79,
+    "Low Risk": 500,
+    "Moderate Risk": 484
+  },
+  "cluster_profiles": {
+    "High Risk": {
+      "hba1c": 9.3,
+      "fbs": 225.23,
+      "bmi": 36.82,
+      "triglycerides": 167.87,
+      "ldl": 116.89,
+      "hdl": 48.29,
+      "age": 54.96
+    },
+    "Low Risk": {
+      "hba1c": 5.58,
+      "fbs": 99.38,
+      "bmi": 27.45,
+      "triglycerides": 79.19,
+      "ldl": 117.49,
+      "hdl": 70.28,
+      "age": 54.76
+    },
+    "Moderate Risk": {
+      "hba1c": 5.89,
+      "fbs": 107.71,
+      "bmi": 33.9,
+      "triglycerides": 155.95,
+      "ldl": 137.05,
+      "hdl": 48.65,
+      "age": 54.1
+    }
+  },
+  "k_optimization": [
+    {
+      "k": 2,
+      "silhouette": 0.4384107546798602,
+      "wcss": 5890.345003234316
+    },
+    {
+      "k": 3,
+      "silhouette": 0.18173748212216784,
+      "wcss": 4891.346105389955
+    },
+    {
+      "k": 4,
+      "silhouette": 0.1870728703330799,
+      "wcss": 4298.180395444115
+    },
+    {
+      "k": 5,
+      "silhouette": 0.18117485261334512,
+      "wcss": 3903.2775846349905
+    },
+    {
+      "k": 6,
+      "silhouette": 0.17792461087059933,
+      "wcss": 3585.0920772693403
+    }
+  ]
+}
