@@ -351,16 +351,18 @@ For detailed deployment instructions, see `docs/ops/deployment.md`.
 ### Common Issues
 
 #### ❌ "401 Unauthorized" or "403 Forbidden"
-- **Check:** Is your JWT token expired or invalid?
-- **Check:** Is `JWT_SECRET` the same on frontend and backend?
-- **Fix:** Login again to get a fresh token
+- **Cause:** Incorrect email/password or expired token.
+- **Fix:** Use one of the demo accounts seeded in the database:
 
-```bash
-# Test authentication
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "clinician@example.com", "password": "password123"}'
-```
+| User Type | Email | Password |
+|-----------|-------|----------|
+| Demo User | `demo@diana.app` | `demo123` |
+| Clinician | `clinician@example.com` | `password123` |
+| Admin | `admin@diana.app` | `admin123` |
+| Researcher| `researcher@diana.app` | `research456` |
+
+- **Check:** Ensure you are running the frontend in `frontend/` directory (not serving old build).
+- **Check:** Hard refresh the page to clear any stale state.
 
 #### ❌ Database Connection Errors
 - **Check:** Is PostgreSQL running?
