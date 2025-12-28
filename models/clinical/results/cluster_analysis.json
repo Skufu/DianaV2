@@ -1,0 +1,68 @@
+{
+  "model_type": "clinical",
+  "features": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age"
+  ],
+  "note": "Clusters based on metabolic profile (BMI, lipids), not glucose",
+  "n_clusters": 3,
+  "silhouette_score": 0.1971,
+  "cluster_sizes": {
+    "Low Risk": 432,
+    "High Risk": 312,
+    "Moderate Risk": 319
+  },
+  "cluster_profiles": {
+    "Low Risk": {
+      "bmi": 25.96,
+      "triglycerides": 79.24,
+      "ldl": 122.15,
+      "hdl": 71.97,
+      "age": 55.03
+    },
+    "High Risk": {
+      "bmi": 30.39,
+      "triglycerides": 190.35,
+      "ldl": 149.47,
+      "hdl": 48.0,
+      "age": 55.7
+    },
+    "Moderate Risk": {
+      "bmi": 38.69,
+      "triglycerides": 108.83,
+      "ldl": 109.43,
+      "hdl": 51.53,
+      "age": 52.53
+    }
+  },
+  "k_optimization": [
+    {
+      "k": 2,
+      "silhouette": 0.19013448547272604,
+      "wcss": 4201.777099374831
+    },
+    {
+      "k": 3,
+      "silhouette": 0.1970573985678629,
+      "wcss": 3555.821396476822
+    },
+    {
+      "k": 4,
+      "silhouette": 0.18997988566171894,
+      "wcss": 3146.0303380484097
+    },
+    {
+      "k": 5,
+      "silhouette": 0.19163830419557515,
+      "wcss": 2808.1610595344073
+    },
+    {
+      "k": 6,
+      "silhouette": 0.1855511626666353,
+      "wcss": 2540.6634362120567
+    }
+  ]
+}

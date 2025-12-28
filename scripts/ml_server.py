@@ -22,30 +22,50 @@ from flask_cors import CORS
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scripts.predict import DianaPredictor, REQUIRED_FEATURES
+from scripts.predict import DianaPredictor, ClinicalPredictor, REQUIRED_FEATURES, CLINICAL_FEATURES
 
 app = Flask(__name__)
 CORS(app)
 
-# Initialize predictor
+# Initialize predictors
 predictor = None
+clinical_predictor = None
 
 
 def get_predictor():
-    """Lazy load predictor."""
+    """Lazy load ADA baseline predictor."""
     global predictor
     if predictor is None:
         predictor = DianaPredictor()
     return predictor
 
 
+def get_clinical_predictor():
+    """Lazy load clinical (non-circular) predictor."""
+    global clinical_predictor
+    if clinical_predictor is None:
+        try:
+            clinical_predictor = ClinicalPredictor()
+        except FileNotFoundError:
+            return None
+    return clinical_predictor
+
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint."""
+    clinical_available = get_clinical_predictor() is not None
     return jsonify({
         "status": "healthy",
         "model": "diana-v2",
-        "features": REQUIRED_FEATURES
+        "models_available": {
+            "ada_baseline": True,
+            "clinical": clinical_available
+        },
+        "features": {
+            "ada": REQUIRED_FEATURES,
+            "clinical": CLINICAL_FEATURES
+        }
     })
 
 
@@ -54,56 +74,54 @@ def predict():
     """
     Predict diabetes risk for a single patient.
     
-    Request body:
-    {
-        "patient_id": 123,          # Optional
-        "hba1c": 6.5,               # Required
-        "fbs": 126,                 # Required
-        "bmi": 28.0,                # Required
-        "triglycerides": 150,       # Required
-        "ldl": 130,                 # Required
-        "hdl": 45                   # Required
-    }
+    Query params:
+        model_type: "clinical" (default) or "ada"
     
-    Response:
-    {
-        "cluster": "SIRD-like",
-        "risk_score": 85,
-        "risk_level": "HIGH",
-        ...
-    }
+    For clinical model (non-circular, recommended):
+        Required: bmi, triglycerides, ldl, hdl, age
+    
+    For ADA baseline:
+        Required: hba1c, fbs, bmi, triglycerides, ldl, hdl
     """
     try:
         data = request.get_json()
+        model_type = request.args.get('model_type', 'clinical')
         
         if not data:
             return jsonify({"error": "No data provided"}), 400
         
-        # Extract patient data
-        patient_data = {
-            "hba1c": data.get("hba1c"),
-            "fbs": data.get("fbs"),
-            "bmi": data.get("bmi"),
-            "triglycerides": data.get("triglycerides"),
-            "ldl": data.get("ldl"),
-            "hdl": data.get("hdl")
-        }
+        if model_type == 'clinical':
+            # Use clinical model (non-circular)
+            clin_predictor = get_clinical_predictor()
+            if clin_predictor is None:
+                return jsonify({
+                    "error": "Clinical model not trained. Run train_models_v2.py first."
+                }), 503
+            
+            patient_data = {
+                "bmi": data.get("bmi"),
+                "triglycerides": data.get("triglycerides"),
+                "ldl": data.get("ldl"),
+                "hdl": data.get("hdl"),
+                "age": data.get("age", 54)  # Default age if not provided
+            }
+            result = clin_predictor.predict(patient_data)
+        else:
+            # Use ADA baseline model
+            patient_data = {
+                "hba1c": data.get("hba1c"),
+                "fbs": data.get("fbs"),
+                "bmi": data.get("bmi"),
+                "triglycerides": data.get("triglycerides"),
+                "ldl": data.get("ldl"),
+                "hdl": data.get("hdl")
+            }
+            result = get_predictor().predict(patient_data)
         
-        # Predict
-        result = get_predictor().predict(patient_data)
+        if not result.get("success"):
+            return jsonify({"error": result.get("error")}), 400
         
-        if not result["success"]:
-            return jsonify({"error": result["error"]}), 400
-        
-        # Format response to match Diana V2 backend expectations
-        return jsonify({
-            "medical_status": result["medical_status"],
-            "risk_cluster": result["risk_cluster"],
-            "probability": result["probability"],
-            "risk_score": result["risk_score"],
-            "confidence": result["confidence"],
-            "model_info": result.get("model_info", {})
-        })
+        return jsonify(result)
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -166,22 +184,57 @@ def model_info():
 
 @app.route('/analytics/metrics', methods=['GET'])
 def get_metrics():
-    """Get model performance metrics for dashboard."""
+    """Get model performance metrics for dashboard - returns BOTH model sets."""
     try:
-        # Load model comparison
         import pandas as pd
         from pathlib import Path
         
-        results_dir = Path("models/results")
+        response = {"ada_baseline": {}, "clinical": {}}
         
-        # Model comparison
+        # ADA Baseline metrics
+        ada_dir = Path("models/results")
+        if (ada_dir / "model_comparison.csv").exists():
+            response["ada_baseline"]["model_comparison"] = pd.read_csv(
+                ada_dir / "model_comparison.csv"
+            ).to_dict(orient='records')
+        if (ada_dir / "best_model_report.json").exists():
+            with open(ada_dir / "best_model_report.json") as f:
+                response["ada_baseline"]["best_model"] = json.load(f)
+        
+        # Clinical model metrics
+        clinical_dir = Path("models/clinical/results")
+        if clinical_dir.exists():
+            if (clinical_dir / "model_comparison.csv").exists():
+                response["clinical"]["model_comparison"] = pd.read_csv(
+                    clinical_dir / "model_comparison.csv"
+                ).to_dict(orient='records')
+            if (clinical_dir / "best_model_report.json").exists():
+                with open(clinical_dir / "best_model_report.json") as f:
+                    response["clinical"]["best_model"] = json.load(f)
+        
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/analytics/metrics/clinical', methods=['GET'])
+def get_clinical_metrics():
+    """Get clinical model metrics only."""
+    try:
+        import pandas as pd
+        from pathlib import Path
+        
+        results_dir = Path("models/clinical/results")
+        
+        if not results_dir.exists():
+            return jsonify({"error": "Clinical model not trained. Run train_models_v2.py first."}), 404
+        
         comparison_path = results_dir / "model_comparison.csv"
         if comparison_path.exists():
             comparison = pd.read_csv(comparison_path).to_dict(orient='records')
         else:
             comparison = []
         
-        # Best model report
         report_path = results_dir / "best_model_report.json"
         if report_path.exists():
             with open(report_path) as f:
@@ -195,6 +248,7 @@ def get_metrics():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 @app.route('/analytics/information-gain', methods=['GET'])
