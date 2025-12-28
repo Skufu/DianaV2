@@ -1,0 +1,15 @@
+{
+  "dataset_size": 1063,
+  "n_clusters": 2,
+  "silhouette_score": 0.48242425048287707,
+  "random_forest": {
+    "train_accuracy": 1.0,
+    "test_accuracy": 0.9906103286384976,
+    "cv_score": 0.989653645141288
+  },
+  "xgboost": {
+    "train_accuracy": 1.0,
+    "test_accuracy": 0.9859154929577465,
+    "cv_score": 0.990597041367703
+  }
+}

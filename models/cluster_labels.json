@@ -1,0 +1,12 @@
+{
+  "0": {
+    "label": "SIRD-like",
+    "description": "Severe Insulin-Resistant Diabetes",
+    "risk_level": "HIGH"
+  },
+  "1": {
+    "label": "MOD-like",
+    "description": "Mild Obesity-Related Diabetes",
+    "risk_level": "MODERATE"
+  }
+}

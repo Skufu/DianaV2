@@ -27,11 +27,11 @@ func NewAssessmentsHandler(store store.Store, predictor ml.Predictor, modelVersi
 }
 
 func (h *AssessmentsHandler) Register(rg *gin.RouterGroup) {
-	rg.POST("/:patientID/assessments", h.create)
-	rg.GET("/:patientID/assessments", h.list)
-	rg.GET("/:patientID/assessments/:assessmentID", h.get)
-	rg.PUT("/:patientID/assessments/:assessmentID", h.update)
-	rg.DELETE("/:patientID/assessments/:assessmentID", h.delete)
+	rg.POST("/:id/assessments", h.create)
+	rg.GET("/:id/assessments", h.list)
+	rg.GET("/:id/assessments/:assessmentID", h.get)
+	rg.PUT("/:id/assessments/:assessmentID", h.update)
+	rg.DELETE("/:id/assessments/:assessmentID", h.delete)
 }
 
 type assessmentReq struct {
@@ -58,7 +58,7 @@ func (h *AssessmentsHandler) create(c *gin.Context) {
 		return
 	}
 
-	patientID, err := parseIDParam(c, "patientID")
+	patientID, err := parseIDParam(c, "id")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid patient id"})
 		return
@@ -114,7 +114,7 @@ func (h *AssessmentsHandler) list(c *gin.Context) {
 		return
 	}
 
-	patientID, err := parseIDParam(c, "patientID")
+	patientID, err := parseIDParam(c, "id")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid patient id"})
 		return
@@ -247,7 +247,7 @@ func (h *AssessmentsHandler) update(c *gin.Context) {
 		return
 	}
 
-	patientID, err := parseIDParam(c, "patientID")
+	patientID, err := parseIDParam(c, "id")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid patient id"})
 		return
@@ -308,7 +308,7 @@ func (h *AssessmentsHandler) delete(c *gin.Context) {
 		return
 	}
 
-	patientID, err := parseIDParam(c, "patientID")
+	patientID, err := parseIDParam(c, "id")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid patient id"})
 		return
