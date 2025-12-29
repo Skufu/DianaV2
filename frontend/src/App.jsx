@@ -13,6 +13,7 @@ import Dashboard from './components/dashboard/Dashboard';
 import PatientHistory from './components/patients/PatientHistory';
 import Analytics from './components/analytics/Analytics';
 import Export from './components/export/Export';
+import Education from './components/education/Education';
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -144,8 +145,9 @@ const App = () => {
       bmi: bmi || null,
     };
     const assessment = await createAssessmentApi(token, patient.id, assessmentPayload);
-    setPatients((prev) => [patient, ...prev]);
-    setAssessmentsCache((prev) => ({ ...prev, [patient.id]: [assessment] }));
+    // Refresh patient list in background to get updated data with FBS/HbA1c
+    // Don't await - let it happen in background so Step 4 modal shows immediately
+    refreshPatients().catch(console.error);
     return assessment;
   };
 
@@ -183,6 +185,8 @@ const App = () => {
         );
       case 'analytics':
         return <Analytics token={token} patients={patients} />;
+      case 'education':
+        return <Education />;
       case 'export':
         return <Export token={token} />;
       default:

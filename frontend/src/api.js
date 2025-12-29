@@ -81,6 +81,10 @@ const apiFetch = async (path, options = {}, isRetry = false) => {
     }
     throw new Error(msg);
   }
+  // Handle 204 No Content (DELETE responses) - no body to parse
+  if (res.status === 204) {
+    return null;
+  }
   const ct = res.headers.get('content-type') || '';
   if (ct.includes('application/json')) {
     return res.json();

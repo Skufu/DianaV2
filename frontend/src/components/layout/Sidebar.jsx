@@ -1,6 +1,6 @@
 // Sidebar: navigation shell and new assessment shortcut.
 import React from 'react';
-import { LayoutDashboard, Users, Activity, Download, Plus, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Activity, Download, Plus, LogOut, BookOpen } from 'lucide-react';
 import Button from '../common/Button';
 
 const THEME = {
@@ -14,6 +14,7 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout }) => {
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'patients', icon: Users, label: 'Assessments' },
     { id: 'analytics', icon: Activity, label: 'Analytics' },
+    { id: 'education', icon: BookOpen, label: 'Education' },
     { id: 'export', icon: Download, label: 'Export Data' },
   ];
   return (

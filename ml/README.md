@@ -1,54 +1,184 @@
-# ML Module - DIANA Machine Learning
+# ML Module - DIANA Machine Learning Server
 
-This folder contains all Python code for the DIANA diabetes risk prediction system.
+> **Purpose**: Flask API server for diabetes risk prediction using trained ML models  
+> **Framework**: Flask | **ML**: scikit-learn, XGBoost  
+> **Port**: 5000
 
-## Quick Start
+---
+
+## Quick Search Index
+
+| Topic | File Location |
+|-------|---------------|
+| Flask API Server | `server.py` |
+| Prediction Logic | `predict.py` |
+| Model Training | `train.py` |
+| K-Means Clustering | `clustering.py` |
+| Data Processing | `data_processing.py` |
+
+---
+
+## Directory Structure
+
+```
+ml/
+├── server.py             # Flask API server (main entry)
+├── predict.py            # DianaPredictor, ClinicalPredictor classes
+├── train.py              # Train classification models
+├── clustering.py         # K-Means cluster training
+├── data_processing.py    # Prepare NHANES data for training
+└── requirements.txt      # Python dependencies
+```
+
+---
+
+## API Endpoints
+
+| Endpoint | Method | Purpose | Response |
+|----------|--------|---------|----------|
+| `/health` | GET | Health check | `{"status": "healthy"}` |
+| `/predict` | POST | Single prediction | Prediction + cluster |
+| `/predict/batch` | POST | Batch predictions | Array of predictions |
+| `/analytics/metrics` | GET | Model performance | AUC, accuracy, etc. |
+| `/analytics/clusters` | GET | Cluster distribution | Counts per cluster |
+| `/analytics/information-gain` | GET | Feature importance | IG scores |
+| `/analytics/visualizations/<name>` | GET | PNG images | Binary image |
+
+---
+
+## Key Classes
+
+### DianaPredictor (`predict.py`)
+```python
+class DianaPredictor:
+    """ADA-based diabetes predictor using all biomarkers including HbA1c."""
+    
+    FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+    
+    def predict(self, features: dict) -> dict:
+        """
+        Args:
+            features: Dict with keys matching FEATURES
+        Returns:
+            {
+                'prediction': 'Diabetic'|'Pre-diabetic'|'Normal',
+                'probability': [p_normal, p_prediabetic, p_diabetic],
+                'cluster': 'MARD'|'MOD'|'SIDD'|'SIRD',
+                'risk_score': 0-100
+            }
+        """
+```
+
+### ClinicalPredictor (`predict.py`)
+```python
+class ClinicalPredictor:
+    """Non-circular predictor excluding HbA1c from features."""
+    
+    FEATURES = ['fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age',
+                'smoking_status', 'physical_activity', 'alcohol_use']
+```
+
+---
+
+## Prediction Request Format
+
+```json
+POST /predict?model_type=clinical
+{
+    "fbs": 126.0,
+    "bmi": 28.5,
+    "triglycerides": 180.0,
+    "ldl": 130.0,
+    "hdl": 45.0,
+    "age": 58,
+    "smoking_status": 0,
+    "physical_activity": 1,
+    "alcohol_use": 0
+}
+```
+
+## Prediction Response Format
+
+```json
+{
+    "prediction": "Pre-diabetic",
+    "probability": [0.15, 0.70, 0.15],
+    "cluster": "MOD",
+    "risk_score": 65,
+    "model_type": "clinical",
+    "model_version": "v2.1"
+}
+```
+
+---
+
+## Model Types
+
+| Type | Query Param | Features | Use Case |
+|------|-------------|----------|----------|
+| ADA | `?model_type=ada` | All 7 biomarkers | Diagnostic confirmation |
+| Clinical | `?model_type=clinical` | 9 features (no HbA1c) | Screening without lab test |
+
+---
+
+## Training Pipeline
+
+```bash
+cd ml
+
+# 1. Process NHANES data
+python data_processing.py
+
+# 2. Train classifiers (RF, XGB, LR)
+python train.py
+
+# 3. Train K-Means clustering
+python clustering.py
+
+# 4. Start server
+python server.py
+```
+
+---
+
+## Available Visualizations
+
+| Name | Endpoint | Description |
+|------|----------|-------------|
+| `roc_curve` | `/analytics/visualizations/roc_curve` | ROC-AUC curve |
+| `confusion_matrix` | `/analytics/visualizations/confusion_matrix` | Classification matrix |
+| `feature_importance` | `/analytics/visualizations/feature_importance` | Bar chart |
+| `cluster_distribution` | `/analytics/visualizations/cluster_distribution` | Cluster counts |
+
+---
+
+## Dependencies
+
+```
+flask>=2.0.0
+numpy>=1.21.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
+xgboost>=1.5.0
+joblib>=1.1.0
+```
+
+---
+
+## Running
 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
-# Start the ML server
-python ml/server.py
+# Start server (development)
+python server.py
 
-# The server runs on http://localhost:5000
+# Server runs on http://localhost:5000
 ```
 
-## Files
+---
 
-| File | Description |
-|------|-------------|
-| `server.py` | Flask API server for predictions |
-| `predict.py` | Core prediction logic (load models, make predictions) |
-| `train.py` | Train and save ML models |
-| `clustering.py` | K-means clustering analysis |
-| `data_processing.py` | Prepare NHANES data for training |
-| `requirements.txt` | Python dependencies |
+## Search Keywords
 
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/health` | GET | Check if server is running |
-| `/predict` | POST | Predict for one patient |
-| `/predict/batch` | POST | Predict for multiple patients |
-| `/analytics/metrics` | GET | Get model performance metrics |
-
-## Training a New Model
-
-```bash
-# 1. Process raw data
-python ml/data_processing.py
-
-# 2. Train models
-python ml/train.py
-
-# 3. Start server with new models
-python ml/server.py
-```
-
-## Models Used
-
-- **Random Forest** - Primary classifier
-- **XGBoost** - Secondary classifier  
-- **K-means (K=3)** - Risk clustering (Low/Moderate/High)
+`Flask` `API` `prediction` `diabetes` `machine learning` `scikit-learn` `XGBoost` `Random Forest` `K-Means` `clustering` `biomarkers` `HbA1c` `clinical` `ADA` `risk score` `SIRD` `SIDD` `MOD` `MARD` `analytics` `visualizations` `ROC` `feature importance`

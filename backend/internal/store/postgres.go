@@ -4,6 +4,7 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -658,7 +659,9 @@ func numericVal(n pgtype.Numeric) float64 {
 
 func floatToNumeric(v float64) pgtype.Numeric {
 	var n pgtype.Numeric
-	_ = n.Scan(v)
+	// Use string representation to ensure proper scanning, including for 0 values
+	str := fmt.Sprintf("%f", v)
+	_ = n.Scan(str)
 	return n
 }
 

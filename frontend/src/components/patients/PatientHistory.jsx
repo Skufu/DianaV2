@@ -1,9 +1,10 @@
 // PatientHistory: list, profile, and assessment form for menopausal risk.
 import React, { useEffect, useState } from 'react';
-import { ChevronRight, ArrowLeft, Activity, Clipboard, FileText, CheckCircle, XCircle, Heart, TrendingUp, X, Users, Thermometer, Edit2, Trash2, Eye } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Activity, Clipboard, FileText, CheckCircle, XCircle, Heart, TrendingUp, X, Users, Thermometer, Edit2, Trash2, Eye, AlertTriangle, Info } from 'lucide-react';
 import Button from '../common/Button';
 import { updatePatientApi, deletePatientApi, updateAssessmentApi, deleteAssessmentApi } from '../../api';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { clusterEducation } from '../education/Education';
 
 const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessments, onSubmitAssessment, onRefreshPatients, token }) => {
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -41,8 +42,8 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
   // Form wizard state
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 3;
-  const stepTitles = ['Demographics', 'Biomarkers', 'Medical History'];
+  const totalSteps = 4;
+  const stepTitles = ['Demographics', 'Biomarkers', 'Medical History', 'Results'];
 
   // Step validation
   const validateStep = (step) => {
@@ -74,9 +75,14 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
     return true;
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+      if (currentStep === 3) {
+        // Step 3 -> 4: Run ML calculation
+        await calculateRisk();
+      } else {
+        setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+      }
     }
   };
 
@@ -263,6 +269,8 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
         const result = await onSubmitAssessment(formData, bmi);
         setCluster(result?.cluster || 'N/A');
         setPrediction(result?.risk_score ?? result?.riskScore ?? null);
+        // Advance to Step 4 results
+        setCurrentStep(4);
       } else {
         const bmi = parseFloat(calculatedBMI) || 20;
         const hba1c = parseFloat(formData.hba1c) || 5.0;
@@ -277,6 +285,8 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
         }
         setCluster(calculatedCluster);
         setPrediction(riskScore);
+        // Advance to Step 4 results
+        setCurrentStep(4);
       }
     } catch (err) {
       setCluster('Error');
@@ -347,22 +357,36 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   };
 
   const confirmDelete = async () => {
-    if (!deleteConfirm || !token) return;
+    if (!deleteConfirm) {
+      console.error('confirmDelete: deleteConfirm is null');
+      return;
+    }
+    if (!token) {
+      console.error('confirmDelete: token is null');
+      alert('Authentication error. Please refresh the page and try again.');
+      setDeleteConfirm(null);
+      return;
+    }
     try {
       if (deleteConfirm.type === 'patient') {
         await deletePatientApi(token, deleteConfirm.id);
-        if (onRefreshPatients) await onRefreshPatients();
+        setDeleteConfirm(null);
+        if (onRefreshPatients) {
+          await onRefreshPatients();
+        }
       } else if (deleteConfirm.type === 'assessment') {
         await deleteAssessmentApi(token, deleteConfirm.patientId, deleteConfirm.id);
+        setDeleteConfirm(null);
         // Refresh the patient's assessment history
         if (selectedPatient) {
           const history = await loadAssessments(selectedPatient.id);
           setSelectedPatient(attachHistoryToPatient(selectedPatient, history || []));
         }
       }
-      setDeleteConfirm(null);
     } catch (err) {
+      console.error('Delete failed:', err);
       alert('Failed to delete: ' + err.message);
+      setDeleteConfirm(null);
     }
   };
 
@@ -913,63 +937,156 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
                 {/* Step Navigation */}
                 <div className="flex justify-between items-center mt-8 pt-6 border-t border-[#E0E5F2]">
-                  {currentStep > 1 ? (
+                  {currentStep > 1 && currentStep < 4 ? (
                     <Button variant="ghost" onClick={prevStep}>
                       ← Back
                     </Button>
                   ) : (
                     <div />
                   )}
-                  {currentStep < totalSteps ? (
-                    <Button onClick={nextStep}>
-                      Continue →
+                  {currentStep < 4 ? (
+                    <Button onClick={nextStep} disabled={isComputing}>
+                      {currentStep === 3 ? (isComputing ? 'Analyzing...' : 'Submit & Analyze →') : 'Continue →'}
                     </Button>
                   ) : null}
                 </div>
               </div>
             </div>
-            {currentStep === 3 && <div className="lg:col-span-1 space-y-6 animate-fade-in">
-              <div className="bg-[#111C44] rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
-                <div className="relative z-10">
-                  <h3 className="text-2xl font-bold mb-2">Live Analysis</h3>
-                  <p className="opacity-70 text-sm mb-6">Real-time BMI calculation based on input parameters.</p>
-                  <div className="flex justify-between items-end border-b border-white/20 pb-4 mb-4">
-                    <span className="text-sm opacity-80">Calculated BMI</span>
-                    <span className="text-3xl font-bold">{calculatedBMI || '--.-'}</span>
+
+            {/* Step 3 Live Analysis Sidebar */}
+            {currentStep === 3 && (
+              <div className="lg:col-span-1 space-y-6 animate-fade-in">
+                <div className="bg-[#111C44] rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
+                  <div className="relative z-10">
+                    <h3 className="text-2xl font-bold mb-2">Live Analysis</h3>
+                    <p className="opacity-70 text-sm mb-6">Real-time BMI calculation based on input parameters.</p>
+                    <div className="flex justify-between items-end border-b border-white/20 pb-4 mb-4">
+                      <span className="text-sm opacity-80">Calculated BMI</span>
+                      <span className="text-3xl font-bold">{calculatedBMI || '--.-'}</span>
+                    </div>
+                    <div className="text-xs opacity-60">Click "Submit & Analyze" to run the ML prediction and view your results.</div>
                   </div>
-                  <div className="text-xs opacity-60">Fill in all core biomarkers to enable risk prediction and cluster assignment.</div>
+                  <Activity size={120} className="absolute -bottom-6 -right-6 opacity-10" />
                 </div>
-                <Activity size={120} className="absolute -bottom-6 -right-6 opacity-10" />
               </div>
-              <div className="bg-white rounded-3xl shadow-sm p-6 border border-[#E0E5F2] sticky top-6">
-                <h3 className="text-[#1B2559] font-bold text-xl mb-6">Action</h3>
-                <div className="space-y-4">
-                  <Button fullWidth onClick={calculateRisk} disabled={isComputing}>
-                    {isComputing ? 'Processing...' : 'Run Cluster Analysis'}
-                  </Button>
-                  <Button variant="ghost" fullWidth onClick={() => setViewState('list')}>
-                    Cancel Assessment
-                  </Button>
-                </div>
-                {prediction !== null && (
-                  <div className="mt-8 pt-8 border-t border-[#E0E5F2] animate-fade-in">
-                    <div className="text-center">
-                      <p className="text-[#A3AED0] text-xs font-bold uppercase tracking-widest mb-1">Identified Cluster</p>
-                      <h2 className="text-4xl font-bold text-[#4318FF] mb-2">{cluster}</h2>
-                      <div
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-bold mb-4 ${getRiskMeta(prediction).badge
-                          }`}
-                      >
-                        {prediction}% Risk Probability
+            )}
+
+            {/* Step 4: Results View */}
+            {currentStep === 4 && (
+              <div className="lg:col-span-3 animate-fade-in">
+                <div className="max-w-3xl mx-auto space-y-6">
+                  {/* Success Header */}
+                  <div className="text-center mb-8">
+                    <div className="w-20 h-20 mx-auto rounded-full bg-[#05CD99]/10 flex items-center justify-center mb-4">
+                      <CheckCircle size={40} className="text-[#05CD99]" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-[#1B2559]">Assessment Complete</h3>
+                    <p className="text-[#A3AED0] mt-2">Results have been saved to patient history</p>
+                  </div>
+
+                  {/* Cluster Result Card */}
+                  <div
+                    className="rounded-3xl p-8 text-white mb-6 relative overflow-hidden"
+                    style={{
+                      backgroundColor: clusterEducation[cluster?.toUpperCase()]?.color || '#4318FF',
+                      background: `linear-gradient(135deg, ${clusterEducation[cluster?.toUpperCase()]?.color || '#4318FF'} 0%, ${clusterEducation[cluster?.toUpperCase()]?.color || '#4318FF'}dd 100%)`
+                    }}
+                  >
+                    <div className="relative z-10">
+                      <p className="text-white/70 text-sm mb-2">Identified Cluster</p>
+                      <h2 className="text-5xl font-bold mb-2">{cluster}</h2>
+                      <p className="text-white/90 text-lg">{clusterEducation[cluster?.toUpperCase()]?.name || 'Diabetes Subtype'}</p>
+                      <div className="mt-6 pt-6 border-t border-white/20 flex items-center gap-8">
+                        <div>
+                          <p className="text-white/70 text-sm mb-1">Risk Probability</p>
+                          <span className="text-4xl font-bold">{prediction}%</span>
+                        </div>
+                        <div>
+                          <p className="text-white/70 text-sm mb-1">Risk Level</p>
+                          <span className="text-xl font-bold">{getRiskMeta(prediction).label}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute -bottom-10 -right-10 opacity-10">
+                      <Activity size={200} />
+                    </div>
+                  </div>
+
+                  {/* Cluster Education Section */}
+                  {clusterEducation[cluster?.toUpperCase()] && (
+                    <div className="bg-white rounded-3xl p-8 border border-[#E0E5F2]">
+                      <div className="flex items-start gap-3 mb-6">
+                        <div className="w-10 h-10 rounded-xl bg-[#4318FF]/10 flex items-center justify-center">
+                          <Info size={20} className="text-[#4318FF]" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-[#1B2559] text-lg">What does {cluster} mean?</h4>
+                          <p className="text-[#A3AED0] text-sm">Understanding your cluster assignment</p>
+                        </div>
+                      </div>
+
+                      <p className="text-[#1B2559] leading-relaxed mb-6">
+                        {clusterEducation[cluster?.toUpperCase()]?.shortDesc}
+                      </p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-3">Key Risk Factors</h5>
+                          <ul className="space-y-2">
+                            {clusterEducation[cluster?.toUpperCase()]?.riskFactors.slice(0, 4).map((factor, i) => (
+                              <li key={i} className="text-sm text-[#1B2559] flex items-start gap-2">
+                                <span className="text-[#EE5D50] mt-1">•</span> {factor}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-3">Recommendations</h5>
+                          <ul className="space-y-2">
+                            {clusterEducation[cluster?.toUpperCase()]?.recommendations.slice(0, 4).map((rec, i) => (
+                              <li key={i} className="text-sm text-[#1B2559] flex items-start gap-2">
+                                <span className="text-[#05CD99] mt-1">✓</span> {rec}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Clinical Note */}
+                  <div className="bg-[#FFF9E6] border border-[#FFB547]/30 p-6 rounded-2xl">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle size={24} className="text-[#FFB547] flex-shrink-0 mt-1" />
+                      <div>
+                        <h4 className="font-bold text-[#1B2559] mb-2">Important Notice</h4>
+                        <p className="text-sm text-[#1B2559] leading-relaxed">
+                          This assessment is for informational purposes. Please discuss these results with your healthcare provider
+                          for proper diagnosis and personalized treatment recommendations.
+                        </p>
                       </div>
                     </div>
                   </div>
-                )}
-                <div className="mt-6 text-[12px] text-[#A3AED0] leading-relaxed">
-                  Next steps: keep these results, schedule a follow-up with your provider, and repeat labs as advised.
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-4 pt-4">
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      onClick={() => window.print()}
+                    >
+                      Download / Print Results
+                    </Button>
+                    <Button
+                      fullWidth
+                      onClick={() => { resetForm(); setViewState('list'); }}
+                    >
+                      Back to Patients
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>}
+            )}
           </div >
         </div >
       </div >

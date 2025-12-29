@@ -29,8 +29,8 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 # Check if ML models exist
-if [ ! -f "models/best_model.joblib" ]; then
-    echo -e "${RED}ML models not found. Run 'bash scripts/start-ml.sh' first to train models.${NC}"
+if [ ! -f "models/random_forest.joblib" ] && [ ! -f "models/best_model.joblib" ]; then
+    echo -e "${RED}ML models not found. Run 'python scripts/train_enhanced.py' first.${NC}"
     exit 1
 fi
 
@@ -41,7 +41,7 @@ fi
 
 # Start ML Server (port 5000)
 echo -e "\n${YELLOW}[1/3] Starting ML Server...${NC}"
-python scripts/ml_server.py &
+python ml/server.py &
 ML_PID=$!
 sleep 2
 
@@ -84,7 +84,7 @@ echo ""
 echo "Services:"
 echo -e "  ${CYAN}ML Server:${NC}  http://localhost:${ML_PORT:-5000}/health"
 echo -e "  ${CYAN}Backend:${NC}    http://localhost:${PORT:-8080}/api/v1/healthz"
-echo -e "  ${CYAN}Frontend:${NC}   http://localhost:3000"
+echo -e "  ${CYAN}Frontend:${NC}   http://localhost:5173"
 echo ""
 echo "Press Ctrl+C to stop all services"
 echo ""

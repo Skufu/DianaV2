@@ -5,51 +5,94 @@
     "interpretation": "Uncertainty in diabetes classification before using features"
   },
   "information_gain": {
-    "hba1c": 0.6837,
     "fbs": 0.3576,
     "bmi": 0.0825,
     "triglycerides": 0.0579,
     "ldl": 0.0262,
     "hdl": 0.1024,
-    "age": 0.0178
+    "age": 0.0178,
+    "systolic": 0.0341,
+    "diastolic": 0.0085,
+    "total_cholesterol": 0.0243,
+    "smoking_status": 0.0071,
+    "physical_activity": 0.0113,
+    "alcohol_use": 0.031
   },
   "feature_ranking": [
     {
       "rank": 1,
-      "feature": "hba1c",
-      "ig": 0.6837
+      "feature": "fbs",
+      "ig": 0.3576,
+      "type": "biomarker"
     },
     {
       "rank": 2,
-      "feature": "fbs",
-      "ig": 0.3576
+      "feature": "hdl",
+      "ig": 0.1024,
+      "type": "biomarker"
     },
     {
       "rank": 3,
-      "feature": "hdl",
-      "ig": 0.1024
+      "feature": "bmi",
+      "ig": 0.0825,
+      "type": "biomarker"
     },
     {
       "rank": 4,
-      "feature": "bmi",
-      "ig": 0.0825
+      "feature": "triglycerides",
+      "ig": 0.0579,
+      "type": "biomarker"
     },
     {
       "rank": 5,
-      "feature": "triglycerides",
-      "ig": 0.0579
+      "feature": "systolic",
+      "ig": 0.0341,
+      "type": "biomarker"
     },
     {
       "rank": 6,
-      "feature": "ldl",
-      "ig": 0.0262
+      "feature": "alcohol_use",
+      "ig": 0.031,
+      "type": "lifestyle"
     },
     {
       "rank": 7,
+      "feature": "ldl",
+      "ig": 0.0262,
+      "type": "biomarker"
+    },
+    {
+      "rank": 8,
+      "feature": "total_cholesterol",
+      "ig": 0.0243,
+      "type": "biomarker"
+    },
+    {
+      "rank": 9,
       "feature": "age",
-      "ig": 0.0178
+      "ig": 0.0178,
+      "type": "biomarker"
+    },
+    {
+      "rank": 10,
+      "feature": "physical_activity",
+      "ig": 0.0113,
+      "type": "lifestyle"
+    },
+    {
+      "rank": 11,
+      "feature": "diastolic",
+      "ig": 0.0085,
+      "type": "biomarker"
+    },
+    {
+      "rank": 12,
+      "feature": "smoking_status",
+      "ig": 0.0071,
+      "type": "lifestyle"
     }
   ],
   "n_samples": 1111,
-  "n_bins_used": 10
+  "n_bins_used": 10,
+  "lifestyle_features_included": true
 }

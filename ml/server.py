@@ -291,14 +291,18 @@ def get_visualization(name):
     from pathlib import Path
     
     allowed = ['confusion_matrix', 'roc_curve', 'information_gain_chart', 
-               'cluster_heatmap', 'cluster_scatter', 'cluster_distribution', 'k_optimization']
+               'cluster_heatmap', 'cluster_scatter', 'cluster_distribution', 
+               'k_optimization', 'feature_importance']
     
     if name not in allowed:
         return jsonify({"error": "Visualization not found"}), 404
     
-    viz_path = Path(f"models/visualizations/{name}.png")
+    # Use absolute path from project root (parent of ml/)
+    project_root = Path(__file__).parent.parent
+    viz_path = project_root / "models" / "visualizations" / f"{name}.png"
+    
     if viz_path.exists():
-        return send_file(viz_path, mimetype='image/png')
+        return send_file(str(viz_path), mimetype='image/png')
     else:
         return jsonify({"error": f"{name}.png not found"}), 404
 

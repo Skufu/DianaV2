@@ -61,16 +61,16 @@ class DianaPredictor:
         # Load K-means (for risk cluster)
         self.kmeans = joblib.load(self.models_dir / "kmeans_model.joblib")
         
-        # Load cluster analysis for mapping
-        cluster_analysis_path = self.results_dir / "cluster_analysis.json"
-        if cluster_analysis_path.exists():
-            with open(cluster_analysis_path) as f:
-                self.cluster_analysis = json.load(f)
+        # Load cluster labels
+        cluster_labels_path = self.models_dir / "cluster_labels.json"
+        if cluster_labels_path.exists():
+            with open(cluster_labels_path) as f:
+                self.cluster_labels = json.load(f)
         else:
-            self.cluster_analysis = {}
+            self.cluster_labels = {"0": {"label": "HIGH", "risk_level": "HIGH"}, "1": {"label": "MODERATE", "risk_level": "MODERATE"}}
         
         # Load model metrics
-        metrics_path = self.results_dir / "best_model_report.json"
+        metrics_path = self.models_dir / "model_metrics.json"
         if metrics_path.exists():
             with open(metrics_path) as f:
                 self.metrics = json.load(f)
@@ -103,11 +103,9 @@ class DianaPredictor:
         # Get medical status from HbA1c
         medical_status = get_medical_status(data['hba1c'])
         
-        # Prepare features for models
-        # Use age=54 (mean) if not provided
-        age = data.get('age', 54)
+        # Prepare features for models (6 features - must match training)
         X = np.array([[data['hba1c'], data['fbs'], data['bmi'], 
-                      data['triglycerides'], data['ldl'], data['hdl'], age]])
+                      data['triglycerides'], data['ldl'], data['hdl']]])
         
         # Scale
         X_scaled = self.scaler.transform(X)
@@ -115,43 +113,37 @@ class DianaPredictor:
         # Get risk cluster from K-means
         cluster_id = int(self.kmeans.predict(X_scaled)[0])
         
-        # Map cluster ID to risk label
-        # Clusters are ordered by mean HbA1c/FBS in clustering.py
-        cluster_profiles = self.cluster_analysis.get("cluster_profiles", {})
-        if cluster_profiles:
-            # Find which risk level this cluster maps to
-            risk_labels = list(cluster_profiles.keys())
-            if cluster_id < len(risk_labels):
-                # Need to map based on cluster characteristics
-                # In our clustering, we sorted by mean HbA1c+FBS
-                risk_cluster = self._get_risk_label(cluster_id)
-            else:
-                risk_cluster = f"Cluster-{cluster_id}"
-        else:
-            risk_cluster = f"Cluster-{cluster_id}"
+        # Map cluster ID to label and risk level
+        cluster_info = self.cluster_labels.get(str(cluster_id), {})
+        cluster_label = cluster_info.get("label", f"Cluster-{cluster_id}")
+        risk_level = cluster_info.get("risk_level", "UNKNOWN")
         
-        # Get probability from classifier (using 7 features for clustering but 7 for classifier)
-        # Classifier was trained on 7 features, need to match
+        # Get probability from classifier
+        # Classifier predicts cluster: 0=SIRD-like (HIGH), 1=MOD-like (MODERATE)
         try:
             proba = self.classifier.predict_proba(X_scaled)[0]
-            # Probability of being diabetic (class 2)
-            diabetes_prob = proba[2] if len(proba) > 2 else max(proba)
-            # Overall risk score
-            risk_score = int(max(proba) * 100)
-        except:
-            diabetes_prob = 0.0
-            risk_score = 0
+            # proba[0] = probability of HIGH risk cluster (SIRD-like)
+            # proba[1] = probability of MODERATE risk cluster (MOD-like)
+            high_risk_prob = proba[0] if len(proba) >= 2 else proba[0]
+            # Risk score: weighted by HIGH risk probability
+            risk_score = int(high_risk_prob * 100)
+            confidence = round(max(proba), 3)
+        except Exception as e:
+            high_risk_prob = 0.0
+            risk_score = 50  # Default moderate risk
+            confidence = 0.5
         
         return {
             "success": True,
             "medical_status": medical_status,
-            "risk_cluster": risk_cluster,
-            "probability": round(diabetes_prob, 3),
+            "cluster": cluster_label,
+            "risk_level": risk_level,
             "risk_score": risk_score,
-            "confidence": round(max(proba) if 'proba' in dir() else 1.0, 3),
+            "probability": round(high_risk_prob, 3),
+            "confidence": confidence,
             "model_info": {
-                "classifier": self.metrics.get("best_model", "Unknown"),
-                "auc_roc": self.metrics.get("metrics", {}).get("auc_roc", 0)
+                "n_clusters": self.metrics.get("n_clusters", 2),
+                "classifier_accuracy": self.metrics.get("random_forest", {}).get("test_accuracy", 0)
             }
         }
     

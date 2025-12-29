@@ -62,10 +62,17 @@ const VisualizationCard = ({ title, visualizationName }) => {
   );
 };
 
-// Format metric value - shows N/A if null/undefined/0
+// Format metric value - shows N/A if null/undefined
 const formatMetric = (value, isPercentage = false, decimals = 1) => {
-  if (value === null || value === undefined || value === 0) return 'N/A';
+  if (value === null || value === undefined) return 'N/A';
   return isPercentage ? `${(value * 100).toFixed(decimals)}%` : value.toFixed(decimals);
+};
+
+// Helper to get ML metrics from either clinical or ada_baseline response
+const getMLMetrics = (mlMetrics) => {
+  if (!mlMetrics) return null;
+  // Prefer clinical model, fallback to ada_baseline
+  return mlMetrics.clinical?.best_model ? mlMetrics.clinical : mlMetrics.ada_baseline;
 };
 
 const Analytics = ({ token, patients = [] }) => {
@@ -276,67 +283,75 @@ const Analytics = ({ token, patients = [] }) => {
       {mlLoading && <MLMetricsSkeleton />}
 
       {/* ML Model Performance Dashboard */}
-      {!mlLoading && mlMetrics && (
-        <div className="bg-gradient-to-br from-[#4318FF] to-[#7C3AED] p-8 rounded-3xl shadow-lg text-white">
-          <div className="flex items-center gap-3 mb-6">
-            <Brain size={28} />
-            <h3 className="text-2xl font-bold">ML Model Performance</h3>
-          </div>
+      {!mlLoading && mlMetrics && (() => {
+        const metrics = getMLMetrics(mlMetrics);
+        const modelComparison = mlMetrics.clinical?.model_comparison || mlMetrics.ada_baseline?.model_comparison || [];
+        return (
+          <div className="bg-gradient-to-br from-[#4318FF] to-[#7C3AED] p-8 rounded-3xl shadow-lg text-white">
+            <div className="flex items-center gap-3 mb-6">
+              <Brain size={28} />
+              <h3 className="text-2xl font-bold">ML Model Performance</h3>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-              <p className="text-white/70 text-sm mb-1">Best Model</p>
-              <p className="text-xl font-bold">{mlMetrics.best_model?.best_model || 'N/A'}</p>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
+                <p className="text-white/70 text-sm mb-1">Best Model</p>
+                <p className="text-xl font-bold">
+                  {typeof metrics?.best_model === 'string'
+                    ? metrics.best_model
+                    : (metrics?.best_model?.model_type || metrics?.model_type || 'N/A')}
+                </p>
+              </div>
+              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
+                <p className="text-white/70 text-sm mb-1">Accuracy</p>
+                <p className="text-xl font-bold">
+                  {formatMetric(metrics?.metrics?.accuracy, true)}
+                </p>
+              </div>
+              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
+                <p className="text-white/70 text-sm mb-1">AUC-ROC</p>
+                <p className="text-xl font-bold">
+                  {formatMetric(metrics?.metrics?.auc_roc, false, 3)}
+                </p>
+              </div>
+              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
+                <p className="text-white/70 text-sm mb-1">F1-Score</p>
+                <p className="text-xl font-bold">
+                  {formatMetric(metrics?.metrics?.f1_score, true)}
+                </p>
+              </div>
             </div>
-            <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-              <p className="text-white/70 text-sm mb-1">Accuracy</p>
-              <p className="text-xl font-bold">
-                {formatMetric(mlMetrics.best_model?.metrics?.accuracy, true)}
-              </p>
-            </div>
-            <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-              <p className="text-white/70 text-sm mb-1">AUC-ROC</p>
-              <p className="text-xl font-bold">
-                {formatMetric(mlMetrics.best_model?.metrics?.auc_roc, false, 3)}
-              </p>
-            </div>
-            <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-              <p className="text-white/70 text-sm mb-1">F1-Score</p>
-              <p className="text-xl font-bold">
-                {formatMetric(mlMetrics.best_model?.metrics?.f1_score, true)}
-              </p>
-            </div>
-          </div>
 
-          {/* Model Comparison Table */}
-          {mlMetrics.model_comparison && mlMetrics.model_comparison.length > 0 && (
-            <div className="mt-6 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-white/70 border-b border-white/20">
-                    <th className="text-left py-2">Model</th>
-                    <th className="text-right py-2">Accuracy</th>
-                    <th className="text-right py-2">Precision</th>
-                    <th className="text-right py-2">Recall</th>
-                    <th className="text-right py-2">AUC-ROC</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mlMetrics.model_comparison.map((m, i) => (
-                    <tr key={i} className="border-b border-white/10">
-                      <td className="py-2 font-medium">{m.Model}</td>
-                      <td className="text-right py-2">{formatMetric(m.Accuracy, true)}</td>
-                      <td className="text-right py-2">{formatMetric(m.Precision, true)}</td>
-                      <td className="text-right py-2">{formatMetric(m.Recall, true)}</td>
-                      <td className="text-right py-2">{formatMetric(m['AUC-ROC'], false, 3)}</td>
+            {/* Model Comparison Table */}
+            {modelComparison.length > 0 && (
+              <div className="mt-6 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-white/70 border-b border-white/20">
+                      <th className="text-left py-2">Model</th>
+                      <th className="text-right py-2">Accuracy</th>
+                      <th className="text-right py-2">Precision</th>
+                      <th className="text-right py-2">Recall</th>
+                      <th className="text-right py-2">AUC-ROC</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+                  </thead>
+                  <tbody>
+                    {modelComparison.map((m, i) => (
+                      <tr key={i} className="border-b border-white/10">
+                        <td className="py-2 font-medium">{m.Model}</td>
+                        <td className="text-right py-2">{formatMetric(m.Accuracy, true)}</td>
+                        <td className="text-right py-2">{formatMetric(m.Precision, true)}</td>
+                        <td className="text-right py-2">{formatMetric(m.Recall, true)}</td>
+                        <td className="text-right py-2">{formatMetric(m['AUC-ROC'], false, 3)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ML Visualizations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
