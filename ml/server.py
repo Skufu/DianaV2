@@ -8,7 +8,7 @@ Endpoints:
     GET /health - Health check
 
 Usage:
-    python scripts/ml_server.py
+    python ml/server.py
     
 Environment:
     ML_PORT: Port to run on (default: 5000)
@@ -23,7 +23,7 @@ from flask_cors import CORS
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scripts.predict import DianaPredictor, ClinicalPredictor, REQUIRED_FEATURES, CLINICAL_FEATURES
+from ml.predict import DianaPredictor, ClinicalPredictor, REQUIRED_FEATURES, CLINICAL_FEATURES
 
 app = Flask(__name__)
 CORS(app)

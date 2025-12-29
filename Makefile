@@ -61,10 +61,10 @@ debug-neon:
 
 # ML targets
 ml:
-	python scripts/ml_server.py
+	python ml/server.py
 
 ml-train:
-	bash scripts/start-ml.sh
+	python ml/train.py
 
 # Start all services (ML + Backend + Frontend)
 start-all:

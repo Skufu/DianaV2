@@ -6,89 +6,54 @@ This document outlines the organizational structure of the Diana V2 codebase.
 
 ```
 DIANA V2/
-├── build/                      # Build artifacts and containerization
-│   └── Dockerfile             # Container configuration
-├── cmd/                       # Main applications
-│   ├── server/                # API server entrypoint
-│   │   └── main.go
-│   └── seed/                  # Database seeding utility
-│       └── main.go
-├── configs/                   # Configuration file templates
-│   ├── env.example            # Environment variables template
-│   └── .env.local.example     # Local development overrides template
-├── docs/                      # Documentation
-│   ├── architecture/          # Architecture and system design docs
-│   │   ├── ARCHITECTURE.md    # System architecture documentation
-│   │   └── PROJECT_STRUCTURE.md # This file
-│   ├── dev/                   # Developer guides and historical plans
-│   │   ├── CLAUDE.md          # Claude Code documentation
-│   │   ├── frontendplan.md    # Frontend development plan
-│   │   ├── frontendplan-root.md # Historical root-level frontend plan
-│   │   ├── plan.md            # Project development plan
-│   │   ├── plan-root.md       # Historical root-level project plan
-│   │   └── TROUBLESHOOTING.md # Common issues and solutions
-│   ├── ml-api-contract.md     # ML API contract specification
-│   └── ops/                   # Deployment and operations docs
-│       ├── deployment.md      # Primary deployment instructions
-│       ├── deployment-internal.md # Internal/legacy deployment notes
-│       └── logging-improvements.md # Logging and observability improvements
-├── frontend/                  # React application
+├── backend/                    # Go backend server
+│   ├── cmd/                   # Application entrypoints
+│   │   ├── server/            # Main API server
+│   │   ├── migrate/           # Database migrations
+│   │   └── seed/              # Database seeding
+│   ├── internal/              # Private application code
+│   │   ├── config/            # Configuration management
+│   │   ├── http/              # HTTP handlers and middleware
+│   │   ├── ml/                # ML client integration
+│   │   ├── models/            # Domain models
+│   │   └── store/             # Database access layer
+│   ├── migrations/            # SQL migration files
+│   └── sqlc.yaml              # SQLC configuration
+├── frontend/                   # React application
 │   ├── src/
 │   │   ├── components/        # React components
-│   │   ├── App.jsx           # Main application component
+│   │   ├── App.jsx           # Main application
 │   │   ├── api.js            # API client
-│   │   ├── index.css         # Global styles
 │   │   └── main.jsx          # Application entrypoint
-│   ├── index.html
 │   ├── package.json
 │   └── vite.config.js
-├── internal/                  # Private application code
-│   ├── config/                # Configuration management
-│   │   └── config.go
-│   ├── http/                  # HTTP layer
-│   │   ├── handlers/          # HTTP request handlers
-│   │   │   ├── analytics.go
-│   │   │   ├── assessments.go
-│   │   │   ├── auth.go
-│   │   │   ├── export.go
-│   │   │   ├── health.go
-│   │   │   ├── patients.go
-│   │   │   └── utils.go
-│   │   ├── middleware/        # HTTP middleware
-│   │   │   ├── auth.go        # JWT authentication
-│   │   │   └── logger.go      # Request logging and tracing
-│   │   └── router/            # Route configuration
-│   │       └── router.go
-│   ├── ml/                    # Machine learning integration
-│   │   ├── http_predictor.go  # HTTP-based ML predictor
-│   │   ├── mock.go           # Mock predictor for development
-│   │   └── README.md
-│   ├── models/                # Domain models and DTOs
-│   │   └── types.go
-│   └── store/                 # Data access layer
-│       ├── postgres.go        # PostgreSQL implementation
-│       ├── queries/           # SQL query definitions
-│       │   ├── assessments.sql
-│       │   ├── patients.sql
-│       │   └── users.sql
-│       ├── sqlc/              # Generated query code
-│       └── store.go           # Storage interfaces
-├── migrations/                # Database migrations
-│   ├── 0001_init.sql
-│   └── 0002_add_family_history_and_phys_activity.sql
-├── scripts/                   # Development and operational scripts
-│   ├── debug-neon.sh         # Database connectivity debugging
-│   ├── dev-setup.sh          # Initial development setup
-│   ├── run-dev.sh            # Full-stack development runner
-│   └── test-db.sh            # Database connection testing
-├── .env.example              # Example environment variables
-├── .env.local.example        # Example local overrides
-├── .gitignore               # Git ignore patterns
-├── go.mod                   # Go module definition
-├── go.sum                   # Go module checksums
-├── Makefile                 # Build and development commands
-├── README.md                # Project overview and quickstart
-└── sqlc.yaml                # SQLC configuration
+├── ml/                         # Machine Learning (Python)
+│   ├── README.md              # ML module documentation
+│   ├── server.py              # Flask API server
+│   ├── predict.py             # Prediction logic
+│   ├── train.py               # Model training
+│   ├── clustering.py          # Risk clustering
+│   ├── data_processing.py     # Data preparation
+│   └── requirements.txt       # Python dependencies
+├── models/                     # Trained ML model artifacts
+│   ├── clinical/              # Clinical model files
+│   └── *.joblib               # Serialized models
+├── data/                       # Raw datasets
+│   └── nhanes/                # NHANES data files
+├── scripts/                    # Shell scripts
+│   ├── README.md              # Scripts documentation
+│   ├── setup.sh               # Project setup
+│   ├── run-dev.sh             # Development runner
+│   ├── start-ml.sh            # ML server starter
+│   └── test-db.sh             # Database testing
+├── docs/                       # Documentation
+│   ├── architecture/          # Architecture docs
+│   ├── dev/                   # Developer guides
+│   └── ops/                   # Operations docs
+├── build/                      # Container configuration
+│   └── Dockerfile
+├── Makefile                    # Build commands
+└── README.md                   # Project overview
 ```
 
 ## Architecture Layers
