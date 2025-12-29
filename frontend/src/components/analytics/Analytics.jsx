@@ -9,7 +9,64 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
-import { TrendingUp, Activity, Users, BarChart3, Brain, Target, Layers } from 'lucide-react';
+import { TrendingUp, Activity, Users, BarChart3, Brain, Target, Layers, AlertCircle, Image } from 'lucide-react';
+
+// Loading Skeleton Component
+const LoadingSkeleton = ({ className = '' }) => (
+  <div className={`animate-pulse bg-[#E0E5F2] rounded-xl ${className}`} />
+);
+
+// ML Loading Skeleton for the metrics section
+const MLMetricsSkeleton = () => (
+  <div className="bg-gradient-to-br from-[#4318FF] to-[#7C3AED] p-8 rounded-3xl shadow-lg">
+    <div className="flex items-center gap-3 mb-6">
+      <LoadingSkeleton className="w-7 h-7 rounded-full !bg-white/20" />
+      <LoadingSkeleton className="w-48 h-7 !bg-white/20" />
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="bg-white/10 p-4 rounded-2xl">
+          <LoadingSkeleton className="w-20 h-4 mb-2 !bg-white/20" />
+          <LoadingSkeleton className="w-16 h-6 !bg-white/20" />
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+// Visualization Card with loading/error states
+const VisualizationCard = ({ title, visualizationName }) => {
+  const [status, setStatus] = useState('loading'); // 'loading', 'loaded', 'error'
+
+  return (
+    <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+      <h3 className="text-xl font-bold text-[#1B2559] mb-4">{title}</h3>
+      {status === 'loading' && (
+        <LoadingSkeleton className="w-full h-64" />
+      )}
+      <img
+        src={getMLVisualizationUrl(visualizationName)}
+        alt={title}
+        className={`w-full rounded-xl ${status !== 'loaded' ? 'hidden' : ''}`}
+        onLoad={() => setStatus('loaded')}
+        onError={() => setStatus('error')}
+      />
+      {status === 'error' && (
+        <div className="w-full h-64 flex flex-col items-center justify-center bg-[#F4F7FE] rounded-xl text-[#A3AED0]">
+          <Image size={48} className="mb-3 opacity-40" />
+          <p className="font-medium">Visualization Unavailable</p>
+          <p className="text-sm mt-1">ML server may be offline</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Format metric value - shows N/A if null/undefined/0
+const formatMetric = (value, isPercentage = false, decimals = 1) => {
+  if (value === null || value === undefined || value === 0) return 'N/A';
+  return isPercentage ? `${(value * 100).toFixed(decimals)}%` : value.toFixed(decimals);
+};
 
 const Analytics = ({ token, patients = [] }) => {
   const [clusters, setClusters] = useState([]);
@@ -23,6 +80,8 @@ const Analytics = ({ token, patients = [] }) => {
   const [mlIG, setMlIG] = useState(null);
   const [mlClusters, setMlClusters] = useState(null);
   const [mlLoading, setMlLoading] = useState(false);
+  const [mlError, setMlError] = useState(null);
+
 
   useEffect(() => {
     if (!token) return;
@@ -60,6 +119,7 @@ const Analytics = ({ token, patients = [] }) => {
   useEffect(() => {
     const loadML = async () => {
       setMlLoading(true);
+      setMlError(null);
       try {
         const [metrics, ig, clusters] = await Promise.all([
           fetchMLMetricsApi().catch(() => null),
@@ -69,8 +129,13 @@ const Analytics = ({ token, patients = [] }) => {
         setMlMetrics(metrics);
         setMlIG(ig);
         setMlClusters(clusters);
+        // Check if all ML data failed
+        if (!metrics && !ig && !clusters) {
+          setMlError('ML server is unavailable. Some analytics may be limited.');
+        }
       } catch (err) {
         console.error('Failed to load ML data:', err);
+        setMlError('Failed to connect to ML server');
       } finally {
         setMlLoading(false);
       }
@@ -81,7 +146,7 @@ const Analytics = ({ token, patients = [] }) => {
   // Calculate risk factor importance from real IG data or fallback to mock
   const riskFactorImportance = useMemo(() => {
     if (mlIG && mlIG.feature_ranking) {
-      const colors = ['#4318FF', '#6AD2FF', '#FFB547', '#05CD99', '#EE5D50', '#A3AED0', '#7C3AED'];
+      const colors = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#64748B', '#6366F1'];
       return mlIG.feature_ranking.map((item, i) => ({
         factor: item.feature.charAt(0).toUpperCase() + item.feature.slice(1),
         importance: item.ig,
@@ -90,12 +155,12 @@ const Analytics = ({ token, patients = [] }) => {
     }
     // Fallback mock data
     return [
-      { factor: 'HbA1c', importance: 0.28, color: '#4318FF' },
-      { factor: 'FBS', importance: 0.25, color: '#6AD2FF' },
-      { factor: 'BMI', importance: 0.18, color: '#FFB547' },
-      { factor: 'Age', importance: 0.12, color: '#05CD99' },
-      { factor: 'Blood Pressure', importance: 0.10, color: '#EE5D50' },
-      { factor: 'Physical Activity', importance: 0.07, color: '#A3AED0' }
+      { factor: 'HbA1c', importance: 0.28, color: '#7C3AED' },
+      { factor: 'FBS', importance: 0.25, color: '#06B6D4' },
+      { factor: 'BMI', importance: 0.18, color: '#10B981' },
+      { factor: 'Age', importance: 0.12, color: '#F59E0B' },
+      { factor: 'Blood Pressure', importance: 0.10, color: '#F43F5E' },
+      { factor: 'Physical Activity', importance: 0.07, color: '#64748B' }
     ];
   }, [mlIG]);
 
@@ -199,36 +264,46 @@ const Analytics = ({ token, patients = [] }) => {
         </div>
       </div>
 
+      {/* ML Error Banner */}
+      {mlError && !mlLoading && (
+        <div className="bg-[#FFF5F5] border border-[#EE5D50]/30 p-4 rounded-2xl flex items-center gap-3 text-[#EE5D50]">
+          <AlertCircle size={20} />
+          <span className="text-sm font-medium">{mlError}</span>
+        </div>
+      )}
+
+      {/* ML Loading Skeleton */}
+      {mlLoading && <MLMetricsSkeleton />}
+
       {/* ML Model Performance Dashboard */}
-      {mlMetrics && (
+      {!mlLoading && mlMetrics && (
         <div className="bg-gradient-to-br from-[#4318FF] to-[#7C3AED] p-8 rounded-3xl shadow-lg text-white">
           <div className="flex items-center gap-3 mb-6">
             <Brain size={28} />
             <h3 className="text-2xl font-bold">ML Model Performance</h3>
-            {mlLoading && <span className="text-xs opacity-70">Loading...</span>}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
               <p className="text-white/70 text-sm mb-1">Best Model</p>
-              <p className="text-xl font-bold">{mlMetrics.best_model?.best_model || 'Random Forest'}</p>
+              <p className="text-xl font-bold">{mlMetrics.best_model?.best_model || 'N/A'}</p>
             </div>
             <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
               <p className="text-white/70 text-sm mb-1">Accuracy</p>
               <p className="text-xl font-bold">
-                {((mlMetrics.best_model?.metrics?.accuracy || 0) * 100).toFixed(1)}%
+                {formatMetric(mlMetrics.best_model?.metrics?.accuracy, true)}
               </p>
             </div>
             <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
               <p className="text-white/70 text-sm mb-1">AUC-ROC</p>
               <p className="text-xl font-bold">
-                {(mlMetrics.best_model?.metrics?.auc_roc || 0).toFixed(3)}
+                {formatMetric(mlMetrics.best_model?.metrics?.auc_roc, false, 3)}
               </p>
             </div>
             <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
               <p className="text-white/70 text-sm mb-1">F1-Score</p>
               <p className="text-xl font-bold">
-                {((mlMetrics.best_model?.metrics?.f1_score || 0) * 100).toFixed(1)}%
+                {formatMetric(mlMetrics.best_model?.metrics?.f1_score, true)}
               </p>
             </div>
           </div>
@@ -250,10 +325,10 @@ const Analytics = ({ token, patients = [] }) => {
                   {mlMetrics.model_comparison.map((m, i) => (
                     <tr key={i} className="border-b border-white/10">
                       <td className="py-2 font-medium">{m.Model}</td>
-                      <td className="text-right py-2">{(m.Accuracy * 100).toFixed(1)}%</td>
-                      <td className="text-right py-2">{(m.Precision * 100).toFixed(1)}%</td>
-                      <td className="text-right py-2">{(m.Recall * 100).toFixed(1)}%</td>
-                      <td className="text-right py-2">{m['AUC-ROC'].toFixed(3)}</td>
+                      <td className="text-right py-2">{formatMetric(m.Accuracy, true)}</td>
+                      <td className="text-right py-2">{formatMetric(m.Precision, true)}</td>
+                      <td className="text-right py-2">{formatMetric(m.Recall, true)}</td>
+                      <td className="text-right py-2">{formatMetric(m['AUC-ROC'], false, 3)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -265,46 +340,14 @@ const Analytics = ({ token, patients = [] }) => {
 
       {/* ML Visualizations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
-          <h3 className="text-xl font-bold text-[#1B2559] mb-4">ROC Curve</h3>
-          <img
-            src={getMLVisualizationUrl('roc_curve')}
-            alt="ROC Curve"
-            className="w-full rounded-xl"
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
-        </div>
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
-          <h3 className="text-xl font-bold text-[#1B2559] mb-4">Confusion Matrix</h3>
-          <img
-            src={getMLVisualizationUrl('confusion_matrix')}
-            alt="Confusion Matrix"
-            className="w-full rounded-xl"
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
-        </div>
+        <VisualizationCard title="ROC Curve" visualizationName="roc_curve" />
+        <VisualizationCard title="Confusion Matrix" visualizationName="confusion_matrix" />
       </div>
 
       {/* Cluster Visualizations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
-          <h3 className="text-xl font-bold text-[#1B2559] mb-4">Cluster Heatmap</h3>
-          <img
-            src={getMLVisualizationUrl('cluster_heatmap')}
-            alt="Cluster Heatmap"
-            className="w-full rounded-xl"
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
-        </div>
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
-          <h3 className="text-xl font-bold text-[#1B2559] mb-4">Cluster Distribution</h3>
-          <img
-            src={getMLVisualizationUrl('cluster_distribution')}
-            alt="Cluster Distribution"
-            className="w-full rounded-xl"
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
-        </div>
+        <VisualizationCard title="Cluster Heatmap" visualizationName="cluster_heatmap" />
+        <VisualizationCard title="Cluster Distribution" visualizationName="cluster_distribution" />
       </div>
 
       {/* Risk Factor Importance Chart */}
@@ -471,6 +514,11 @@ const Analytics = ({ token, patients = [] }) => {
                     border: 'none',
                     borderRadius: '12px',
                     color: '#fff'
+                  }}
+                  formatter={(value, name, props) => {
+                    const total = clusters.reduce((sum, c) => sum + (c.count || 0), 0);
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    return [`${value} patients (${percentage}%)`, props.payload?.fullName || name];
                   }}
                 />
               </PieChart>

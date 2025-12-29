@@ -20,10 +20,17 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 	r.Use(middleware.SecurityHeaders())
 
 	corsCfg := cors.Config{
-		AllowOrigins: cfg.CORSOrigins,
-		AllowMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
-		MaxAge:       12 * time.Hour,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
+	// In dev mode, allow all origins; in production, use configured origins
+	if cfg.Env == "dev" || cfg.Env == "development" {
+		corsCfg.AllowAllOrigins = true
+		corsCfg.AllowCredentials = false // Can't use AllowCredentials with AllowAllOrigins
+	} else {
+		corsCfg.AllowOrigins = cfg.CORSOrigins
 	}
 	r.Use(cors.New(corsCfg))
 

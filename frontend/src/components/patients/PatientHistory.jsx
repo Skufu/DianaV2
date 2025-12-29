@@ -14,7 +14,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
     weight: '',
     fbs: '',
     hba1c: '',
-    menopauseStatus: 'Perimenopause',
+    menopauseStatus: 'Postmenopause',
     yearsMenopause: 0,
     familyHistory: false,
     physActivity: false,
@@ -38,6 +38,122 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   const [editingPatient, setEditingPatient] = useState(null);
   const [editingAssessment, setEditingAssessment] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  // Form wizard state
+  const [currentStep, setCurrentStep] = useState(1);
+  const totalSteps = 3;
+  const stepTitles = ['Demographics', 'Biomarkers', 'Medical History'];
+
+  // Step validation
+  const validateStep = (step) => {
+    switch (step) {
+      case 1:
+        if (!formData.name.trim()) {
+          setFormError('Patient name is required');
+          return false;
+        }
+        if (!formData.age || Number(formData.age) <= 0) {
+          setFormError('Valid age is required');
+          return false;
+        }
+        break;
+      case 2:
+        if (!formData.fbs || Number(formData.fbs) <= 0) {
+          setFormError('Fasting Blood Sugar is required');
+          return false;
+        }
+        if (!formData.hba1c || Number(formData.hba1c) <= 0) {
+          setFormError('HbA1c is required');
+          return false;
+        }
+        break;
+      default:
+        break;
+    }
+    setFormError(null);
+    return true;
+  };
+
+  const nextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+    }
+  };
+
+  const prevStep = () => {
+    setFormError(null);
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+  };
+
+  // Reset step when form opens
+  const resetForm = () => {
+    setCurrentStep(1);
+    setFormError(null);
+    setPrediction(null);
+    setCluster(null);
+    setFormData({
+      name: '',
+      age: '',
+      height: '',
+      weight: '',
+      fbs: '',
+      hba1c: '',
+      menopauseStatus: 'Postmenopause',
+      yearsMenopause: 0,
+      familyHistory: false,
+      physActivity: false,
+      systolic: '',
+      diastolic: '',
+      activity: 'No',
+      cholesterol: '',
+      ldl: '',
+      hdl: '',
+      triglycerides: '',
+      smoking: 'No',
+      hypertension: 'No',
+      heartDisease: 'No',
+    });
+  };
+
+  // Step Indicator Component
+  const StepIndicator = () => (
+    <div className="flex items-center justify-center mb-8">
+      {stepTitles.map((title, idx) => {
+        const stepNum = idx + 1;
+        const isCompleted = currentStep > stepNum;
+        const isCurrent = currentStep === stepNum;
+
+        return (
+          <React.Fragment key={idx}>
+            <div className="flex flex-col items-center">
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${isCompleted
+                  ? 'bg-[#05CD99] text-white'
+                  : isCurrent
+                    ? 'bg-[#4318FF] text-white shadow-lg shadow-[#4318FF]/30'
+                    : 'bg-[#F4F7FE] text-[#A3AED0] border-2 border-[#E0E5F2]'
+                  }`}
+              >
+                {isCompleted ? <CheckCircle size={18} /> : stepNum}
+              </div>
+              <span
+                className={`mt-2 text-xs font-medium ${isCurrent ? 'text-[#4318FF]' : isCompleted ? 'text-[#05CD99]' : 'text-[#A3AED0]'
+                  }`}
+              >
+                {title}
+              </span>
+            </div>
+            {idx < stepTitles.length - 1 && (
+              <div
+                className={`w-16 h-1 mx-2 rounded-full transition-colors ${isCompleted ? 'bg-[#05CD99]' : 'bg-[#E0E5F2]'
+                  }`}
+              />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
 
   // Keep selectedPatient's summary fields in sync with the latest data
   // from the /patients API (single source of truth on the backend).
@@ -189,7 +305,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   const handleEditPatient = (patient) => {
     setEditingPatient({
       ...patient,
-      menopauseStatus: patient.menopause_status || patient.menopauseStatus || 'Perimenopause',
+      menopauseStatus: patient.menopause_status || patient.menopauseStatus || 'Postmenopause',
       yearsMenopause: patient.years_menopause || patient.yearsMenopause || 0,
       familyHistory: patient.family_history || patient.familyHistory || false,
       physActivity: patient.phys_activity || patient.physActivity || false,
@@ -561,229 +677,258 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
     );
   };
 
+  // Render profile view when a patient is selected
+  if (viewState === 'profile' && selectedPatient) {
+    return <PatientProfileView patient={selectedPatient} />;
+  }
+
   if (viewState === 'form') {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-        <div className="bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto p-6 lg:p-8 relative animate-scale-in">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 md:p-4 animate-fade-in">
+        <div className="bg-white rounded-3xl shadow-2xl max-w-[95vw] md:max-w-6xl w-full max-h-[95vh] overflow-y-auto p-4 md:p-6 lg:p-8 relative animate-scale-in">
           <button
-            onClick={() => setViewState('list')}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#F4F7FE] text-[#1B2559] flex items-center justify-center hover:bg-[#E0E5F2] transition-colors"
+            onClick={() => { resetForm(); setViewState('list'); }}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#F4F7FE] text-[#1B2559] flex items-center justify-center hover:bg-[#E0E5F2] transition-colors z-10"
           >
             <X size={18} />
           </button>
-          <header className="flex items-center gap-4 mb-8">
-            <button
-              onClick={() => setViewState('list')}
-              className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-[#1B2559] hover:bg-[#F4F7FE] transition-colors border border-[#E0E5F2]"
-            >
-              <ChevronRight className="rotate-180" />
-            </button>
-            <div>
-              <h2 className="text-3xl font-bold text-[#1B2559]">New Assessment</h2>
-              <p className="text-[#A3AED0]">Complete biomarker data for Cluster-Based Identification.</p>
+          <header className="mb-6">
+            <div className="flex items-center gap-4 mb-6">
+              <button
+                onClick={() => { resetForm(); setViewState('list'); }}
+                className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-[#1B2559] hover:bg-[#F4F7FE] transition-colors border border-[#E0E5F2]"
+              >
+                <ChevronRight className="rotate-180" size={18} />
+              </button>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-[#1B2559]">New Assessment</h2>
+                <p className="text-[#A3AED0] text-sm">Step {currentStep} of {totalSteps}</p>
+              </div>
             </div>
+            <StepIndicator />
           </header>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
-                {formError && <div className="mb-4 text-sm text-[#EE5D50] font-semibold">{formError}</div>}
-                <div className="mb-8">
-                  <h3 className="text-[#1B2559] text-lg font-bold mb-6 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-[#4318FF]/10 text-[#4318FF] flex items-center justify-center">
-                      <Users size={18} />
-                    </div>
-                    Patient Demographics
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[#1B2559] text-sm font-bold ml-1">Name</label>
-                      <input
-                        type="text"
-                        className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[#1B2559] text-sm font-bold ml-1">Age</label>
-                      <input
-                        type="number"
-                        className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
-                        onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[#1B2559] text-sm font-bold ml-1">Weight (kg)</label>
-                      <input
-                        type="number"
-                        className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
-                        onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[#1B2559] text-sm font-bold ml-1">Height (cm)</label>
-                      <input
-                        type="number"
-                        className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
-                        onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2 col-span-2 md:col-span-1">
-                      <label className="text-[#1B2559] text-sm font-bold ml-1">Menopausal Status</label>
-                      <select
-                        className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all appearance-none"
-                        onChange={(e) => setFormData({ ...formData, menopauseStatus: e.target.value })}
-                      >
-                        <option value="Perimenopause">Perimenopause</option>
-                        <option value="Menopause">Menopause</option>
-                        <option value="Postmenopause">Postmenopause</option>
-                        <option value="Surgical Menopause">Surgical Menopause</option>
-                      </select>
-                    </div>
-                    {formData.menopauseStatus !== 'Perimenopause' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+            <div className={`${currentStep === 3 ? 'lg:col-span-2' : 'lg:col-span-3'} space-y-6`}>
+              <div className="bg-white p-4 md:p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+                {formError && <div className="mb-4 p-3 bg-[#FFF5F5] border border-[#EE5D50]/30 rounded-xl text-sm text-[#EE5D50] font-semibold flex items-center gap-2"><XCircle size={16} /> {formError}</div>}
+
+                {/* Step 1: Demographics */}
+                {currentStep === 1 && (
+                  <div className="animate-fade-in">
+                    <h3 className="text-[#1B2559] text-lg font-bold mb-6 flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-[#4318FF]/10 text-[#4318FF] flex items-center justify-center">
+                        <Users size={18} />
+                      </div>
+                      Patient Demographics
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[#1B2559] text-sm font-bold ml-1">Name</label>
+                        <input
+                          type="text"
+                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[#1B2559] text-sm font-bold ml-1">Age</label>
+                        <input
+                          type="number"
+                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                          onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[#1B2559] text-sm font-bold ml-1">Weight (kg)</label>
+                        <input
+                          type="number"
+                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                          onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[#1B2559] text-sm font-bold ml-1">Height (cm)</label>
+                        <input
+                          type="number"
+                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                          onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2 md:col-span-1">
+                        <label className="text-[#1B2559] text-sm font-bold ml-1">Menopausal Status</label>
+                        <div className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] font-medium">
+                          Postmenopausal
+                        </div>
+                      </div>
                       <div className="space-y-2 col-span-2 md:col-span-2 animate-fade-in">
                         <label className="text-[#1B2559] text-sm font-bold ml-1">Years Since Menopause</label>
                         <input
                           type="number"
                           className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                          value={formData.yearsMenopause}
                           onChange={(e) => setFormData({ ...formData, yearsMenopause: e.target.value })}
                         />
                       </div>
-                    )}
-                  </div>
-                </div>
-                <div className="w-full h-px bg-[#E0E5F2] my-8" />
-                <div className="mb-8">
-                  <h3 className="text-[#1B2559] text-lg font-bold mb-6 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-[#4318FF]/10 text-[#4318FF] flex items-center justify-center">
-                      <Thermometer size={18} />
-                    </div>
-                    Blood Biomarkers
-                  </h3>
-                  <div className="grid grid-cols-2 gap-6 mb-6">
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">Fasting Blood Sugar</label>
-                        <span className="text-[#A3AED0] text-xs">Normal: &lt;100</span>
-                      </div>
-                      <input
-                        type="number"
-                        className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
-                        placeholder="mg/dL"
-                        onChange={(e) => setFormData({ ...formData, fbs: e.target.value })}
-                      />
-                      <p className="text-[11px] text-[#A3AED0]">Refer to lab ranges (FBS/OGTT) from study tables.</p>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">HbA1c (%)</label>
-                        <span className="text-[#A3AED0] text-xs">Normal: &lt;5.7%</span>
-                      </div>
-                      <input
-                        type="number"
-                        step="0.1"
-                        className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
-                        placeholder="%"
-                        onChange={(e) => setFormData({ ...formData, hba1c: e.target.value })}
-                      />
-                      <p className="text-[11px] text-[#A3AED0]">Use recent lab value; long-term control indicator.</p>
                     </div>
                   </div>
-                  <div className="bg-[#F4F7FE] p-6 rounded-2xl border border-[#E0E5F2]">
-                    <h4 className="text-[#707EAE] font-bold text-sm uppercase mb-4">Lipid Profile</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {[
-                        { key: 'cholesterol', label: 'Total Cholesterol' },
-                        { key: 'triglycerides', label: 'Triglycerides' },
-                        { key: 'ldl', label: 'LDL-C' },
-                        { key: 'hdl', label: 'HDL-C' },
-                      ].map((field) => (
-                        <div className="space-y-2" key={field.key}>
-                          <label className="text-[#1B2559] text-xs font-bold ml-1">{field.label}</label>
+                )}
+
+                {/* Step 2: Biomarkers */}
+                {currentStep === 2 && (
+                  <div className="animate-fade-in">
+                    <div className="mb-8">
+                      <h3 className="text-[#1B2559] text-lg font-bold mb-6 flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-[#4318FF]/10 text-[#4318FF] flex items-center justify-center">
+                          <Thermometer size={18} />
+                        </div>
+                        Blood Biomarkers
+                      </h3>
+                      <div className="grid grid-cols-2 gap-6 mb-6">
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <label className="text-[#1B2559] text-sm font-bold ml-1">Fasting Blood Sugar</label>
+                            <span className="text-[#A3AED0] text-xs">Normal: &lt;100</span>
+                          </div>
                           <input
                             type="number"
-                            className="w-full bg-white border border-transparent p-3 rounded-lg text-[#1B2559] focus:border-[#4318FF] outline-none transition-all shadow-sm"
+                            className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
                             placeholder="mg/dL"
-                            onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                            onChange={(e) => setFormData({ ...formData, fbs: e.target.value })}
                           />
+                          <p className="text-[11px] text-[#A3AED0]">Refer to lab ranges (FBS/OGTT) from study tables.</p>
                         </div>
-                      ))}
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <label className="text-[#1B2559] text-sm font-bold ml-1">HbA1c (%)</label>
+                            <span className="text-[#A3AED0] text-xs">Normal: &lt;5.7%</span>
+                          </div>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                            placeholder="%"
+                            onChange={(e) => setFormData({ ...formData, hba1c: e.target.value })}
+                          />
+                          <p className="text-[11px] text-[#A3AED0]">Use recent lab value; long-term control indicator.</p>
+                        </div>
+                      </div>
+                      <div className="bg-[#F4F7FE] p-6 rounded-2xl border border-[#E0E5F2]">
+                        <h4 className="text-[#707EAE] font-bold text-sm uppercase mb-4">Lipid Profile</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {[
+                            { key: 'cholesterol', label: 'Total Cholesterol' },
+                            { key: 'triglycerides', label: 'Triglycerides' },
+                            { key: 'ldl', label: 'LDL-C' },
+                            { key: 'hdl', label: 'HDL-C' },
+                          ].map((field) => (
+                            <div className="space-y-2" key={field.key}>
+                              <label className="text-[#1B2559] text-xs font-bold ml-1">{field.label}</label>
+                              <input
+                                type="number"
+                                className="w-full bg-white border border-transparent p-3 rounded-lg text-[#1B2559] focus:border-[#4318FF] outline-none transition-all shadow-sm"
+                                placeholder="mg/dL"
+                                onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="w-full h-px bg-[#E0E5F2] my-8" />
-                <div>
-                  <h3 className="text-[#1B2559] text-lg font-bold mb-6 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-[#4318FF]/10 text-[#4318FF] flex items-center justify-center">
-                      <Clipboard size={18} />
-                    </div>
-                    Medical History & Lifestyle
-                  </h3>
-                  <div className="grid grid-cols-2 gap-6 mb-6">
-                    <div className="space-y-2">
-                      <label className="text-[#1B2559] text-sm font-bold ml-1">Systolic BP</label>
-                      <input
-                        type="number"
-                        className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] outline-none transition-all"
-                        placeholder="mmHg"
-                        onChange={(e) => setFormData({ ...formData, systolic: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[#1B2559] text-sm font-bold ml-1">Diastolic BP</label>
-                      <input
-                        type="number"
-                        className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] outline-none transition-all"
-                        placeholder="mmHg"
-                        onChange={(e) => setFormData({ ...formData, diastolic: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2 col-span-2">
-                      <label className="text-[#1B2559] text-sm font-bold ml-1">Physical Activity (Yes/No)</label>
-                      <select
-                        className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] outline-none transition-all appearance-none"
-                        value={formData.physActivity ? 'Yes' : 'No'}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            physActivity: e.target.value === 'Yes',
-                            activity: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="No">No</option>
-                        <option value="Yes">Yes</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {[
-                      { key: 'familyHistory', label: 'Family History of Diabetes' },
-                      { key: 'smoking', label: 'Smoking History', checkboxVal: 'Yes', fallback: 'No' },
-                      { key: 'hypertension', label: 'History of Hypertension', checkboxVal: 'Yes', fallback: 'No' },
-                      { key: 'heartDisease', label: 'History of Heart Disease', checkboxVal: 'Yes', fallback: 'No' },
-                    ].map((item) => (
-                      <label
-                        key={item.key}
-                        className="flex items-center gap-3 p-4 rounded-xl border border-[#E0E5F2] cursor-pointer hover:bg-[#F4F7FE] transition-colors"
-                      >
+                )}
+
+                {/* Step 3: Medical History */}
+                {currentStep === 3 && (
+                  <div className="animate-fade-in">
+                    <h3 className="text-[#1B2559] text-lg font-bold mb-6 flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-[#4318FF]/10 text-[#4318FF] flex items-center justify-center">
+                        <Clipboard size={18} />
+                      </div>
+                      Medical History &amp; Lifestyle
+                    </h3>
+                    <div className="grid grid-cols-2 gap-6 mb-6">
+                      <div className="space-y-2">
+                        <label className="text-[#1B2559] text-sm font-bold ml-1">Systolic BP</label>
                         <input
-                          type="checkbox"
-                          className="w-5 h-5 rounded text-[#4318FF] focus:ring-[#4318FF]"
+                          type="number"
+                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] outline-none transition-all"
+                          placeholder="mmHg"
+                          onChange={(e) => setFormData({ ...formData, systolic: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[#1B2559] text-sm font-bold ml-1">Diastolic BP</label>
+                        <input
+                          type="number"
+                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] outline-none transition-all"
+                          placeholder="mmHg"
+                          onChange={(e) => setFormData({ ...formData, diastolic: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <label className="text-[#1B2559] text-sm font-bold ml-1">Physical Activity (Yes/No)</label>
+                        <select
+                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] outline-none transition-all appearance-none"
+                          value={formData.physActivity ? 'Yes' : 'No'}
                           onChange={(e) =>
                             setFormData({
                               ...formData,
-                              [item.key]: item.checkboxVal ? (e.target.checked ? item.checkboxVal : item.fallback || 'No') : e.target.checked,
+                              physActivity: e.target.value === 'Yes',
+                              activity: e.target.value,
                             })
                           }
-                        />
-                        <span className="text-[#1B2559] font-medium">{item.label}</span>
-                      </label>
-                    ))}
+                        >
+                          <option value="No">No</option>
+                          <option value="Yes">Yes</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {[
+                        { key: 'familyHistory', label: 'Family History of Diabetes' },
+                        { key: 'smoking', label: 'Smoking History', checkboxVal: 'Yes', fallback: 'No' },
+                        { key: 'hypertension', label: 'History of Hypertension', checkboxVal: 'Yes', fallback: 'No' },
+                        { key: 'heartDisease', label: 'History of Heart Disease', checkboxVal: 'Yes', fallback: 'No' },
+                      ].map((item) => (
+                        <label
+                          key={item.key}
+                          className="flex items-center gap-3 p-4 rounded-xl border border-[#E0E5F2] cursor-pointer hover:bg-[#F4F7FE] transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            className="w-5 h-5 rounded text-[#4318FF] focus:ring-[#4318FF]"
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                [item.key]: item.checkboxVal ? (e.target.checked ? item.checkboxVal : item.fallback || 'No') : e.target.checked,
+                              })
+                            }
+                          />
+                          <span className="text-[#1B2559] font-medium">{item.label}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
+                )}
+
+                {/* Step Navigation */}
+                <div className="flex justify-between items-center mt-8 pt-6 border-t border-[#E0E5F2]">
+                  {currentStep > 1 ? (
+                    <Button variant="ghost" onClick={prevStep}>
+                      ← Back
+                    </Button>
+                  ) : (
+                    <div />
+                  )}
+                  {currentStep < totalSteps ? (
+                    <Button onClick={nextStep}>
+                      Continue →
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             </div>
-            <div className="lg:col-span-1 space-y-6">
+            {currentStep === 3 && <div className="lg:col-span-1 space-y-6 animate-fade-in">
               <div className="bg-[#111C44] rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
                 <div className="relative z-10">
                   <h3 className="text-2xl font-bold mb-2">Live Analysis</h3>
@@ -824,10 +969,10 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                   Next steps: keep these results, schedule a follow-up with your provider, and repeat labs as advised.
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            </div>}
+          </div >
+        </div >
+      </div >
     );
   }
 
@@ -866,15 +1011,9 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[#1B2559] mb-2">Menopause Status</label>
-                  <select
-                    value={editingPatient.menopauseStatus || editingPatient.menopause_status || ''}
-                    onChange={(e) => setEditingPatient({ ...editingPatient, menopauseStatus: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
-                  >
-                    <option>Perimenopause</option>
-                    <option>Postmenopause</option>
-                    <option>Premenopause</option>
-                  </select>
+                  <div className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] bg-[#F4F7FE] text-[#1B2559] font-medium">
+                    Postmenopausal
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
@@ -1032,7 +1171,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                         <td className="p-6 cursor-pointer" onClick={() => handleViewProfile(p)}>
                           <div className="flex flex-wrap gap-2">
                             <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">FBS: {p.fbs || '--'}</div>
-                            <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">A1c: {p.hba1c || '--'}%</div>
+                            <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">HbA1c: {p.hba1c || '--'}%</div>
                             <div className={`px-2 py-1 rounded text-xs font-bold border border-[#E0E5F2] ${riskMeta.badge}`}>
                               {riskMeta.value === '--' ? '--' : `${riskMeta.value}%`}
                             </div>

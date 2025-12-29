@@ -1,6 +1,6 @@
 // Dashboard: cohort overview cards, biomarker trends, cluster distribution.
 import React, { useEffect, useMemo, useState } from 'react';
-import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight } from 'lucide-react';
+import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight, TrendingUp, BarChart2 } from 'lucide-react';
 import { fetchClusterDistributionApi, fetchTrendAnalyticsApi } from '../../api';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
@@ -80,6 +80,25 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
           <p className="text-[#A3AED0] text-sm mt-1">For menopausal women: review assessments, track trends, then consult your provider.</p>
         </div>
       </header>
+
+      {/* Onboarding Prompt for New Users */}
+      {patientCount === 0 && !patientsLoading && (
+        <div className="bg-gradient-to-r from-[#4318FF] via-[#7C3AED] to-[#6AD2FF] p-6 rounded-3xl text-white relative overflow-hidden animate-fade-in">
+          <div className="relative z-10">
+            <h3 className="text-xl font-bold mb-2">Welcome to DIANA 👋</h3>
+            <p className="text-white/80 text-sm mb-4">Get started by creating your first patient assessment. Our ML-powered analysis will help identify diabetes risk clusters for menopausal women.</p>
+            <button
+              onClick={onStartAssessment}
+              className="bg-white text-[#4318FF] px-6 py-2 rounded-xl font-bold text-sm hover:bg-white/90 transition-colors flex items-center gap-2"
+            >
+              Create First Assessment
+              <ArrowRight size={16} />
+            </button>
+          </div>
+          <Activity size={120} className="absolute -right-4 -bottom-4 opacity-10" />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div
           onClick={onStartAssessment}
@@ -199,8 +218,10 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
                 )}
               </AreaChart>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-[#A3AED0] text-sm">
-                No trend data available
+              <div className="w-full h-full flex flex-col items-center justify-center text-[#A3AED0]">
+                <TrendingUp size={48} className="opacity-30 mb-3" />
+                <p className="text-sm font-medium">No trend data yet</p>
+                <p className="text-xs mt-1">Complete patient assessments to see biomarker trends</p>
               </div>
             )}
           </ResponsiveContainer>
@@ -263,7 +284,11 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
                 </div>
               </>
             ) : (
-              <div className="text-sm text-[#A3AED0] py-12">No cluster data yet.</div>
+              <div className="w-full flex flex-col items-center justify-center text-[#A3AED0] py-12">
+                <BarChart2 size={48} className="opacity-30 mb-3" />
+                <p className="text-sm font-medium">No cluster data yet</p>
+                <p className="text-xs mt-1 text-center">Assessments will be grouped into T2DM subtype clusters</p>
+              </div>
             )}
           </div>
           <button
