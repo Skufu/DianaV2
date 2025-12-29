@@ -136,14 +136,14 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${isCompleted
                   ? 'bg-[#05CD99] text-white'
                   : isCurrent
-                    ? 'bg-[#4318FF] text-white shadow-lg shadow-[#4318FF]/30'
-                    : 'bg-[#F4F7FE] text-[#A3AED0] border-2 border-[#E0E5F2]'
+                    ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30'
+                    : 'bg-slate-700/30 text-slate-400 border-2 border-slate-600/30'
                   }`}
               >
                 {isCompleted ? <CheckCircle size={18} /> : stepNum}
               </div>
               <span
-                className={`mt-2 text-xs font-medium ${isCurrent ? 'text-[#4318FF]' : isCompleted ? 'text-[#05CD99]' : 'text-[#A3AED0]'
+                className={`mt-2 text-xs font-medium ${isCurrent ? 'text-teal-400' : isCompleted ? 'text-[#05CD99]' : 'text-slate-400'
                   }`}
               >
                 {title}
@@ -151,7 +151,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             </div>
             {idx < stepTitles.length - 1 && (
               <div
-                className={`w-16 h-1 mx-2 rounded-full transition-colors ${isCompleted ? 'bg-[#05CD99]' : 'bg-[#E0E5F2]'
+                className={`w-16 h-1 mx-2 rounded-full transition-colors ${isCompleted ? 'bg-[#05CD99]' : 'bg-slate-700'
                   }`}
               />
             )}
@@ -191,15 +191,15 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
   const getRiskMeta = (score) => {
     if (score === null || score === undefined || score === '') {
-      return { label: 'No risk available', badge: 'bg-[#EFF4FB] text-[#1B2559]', value: '--' };
+      return { label: 'No risk available', badge: 'bg-[#EFF4FB] text-white', value: '--' };
     }
     const numeric = Number(score);
     if (Number.isNaN(numeric)) {
-      return { label: 'No risk available', badge: 'bg-[#EFF4FB] text-[#1B2559]', value: '--' };
+      return { label: 'No risk available', badge: 'bg-[#EFF4FB] text-white', value: '--' };
     }
     if (numeric >= 67) return { label: 'High risk', badge: 'bg-[#EE5D50] text-white', value: numeric };
-    if (numeric >= 34) return { label: 'Moderate risk', badge: 'bg-[#FFB547] text-[#1B2559]', value: numeric };
-    return { label: 'Low risk', badge: 'bg-[#6AD2FF] text-[#1B2559]', value: numeric };
+    if (numeric >= 34) return { label: 'Moderate risk', badge: 'bg-[#FFB547] text-white', value: numeric };
+    return { label: 'Low risk', badge: 'bg-[#6AD2FF] text-white', value: numeric };
   };
 
   const renderLoadingRows = () =>
@@ -207,26 +207,26 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
       <tr key={`skeleton-${idx}`} className="animate-pulse">
         <td className="p-6">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-[#E0E5F2]" />
+            <div className="w-10 h-10 rounded-full bg-slate-700" />
             <div className="space-y-2">
-              <div className="h-3 w-28 bg-[#E0E5F2] rounded" />
-              <div className="h-2 w-16 bg-[#E0E5F2] rounded" />
+              <div className="h-3 w-28 bg-slate-700 rounded" />
+              <div className="h-2 w-16 bg-slate-700 rounded" />
             </div>
           </div>
         </td>
         <td className="p-6">
-          <div className="h-3 w-20 bg-[#E0E5F2] rounded mb-2" />
-          <div className="h-2 w-14 bg-[#E0E5F2] rounded" />
+          <div className="h-3 w-20 bg-slate-700 rounded mb-2" />
+          <div className="h-2 w-14 bg-slate-700 rounded" />
         </td>
         <td className="p-6">
-          <div className="h-3 w-32 bg-[#E0E5F2] rounded" />
+          <div className="h-3 w-32 bg-slate-700 rounded" />
         </td>
         <td className="p-6">
-          <div className="h-3 w-24 bg-[#E0E5F2] rounded mb-2" />
-          <div className="h-2 w-32 bg-[#E0E5F2] rounded" />
+          <div className="h-3 w-24 bg-slate-700 rounded mb-2" />
+          <div className="h-2 w-32 bg-slate-700 rounded" />
         </td>
         <td className="p-6">
-          <div className="w-8 h-8 rounded-full border border-[#E0E5F2] bg-[#F4F7FE]" />
+          <div className="w-8 h-8 rounded-full border border-slate-600/30 bg-slate-700/30" />
         </td>
       </tr>
     ));
@@ -435,19 +435,19 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => setViewState('list')}
-            className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-[#1B2559] hover:bg-[#F4F7FE] transition-colors"
+            className="w-10 h-10 glass-card rounded-xl shadow-sm flex items-center justify-center text-white hover:bg-slate-700/30 transition-colors"
           >
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h2 className="text-3xl font-bold text-[#1B2559]">{patient.name}</h2>
-            <p className="text-[#A3AED0]">ID: {patient.id || patient.idNumber || 'N/A'} • {patient.status || patient.menopause_status}</p>
+            <h2 className="text-3xl font-bold text-white">{patient.name}</h2>
+            <p className="text-slate-400">ID: {patient.id || patient.idNumber || 'N/A'} • {patient.status || patient.menopause_status}</p>
             <div className="flex flex-wrap gap-2 mt-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold border border-[#E0E5F2] ${riskMeta.badge}`}>{riskMeta.label}</span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#F4F7FE] text-[#1B2559] border border-[#E0E5F2]">
+              <span className={`px-3 py-1 rounded-full text-xs font-bold border border-slate-600/30 ${riskMeta.badge}`}>{riskMeta.label}</span>
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-700/30 text-white border border-slate-600/30">
                 {clusterDescriptions[patient.cluster] || 'Cluster description unavailable'}
               </span>
-              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#F4F7FE] text-[#1B2559] border border-[#E0E5F2]">
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-700/30 text-white border border-slate-600/30">
                 Patient self-check • discuss with provider
               </span>
             </div>
@@ -461,7 +461,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
               ? 'bg-gradient-to-r from-[#6AD2FF] to-[#4318FF]'
               : patient.cluster === 'MARD'
                 ? 'bg-gradient-to-r from-[#05CD99] to-[#6AD2FF]'
-                : 'bg-[#4318FF]'
+                : 'bg-teal-500'
             }`}
         >
           <div className="relative z-10">
@@ -478,26 +478,26 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="space-y-8">
-            <div className="bg-white p-8 rounded-3xl shadow-sm text-center relative overflow-hidden border border-[#E0E5F2]">
+            <div className="glass-card p-8 rounded-3xl shadow-sm text-center relative overflow-hidden border border-slate-600/30">
               <div
                 className={`w-32 h-32 mx-auto rounded-full flex items-center justify-center text-4xl font-bold mb-4 relative z-10 transition-all duration-500 ${patient.risk > 66
                   ? 'bg-[#EE5D50] text-white shadow-red-200 shadow-xl'
                   : patient.risk > 33
-                    ? 'bg-[#FFB547] text-[#1B2559] shadow-orange-200 shadow-xl'
-                    : 'bg-[#6AD2FF] text-[#1B2559] shadow-blue-200 shadow-xl'
+                    ? 'bg-[#FFB547] text-white shadow-orange-200 shadow-xl'
+                    : 'bg-[#6AD2FF] text-white shadow-blue-200 shadow-xl'
                   }`}
               >
                 {patient.risk || patient.risk_score || 'N/A'}%
               </div>
-              <h3 className="text-[#1B2559] font-bold text-xl mb-1">Probabilistic Risk</h3>
-              <p className="text-[#A3AED0] text-sm">Last assessment: {patient.lastVisit || 'N/A'}</p>
+              <h3 className="text-white font-bold text-xl mb-1">Probabilistic Risk</h3>
+              <p className="text-slate-400 text-sm">Last assessment: {patient.lastVisit || 'N/A'}</p>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
-              <h4 className="text-[#1B2559] font-bold mb-3 flex items-center gap-2">
-                <FileText size={18} className="text-[#4318FF]" /> Share with your provider
+            <div className="glass-card p-6 rounded-3xl shadow-sm border border-slate-600/30">
+              <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                <FileText size={18} className="text-teal-400" /> Share with your provider
               </h4>
-              <p className="text-sm text-[#A3AED0] leading-relaxed">
+              <p className="text-sm text-slate-400 leading-relaxed">
                 This tool is informational for patients. Save these results and review them with your clinician for medical decisions.
               </p>
               <div className="mt-4 flex gap-2">
@@ -509,15 +509,15 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
           </div>
 
           <div className="lg:col-span-2 space-y-8">
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+            <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-[#1B2559] font-bold text-xl flex items-center gap-2">
-                  <TrendingUp size={20} className="text-[#4318FF]" /> Historical Biomarker Trends
+                <h3 className="text-white font-bold text-xl flex items-center gap-2">
+                  <TrendingUp size={20} className="text-teal-400" /> Historical Biomarker Trends
                 </h3>
               </div>
               <ResponsiveContainer width="100%" height={320}>
                 {historyLoading ? (
-                  <div className="w-full h-full flex items-center justify-center text-[#A3AED0]">Loading history…</div>
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">Loading history…</div>
                 ) : patient.history && patient.history.length > 0 ? (
                   <AreaChart
                     data={patient.history.map(h => ({
@@ -584,16 +584,16 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                     />
                   </AreaChart>
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-[#A3AED0]">No historical data available.</div>
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">No historical data available.</div>
                 )}
               </ResponsiveContainer>
             </div>
 
             {/* Risk Score Trend Chart */}
             {patient.history && patient.history.length > 0 && (
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+              <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-[#1B2559] font-bold text-xl flex items-center gap-2">
+                  <h3 className="text-white font-bold text-xl flex items-center gap-2">
                     <Activity size={20} className="text-[#EE5D50]" /> Risk Score Progression
                   </h3>
                 </div>
@@ -649,42 +649,42 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             )}
 
             {patient.history && patient.history.length > 0 && (
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
-                <h3 className="text-[#1B2559] font-bold text-xl mb-6 flex items-center gap-2">
-                  <Clipboard size={20} className="text-[#4318FF]" /> Assessment History
+              <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
+                <h3 className="text-white font-bold text-xl mb-6 flex items-center gap-2">
+                  <Clipboard size={20} className="text-teal-400" /> Assessment History
                 </h3>
                 <div className="space-y-3">
                   {patient.history.map((assessment, idx) => (
-                    <div key={assessment.id || idx} className="flex items-center justify-between p-4 bg-[#F4F7FE] rounded-xl border border-[#E0E5F2] hover:border-[#4318FF] transition-colors">
+                    <div key={assessment.id || idx} className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl border border-slate-600/30 hover:border-teal-500 transition-colors">
                       <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
-                          <span className="text-[#A3AED0] text-xs">Date</span>
-                          <div className="text-[#1B2559] font-bold text-sm">{assessment.date || new Date(assessment.created_at).toLocaleDateString()}</div>
+                          <span className="text-slate-400 text-xs">Date</span>
+                          <div className="text-white font-bold text-sm">{assessment.date || new Date(assessment.created_at).toLocaleDateString()}</div>
                         </div>
                         <div>
-                          <span className="text-[#A3AED0] text-xs">FBS / HbA1c</span>
-                          <div className="text-[#1B2559] font-bold text-sm">{assessment.fbs} / {assessment.hba1c}%</div>
+                          <span className="text-slate-400 text-xs">FBS / HbA1c</span>
+                          <div className="text-white font-bold text-sm">{assessment.fbs} / {assessment.hba1c}%</div>
                         </div>
                         <div>
-                          <span className="text-[#A3AED0] text-xs">Risk Score</span>
-                          <div className="text-[#1B2559] font-bold text-sm">{assessment.risk_score}%</div>
+                          <span className="text-slate-400 text-xs">Risk Score</span>
+                          <div className="text-white font-bold text-sm">{assessment.risk_score}%</div>
                         </div>
                         <div>
-                          <span className="text-[#A3AED0] text-xs">Cluster</span>
-                          <div className="text-[#1B2559] font-bold text-sm">{assessment.cluster}</div>
+                          <span className="text-slate-400 text-xs">Cluster</span>
+                          <div className="text-white font-bold text-sm">{assessment.cluster}</div>
                         </div>
                       </div>
                       <div className="flex gap-2 ml-4">
                         <button
                           onClick={() => handleEditAssessment(assessment)}
-                          className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#4318FF] hover:border-[#4318FF] transition-colors bg-white"
+                          className="w-8 h-8 rounded-full border border-slate-600/30 flex items-center justify-center text-slate-400 hover:text-teal-400 hover:border-teal-500 transition-colors glass-card"
                           title="Edit Assessment"
                         >
                           <Edit2 size={14} />
                         </button>
                         <button
                           onClick={() => handleDeleteAssessment(assessment)}
-                          className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#EE5D50] hover:border-[#EE5D50] transition-colors bg-white"
+                          className="w-8 h-8 rounded-full border border-slate-600/30 flex items-center justify-center text-slate-400 hover:text-[#EE5D50] hover:border-[#EE5D50] transition-colors glass-card"
                           title="Delete Assessment"
                         >
                           <Trash2 size={14} />
@@ -709,10 +709,10 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   if (viewState === 'form') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 md:p-4 animate-fade-in">
-        <div className="bg-white rounded-3xl shadow-2xl max-w-[95vw] md:max-w-6xl w-full max-h-[95vh] overflow-y-auto p-4 md:p-6 lg:p-8 relative animate-scale-in">
+        <div className="glass-card rounded-3xl shadow-2xl max-w-[95vw] md:max-w-6xl w-full max-h-[95vh] overflow-y-auto p-4 md:p-6 lg:p-8 relative animate-scale-in">
           <button
             onClick={() => { resetForm(); setViewState('list'); }}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#F4F7FE] text-[#1B2559] flex items-center justify-center hover:bg-[#E0E5F2] transition-colors z-10"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-700/30 text-white flex items-center justify-center hover:bg-slate-700 transition-colors z-10"
           >
             <X size={18} />
           </button>
@@ -720,75 +720,75 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             <div className="flex items-center gap-4 mb-6">
               <button
                 onClick={() => { resetForm(); setViewState('list'); }}
-                className="w-10 h-10 md:w-12 md:h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-[#1B2559] hover:bg-[#F4F7FE] transition-colors border border-[#E0E5F2]"
+                className="w-10 h-10 md:w-12 md:h-12 glass-card rounded-2xl shadow-sm flex items-center justify-center text-white hover:bg-slate-700/30 transition-colors border border-slate-600/30"
               >
                 <ChevronRight className="rotate-180" size={18} />
               </button>
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-[#1B2559]">New Assessment</h2>
-                <p className="text-[#A3AED0] text-sm">Step {currentStep} of {totalSteps}</p>
+                <h2 className="text-2xl md:text-3xl font-bold text-white">New Assessment</h2>
+                <p className="text-slate-400 text-sm">Step {currentStep} of {totalSteps}</p>
               </div>
             </div>
             <StepIndicator />
           </header>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             <div className={`${currentStep === 3 ? 'lg:col-span-2' : 'lg:col-span-3'} space-y-6`}>
-              <div className="bg-white p-4 md:p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+              <div className="glass-card p-4 md:p-8 rounded-3xl shadow-sm border border-slate-600/30">
                 {formError && <div className="mb-4 p-3 bg-[#FFF5F5] border border-[#EE5D50]/30 rounded-xl text-sm text-[#EE5D50] font-semibold flex items-center gap-2"><XCircle size={16} /> {formError}</div>}
 
                 {/* Step 1: Demographics */}
                 {currentStep === 1 && (
                   <div className="animate-fade-in">
-                    <h3 className="text-[#1B2559] text-lg font-bold mb-6 flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-[#4318FF]/10 text-[#4318FF] flex items-center justify-center">
+                    <h3 className="text-white text-lg font-bold mb-6 flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
                         <Users size={18} />
                       </div>
                       Patient Demographics
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">Name</label>
+                        <label className="text-white text-sm font-bold ml-1">Name</label>
                         <input
                           type="text"
-                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">Age</label>
+                        <label className="text-white text-sm font-bold ml-1">Age</label>
                         <input
                           type="number"
-                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
                           onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">Weight (kg)</label>
+                        <label className="text-white text-sm font-bold ml-1">Weight (kg)</label>
                         <input
                           type="number"
-                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
                           onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">Height (cm)</label>
+                        <label className="text-white text-sm font-bold ml-1">Height (cm)</label>
                         <input
                           type="number"
-                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
                           onChange={(e) => setFormData({ ...formData, height: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2 col-span-2 md:col-span-1">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">Menopausal Status</label>
-                        <div className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] font-medium">
+                        <label className="text-white text-sm font-bold ml-1">Menopausal Status</label>
+                        <div className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white font-medium">
                           Postmenopausal
                         </div>
                       </div>
                       <div className="space-y-2 col-span-2 md:col-span-2 animate-fade-in">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">Years Since Menopause</label>
+                        <label className="text-white text-sm font-bold ml-1">Years Since Menopause</label>
                         <input
                           type="number"
-                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
                           value={formData.yearsMenopause}
                           onChange={(e) => setFormData({ ...formData, yearsMenopause: e.target.value })}
                         />
@@ -801,8 +801,8 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 {currentStep === 2 && (
                   <div className="animate-fade-in">
                     <div className="mb-8">
-                      <h3 className="text-[#1B2559] text-lg font-bold mb-6 flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-[#4318FF]/10 text-[#4318FF] flex items-center justify-center">
+                      <h3 className="text-white text-lg font-bold mb-6 flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
                           <Thermometer size={18} />
                         </div>
                         Blood Biomarkers
@@ -810,33 +810,33 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                       <div className="grid grid-cols-2 gap-6 mb-6">
                         <div className="space-y-2">
                           <div className="flex justify-between">
-                            <label className="text-[#1B2559] text-sm font-bold ml-1">Fasting Blood Sugar</label>
-                            <span className="text-[#A3AED0] text-xs">Normal: &lt;100</span>
+                            <label className="text-white text-sm font-bold ml-1">Fasting Blood Sugar</label>
+                            <span className="text-slate-400 text-xs">Normal: &lt;100</span>
                           </div>
                           <input
                             type="number"
-                            className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
                             placeholder="mg/dL"
                             onChange={(e) => setFormData({ ...formData, fbs: e.target.value })}
                           />
-                          <p className="text-[11px] text-[#A3AED0]">Refer to lab ranges (FBS/OGTT) from study tables.</p>
+                          <p className="text-[11px] text-slate-400">Refer to lab ranges (FBS/OGTT) from study tables.</p>
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between">
-                            <label className="text-[#1B2559] text-sm font-bold ml-1">HbA1c (%)</label>
-                            <span className="text-[#A3AED0] text-xs">Normal: &lt;5.7%</span>
+                            <label className="text-white text-sm font-bold ml-1">HbA1c (%)</label>
+                            <span className="text-slate-400 text-xs">Normal: &lt;5.7%</span>
                           </div>
                           <input
                             type="number"
                             step="0.1"
-                            className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/10 outline-none transition-all"
+                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
                             placeholder="%"
                             onChange={(e) => setFormData({ ...formData, hba1c: e.target.value })}
                           />
-                          <p className="text-[11px] text-[#A3AED0]">Use recent lab value; long-term control indicator.</p>
+                          <p className="text-[11px] text-slate-400">Use recent lab value; long-term control indicator.</p>
                         </div>
                       </div>
-                      <div className="bg-[#F4F7FE] p-6 rounded-2xl border border-[#E0E5F2]">
+                      <div className="bg-slate-700/30 p-6 rounded-2xl border border-slate-600/30">
                         <h4 className="text-[#707EAE] font-bold text-sm uppercase mb-4">Lipid Profile</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                           {[
@@ -846,10 +846,10 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                             { key: 'hdl', label: 'HDL-C' },
                           ].map((field) => (
                             <div className="space-y-2" key={field.key}>
-                              <label className="text-[#1B2559] text-xs font-bold ml-1">{field.label}</label>
+                              <label className="text-white text-xs font-bold ml-1">{field.label}</label>
                               <input
                                 type="number"
-                                className="w-full bg-white border border-transparent p-3 rounded-lg text-[#1B2559] focus:border-[#4318FF] outline-none transition-all shadow-sm"
+                                className="w-full glass-card border border-transparent p-3 rounded-lg text-white focus:border-teal-500 outline-none transition-all shadow-sm"
                                 placeholder="mg/dL"
                                 onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
                               />
@@ -864,35 +864,35 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 {/* Step 3: Medical History */}
                 {currentStep === 3 && (
                   <div className="animate-fade-in">
-                    <h3 className="text-[#1B2559] text-lg font-bold mb-6 flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-[#4318FF]/10 text-[#4318FF] flex items-center justify-center">
+                    <h3 className="text-white text-lg font-bold mb-6 flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
                         <Clipboard size={18} />
                       </div>
                       Medical History &amp; Lifestyle
                     </h3>
                     <div className="grid grid-cols-2 gap-6 mb-6">
                       <div className="space-y-2">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">Systolic BP</label>
+                        <label className="text-white text-sm font-bold ml-1">Systolic BP</label>
                         <input
                           type="number"
-                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] outline-none transition-all"
+                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 outline-none transition-all"
                           placeholder="mmHg"
                           onChange={(e) => setFormData({ ...formData, systolic: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">Diastolic BP</label>
+                        <label className="text-white text-sm font-bold ml-1">Diastolic BP</label>
                         <input
                           type="number"
-                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] outline-none transition-all"
+                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 outline-none transition-all"
                           placeholder="mmHg"
                           onChange={(e) => setFormData({ ...formData, diastolic: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2 col-span-2">
-                        <label className="text-[#1B2559] text-sm font-bold ml-1">Physical Activity (Yes/No)</label>
+                        <label className="text-white text-sm font-bold ml-1">Physical Activity (Yes/No)</label>
                         <select
-                          className="w-full bg-[#F4F7FE] border border-transparent p-4 rounded-xl text-[#1B2559] focus:bg-white focus:border-[#4318FF] outline-none transition-all appearance-none"
+                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 outline-none transition-all appearance-none"
                           value={formData.physActivity ? 'Yes' : 'No'}
                           onChange={(e) =>
                             setFormData({
@@ -916,11 +916,11 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                       ].map((item) => (
                         <label
                           key={item.key}
-                          className="flex items-center gap-3 p-4 rounded-xl border border-[#E0E5F2] cursor-pointer hover:bg-[#F4F7FE] transition-colors"
+                          className="flex items-center gap-3 p-4 rounded-xl border border-slate-600/30 cursor-pointer hover:bg-slate-700/30 transition-colors"
                         >
                           <input
                             type="checkbox"
-                            className="w-5 h-5 rounded text-[#4318FF] focus:ring-[#4318FF]"
+                            className="w-5 h-5 rounded text-teal-400 focus:ring-teal-500"
                             onChange={(e) =>
                               setFormData({
                                 ...formData,
@@ -928,7 +928,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                               })
                             }
                           />
-                          <span className="text-[#1B2559] font-medium">{item.label}</span>
+                          <span className="text-white font-medium">{item.label}</span>
                         </label>
                       ))}
                     </div>
@@ -936,7 +936,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 )}
 
                 {/* Step Navigation */}
-                <div className="flex justify-between items-center mt-8 pt-6 border-t border-[#E0E5F2]">
+                <div className="flex justify-between items-center mt-8 pt-6 border-t border-slate-600/30">
                   {currentStep > 1 && currentStep < 4 ? (
                     <Button variant="ghost" onClick={prevStep}>
                       ← Back
@@ -980,8 +980,8 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                     <div className="w-20 h-20 mx-auto rounded-full bg-[#05CD99]/10 flex items-center justify-center mb-4">
                       <CheckCircle size={40} className="text-[#05CD99]" />
                     </div>
-                    <h3 className="text-2xl font-bold text-[#1B2559]">Assessment Complete</h3>
-                    <p className="text-[#A3AED0] mt-2">Results have been saved to patient history</p>
+                    <h3 className="text-2xl font-bold text-white">Assessment Complete</h3>
+                    <p className="text-slate-400 mt-2">Results have been saved to patient history</p>
                   </div>
 
                   {/* Cluster Result Card */}
@@ -1014,18 +1014,18 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
                   {/* Cluster Education Section */}
                   {clusterEducation[cluster?.toUpperCase()] && (
-                    <div className="bg-white rounded-3xl p-8 border border-[#E0E5F2]">
+                    <div className="glass-card rounded-3xl p-8 border border-slate-600/30">
                       <div className="flex items-start gap-3 mb-6">
-                        <div className="w-10 h-10 rounded-xl bg-[#4318FF]/10 flex items-center justify-center">
-                          <Info size={20} className="text-[#4318FF]" />
+                        <div className="w-10 h-10 rounded-xl bg-teal-500/10 flex items-center justify-center">
+                          <Info size={20} className="text-teal-400" />
                         </div>
                         <div>
-                          <h4 className="font-bold text-[#1B2559] text-lg">What does {cluster} mean?</h4>
-                          <p className="text-[#A3AED0] text-sm">Understanding your cluster assignment</p>
+                          <h4 className="font-bold text-white text-lg">What does {cluster} mean?</h4>
+                          <p className="text-slate-400 text-sm">Understanding your cluster assignment</p>
                         </div>
                       </div>
 
-                      <p className="text-[#1B2559] leading-relaxed mb-6">
+                      <p className="text-white leading-relaxed mb-6">
                         {clusterEducation[cluster?.toUpperCase()]?.shortDesc}
                       </p>
 
@@ -1034,7 +1034,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                           <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-3">Key Risk Factors</h5>
                           <ul className="space-y-2">
                             {clusterEducation[cluster?.toUpperCase()]?.riskFactors.slice(0, 4).map((factor, i) => (
-                              <li key={i} className="text-sm text-[#1B2559] flex items-start gap-2">
+                              <li key={i} className="text-sm text-white flex items-start gap-2">
                                 <span className="text-[#EE5D50] mt-1">•</span> {factor}
                               </li>
                             ))}
@@ -1044,7 +1044,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                           <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-3">Recommendations</h5>
                           <ul className="space-y-2">
                             {clusterEducation[cluster?.toUpperCase()]?.recommendations.slice(0, 4).map((rec, i) => (
-                              <li key={i} className="text-sm text-[#1B2559] flex items-start gap-2">
+                              <li key={i} className="text-sm text-white flex items-start gap-2">
                                 <span className="text-[#05CD99] mt-1">✓</span> {rec}
                               </li>
                             ))}
@@ -1059,8 +1059,8 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                     <div className="flex items-start gap-3">
                       <AlertTriangle size={24} className="text-[#FFB547] flex-shrink-0 mt-1" />
                       <div>
-                        <h4 className="font-bold text-[#1B2559] mb-2">Important Notice</h4>
-                        <p className="text-sm text-[#1B2559] leading-relaxed">
+                        <h4 className="font-bold text-white mb-2">Important Notice</h4>
+                        <p className="text-sm text-white leading-relaxed">
                           This assessment is for informational purposes. Please discuss these results with your healthcare provider
                           for proper diagnosis and personalized treatment recommendations.
                         </p>
@@ -1098,37 +1098,37 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
       {/* Edit Patient Modal */}
       {editingPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 relative animate-scale-in">
+          <div className="glass-card rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-8 relative animate-scale-in">
             <button
               onClick={() => setEditingPatient(null)}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#F4F7FE] text-[#1B2559] flex items-center justify-center hover:bg-[#E0E5F2] transition-colors"
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-700/30 text-white flex items-center justify-center hover:bg-slate-700 transition-colors"
             >
               <X size={18} />
             </button>
-            <h2 className="text-2xl font-bold text-[#1B2559] mb-6">Edit Patient</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Edit Patient</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[#1B2559] mb-2">Name</label>
+                <label className="block text-sm font-medium text-white mb-2">Name</label>
                 <input
                   type="text"
                   value={editingPatient.name || ''}
                   onChange={(e) => setEditingPatient({ ...editingPatient, name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-600/30 focus:border-teal-500 focus:outline-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#1B2559] mb-2">Age</label>
+                  <label className="block text-sm font-medium text-white mb-2">Age</label>
                   <input
                     type="number"
                     value={editingPatient.age || ''}
                     onChange={(e) => setEditingPatient({ ...editingPatient, age: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-600/30 focus:border-teal-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[#1B2559] mb-2">Menopause Status</label>
-                  <div className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] bg-[#F4F7FE] text-[#1B2559] font-medium">
+                  <label className="block text-sm font-medium text-white mb-2">Menopause Status</label>
+                  <div className="w-full px-4 py-3 rounded-xl border border-slate-600/30 bg-slate-700/30 text-white font-medium">
                     Postmenopausal
                   </div>
                 </div>
@@ -1145,69 +1145,69 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
       {/* Edit Assessment Modal */}
       {editingAssessment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8 relative animate-scale-in">
+          <div className="glass-card rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8 relative animate-scale-in">
             <button
               onClick={() => setEditingAssessment(null)}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#F4F7FE] text-[#1B2559] flex items-center justify-center hover:bg-[#E0E5F2] transition-colors"
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-700/30 text-white flex items-center justify-center hover:bg-slate-700 transition-colors"
             >
               <X size={18} />
             </button>
-            <h2 className="text-2xl font-bold text-[#1B2559] mb-6">Edit Assessment</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Edit Assessment</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-[#1B2559] mb-2">FBS (mg/dL)</label>
+                <label className="block text-sm font-medium text-white mb-2">FBS (mg/dL)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={editingAssessment.fbs || ''}
                   onChange={(e) => setEditingAssessment({ ...editingAssessment, fbs: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-600/30 focus:border-teal-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1B2559] mb-2">HbA1c (%)</label>
+                <label className="block text-sm font-medium text-white mb-2">HbA1c (%)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={editingAssessment.hba1c || ''}
                   onChange={(e) => setEditingAssessment({ ...editingAssessment, hba1c: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-600/30 focus:border-teal-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1B2559] mb-2">Cholesterol</label>
+                <label className="block text-sm font-medium text-white mb-2">Cholesterol</label>
                 <input
                   type="number"
                   value={editingAssessment.cholesterol || ''}
                   onChange={(e) => setEditingAssessment({ ...editingAssessment, cholesterol: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-600/30 focus:border-teal-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1B2559] mb-2">LDL</label>
+                <label className="block text-sm font-medium text-white mb-2">LDL</label>
                 <input
                   type="number"
                   value={editingAssessment.ldl || ''}
                   onChange={(e) => setEditingAssessment({ ...editingAssessment, ldl: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-600/30 focus:border-teal-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1B2559] mb-2">HDL</label>
+                <label className="block text-sm font-medium text-white mb-2">HDL</label>
                 <input
                   type="number"
                   value={editingAssessment.hdl || ''}
                   onChange={(e) => setEditingAssessment({ ...editingAssessment, hdl: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-600/30 focus:border-teal-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1B2559] mb-2">Triglycerides</label>
+                <label className="block text-sm font-medium text-white mb-2">Triglycerides</label>
                 <input
                   type="number"
                   value={editingAssessment.triglycerides || ''}
                   onChange={(e) => setEditingAssessment({ ...editingAssessment, triglycerides: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-[#E0E5F2] focus:border-[#4318FF] focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-600/30 focus:border-teal-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -1222,13 +1222,13 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-scale-in">
+          <div className="glass-card rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-scale-in">
             <div className="text-center">
               <div className="w-16 h-16 bg-[#EE5D50]/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <XCircle size={32} className="text-[#EE5D50]" />
               </div>
-              <h2 className="text-2xl font-bold text-[#1B2559] mb-2">Confirm Delete</h2>
-              <p className="text-[#A3AED0] mb-6">
+              <h2 className="text-2xl font-bold text-white mb-2">Confirm Delete</h2>
+              <p className="text-slate-400 mb-6">
                 Are you sure you want to delete this {deleteConfirm.type}? This action cannot be undone.
               </p>
               <div className="flex gap-3">
@@ -1244,19 +1244,19 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
         <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8">
           <div>
             <h4 className="text-[#707EAE] font-medium text-sm mb-1">Database</h4>
-            <h2 className="text-3xl font-bold text-[#1B2559]">Patient History</h2>
+            <h2 className="text-3xl font-bold text-white">Patient History</h2>
           </div>
         </header>
-        <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-[#E0E5F2]">
+        <div className="glass-card rounded-3xl shadow-sm overflow-hidden border border-slate-600/30">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#E0E5F2] bg-[#F4F7FE]">
-                  <th className="p-6 text-[#A3AED0] font-medium text-sm uppercase tracking-wider">Patient</th>
-                  <th className="p-6 text-[#A3AED0] font_medium text-sm uppercase tracking-wider">Status</th>
-                  <th className="p-6 text-[#A3AED0] font_medium text-sm uppercase tracking-wider">Biomarkers</th>
-                  <th className="p-6 text-[#A3AED0] font_medium text-sm uppercase tracking-wider">Assigned Cluster</th>
-                  <th className="p-6 text-[#A3AED0] font_medium text-sm uppercase tracking-wider">Action</th>
+                <tr className="border-b border-slate-600/30 bg-slate-700/30">
+                  <th className="p-6 text-slate-400 font-medium text-sm uppercase tracking-wider">Patient</th>
+                  <th className="p-6 text-slate-400 font_medium text-sm uppercase tracking-wider">Status</th>
+                  <th className="p-6 text-slate-400 font_medium text-sm uppercase tracking-wider">Biomarkers</th>
+                  <th className="p-6 text-slate-400 font_medium text-sm uppercase tracking-wider">Assigned Cluster</th>
+                  <th className="p-6 text-slate-400 font_medium text-sm uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E0E5F2]">
@@ -1266,30 +1266,30 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                   patients.map((p) => {
                     const riskMeta = getRiskMeta(p.risk ?? p.risk_score);
                     return (
-                      <tr key={p.id} className="hover:bg-[#F4F7FE] transition-colors group">
+                      <tr key={p.id} className="hover:bg-slate-700/30 transition-colors group">
                         <td className="p-6 cursor-pointer" onClick={() => handleViewProfile(p)}>
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-[#4318FF] text-white flex items-center justify-center font-bold shadow-md group-hover:scale-110 transition-transform">
+                            <div className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center font-bold shadow-md group-hover:scale-110 transition-transform">
                               {p.name?.charAt(0) || '?'}
                             </div>
                             <div>
-                              <div className="text-[#1B2559] font-bold text-sm group-hover:text-[#4318FF] transition-colors">{p.name || 'Unnamed'}</div>
-                              <div className="text-[#A3AED0] text-xs font-medium">ID: {p.id || 'N/A'}</div>
+                              <div className="text-white font-bold text-sm group-hover:text-teal-400 transition-colors">{p.name || 'Unnamed'}</div>
+                              <div className="text-slate-400 text-xs font-medium">ID: {p.id || 'N/A'}</div>
                             </div>
                           </div>
                         </td>
                         <td className="p-6 cursor-pointer" onClick={() => handleViewProfile(p)}>
-                          <span className="text-[#1B2559] font-medium text-sm">{p.menopause_status || 'N/A'}</span>
-                          <div className="text-[#A3AED0] text-xs">Age: {p.age || 'N/A'}</div>
-                          <div className="mt-2 inline-block px-2 py-1 rounded-full text-[11px] font-semibold border border-[#E0E5F2] text-[#1B2559] bg-[#F4F7FE]">
+                          <span className="text-white font-medium text-sm">{p.menopause_status || 'N/A'}</span>
+                          <div className="text-slate-400 text-xs">Age: {p.age || 'N/A'}</div>
+                          <div className="mt-2 inline-block px-2 py-1 rounded-full text-[11px] font-semibold border border-slate-600/30 text-white bg-slate-700/30">
                             {riskMeta.label}
                           </div>
                         </td>
                         <td className="p-6 cursor-pointer" onClick={() => handleViewProfile(p)}>
                           <div className="flex flex-wrap gap-2">
-                            <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">FBS: {p.fbs || '--'}</div>
-                            <div className="bg-[#EFF4FB] px-2 py-1 rounded text-xs font-bold text-[#1B2559] border border-[#E0E5F2]">HbA1c: {p.hba1c || '--'}%</div>
-                            <div className={`px-2 py-1 rounded text-xs font-bold border border-[#E0E5F2] ${riskMeta.badge}`}>
+                            <div className="bg-teal-500/20 px-2 py-1 rounded text-xs font-bold text-teal-300 border border-teal-500/30">FBS: {p.fbs || '--'}</div>
+                            <div className="bg-cyan-500/20 px-2 py-1 rounded text-xs font-bold text-cyan-300 border border-cyan-500/30">HbA1c: {p.hba1c || '--'}%</div>
+                            <div className={`px-2 py-1 rounded text-xs font-bold border border-slate-600/30 ${riskMeta.badge}`}>
                               {riskMeta.value === '--' ? '--' : `${riskMeta.value}%`}
                             </div>
                           </div>
@@ -1297,12 +1297,12 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                         <td className="p-6 cursor-pointer" onClick={() => handleViewProfile(p)}>
                           <div className="space-y-1">
                             <span
-                              className={`px-3 py-1 rounded-full text-xs font-bold ${p.cluster === 'SIRD' || p.cluster === 'SIDD' ? 'bg-[#111C44] text-white' : 'bg-[#6AD2FF]/20 text-[#1B2559]'
+                              className={`px-3 py-1 rounded-full text-xs font-bold ${p.cluster === 'SIRD' || p.cluster === 'SIDD' ? 'bg-[#111C44] text-white' : 'bg-[#6AD2FF]/20 text-white'
                                 }`}
                             >
                               {p.cluster || 'N/A'}
                             </span>
-                            <div className="text-[11px] text-[#A3AED0] font-medium leading-snug">
+                            <div className="text-[11px] text-slate-400 font-medium leading-snug">
                               {clusterDescriptions[p.cluster] || 'Cluster description unavailable'}
                             </div>
                           </div>
@@ -1314,7 +1314,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                                 e.stopPropagation();
                                 handleViewProfile(p);
                               }}
-                              className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#4318FF] hover:border-[#4318FF] transition-colors bg-white"
+                              className="w-8 h-8 rounded-full border border-slate-600/30 flex items-center justify-center text-slate-400 hover:text-teal-400 hover:border-teal-500 transition-colors glass-card"
                               title="View Profile"
                             >
                               <Eye size={16} />
@@ -1324,7 +1324,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                                 e.stopPropagation();
                                 handleEditPatient(p);
                               }}
-                              className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#4318FF] hover:border-[#4318FF] transition-colors bg-white"
+                              className="w-8 h-8 rounded-full border border-slate-600/30 flex items-center justify-center text-slate-400 hover:text-teal-400 hover:border-teal-500 transition-colors glass-card"
                               title="Edit Patient"
                             >
                               <Edit2 size={16} />
@@ -1334,7 +1334,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                                 e.stopPropagation();
                                 handleDeletePatient(p.id);
                               }}
-                              className="w-8 h-8 rounded-full border border-[#E0E5F2] flex items-center justify-center text-[#A3AED0] hover:text-[#EE5D50] hover:border-[#EE5D50] transition-colors bg-white"
+                              className="w-8 h-8 rounded-full border border-slate-600/30 flex items-center justify-center text-slate-400 hover:text-[#EE5D50] hover:border-[#EE5D50] transition-colors glass-card"
                               title="Delete Patient"
                             >
                               <Trash2 size={16} />
@@ -1346,7 +1346,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                   })
                 ) : (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-[#A3AED0]">
+                    <td colSpan={5} className="p-8 text-center text-slate-400">
                       No patients found. Start a new assessment to populate history.
                       <div className="mt-4 flex justify-center">
                         <Button onClick={() => setViewState('form')}>New Assessment</Button>
@@ -1358,7 +1358,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             </table>
           </div>
         </div>
-        <p className="text-[#A3AED0] text-xs mt-4">
+        <p className="text-slate-400 text-xs mt-4">
           This tool supports cluster-based risk assessment for menopausal women; results should be interpreted alongside healthcare providers.
         </p>
       </div>

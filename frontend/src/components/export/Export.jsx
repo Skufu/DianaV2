@@ -28,26 +28,26 @@ const Export = ({ token }) => {
     <div className="space-y-6 animate-fade-in pb-8">
       <header className="mb-8">
         <h4 className="text-[#707EAE] font-medium text-sm mb-1">Data Management</h4>
-        <h2 className="text-3xl font-bold text-[#1B2559]">Export Data</h2>
-        <p className="text-[#A3AED0] text-sm mt-1">
+        <h2 className="text-3xl font-bold text-white">Export Data</h2>
+        <p className="text-slate-400 text-sm mt-1">
           Download patient data and analytics reports for clinical records or research
         </p>
       </header>
 
       {/* Filtering Options */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+      <div className="glass-card p-6 rounded-3xl shadow-sm border border-slate-600/30">
         <div className="flex items-center gap-2 mb-4">
-          <Filter size={20} className="text-[#4318FF]" />
-          <h3 className="text-xl font-bold text-[#1B2559]">Filter Options</h3>
+          <Filter size={20} className="text-teal-400" />
+          <h3 className="text-xl font-bold text-white">Filter Options</h3>
         </div>
-        <p className="text-[#A3AED0] text-sm mb-6">
+        <p className="text-slate-400 text-sm mb-6">
           Apply filters to export specific patient subsets based on menopausal status and risk level
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Menopause Status Filter */}
           <div>
-            <label className="block text-sm font-semibold text-[#1B2559] mb-3">
+            <label className="block text-sm font-semibold text-white mb-3">
               Menopausal Status
             </label>
             <div className="space-y-2">
@@ -60,8 +60,8 @@ const Export = ({ token }) => {
                 <label
                   key={option.value}
                   className={`flex items-center p-3 rounded-xl border-2 cursor-pointer transition-all ${menopauseFilter === option.value
-                    ? 'border-[#4318FF] bg-[#F4F7FE]'
-                    : 'border-[#E0E5F2] hover:border-[#A3AED0]'
+                    ? 'border-teal-500 bg-slate-700/30'
+                    : 'border-slate-600/30 hover:border-[#A3AED0]'
                     }`}
                 >
                   <input
@@ -70,9 +70,9 @@ const Export = ({ token }) => {
                     value={option.value}
                     checked={menopauseFilter === option.value}
                     onChange={(e) => setMenopauseFilter(e.target.value)}
-                    className="mr-3 w-4 h-4 text-[#4318FF]"
+                    className="mr-3 w-4 h-4 text-teal-400"
                   />
-                  <span className="text-sm font-medium text-[#1B2559]">{option.label}</span>
+                  <span className="text-sm font-medium text-white">{option.label}</span>
                 </label>
               ))}
             </div>
@@ -80,7 +80,7 @@ const Export = ({ token }) => {
 
           {/* Risk Level Filter */}
           <div>
-            <label className="block text-sm font-semibold text-[#1B2559] mb-3">
+            <label className="block text-sm font-semibold text-white mb-3">
               Diabetes Risk Level
             </label>
             <div className="space-y-2">
@@ -93,8 +93,8 @@ const Export = ({ token }) => {
                 <label
                   key={option.value}
                   className={`flex items-center p-3 rounded-xl border-2 cursor-pointer transition-all ${riskFilter === option.value
-                    ? 'border-[#4318FF] bg-[#F4F7FE]'
-                    : 'border-[#E0E5F2] hover:border-[#A3AED0]'
+                    ? 'border-teal-500 bg-slate-700/30'
+                    : 'border-slate-600/30 hover:border-[#A3AED0]'
                     }`}
                 >
                   <input
@@ -103,14 +103,14 @@ const Export = ({ token }) => {
                     value={option.value}
                     checked={riskFilter === option.value}
                     onChange={(e) => setRiskFilter(e.target.value)}
-                    className="mr-3 w-4 h-4 text-[#4318FF]"
+                    className="mr-3 w-4 h-4 text-teal-400"
                   />
                   <div className="flex items-center gap-2 flex-1">
                     <div
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: option.color }}
                     />
-                    <span className="text-sm font-medium text-[#1B2559]">{option.label}</span>
+                    <span className="text-sm font-medium text-white">{option.label}</span>
                   </div>
                 </label>
               ))}
@@ -120,16 +120,16 @@ const Export = ({ token }) => {
 
         {/* Active Filters Display */}
         {(menopauseFilter !== 'all' || riskFilter !== 'all') && (
-          <div className="mt-6 p-4 bg-[#F4F7FE] rounded-xl border border-[#E0E5F2]">
-            <p className="text-sm font-semibold text-[#1B2559] mb-2">Active Filters:</p>
+          <div className="mt-6 p-4 bg-slate-700/30 rounded-xl border border-slate-600/30">
+            <p className="text-sm font-semibold text-white mb-2">Active Filters:</p>
             <div className="flex flex-wrap gap-2">
               {menopauseFilter !== 'all' && (
-                <span className="px-3 py-1 bg-white rounded-lg text-sm text-[#4318FF] border border-[#4318FF]">
+                <span className="px-3 py-1 glass-card rounded-lg text-sm text-teal-400 border border-teal-500">
                   Menopause: {menopauseFilter}
                 </span>
               )}
               {riskFilter !== 'all' && (
-                <span className="px-3 py-1 bg-white rounded-lg text-sm text-[#4318FF] border border-[#4318FF]">
+                <span className="px-3 py-1 glass-card rounded-lg text-sm text-teal-400 border border-teal-500">
                   Risk: {riskFilter}
                 </span>
               )}
@@ -139,26 +139,26 @@ const Export = ({ token }) => {
       </div>
 
       {/* Export Options */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+      <div className="glass-card p-6 rounded-3xl shadow-sm border border-slate-600/30">
         <div className="flex items-center gap-2 mb-4">
-          <Download size={20} className="text-[#4318FF]" />
-          <h3 className="text-xl font-bold text-[#1B2559]">Export Patient Data</h3>
+          <Download size={20} className="text-teal-400" />
+          <h3 className="text-xl font-bold text-white">Export Patient Data</h3>
         </div>
-        <p className="text-[#A3AED0] text-sm mb-6">
+        <p className="text-slate-400 text-sm mb-6">
           Download CSV files containing patient demographics, biomarkers, and assessment history
         </p>
 
         <div className="space-y-4">
           {/* Patients CSV */}
-          <div className="p-4 border-2 border-[#E0E5F2] rounded-xl hover:border-[#4318FF] transition-all">
+          <div className="p-4 border-2 border-slate-600/30 rounded-xl hover:border-teal-500 transition-all">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h4 className="font-bold text-[#1B2559] mb-1">Patients Data (CSV)</h4>
-                <p className="text-sm text-[#A3AED0]">
+                <h4 className="font-bold text-white mb-1">Patients Data (CSV)</h4>
+                <p className="text-sm text-slate-400">
                   Patient demographics: name, age, menopause status, blood pressure, activity level, and complete lipid panel
                 </p>
                 {(menopauseFilter !== 'all' || riskFilter !== 'all') && (
-                  <p className="text-xs text-[#4318FF] mt-2 font-medium">
+                  <p className="text-xs text-teal-400 mt-2 font-medium">
                     ✓ Filters will be applied to this export
                   </p>
                 )}
@@ -166,7 +166,7 @@ const Export = ({ token }) => {
               <Button
                 variant="outline"
                 onClick={openLink('/api/v1/export/patients.csv')}
-                className="ml-4 bg-[#4318FF] text-white hover:bg-[#3311DD] flex items-center gap-2"
+                className="ml-4 bg-teal-500 text-white hover:bg-[#3311DD] flex items-center gap-2"
               >
                 <Download size={16} />
                 Download
@@ -175,15 +175,15 @@ const Export = ({ token }) => {
           </div>
 
           {/* Assessments CSV */}
-          <div className="p-4 border-2 border-[#E0E5F2] rounded-xl hover:border-[#4318FF] transition-all">
+          <div className="p-4 border-2 border-slate-600/30 rounded-xl hover:border-teal-500 transition-all">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h4 className="font-bold text-[#1B2559] mb-1">Assessments Data (CSV)</h4>
-                <p className="text-sm text-[#A3AED0]">
+                <h4 className="font-bold text-white mb-1">Assessments Data (CSV)</h4>
+                <p className="text-sm text-slate-400">
                   Assessment records: FBS, HbA1c, BMI, risk scores, cluster assignments, timestamps, and validation status
                 </p>
                 {(menopauseFilter !== 'all' || riskFilter !== 'all') && (
-                  <p className="text-xs text-[#4318FF] mt-2 font-medium">
+                  <p className="text-xs text-teal-400 mt-2 font-medium">
                     ✓ Filters will be applied to this export
                   </p>
                 )}
@@ -191,7 +191,7 @@ const Export = ({ token }) => {
               <Button
                 variant="outline"
                 onClick={openLink('/api/v1/export/assessments.csv')}
-                className="ml-4 bg-[#4318FF] text-white hover:bg-[#3311DD] flex items-center gap-2"
+                className="ml-4 bg-teal-500 text-white hover:bg-[#3311DD] flex items-center gap-2"
               >
                 <Download size={16} />
                 Download
@@ -202,20 +202,20 @@ const Export = ({ token }) => {
       </div>
 
       {/* Analytics Report */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+      <div className="glass-card p-6 rounded-3xl shadow-sm border border-slate-600/30">
         <div className="flex items-center gap-2 mb-4">
-          <FileText size={20} className="text-[#4318FF]" />
-          <h3 className="text-xl font-bold text-[#1B2559]">Analytics Report</h3>
+          <FileText size={20} className="text-teal-400" />
+          <h3 className="text-xl font-bold text-white">Analytics Report</h3>
         </div>
-        <p className="text-[#A3AED0] text-sm mb-6">
+        <p className="text-slate-400 text-sm mb-6">
           Generate comprehensive analytics report with visualizations and statistical summaries
         </p>
 
-        <div className="p-4 border-2 border-[#E0E5F2] rounded-xl hover:border-[#4318FF] transition-all">
+        <div className="p-4 border-2 border-slate-600/30 rounded-xl hover:border-teal-500 transition-all">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h4 className="font-bold text-[#1B2559] mb-1">Cohort Analytics Report</h4>
-              <p className="text-sm text-[#A3AED0]">
+              <h4 className="font-bold text-white mb-1">Cohort Analytics Report</h4>
+              <p className="text-sm text-slate-400">
                 Comprehensive PDF report including: risk distribution, cluster analysis, biomarker trends, and correlation matrices
               </p>
               <p className="text-xs text-[#707EAE] mt-2">
@@ -225,7 +225,7 @@ const Export = ({ token }) => {
             <Button
               variant="outline"
               onClick={() => alert('Analytics report generation coming soon!')}
-              className="ml-4 bg-white text-[#4318FF] border-2 border-[#4318FF] hover:bg-[#F4F7FE] flex items-center gap-2"
+              className="ml-4 glass-card text-teal-400 border-2 border-teal-500 hover:bg-slate-700/30 flex items-center gap-2"
             >
               <FileText size={16} />
               Generate
@@ -235,12 +235,12 @@ const Export = ({ token }) => {
       </div>
 
       {/* Data Privacy Notice */}
-      <div className="bg-[#FFF9EB] p-6 rounded-3xl border border-[#FFB547]">
-        <h4 className="font-bold text-[#1B2559] mb-2 flex items-center gap-2">
-          <span className="text-[#FFB547]">⚠️</span>
+      <div className="bg-amber-500/10 p-6 rounded-3xl border border-amber-500/30">
+        <h4 className="font-bold text-amber-300 mb-2 flex items-center gap-2">
+          <span>⚠️</span>
           Data Privacy & Security Notice
         </h4>
-        <p className="text-sm text-[#707EAE]">
+        <p className="text-sm text-slate-300">
           Exported files contain protected health information (PHI). Ensure compliance with HIPAA, GDPR, or applicable data protection regulations.
           Store files securely, encrypt when transmitting, and delete when no longer needed for clinical or research purposes.
         </p>

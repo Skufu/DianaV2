@@ -1,13 +1,6 @@
-// Sidebar: navigation shell and new assessment shortcut.
+// Sidebar: Clinical Precision navigation with teal accents
 import React from 'react';
 import { LayoutDashboard, Users, Activity, Download, Plus, LogOut, BookOpen } from 'lucide-react';
-import Button from '../common/Button';
-
-const THEME = {
-  colors: {
-    sidebarGradient: 'linear-gradient(180deg, #0B1437 0%, #111C44 100%)',
-  },
-};
 
 const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout }) => {
   const navItems = [
@@ -17,28 +10,37 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout }) => {
     { id: 'education', icon: BookOpen, label: 'Education' },
     { id: 'export', icon: Download, label: 'Export Data' },
   ];
+
   return (
     <div
-      className="w-20 lg:w-72 h-screen fixed left-0 top-0 flex flex-col z-50 transition-all duration-300 shadow-2xl"
-      style={{ background: THEME.colors.sidebarGradient }}
+      className="w-20 lg:w-72 h-screen fixed left-0 top-0 flex flex-col z-50 transition-all duration-300"
+      style={{ background: 'linear-gradient(180deg, #0F172A 0%, #1E293B 100%)' }}
     >
-      <div className="p-8 flex items-center justify-center lg:justify-start gap-3 border-b border-white/10">
-        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0 shadow-lg" aria-label="DIANA logo">
-          <span className="text-[#0B1437] font-bold">D</span>
+      {/* Logo */}
+      <div className="p-6 lg:p-8 flex items-center justify-center lg:justify-start gap-3 border-b border-slate-700/50">
+        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-400 flex items-center justify-center shrink-0 shadow-lg shadow-teal-500/20">
+          <Activity size={20} className="text-white" />
         </div>
         <span className="text-2xl text-white font-bold hidden lg:block tracking-wide">DIANA</span>
       </div>
-      <div className="p-6">
-        <Button
-          fullWidth
+
+      {/* New Assessment Button */}
+      <div className="p-4 lg:p-6">
+        <button
           onClick={onStartAssessment}
-          className="bg-[#4318FF] text-white hover:bg-[#2B3674] shadow-lg border-none py-4 transform hover:scale-105 transition-transform"
-          icon={Plus}
+          className="w-full flex items-center justify-center lg:justify-start gap-3 py-4 px-4 rounded-xl font-semibold text-white
+                     bg-gradient-to-r from-teal-500 to-cyan-500 
+                     hover:from-teal-400 hover:to-cyan-400 
+                     hover:shadow-lg hover:shadow-teal-500/25
+                     transition-all duration-300 active:scale-[0.98]"
         >
+          <Plus size={20} />
           <span className="hidden lg:inline">New Assessment</span>
-        </Button>
+        </button>
       </div>
-      <nav className="flex-1 px-4 space-y-2">
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 lg:px-4 space-y-1">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
@@ -47,20 +49,28 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout }) => {
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all duration-200 group relative
-                ${isActive ? 'bg-white/10 text-white shadow-lg backdrop-blur-sm' : 'text-[#A3AED0] hover:text-white hover:bg-white/5'}`}
-              aria-label={item.label}
+                ${isActive
+                  ? 'bg-slate-700/50 text-white'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'}`}
             >
-              <Icon size={20} className={isActive ? 'text-white' : 'text-[#A3AED0] group-hover:text-white'} />
+              <Icon
+                size={20}
+                className={isActive ? 'text-teal-400' : 'text-slate-500 group-hover:text-slate-300'}
+              />
               <span className="hidden lg:block font-medium">{item.label}</span>
-              {isActive && <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#4318FF] rounded-l-full hidden lg:block" />}
+              {isActive && (
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-teal-400 rounded-l-full hidden lg:block" />
+              )}
             </button>
           );
         })}
       </nav>
-      <div className="p-8">
+
+      {/* Logout */}
+      <div className="p-4 lg:p-6 border-t border-slate-700/50">
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-4 mt-8 text-[#A3AED0] hover:text-white transition-colors lg:pl-4"
+          className="w-full flex items-center justify-center lg:justify-start gap-4 p-4 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-slate-800/50 transition-all duration-200"
         >
           <LogOut size={20} />
           <span className="hidden lg:block font-medium">Log Out</span>
@@ -71,4 +81,5 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout }) => {
 };
 
 export default Sidebar;
+
 

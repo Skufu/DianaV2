@@ -1,8 +1,8 @@
-// Dashboard: cohort overview cards, biomarker trends, cluster distribution.
+// Dashboard: Clinical Precision cohort overview with glass cards
 import React, { useEffect, useMemo, useState } from 'react';
 import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight, TrendingUp, BarChart2 } from 'lucide-react';
 import { fetchClusterDistributionApi, fetchTrendAnalyticsApi } from '../../api';
-import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 
 const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssessment, loading: patientsLoading = false }) => {
   const [activeBiomarker, setActiveBiomarker] = useState('hba1c');
@@ -44,10 +44,10 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
       ? Math.round(trends.reduce((s, t) => s + (t.fbs || 0), 0) / trends.length)
       : '—';
     return [
-      { label: 'Total Patients', value: patientCount || '0', icon: Users, trend: '', iconColor: '#4318FF', bg: '#F4F7FE' },
-      { label: 'High Risk (SOIRD/SIDD)', value: highRisk.toString(), icon: AlertCircle, trend: '', iconColor: '#EE5D50', bg: '#FFF5F5' },
-      { label: 'Avg HbA1c', value: `${avgHbA1c}%`, icon: Droplet, trend: '', iconColor: '#FFB547', bg: '#FFF9EB' },
-      { label: 'Avg FBS', value: avgFBS === '—' ? '—' : `${avgFBS}`, icon: Activity, trend: '', iconColor: '#05CD99', bg: '#E6FBF5' },
+      { label: 'Total Patients', value: patientCount || '0', icon: Users, iconColor: '#14B8A6', bg: 'bg-teal-500/10' },
+      { label: 'High Risk', value: highRisk.toString(), icon: AlertCircle, iconColor: '#F43F5E', bg: 'bg-rose-500/10' },
+      { label: 'Avg HbA1c', value: `${avgHbA1c}%`, icon: Droplet, iconColor: '#F59E0B', bg: 'bg-amber-500/10' },
+      { label: 'Avg FBS', value: avgFBS === '—' ? '—' : `${avgFBS}`, icon: Activity, iconColor: '#22D3EE', bg: 'bg-cyan-500/10' },
     ];
   }, [clusterStats, trends, patientCount]);
 
@@ -58,148 +58,138 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   const clusterColor = (label) => {
     const key = (label || '').toUpperCase();
     switch (key) {
-      case 'SIRD': // Severe Insulin-Resistant Diabetes
-        return '#EE5D50';
-      case 'SIDD': // Severe Insulin-Deficient Diabetes
-        return '#FFB547';
-      case 'MARD': // Mild Age-Related Diabetes
-        return '#6AD2FF';
-      case 'MOD': // Mild Obesity-Related Diabetes
-        return '#4318FF';
-      default:
-        return '#A3AED0';
+      case 'SIRD': return '#F43F5E';
+      case 'SIDD': return '#F59E0B';
+      case 'MARD': return '#22D3EE';
+      case 'MOD': return '#14B8A6';
+      default: return '#64748B';
     }
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-8">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-end pb-2">
-        <div>
-          <h4 className="text-[#707EAE] font-medium text-sm mb-1">Overview</h4>
-          <h2 className="text-3xl font-bold text-[#1B2559]">Dashboard</h2>
-          <p className="text-[#A3AED0] text-sm mt-1">For menopausal women: review assessments, track trends, then consult your provider.</p>
-        </div>
+    <div className="space-y-6 animate-fade-in pb-8">
+      {/* Header */}
+      <header className="mb-2">
+        <p className="text-slate-400 text-sm font-medium mb-1">Overview</p>
+        <h2 className="text-3xl font-bold text-white">Dashboard</h2>
+        <p className="text-slate-400 text-sm mt-1">Patient cohort analytics and risk cluster distribution</p>
       </header>
 
-      {/* Onboarding Prompt for New Users */}
+      {/* Welcome Banner - Only for new users */}
       {patientCount === 0 && !patientsLoading && (
-        <div className="bg-gradient-to-r from-[#4318FF] via-[#7C3AED] to-[#6AD2FF] p-6 rounded-3xl text-white relative overflow-hidden animate-fade-in">
+        <div className="glass-card p-6 border border-teal-500/20">
           <div className="relative z-10">
-            <h3 className="text-xl font-bold mb-2">Welcome to DIANA 👋</h3>
-            <p className="text-white/80 text-sm mb-4">Get started by creating your first patient assessment. Our ML-powered analysis will help identify diabetes risk clusters for menopausal women.</p>
+            <h3 className="text-xl font-bold text-white mb-2">Welcome to DIANA</h3>
+            <p className="text-slate-300 text-sm mb-4 max-w-lg">
+              Get started by creating your first patient assessment. Our ML-powered analysis identifies diabetes risk clusters for menopausal women.
+            </p>
             <button
               onClick={onStartAssessment}
-              className="bg-white text-[#4318FF] px-6 py-2 rounded-xl font-bold text-sm hover:bg-white/90 transition-colors flex items-center gap-2"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white
+                         bg-gradient-to-r from-teal-500 to-cyan-500 
+                         hover:from-teal-400 hover:to-cyan-400 
+                         hover:shadow-lg hover:shadow-teal-500/25
+                         transition-all duration-300"
             >
               Create First Assessment
               <ArrowRight size={16} />
             </button>
           </div>
-          <Activity size={120} className="absolute -right-4 -bottom-4 opacity-10" />
+          <Activity size={100} className="absolute -right-2 -bottom-2 text-teal-500/20" />
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* New Assessment Card */}
         <div
           onClick={onStartAssessment}
-          className="lg:col-span-1 bg-gradient-to-br from-[#4318FF] to-[#6AD2FF] p-6 rounded-3xl shadow-lg cursor-pointer hover:scale-105 transition-transform flex flex-col justify-center items-center text-white text-center group"
+          className="sm:col-span-1 p-5 rounded-2xl cursor-pointer transition-all duration-300 hover-lift
+                     bg-gradient-to-br from-teal-500 to-cyan-500 text-white"
         >
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mb-3 group-hover:bg-white/30 transition-colors">
-            <Plus size={24} />
+          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-3">
+            <Plus size={20} />
           </div>
-          <h3 className="font-bold text-lg">New Patient Assessment</h3>
-          <p className="text-xs opacity-80 mt-2">Start a cluster-based analysis</p>
+          <h3 className="font-semibold text-base">New Assessment</h3>
+          <p className="text-xs text-white/70 mt-1">Start analysis</p>
         </div>
+
+        {/* Stat Cards */}
         {analyticsLoading || patientsLoading
           ? Array.from({ length: 4 }).map((_, idx) => (
-            <div key={`sk-${idx}`} className="lg:col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2] animate-pulse space-y-4">
-              <div className="flex justify-between items-start">
-                <div className="w-10 h-10 rounded-full bg-[#E0E5F2]" />
-                <div className="h-4 w-10 bg-[#E0E5F2] rounded" />
-              </div>
-              <div className="h-6 w-16 bg-[#E0E5F2] rounded" />
-              <div className="h-3 w-24 bg-[#E0E5F2] rounded" />
+            <div key={`sk-${idx}`} className="glass-card p-5 animate-pulse space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-700" />
+              <div className="h-6 w-16 bg-slate-700 rounded" />
+              <div className="h-3 w-20 bg-slate-700 rounded" />
             </div>
           ))
           : stats.map((stat, idx) => (
             <div
               key={idx}
-              className="lg:col-span-1 bg-white p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between border border-[#E0E5F2] animate-slide-up"
-              style={{ animationDelay: `${idx * 70}ms` }}
+              className="glass-card p-5 hover-lift animate-slide-up"
+              style={{ animationDelay: `${idx * 50}ms` }}
             >
-              <div className="flex justify-between items-start">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ backgroundColor: stat.bg, color: stat.iconColor }}>
-                  <stat.icon size={20} />
-                </div>
-                <span className="text-xs font-bold text-[#05CD99] bg-[#E6FBF5] px-2 py-1 rounded-md">{stat.trend}</span>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.bg}`}>
+                <stat.icon size={20} style={{ color: stat.iconColor }} />
               </div>
-              <div className="mt-4">
-                <h3 className="text-2xl font-bold text-[#1B2559]">{stat.value}</h3>
-                <p className="text-[#A3AED0] text-xs font-medium uppercase tracking-wider mt-1">{stat.label}</p>
-              </div>
+              <h3 className="text-2xl font-bold text-white mt-3">{stat.value}</h3>
+              <p className="text-slate-400 text-xs font-medium uppercase tracking-wide mt-1">{stat.label}</p>
             </div>
           ))}
       </div>
+
+      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+        {/* Biomarker Trends */}
+        <div className="lg:col-span-2 glass-card p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-[#1B2559]">Biomarker Trends (Cohort)</h3>
-            <div className="flex gap-2 bg-[#F4F7FE] p-1 rounded-lg">
+            <h3 className="text-lg font-bold text-white">Biomarker Trends</h3>
+            <div className="flex gap-1 bg-slate-700/50 p-1 rounded-lg">
               {['hba1c', 'fbs'].map((marker) => (
                 <button
                   key={marker}
                   onClick={() => setActiveBiomarker(marker)}
-                  className={`px-3 py-1 text-sm font-bold rounded-md transition-all uppercase ${activeBiomarker === marker ? 'bg-white text-[#1B2559] shadow-sm' : 'text-[#A3AED0] hover:text-[#1B2559]'
-                    }`}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all uppercase
+                    ${activeBiomarker === marker
+                      ? 'bg-slate-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'}`}
                 >
                   {marker}
                 </button>
               ))}
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={260}>
             {trends.length > 0 ? (
-              <AreaChart
-                data={trends}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
+              <AreaChart data={trends} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorHbA1c" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4318FF" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#4318FF" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#14B8A6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#14B8A6" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorFBS" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6AD2FF" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6AD2FF" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#22D3EE" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#22D3EE" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E0E5F2" />
-                <XAxis
-                  dataKey="label"
-                  stroke="#A3AED0"
-                  style={{ fontSize: '12px', fontWeight: 600 }}
-                />
-                <YAxis
-                  stroke="#A3AED0"
-                  style={{ fontSize: '12px', fontWeight: 600 }}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="label" stroke="#64748B" style={{ fontSize: '11px' }} />
+                <YAxis stroke="#64748B" style={{ fontSize: '11px' }} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#1B2559',
+                    backgroundColor: '#1E293B',
                     border: 'none',
                     borderRadius: '12px',
                     color: '#fff',
-                    fontSize: '12px',
-                    padding: '10px'
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
                   }}
-                  labelStyle={{ color: '#A3AED0', marginBottom: '5px' }}
                 />
                 {activeBiomarker === 'hba1c' && (
                   <Area
                     type="monotone"
                     dataKey="hba1c"
-                    stroke="#4318FF"
-                    strokeWidth={3}
+                    stroke="#14B8A6"
+                    strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorHbA1c)"
                     name="HbA1c (%)"
@@ -209,8 +199,8 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
                   <Area
                     type="monotone"
                     dataKey="fbs"
-                    stroke="#6AD2FF"
-                    strokeWidth={3}
+                    stroke="#22D3EE"
+                    strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorFBS)"
                     name="FBS (mg/dL)"
@@ -218,35 +208,35 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
                 )}
               </AreaChart>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-[#A3AED0]">
-                <TrendingUp size={48} className="opacity-30 mb-3" />
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                <TrendingUp size={40} className="opacity-30 mb-3" />
                 <p className="text-sm font-medium">No trend data yet</p>
-                <p className="text-xs mt-1">Complete patient assessments to see biomarker trends</p>
+                <p className="text-xs mt-1">Complete assessments to see biomarker trends</p>
               </div>
             )}
           </ResponsiveContainer>
         </div>
-        <div className="bg-white p-6 rounded-3xl shadow-sm flex flex-col border border-[#E0E5F2]">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xl font-bold text-[#1B2559]">Cluster Distribution</h3>
-            {analyticsLoading && <span className="text-xs text-[#A3AED0]">Loading…</span>}
-            {error && !analyticsLoading && <span className="text-xs text-[#EE5D50]">Failed to load</span>}
+        {/* Cluster Distribution */}
+        <div className="glass-card p-6 flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-white">Cluster Distribution</h3>
+            {analyticsLoading && <span className="text-xs text-slate-400">Loading…</span>}
+            {error && !analyticsLoading && <span className="text-xs text-rose-400">Failed</span>}
           </div>
-          <div className="flex flex-col items-center">
+
+          <div className="flex-1 flex flex-col items-center justify-center">
             {clusterStats.length > 0 ? (
               <>
-                <ResponsiveContainer width="100%" height={240}>
+                <ResponsiveContainer width="100%" height={180}>
                   <PieChart>
                     <Pie
                       data={clusterStats.map(c => ({ name: c.cluster || 'Unknown', value: c.count || 0 }))}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
-                      paddingAngle={5}
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={4}
                       dataKey="value"
-                      label={(entry) => `${entry.name}: ${entry.value}`}
-                      labelLine={{ stroke: '#A3AED0', strokeWidth: 1 }}
                     >
                       {clusterStats.map((c, idx) => (
                         <Cell key={`cell-${idx}`} fill={clusterColor(c.cluster)} />
@@ -254,49 +244,50 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: '#1B2559',
+                        backgroundColor: '#1E293B',
                         border: 'none',
                         borderRadius: '8px',
                         color: '#fff',
-                        fontSize: '12px'
+                        fontSize: '11px'
                       }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="grid grid-cols-2 gap-3 mt-4 w-full">
+                <div className="grid grid-cols-2 gap-2 mt-4 w-full">
                   {clusterStats.map((c, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between p-3 rounded-xl border border-[#E0E5F2] animate-scale-in"
-                      style={{ animationDelay: `${idx * 60}ms` }}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-700/30 border border-slate-600/30"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: clusterColor(c.cluster) }}></div>
-                        <span className="text-sm font-bold text-[#1B2559]">{c.cluster || 'Unknown'}</span>
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: clusterColor(c.cluster) }} />
+                        <span className="text-xs font-semibold text-slate-300">{c.cluster || 'N/A'}</span>
                       </div>
-                      <span className="text-sm font-semibold text-[#4318FF]">{c.count ?? 0}</span>
+                      <span className="text-xs font-bold text-white">{c.count ?? 0}</span>
                     </div>
                   ))}
                 </div>
-                <div className="text-center mt-4">
-                  <span className="text-2xl font-bold text-[#1B2559]">{totalClusterCount}</span>
-                  <span className="text-xs uppercase text-[#A3AED0] ml-2">Total Assessments</span>
+
+                <div className="text-center mt-4 pt-4 border-t border-slate-600/30 w-full">
+                  <span className="text-2xl font-bold text-white">{totalClusterCount}</span>
+                  <span className="text-xs uppercase text-slate-400 ml-2">Total Assessments</span>
                 </div>
               </>
             ) : (
-              <div className="w-full flex flex-col items-center justify-center text-[#A3AED0] py-12">
-                <BarChart2 size={48} className="opacity-30 mb-3" />
-                <p className="text-sm font-medium">No cluster data yet</p>
-                <p className="text-xs mt-1 text-center">Assessments will be grouped into T2DM subtype clusters</p>
+              <div className="flex flex-col items-center justify-center text-slate-500 py-8">
+                <BarChart2 size={40} className="opacity-30 mb-3" />
+                <p className="text-sm font-medium">No cluster data</p>
+                <p className="text-xs mt-1 text-center">Assessments will be grouped into risk clusters</p>
               </div>
             )}
           </div>
+
           <button
-            className="w-full text-[#4318FF] font-bold flex items-center justify-center gap-2 mt-4 hover:underline"
+            className="w-full mt-4 py-3 rounded-xl text-teal-400 font-semibold text-sm hover:bg-teal-500/10 transition-colors flex items-center justify-center gap-2"
             onClick={onNavigateToPatient}
           >
-            View Patients
-            <ArrowRight size={16} />
+            View All Patients
+            <ArrowRight size={14} />
           </button>
         </div>
       </div>

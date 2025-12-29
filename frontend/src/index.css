@@ -1,18 +1,139 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'DM Sans', sans-serif;
+/* ============================================
+   DIANA Design System - Clinical Precision
+   ============================================ */
+
+:root {
+  /* Primary Palette */
+  --diana-navy: #0A0F1E;
+  --diana-navy-light: #0F172A;
+  --diana-slate: #1E293B;
+  --diana-slate-light: #334155;
+
+  /* Light Mode */
+  --diana-ice: #F1F5F9;
+  --diana-ice-dark: #E2E8F0;
+
+  /* Accent Colors */
+  --diana-teal: #14B8A6;
+  --diana-teal-light: #2DD4BF;
+  --diana-cyan: #22D3EE;
+  --diana-cyan-muted: #67E8F9;
+
+  /* Status Colors */
+  --diana-rose: #F43F5E;
+  --diana-rose-light: #FB7185;
+  --diana-amber: #F59E0B;
+  --diana-emerald: #10B981;
+
+  /* Text Colors */
+  --diana-text-primary: #F8FAFC;
+  --diana-text-secondary: #94A3B8;
+  --diana-text-muted: #64748B;
+  --diana-text-dark: #1E293B;
+
+  /* Glass Effect */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
+
+body {
+  font-family: 'Inter', 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--diana-navy);
+  color: var(--diana-text-primary);
+  overflow-x: hidden;
+  cursor: none !important;
+  /* Premium: Custom Cursor only */
+}
+
+/* Ensure interactive elements also hide the cursor */
+a,
+button,
+input,
+select,
+textarea,
+[role="button"] {
+  cursor: none !important;
+}
+
+/* ============================================
+   Glass Morphism Utilities
+   ============================================ */
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1.5rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  background: rgba(30, 41, 59, 0.55);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-light:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(20, 184, 166, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   Animation Keyframes
+   ============================================ */
 
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -22,8 +143,9 @@ body {
 @keyframes slide-up {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(16px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -33,23 +155,129 @@ body {
 @keyframes scale-in {
   from {
     opacity: 0;
-    transform: scale(0.98);
+    transform: scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
   }
 }
 
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ============================================
+   Animation Utilities
+   ============================================ */
+
 .animate-fade-in {
-  animation: fade-in 0.45s ease forwards;
+  animation: fade-in 0.5s ease-out forwards;
 }
 
 .animate-slide-up {
-  animation: slide-up 0.5s ease forwards;
+  animation: slide-up 0.6s ease-out forwards;
 }
 
 .animate-scale-in {
-  animation: scale-in 0.4s ease forwards;
+  animation: scale-in 0.4s ease-out forwards;
 }
 
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 8s ease infinite;
+}
+
+/* ============================================
+   Custom Utilities
+   ============================================ */
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--diana-teal) 0%, var(--diana-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-diana-gradient {
+  background: linear-gradient(135deg, var(--diana-navy) 0%, var(--diana-slate) 100%);
+}
+
+.border-glow {
+  box-shadow: 0 0 20px rgba(20, 184, 166, 0.15),
+    0 0 40px rgba(34, 211, 238, 0.1);
+}
+
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--diana-navy-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--diana-slate-light);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--diana-text-muted);
+}

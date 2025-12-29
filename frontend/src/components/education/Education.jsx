@@ -216,16 +216,16 @@ const ExpandableCard = ({ title, children, defaultOpen = false, icon: Icon }) =>
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
     return (
-        <div className="bg-white rounded-2xl border border-[#E0E5F2] overflow-hidden transition-all">
+        <div className="glass-card rounded-2xl border border-slate-600/30 overflow-hidden transition-all">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full p-6 flex items-center justify-between hover:bg-[#F4F7FE] transition-colors"
+                className="w-full p-6 flex items-center justify-between hover:bg-slate-700/30 transition-colors"
             >
                 <div className="flex items-center gap-3">
-                    {Icon && <Icon size={20} className="text-[#4318FF]" />}
-                    <h3 className="text-lg font-bold text-[#1B2559]">{title}</h3>
+                    {Icon && <Icon size={20} className="text-teal-400" />}
+                    <h3 className="text-lg font-bold text-white">{title}</h3>
                 </div>
-                {isOpen ? <ChevronUp size={20} className="text-[#A3AED0]" /> : <ChevronDown size={20} className="text-[#A3AED0]" />}
+                {isOpen ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
             </button>
             {isOpen && (
                 <div className="px-6 pb-6 animate-fade-in">
@@ -245,15 +245,15 @@ const Education = () => {
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8">
                 <div>
                     <h4 className="text-[#707EAE] font-medium text-sm mb-1">Learn More</h4>
-                    <h2 className="text-3xl font-bold text-[#1B2559]">Education Center</h2>
-                    <p className="text-[#A3AED0] text-sm mt-1">
+                    <h2 className="text-3xl font-bold text-white">Education Center</h2>
+                    <p className="text-slate-400 text-sm mt-1">
                         Understanding diabetes clusters, biomarkers, and your risk assessment
                     </p>
                 </div>
             </header>
 
             {/* Quick Overview */}
-            <div className="bg-gradient-to-br from-[#4318FF] to-[#7C3AED] p-8 rounded-3xl text-white">
+            <div className="bg-gradient-to-br from-teal-500 to-cyan-500 p-8 rounded-3xl text-white">
                 <div className="flex items-center gap-3 mb-4">
                     <BookOpen size={28} />
                     <h3 className="text-2xl font-bold">Understanding Your Results</h3>
@@ -267,15 +267,15 @@ const Education = () => {
 
             {/* Cluster Cards */}
             <div>
-                <h3 className="text-xl font-bold text-[#1B2559] mb-4 flex items-center gap-2">
-                    <Target size={20} className="text-[#4318FF]" />
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <Target size={20} className="text-teal-400" />
                     Diabetes Clusters Explained
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {Object.entries(clusterEducation).map(([key, cluster]) => (
                         <div
                             key={key}
-                            className={`bg-white rounded-3xl border-2 transition-all cursor-pointer ${activeCluster === key ? 'border-[#4318FF] shadow-lg' : 'border-[#E0E5F2] hover:border-[#4318FF]/50'
+                            className={`glass-card rounded-3xl border-2 transition-all cursor-pointer ${activeCluster === key ? 'border-[#4318FF] shadow-lg' : 'border-slate-600/30 hover:border-[#4318FF]/50'
                                 }`}
                             onClick={() => setActiveCluster(activeCluster === key ? null : key)}
                         >
@@ -289,23 +289,23 @@ const Education = () => {
                                             {key}
                                         </div>
                                         <div>
-                                            <h4 className="font-bold text-[#1B2559]">{key}</h4>
+                                            <h4 className="font-bold text-white">{key}</h4>
                                             <p className="text-xs text-[#707EAE]">{cluster.name}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-[#A3AED0] text-sm mb-4">{cluster.shortDesc}</p>
+                                <p className="text-slate-400 text-sm mb-4">{cluster.shortDesc}</p>
 
                                 {activeCluster === key && (
-                                    <div className="mt-4 pt-4 border-t border-[#E0E5F2] space-y-4 animate-fade-in">
-                                        <p className="text-[#1B2559] text-sm leading-relaxed">{cluster.fullDesc}</p>
+                                    <div className="mt-4 pt-4 border-t border-slate-600/30 space-y-4 animate-fade-in">
+                                        <p className="text-white text-sm leading-relaxed">{cluster.fullDesc}</p>
 
                                         <div>
                                             <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Risk Factors</h5>
                                             <ul className="space-y-1">
                                                 {cluster.riskFactors.map((factor, i) => (
-                                                    <li key={i} className="text-sm text-[#1B2559] flex items-start gap-2">
-                                                        <span className="text-[#4318FF] mt-1">•</span> {factor}
+                                                    <li key={i} className="text-sm text-white flex items-start gap-2">
+                                                        <span className="text-teal-400 mt-1">•</span> {factor}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -315,7 +315,7 @@ const Education = () => {
                                             <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Recommendations</h5>
                                             <ul className="space-y-1">
                                                 {cluster.recommendations.map((rec, i) => (
-                                                    <li key={i} className="text-sm text-[#1B2559] flex items-start gap-2">
+                                                    <li key={i} className="text-sm text-white flex items-start gap-2">
                                                         <span className="text-[#05CD99] mt-1">✓</span> {rec}
                                                     </li>
                                                 ))}
@@ -326,7 +326,7 @@ const Education = () => {
                                             <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Clinical Implications</h5>
                                             <ul className="space-y-1">
                                                 {cluster.clinicalImplications.map((imp, i) => (
-                                                    <li key={i} className="text-sm text-[#1B2559] flex items-start gap-2">
+                                                    <li key={i} className="text-sm text-white flex items-start gap-2">
                                                         <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" style={{ color: cluster.color }} />
                                                         {imp}
                                                     </li>
@@ -346,7 +346,7 @@ const Education = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-[#E0E5F2]">
+                            <tr className="border-b border-slate-600/30">
                                 <th className="text-left py-3 text-[#707EAE] font-medium">Biomarker</th>
                                 <th className="text-center py-3 text-[#05CD99] font-medium">Normal</th>
                                 <th className="text-center py-3 text-[#FFB547] font-medium">Pre-diabetic</th>
@@ -355,10 +355,10 @@ const Education = () => {
                         </thead>
                         <tbody>
                             {biomarkerReference.map((bio, i) => (
-                                <tr key={i} className="border-b border-[#E0E5F2]">
+                                <tr key={i} className="border-b border-slate-600/30">
                                     <td className="py-4">
-                                        <div className="font-bold text-[#1B2559]">{bio.name}</div>
-                                        <div className="text-xs text-[#A3AED0] mt-1">{bio.description}</div>
+                                        <div className="font-bold text-white">{bio.name}</div>
+                                        <div className="text-xs text-slate-400 mt-1">{bio.description}</div>
                                     </td>
                                     <td className="text-center py-4 text-[#05CD99] font-medium">{bio.normal}</td>
                                     <td className="text-center py-4 text-[#FFB547] font-medium">{bio.prediabetic}</td>
@@ -373,7 +373,7 @@ const Education = () => {
             {/* Understanding Risk */}
             <ExpandableCard title="Understanding Your Risk Score" icon={Lightbulb}>
                 <div className="space-y-4">
-                    <p className="text-[#1B2559] leading-relaxed">
+                    <p className="text-white leading-relaxed">
                         Your risk score is calculated using machine learning algorithms trained on large population datasets.
                         The score represents the probability of developing or having Type 2 Diabetes based on your biomarker profile.
                     </p>
@@ -381,18 +381,18 @@ const Education = () => {
                     <div className="grid grid-cols-3 gap-4">
                         <div className="p-4 rounded-xl bg-[#6AD2FF]/10 border border-[#6AD2FF]/30 text-center">
                             <div className="text-2xl font-bold text-[#6AD2FF]">0-33%</div>
-                            <div className="text-sm font-medium text-[#1B2559] mt-1">Low Risk</div>
-                            <div className="text-xs text-[#A3AED0] mt-2">Maintain healthy lifestyle, annual screening</div>
+                            <div className="text-sm font-medium text-white mt-1">Low Risk</div>
+                            <div className="text-xs text-slate-400 mt-2">Maintain healthy lifestyle, annual screening</div>
                         </div>
                         <div className="p-4 rounded-xl bg-[#FFB547]/10 border border-[#FFB547]/30 text-center">
                             <div className="text-2xl font-bold text-[#FFB547]">34-66%</div>
-                            <div className="text-sm font-medium text-[#1B2559] mt-1">Moderate Risk</div>
-                            <div className="text-xs text-[#A3AED0] mt-2">Lifestyle modifications, more frequent monitoring</div>
+                            <div className="text-sm font-medium text-white mt-1">Moderate Risk</div>
+                            <div className="text-xs text-slate-400 mt-2">Lifestyle modifications, more frequent monitoring</div>
                         </div>
                         <div className="p-4 rounded-xl bg-[#EE5D50]/10 border border-[#EE5D50]/30 text-center">
                             <div className="text-2xl font-bold text-[#EE5D50]">67-100%</div>
-                            <div className="text-sm font-medium text-[#1B2559] mt-1">High Risk</div>
-                            <div className="text-xs text-[#A3AED0] mt-2">Consult healthcare provider, consider treatment</div>
+                            <div className="text-sm font-medium text-white mt-1">High Risk</div>
+                            <div className="text-xs text-slate-400 mt-2">Consult healthcare provider, consider treatment</div>
                         </div>
                     </div>
                 </div>
@@ -400,14 +400,14 @@ const Education = () => {
 
             {/* FAQ Section */}
             <div>
-                <h3 className="text-xl font-bold text-[#1B2559] mb-4 flex items-center gap-2">
-                    <HelpCircle size={20} className="text-[#4318FF]" />
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <HelpCircle size={20} className="text-teal-400" />
                     Frequently Asked Questions
                 </h3>
                 <div className="space-y-3">
                     {faqData.map((faq, i) => (
                         <ExpandableCard key={i} title={faq.question} icon={Info}>
-                            <p className="text-[#1B2559] leading-relaxed">{faq.answer}</p>
+                            <p className="text-white leading-relaxed">{faq.answer}</p>
                         </ExpandableCard>
                     ))}
                 </div>
@@ -418,8 +418,8 @@ const Education = () => {
                 <div className="flex items-start gap-3">
                     <AlertTriangle size={24} className="text-[#EE5D50] flex-shrink-0 mt-1" />
                     <div>
-                        <h4 className="font-bold text-[#1B2559] mb-2">Medical Disclaimer</h4>
-                        <p className="text-sm text-[#1B2559] leading-relaxed">
+                        <h4 className="font-bold text-white mb-2">Medical Disclaimer</h4>
+                        <p className="text-sm text-white leading-relaxed">
                             This tool is for educational and informational purposes only. It is not intended to diagnose, treat, cure, or prevent any disease.
                             The risk predictions and cluster assignments are based on statistical models and should not replace professional medical advice.
                             Always consult with a qualified healthcare provider for diagnosis and treatment decisions.

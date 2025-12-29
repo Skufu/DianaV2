@@ -16,18 +16,17 @@ const LoadingSkeleton = ({ className = '' }) => (
   <div className={`animate-pulse bg-[#E0E5F2] rounded-xl ${className}`} />
 );
 
-// ML Loading Skeleton for the metrics section
 const MLMetricsSkeleton = () => (
-  <div className="bg-gradient-to-br from-[#4318FF] to-[#7C3AED] p-8 rounded-3xl shadow-lg">
+  <div className="glass-card p-8">
     <div className="flex items-center gap-3 mb-6">
-      <LoadingSkeleton className="w-7 h-7 rounded-full !bg-white/20" />
-      <LoadingSkeleton className="w-48 h-7 !bg-white/20" />
+      <LoadingSkeleton className="w-7 h-7 rounded-full !bg-slate-600" />
+      <LoadingSkeleton className="w-48 h-7 !bg-slate-600" />
     </div>
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       {[1, 2, 3, 4].map(i => (
-        <div key={i} className="bg-white/10 p-4 rounded-2xl">
-          <LoadingSkeleton className="w-20 h-4 mb-2 !bg-white/20" />
-          <LoadingSkeleton className="w-16 h-6 !bg-white/20" />
+        <div key={i} className="bg-slate-700/30 p-4 rounded-2xl">
+          <LoadingSkeleton className="w-20 h-4 mb-2 !bg-slate-600" />
+          <LoadingSkeleton className="w-16 h-6 !bg-slate-600" />
         </div>
       ))}
     </div>
@@ -39,10 +38,10 @@ const VisualizationCard = ({ title, visualizationName }) => {
   const [status, setStatus] = useState('loading'); // 'loading', 'loaded', 'error'
 
   return (
-    <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
-      <h3 className="text-xl font-bold text-[#1B2559] mb-4">{title}</h3>
+    <div className="glass-card p-6">
+      <h3 className="text-xl font-bold text-white mb-4">{title}</h3>
       {status === 'loading' && (
-        <LoadingSkeleton className="w-full h-64" />
+        <LoadingSkeleton className="w-full h-64 !bg-slate-700" />
       )}
       <img
         src={getMLVisualizationUrl(visualizationName)}
@@ -52,7 +51,7 @@ const VisualizationCard = ({ title, visualizationName }) => {
         onError={() => setStatus('error')}
       />
       {status === 'error' && (
-        <div className="w-full h-64 flex flex-col items-center justify-center bg-[#F4F7FE] rounded-xl text-[#A3AED0]">
+        <div className="w-full h-64 flex flex-col items-center justify-center bg-slate-700/30 rounded-xl text-slate-400">
           <Image size={48} className="mb-3 opacity-40" />
           <p className="font-medium">Visualization Unavailable</p>
           <p className="text-sm mt-1">ML server may be offline</p>
@@ -228,52 +227,52 @@ const Analytics = ({ token, patients = [] }) => {
     <div className="space-y-8 animate-fade-in pb-8">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8">
         <div>
-          <h4 className="text-[#707EAE] font-medium text-sm mb-1">Insights & Clustering</h4>
-          <h2 className="text-3xl font-bold text-[#1B2559]">Advanced Analytics</h2>
-          <p className="text-[#A3AED0] text-sm mt-1">
+          <h4 className="text-slate-400 font-medium text-sm mb-1">Insights & Clustering</h4>
+          <h2 className="text-3xl font-bold text-white">Advanced Analytics</h2>
+          <p className="text-slate-400 text-sm mt-1">
             Cohort-level analysis including risk factors, clustering, and biomarker correlations
           </p>
         </div>
-        {loading && <span className="text-xs text-[#A3AED0]">Loading…</span>}
-        {error && !loading && <span className="text-xs text-[#EE5D50]">{error}</span>}
+        {loading && <span className="text-xs text-slate-400">Loading…</span>}
+        {error && !loading && <span className="text-xs text-rose-400">{error}</span>}
       </header>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+        <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-full bg-[#F4F7FE] flex items-center justify-center">
-              <Users className="text-[#4318FF]" size={24} />
+            <div className="w-12 h-12 rounded-full bg-teal-500/10 flex items-center justify-center">
+              <Users className="text-teal-400" size={24} />
             </div>
           </div>
-          <h3 className="text-3xl font-bold text-[#1B2559]">{totalAssessments}</h3>
-          <p className="text-[#A3AED0] text-sm mt-1">Total Assessments</p>
+          <h3 className="text-3xl font-bold text-white">{totalAssessments}</h3>
+          <p className="text-slate-400 text-sm mt-1">Total Assessments</p>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+        <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-full bg-[#FFF5F5] flex items-center justify-center">
-              <Activity className="text-[#EE5D50]" size={24} />
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center">
+              <Activity className="text-rose-400" size={24} />
             </div>
           </div>
-          <h3 className="text-3xl font-bold text-[#1B2559]">{avgRiskScore}%</h3>
-          <p className="text-[#A3AED0] text-sm mt-1">Average Risk Score</p>
+          <h3 className="text-3xl font-bold text-white">{avgRiskScore}%</h3>
+          <p className="text-slate-400 text-sm mt-1">Average Risk Score</p>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#E0E5F2]">
+        <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-full bg-[#E6FBF5] flex items-center justify-center">
-              <BarChart3 className="text-[#05CD99]" size={24} />
+            <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <BarChart3 className="text-emerald-400" size={24} />
             </div>
           </div>
-          <h3 className="text-3xl font-bold text-[#1B2559]">{mlClusters?.n_clusters || clusters.length || 3}</h3>
-          <p className="text-[#A3AED0] text-sm mt-1">Risk Clusters</p>
+          <h3 className="text-3xl font-bold text-white">{mlClusters?.n_clusters || clusters.length || 3}</h3>
+          <p className="text-slate-400 text-sm mt-1">Risk Clusters</p>
         </div>
       </div>
 
       {/* ML Error Banner */}
       {mlError && !mlLoading && (
-        <div className="bg-[#FFF5F5] border border-[#EE5D50]/30 p-4 rounded-2xl flex items-center gap-3 text-[#EE5D50]">
+        <div className="glass-card border border-rose-500/30 p-4 flex items-center gap-3 text-rose-400">
           <AlertCircle size={20} />
           <span className="text-sm font-medium">{mlError}</span>
         </div>
@@ -287,36 +286,36 @@ const Analytics = ({ token, patients = [] }) => {
         const metrics = getMLMetrics(mlMetrics);
         const modelComparison = mlMetrics.clinical?.model_comparison || mlMetrics.ada_baseline?.model_comparison || [];
         return (
-          <div className="bg-gradient-to-br from-[#4318FF] to-[#7C3AED] p-8 rounded-3xl shadow-lg text-white">
+          <div className="glass-card p-8 border border-teal-500/20">
             <div className="flex items-center gap-3 mb-6">
-              <Brain size={28} />
-              <h3 className="text-2xl font-bold">ML Model Performance</h3>
+              <Brain size={28} className="text-teal-400" />
+              <h3 className="text-2xl font-bold text-white">ML Model Performance</h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-                <p className="text-white/70 text-sm mb-1">Best Model</p>
-                <p className="text-xl font-bold">
+              <div className="bg-slate-700/30 p-4 rounded-2xl">
+                <p className="text-slate-400 text-sm mb-1">Best Model</p>
+                <p className="text-xl font-bold text-white">
                   {typeof metrics?.best_model === 'string'
                     ? metrics.best_model
                     : (metrics?.best_model?.model_type || metrics?.model_type || 'N/A')}
                 </p>
               </div>
-              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-                <p className="text-white/70 text-sm mb-1">Accuracy</p>
-                <p className="text-xl font-bold">
+              <div className="bg-slate-700/30 p-4 rounded-2xl">
+                <p className="text-slate-400 text-sm mb-1">Accuracy</p>
+                <p className="text-xl font-bold text-white">
                   {formatMetric(metrics?.metrics?.accuracy, true)}
                 </p>
               </div>
-              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-                <p className="text-white/70 text-sm mb-1">AUC-ROC</p>
-                <p className="text-xl font-bold">
+              <div className="bg-slate-700/30 p-4 rounded-2xl">
+                <p className="text-slate-400 text-sm mb-1">AUC-ROC</p>
+                <p className="text-xl font-bold text-white">
                   {formatMetric(metrics?.metrics?.auc_roc, false, 3)}
                 </p>
               </div>
-              <div className="bg-white/10 p-4 rounded-2xl backdrop-blur-sm">
-                <p className="text-white/70 text-sm mb-1">F1-Score</p>
-                <p className="text-xl font-bold">
+              <div className="bg-slate-700/30 p-4 rounded-2xl">
+                <p className="text-slate-400 text-sm mb-1">F1-Score</p>
+                <p className="text-xl font-bold text-white">
                   {formatMetric(metrics?.metrics?.f1_score, true)}
                 </p>
               </div>
@@ -327,7 +326,7 @@ const Analytics = ({ token, patients = [] }) => {
               <div className="mt-6 overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-white/70 border-b border-white/20">
+                    <tr className="text-slate-400 border-b border-slate-600/50">
                       <th className="text-left py-2">Model</th>
                       <th className="text-right py-2">Accuracy</th>
                       <th className="text-right py-2">Precision</th>
@@ -337,7 +336,7 @@ const Analytics = ({ token, patients = [] }) => {
                   </thead>
                   <tbody>
                     {modelComparison.map((m, i) => (
-                      <tr key={i} className="border-b border-white/10">
+                      <tr key={i} className="border-b border-slate-700/50 text-white">
                         <td className="py-2 font-medium">{m.Model}</td>
                         <td className="text-right py-2">{formatMetric(m.Accuracy, true)}</td>
                         <td className="text-right py-2">{formatMetric(m.Precision, true)}</td>
@@ -366,10 +365,10 @@ const Analytics = ({ token, patients = [] }) => {
       </div>
 
       {/* Risk Factor Importance Chart */}
-      <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+      <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
         <div className="mb-6">
-          <h3 className="text-2xl font-bold text-[#1B2559]">Risk Factor Importance</h3>
-          <p className="text-[#A3AED0] text-sm mt-2">
+          <h3 className="text-2xl font-bold text-white">Risk Factor Importance</h3>
+          <p className="text-slate-400 text-sm mt-2">
             Feature importance ranking based on contribution to T2DM risk prediction
           </p>
         </div>
@@ -379,9 +378,9 @@ const Analytics = ({ token, patients = [] }) => {
             layout="vertical"
             margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="#E0E5F2" />
-            <XAxis type="number" stroke="#A3AED0" domain={[0, 0.3]} />
-            <YAxis type="category" dataKey="factor" stroke="#A3AED0" style={{ fontSize: '14px', fontWeight: 600 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+            <XAxis type="number" stroke="#94A3B8" domain={[0, 0.3]} />
+            <YAxis type="category" dataKey="factor" stroke="#94A3B8" style={{ fontSize: '14px', fontWeight: 600 }} />
             <Tooltip
               contentStyle={{
                 backgroundColor: '#1B2559',
@@ -402,30 +401,30 @@ const Analytics = ({ token, patients = [] }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* BMI vs Glucose Correlation */}
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+        <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
           <div className="mb-6">
-            <h3 className="text-2xl font-bold text-[#1B2559]">BMI vs Glucose Correlation</h3>
-            <p className="text-[#A3AED0] text-sm mt-2">
+            <h3 className="text-2xl font-bold text-white">BMI vs Glucose Correlation</h3>
+            <p className="text-slate-400 text-sm mt-2">
               Scatter plot showing relationship between BMI and fasting blood sugar
             </p>
           </div>
           <ResponsiveContainer width="100%" height={350}>
             {bmiGlucoseData.length > 0 ? (
               <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E0E5F2" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                 <XAxis
                   type="number"
                   dataKey="bmi"
                   name="BMI"
-                  stroke="#A3AED0"
-                  label={{ value: 'BMI (kg/m²)', position: 'insideBottom', offset: -10, fill: '#A3AED0' }}
+                  stroke="#94A3B8"
+                  label={{ value: 'BMI (kg/m²)', position: 'insideBottom', offset: -10, fill: "#94A3B8" }}
                 />
                 <YAxis
                   type="number"
                   dataKey="fbs"
                   name="FBS"
-                  stroke="#A3AED0"
-                  label={{ value: 'FBS (mg/dL)', angle: -90, position: 'insideLeft', fill: '#A3AED0' }}
+                  stroke="#94A3B8"
+                  label={{ value: 'FBS (mg/dL)', angle: -90, position: 'insideLeft', fill: "#94A3B8" }}
                 />
                 <Tooltip
                   cursor={{ strokeDasharray: '3 3' }}
@@ -441,10 +440,10 @@ const Analytics = ({ token, patients = [] }) => {
                     return [value, name];
                   }}
                 />
-                <Scatter name="Patients" data={bmiGlucoseData} fill="#4318FF" />
+                <Scatter name="Patients" data={bmiGlucoseData} fill="#14B8A6" />
               </ScatterChart>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-[#A3AED0]">
+              <div className="w-full h-full flex items-center justify-center text-slate-400">
                 No correlation data available
               </div>
             )}
@@ -452,19 +451,19 @@ const Analytics = ({ token, patients = [] }) => {
         </div>
 
         {/* Risk Distribution */}
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+        <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
           <div className="mb-6">
-            <h3 className="text-2xl font-bold text-[#1B2559]">Risk Distribution</h3>
-            <p className="text-[#A3AED0] text-sm mt-2">
+            <h3 className="text-2xl font-bold text-white">Risk Distribution</h3>
+            <p className="text-slate-400 text-sm mt-2">
               Breakdown of patient assessments by risk category
             </p>
           </div>
           <ResponsiveContainer width="100%" height={350}>
             {riskDistribution.length > 0 && riskDistribution.some(r => r.value > 0) ? (
               <BarChart data={riskDistribution} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E0E5F2" />
-                <XAxis dataKey="name" stroke="#A3AED0" style={{ fontSize: '12px', fontWeight: 600 }} />
-                <YAxis stroke="#A3AED0" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                <XAxis dataKey="name" stroke="#94A3B8" style={{ fontSize: '12px', fontWeight: 600 }} />
+                <YAxis stroke="#94A3B8" />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#1B2559',
@@ -484,7 +483,7 @@ const Analytics = ({ token, patients = [] }) => {
                 </Bar>
               </BarChart>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-[#A3AED0]">
+              <div className="w-full h-full flex items-center justify-center text-slate-400">
                 No risk distribution data available
               </div>
             )}
@@ -493,10 +492,10 @@ const Analytics = ({ token, patients = [] }) => {
       </div>
 
       {/* T2DM Subgroups (Clustering) */}
-      <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+      <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
         <div className="mb-6">
-          <h3 className="text-2xl font-bold text-[#1B2559]">T2DM Subgroups (Novel Clustering)</h3>
-          <p className="text-[#A3AED0] text-sm mt-2">
+          <h3 className="text-2xl font-bold text-white">T2DM Subgroups (Novel Clustering)</h3>
+          <p className="text-slate-400 text-sm mt-2">
             Distribution across four diabetes subgroups based on Ahlqvist et al. classification
           </p>
         </div>
@@ -545,7 +544,7 @@ const Analytics = ({ token, patients = [] }) => {
                 const count = clusterData?.count || 0;
 
                 return (
-                  <div key={key} className="p-4 rounded-xl border-2 border-[#E0E5F2] hover:border-[#4318FF] transition-colors">
+                  <div key={key} className="p-4 rounded-xl border border-slate-600/30 hover:border-teal-500 transition-colors">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div
@@ -553,39 +552,39 @@ const Analytics = ({ token, patients = [] }) => {
                           style={{ backgroundColor: info.color }}
                         />
                         <div>
-                          <h4 className="font-bold text-[#1B2559]">{key}</h4>
-                          <p className="text-xs text-[#707EAE] font-medium">{info.name}</p>
+                          <h4 className="font-bold text-white">{key}</h4>
+                          <p className="text-xs text-slate-400 font-medium">{info.name}</p>
                         </div>
                       </div>
-                      <span className="text-2xl font-bold text-[#4318FF]">{count}</span>
+                      <span className="text-2xl font-bold text-teal-400">{count}</span>
                     </div>
-                    <p className="text-sm text-[#A3AED0] mt-2">{info.description}</p>
+                    <p className="text-sm text-slate-400 mt-2">{info.description}</p>
                   </div>
                 );
               })}
             </div>
           </>
         ) : (
-          <div className="text-center py-12 text-[#A3AED0]">
+          <div className="text-center py-12 text-slate-400">
             No clustering data available. Complete patient assessments to see subgroup distribution.
           </div>
         )}
       </div>
 
       {/* Biomarker Trends */}
-      <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#E0E5F2]">
+      <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
         <div className="mb-6">
-          <h3 className="text-2xl font-bold text-[#1B2559]">Biomarker Trends Over Time</h3>
-          <p className="text-[#A3AED0] text-sm mt-2">
+          <h3 className="text-2xl font-bold text-white">Biomarker Trends Over Time</h3>
+          <p className="text-slate-400 text-sm mt-2">
             Monthly averages of key biomarkers across the cohort
           </p>
         </div>
         <ResponsiveContainer width="100%" height={350}>
           {trends.length > 0 ? (
             <LineChart data={trends} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E0E5F2" />
-              <XAxis dataKey="label" stroke="#A3AED0" style={{ fontSize: '12px', fontWeight: 600 }} />
-              <YAxis stroke="#A3AED0" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+              <XAxis dataKey="label" stroke="#94A3B8" style={{ fontSize: '12px', fontWeight: 600 }} />
+              <YAxis stroke="#94A3B8" />
               <Tooltip
                 contentStyle={{
                   backgroundColor: '#1B2559',
@@ -598,7 +597,7 @@ const Analytics = ({ token, patients = [] }) => {
               <Line
                 type="monotone"
                 dataKey="hba1c"
-                stroke="#4318FF"
+                stroke="#14B8A6"
                 strokeWidth={3}
                 name="HbA1c (%)"
                 dot={{ fill: '#4318FF', r: 5 }}
@@ -613,7 +612,7 @@ const Analytics = ({ token, patients = [] }) => {
               />
             </LineChart>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-[#A3AED0]">
+            <div className="w-full h-full flex items-center justify-center text-slate-400">
               No trend data available
             </div>
           )}

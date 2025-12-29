@@ -14,6 +14,8 @@ import PatientHistory from './components/patients/PatientHistory';
 import Analytics from './components/analytics/Analytics';
 import Export from './components/export/Export';
 import Education from './components/education/Education';
+import BiologicalNetwork from './components/layout/BiologicalNetwork';
+import CustomCursor from './components/common/CustomCursor';
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -171,7 +173,7 @@ const App = () => {
       case 'patients':
         return (
           <>
-            {patientsError && <div className="text-red-600 mb-2">{patientsError}</div>}
+            {patientsError && <div className="text-rose-400 text-sm mb-2 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">{patientsError}</div>}
             <PatientHistory
               viewState={patientViewState}
               setViewState={setPatientViewState}
@@ -201,25 +203,38 @@ const App = () => {
     }
   };
 
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
-  }
-
   return (
-    <div className="flex bg-[#F4F7FE]">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onStartAssessment={handleStartAssessment} onLogout={handleLogout} />
-      <main className="flex-1 ml-20 lg:ml-72 p-6 lg:p-10">
-        {loadingPatients ? (
-          <div className="space-y-3 text-[#707EAE] animate-pulse">
-            <div className="h-4 w-24 bg-[#E0E5F2] rounded" />
-            <div className="h-4 w-48 bg-[#E0E5F2] rounded" />
-            <div className="h-4 w-32 bg-[#E0E5F2] rounded" />
-          </div>
-        ) : (
-          renderContent()
-        )}
-      </main>
-    </div>
+    <>
+      <CustomCursor isLoggedIn={isAuthenticated} />
+      {!isAuthenticated ? (
+        <Login onLogin={handleLogin} />
+      ) : (
+        <div
+          className="flex min-h-screen relative overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1E293B 100%)' }}
+        >
+          {/* Animated Background */}
+          <BiologicalNetwork nodeCount={40} connectionDistance={200} speed={0.15} />
+
+          {/* Subtle gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5 pointer-events-none" />
+
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onStartAssessment={handleStartAssessment} onLogout={handleLogout} />
+
+          <main className="relative z-10 flex-1 ml-20 lg:ml-72 p-6 lg:p-8">
+            {loadingPatients ? (
+              <div className="space-y-4 animate-pulse">
+                <div className="h-4 w-24 bg-slate-700/50 rounded" />
+                <div className="h-4 w-48 bg-slate-700/50 rounded" />
+                <div className="h-4 w-32 bg-slate-700/50 rounded" />
+              </div>
+            ) : (
+              renderContent()
+            )}
+          </main>
+        </div>
+      )}
+    </>
   );
 };
 
