@@ -115,6 +115,9 @@ class PredictorManager:
 # Global predictor manager
 _predictor_manager = PredictorManager()
 
+# Global SHAP explainer instance (lazy-loaded per model)
+shap_explainer = None
+
 
 def get_predictor():
     """Lazy load ADA baseline predictor."""
@@ -232,6 +235,7 @@ def predict_explain():
 
     Returns prediction results with SHAP-based feature contributions.
     """
+    global shap_explainer
     
     if not SHAP_AVAILABLE:
         return jsonify({"error": "SHAP not available. Install shap package."}), 503
