@@ -10,6 +10,7 @@ import {
   ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
 import { TrendingUp, Activity, Users, BarChart3, Brain, Target, Layers, AlertCircle, Image } from 'lucide-react';
+import { shouldAnimateCharts } from '../../utils/deviceCapabilities';
 
 // Loading Skeleton Component
 const LoadingSkeleton = ({ className = '' }) => (
@@ -87,6 +88,9 @@ const Analytics = ({ token, patients = [] }) => {
   const [mlClusters, setMlClusters] = useState(null);
   const [mlLoading, setMlLoading] = useState(false);
   const [mlError, setMlError] = useState(null);
+
+  // Device capability - disable chart animations on low-end devices
+  const animateCharts = useMemo(() => shouldAnimateCharts(), []);
 
 
   useEffect(() => {
@@ -390,7 +394,7 @@ const Analytics = ({ token, patients = [] }) => {
               }}
               formatter={(value) => `${(value * 100).toFixed(1)}%`}
             />
-            <Bar dataKey="importance" radius={[0, 8, 8, 0]}>
+            <Bar dataKey="importance" radius={[0, 8, 8, 0]} isAnimationActive={animateCharts}>
               {riskFactorImportance.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
@@ -440,7 +444,7 @@ const Analytics = ({ token, patients = [] }) => {
                     return [value, name];
                   }}
                 />
-                <Scatter name="Patients" data={bmiGlucoseData} fill="#14B8A6" />
+                <Scatter name="Patients" data={bmiGlucoseData} fill="#14B8A6" isAnimationActive={animateCharts} />
               </ScatterChart>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-slate-400">
@@ -476,7 +480,7 @@ const Analytics = ({ token, patients = [] }) => {
                     'Count'
                   ]}
                 />
-                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                <Bar dataKey="value" radius={[8, 8, 0, 0]} isAnimationActive={animateCharts}>
                   {riskDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
@@ -517,6 +521,7 @@ const Analytics = ({ token, patients = [] }) => {
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
+                  isAnimationActive={animateCharts}
                 >
                   {clusters.map((c, index) => (
                     <Cell key={`cell-${index}`} fill={clusterColor(c.cluster)} />
@@ -601,6 +606,7 @@ const Analytics = ({ token, patients = [] }) => {
                 strokeWidth={3}
                 name="HbA1c (%)"
                 dot={{ fill: '#4318FF', r: 5 }}
+                isAnimationActive={animateCharts}
               />
               <Line
                 type="monotone"
@@ -609,6 +615,7 @@ const Analytics = ({ token, patients = [] }) => {
                 strokeWidth={3}
                 name="FBS (mg/dL)"
                 dot={{ fill: '#6AD2FF', r: 5 }}
+                isAnimationActive={animateCharts}
               />
             </LineChart>
           ) : (

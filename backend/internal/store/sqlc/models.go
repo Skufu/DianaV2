@@ -44,6 +44,14 @@ type AuditEvent struct {
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 }
 
+type Clinic struct {
+	ID        int32              `json:"id"`
+	Name      string             `json:"name"`
+	Address   pgtype.Text        `json:"address"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
 type ModelRun struct {
 	ID           int32              `json:"id"`
 	ModelVersion string             `json:"model_version"`
@@ -93,4 +101,11 @@ type User struct {
 	Role         string             `json:"role"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
+type UserClinic struct {
+	UserID    int32              `json:"user_id"`
+	ClinicID  int32              `json:"clinic_id"`
+	Role      string             `json:"role"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }

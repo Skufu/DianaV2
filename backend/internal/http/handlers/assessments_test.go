@@ -74,8 +74,8 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"cluster":    "SIDD",
-			"risk_score": 87,
+			"risk_cluster": "SIDD",
+			"risk_score":   87,
 		})
 	}))
 	defer modelSrv.Close()
@@ -87,7 +87,7 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 	r.Use(mockAuthMiddleware())
 	r.POST("/:id/assessments", h.create)
 
-	body := bytes.NewBufferString(`{"fbs":110,"hba1c":6.1,"cholesterol":205}`)
+	body := bytes.NewBufferString(`{"fbs":110,"hba1c":6.1,"cholesterol":205,"bmi":25}`)
 	req, _ := http.NewRequest(http.MethodPost, "/123/assessments", body)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -117,7 +117,7 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 	r.Use(mockAuthMiddleware())
 	r.POST("/:id/assessments", h.create)
 
-	body := bytes.NewBufferString(`{"fbs":95}`)
+	body := bytes.NewBufferString(`{"fbs":95,"bmi":22}`)
 	req, _ := http.NewRequest(http.MethodPost, "/5/assessments", body)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -143,6 +143,8 @@ func (f *fakeStore) Users() store.UserRepository                 { return nil }
 func (f *fakeStore) Patients() store.PatientRepository           { return f.patientRepo }
 func (f *fakeStore) Assessments() store.AssessmentRepository     { return f.repo }
 func (f *fakeStore) RefreshTokens() store.RefreshTokenRepository { return nil }
+func (f *fakeStore) Cohort() store.CohortRepository           { return nil }
+func (f *fakeStore) Clinics() store.ClinicRepository          { return nil }
 func (f *fakeStore) Close()                                      {}
 
 // mockAuthMiddleware injects mock user claims for testing
@@ -219,5 +221,13 @@ func (f *fakeAssessmentRepo) TrendAverages(ctx context.Context) ([]models.TrendP
 }
 
 func (f *fakeAssessmentRepo) ListAllLimited(ctx context.Context, limit int) ([]models.Assessment, error) {
+	return nil, nil
+}
+
+func (f *fakeAssessmentRepo) GetTrend(ctx context.Context, patientID int64) ([]models.AssessmentTrend, error) {
+	return nil, nil
+}
+
+func (f *fakeAssessmentRepo) ListAllLimitedByUser(ctx context.Context, userID int32, limit int) ([]models.Assessment, error) {
 	return nil, nil
 }

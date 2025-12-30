@@ -12,6 +12,8 @@ type Store interface {
 	Patients() PatientRepository
 	Assessments() AssessmentRepository
 	RefreshTokens() RefreshTokenRepository
+	Cohort() CohortRepository
+	Clinics() ClinicRepository
 	Close()
 }
 
@@ -38,6 +40,8 @@ type AssessmentRepository interface {
 	ClusterCounts(ctx context.Context) ([]models.ClusterAnalytics, error)
 	TrendAverages(ctx context.Context) ([]models.TrendPoint, error)
 	ListAllLimited(ctx context.Context, limit int) ([]models.Assessment, error)
+	ListAllLimitedByUser(ctx context.Context, userID int32, limit int) ([]models.Assessment, error)
+	GetTrend(ctx context.Context, patientID int64) ([]models.AssessmentTrend, error)
 }
 
 type RefreshTokenRepository interface {
@@ -46,4 +50,24 @@ type RefreshTokenRepository interface {
 	RevokeRefreshToken(ctx context.Context, tokenHash string) error
 	RevokeAllUserTokens(ctx context.Context, userID int32) error
 	DeleteExpiredTokens(ctx context.Context) error
+}
+
+type CohortRepository interface {
+	StatsByCluster(ctx context.Context) ([]models.CohortGroup, error)
+	StatsByRiskLevel(ctx context.Context) ([]models.CohortGroup, error)
+	StatsByAgeGroup(ctx context.Context) ([]models.CohortGroup, error)
+	StatsByMenopauseStatus(ctx context.Context) ([]models.CohortGroup, error)
+	TotalPatientCount(ctx context.Context) (int, error)
+	TotalAssessmentCount(ctx context.Context) (int, error)
+}
+
+type ClinicRepository interface {
+	List(ctx context.Context) ([]models.Clinic, error)
+	Get(ctx context.Context, id int32) (*models.Clinic, error)
+	Create(ctx context.Context, name, address string) (*models.Clinic, error)
+	ListUserClinics(ctx context.Context, userID int32) ([]models.UserClinic, error)
+	IsClinicAdmin(ctx context.Context, userID, clinicID int32) (bool, error)
+	ClinicAggregate(ctx context.Context, clinicID int32) (*models.ClinicAggregate, error)
+	AdminSystemStats(ctx context.Context) (*models.SystemStats, error)
+	AdminClinicComparison(ctx context.Context) ([]models.ClinicComparison, error)
 }

@@ -1,14 +1,25 @@
 package handlers
 
 import (
+	"fmt"
+	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/ml"
 	"github.com/skufu/DianaV2/backend/internal/models"
+	"github.com/skufu/DianaV2/backend/internal/pdf"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
+
+// sanitizeFilename removes potentially dangerous characters from filenames
+var safeFilenameRegex = regexp.MustCompile(`[^a-zA-Z0-9_\-]`)
+
+func sanitizeFilename(name string) string {
+	return safeFilenameRegex.ReplaceAllString(name, "_")
+}
 
 type AssessmentsHandler struct {
 	store       store.Store
@@ -32,23 +43,24 @@ func (h *AssessmentsHandler) Register(rg *gin.RouterGroup) {
 	rg.GET("/:id/assessments/:assessmentID", h.get)
 	rg.PUT("/:id/assessments/:assessmentID", h.update)
 	rg.DELETE("/:id/assessments/:assessmentID", h.delete)
+	rg.GET("/:id/assessments/:assessmentID/report", h.report)
 }
 
 type assessmentReq struct {
-	FBS           float64 `json:"fbs"`
-	HbA1c         float64 `json:"hba1c"`
-	Cholesterol   int     `json:"cholesterol"`
-	LDL           int     `json:"ldl"`
-	HDL           int     `json:"hdl"`
-	Triglycerides int     `json:"triglycerides"`
-	Systolic      int     `json:"systolic"`
-	Diastolic     int     `json:"diastolic"`
-	Activity      string  `json:"activity"`
+	FBS           float64 `json:"fbs" binding:"gte=0,lte=1000"`
+	HbA1c         float64 `json:"hba1c" binding:"gte=0,lte=20"`
+	Cholesterol   int     `json:"cholesterol" binding:"gte=0,lte=1000"`
+	LDL           int     `json:"ldl" binding:"gte=0,lte=500"`
+	HDL           int     `json:"hdl" binding:"gte=0,lte=200"`
+	Triglycerides int     `json:"triglycerides" binding:"gte=0,lte=2000"`
+	Systolic      int     `json:"systolic" binding:"gte=0,lte=300"`
+	Diastolic     int     `json:"diastolic" binding:"gte=0,lte=200"`
+	Activity      string  `json:"activity" binding:"max=50,oneof='' 'sedentary' 'light' 'moderate' 'active' 'very_active'"`
 	HistoryFlag   bool    `json:"history_flag"`
-	Smoking       string  `json:"smoking"`
-	Hypertension  string  `json:"hypertension"`
-	HeartDisease  string  `json:"heart_disease"`
-	BMI           float64 `json:"bmi"`
+	Smoking       string  `json:"smoking" binding:"max=20,oneof='' 'never' 'former' 'current'"`
+	Hypertension  string  `json:"hypertension" binding:"max=10,oneof='' 'yes' 'no'"`
+	HeartDisease  string  `json:"heart_disease" binding:"max=10,oneof='' 'yes' 'no'"`
+	BMI           float64 `json:"bmi" binding:"gte=10,lte=100"`
 }
 
 func (h *AssessmentsHandler) create(c *gin.Context) {
@@ -101,6 +113,7 @@ func (h *AssessmentsHandler) create(c *gin.Context) {
 	a.RiskScore = risk
 	created, err := h.store.Assessments().Create(c.Request.Context(), a)
 	if err != nil {
+		log.Printf("Failed to create assessment: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create assessment"})
 		return
 	}
@@ -218,6 +231,25 @@ func joinWarnings(ws []string) string {
 }
 
 func (h *AssessmentsHandler) get(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	patientID, err := parseIDParam(c, "id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid patient id"})
+		return
+	}
+
+	// Verify patient exists and belongs to user
+	_, err = h.store.Patients().Get(c.Request.Context(), int32(patientID), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "patient not found"})
+		return
+	}
+
 	idStr := c.Param("assessmentID")
 	id, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
@@ -230,6 +262,13 @@ func (h *AssessmentsHandler) get(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "assessment not found"})
 		return
 	}
+
+	// Verify the assessment belongs to the requested patient
+	if assessment.PatientID != patientID {
+		c.JSON(http.StatusNotFound, gin.H{"error": "assessment not found"})
+		return
+	}
+
 	c.JSON(http.StatusOK, assessment)
 }
 
@@ -328,9 +367,77 @@ func (h *AssessmentsHandler) delete(c *gin.Context) {
 		return
 	}
 
+	// Verify the assessment exists and belongs to the patient
+	assessment, err := h.store.Assessments().Get(c.Request.Context(), int32(assessmentID))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "assessment not found"})
+		return
+	}
+	if assessment.PatientID != patientID {
+		c.JSON(http.StatusNotFound, gin.H{"error": "assessment not found"})
+		return
+	}
+
 	if err := h.store.Assessments().Delete(c.Request.Context(), int32(assessmentID)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete assessment"})
 		return
 	}
-	c.JSON(http.StatusNoContent, nil)
+	c.Status(http.StatusNoContent)
+}
+
+// report generates a PDF report for an assessment
+func (h *AssessmentsHandler) report(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	patientID, err := parseIDParam(c, "id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid patient id"})
+		return
+	}
+
+	// Verify patient exists and belongs to user
+	patient, err := h.store.Patients().Get(c.Request.Context(), int32(patientID), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "patient not found"})
+		return
+	}
+
+	assessmentIDStr := c.Param("assessmentID")
+	assessmentID, err := strconv.ParseInt(assessmentIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid assessment ID"})
+		return
+	}
+
+	assessment, err := h.store.Assessments().Get(c.Request.Context(), int32(assessmentID))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "assessment not found"})
+		return
+	}
+
+	// Verify the assessment belongs to the patient
+	if assessment.PatientID != patientID {
+		c.JSON(http.StatusNotFound, gin.H{"error": "assessment not found"})
+		return
+	}
+
+	// Generate PDF
+	generator := pdf.NewReportGenerator("")
+	pdfBytes, err := generator.GenerateAssessmentReport(*patient, *assessment, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate report"})
+		return
+	}
+
+	// Set response headers for PDF download - sanitize filename to prevent header injection
+	safeName := sanitizeFilename(patient.Name)
+	filename := fmt.Sprintf("diana_report_%s_%s.pdf", safeName, assessment.CreatedAt.Format("2006-01-02"))
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	c.Header("Content-Length", fmt.Sprintf("%d", len(pdfBytes)))
+	c.Data(http.StatusOK, "application/pdf", pdfBytes)
 }

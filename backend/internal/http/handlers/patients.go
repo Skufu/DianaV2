@@ -39,6 +39,7 @@ func (h *PatientsHandler) Register(rg *gin.RouterGroup) {
 	rg.GET("/:id", h.get)
 	rg.PUT("/:id", h.update)
 	rg.DELETE("/:id", h.delete)
+	rg.GET("/:id/trend", h.trend)
 }
 
 func (h *PatientsHandler) list(c *gin.Context) {
@@ -185,4 +186,36 @@ func (h *PatientsHandler) delete(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusNoContent, nil)
+}
+
+// trend returns the assessment history for a patient for trend visualization
+func (h *PatientsHandler) trend(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid patient ID"})
+		return
+	}
+
+	// Verify patient exists and belongs to user
+	_, err = h.store.Patients().Get(c.Request.Context(), int32(id), userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "patient not found"})
+		return
+	}
+
+	// Get assessment trend data
+	trend, err := h.store.Assessments().GetTrend(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get trend data"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"trend": trend})
 }

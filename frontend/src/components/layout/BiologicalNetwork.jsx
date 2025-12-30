@@ -15,6 +15,8 @@ const BiologicalNetwork = memo(({
     const dimensionsRef = useRef({ width: 0, height: 0 });
     const contextRef = useRef(null);
     const dprRef = useRef(1);
+    const isVisibleRef = useRef(true); // Track if canvas is visible
+    const reducedMotionRef = useRef(false); // Track reduced motion preference
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -73,10 +75,46 @@ const BiologicalNetwork = memo(({
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseleave', handleMouseLeave);
 
+        // Check for reduced motion preference
+        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        reducedMotionRef.current = mediaQuery.matches;
+        const handleMotionChange = (e) => {
+            reducedMotionRef.current = e.matches;
+        };
+        mediaQuery.addEventListener('change', handleMotionChange);
+
+        // IntersectionObserver to pause animation when off-screen
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    isVisibleRef.current = entry.isIntersecting;
+                });
+            },
+            { threshold: 0.1 }
+        );
+        observer.observe(canvas);
+
         // Animation loop
         const animate = () => {
+            // Skip animation if not visible or reduced motion preferred
+            if (!isVisibleRef.current) {
+                animationRef.current = requestAnimationFrame(animate);
+                return;
+            }
+
             const { width: w, height: h } = dimensionsRef.current;
             ctx.clearRect(0, 0, w, h);
+
+            // If reduced motion, just draw static nodes without animation
+            if (reducedMotionRef.current) {
+                nodesRef.current.forEach((node) => {
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, node.baseRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsla(${node.hue}, 70%, 55%, 0.6)`;
+                    ctx.fill();
+                });
+                return; // Don't request next frame for static view
+            }
 
             const nodes = nodesRef.current;
             const mouse = mouseRef.current;
@@ -268,6 +306,8 @@ const BiologicalNetwork = memo(({
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseleave', handleMouseLeave);
             window.removeEventListener('resize', handleResize);
+            mediaQuery.removeEventListener('change', handleMotionChange);
+            observer.disconnect();
         };
     }, []); // Empty dependency array - only run once!
 

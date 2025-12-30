@@ -182,6 +182,58 @@ func (q *Queries) GetAssessment(ctx context.Context, id int32) (Assessment, erro
 	return i, err
 }
 
+const getPatientAssessmentTrend = `-- name: GetPatientAssessmentTrend :many
+SELECT id, created_at, risk_score, cluster, hba1c, bmi, fbs, 
+       triglycerides, ldl, hdl
+FROM assessments
+WHERE patient_id = $1
+ORDER BY created_at ASC
+`
+
+type GetPatientAssessmentTrendRow struct {
+	ID            int32              `json:"id"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	RiskScore     pgtype.Int4        `json:"risk_score"`
+	Cluster       pgtype.Text        `json:"cluster"`
+	Hba1c         pgtype.Numeric     `json:"hba1c"`
+	Bmi           pgtype.Numeric     `json:"bmi"`
+	Fbs           pgtype.Numeric     `json:"fbs"`
+	Triglycerides pgtype.Int4        `json:"triglycerides"`
+	Ldl           pgtype.Int4        `json:"ldl"`
+	Hdl           pgtype.Int4        `json:"hdl"`
+}
+
+func (q *Queries) GetPatientAssessmentTrend(ctx context.Context, patientID pgtype.Int4) ([]GetPatientAssessmentTrendRow, error) {
+	rows, err := q.db.Query(ctx, getPatientAssessmentTrend, patientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPatientAssessmentTrendRow
+	for rows.Next() {
+		var i GetPatientAssessmentTrendRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.RiskScore,
+			&i.Cluster,
+			&i.Hba1c,
+			&i.Bmi,
+			&i.Fbs,
+			&i.Triglycerides,
+			&i.Ldl,
+			&i.Hdl,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAssessmentsByPatient = `-- name: ListAssessmentsByPatient :many
 SELECT id, patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
        activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
@@ -246,6 +298,67 @@ LIMIT $1
 
 func (q *Queries) ListAssessmentsLimited(ctx context.Context, limit int32) ([]Assessment, error) {
 	rows, err := q.db.Query(ctx, listAssessmentsLimited, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Assessment
+	for rows.Next() {
+		var i Assessment
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientID,
+			&i.Fbs,
+			&i.Hba1c,
+			&i.Cholesterol,
+			&i.Ldl,
+			&i.Hdl,
+			&i.Triglycerides,
+			&i.Systolic,
+			&i.Diastolic,
+			&i.Activity,
+			&i.HistoryFlag,
+			&i.Smoking,
+			&i.Hypertension,
+			&i.HeartDisease,
+			&i.Bmi,
+			&i.Cluster,
+			&i.RiskScore,
+			&i.ModelVersion,
+			&i.DatasetHash,
+			&i.ValidationStatus,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAssessmentsLimitedByUser = `-- name: ListAssessmentsLimitedByUser :many
+SELECT a.id, a.patient_id, a.fbs, a.hba1c, a.cholesterol, a.ldl, a.hdl, a.triglycerides,
+       a.systolic, a.diastolic, a.activity, a.history_flag, a.smoking, a.hypertension,
+       a.heart_disease, a.bmi, a.cluster, a.risk_score, a.model_version, a.dataset_hash,
+       a.validation_status, a.created_at, a.updated_at
+FROM assessments a
+INNER JOIN patients p ON a.patient_id = p.id
+WHERE p.user_id = $1
+ORDER BY a.created_at DESC
+LIMIT $2
+`
+
+type ListAssessmentsLimitedByUserParams struct {
+	UserID int32 `json:"user_id"`
+	Limit  int32 `json:"limit"`
+}
+
+func (q *Queries) ListAssessmentsLimitedByUser(ctx context.Context, arg ListAssessmentsLimitedByUserParams) ([]Assessment, error) {
+	rows, err := q.db.Query(ctx, listAssessmentsLimitedByUser, arg.UserID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

@@ -116,3 +116,19 @@ internal/store/sqlc/
 *.pid.lock
 .cache/
 .temp/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# MLflow
+mlruns/
+
+# Playwright test artifacts
+frontend/playwright-report/
+frontend/test-results/
+
+# Generated summaries
+GIT_CHANGES_SUMMARY.md

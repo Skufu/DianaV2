@@ -348,6 +348,56 @@ func (r *pgAssessmentRepo) ListAllLimited(ctx context.Context, limit int) ([]mod
 	return mapAssessmentsLimitedRows(rows), nil
 }
 
+func (r *pgAssessmentRepo) ListAllLimitedByUser(ctx context.Context, userID int32, limit int) ([]models.Assessment, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	rows, err := r.q.ListAssessmentsLimitedByUser(ctx, sqlcgen.ListAssessmentsLimitedByUserParams{
+		UserID: userID,
+		Limit:  int32(limit),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapAssessmentsLimitedRows(rows), nil
+}
+
+func (r *pgAssessmentRepo) GetTrend(ctx context.Context, patientID int64) ([]models.AssessmentTrend, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	// Use raw SQL since this query may not be in sqlc yet
+	// Query returns assessment trend data ordered by created_at ASC
+	assessments, err := r.ListByPatient(ctx, patientID)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Convert to trend format and sort by date ascending
+	var trends []models.AssessmentTrend
+	for i := len(assessments) - 1; i >= 0; i-- {
+		a := assessments[i]
+		var riskScore *float64
+		if a.RiskScore > 0 {
+			rs := float64(a.RiskScore) / 100.0
+			riskScore = &rs
+		}
+		trends = append(trends, models.AssessmentTrend{
+			ID:            a.ID,
+			CreatedAt:     a.CreatedAt,
+			RiskScore:     riskScore,
+			Cluster:       a.Cluster,
+			HbA1c:         a.HbA1c,
+			BMI:           a.BMI,
+			FBS:           a.FBS,
+			Triglycerides: a.Triglycerides,
+			LDL:           a.LDL,
+			HDL:           a.HDL,
+		})
+	}
+	return trends, nil
+}
+
 type pgRefreshTokenRepo struct{ q *sqlcgen.Queries }
 
 func (r *pgRefreshTokenRepo) CreateRefreshToken(ctx context.Context, tokenHash string, userID int32, expiresAt time.Time) (*models.RefreshToken, error) {

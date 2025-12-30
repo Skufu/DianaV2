@@ -18,7 +18,7 @@ type HTTPPredictor struct {
 }
 
 type predictResp struct {
-	Cluster   string `json:"cluster"`
+	Cluster   string `json:"risk_cluster"`
 	RiskScore int    `json:"risk_score"`
 }
 

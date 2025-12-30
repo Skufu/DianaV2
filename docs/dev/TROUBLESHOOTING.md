@@ -88,7 +88,7 @@ ping ep-blue-king-a14l0x0l-pooler.ap-southeast-1.aws.neon.tech
 **Check ports match**:
 ```bash
 # Ensure backend port matches frontend API_BASE
-grep PORT .env                    # Should show PORT=8080 or 8081
+grep PORT .env                    # Should show PORT=8080 or 8080
 grep VITE_API_BASE .env          # Should match backend port
 ```
 
@@ -101,14 +101,14 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 **API base path**:
 ```bash
 # Frontend should use full API path
-VITE_API_BASE=http://localhost:8081/api/v1
+VITE_API_BASE=http://localhost:8080/api/v1
 ```
 
 ## Development Commands
 
 ```bash
 # Quick health check
-curl http://localhost:8081/api/v1/healthz
+curl http://localhost:8080/api/v1/healthz
 
 # Test database connectivity
 ./test-db.sh

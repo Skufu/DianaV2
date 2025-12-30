@@ -70,11 +70,18 @@ func (h *ExportHandler) patientsCSV(c *gin.Context) {
 }
 
 func (h *ExportHandler) assessmentsCSV(c *gin.Context) {
+	userID, err := getUserID(c)
+	if err != nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
 	c.Header("Content-Type", "text/csv")
 	c.Header("Content-Disposition", "attachment; filename=\"assessments.csv\"")
 	w := csv.NewWriter(c.Writer)
 	_ = w.Write([]string{"id", "patient_id", "fbs", "hba1c", "cholesterol", "ldl", "hdl", "triglycerides", "systolic", "diastolic", "activity", "history_flag", "smoking", "hypertension", "heart_disease", "bmi", "cluster", "risk_score", "model_version", "dataset_hash", "validation_status", "created_at"})
-	rows, err := h.store.Assessments().ListAllLimited(c.Request.Context(), h.maxRows)
+	// Only export assessments for patients owned by the authenticated user
+	rows, err := h.store.Assessments().ListAllLimitedByUser(c.Request.Context(), userID, h.maxRows)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return

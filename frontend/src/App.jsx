@@ -1,21 +1,44 @@
 // App: auth gate, tab routing, and data fetching for patients/assessments.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense, lazy, useMemo } from 'react';
 import {
   createAssessmentApi,
   createPatientApi,
   fetchAssessmentsApi,
   fetchPatientsApi,
   loginApi,
+  clearCache,
 } from './api';
 import Sidebar from './components/layout/Sidebar';
 import Login from './components/auth/Login';
-import Dashboard from './components/dashboard/Dashboard';
-import PatientHistory from './components/patients/PatientHistory';
-import Analytics from './components/analytics/Analytics';
-import Export from './components/export/Export';
-import Education from './components/education/Education';
 import BiologicalNetwork from './components/layout/BiologicalNetwork';
 import CustomCursor from './components/common/CustomCursor';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import {
+  getAnimationNodeCount,
+  shouldDisableHeavyEffects,
+  getPerformanceTier,
+  PERF_TIER,
+} from './utils/deviceCapabilities';
+
+// Lazy-loaded route components for code splitting
+const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
+const PatientHistory = lazy(() => import('./components/patients/PatientHistory'));
+const Analytics = lazy(() => import('./components/analytics/Analytics'));
+const Export = lazy(() => import('./components/export/Export'));
+const Education = lazy(() => import('./components/education/Education'));
+
+// Loading skeleton for lazy components
+const LoadingSkeleton = () => (
+  <div className="space-y-4 animate-pulse">
+    <div className="h-8 w-48 bg-slate-700/50 rounded" />
+    <div className="h-4 w-full max-w-md bg-slate-700/30 rounded" />
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-40 bg-slate-700/20 rounded-2xl" />
+      ))}
+    </div>
+  </div>
+);
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,6 +50,24 @@ const App = () => {
   const [assessmentsCache, setAssessmentsCache] = useState({});
   const [patientsError, setPatientsError] = useState(null);
   const [loadingPatients, setLoadingPatients] = useState(false);
+
+  // Device performance detection (computed once)
+  const performanceTier = useMemo(() => getPerformanceTier(), []);
+  const animationNodeCount = useMemo(() => getAnimationNodeCount(), []);
+  const disableHeavyEffects = useMemo(() => shouldDisableHeavyEffects(), []);
+
+  // Apply low-perf CSS class to body for global effect reduction
+  useEffect(() => {
+    if (disableHeavyEffects) {
+      document.body.classList.add('low-perf');
+    }
+    if (performanceTier !== PERF_TIER.HIGH) {
+      document.body.classList.add('reduced-motion');
+    }
+    return () => {
+      document.body.classList.remove('low-perf', 'reduced-motion');
+    };
+  }, [disableHeavyEffects, performanceTier]);
 
   const handleLogin = async (email, password) => {
     const res = await loginApi(email, password);
@@ -213,8 +254,10 @@ const App = () => {
           className="flex min-h-screen relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1E293B 100%)' }}
         >
-          {/* Animated Background */}
-          <BiologicalNetwork nodeCount={40} connectionDistance={200} speed={0.15} />
+          {/* Animated Background - disabled on low-end devices */}
+          {animationNodeCount > 0 && (
+            <BiologicalNetwork nodeCount={animationNodeCount} connectionDistance={200} speed={0.15} />
+          )}
 
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5 pointer-events-none" />
@@ -223,13 +266,13 @@ const App = () => {
 
           <main className="relative z-10 flex-1 ml-20 lg:ml-72 p-6 lg:p-8">
             {loadingPatients ? (
-              <div className="space-y-4 animate-pulse">
-                <div className="h-4 w-24 bg-slate-700/50 rounded" />
-                <div className="h-4 w-48 bg-slate-700/50 rounded" />
-                <div className="h-4 w-32 bg-slate-700/50 rounded" />
-              </div>
+              <LoadingSkeleton />
             ) : (
-              renderContent()
+              <ErrorBoundary section={activeTab}>
+                <Suspense fallback={<LoadingSkeleton />}>
+                  {renderContent()}
+                </Suspense>
+              </ErrorBoundary>
             )}
           </main>
         </div>

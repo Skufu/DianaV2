@@ -1,0 +1,95 @@
+version: '3.8'
+
+# DIANA V2 Multi-Service Docker Compose
+# Usage: docker-compose up --build
+#
+# Required environment variables (set in .env file or export):
+#   POSTGRES_PASSWORD - Database password
+#   JWT_SECRET - JWT signing secret (min 32 chars)
+#   ML_API_KEY - API key for ML server authentication
+#
+# Optional:
+#   VITE_API_BASE - Backend API URL (default: http://localhost:8080)
+#   VITE_ML_BASE - ML server URL (default: http://localhost:5000)
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: diana-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-diana}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password required}
+      POSTGRES_DB: ${POSTGRES_DB:-diana}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-diana}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Go Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: build/Dockerfile
+    container_name: diana-backend
+    environment:
+      PORT: 8080
+      ENV: production
+      DB_DSN: postgres://${POSTGRES_USER:-diana}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-diana}?sslmode=require
+      JWT_SECRET: ${JWT_SECRET:?JWT secret required (min 32 chars)}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173}
+      MODEL_URL: http://ml:5000
+      ML_API_KEY: ${ML_API_KEY:-}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Python ML Server
+  ml:
+    build:
+      context: ./ml
+      dockerfile: Dockerfile
+    container_name: diana-ml
+    environment:
+      ML_PORT: 5000
+      PYTHONUNBUFFERED: 1
+      ML_API_KEY: ${ML_API_KEY:-}
+      ENV: production
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080}
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./models:/app/models:ro
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  # React Frontend (Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: ${VITE_API_BASE:-http://localhost:8080}
+        VITE_ML_BASE: ${VITE_ML_BASE:-http://localhost:5000}
+    container_name: diana-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - ml
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -14,6 +14,17 @@ FROM assessments
 ORDER BY created_at DESC
 LIMIT $1;
 
+-- name: ListAssessmentsLimitedByUser :many
+SELECT a.id, a.patient_id, a.fbs, a.hba1c, a.cholesterol, a.ldl, a.hdl, a.triglycerides,
+       a.systolic, a.diastolic, a.activity, a.history_flag, a.smoking, a.hypertension,
+       a.heart_disease, a.bmi, a.cluster, a.risk_score, a.model_version, a.dataset_hash,
+       a.validation_status, a.created_at, a.updated_at
+FROM assessments a
+INNER JOIN patients p ON a.patient_id = p.id
+WHERE p.user_id = $1
+ORDER BY a.created_at DESC
+LIMIT $2;
+
 -- name: CreateAssessment :one
 INSERT INTO assessments (
   patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
@@ -81,3 +92,9 @@ FROM assessments
 GROUP BY label
 ORDER BY label;
 
+-- name: GetPatientAssessmentTrend :many
+SELECT id, created_at, risk_score, cluster, hba1c, bmi, fbs, 
+       triglycerides, ldl, hdl
+FROM assessments
+WHERE patient_id = $1
+ORDER BY created_at ASC;

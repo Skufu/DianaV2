@@ -15,6 +15,25 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
+// @title           DIANA API
+// @version         1.0
+// @description     Diabetes Insulin Activity and Nutrition Analyzer (DIANA) - Risk assessment and patient management API
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   DIANA Support
+// @contact.email  support@diana-health.com
+
+// @license.name  MIT
+// @license.url   https://opensource.org/licenses/MIT
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description JWT Bearer token. Format: Bearer <token>
+
 func main() {
 	// Load .env file if it exists (not required in production)
 	if err := godotenv.Load(); err != nil {

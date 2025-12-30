@@ -118,6 +118,18 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 		return
 	}
 
+	// Check if token has been revoked
+	if tokenRecord.Revoked {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token has been revoked"})
+		return
+	}
+
+	// Check if token has expired
+	if time.Now().After(tokenRecord.ExpiresAt) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token has expired"})
+		return
+	}
+
 	// Get user details
 	user, err := h.store.Users().FindByID(c.Request.Context(), int32(tokenRecord.UserID))
 	if err != nil {
