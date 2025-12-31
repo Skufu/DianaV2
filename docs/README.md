@@ -16,6 +16,7 @@
 | Database Schema | [DATABASE.md](./DATABASE.md) |
 | ML API Contract | [ml-api-contract.md](./ml-api-contract.md) |
 | Paper Requirements | [paper-requirements.md](./paper-requirements.md) |
+| **📖 Paper RAG (AI)** | [paper_rag/README.md](./paper_rag/README.md) |
 
 ---
 

@@ -4,7 +4,9 @@
 
 **DIANA** = Diabetes Intelligent Analysis for Menopausal Women
 
-A system to predict Type 2 Diabetes risk in postmenopausal women using machine learning, combining supervised classification with unsupervised clustering.
+A predictive model-based application to identify cluster-based Type 2 Diabetes risk in menopausal women using machine learning, combining supervised classification with unsupervised clustering.
+
+> **For detailed RAG-friendly references, see [`paper_rag/`](paper_rag/README.md)**
 
 ---
 
@@ -26,21 +28,31 @@ A system to predict Type 2 Diabetes risk in postmenopausal women using machine l
 ## Biomarkers / Features
 
 ### Blood Biomarkers (Required)
-| Biomarker | Full Name | Unit |
-|-----------|-----------|------|
-| FBS | Fasting Blood Sugar | mg/dL |
-| HbA1c | Hemoglobin A1c | % |
-| TC | Total Cholesterol | mg/dL |
-| HDL-C | HDL Cholesterol | mg/dL |
-| LDL-C | LDL Cholesterol | mg/dL |
-| TG | Triglycerides | mg/dL |
+| Biomarker | Full Name | Unit | Normal | Pre-diabetic | Diabetic |
+|-----------|-----------|------|--------|--------------|----------|
+| FBS | Fasting Blood Sugar | mg/dL | <100 | 100-125 | ≥126 |
+| HbA1c | Hemoglobin A1c | % | <5.7 | 5.7-6.4 | ≥6.5 |
+| TC | Total Cholesterol | mg/dL | - | - | - |
+| HDL-C | HDL Cholesterol | mg/dL | - | - | - |
+| LDL-C | LDL Cholesterol | mg/dL | - | - | - |
+| TG | Triglycerides | mg/dL | - | - | - |
 
 ### Non-Blood Features
-| Feature | Type |
-|---------|------|
-| Age | Numerical (years) |
-| BMI | Numerical (kg/m²) - calculated from height/weight |
-| Menopausal Status | Cohort descriptor (all Postmenopausal) |
+| Feature | Type | Notes |
+|---------|------|-------|
+| Age | Numerical (years) | 45-60 range |
+| BMI | Numerical (kg/m²) | Calculated from height/weight |
+| Menopausal Status | Categorical | All Postmenopausal in cohort |
+| Family History | Binary | Diabetes in parents/siblings |
+
+### Lifestyle Factors (Optional)
+| Factor | Type | Source |
+|--------|------|--------|
+| Smoking | Binary | SMQ020 in NHANES |
+| Physical Activity | Binary | PAQ710 in NHANES |
+| Alcohol Use | Binary | ALQ101 in NHANES |
+
+> **See also**: [paper_rag/biomarkers.md](paper_rag/biomarkers.md)
 
 ---
 
@@ -49,7 +61,7 @@ A system to predict Type 2 Diabetes risk in postmenopausal women using machine l
 Based on **HbA1c** (per ADA guidelines):
 
 | Status | HbA1c | FBS (secondary) |
-|--------|-------|-----------------|
+|--------|-------|-----------------| 
 | **Normal** | < 5.7% | < 100 mg/dL |
 | **Pre-diabetic** | 5.7 - 6.4% | 100 - 125 mg/dL |
 | **Diabetic** | ≥ 6.5% | ≥ 126 mg/dL |
@@ -67,11 +79,7 @@ Based on **HbA1c** (per ADA guidelines):
 | **Features** | All 7 biomarkers: HbA1c, FBS, BMI, Triglycerides, LDL, HDL, Age |
 | **Target** | Diabetes status (3-class: Normal/Pre-diabetic/Diabetic) |
 | **Algorithms** | Logistic Regression, Random Forest, XGBoost |
-| **Expected Performance** | AUC ~1.0 (model correctly applies ADA diagnostic criteria) |
-
-> **Why 100% accuracy?** The model includes HbA1c as a feature, and diabetes 
-> labels are defined by HbA1c thresholds per ADA guidelines. This perfect 
-> alignment validates the implementation correctly applies clinical criteria.
+| **Expected Performance** | AUC > 0.80 (clinical), ~1.0 (ADA with HbA1c) |
 
 ### Algorithms Required
 | Model | Library | Key Parameters |
@@ -91,7 +99,7 @@ Based on **HbA1c** (per ADA guidelines):
 | Precision | Report value |
 | Recall | Report value |
 | F1-Score | Report value |
-| AUC-ROC | > 0.95 |
+| AUC-ROC | > 0.80 (minimum acceptable) |
 | Cross-validation score | Report value |
 
 ### Best Model Selection
@@ -99,6 +107,8 @@ Based on **HbA1c** (per ADA guidelines):
 2. Select best based on AUC-ROC (primary) + F1-Score (secondary)
 3. Generate confusion matrix and ROC curve for best model
 4. Document justification in `best_model_report.json`
+
+> **See also**: [paper_rag/ml_algorithms.md](paper_rag/ml_algorithms.md)
 
 ---
 
@@ -111,6 +121,8 @@ Based on **HbA1c** (per ADA guidelines):
 | Rank features by importance | Ordered list |
 | Visualize | Bar chart |
 
+> **See also**: [paper_rag/feature_selection.md](paper_rag/feature_selection.md)
+
 ---
 
 ## K-Means Clustering (Unsupervised)
@@ -120,7 +132,7 @@ Based on **HbA1c** (per ADA guidelines):
 | Parameter | Value |
 |-----------|-------|
 | Algorithm | K-Means |
-| Features | All biomarkers |
+| Features | All biomarkers (standardized) |
 | K | 4 clusters (based on diabetes subtypes) |
 | Validation | Elbow method + Silhouette score |
 
@@ -131,6 +143,8 @@ Based on **HbA1c** (per ADA guidelines):
 | SIDD | Severe Insulin-Deficient Diabetes | Low BMI, high HbA1c |
 | MOD | Mild Obesity-Related Diabetes | Moderate BMI elevation |
 | MARD | Mild Age-Related Diabetes | Older onset, mild dysfunction |
+
+> **See also**: [paper_rag/diabetes_subgroups.md](paper_rag/diabetes_subgroups.md)
 
 ---
 
@@ -178,13 +192,20 @@ Based on **HbA1c** (per ADA guidelines):
 1. **Risk Assessment Interface**
    - Medical Status: "Normal" / "Pre-diabetic" / "Diabetic"
    - Risk Cluster: "SIRD" / "SIDD" / "MOD" / "MARD"
-   - Probability: Risk score from classifier
+   - Probability: Risk score from classifier (0-100%)
 
 2. **Analytics Dashboard**
    - Model performance metrics
    - Feature importance (IG scores)
    - Cluster distribution charts
    - Cluster heatmaps
+
+3. **Patient Management**
+   - Patient records list
+   - Historical biomarker tracking
+   - Trend visualization (line graphs over time)
+
+> **See also**: [paper_rag/ui_requirements.md](paper_rag/ui_requirements.md)
 
 ---
 
@@ -201,3 +222,20 @@ Based on **HbA1c** (per ADA guidelines):
 - **Backend:** Go 1.21+, PostgreSQL
 - **Frontend:** React, Vite
 - **ML Server:** Flask (Python)
+
+---
+
+## RAG Reference Index
+
+For AI-assisted development, use these focused documents:
+
+| Topic | Document |
+|-------|----------|
+| Biomarkers | [paper_rag/biomarkers.md](paper_rag/biomarkers.md) |
+| T2DM Subgroups | [paper_rag/diabetes_subgroups.md](paper_rag/diabetes_subgroups.md) |
+| ML Algorithms | [paper_rag/ml_algorithms.md](paper_rag/ml_algorithms.md) |
+| Feature Selection | [paper_rag/feature_selection.md](paper_rag/feature_selection.md) |
+| Data Pipeline | [paper_rag/data_pipeline.md](paper_rag/data_pipeline.md) |
+| Metrics | [paper_rag/metrics.md](paper_rag/metrics.md) |
+| UI Requirements | [paper_rag/ui_requirements.md](paper_rag/ui_requirements.md) |
+| Code Alignment | [paper_rag/codebase_alignment.md](paper_rag/codebase_alignment.md) |
