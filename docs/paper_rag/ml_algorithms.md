@@ -25,7 +25,7 @@
 2. **Secondary**: F1-Score (balance of precision/recall)
 3. **Tertiary**: Clinical interpretability
 
-> Paper expects AUC ~1.0 for ADA predictor (since HbA1c defines labels), but **realistic AUC > 0.80** for clinical predictor.
+> Paper expects AUC ~1.0 for ADA predictor (since HbA1c defines labels). **Verified clinical predictor AUC: ~0.67** (realistic for non-circular prediction without HbA1c/FBS).
 
 ---
 

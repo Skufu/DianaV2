@@ -1,98 +1,206 @@
 {
   "entropy": {
-    "target": "diabetes_status",
+    "target": "diabetes_label",
     "value": 1.4596,
     "interpretation": "Uncertainty in diabetes classification before using features"
   },
-  "information_gain": {
-    "fbs": 0.3576,
-    "bmi": 0.0825,
-    "triglycerides": 0.0579,
-    "ldl": 0.0262,
-    "hdl": 0.1024,
-    "age": 0.0178,
-    "systolic": 0.0341,
-    "diastolic": 0.0085,
-    "total_cholesterol": 0.0243,
-    "smoking_status": 0.0071,
-    "physical_activity": 0.0113,
-    "alcohol_use": 0.031
+  "mutual_information": {
+    "method": "sklearn.mutual_info_classif (k-NN estimator)",
+    "scores": {
+      "hba1c": 1.0076,
+      "fbs": 0.3168,
+      "bmi": 0.0605,
+      "triglycerides": 0.0278,
+      "ldl": 0.0,
+      "hdl": 0.0465,
+      "age": 0.0
+    },
+    "ranking": [
+      {
+        "rank": 1,
+        "feature": "hba1c",
+        "score": 1.0076
+      },
+      {
+        "rank": 2,
+        "feature": "fbs",
+        "score": 0.3168
+      },
+      {
+        "rank": 3,
+        "feature": "bmi",
+        "score": 0.0605
+      },
+      {
+        "rank": 4,
+        "feature": "hdl",
+        "score": 0.0465
+      },
+      {
+        "rank": 5,
+        "feature": "triglycerides",
+        "score": 0.0278
+      },
+      {
+        "rank": 6,
+        "feature": "ldl",
+        "score": 0.0
+      },
+      {
+        "rank": 7,
+        "feature": "age",
+        "score": 0.0
+      }
+    ]
   },
-  "feature_ranking": [
+  "information_gain_clinical": {
+    "method": "Discretization with clinical thresholds",
+    "thresholds_used": {
+      "hba1c": [
+        5.7,
+        6.5
+      ],
+      "fbs": [
+        100,
+        126
+      ],
+      "bmi": [
+        25,
+        30
+      ],
+      "triglycerides": [
+        150,
+        200
+      ],
+      "ldl": [
+        100,
+        160
+      ],
+      "hdl": [
+        40,
+        60
+      ],
+      "age": [
+        50,
+        55
+      ]
+    },
+    "scores": {
+      "fbs": 0.3598,
+      "bmi": 0.0688,
+      "triglycerides": 0.0323,
+      "ldl": 0.0185,
+      "hdl": 0.0721,
+      "age": 0.0054
+    }
+  },
+  "random_forest_importance": {
+    "method": "RandomForest(n_estimators=100, max_depth=10)",
+    "scores": {
+      "hba1c": 0.7434,
+      "fbs": 0.14,
+      "bmi": 0.0315,
+      "triglycerides": 0.0219,
+      "ldl": 0.0228,
+      "hdl": 0.0304,
+      "age": 0.01
+    },
+    "ranking": [
+      {
+        "rank": 1,
+        "feature": "hba1c",
+        "score": 0.7434
+      },
+      {
+        "rank": 2,
+        "feature": "fbs",
+        "score": 0.14
+      },
+      {
+        "rank": 3,
+        "feature": "bmi",
+        "score": 0.0315
+      },
+      {
+        "rank": 4,
+        "feature": "hdl",
+        "score": 0.0304
+      },
+      {
+        "rank": 5,
+        "feature": "ldl",
+        "score": 0.0228
+      },
+      {
+        "rank": 6,
+        "feature": "triglycerides",
+        "score": 0.0219
+      },
+      {
+        "rank": 7,
+        "feature": "age",
+        "score": 0.01
+      }
+    ]
+  },
+  "consensus_ranking": [
     {
-      "rank": 1,
-      "feature": "fbs",
-      "ig": 0.3576,
-      "type": "biomarker"
+      "Feature": "hba1c",
+      "MI_Score": 1.0075583006633304,
+      "MI_Rank": 1,
+      "RF_Score": 0.7434224286532545,
+      "RF_Rank": 1,
+      "Avg_Rank": 1.0
     },
     {
-      "rank": 2,
-      "feature": "hdl",
-      "ig": 0.1024,
-      "type": "biomarker"
+      "Feature": "fbs",
+      "MI_Score": 0.31677087976560325,
+      "MI_Rank": 2,
+      "RF_Score": 0.14003729689580421,
+      "RF_Rank": 2,
+      "Avg_Rank": 2.0
     },
     {
-      "rank": 3,
-      "feature": "bmi",
-      "ig": 0.0825,
-      "type": "biomarker"
+      "Feature": "bmi",
+      "MI_Score": 0.06054414552492737,
+      "MI_Rank": 3,
+      "RF_Score": 0.031450913900166966,
+      "RF_Rank": 3,
+      "Avg_Rank": 3.0
     },
     {
-      "rank": 4,
-      "feature": "triglycerides",
-      "ig": 0.0579,
-      "type": "biomarker"
+      "Feature": "hdl",
+      "MI_Score": 0.04651580781682618,
+      "MI_Rank": 4,
+      "RF_Score": 0.030358967353690484,
+      "RF_Rank": 4,
+      "Avg_Rank": 4.0
     },
     {
-      "rank": 5,
-      "feature": "systolic",
-      "ig": 0.0341,
-      "type": "biomarker"
+      "Feature": "triglycerides",
+      "MI_Score": 0.027773919581284945,
+      "MI_Rank": 5,
+      "RF_Score": 0.021913109920735856,
+      "RF_Rank": 6,
+      "Avg_Rank": 5.5
     },
     {
-      "rank": 6,
-      "feature": "alcohol_use",
-      "ig": 0.031,
-      "type": "lifestyle"
+      "Feature": "ldl",
+      "MI_Score": 0.0,
+      "MI_Rank": 6,
+      "RF_Score": 0.02279461121298431,
+      "RF_Rank": 5,
+      "Avg_Rank": 5.5
     },
     {
-      "rank": 7,
-      "feature": "ldl",
-      "ig": 0.0262,
-      "type": "biomarker"
-    },
-    {
-      "rank": 8,
-      "feature": "total_cholesterol",
-      "ig": 0.0243,
-      "type": "biomarker"
-    },
-    {
-      "rank": 9,
-      "feature": "age",
-      "ig": 0.0178,
-      "type": "biomarker"
-    },
-    {
-      "rank": 10,
-      "feature": "physical_activity",
-      "ig": 0.0113,
-      "type": "lifestyle"
-    },
-    {
-      "rank": 11,
-      "feature": "diastolic",
-      "ig": 0.0085,
-      "type": "biomarker"
-    },
-    {
-      "rank": 12,
-      "feature": "smoking_status",
-      "ig": 0.0071,
-      "type": "lifestyle"
+      "Feature": "age",
+      "MI_Score": 0.0,
+      "MI_Rank": 7,
+      "RF_Score": 0.010022672063363753,
+      "RF_Rank": 7,
+      "Avg_Rank": 7.0
     }
   ],
-  "n_samples": 1111,
-  "n_bins_used": 10,
-  "lifestyle_features_included": true
+  "n_samples": 1063,
+  "note": "HbA1c excluded from IG calculation to avoid circularity (defines target)"
 }

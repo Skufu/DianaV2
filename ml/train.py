@@ -22,6 +22,7 @@ warnings.filterwarnings('ignore')
 
 from sklearn.model_selection import cross_val_score, StratifiedKFold, LeaveOneGroupOut
 from sklearn.preprocessing import StandardScaler, label_binarize
+from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
@@ -32,9 +33,9 @@ from sklearn.metrics import (
 try:
     from xgboost import XGBClassifier
     HAS_XGBOOST = True
-except ImportError:
+except Exception as e:
     HAS_XGBOOST = False
-    print("[WARN] XGBoost not installed")
+    print(f"[WARN] XGBoost not available: {e}")
 
 DATA_PATH = Path("data/nhanes/processed/diana_dataset_final.csv")
 MODELS_DIR = Path("models/clinical")
@@ -59,6 +60,7 @@ def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_al
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred, average='weighted', zero_division=0)
     recall = recall_score(y_test, y_pred, average='weighted', zero_division=0)
+    recall_macro = recall_score(y_test, y_pred, average='macro', zero_division=0)  # Clinical: catch all classes
     f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
     
     y_test_bin = label_binarize(y_test, classes=[0, 1, 2])
@@ -76,7 +78,7 @@ def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_al
     
     print(f"   Accuracy:  {accuracy:.4f}")
     print(f"   Precision: {precision:.4f}")
-    print(f"   Recall:    {recall:.4f}")
+    print(f"   Recall:    {recall:.4f} (macro: {recall_macro:.4f})")
     print(f"   F1-Score:  {f1:.4f}")
     print(f"   AUC-ROC:   {auc_roc:.4f}")
     print(f"   CV Score:  {cv_mean:.4f} (+/- {cv_std:.4f})")
@@ -87,6 +89,7 @@ def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_al
         'accuracy': round(accuracy, 4),
         'precision': round(precision, 4),
         'recall': round(recall, 4),
+        'recall_macro': round(recall_macro, 4),
         'f1_score': round(f1, 4),
         'auc_roc': round(auc_roc, 4),
         'cv_mean': round(cv_mean, 4),

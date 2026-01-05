@@ -14,4 +14,18 @@ echo ""
 echo "To connect Go backend, set: MODEL_URL=http://localhost:${ML_PORT:-5000}/predict"
 echo ""
 
-python scripts/ml_server.py
+# Detect Python
+if [ -d "venv" ]; then
+  PYTHON="venv/bin/python"
+elif [ -d "../venv" ]; then
+  PYTHON="../venv/bin/python"
+elif command -v python3 &> /dev/null; then
+  PYTHON=python3
+elif command -v python &> /dev/null; then
+  PYTHON=python
+else
+  echo "Error: Python not found."
+  exit 1
+fi
+
+$PYTHON scripts/ml_server.py

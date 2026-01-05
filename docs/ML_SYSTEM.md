@@ -9,20 +9,29 @@ DIANA uses machine learning to predict Type 2 Diabetes risk in postmenopausal wo
 ## Directory Structure
 
 ```
-scripts/
-├── ml_server.py          # Flask API server
+ml/
+├── server.py             # Flask API server
 ├── predict.py            # DianaPredictor class
-├── train_models.py       # Model training
-├── clustering.py         # K-Means clustering
-├── feature_selection.py  # Information Gain analysis
-└── process_nhanes_multi.py  # Data preprocessing
+├── train.py              # Clinical model training (non-circular)
+├── clustering.py         # K-Means clustering (K=4 Ahlqvist)
+└── explainability.py     # SHAP explanations
+
+scripts/
+├── feature_selection.py  # MI + IG analysis
+├── train_enhanced.py     # Combined training pipeline
+├── generate_thesis_outputs.py  # All-in-one thesis output generator
+└── process_nhanes_multi.py     # Data preprocessing
 
 models/
-├── best_model.joblib     # Best classifier
-├── scaler.joblib         # StandardScaler
-├── kmeans_model.joblib   # K-Means clustering
-├── results/              # Metrics and reports
-└── visualizations/       # PNG plots
+├── clinical/
+│   ├── best_model.joblib     # Best classifier
+│   ├── scaler.joblib         # StandardScaler
+│   ├── kmeans_model.joblib   # K-Means (K=4)
+│   ├── cluster_labels.json   # SIRD/SIDD/MOD/MARD mapping
+│   ├── results/              # Metrics and reports
+│   └── visualizations/       # PNG plots
+└── results/
+    └── information_gain_results.json
 ```
 
 ---
@@ -34,7 +43,8 @@ models/
 | **Features** | HbA1c, FBS, BMI, Triglycerides, LDL, HDL, Age |
 | **Target** | Diabetes status (Normal/Pre-diabetic/Diabetic) |
 | **Algorithms** | Logistic Regression, Random Forest, XGBoost |
-| **Performance** | AUC ~1.0 |
+| **Clinical Model AUC** | ~0.67 (realistic, non-circular) |
+| **ADA Model AUC** | ~1.0 (validates implementation) |
 
 > **Why high accuracy?** The model includes HbA1c as a feature, and diabetes 
 > labels are defined by HbA1c thresholds per ADA guidelines. This validates 
@@ -71,19 +81,39 @@ Flask API with these endpoints:
 
 ---
 
-## Training
+## Training & Execution
 
+> [!IMPORTANT]
+> Modern systems (macOS/Linux) require a virtual environment. Run `scripts/setup.sh` first to create it.
+
+### Using Makefile (Recommended)
 ```bash
-# Train models
-cd scripts
-python train_models.py
-
-# Train clustering
-python clustering.py
+# Train all models
+make ml-train
 
 # Start ML server
-python ml_server.py
+make ml
 ```
+
+### Manual execution (via venv)
+```bash
+# Train clinical models
+./venv/bin/python ml/train.py
+
+# Train clustering (K=4 Ahlqvist subtypes)
+./venv/bin/python ml/clustering.py --k 4
+
+# Run feature selection
+./venv/bin/python scripts/feature_selection.py
+
+# Generate all thesis outputs
+./venv/bin/python scripts/generate_thesis_outputs.py
+
+# Start ML server
+./venv/bin/python ml/server.py
+```
+
+> **See**: [ml-rationale.md](ml-rationale.md) for methodology justification
 
 ---
 

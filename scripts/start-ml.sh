@@ -19,17 +19,44 @@ NC='\033[0m' # No Color
 
 # Check Python
 echo -e "\n${YELLOW}[1/6] Checking Python...${NC}"
-if command -v python &> /dev/null; then
-    PYTHON_VERSION=$(python --version 2>&1)
-    echo "   Found: $PYTHON_VERSION"
+if [ -d "venv" ]; then
+    PYTHON="venv/bin/python"
+    echo -e "${GREEN}   Using virtual environment (venv)${NC}"
+elif [ -d "../venv" ]; then
+    PYTHON="../venv/bin/python"
+    echo -e "${GREEN}   Using virtual environment (venv)${NC}"
+elif command -v python3 &> /dev/null; then
+    PYTHON=python3
+elif command -v python &> /dev/null; then
+    PYTHON=python
 else
-    echo "   ERROR: Python not found. Please install Python 3.10+"
+    echo -e "${RED}   ERROR: Python not found. Please install Python 3.10+${NC}"
     exit 1
+fi
+
+PYTHON_VERSION=$($PYTHON --version 2>&1)
+echo "   Found: $PYTHON_VERSION"
+
+# Check Pip
+if [[ "$PYTHON" == *"venv"* ]]; then
+    PIP="$(dirname "$PYTHON")/pip"
+elif command -v pip3 &> /dev/null; then
+    PIP=pip3
+elif command -v pip &> /dev/null; then
+    PIP=pip
+else
+    # Try as python module if standalone not found
+    if $PYTHON -m pip --version &> /dev/null; then
+        PIP="$PYTHON -m pip"
+    else
+        echo -e "${RED}   ERROR: pip not found.${NC}"
+        exit 1
+    fi
 fi
 
 # Install dependencies
 echo -e "\n${YELLOW}[2/6] Installing ML dependencies...${NC}"
-pip install -q pandas pyreadstat scikit-learn numpy matplotlib joblib xgboost flask flask-cors seaborn
+$PIP install -q pandas pyreadstat scikit-learn numpy matplotlib joblib xgboost flask flask-cors seaborn
 echo "   Dependencies installed"
 
 # Check if data needs to be downloaded
@@ -41,13 +68,13 @@ else
     echo "   Dataset not found. Running full pipeline..."
     
     echo "   Downloading NHANES data..."
-    python scripts/download_nhanes_multi.py
+    $PYTHON scripts/download_nhanes_multi.py
     
     echo "   Processing data..."
-    python scripts/process_nhanes_multi.py
+    $PYTHON scripts/process_nhanes_multi.py
     
     echo "   Preparing final dataset..."
-    python scripts/prepare_dataset.py
+    $PYTHON scripts/prepare_dataset.py
 fi
 
 # Check if models need training
@@ -58,18 +85,18 @@ else
     echo "   Training models..."
     
     echo "   Feature selection..."
-    python scripts/feature_selection.py
+    $PYTHON scripts/feature_selection.py
     
     echo "   Training classifiers..."
-    python scripts/train_models.py
+    $PYTHON scripts/train_models.py
     
     echo "   Clustering..."
-    python scripts/clustering.py
+    $PYTHON scripts/clustering.py
 fi
 
 # Verify everything is ready
 echo -e "\n${YELLOW}[5/6] Verification...${NC}"
-python -c "
+$PYTHON -c "
 from pathlib import Path
 import json
 
@@ -108,4 +135,4 @@ echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
 
-python scripts/ml_server.py
+$PYTHON scripts/ml_server.py

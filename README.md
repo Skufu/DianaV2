@@ -48,10 +48,12 @@ A full-stack health application that helps clinicians assess diabetes risk using
 |------|---------------|---------|
 | Flask Server | `ml/server.py` | API endpoints |
 | Predictors | `ml/predict.py` | DianaPredictor, ClinicalPredictor |
-| Training | `ml/train.py` | Model training |
-| Clustering | `ml/clustering.py` | K-Means training |
+| Training | `ml/train.py` | Clinical model training (non-circular) |
+| Clustering | `ml/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
 | Data Processing | `scripts/process_nhanes_multi.py` | NHANES data pipeline |
-| Feature Selection | `scripts/feature_selection.py` | Information Gain analysis |
+| Feature Selection | `scripts/feature_selection.py` | Mutual Information + IG analysis |
+| Thesis Outputs | `scripts/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
+| ML Rationale | `docs/ml-rationale.md` | Defense-ready methodology justification |
 
 ---
 
@@ -62,7 +64,7 @@ A full-stack health application that helps clinicians assess diabetes risk using
 | Backend | Go 1.21+, Gin, SQLC |
 | Frontend | React 18, Vite, Tailwind CSS |
 | Database | PostgreSQL (Goose migrations) |
-| ML | Python, Flask, scikit-learn, XGBoost |
+| ML | Python 3.10+, Flask, scikit-learn, XGBoost |
 
 ---
 
@@ -85,6 +87,8 @@ cp env.example .env
 # 2. Dependencies
 go mod download
 cd frontend && npm install && cd ..
+# ML Setup (creates venv and installs requirements)
+bash scripts/setup.sh
 
 # 3. Database
 make db_up
@@ -190,6 +194,7 @@ VITE_ML_BASE=http://localhost:5000
 | DB connection error | Verify PostgreSQL running, check DB_DSN |
 | CORS errors | Add frontend URL to CORS_ORIGINS |
 | ML timeout | Check ML server running at MODEL_URL |
+| Port 5000 error | Change ML_PORT to 5001 or disable AirPlay Receiver in macOS System Settings |
 
 ---
 

@@ -43,6 +43,7 @@ This separation lets you evolve the backend and frontend independently (e.g., sw
   - `PROJECT_STRUCTURE.md`: Detailed directory-by-directory project structure.
   - `layout.md`: This high-level layout and boundary overview.
 - `docs/dev/`
+  - `LOCAL_SETUP.md`: Primary local development setup guide for the team.
   - `CLAUDE.md`: Guidance for AI coding assistants.
   - `frontendplan.md`, `frontendplan-root.md`: Historical frontend plans.
   - `plan.md`, `plan-root.md`: Historical project plans.

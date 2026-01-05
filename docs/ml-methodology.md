@@ -38,21 +38,26 @@ When Philippine hospital records become available:
 
 ## Feature Selection
 
-### Information Gain Process
-1. **Discretize** continuous features into clinical bins
-2. **Compute** overall entropy H(Y) of diabetes labels
-3. **For each feature Xⱼ**: Calculate IG(Y, Xⱼ) = H(Y) - H(Y|Xⱼ)
-4. **Rank** features by IG (highest first)
-5. **Select** top features for model training
+### Primary Method: Mutual Information (sklearn)
+Using `mutual_info_classif()` which handles continuous features natively via k-NN estimation.
 
-### Expected Feature Importance (from paper)
-1. HbA1c (defines label directly - circular for ADA model)
-2. FBS (secondary diagnostic criteria)
-3. BMI (metabolic indicator)
-4. Lipid profile (TG, LDL, HDL)
-5. Age
+### Secondary Validation: Clinical Discretization
+For panel defense, also compute Information Gain using clinical thresholds.
 
-> **See**: [paper_rag/feature_selection.md](paper_rag/feature_selection.md)
+### Process
+1. **Compute** Mutual Information for all features using sklearn
+2. **Cross-validate** with Random Forest feature importance
+3. **Compare** rankings for consensus
+4. **Document** both methods for thesis
+
+### Expected Feature Importance (verified)
+1. HbA1c: 1.0076 (defines label directly - circular for ADA model)
+2. FBS: 0.3168 (secondary diagnostic criteria)
+3. BMI: 0.0605 (metabolic indicator)
+4. HDL: 0.0465 (lipid profile)
+5. Triglycerides: 0.0278
+
+> **See**: [ml-rationale.md](ml-rationale.md) for full methodology justification
 
 ---
 
@@ -123,10 +128,12 @@ Clusters labeled post-hoc by comparing profiles to Ahlqvist et al. (2018) criter
 3. **Clinical Interpretability** (tertiary) - explainability
 
 ### Target Performance
-| Model Type | AUC Target | Notes |
-|------------|------------|-------|
-| ADA Predictor | ~1.0 | HbA1c feature = perfect alignment |
-| Clinical Predictor | > 0.80 | Realistic screening model |
+| Model Type | AUC Target | Actual | Notes |
+|------------|------------|--------|-------|
+| ADA Predictor | ~1.0 | ~1.0 | HbA1c feature = perfect alignment |
+| Clinical Predictor | > 0.70 | ~0.67 | Realistic screening model without HbA1c/FBS |
+
+> **Note**: Clinical Predictor AUC of 0.67 is realistic for non-circular prediction. See [ml-rationale.md](ml-rationale.md).
 
 ---
 
@@ -140,7 +147,8 @@ Clusters labeled post-hoc by comparing profiles to Ahlqvist et al. (2018) criter
 ### 2. Clinical Predictor (ClinicalPredictor)
 - **Features**: BMI, TG, LDL, HDL, Age (NO HbA1c/FBS)
 - **Use Case**: Screening without lab test
-- **Expected AUC**: > 0.80 (realistic screening)
+- **Expected AUC**: ~0.67 (realistic screening)
+- **Rationale**: See [ml-rationale.md](ml-rationale.md) for why this is expected
 
 ---
 

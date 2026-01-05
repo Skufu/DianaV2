@@ -75,12 +75,15 @@ Open two terminals:
 
 **Terminal 1 - ML Server:**
 ```bash
-python scripts/ml_server.py
+# Using detected python (auto-detects venv/python3)
+make ml
+# OR explicitly using venv
+./venv/bin/python scripts/ml_server.py
 ```
 
 **Terminal 2 - Go Backend:**
 ```bash
-MODEL_URL=http://localhost:5000/predict go run ./cmd/server
+MODEL_URL=http://localhost:5000/predict go run ./backend/cmd/server
 ```
 
 ## Production Deployment

@@ -300,27 +300,25 @@ const Analytics = ({ token, patients = [] }) => {
               <div className="bg-slate-700/30 p-4 rounded-2xl">
                 <p className="text-slate-400 text-sm mb-1">Best Model</p>
                 <p className="text-xl font-bold text-white">
-                  {typeof metrics?.best_model === 'string'
-                    ? metrics.best_model
-                    : (metrics?.best_model?.model_type || metrics?.model_type || 'N/A')}
+                  {metrics?.best_model?.best_model || metrics?.best_model?.model_type || 'clinical'}
                 </p>
               </div>
               <div className="bg-slate-700/30 p-4 rounded-2xl">
                 <p className="text-slate-400 text-sm mb-1">Accuracy</p>
                 <p className="text-xl font-bold text-white">
-                  {formatMetric(metrics?.metrics?.accuracy, true)}
+                  {formatMetric(metrics?.best_model?.metrics?.accuracy, true)}
                 </p>
               </div>
               <div className="bg-slate-700/30 p-4 rounded-2xl">
                 <p className="text-slate-400 text-sm mb-1">AUC-ROC</p>
                 <p className="text-xl font-bold text-white">
-                  {formatMetric(metrics?.metrics?.auc_roc, false, 3)}
+                  {formatMetric(metrics?.best_model?.metrics?.auc_roc, false, 3)}
                 </p>
               </div>
               <div className="bg-slate-700/30 p-4 rounded-2xl">
                 <p className="text-slate-400 text-sm mb-1">F1-Score</p>
                 <p className="text-xl font-bold text-white">
-                  {formatMetric(metrics?.metrics?.f1_score, true)}
+                  {formatMetric(metrics?.best_model?.metrics?.f1_score, true)}
                 </p>
               </div>
             </div>

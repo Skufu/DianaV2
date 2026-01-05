@@ -4,6 +4,12 @@ SQLC      = sqlc
 GOOSE     = goose
 ENV_FILE ?= .env
 
+# Detect Python version
+PYTHON ?= $(shell \
+	if [ -d "venv" ]; then echo "venv/bin/python"; \
+	elif command -v python3 >/dev/null 2>&1; then echo "python3"; \
+	else echo "python"; fi)
+
 BACKEND_DIR = ./backend
 MIGRATIONS_DIR = $(BACKEND_DIR)/migrations
 
@@ -61,10 +67,10 @@ debug-neon:
 
 # ML targets
 ml:
-	python ml/server.py
+	$(PYTHON) ml/server.py
 
 ml-train:
-	python ml/train.py
+	$(PYTHON) ml/train.py
 
 # Start all services (ML + Backend + Frontend)
 start-all:
