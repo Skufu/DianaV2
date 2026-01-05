@@ -1,5 +1,5 @@
-#### Builder stage: compile the Go server
-FROM golang:1.21-alpine AS build
+### Builder stage: compile the Go server
+FROM golang:1.24-alpine AS build
 WORKDIR /app
 
 # Enable modules and avoid CGO for simpler deployment
