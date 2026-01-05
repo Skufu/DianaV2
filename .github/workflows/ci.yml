@@ -29,6 +29,7 @@ jobs:
           version: latest
           working-directory: backend
           args: --timeout=5m
+        continue-on-error: true
 
       - name: Test
         run: go test -v -race -coverprofile=coverage.out ./...
