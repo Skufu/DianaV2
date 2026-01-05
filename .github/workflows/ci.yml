@@ -94,7 +94,7 @@ jobs:
         continue-on-error: true
 
       - name: Check import
-        run: python -c "from ml.predict import DianaPredictor; print('Import OK')"
+        run: python -c "from predict import DianaPredictor; print('Import OK')"
 
   # Docker build test
   docker:
