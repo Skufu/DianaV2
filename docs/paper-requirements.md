@@ -37,6 +37,8 @@ A predictive model-based application to identify cluster-based Type 2 Diabetes r
 | LDL-C | LDL Cholesterol | mg/dL | - | - | - |
 | TG | Triglycerides | mg/dL | - | - | - |
 
+> **Note on TC**: Total Cholesterol was collected but excluded from the predictive model to avoid multicollinearity (TC ≈ LDL + HDL + TG/5). LDL and HDL are retained as separate features per clinical practice. See [ml-rationale.md](ml-rationale.md#1b-feature-exclusion-total-cholesterol-tc).
+
 ### Non-Blood Features
 | Feature | Type | Notes |
 |---------|------|-------|
