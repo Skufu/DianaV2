@@ -95,3 +95,4 @@ VITE_ML_BASE=http://localhost:5000  # For direct ML calls
 | SQLC for queries | Type-safe SQL, no ORM magic |
 | JWT auth | Stateless, scalable, standard |
 | Dual-model ML | Avoids circular reasoning (see ML docs) |
+| Unit tests | Config, middleware, ML validation all tested |

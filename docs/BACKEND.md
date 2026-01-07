@@ -138,6 +138,35 @@ Admin routes use `middleware.RoleRequired("admin")` for access control.
 
 ---
 
+## Testing
+
+The backend includes comprehensive unit tests for core packages:
+
+| Package | Test File | Coverage |
+|---------|-----------|----------|
+| `config/` | `config_test.go` | Environment loading, defaults |
+| `ml/` | `mock_test.go`, `validation_test.go` | Predictor, biomarker validation |
+| `middleware/` | `auth_test.go`, `ratelimit_test.go`, `rbac_test.go`, `security_test.go` | JWT, rate limiting, RBAC, security headers |
+| `handlers/` | `assessments_test.go`, `router_test.go` | HTTP handlers, validation |
+
+### Running Tests
+
+```bash
+# Run all tests
+go test ./...
+
+# Run with verbose output
+go test ./... -v
+
+# Run specific package
+go test ./internal/ml/...
+
+# Run with coverage
+go test ./... -cover
+```
+
+---
+
 ## Running
 
 ```bash

@@ -173,6 +173,37 @@ sqlc generate
 
 ---
 
+## Testing
+
+```bash
+# Run all tests
+go test ./...
+
+# Run with verbose output
+go test ./... -v
+
+# Run with coverage report
+go test ./... -cover -coverprofile=coverage.out
+
+# View coverage in browser
+go tool cover -html=coverage.out
+```
+
+### Test Coverage
+
+| Package | Test File | What's Tested |
+|---------|-----------|---------------|
+| `internal/config/` | `config_test.go` | Env loading, defaults, validation |
+| `internal/ml/` | `mock_test.go` | MockPredictor cluster assignments |
+| `internal/ml/` | `validation_test.go` | Biomarker range validation |
+| `internal/http/middleware/` | `auth_test.go` | JWT parsing, claims validation |
+| `internal/http/middleware/` | `ratelimit_test.go` | Token bucket, concurrency |
+| `internal/http/middleware/` | `rbac_test.go` | Role-based access control |
+| `internal/http/middleware/` | `security_test.go` | Security headers |
+| `internal/http/handlers/` | `assessments_test.go` | Handler validation |
+
+---
+
 ## Environment Variables
 
 | Variable | Required | Description |
