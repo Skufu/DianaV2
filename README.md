@@ -29,6 +29,8 @@ A full-stack health application that helps clinicians assess diabetes risk using
 | Auth Handler | `backend/internal/http/handlers/auth.go` | Login, register, JWT |
 | Patient Handler | `backend/internal/http/handlers/patients.go` | Patient CRUD |
 | Assessment Handler | `backend/internal/http/handlers/assessments.go` | Create assessments, call ML |
+| Admin Handlers | `backend/internal/http/handlers/admin_*.go` | User mgmt, audit, models |
+| RBAC Middleware | `backend/internal/http/middleware/rbac.go` | Role-based access control |
 | ML Predictor | `backend/internal/ml/predictor.go` | HTTP client for ML server |
 | DB Queries | `backend/internal/store/sqlc/queries.sql` | SQLC query definitions |
 | Config | `backend/internal/config/config.go` | Environment loading |
@@ -124,6 +126,16 @@ make run-dev
 | GET | `/api/v1/analytics/summary` | Dashboard stats |
 | GET | `/api/v1/export/patients.csv` | Export CSV |
 
+### Admin (JWT + Admin Role Required)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/admin/users` | List users (paginated) |
+| POST | `/api/v1/admin/users` | Create user |
+| PUT | `/api/v1/admin/users/:id` | Update user |
+| DELETE | `/api/v1/admin/users/:id` | Deactivate user |
+| GET | `/api/v1/admin/audit` | Audit logs |
+| GET | `/api/v1/admin/models` | Model run history |
+
 ### ML Server
 | Method | Path | Description |
 |--------|------|-------------|
@@ -205,6 +217,7 @@ VITE_ML_BASE=http://localhost:5000
 | Architecture | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) |
 | Backend Guide | [docs/BACKEND.md](./docs/BACKEND.md) |
 | Frontend Guide | [docs/FRONTEND.md](./docs/FRONTEND.md) |
+| **Admin Dashboard** | [docs/ADMIN.md](./docs/ADMIN.md) |
 | ML System | [docs/ML_SYSTEM.md](./docs/ML_SYSTEM.md) |
 | Database | [docs/DATABASE.md](./docs/DATABASE.md) |
 | API Contract | [docs/ml-api-contract.md](./docs/ml-api-contract.md) |
