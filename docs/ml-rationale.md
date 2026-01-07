@@ -27,6 +27,39 @@ Use **sklearn's `mutual_info_classif()`** rather than manual discretization with
 
 ---
 
+## 1b. Feature Exclusion: Total Cholesterol (TC)
+
+### The Decision
+**Exclude TC from predictive model features**, despite being collected as part of the lipid profile.
+
+### Rationale
+
+| Factor | Explanation |
+|--------|-------------|
+| **Mathematical Redundancy** | TC ≈ LDL + HDL + (TG/5) — derived from features already included |
+| **Multicollinearity** | Adding TC would create near-perfect correlation with existing lipid features |
+| **No Added Information** | TC provides no discriminative power beyond its constituent components |
+| **Clinical Practice** | Clinicians assess LDL and HDL independently for actionable treatment decisions |
+
+**The Friedewald Equation:**
+```
+TC = LDL + HDL + (TG/5)
+```
+This mathematical relationship means including TC alongside LDL, HDL, and TG introduces:
+- Coefficient instability in Logistic Regression (ill-conditioned design matrix)
+- Redundant splits in tree-based models (no information gain)
+- Inflated variable importance scores (shared variance)
+
+### Defense Script
+> "Total Cholesterol (TC) was collected as part of the lipid profile but was excluded from the final predictive model. This decision was made because TC is mathematically derived from LDL, HDL, and triglycerides (TC ≈ LDL + HDL + TG/5), introducing multicollinearity without providing additional discriminative power. Retaining LDL and HDL as separate features aligns with clinical practice, where these components are assessed independently to guide diabetes risk stratification and treatment decisions."
+
+### Literature Support
+- Friedewald et al. (1972) - Original TC estimation formula
+- NCEP ATP III Guidelines - Separate LDL/HDL targets for CVD risk
+- Dormann et al. (2013) - Collinearity in ecological models (principles apply)
+
+---
+
 ## 2. Imputation: Median Strategy
 
 ### The Decision

@@ -17,6 +17,8 @@
 
 > **Diabetes Classification**: HbA1c is the PRIMARY classifier per ADA guidelines.
 
+> **TC Exclusion Note**: Total Cholesterol was collected but excluded from the predictive model because TC ≈ LDL + HDL + TG/5 (Friedewald equation), introducing multicollinearity. LDL and HDL are retained as separate features for actionable clinical insights.
+
 ---
 
 ## Non-Blood Features
@@ -44,11 +46,11 @@
 
 ## Feature Sets in Codebase
 
-| Model Type | Features | File |
-|------------|----------|------|
-| **ADA Predictor** | HbA1c, FBS, BMI, TG, LDL, HDL, Age | `ml/predict.py` |
-| **Clinical Predictor** | BMI, TG, LDL, HDL, Age (no HbA1c/FBS) | `ml/predict.py` |
-| **K-Means Clustering** | BMI, TG, LDL, HDL, Age | `ml/clustering.py` |
+| Model Type | Features | TC Included? | File |
+|------------|----------|--------------|------|
+| **ADA Predictor** | HbA1c, FBS, BMI, TG, LDL, HDL, Age | ❌ No | `ml/predict.py` |
+| **Clinical Predictor** | BMI, TG, LDL, HDL, Age | ❌ No | `ml/predict.py` |
+| **K-Means Clustering** | BMI, TG, LDL, HDL, Age | ❌ No | `ml/clustering.py` |
 
 ---
 
