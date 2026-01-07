@@ -14,12 +14,21 @@ type Store interface {
 	RefreshTokens() RefreshTokenRepository
 	Cohort() CohortRepository
 	Clinics() ClinicRepository
+	AuditEvents() AuditEventRepository
+	ModelRuns() ModelRunRepository
 	Close()
 }
 
 type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*models.User, error)
 	FindByID(ctx context.Context, id int32) (*models.User, error)
+	// Admin user management methods
+	List(ctx context.Context, params models.UserListParams) ([]models.User, int, error)
+	Create(ctx context.Context, user models.User) (*models.User, error)
+	Update(ctx context.Context, user models.User) (*models.User, error)
+	Deactivate(ctx context.Context, id int32) error
+	Activate(ctx context.Context, id int32) error
+	UpdateLastLogin(ctx context.Context, id int32) error
 }
 
 type PatientRepository interface {
@@ -71,3 +80,18 @@ type ClinicRepository interface {
 	AdminSystemStats(ctx context.Context) (*models.SystemStats, error)
 	AdminClinicComparison(ctx context.Context) ([]models.ClinicComparison, error)
 }
+
+// AuditEventRepository provides access to audit logs for admin transparency
+type AuditEventRepository interface {
+	Create(ctx context.Context, event models.AuditEvent) error
+	List(ctx context.Context, params models.AuditListParams) ([]models.AuditEvent, int, error)
+}
+
+// ModelRunRepository provides access to ML model training run history
+type ModelRunRepository interface {
+	List(ctx context.Context, limit, offset int) ([]models.ModelRun, int, error)
+	GetActive(ctx context.Context) (*models.ModelRun, error)
+	Create(ctx context.Context, run models.ModelRun) (*models.ModelRun, error)
+	SetActive(ctx context.Context, id int32) error
+}
+

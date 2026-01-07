@@ -86,9 +86,27 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 	clinicHandler := handlers.NewClinicDashboardHandler(st)
 	clinicHandler.Register(protected.Group("/clinics"))
 
-	// Admin dashboard handler
-	adminHandler := handlers.NewAdminDashboardHandler(st)
-	adminHandler.Register(protected.Group("/admin"))
+	// Admin routes - protected by RBAC middleware (admin role required)
+	adminGroup := protected.Group("/admin")
+	adminGroup.Use(middleware.RoleRequired("admin"))
+	{
+		// Dashboard statistics handler
+		adminHandler := handlers.NewAdminDashboardHandler(st)
+		adminHandler.Register(adminGroup)
+
+		// User management handler
+		adminUsersHandler := handlers.NewAdminUsersHandler(st)
+		adminUsersHandler.Register(adminGroup)
+
+		// Audit logs handler
+		adminAuditHandler := handlers.NewAdminAuditHandler(st)
+		adminAuditHandler.Register(adminGroup)
+
+		// Model traceability handler
+		adminModelsHandler := handlers.NewAdminModelsHandler(st)
+		adminModelsHandler.Register(adminGroup)
+	}
 
 	return r
 }
+

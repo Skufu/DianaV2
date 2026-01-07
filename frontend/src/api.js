@@ -395,3 +395,78 @@ export const fetchClinicComparisonApi = async (token) => {
   return data;
 };
 
+// ============================================================
+// Admin User Management API
+// ============================================================
+export const fetchAdminUsersApi = async (token, params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  const path = `/api/v1/admin/users${query ? `?${query}` : ''}`;
+  return apiFetch(path, { headers: { Authorization: `Bearer ${token}` } });
+};
+
+export const createAdminUserApi = async (token, userData) => {
+  const result = await apiFetch('/api/v1/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(userData),
+  });
+  invalidateCache('/api/v1/admin/users');
+  invalidateCache('/api/v1/admin/dashboard');
+  return result;
+};
+
+export const updateAdminUserApi = async (token, userId, userData) => {
+  const result = await apiFetch(`/api/v1/admin/users/${userId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(userData),
+  });
+  invalidateCache('/api/v1/admin/users');
+  return result;
+};
+
+export const deactivateAdminUserApi = async (token, userId) => {
+  const result = await apiFetch(`/api/v1/admin/users/${userId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  invalidateCache('/api/v1/admin/users');
+  invalidateCache('/api/v1/admin/dashboard');
+  return result;
+};
+
+export const activateAdminUserApi = async (token, userId) => {
+  const result = await apiFetch(`/api/v1/admin/users/${userId}/activate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  invalidateCache('/api/v1/admin/users');
+  return result;
+};
+
+// ============================================================
+// Admin Audit Logs API
+// ============================================================
+export const fetchAuditLogsApi = async (token, params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  return apiFetch(`/api/v1/admin/audit?${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+// ============================================================
+// Admin Model Runs API
+// ============================================================
+export const fetchModelRunsApi = async (token, params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  return apiFetch(`/api/v1/admin/models?${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const fetchActiveModelApi = async (token) => {
+  return apiFetch('/api/v1/admin/models/active', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+

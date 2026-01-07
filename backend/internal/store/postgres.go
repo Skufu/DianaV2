@@ -33,7 +33,7 @@ func (s *PostgresStore) Close() {
 }
 
 func (s *PostgresStore) Users() UserRepository {
-	return &pgUserRepo{q: s.q}
+	return &pgUserRepo{q: s.q, pool: s.pool}
 }
 
 func (s *PostgresStore) Patients() PatientRepository {
@@ -48,7 +48,10 @@ func (s *PostgresStore) RefreshTokens() RefreshTokenRepository {
 	return &pgRefreshTokenRepo{q: s.q}
 }
 
-type pgUserRepo struct{ q *sqlcgen.Queries }
+type pgUserRepo struct {
+	q    *sqlcgen.Queries
+	pool *pgxpool.Pool
+}
 
 func (r *pgUserRepo) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	if r.q == nil {

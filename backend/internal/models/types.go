@@ -4,12 +4,15 @@ package models
 import "time"
 
 type User struct {
-	ID           int64     `json:"id"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"`
-	Role         string    `json:"role"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID           int64      `json:"id"`
+	Email        string     `json:"email"`
+	PasswordHash string     `json:"-"`
+	Role         string     `json:"role"`
+	IsActive     bool       `json:"is_active"`
+	LastLoginAt  *time.Time `json:"last_login_at,omitempty"`
+	CreatedBy    *int64     `json:"created_by,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
 type Patient struct {
@@ -156,4 +159,53 @@ type ClinicComparison struct {
 	AssessmentCount int     `json:"assessment_count"`
 	AvgRiskScore    float64 `json:"avg_risk_score"`
 	HighRiskCount   int     `json:"high_risk_count"`
+}
+
+// AuditEvent represents a logged admin action for audit trail
+type AuditEvent struct {
+	ID         int64                  `json:"id"`
+	Actor      string                 `json:"actor"`
+	Action     string                 `json:"action"`
+	TargetType string                 `json:"target_type"`
+	TargetID   int                    `json:"target_id"`
+	Details    map[string]interface{} `json:"details,omitempty"`
+	CreatedAt  time.Time              `json:"created_at"`
+}
+
+// ModelRun represents a training run of the ML model
+type ModelRun struct {
+	ID           int64     `json:"id"`
+	ModelVersion string    `json:"model_version"`
+	DatasetHash  string    `json:"dataset_hash,omitempty"`
+	Notes        string    `json:"notes,omitempty"`
+	IsActive     bool      `json:"is_active"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// UserListParams defines pagination and filter parameters for user listing
+type UserListParams struct {
+	Page     int    `form:"page" binding:"min=1"`
+	PageSize int    `form:"page_size" binding:"min=1,max=100"`
+	Search   string `form:"search"`
+	Role     string `form:"role"`
+	IsActive *bool  `form:"is_active"`
+}
+
+// AuditListParams defines pagination and filter parameters for audit log listing
+type AuditListParams struct {
+	Page      int       `form:"page" binding:"min=1"`
+	PageSize  int       `form:"page_size" binding:"min=1,max=100"`
+	Actor     string    `form:"actor"`
+	Action    string    `form:"action"`
+	StartDate time.Time `form:"start_date"`
+	EndDate   time.Time `form:"end_date"`
+}
+
+// PaginatedResponse is a generic wrapper for paginated API responses
+type PaginatedResponse struct {
+	Data       interface{} `json:"data"`
+	Total      int         `json:"total"`
+	Page       int         `json:"page"`
+	PageSize   int         `json:"page_size"`
+	TotalPages int         `json:"total_pages"`
 }

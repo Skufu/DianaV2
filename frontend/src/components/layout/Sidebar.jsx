@@ -1,14 +1,17 @@
 // Sidebar: Clinical Precision navigation with teal accents
 import React from 'react';
-import { LayoutDashboard, Users, Activity, Download, Plus, LogOut, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Users, Activity, Download, Plus, LogOut, BookOpen, Shield } from 'lucide-react';
 
-const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout }) => {
+const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, userRole }) => {
+  // Build nav items with optional admin tab
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'patients', icon: Users, label: 'Assessments' },
     { id: 'analytics', icon: Activity, label: 'Analytics' },
     { id: 'education', icon: BookOpen, label: 'Education' },
     { id: 'export', icon: Download, label: 'Export Data' },
+    // Admin-only navigation item
+    ...(userRole === 'admin' ? [{ id: 'admin', icon: Shield, label: 'Admin Panel' }] : []),
   ];
 
   return (

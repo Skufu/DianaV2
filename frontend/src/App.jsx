@@ -26,6 +26,7 @@ const PatientHistory = lazy(() => import('./components/patients/PatientHistory')
 const Analytics = lazy(() => import('./components/analytics/Analytics'));
 const Export = lazy(() => import('./components/export/Export'));
 const Education = lazy(() => import('./components/education/Education'));
+const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
 
 // Loading skeleton for lazy components
 const LoadingSkeleton = () => (
@@ -44,6 +45,7 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
+  const [userRole, setUserRole] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [patientViewState, setPatientViewState] = useState('list');
   const [patients, setPatients] = useState([]);
@@ -74,6 +76,13 @@ const App = () => {
     if (!res?.access_token) throw new Error('login failed');
     setToken(res.access_token);
     setRefreshToken(res.refresh_token);
+    // Decode JWT to extract user role
+    try {
+      const payload = JSON.parse(atob(res.access_token.split('.')[1]));
+      setUserRole(payload.role || 'clinician');
+    } catch {
+      setUserRole('clinician');
+    }
     setIsAuthenticated(true);
     localStorage.setItem('diana_token', res.access_token);
     localStorage.setItem('diana_refresh_token', res.refresh_token);
@@ -93,6 +102,7 @@ const App = () => {
       setIsAuthenticated(false);
       setToken(null);
       setRefreshToken(null);
+      setUserRole(null);
       setPatients([]);
       setAssessmentsCache({});
       localStorage.removeItem('diana_token');
@@ -106,6 +116,13 @@ const App = () => {
     if (savedToken) {
       setToken(savedToken);
       setRefreshToken(savedRefreshToken);
+      // Decode JWT to extract user role
+      try {
+        const payload = JSON.parse(atob(savedToken.split('.')[1]));
+        setUserRole(payload.role || 'clinician');
+      } catch {
+        setUserRole('clinician');
+      }
       setIsAuthenticated(true);
     }
   }, []);
@@ -232,6 +249,17 @@ const App = () => {
         return <Education />;
       case 'export':
         return <Export token={token} />;
+      case 'admin':
+        return userRole === 'admin' ? (
+          <AdminDashboard token={token} userRole={userRole} />
+        ) : (
+          <Dashboard
+            token={token}
+            patientCount={patients.length}
+            onNavigateToPatient={() => setActiveTab('patients')}
+            onStartAssessment={handleStartAssessment}
+          />
+        );
       default:
         return (
           <Dashboard
@@ -262,7 +290,7 @@ const App = () => {
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5 pointer-events-none" />
 
-          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onStartAssessment={handleStartAssessment} onLogout={handleLogout} />
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onStartAssessment={handleStartAssessment} onLogout={handleLogout} userRole={userRole} />
 
           <main className="relative z-10 flex-1 ml-20 lg:ml-72 p-6 lg:p-8">
             {loadingPatients ? (
