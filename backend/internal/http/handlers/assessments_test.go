@@ -143,8 +143,10 @@ func (f *fakeStore) Users() store.UserRepository                 { return nil }
 func (f *fakeStore) Patients() store.PatientRepository           { return f.patientRepo }
 func (f *fakeStore) Assessments() store.AssessmentRepository     { return f.repo }
 func (f *fakeStore) RefreshTokens() store.RefreshTokenRepository { return nil }
-func (f *fakeStore) Cohort() store.CohortRepository           { return nil }
-func (f *fakeStore) Clinics() store.ClinicRepository          { return nil }
+func (f *fakeStore) Cohort() store.CohortRepository              { return nil }
+func (f *fakeStore) Clinics() store.ClinicRepository             { return nil }
+func (f *fakeStore) AuditEvents() store.AuditEventRepository     { return nil }
+func (f *fakeStore) ModelRuns() store.ModelRunRepository         { return nil }
 func (f *fakeStore) Close()                                      {}
 
 // mockAuthMiddleware injects mock user claims for testing
