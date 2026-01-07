@@ -114,6 +114,19 @@ SQLC generates type-safe Go code automatically.
 | GET | /analytics/summary | analyticsHandler | Dashboard stats |
 | GET | /export/csv | exportHandler | Export data |
 
+### Admin Endpoints (Admin Role Required)
+
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
+| GET | /admin/users | adminUsersHandler | List users |
+| POST | /admin/users | adminUsersHandler | Create user |
+| PUT | /admin/users/:id | adminUsersHandler | Update user |
+| DELETE | /admin/users/:id | adminUsersHandler | Deactivate user |
+| GET | /admin/audit | adminAuditHandler | Audit logs |
+| GET | /admin/models | adminModelsHandler | ML model history |
+
+Admin routes use `middleware.RoleRequired("admin")` for access control.
+
 ---
 
 ## Authentication Flow
