@@ -4,6 +4,76 @@ A thesis-defense-ready document explaining the scientific reasoning behind every
 
 ---
 
+## 0. Population Inclusion: Postmenopausal Women Only
+
+### The Decision
+Focus on **postmenopausal women** (12+ months without menstruation) and **exclude perimenopausal women** from the study cohort.
+
+### Rationale
+
+| Factor | Justification |
+|--------|---------------|
+| **Operational Definition** | NHANES RHQ031=2 provides clear binary classification (menstruated in past 12 months: Yes/No) |
+| **Perimenopause Identification** | STRAW+10 staging requires longitudinal FSH measurements and cycle tracking—unavailable in cross-sectional NHANES |
+| **Misclassification Risk** | Using age (45-51) as perimenopause proxy would mix early/late perimenopause with pathological amenorrhea |
+| **Cohort Homogeneity** | Well-defined postmenopausal cohort reduces noise in ML model training |
+| **Reproducibility** | Clear NHANES variable (RHQ031=2) enables study replication |
+
+### Why Not Include Perimenopause By Age?
+
+The critique suggests the 45-60 age range "includes perimenopause." However:
+
+1. **Our filter is RHQ031=2, not age alone** — A 48-year-old still menstruating is excluded
+2. **Age ≠ menopausal stage** — Average menopause is 51, but ranges from 40-58
+3. **No validated perimenopause variable in NHANES** — Survey lacks FSH levels and cycle pattern data
+
+### STRAW+10 Staging Requirements (Why We Can't Identify Perimenopause)
+
+The Stages of Reproductive Aging Workshop (STRAW+10) criteria require:
+
+| Criterion | NHANES Availability |
+|-----------|---------------------|
+| FSH levels at multiple time points | ❌ Not collected |
+| Menstrual cycle regularity tracking | ❌ Single yes/no question |
+| AMH (Anti-Müllerian Hormone) | ❌ Not collected |
+| Vasomotor symptom assessment | ⚠️ Limited questions |
+
+Without these, any "perimenopausal" classification would be speculation.
+
+### Addressing the "Early Detection" Concern
+
+The critique asks: *"Does excluding perimenopause align with 'early' detection goals?"*
+
+**Yes.** "Early detection" in DIANA refers to:
+- Identifying **prediabetes** before progression to overt diabetes
+- Detecting **metabolic dysfunction** before clinical symptoms
+- Stratifying **risk clusters** for targeted intervention
+
+Within our postmenopausal cohort, DIANA identifies women at the *early stages of metabolic dysfunction*, not early menopausal transition.
+
+### Defense Script
+> "We focused specifically on postmenopausal women rather than the broader menopausal transition for methodological reasons. The NHANES survey uses RHQ031 to identify women who have not menstruated for 12+ consecutive months—the clinical definition of postmenopause.
+>
+> Reliably identifying perimenopause requires longitudinal menstrual cycle tracking and serial FSH measurements per the STRAW+10 staging criteria, which are not available in cross-sectional NHANES data. Rather than introduce misclassification bias by using age as a proxy for perimenopausal status, we chose to define a homogeneous cohort with confirmed postmenopausal status.
+>
+> We acknowledge this as a limitation. Future studies with prospective cohorts could extend DIANA's methodology to include the perimenopausal transition phase."
+
+### Panel Q&A Preparation
+
+| Likely Question | Answer |
+|-----------------|--------|
+| "Why exclude perimenopause if that's when hormonal changes occur?" | "NHANES cannot reliably identify perimenopause. Including unverified women would introduce classification noise." |
+| "Your 45-60 range includes perimenopausal ages" | "We filter by RHQ031=2 (postmenopausal), not age. A 48-year-old still menstruating is excluded." |
+| "Doesn't this limit generalizability?" | "Yes, acknowledged as a limitation. However, a well-defined cohort is preferable to a noisy one for ML modeling." |
+| "How would you extend to perimenopause?" | "Prospective study with STRAW+10 staging protocol, FSH measurements, and cycle tracking." |
+
+### Literature Support
+- Harlow et al. (2012) - STRAW+10 staging criteria
+- Santoro et al. (2015) - Challenges in perimenopause classification
+- Finkelstein et al. (2008) - Bone, SWAN study on menopausal transition biomarkers
+
+---
+
 ## 1. Feature Selection: Mutual Information
 
 ### The Decision

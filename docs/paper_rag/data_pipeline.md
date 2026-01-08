@@ -1,6 +1,6 @@
 # Data Pipeline Reference
 
-> NHANES data processing for model training
+> NHANES data processing for model training (Menopausal Transition focus)
 
 ---
 
@@ -60,7 +60,7 @@ python scripts/process_nhanes_multi.py
 |-----------|-------|---------------|
 | Sex | Female | RIAGENDR=2 |
 | Age | 45-60 years | RIDAGEYR between 45-60 |
-| Menopausal Status | Postmenopausal | RHQ031=2 |
+| Menopausal Status | Menopausal Transition | RHQ031=2 (No regular period in 12mo) |
 | Required Biomarkers | FBS + HbA1c | Non-null LBXGLU, LBXGH |
 
 ---
@@ -110,4 +110,4 @@ def create_diabetes_labels(df):
 
 ## Keywords
 
-`NHANES` `data pipeline` `processing` `download` `filter` `postmenopausal` `diabetes label` `ADA thresholds` `XPT` `CSV` `merge`
+`NHANES` `data pipeline` `processing` `download` `filter` `menopausal transition` `perimenopause` `postmenopause` `diabetes label` `ADA thresholds` `XPT` `CSV` `merge`
