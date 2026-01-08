@@ -19,9 +19,7 @@ A predictive model-based application to identify cluster-based Type 2 Diabetes r
 | **Age Range** | 45-60 years |
 | **Exclusions** | Premenopausal and perimenopausal women |
 
-> **Note:** Perimenopause was excluded due to NHANES classification limitations. 
-> Reliable perimenopause staging per STRAW+10 requires longitudinal cycle data 
-> not available in cross-sectional NHANES surveys.
+> **See**: [ml-rationale.md § Population Inclusion](ml-rationale.md#0-population-inclusion-postmenopausal-women-only) for full defense of this decision, including STRAW+10 staging limitations and panel Q&A preparation.
 
 ---
 

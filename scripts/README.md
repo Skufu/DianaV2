@@ -10,6 +10,7 @@
 | Task | Script |
 |------|--------|
 | Initial Setup | `setup.sh` |
+| **Local PostgreSQL (Mac)** | `setup-local-postgres.sh` |
 | Start Dev Servers | `run-dev.sh`, `start-all.sh` |
 | Start ML Server | `start-ml-server.sh`, `start-ml.sh` |
 | Download NHANES | `download_nhanes.sh`, `download_nhanes_multi.py` |
@@ -55,6 +56,7 @@ scripts/
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `setup.sh` | Install deps, create .env, run migrations | `bash scripts/setup.sh` |
+| `setup-local-postgres.sh` | Local PostgreSQL setup (Mac) with dummy data | `bash scripts/setup-local-postgres.sh` |
 | `run-dev.sh` | Start backend + frontend dev servers | `bash scripts/run-dev.sh` |
 | `start-all.sh` | Start backend + frontend + ML server | `bash scripts/start-all.sh` |
 | `start-ml.sh` | Train models then start ML server | `bash scripts/start-ml.sh` |
