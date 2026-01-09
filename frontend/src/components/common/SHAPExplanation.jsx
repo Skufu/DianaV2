@@ -19,7 +19,7 @@ const FEATURE_LABELS = {
 const SHAPExplanation = ({
     patientData,
     modelType = 'clinical',
-    mlBase = import.meta.env.VITE_ML_BASE || 'http://localhost:5000',
+    mlBase = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`,
     showTitle = true,
     compact = false
 }) => {

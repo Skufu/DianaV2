@@ -60,7 +60,7 @@ type assessmentReq struct {
 	Smoking       string  `json:"smoking" binding:"max=20,oneof='' 'never' 'former' 'current'"`
 	Hypertension  string  `json:"hypertension" binding:"max=10,oneof='' 'yes' 'no'"`
 	HeartDisease  string  `json:"heart_disease" binding:"max=10,oneof='' 'yes' 'no'"`
-	BMI           float64 `json:"bmi" binding:"gte=10,lte=100"`
+	BMI           float64 `json:"bmi" binding:"gte=0,lte=100"`
 }
 
 func (h *AssessmentsHandler) create(c *gin.Context) {
