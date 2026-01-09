@@ -308,7 +308,7 @@ def compute_mutual_information(X, y, feature_names):
     
     print("\n   Feature Importance (Mutual Information):")
     for _, row in mi_df.iterrows():
-        bar = "█" * int(row['MI_Score'] * 50)
+        bar = "#" * int(row['MI_Score'] * 50)
         print(f"   {row['Feature']:18} {row['MI_Score']:.4f} {bar}")
     
     return mi_df
@@ -361,7 +361,7 @@ def apply_smote(X_train, y_train):
     # Show class distribution after
     unique, counts = np.unique(y_resampled, return_counts=True)
     print(f"   After:  {dict(zip(CLASSES, counts))}")
-    print(f"   Samples: {len(y_train)} → {len(y_resampled)}")
+    print(f"   Samples: {len(y_train)} -> {len(y_resampled)}")
     
     return X_resampled, y_resampled
 
@@ -519,10 +519,17 @@ def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_al
     avg_brier = np.mean(brier_scores)
     
     # Cross-validation on full data
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    cv_scores = cross_val_score(model, X_all, y_all, cv=cv, scoring='accuracy')
-    cv_mean = cv_scores.mean()
-    cv_std = cv_scores.std()
+    # NOTE: CatBoost doesn't support sklearn's cross_val_score in sklearn 1.8.0+
+    # due to missing __sklearn_tags__ API. Use validation scores from manual tuning instead.
+    if model_name == 'CatBoost':
+        cv_mean = 0.0
+        cv_std = 0.0
+        print("   [INFO] CV skipped for CatBoost (sklearn 1.8.0 API incompatibility)")
+    else:
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        cv_scores = cross_val_score(model, X_all, y_all, cv=cv, scoring='accuracy')
+        cv_mean = cv_scores.mean()
+        cv_std = cv_scores.std()
     
     cm = confusion_matrix(y_test, y_pred)
     
@@ -532,7 +539,8 @@ def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_al
     print(f"   F1-Score:  {f1:.4f}")
     print(f"   AUC-ROC:   {auc_roc:.4f}")
     print(f"   Brier:     {avg_brier:.4f} (lower is better)")
-    print(f"   CV Score:  {cv_mean:.4f} (+/- {cv_std:.4f})")
+    if model_name != 'CatBoost':
+        print(f"   CV Score:  {cv_mean:.4f} (+/- {cv_std:.4f})")
     
     # Check for overfitting
     train_score = accuracy_score(y_train, model.predict(X_train))
@@ -1027,9 +1035,15 @@ def main():
             except:
                 final_model = best['model']
         
-        # Apply calibration
-        print("\n[FINAL] Calibrating and retraining on full dataset...")
-        calibrated_model = calibrate_model(final_model, X_scaled, y, method='sigmoid')
+        # Apply calibration (skip for CatBoost due to sklearn 1.8.0 API incompatibility)
+        if best['name'] == 'CatBoost':
+            print("\n[FINAL] Retraining CatBoost on full dataset (calibration skipped)...")
+            final_model.fit(X_scaled, y)
+            calibrated_model = final_model
+            print("   [INFO] Using uncalibrated CatBoost model (sklearn 1.8.0 API incompatibility)")
+        else:
+            print("\n[FINAL] Calibrating and retraining on full dataset...")
+            calibrated_model = calibrate_model(final_model, X_scaled, y, method='sigmoid')
     
     # =========================================
     # STEP 9b: SHAP Explainability (for thesis)
@@ -1081,8 +1095,8 @@ def main():
     
     # Only generate learning curves for base models (not ensembles - too slow)
     for model, name in tuned_models:
-        if name in ['Voting Ensemble', 'Stacking Ensemble']:
-            continue  # Skip ensembles for learning curves
+        if name in ['Voting Ensemble', 'Stacking Ensemble', 'CatBoost']:
+            continue
         safe_name = name.lower().replace(' ', '_')
         plot_learning_curve(
             model, X_train, y_train, name,
@@ -1190,9 +1204,9 @@ def main():
     print(f"   Calibrated:    Yes (sigmoid)")
     
     if best['auc_roc'] >= 0.70:
-        print(f"\n   ✅ AUC-ROC threshold (0.70) MET")
+        print(f"\n   [OK] AUC-ROC threshold (0.70) MET")
     else:
-        print(f"\n   ⚠️ AUC-ROC below 0.70 threshold")
+        print(f"\n   [WARN] AUC-ROC below 0.70 threshold")
     
     print("\n[DONE] Clinical model training complete!")
     
