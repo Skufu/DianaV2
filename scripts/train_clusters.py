@@ -88,55 +88,55 @@ def profile_clusters(df, labels, features):
 def assign_cluster_labels(profiles):
     """
     Assign SIDD/SIRD/MOD/MARD-like labels based on profile characteristics.
+    Uses ranking to ensure correct relative assignment based on Ahlqvist criteria.
     
-    Per paper (Ahlqvist criteria):
-    - SIDD: High HbA1c/FBS, lower BMI, younger (insulin deficiency pattern)
-    - SIRD: High BMI, high TG, low HDL (insulin resistance pattern)
-    - MOD: High BMI (>30), moderate HbA1c (obesity-related)
-    - MARD: Older age, mild elevations (age-related)
-    
-    Adapted thresholds for NHANES postmenopausal population.
+    Logic:
+    1. SIDD: Highest HbA1c (Severe Insulin-Deficient)
+    2. SIRD: Highest metabolic risk proxy (BMI + TG - HDL) among remaining
+    3. MOD:  Highest BMI among remaining (Mild Obesity-Related)
+    4. MARD: Remaining (Mild Age-Related)
     """
+    available_ids = list(profiles.index)
     labels = {}
     
-    for cluster_id in profiles.index:
-        p = profiles.loc[cluster_id]
-        
-        # Order: most specific patterns first
-        # 1. SIRD: Metabolic syndrome pattern (high BMI + high TG + low HDL)
-        if p['bmi'] > 32 and p['triglycerides'] > 150 and p['hdl'] < 55:
-            label = "SIRD-like"
-            desc = "Severe Insulin-Resistant Diabetes pattern"
-        # 2. High glucose (HbA1c/FBS) - differentiate by BMI
-        elif p['hba1c'] > 7.0 or (p['hba1c'] > 6.0 and p['fbs'] > 150):
-            if p['bmi'] < 32:
-                label = "SIDD-like"
-                desc = "Severe Insulin-Deficient Diabetes pattern"
-            else:
-                label = "SIRD-like"
-                desc = "Severe Insulin-Resistant Diabetes pattern"
-        # 3. SIDD: Lean with good HDL (insulin-deficient, not resistant)
-        elif p['bmi'] < 28 and p['hdl'] > 60:
-            label = "SIDD-like"
-            desc = "Severe Insulin-Deficient Diabetes pattern"
-        # 4. MOD: High BMI without severe glucose elevation
-        elif p['bmi'] > 35:
-            label = "MOD-like"
-            desc = "Mild Obesity-Related Diabetes pattern"
-        # 5. MARD: Older, mild metabolic changes
-        elif p['age'] > 54:
-            label = "MARD-like"
-            desc = "Mild Age-Related Diabetes pattern"
-        # 6. Moderate obesity
-        elif p['bmi'] > 30:
-            label = "MOD-like"
-            desc = "Mild Obesity-Related Diabetes pattern"
-        # 7. Default to MARD
-        else:
-            label = "MARD-like"
-            desc = "Mild Age-Related Diabetes pattern"
-        
-        labels[int(cluster_id)] = {"label": label, "description": desc}
+    # 1. SIDD: Highest HbA1c
+    sidd_id = profiles.loc[available_ids, 'hba1c'].idxmax()
+    labels[int(sidd_id)] = {
+        "label": "SIDD-like",
+        "description": "Severe Insulin-Deficient Diabetes pattern (Highest HbA1c)"
+    }
+    available_ids.remove(sidd_id)
+    
+    # 2. SIRD: Highest Metabolic Risk proxy (BMI + TG - HDL)
+    # Using standardized values implicitly or relative rank here
+    risk_scores = {}
+    for cid in available_ids:
+        p = profiles.loc[cid]
+        # SIRD is characterized by insulin resistance: high BMI, high TG, low HDL
+        # We rank by a simple composite score for detection
+        risk_scores[cid] = p['bmi'] + (p['triglycerides'] / 50) - (p['hdl'] / 10)
+    
+    sird_id = max(risk_scores, key=risk_scores.get)
+    labels[int(sird_id)] = {
+        "label": "SIRD-like",
+        "description": "Severe Insulin-Resistant Diabetes pattern (Highest Metabolic Risk)"
+    }
+    available_ids.remove(sird_id)
+    
+    # 3. MOD: Highest BMI remaining
+    mod_id = profiles.loc[available_ids, 'bmi'].idxmax()
+    labels[int(mod_id)] = {
+        "label": "MOD-like",
+        "description": "Mild Obesity-Related Diabetes pattern (High BMI)"
+    }
+    available_ids.remove(mod_id)
+    
+    # 4. MARD: The last one (typically lowest risk)
+    mard_id = available_ids[0]
+    labels[int(mard_id)] = {
+        "label": "MARD-like",
+        "description": "Mild Age-Related Diabetes pattern (Lowest overall risk)"
+    }
     
     return labels
 
