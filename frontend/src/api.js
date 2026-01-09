@@ -290,9 +290,9 @@ export const logoutApi = (refreshToken) =>
   });
 
 // ============================================================
-// ML Server API (runs on port 5000)
+// ML Server API (default port 5001, configurable via VITE_ML_BASE or VITE_ML_PORT)
 // ============================================================
-const ML_BASE = import.meta.env.VITE_ML_BASE || 'http://localhost:5000';
+const ML_BASE = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
 const mlFetch = async (path) => {
   const res = await fetch(`${ML_BASE}${path}`);

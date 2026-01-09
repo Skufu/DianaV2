@@ -26,9 +26,22 @@ cd "$ROOT_DIR/backend"
 go run ./cmd/server &
 API_PID=$!
 
+echo "Starting ML server on port ${ML_PORT:-5001}..."
+if [[ -f "$ROOT_DIR/venv/Scripts/activate" ]]; then
+  source "$ROOT_DIR/venv/Scripts/activate"
+elif [[ -f "$ROOT_DIR/venv/bin/activate" ]]; then
+  source "$ROOT_DIR/venv/bin/activate"
+fi
+
+# Set python path to root so imports work
+export PYTHONPATH="$ROOT_DIR"
+python "$ROOT_DIR/ml/server.py" &
+ML_PID=$!
+
 cleanup() {
-  echo "Stopping backend (pid $API_PID)..."
+  echo "Stopping backend (pid $API_PID) and ML server (pid $ML_PID)..."
   kill "$API_PID" 2>/dev/null || true
+  kill "$ML_PID" 2>/dev/null || true
 }
 trap cleanup EXIT
 

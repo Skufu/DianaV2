@@ -20,12 +20,18 @@ echo -e "${CYAN}DIANA V2 - Starting All Services${NC}"
 echo "============================================================"
 
 # Detect Python version
-if [ -d "venv" ]; then
+if [ -d "venv/Scripts" ]; then
+    PYTHON="venv/Scripts/python"
+    echo -e "${GREEN}Using virtual environment (venv/Scripts)${NC}"
+elif [ -d "venv/bin" ]; then
     PYTHON="venv/bin/python"
-    echo -e "${GREEN}Using virtual environment (venv)${NC}"
-elif [ -d "../venv" ]; then
+    echo -e "${GREEN}Using virtual environment (venv/bin)${NC}"
+elif [ -d "../venv/Scripts" ]; then
+    PYTHON="../venv/Scripts/python"
+    echo -e "${GREEN}Using virtual environment (../venv/Scripts)${NC}"
+elif [ -d "../venv/bin" ]; then
     PYTHON="../venv/bin/python"
-    echo -e "${GREEN}Using virtual environment (venv)${NC}"
+    echo -e "${GREEN}Using virtual environment (../venv/bin)${NC}"
 elif command -v python3 &> /dev/null; then
     PYTHON=python3
 elif command -v python &> /dev/null; then
