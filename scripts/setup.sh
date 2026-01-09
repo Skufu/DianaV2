@@ -155,10 +155,18 @@ else
 fi
 
 # Activate venv and install requirements
-source venv/bin/activate
+if [ -f "venv/Scripts/activate" ]; then
+  source venv/Scripts/activate
+elif [ -f "venv/bin/activate" ]; then
+  source venv/bin/activate
+else
+  print_error "Could not find virtual environment activation script"
+  exit 1
+fi
+
 print_step "Installing ML dependencies into venv..."
 if [ -f "ml/requirements.txt" ]; then
-  pip install --upgrade pip
+  python -m pip install --upgrade pip
   pip install -r ml/requirements.txt
   print_success "ML dependencies installed"
 else
@@ -180,7 +188,7 @@ set +a
 
 if [[ -n "${DB_DSN:-}" && "${DB_DSN}" != *"localhost"* ]]; then
   print_step "Running database migrations..."
-  goose -dir ./migrations postgres "${DB_DSN}" up
+  goose -dir ./backend/migrations postgres "${DB_DSN}" up
   print_success "Migrations complete"
 else
   print_warning "DB_DSN not configured or using localhost. Skipping migrations."

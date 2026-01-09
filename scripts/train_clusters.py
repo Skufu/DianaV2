@@ -90,32 +90,51 @@ def assign_cluster_labels(profiles):
     Assign SIDD/SIRD/MOD/MARD-like labels based on profile characteristics.
     
     Per paper (Ahlqvist criteria):
-    - SIDD: High HbA1c/FBS, lower BMI, younger
-    - SIRD: High BMI, high TG, low HDL
-    - MOD: High BMI (>30), moderate HbA1c
-    - MARD: Older age, mild elevations
+    - SIDD: High HbA1c/FBS, lower BMI, younger (insulin deficiency pattern)
+    - SIRD: High BMI, high TG, low HDL (insulin resistance pattern)
+    - MOD: High BMI (>30), moderate HbA1c (obesity-related)
+    - MARD: Older age, mild elevations (age-related)
+    
+    Adapted thresholds for NHANES postmenopausal population.
     """
     labels = {}
     
     for cluster_id in profiles.index:
         p = profiles.loc[cluster_id]
         
-        # Scoring heuristic
-        if p['bmi'] > 32 and p['triglycerides'] > 150 and p['hdl'] < 50:
+        # Order: most specific patterns first
+        # 1. SIRD: Metabolic syndrome pattern (high BMI + high TG + low HDL)
+        if p['bmi'] > 32 and p['triglycerides'] > 150 and p['hdl'] < 55:
             label = "SIRD-like"
             desc = "Severe Insulin-Resistant Diabetes pattern"
-        elif p['hba1c'] > 6.5 and p['bmi'] < 28:
+        # 2. High glucose (HbA1c/FBS) - differentiate by BMI
+        elif p['hba1c'] > 7.0 or (p['hba1c'] > 6.0 and p['fbs'] > 150):
+            if p['bmi'] < 32:
+                label = "SIDD-like"
+                desc = "Severe Insulin-Deficient Diabetes pattern"
+            else:
+                label = "SIRD-like"
+                desc = "Severe Insulin-Resistant Diabetes pattern"
+        # 3. SIDD: Lean with good HDL (insulin-deficient, not resistant)
+        elif p['bmi'] < 28 and p['hdl'] > 60:
             label = "SIDD-like"
             desc = "Severe Insulin-Deficient Diabetes pattern"
-        elif p['bmi'] > 30 and p['hba1c'] < 6.5:
+        # 4. MOD: High BMI without severe glucose elevation
+        elif p['bmi'] > 35:
             label = "MOD-like"
             desc = "Mild Obesity-Related Diabetes pattern"
-        elif p['age'] > 55 and p['hba1c'] < 6.0:
+        # 5. MARD: Older, mild metabolic changes
+        elif p['age'] > 54:
             label = "MARD-like"
             desc = "Mild Age-Related Diabetes pattern"
+        # 6. Moderate obesity
+        elif p['bmi'] > 30:
+            label = "MOD-like"
+            desc = "Mild Obesity-Related Diabetes pattern"
+        # 7. Default to MARD
         else:
-            label = f"Cluster-{cluster_id}"
-            desc = "Unclassified pattern"
+            label = "MARD-like"
+            desc = "Mild Age-Related Diabetes pattern"
         
         labels[int(cluster_id)] = {"label": label, "description": desc}
     
@@ -145,16 +164,20 @@ def train_clusters():
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
     
-    # Find optimal K
+    # Find optimal K - generate plots for documentation
     results = find_optimal_k(X_scaled)
     
     # Plot optimization
     plot_path = VIZ_DIR / "k_optimization.png"
     plot_optimization(results, plot_path)
     
-    # Select best K (highest silhouette)
-    best_k = results.loc[results['silhouette'].idxmax(), 'k']
-    print(f"\n[RESULT] Optimal K = {int(best_k)} (highest silhouette score)")
+    # Per paper methodology: K=4 to match Ahlqvist T2DM subtypes (SIRD, SIDD, MOD, MARD)
+    # Silhouette score is shown for reference but K=4 is FIXED for clinical interpretability
+    silhouette_best_k = results.loc[results['silhouette'].idxmax(), 'k']
+    best_k = 4  # FIXED per paper methodology
+    k4_silhouette = results[results['k'] == 4]['silhouette'].values[0]
+    print(f"\n[INFO] Silhouette-optimal K = {int(silhouette_best_k)} (for reference)")
+    print(f"[PAPER] Using K = 4 per Ahlqvist methodology (silhouette={k4_silhouette:.3f})")
     
     # Train final model
     print(f"\n[INFO] Training K-Means with K={int(best_k)}...")

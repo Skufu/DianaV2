@@ -89,9 +89,6 @@ desktop.ini
 *.temp
 *.bak
 *.backup
-*.swp
-*.swo
-*~
 
 # Docker
 .dockerignore
@@ -116,6 +113,10 @@ internal/store/sqlc/
 *.pid.lock
 .cache/
 .temp/
+venv/
+.venv/
+env/
+.env/
 
 # Python cache
 __pycache__/
@@ -132,3 +133,7 @@ frontend/test-results/
 
 # Generated summaries
 GIT_CHANGES_SUMMARY.md
+
+# Large files
+*.pdf
+!docs/**/*.pdf

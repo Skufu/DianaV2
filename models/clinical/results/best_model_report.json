@@ -32,44 +32,48 @@
     "metabolic_risk"
   ],
   "note": "Non-circular model with GridSearchCV, SMOTE, calibration",
-  "smote_applied": true,
-  "best_model": "Logistic Regression",
+  "smote_applied": false,
+  "best_model": "XGBoost",
   "best_params": {
-    "C": 2.0,
-    "class_weight": "balanced",
-    "penalty": "l2",
-    "solver": "lbfgs"
+    "n_estimators": 300,
+    "max_depth": 2,
+    "learning_rate": 0.05,
+    "min_child_weight": 5,
+    "reg_alpha": 0.5,
+    "reg_lambda": 10.0,
+    "subsample": 0.8,
+    "colsample_bytree": 0.7
   },
-  "justification": "Selected based on highest AUC-ROC (0.6748)",
+  "justification": "Selected based on highest AUC-ROC (0.6814)",
   "validation_method": "Leave-One-Cycle-Out + GridSearchCV",
   "test_cycle": "2009-2010",
   "metrics": {
-    "accuracy": 0.464,
-    "precision": 0.5015,
-    "recall": 0.464,
-    "f1_score": 0.4625,
-    "auc_roc": 0.6748,
-    "brier_score": 0.2015,
-    "cv_score": 0.4913,
-    "train_accuracy": 0.557,
-    "overfit_gap": 0.093
+    "accuracy": 0.491,
+    "precision": 0.4694,
+    "recall": 0.491,
+    "f1_score": 0.4759,
+    "auc_roc": 0.6814,
+    "brier_score": 0.1857,
+    "cv_score": 0.5429,
+    "train_accuracy": 0.6759,
+    "overfit_gap": 0.1849
   },
   "auc_threshold_met": false,
   "confusion_matrix": [
     [
-      63,
-      23,
-      22
-    ],
-    [
+      75,
       29,
-      19,
-      34
+      4
     ],
     [
-      5,
+      45,
+      28,
+      9
+    ],
+    [
       6,
-      21
+      20,
+      6
     ]
   ]
 }

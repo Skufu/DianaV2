@@ -1,10 +1,18 @@
 {
   "0": {
-    "label": "SIRD-like",
-    "description": "Severe Insulin-Resistant Diabetes pattern"
+    "label": "MARD-like",
+    "description": "Mild Age-Related Diabetes pattern"
   },
   "1": {
+    "label": "SIDD-like",
+    "description": "Severe Insulin-Deficient Diabetes pattern"
+  },
+  "2": {
     "label": "MOD-like",
     "description": "Mild Obesity-Related Diabetes pattern"
+  },
+  "3": {
+    "label": "SIRD-like",
+    "description": "Severe Insulin-Resistant Diabetes pattern"
   }
 }
