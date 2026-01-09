@@ -3,7 +3,8 @@
 # DIANA ML Pipeline - Full Retrain Script
 # Runs all steps: process raw data → impute → train models
 # 
-# Usage: source venv/bin/activate && ./scripts/retrain_all.sh
+# Usage: source venv/bin/activate (Mac/Linux) or source venv/Scripts/activate (Windows)
+#        Then run: ./scripts/retrain_all.sh
 # =============================================================================
 
 set -e  # Exit on first error
@@ -25,7 +26,7 @@ echo ""
 if [ ! -d "data/nhanes/raw" ]; then
     echo -e "${RED}ERROR: Run this script from the project root directory${NC}"
     echo "  cd /path/to/DianaV2"
-    echo "  source venv/bin/activate && ./scripts/retrain_all.sh"
+    echo "  ./scripts/retrain-all.sh"
     exit 1
 fi
 
@@ -33,7 +34,15 @@ fi
 if [ -z "$VIRTUAL_ENV" ]; then
     echo -e "${YELLOW}WARNING: Virtual environment not activated${NC}"
     echo "Activating venv..."
-    source venv/bin/activate
+    if [ -f "venv/Scripts/activate" ]; then
+        source venv/Scripts/activate
+    elif [ -f "venv/bin/activate" ]; then
+        source venv/bin/activate
+    else
+        echo -e "${RED}ERROR: Could not find virtual environment activation script${NC}"
+        echo "Please run ./scripts/setup.sh first."
+        exit 1
+    fi
 fi
 
 # Step 1: Process raw NHANES data

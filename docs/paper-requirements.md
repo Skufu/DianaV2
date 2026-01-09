@@ -79,7 +79,7 @@ Based on **HbA1c** (per ADA guidelines):
 | **Features** | All 7 biomarkers: HbA1c, FBS, BMI, Triglycerides, LDL, HDL, Age |
 | **Target** | Diabetes status (3-class: Normal/Pre-diabetic/Diabetic) |
 | **Algorithms** | Logistic Regression, Random Forest, XGBoost |
-| **Clinical Model Performance** | AUC ~0.67 (realistic, non-circular) |
+| **Clinical Model Performance** | AUC ≥ 0.70 (Acceptable screening) |
 | **ADA Model Performance** | AUC ~1.0 (validates implementation) |
 
 > **Note**: Clinical model excludes HbA1c/FBS to avoid circular reasoning. See [ml-rationale.md](ml-rationale.md).
@@ -102,7 +102,7 @@ Based on **HbA1c** (per ADA guidelines):
 | Precision | Report value |
 | Recall (Sensitivity) | Report value (clinical priority) |
 | F1-Score | Report value |
-| AUC-ROC | Clinical: ~0.67, ADA: ~1.0 |
+| AUC-ROC | Clinical: ≥ 0.70, ADA: ~1.0 |
 | Cross-validation score | Report value |
 
 ### Best Model Selection
@@ -137,7 +137,7 @@ Based on **HbA1c** (per ADA guidelines):
 | Algorithm | K-Means |
 | Features | All biomarkers (standardized) |
 | K | 4 clusters (based on diabetes subtypes) |
-| Validation | Elbow method + Silhouette score |
+| Validation | Elbow + Silhouette (Reference), Fixed K=4 (Clinical) |
 
 ### Cluster Labels (per Ahlqvist Classification)
 | Cluster | Full Name | Characteristics |
