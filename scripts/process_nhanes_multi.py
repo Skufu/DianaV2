@@ -15,12 +15,15 @@ RAW_DIR = Path("data/nhanes/raw")
 OUT_DIR = Path("data/nhanes/processed")
 
 # Cycles to process: (suffix, year_label)
+# 6 cycles from 2009-2023 (post-ADA HbA1c guidelines era)
+# 2021-2023 is a 3-year cycle due to COVID-19 disruption
 CYCLES = [
-    ("F", "2009-2010"),
-    ("G", "2011-2012"),
-    ("H", "2013-2014"),
-    ("I", "2015-2016"),
+    ("L", "2021-2023"),  # NEW: Most recent (3-year cycle)
     ("J", "2017-2018"),
+    ("I", "2015-2016"),
+    ("H", "2013-2014"),
+    ("G", "2011-2012"),
+    ("F", "2009-2010"),
 ]
 
 
@@ -30,7 +33,15 @@ def load_xpt(filename: str) -> pd.DataFrame:
     if not path.exists():
         print(f"  [WARN] Missing: {filename}.XPT")
         return pd.DataFrame()
-    df, _ = pyreadstat.read_xport(str(path))
+    try:
+        # Try with encoding for newer files (2021-2023 uses Windows-1252)
+        df, _ = pyreadstat.read_xport(str(path), encoding='latin1')
+    except Exception:
+        try:
+            df, _ = pyreadstat.read_xport(str(path))
+        except Exception as e:
+            print(f"  [ERROR] Failed to read {filename}.XPT: {e}")
+            return pd.DataFrame()
     return df
 
 
@@ -166,7 +177,10 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
     hdl = load_xpt(f"HDL_{suffix}")
     trigly = load_xpt(f"TRIGLY_{suffix}")
     bmx = load_xpt(f"BMX_{suffix}")
+    # BP file: try BPX first, then BPXO (oscillometric, used in 2021-2023)
     bpx = load_xpt(f"BPX_{suffix}")
+    if bpx.empty:
+        bpx = load_xpt(f"BPXO_{suffix}")  # Fallback for 2021-2023
     rhq = load_xpt(f"RHQ_{suffix}")
     
     # Load lifestyle files

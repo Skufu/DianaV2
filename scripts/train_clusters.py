@@ -18,11 +18,13 @@ import json
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-DATA_PATH = Path("data/nhanes/processed/diana_training_data.csv")
-MODELS_DIR = Path("models")
+DATA_PATH = Path("data/nhanes/processed/diana_dataset_imputed.csv")
+MODELS_DIR = Path("models/clinical")  # Save alongside clinical models
+VIZ_DIR = Path("models/clinical/visualizations")
 
-# Features for clustering (per paper)
-CLUSTER_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl']
+# Features for clustering (per paper - Ahlqvist methodology)
+# Added age for MARD subtype identification
+CLUSTER_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age']
 
 
 def find_optimal_k(X_scaled, k_range=range(2, 7)):
@@ -77,7 +79,7 @@ def profile_clusters(df, labels, features):
     print("\n[INFO] Cluster Profiles:")
     print("=" * 60)
     
-    profiles = df_clustered.groupby('cluster')[features + ['age']].mean().round(2)
+    profiles = df_clustered.groupby('cluster')[features].mean().round(2)
     print(profiles)
     
     return profiles
@@ -123,6 +125,7 @@ def assign_cluster_labels(profiles):
 def train_clusters():
     """Main training function."""
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    VIZ_DIR.mkdir(parents=True, exist_ok=True)
     
     # Load data
     print(f"[INFO] Loading data from {DATA_PATH}")
@@ -146,7 +149,7 @@ def train_clusters():
     results = find_optimal_k(X_scaled)
     
     # Plot optimization
-    plot_path = MODELS_DIR / "k_optimization.png"
+    plot_path = VIZ_DIR / "k_optimization.png"
     plot_optimization(results, plot_path)
     
     # Select best K (highest silhouette)

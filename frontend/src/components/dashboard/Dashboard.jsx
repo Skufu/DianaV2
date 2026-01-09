@@ -2,8 +2,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight, TrendingUp, BarChart2, Filter, Info, Layers, Target, TrendingDown, Shield } from 'lucide-react';
 import { fetchClusterDistributionApi, fetchTrendAnalyticsApi, fetchPatientsApi, fetchAssessmentsApi } from '../../api';
-import { 
-  PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
+import {
+  PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   BarChart, Bar, ScatterChart, Scatter, LineChart, Line, Legend, ComposedChart
 } from 'recharts';
 
@@ -38,11 +38,12 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
         setAllPatients(patients || []);
 
         // Fetch all assessments for all patients
-        const assessmentsPromises = (patients || []).map(patient => 
+        const assessmentsPromises = (patients || []).map(patient =>
           fetchAssessmentsApi(token, patient.id).catch(() => [])
         );
         const assessmentsArrays = await Promise.all(assessmentsPromises);
-        const flatAssessments = assessmentsArrays.flat();
+        // Filter out any null/undefined assessments to prevent null reference errors
+        const flatAssessments = assessmentsArrays.flat().filter(Boolean);
         setAllAssessments(flatAssessments);
       } catch (_) {
         setError('Unable to load analytics data');
@@ -56,21 +57,21 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   // Calculate risk distribution
   const riskDistribution = useMemo(() => {
     if (!allAssessments.length) return { low: 0, moderate: 0, high: 0, total: 0 };
-    
+
     const low = allAssessments.filter(a => (a.risk_score || 0) < 34).length;
     const moderate = allAssessments.filter(a => (a.risk_score || 0) >= 34 && (a.risk_score || 0) < 67).length;
     const high = allAssessments.filter(a => (a.risk_score || 0) >= 67).length;
-    
+
     return { low, moderate, high, total: allAssessments.length };
   }, [allAssessments]);
 
   // Calculate averages
   const averages = useMemo(() => {
     if (!allAssessments.length) return { hba1c: 0, fbs: 0 };
-    
+
     const hba1c = allAssessments.reduce((sum, a) => sum + (a.hba1c || 0), 0) / allAssessments.length;
     const fbs = allAssessments.reduce((sum, a) => sum + (a.fbs || 0), 0) / allAssessments.length;
-    
+
     return { hba1c: hba1c.toFixed(1), fbs: Math.round(fbs) };
   }, [allAssessments]);
 
@@ -122,7 +123,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   // 2D Cluster plot (HbA1c vs FBS)
   const clusterScatterData = useMemo(() => {
     if (!allAssessments.length || !allPatients.length) return [];
-    
+
     const clusterMap = {};
     allAssessments.forEach(assessment => {
       const cluster = assessment.cluster || 'Unknown';
@@ -135,7 +136,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
         cluster: cluster
       });
     });
-    
+
     return Object.keys(clusterMap).map(cluster => ({
       name: cluster,
       data: clusterMap[cluster],
@@ -146,16 +147,16 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   // Heatmap data (biomarkers vs clusters) - calculate from assessments
   const heatmapData = useMemo(() => {
     if (!clusterStats.length || !allAssessments.length) return [];
-    
+
     const biomarkers = ['hba1c', 'fbs', 'cholesterol', 'ldl', 'hdl', 'triglycerides'];
     const clusters = clusterStats.map(c => c.cluster || 'Unknown');
-    
+
     // Group assessments by cluster
     const clusterAssessments = {};
     clusters.forEach(cluster => {
       clusterAssessments[cluster] = allAssessments.filter(a => (a.cluster || 'Unknown') === cluster);
     });
-    
+
     // Calculate average for each biomarker per cluster
     return biomarkers.map(biomarker => {
       const row = { biomarker: biomarker.toUpperCase() };
@@ -163,8 +164,8 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
         const assessments = clusterAssessments[cluster] || [];
         if (assessments.length > 0) {
           const values = assessments.map(a => a[biomarker] || 0).filter(v => v > 0);
-          row[cluster] = values.length > 0 
-            ? values.reduce((a, b) => a + b, 0) / values.length 
+          row[cluster] = values.length > 0
+            ? values.reduce((a, b) => a + b, 0) / values.length
             : 0;
         } else {
           row[cluster] = 0;
@@ -191,14 +192,14 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   // Age distribution data
   const ageDistributionData = useMemo(() => {
     if (!allPatients.length) return [];
-    
+
     const ageGroups = [
       { name: '<45', min: 0, max: 44 },
       { name: '45-54', min: 45, max: 54 },
       { name: '55-64', min: 55, max: 64 },
       { name: '65+', min: 65, max: 200 },
     ];
-    
+
     return ageGroups.map(group => {
       const count = allPatients.filter(p => {
         const age = p.age || 0;
@@ -211,14 +212,14 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   // Risk by age group
   const riskByAgeData = useMemo(() => {
     if (!allPatients.length || !allAssessments.length) return [];
-    
+
     const ageGroups = [
       { name: '<45', min: 0, max: 44 },
       { name: '45-54', min: 45, max: 54 },
       { name: '55-64', min: 55, max: 64 },
       { name: '65+', min: 65, max: 200 },
     ];
-    
+
     return ageGroups.map(group => {
       const patientsInGroup = allPatients.filter(p => {
         const age = p.age || 0;
@@ -226,11 +227,11 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
       });
       const patientIds = new Set(patientsInGroup.map(p => p.id));
       const assessmentsInGroup = allAssessments.filter(a => patientIds.has(a.patient_id));
-      
+
       const low = assessmentsInGroup.filter(a => (a.risk_score || 0) < 34).length;
       const moderate = assessmentsInGroup.filter(a => (a.risk_score || 0) >= 34 && (a.risk_score || 0) < 67).length;
       const high = assessmentsInGroup.filter(a => (a.risk_score || 0) >= 67).length;
-      
+
       return { name: group.name, low, moderate, high };
     });
   }, [allPatients, allAssessments]);
@@ -238,20 +239,20 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   // Key biomarkers per risk group
   const biomarkerImportance = useMemo(() => {
     if (!allAssessments.length) return { low: [], moderate: [], high: [] };
-    
+
     const riskGroups = {
       low: allAssessments.filter(a => (a.risk_score || 0) < 34),
       moderate: allAssessments.filter(a => (a.risk_score || 0) >= 34 && (a.risk_score || 0) < 67),
       high: allAssessments.filter(a => (a.risk_score || 0) >= 67),
     };
-    
+
     const calculateAvg = (assessments, key) => {
       const values = assessments.map(a => a[key] || 0).filter(v => v > 0);
       return values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
     };
-    
+
     const biomarkers = ['hba1c', 'fbs', 'cholesterol', 'ldl', 'hdl', 'triglycerides'];
-    
+
     return Object.keys(riskGroups).reduce((acc, risk) => {
       acc[risk] = biomarkers.map(biomarker => ({
         name: biomarker.toUpperCase(),
@@ -264,12 +265,12 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   // Risk interpretation text
   const riskInterpretation = useMemo(() => {
     if (!allAssessments.length) return null;
-    
+
     const avgRisk = allAssessments.reduce((sum, a) => sum + (a.risk_score || 0), 0) / allAssessments.length;
-    const dominantCluster = clusterStats.length > 0 
+    const dominantCluster = clusterStats.length > 0
       ? clusterStats.reduce((max, c) => (c.count > max.count ? c : max), clusterStats[0])
       : null;
-    
+
     return {
       overallRisk: getRiskLevel(avgRisk),
       dominantCluster: dominantCluster?.cluster || 'N/A',
@@ -484,7 +485,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
                       <td className="text-slate-300 font-medium p-2">{row.biomarker}</td>
                       {clusterStats.map((c, cIdx) => {
                         const value = row[c.cluster] || 0;
-                        const maxValue = Math.max(...heatmapData.flatMap(r => 
+                        const maxValue = Math.max(...heatmapData.flatMap(r =>
                           clusterStats.map(cl => r[cl.cluster] || 0)
                         ));
                         const intensity = maxValue > 0 ? (value / maxValue) * 100 : 0;
@@ -526,7 +527,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
               } else if (['MARD', 'MOD'].includes(clusterKey)) {
                 riskLevel = 'Low';
               }
-              
+
               return (
                 <div
                   key={idx}
@@ -624,7 +625,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
             ))}
           </div>
         </div>
-          </div>
+      </div>
 
       {/* E. Demographic & Filter Panel */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -715,12 +716,12 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                   <XAxis dataKey="name" stroke="#64748B" style={{ fontSize: '11px' }} />
                   <YAxis stroke="#64748B" style={{ fontSize: '11px' }} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#1E293B',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: '#fff',
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1E293B',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#fff',
                     }}
                   />
                   <Legend />
@@ -728,11 +729,11 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
                   <Bar dataKey="moderate" stackId="a" fill="#F59E0B" />
                   <Bar dataKey="high" stackId="a" fill="#F43F5E" />
                 </BarChart>
-                </ResponsiveContainer>
+              </ResponsiveContainer>
             </div>
-                      </div>
-                    </div>
-                </div>
+          </div>
+        </div>
+      </div>
 
       {/* F. Risk Interpretation Panel */}
       {riskInterpretation && (
@@ -754,7 +755,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
               <div>
                 <p className="text-xs text-slate-400 mb-1">Dominant Cluster</p>
                 <p className="text-lg font-bold text-white">{riskInterpretation.dominantCluster}</p>
-                </div>
+              </div>
               <div>
                 <p className="text-xs text-slate-400 mb-1">Key Contributing Biomarkers</p>
                 <p className="text-lg font-bold text-white">{riskInterpretation.keyBiomarkers || 'N/A'}</p>
@@ -762,11 +763,11 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
             </div>
             <div className="border-t border-slate-600/30 pt-4">
               <p className="text-sm text-slate-300 leading-relaxed">
-                The population shows a <strong className="text-white">{riskInterpretation.overallRisk.toLowerCase()}</strong> overall diabetes risk 
-                with an average risk score of <strong className="text-white">{riskInterpretation.avgRiskScore}%</strong>. 
-                The dominant cluster identified is <strong className="text-white">{riskInterpretation.dominantCluster}</strong>, 
-                indicating specific metabolic patterns within the cohort. Key biomarkers contributing to risk assessment include 
-                <strong className="text-white"> {riskInterpretation.keyBiomarkers || 'various metabolic markers'}</strong>. 
+                The population shows a <strong className="text-white">{riskInterpretation.overallRisk.toLowerCase()}</strong> overall diabetes risk
+                with an average risk score of <strong className="text-white">{riskInterpretation.avgRiskScore}%</strong>.
+                The dominant cluster identified is <strong className="text-white">{riskInterpretation.dominantCluster}</strong>,
+                indicating specific metabolic patterns within the cohort. Key biomarkers contributing to risk assessment include
+                <strong className="text-white"> {riskInterpretation.keyBiomarkers || 'various metabolic markers'}</strong>.
                 This analysis helps identify patients who may benefit from targeted interventions and closer monitoring.
               </p>
             </div>
@@ -776,13 +777,13 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
 
       {/* Action Button */}
       <div className="flex justify-end">
-          <button
+        <button
           className="px-6 py-3 rounded-xl text-teal-400 font-semibold text-sm hover:bg-teal-500/10 transition-colors flex items-center justify-center gap-2 glass-card"
-            onClick={onNavigateToPatient}
-          >
-            View All Patients
-            <ArrowRight size={14} />
-          </button>
+          onClick={onNavigateToPatient}
+        >
+          View All Patients
+          <ArrowRight size={14} />
+        </button>
       </div>
     </div>
   );

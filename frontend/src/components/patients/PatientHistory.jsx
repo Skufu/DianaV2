@@ -708,7 +708,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
 
   if (viewState === 'form') {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 md:p-4 animate-fade-in">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-2 md:p-4 animate-fade-in">
         <div className="glass-card rounded-3xl shadow-2xl max-w-[95vw] md:max-w-6xl w-full max-h-[95vh] overflow-y-auto p-4 md:p-6 lg:p-8 relative animate-scale-in">
           <button
             onClick={() => { resetForm(); setViewState('list'); }}

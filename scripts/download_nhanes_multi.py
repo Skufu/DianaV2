@@ -14,7 +14,12 @@ DATA_DIR = Path("data/nhanes/raw")
 
 # NHANES cycles with their URL patterns and suffixes
 # Format: (year_start, url_base, suffix)
+# Using 2009-2023 data (6 cycles) for >1000 records with post-ADA HbA1c guidelines
+# Note: 2021-2023 is a 3-year cycle due to COVID-19 disruption
 CYCLES = [
+    # Most recent available cycle (3-year cycle due to COVID)
+    ("2021", "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles", "L"),
+    # Pre-pandemic cycles (standard 2-year cycles)
     ("2017", "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles", "J"),
     ("2015", "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2015/DataFiles", "I"),
     ("2013", "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2013/DataFiles", "H"),
@@ -33,6 +38,9 @@ FILE_BASES = [
     "BMX",     # Body Measures (BMI)
     "BPX",     # Blood Pressure
     "RHQ",     # Reproductive Health (menopause)
+    "SMQ",     # Smoking questionnaire
+    "PAQ",     # Physical activity questionnaire
+    "ALQ",     # Alcohol use questionnaire
 ]
 
 
@@ -69,7 +77,7 @@ def main():
     
     print("=" * 60)
     print("NHANES Multi-Cycle Data Download")
-    print("Cycles: 2013-2014, 2015-2016, 2017-2018")
+    print("Cycles: 2009-2010 through 2021-2023 (6 cycles)")
     print("=" * 60)
     
     total_success = 0
