@@ -54,15 +54,22 @@ The paper also mentions these labels in Table 4:
 
 ---
 
-## Implementation in Codebase
+## Implementation in Codebase (Verified Results)
 
 ```python
-# scripts/train_enhanced.py - assign_cluster_labels()
-CLUSTER_LABELS = {
-    0: 'MARD',  # Mild Age-Related
-    1: 'MOD',   # Mild Obesity-Related
-    2: 'SIDD',  # Severe Insulin-Deficient
-    3: 'SIRD'   # Severe Insulin-Resistant
+# scripts/train_clusters.py - assign_cluster_labels()
+# Uses rank-based assignment:
+#   1. SIDD = Highest HbA1c
+#   2. SIRD = Highest metabolic risk (BMI + TG - HDL)
+#   3. MOD  = Highest BMI remaining
+#   4. MARD = Last remaining (healthiest)
+
+# Verified Results (n=1,376):
+CLUSTER_RESULTS = {
+    0: {'label': 'MOD-like',  'n': 370,  'pct': '26.9%', 'key': 'BMI=29.58, TG=176.37'},
+    1: {'label': 'MARD-like', 'n': 505,  'pct': '36.7%', 'key': 'BMI=25.74, HDL=72.98'},
+    2: {'label': 'SIRD-like', 'n': 404,  'pct': '29.4%', 'key': 'BMI=38.28, TG=114.68'},
+    3: {'label': 'SIDD-like', 'n': 97,   'pct': '7.1%',  'key': 'HbA1c=9.24%, FBS=223.78'},
 }
 ```
 

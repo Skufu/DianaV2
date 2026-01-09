@@ -40,17 +40,17 @@ models/
 
 | Aspect | Details |
 |--------|---------|
-| **Dataset** | NHANES 2009-2023 (6 cycles, 1376 postmenopausal women) |
+| **Dataset** | NHANES 2009-2023 (6 cycles, 1,376 postmenopausal women) |
 | **Features** | 17 features: base biomarkers + derived (tg_hdl_ratio, metabolic_risk, etc.) |
 | **Target** | Diabetes status (3-class: Normal/Pre-diabetic/Diabetic) |
 | **Algorithms** | Logistic Regression, Random Forest, XGBoost |
-| **Best Model** | Logistic Regression (AUC-ROC: 0.67) |
+| **Best Model** | Logistic Regression (AUC-ROC: 0.6743, Overfit Gap: 8.55%) |
 | **Clustering** | K-Means with K=4 (Ahlqvist diabetes subtypes) |
 | **Imputation** | KNN for biomarkers, mode for categorical |
 
-> **Note on AUC**: Clinical model achieves ~0.67 AUC which is realistic for 
+> **Note on AUC**: Clinical model achieves 0.6743 AUC which is realistic for 
 > non-circular prediction (not using HbA1c directly in features). This is 
-> comparable to CDC diabetes risk calculators.
+> comparable to CDC diabetes risk calculators (AUC 0.72-0.79).
 
 ---
 
@@ -117,16 +117,16 @@ source venv/bin/activate && ./scripts/retrain_all.sh
 
 ---
 
-## Cluster Definitions
+## Cluster Definitions (Verified)
 
-Based on Ahlqvist et al. diabetes subtype classification:
+Based on Ahlqvist et al. diabetes subtype classification with DIANA NHANES results:
 
-| Cluster | Full Name | Characteristics | Risk |
-|---------|-----------|-----------------|------|
-| **SIRD** | Severe Insulin-Resistant Diabetes | High BMI, insulin resistance | High |
-| **SIDD** | Severe Insulin-Deficient Diabetes | Low BMI, high HbA1c | High |
-| **MOD** | Mild Obesity-Related Diabetes | Moderate BMI elevation | Moderate |
-| **MARD** | Mild Age-Related Diabetes | Older onset, mild dysfunction | Low |
+| Cluster | Full Name | n (%) | Key Biomarkers | Risk |
+|---------|-----------|-------|----------------|------|
+| **SIDD** | Severe Insulin-Deficient Diabetes | 97 (7.1%) | HbA1c=9.24%, FBS=223.78 | High |
+| **SIRD** | Severe Insulin-Resistant Diabetes | 404 (29.4%) | BMI=38.28, TG=114.68 | High |
+| **MOD** | Mild Obesity-Related Diabetes | 370 (26.9%) | BMI=29.58, TG=176.37 | Moderate |
+| **MARD** | Mild Age-Related Diabetes | 505 (36.7%) | BMI=25.74, HDL=72.98 | Low |
 
 ---
 

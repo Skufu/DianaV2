@@ -139,13 +139,13 @@ Based on **HbA1c** (per ADA guidelines):
 | K | 4 clusters (based on diabetes subtypes) |
 | Validation | Elbow + Silhouette (Reference), Fixed K=4 (Clinical) |
 
-### Cluster Labels (per Ahlqvist Classification)
-| Cluster | Full Name | Characteristics |
-|---------|-----------|-----------------|
-| SIRD | Severe Insulin-Resistant Diabetes | High BMI, insulin resistance |
-| SIDD | Severe Insulin-Deficient Diabetes | Low BMI, high HbA1c |
-| MOD | Mild Obesity-Related Diabetes | Moderate BMI elevation |
-| MARD | Mild Age-Related Diabetes | Older onset, mild dysfunction |
+### Cluster Labels (Verified Results per Ahlqvist Classification)
+| Cluster | Full Name | n (%) | Key Biomarkers |
+|---------|-----------|----|----------------|
+| SIDD | Severe Insulin-Deficient Diabetes | 97 (7.1%) | HbA1c=9.24%, FBS=223.78 |
+| SIRD | Severe Insulin-Resistant Diabetes | 404 (29.4%) | BMI=38.28, TG=114.68 |
+| MOD | Mild Obesity-Related Diabetes | 370 (26.9%) | BMI=29.58, TG=176.37 |
+| MARD | Mild Age-Related Diabetes | 505 (36.7%) | BMI=25.74, HDL=72.98 |
 
 > **See also**: [paper_rag/diabetes_subgroups.md](paper_rag/diabetes_subgroups.md)
 
@@ -216,9 +216,10 @@ Based on **HbA1c** (per ADA guidelines):
 
 ### Dataset Source
 - **Database:** NHANES (National Health and Nutrition Examination Survey)
-- **Cycles:** 2009-2018
-- **Total Records:** ~1,111 postmenopausal women
+- **Cycles:** 2009-2023 (6 cycles)
+- **Total Records:** 1,376 postmenopausal women
 - **Age Range:** 45-60 years
+- **Best Model:** Logistic Regression (AUC: 0.6743, Overfit Gap: 8.55%)
 
 ### Software Stack
 - **ML Framework:** Python 3.10+, scikit-learn, XGBoost
