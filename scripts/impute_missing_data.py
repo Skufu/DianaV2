@@ -122,8 +122,8 @@ def impute_continuous_knn(df, cols, n_neighbors=5):
         # Validate
         valid, stats = validate_imputation(original, df_work, col)
         n_imputed = original[col].isna().sum()
-        status = "✓" if valid else "⚠"
-        print(f"  {status} {col}: {n_imputed} values imputed - {stats}")
+        status = "OK" if valid else "WARN"
+        print(f"  [{status}] {col}: {n_imputed} values imputed - {stats}")
     
     return df_work
 
@@ -164,7 +164,7 @@ def impute_categorical_mode(df, cols):
         # Replace 'Unknown' with mode
         df_work.loc[unknown_mask, col] = mode_val
         
-        print(f"  ✓ {col}: {n_missing} missing + {n_unknown} 'Unknown' → '{mode_val}'")
+        print(f"  [OK] {col}: {n_missing} missing + {n_unknown} 'Unknown' -> '{mode_val}'")
     
     return df_work
 
