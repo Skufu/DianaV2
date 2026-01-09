@@ -75,7 +75,7 @@ CLUSTER_LABELS = {
 | **K** | 4 | Matches 4 clinical subtypes |
 | **Method** | K-Means | Per paper methodology |
 | **Features** | All biomarkers (standardized) | Equal weighting |
-| **Validation** | Elbow + Silhouette | Optimal K confirmation |
+| **Validation** | Elbow + Silhouette | Reference only (K=4 enforced) |
 
 ---
 
