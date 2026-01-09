@@ -5,37 +5,71 @@
     "triglycerides",
     "ldl",
     "hdl",
-    "age"
+    "age",
+    "systolic",
+    "diastolic",
+    "bmi_category",
+    "tg_hdl_ratio",
+    "ldl_hdl_ratio",
+    "age_group",
+    "bp_category",
+    "hypertension",
+    "smoking_encoded",
+    "activity_encoded",
+    "alcohol_encoded",
+    "metabolic_risk"
   ],
-  "note": "Non-circular model: HbA1c and FBS excluded from features",
-  "best_model": "XGBoost",
-  "justification": "Selected based on highest AUC-ROC score (0.6859) with Leave-One-Cycle-Out validation",
-  "validation_method": "Leave-One-Cycle-Out (temporal validation)",
+  "engineered_features": [
+    "bmi_category",
+    "tg_hdl_ratio",
+    "ldl_hdl_ratio",
+    "age_group",
+    "bp_category",
+    "hypertension",
+    "smoking_encoded",
+    "activity_encoded",
+    "alcohol_encoded",
+    "metabolic_risk"
+  ],
+  "note": "Non-circular model with GridSearchCV, SMOTE, calibration",
+  "smote_applied": true,
+  "best_model": "Logistic Regression",
+  "best_params": {
+    "C": 2.0,
+    "class_weight": "balanced",
+    "penalty": "l2",
+    "solver": "lbfgs"
+  },
+  "justification": "Selected based on highest AUC-ROC (0.6748)",
+  "validation_method": "Leave-One-Cycle-Out + GridSearchCV",
   "test_cycle": "2009-2010",
   "metrics": {
-    "accuracy": 0.566,
-    "precision": 0.5676,
-    "recall": 0.566,
-    "f1_score": 0.5655,
-    "auc_roc": 0.6859,
-    "cv_score": 0.5391
+    "accuracy": 0.464,
+    "precision": 0.5015,
+    "recall": 0.464,
+    "f1_score": 0.4625,
+    "auc_roc": 0.6748,
+    "brier_score": 0.2015,
+    "cv_score": 0.4913,
+    "train_accuracy": 0.557,
+    "overfit_gap": 0.093
   },
   "auc_threshold_met": false,
   "confusion_matrix": [
     [
-      68,
-      32,
-      5
+      63,
+      23,
+      22
     ],
     [
-      27,
-      44,
-      9
+      29,
+      19,
+      34
     ],
     [
       5,
-      14,
-      8
+      6,
+      21
     ]
   ]
 }

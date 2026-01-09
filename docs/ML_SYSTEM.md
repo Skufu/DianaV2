@@ -40,15 +40,17 @@ models/
 
 | Aspect | Details |
 |--------|---------|
-| **Features** | HbA1c, FBS, BMI, Triglycerides, LDL, HDL, Age |
-| **Target** | Diabetes status (Normal/Pre-diabetic/Diabetic) |
+| **Dataset** | NHANES 2009-2023 (6 cycles, 1376 postmenopausal women) |
+| **Features** | 17 features: base biomarkers + derived (tg_hdl_ratio, metabolic_risk, etc.) |
+| **Target** | Diabetes status (3-class: Normal/Pre-diabetic/Diabetic) |
 | **Algorithms** | Logistic Regression, Random Forest, XGBoost |
-| **Clinical Model AUC** | ~0.67 (realistic, non-circular) |
-| **ADA Model AUC** | ~1.0 (validates implementation) |
+| **Best Model** | Logistic Regression (AUC-ROC: 0.67) |
+| **Clustering** | K-Means with K=4 (Ahlqvist diabetes subtypes) |
+| **Imputation** | KNN for biomarkers, mode for categorical |
 
-> **Why high accuracy?** The model includes HbA1c as a feature, and diabetes 
-> labels are defined by HbA1c thresholds per ADA guidelines. This validates 
-> the implementation correctly applies clinical diagnostic criteria.
+> **Note on AUC**: Clinical model achieves ~0.67 AUC which is realistic for 
+> non-circular prediction (not using HbA1c directly in features). This is 
+> comparable to CDC diabetes risk calculators.
 
 ---
 
@@ -97,17 +99,15 @@ make ml
 
 ### Manual execution (via venv)
 ```bash
-# Train clinical models
+# Full pipeline (recommended - processes data, imputes, trains, clusters)
+source venv/bin/activate && ./scripts/retrain_all.sh
+
+# Or run individual steps:
+./venv/bin/python scripts/process_nhanes_multi.py
+./venv/bin/python ml/data_processing.py
+./venv/bin/python scripts/impute_missing_data.py
 ./venv/bin/python ml/train.py
-
-# Train clustering (K=4 Ahlqvist subtypes)
-./venv/bin/python ml/clustering.py --k 4
-
-# Run feature selection
-./venv/bin/python scripts/feature_selection.py
-
-# Generate all thesis outputs
-./venv/bin/python scripts/generate_thesis_outputs.py
+./venv/bin/python scripts/train_clusters.py
 
 # Start ML server
 ./venv/bin/python ml/server.py

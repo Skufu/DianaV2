@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-01-09T16:12:43.601347",
+  "random_seed": 42,
+  "split_method": "LeaveOneGroupOut (NHANES cycles)",
+  "test_cycle": "2009-2010",
+  "train_samples": 1154,
+  "test_samples": 222,
+  "train_class_distribution": {
+    "Normal": 556,
+    "Pre-diabetic": 424,
+    "Diabetic": 174
+  },
+  "test_class_distribution": {
+    "Normal": 108,
+    "Pre-diabetic": 82,
+    "Diabetic": 32
+  },
+  "train_indices_hash": "affa79c3",
+  "test_indices_hash": "f28feeb4",
+  "train_indices_sample": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "test_indices_sample": [
+    1154,
+    1155,
+    1156,
+    1157,
+    1158,
+    1159,
+    1160,
+    1161,
+    1162,
+    1163
+  ],
+  "reproducibility_note": "Use random_state=42 and same data file to reproduce exact split"
+}

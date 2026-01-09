@@ -11,10 +11,10 @@ This document describes the machine learning methodology used in DIANA, aligned 
 ## Data Strategy
 
 ### Development Dataset: NHANES
-Due to Philippine hospital data collection challenges, we use NHANES (US National Health and Nutrition Examination Survey) 2009-2018 as our development dataset. This allows us to:
+Due to Philippine hospital data collection challenges, we use NHANES (US National Health and Nutrition Examination Survey) 2009-2023 as our development dataset. This allows us to:
 1. Build and test the complete ML pipeline
 2. Validate the clustering methodology
-3. Create a working demo with ~1,111 records
+3. Create a working demo with 1,376 records
 
 ### Swap to Philippine Data
 When Philippine hospital records become available:
@@ -174,19 +174,23 @@ All random operations use `random_state=42` for reproducibility.
 ```bash
 # 1. Download NHANES data
 python scripts/download_nhanes_multi.py
-python scripts/download_lifestyle_data.py
 
-# 2. Process data
+# 2. Complete pipeline (Recommended)
+source venv/bin/activate && ./scripts/retrain_all.sh
+
+# Individual steps:
+# 3. Process and Clean
 python scripts/process_nhanes_multi.py
+python ml/data_processing.py
 
-# 3. Train models (includes K-Means + classifiers)
-python scripts/train_enhanced.py
+# 4. Impute
+python scripts/impute_missing_data.py
 
-# 4. (Optional) Train clinical-only models
+# 5. Train and Cluster
 python ml/train.py
-python ml/clustering.py
+python scripts/train_clusters.py
 
-# 5. Start ML server
+# 6. Start ML server
 python ml/server.py
 ```
 
