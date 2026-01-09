@@ -414,7 +414,7 @@ const Education = () => {
             </div>
 
             {/* Disclaimer */}
-            <div className="bg-[#FFF5F5] border border-[#EE5D50]/30 p-6 rounded-2xl">
+            <div className="bg-[#EE5D50]/10 border border-[#EE5D50]/30 p-6 rounded-2xl">
                 <div className="flex items-start gap-3">
                     <AlertTriangle size={24} className="text-[#EE5D50] flex-shrink-0 mt-1" />
                     <div>

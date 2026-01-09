@@ -1,30 +1,10 @@
 {
-  "1": {
-    "label": "SIDD",
-    "full_name": "Severe Insulin-Deficient Diabetes",
-    "characteristics": "Highest HbA1c, lower BMI, younger onset",
-    "clinical_implication": "May need early insulin therapy",
-    "risk_level": "HIGH"
-  },
-  "3": {
-    "label": "SIRD",
-    "full_name": "Severe Insulin-Resistant Diabetes",
-    "characteristics": "High BMI, high TG, low HDL (metabolic syndrome pattern)",
-    "clinical_implication": "Responds well to insulin sensitizers (metformin)",
-    "risk_level": "HIGH"
-  },
-  "2": {
-    "label": "MOD",
-    "full_name": "Mild Obesity-Related Diabetes",
-    "characteristics": "High BMI (>30), moderate HbA1c elevation",
-    "clinical_implication": "Weight management primary intervention",
-    "risk_level": "MODERATE"
-  },
   "0": {
-    "label": "MARD",
-    "full_name": "Mild Age-Related Diabetes",
-    "characteristics": "Older age at diagnosis, mild metabolic dysfunction",
-    "clinical_implication": "Conservative management, slower progression",
-    "risk_level": "LOW"
+    "label": "SIRD-like",
+    "description": "Severe Insulin-Resistant Diabetes pattern"
+  },
+  "1": {
+    "label": "MOD-like",
+    "description": "Mild Obesity-Related Diabetes pattern"
   }
 }

@@ -15,8 +15,8 @@ NHANES XPT Files → Download → Process → Clean → Split → Train
 ## Data Sources
 
 ### NHANES (Development Data)
-- **Cycles**: 2009-2018
-- **Records**: ~1,111 postmenopausal women
+- **Cycles**: 2009-2023 (6 cycles)
+- **Records**: ~1,376 postmenopausal women
 - **Age Range**: 45-60 years
 
 ### Philippine Hospital Data (Target)

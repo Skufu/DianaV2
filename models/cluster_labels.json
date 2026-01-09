@@ -1,12 +1,10 @@
 {
   "0": {
-    "label": "SIRD-like",
-    "description": "Severe Insulin-Resistant Diabetes",
-    "risk_level": "HIGH"
+    "label": "MOD-like",
+    "description": "Mild Obesity-Related Diabetes pattern"
   },
   "1": {
-    "label": "MOD-like",
-    "description": "Mild Obesity-Related Diabetes",
-    "risk_level": "MODERATE"
+    "label": "Cluster-1",
+    "description": "Unclassified pattern"
   }
 }
