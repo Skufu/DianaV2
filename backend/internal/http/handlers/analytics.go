@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
@@ -21,7 +22,14 @@ func (h *AnalyticsHandler) Register(rg *gin.RouterGroup) {
 }
 
 func (h *AnalyticsHandler) cluster(c *gin.Context) {
-	data, err := h.store.Assessments().ClusterCounts(c.Request.Context())
+	claims, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return
+	}
+	userClaims := claims.(middleware.UserClaims)
+
+	data, err := h.store.Assessments().ClusterCountsByUser(c.Request.Context(), int32(userClaims.UserID))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load distribution"})
 		return
@@ -30,7 +38,14 @@ func (h *AnalyticsHandler) cluster(c *gin.Context) {
 }
 
 func (h *AnalyticsHandler) trends(c *gin.Context) {
-	data, err := h.store.Assessments().TrendAverages(c.Request.Context())
+	claims, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return
+	}
+	userClaims := claims.(middleware.UserClaims)
+
+	data, err := h.store.Assessments().TrendAveragesByUser(c.Request.Context(), int32(userClaims.UserID))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load trends"})
 		return

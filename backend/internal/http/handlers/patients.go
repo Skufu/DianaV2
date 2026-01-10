@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/models"
@@ -12,21 +11,6 @@ import (
 
 type PatientsHandler struct {
 	store store.Store
-}
-
-// PatientSummary is the single source of truth for what the frontend expects
-// when displaying patients in lists and profile views. It combines the core
-// patient record with the latest assessment summary fields.
-type PatientSummary struct {
-	models.Patient
-
-	// Latest assessment-derived fields (optional if no assessments exist)
-	Cluster   string    `json:"cluster,omitempty"`
-	RiskScore int       `json:"risk_score,omitempty"`
-	Risk      int       `json:"risk,omitempty"`      // alias for compatibility
-	FBS       float64   `json:"fbs,omitempty"`       // latest FBS
-	HbA1c     float64   `json:"hba1c,omitempty"`     // latest HbA1c
-	LastVisit time.Time `json:"lastVisit,omitempty"` // latest assessment time
 }
 
 func NewPatientsHandler(store store.Store) *PatientsHandler {
@@ -49,27 +33,10 @@ func (h *PatientsHandler) list(c *gin.Context) {
 		return
 	}
 
-	patients, err := h.store.Patients().List(c.Request.Context(), userID)
+	summaries, err := h.store.Patients().ListWithLatestAssessment(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list patients"})
 		return
-	}
-
-	// Attach latest assessment summary so all consumers share a single source of truth.
-	summaries := make([]PatientSummary, 0, len(patients))
-	for _, p := range patients {
-		s := PatientSummary{Patient: p}
-		assessments, err := h.store.Assessments().ListByPatient(c.Request.Context(), p.ID)
-		if err == nil && len(assessments) > 0 {
-			latest := assessments[0]
-			s.Cluster = latest.Cluster
-			s.RiskScore = latest.RiskScore
-			s.Risk = latest.RiskScore
-			s.FBS = latest.FBS
-			s.HbA1c = latest.HbA1c
-			s.LastVisit = latest.CreatedAt
-		}
-		summaries = append(summaries, s)
 	}
 
 	c.JSON(http.StatusOK, summaries)
@@ -119,8 +86,7 @@ func (h *PatientsHandler) get(c *gin.Context) {
 		return
 	}
 
-	// Attach latest assessment summary for consistency with list endpoint.
-	summary := PatientSummary{Patient: *patient}
+	summary := models.PatientSummary{Patient: *patient}
 	assessments, err := h.store.Assessments().ListByPatient(c.Request.Context(), patient.ID)
 	if err == nil && len(assessments) > 0 {
 		latest := assessments[0]

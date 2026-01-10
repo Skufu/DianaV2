@@ -101,6 +101,9 @@ type User struct {
 	Role         string             `json:"role"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	IsActive     bool               `json:"is_active"`
+	LastLoginAt  pgtype.Timestamptz `json:"last_login_at"`
+	CreatedBy    pgtype.Int4        `json:"created_by"`
 }
 
 type UserClinic struct {

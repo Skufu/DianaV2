@@ -356,6 +356,105 @@ func (q *Queries) ListPatientsLimited(ctx context.Context, arg ListPatientsLimit
 	return items, nil
 }
 
+const listPatientsWithLatestAssessment = `-- name: ListPatientsWithLatestAssessment :many
+SELECT 
+    p.id, p.user_id, p.name, p.age, p.menopause_status, p.years_menopause, 
+    p.bmi, p.bp_systolic, p.bp_diastolic, p.activity, p.phys_activity, 
+    p.smoking, p.hypertension, p.heart_disease, p.family_history, 
+    p.chol, p.ldl, p.hdl, p.triglycerides, p.created_at, p.updated_at,
+    COALESCE(la.cluster, '') AS latest_cluster,
+    COALESCE(la.risk_score, 0) AS latest_risk_score,
+    COALESCE(la.fbs, 0) AS latest_fbs,
+    COALESCE(la.hba1c, 0) AS latest_hba1c,
+    la.created_at AS latest_assessment_at
+FROM patients p
+LEFT JOIN LATERAL (
+    SELECT a.cluster, a.risk_score, a.fbs, a.hba1c, a.created_at
+    FROM assessments a
+    WHERE a.patient_id = p.id
+    ORDER BY a.created_at DESC
+    LIMIT 1
+) la ON true
+WHERE p.user_id = $1
+ORDER BY p.id DESC
+`
+
+type ListPatientsWithLatestAssessmentRow struct {
+	ID                 int32              `json:"id"`
+	UserID             int32              `json:"user_id"`
+	Name               string             `json:"name"`
+	Age                pgtype.Int4        `json:"age"`
+	MenopauseStatus    pgtype.Text        `json:"menopause_status"`
+	YearsMenopause     pgtype.Int4        `json:"years_menopause"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	BpSystolic         pgtype.Int4        `json:"bp_systolic"`
+	BpDiastolic        pgtype.Int4        `json:"bp_diastolic"`
+	Activity           pgtype.Text        `json:"activity"`
+	PhysActivity       pgtype.Bool        `json:"phys_activity"`
+	Smoking            pgtype.Text        `json:"smoking"`
+	Hypertension       pgtype.Text        `json:"hypertension"`
+	HeartDisease       pgtype.Text        `json:"heart_disease"`
+	FamilyHistory      pgtype.Bool        `json:"family_history"`
+	Chol               pgtype.Int4        `json:"chol"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	LatestCluster      string             `json:"latest_cluster"`
+	LatestRiskScore    int32              `json:"latest_risk_score"`
+	LatestFbs          pgtype.Numeric     `json:"latest_fbs"`
+	LatestHba1c        pgtype.Numeric     `json:"latest_hba1c"`
+	LatestAssessmentAt pgtype.Timestamptz `json:"latest_assessment_at"`
+}
+
+func (q *Queries) ListPatientsWithLatestAssessment(ctx context.Context, userID int32) ([]ListPatientsWithLatestAssessmentRow, error) {
+	rows, err := q.db.Query(ctx, listPatientsWithLatestAssessment, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPatientsWithLatestAssessmentRow
+	for rows.Next() {
+		var i ListPatientsWithLatestAssessmentRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Age,
+			&i.MenopauseStatus,
+			&i.YearsMenopause,
+			&i.Bmi,
+			&i.BpSystolic,
+			&i.BpDiastolic,
+			&i.Activity,
+			&i.PhysActivity,
+			&i.Smoking,
+			&i.Hypertension,
+			&i.HeartDisease,
+			&i.FamilyHistory,
+			&i.Chol,
+			&i.Ldl,
+			&i.Hdl,
+			&i.Triglycerides,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.LatestCluster,
+			&i.LatestRiskScore,
+			&i.LatestFbs,
+			&i.LatestHba1c,
+			&i.LatestAssessmentAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updatePatient = `-- name: UpdatePatient :one
 UPDATE patients
 SET name = $3,

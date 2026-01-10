@@ -7,6 +7,8 @@ package sqlcgen
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const findUserByEmail = `-- name: FindUserByEmail :one
@@ -16,9 +18,18 @@ WHERE email = $1
 LIMIT 1
 `
 
-func (q *Queries) FindUserByEmail(ctx context.Context, email string) (User, error) {
+type FindUserByEmailRow struct {
+	ID           int32              `json:"id"`
+	Email        string             `json:"email"`
+	PasswordHash string             `json:"password_hash"`
+	Role         string             `json:"role"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) FindUserByEmail(ctx context.Context, email string) (FindUserByEmailRow, error) {
 	row := q.db.QueryRow(ctx, findUserByEmail, email)
-	var i User
+	var i FindUserByEmailRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -37,9 +48,18 @@ WHERE id = $1
 LIMIT 1
 `
 
-func (q *Queries) FindUserByID(ctx context.Context, id int32) (User, error) {
+type FindUserByIDRow struct {
+	ID           int32              `json:"id"`
+	Email        string             `json:"email"`
+	PasswordHash string             `json:"password_hash"`
+	Role         string             `json:"role"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) FindUserByID(ctx context.Context, id int32) (FindUserByIDRow, error) {
 	row := q.db.QueryRow(ctx, findUserByID, id)
-	var i User
+	var i FindUserByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,

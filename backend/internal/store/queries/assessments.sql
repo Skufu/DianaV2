@@ -84,11 +84,28 @@ SELECT COALESCE(cluster, '') AS cluster, COUNT(*) AS count
 FROM assessments
 GROUP BY COALESCE(cluster, '');
 
+-- name: ClusterCountsByUser :many
+SELECT COALESCE(a.cluster, '') AS cluster, COUNT(*) AS count
+FROM assessments a
+INNER JOIN patients p ON a.patient_id = p.id
+WHERE p.user_id = $1
+GROUP BY COALESCE(a.cluster, '');
+
 -- name: TrendAverages :many
 SELECT to_char(created_at, 'YYYY-MM') AS label,
        COALESCE(avg(hba1c), 0)::float8 AS hba1c,
        COALESCE(avg(fbs), 0)::float8 AS fbs
 FROM assessments
+GROUP BY label
+ORDER BY label;
+
+-- name: TrendAveragesByUser :many
+SELECT to_char(a.created_at, 'YYYY-MM') AS label,
+       COALESCE(avg(a.hba1c), 0)::float8 AS hba1c,
+       COALESCE(avg(a.fbs), 0)::float8 AS fbs
+FROM assessments a
+INNER JOIN patients p ON a.patient_id = p.id
+WHERE p.user_id = $1
 GROUP BY label
 ORDER BY label;
 
