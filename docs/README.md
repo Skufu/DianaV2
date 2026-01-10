@@ -1,7 +1,7 @@
 # DIANA V2 - Documentation Hub
 
 > **Purpose**: Centralized documentation index for thesis defense and development  
-> **Last Updated**: December 29, 2024
+> **Last Updated**: January 10, 2026
 
 ---
 
