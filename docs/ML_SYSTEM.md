@@ -41,16 +41,17 @@ models/
 | Aspect | Details |
 |--------|---------|
 | **Dataset** | NHANES 2009-2023 (6 cycles, 1,376 postmenopausal women) |
-| **Features** | 17 features: base biomarkers + derived (tg_hdl_ratio, metabolic_risk, etc.) |
+| **Features** | 25 features: 7 base biomarkers + 18 engineered (ratios, categories, interactions) |
 | **Target** | Diabetes status (3-class: Normal/Pre-diabetic/Diabetic) |
-| **Algorithms** | Logistic Regression, Random Forest, XGBoost |
-| **Best Model** | Logistic Regression (AUC-ROC: 0.6743, Overfit Gap: 8.55%) |
+| **Algorithms** | LR, RF, XGBoost, CatBoost, LightGBM, Voting Ensemble, Stacking Ensemble |
+| **Best Model** | XGBoost (AUC-ROC: 0.6732, selected for deployment) |
 | **Clustering** | K-Means with K=4 (Ahlqvist diabetes subtypes) |
-| **Imputation** | KNN for biomarkers, mode for categorical |
+| **Imputation** | SMOTE+Tomek for class balance, median for biomarkers |
 
-> **Note on AUC**: Clinical model achieves 0.6743 AUC which is realistic for 
-> non-circular prediction (not using HbA1c directly in features). This is 
-> comparable to CDC diabetes risk calculators (AUC 0.72-0.79).
+> **Note on AUC**: Clinical model achieves 0.6732 AUC (XGBoost) which is realistic for 
+> non-circular prediction (excludes HbA1c/FBS from features). This is comparable to 
+> CDC diabetes risk calculators (AUC 0.72-0.79). All 7 models tested: XGBoost (0.6732), 
+> CatBoost (0.6726), LR (0.6683), Stacking (0.6689), Voting (0.6632), RF (0.6534), LightGBM (0.6452).
 
 ---
 
