@@ -1,6 +1,6 @@
 {
   "Logistic Regression": {
-    "C": 2.0,
+    "C": 0.1,
     "class_weight": "balanced",
     "penalty": "l2",
     "solver": "lbfgs"
@@ -12,7 +12,7 @@
     "max_samples": 0.8,
     "min_samples_leaf": 15,
     "min_samples_split": 20,
-    "n_estimators": 200,
+    "n_estimators": 500,
     "oob_score": true
   },
   "XGBoost": {
@@ -24,5 +24,19 @@
     "reg_lambda": 2.0,
     "subsample": 0.8,
     "colsample_bytree": 0.7
+  },
+  "CatBoost": {
+    "depth": 5,
+    "learning_rate": 0.05,
+    "iterations": 300,
+    "l2_leaf_reg": 5
+  },
+  "LightGBM": {
+    "learning_rate": 0.05,
+    "min_child_samples": 30,
+    "n_estimators": 300,
+    "num_leaves": 31,
+    "reg_alpha": 1.0,
+    "reg_lambda": 5.0
   }
 }
