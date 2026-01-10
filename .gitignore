@@ -137,3 +137,4 @@ GIT_CHANGES_SUMMARY.md
 # Large files
 *.pdf
 !docs/**/*.pdf
+catboost_info/
