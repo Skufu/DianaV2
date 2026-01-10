@@ -138,3 +138,4 @@ GIT_CHANGES_SUMMARY.md
 *.pdf
 !docs/**/*.pdf
 catboost_info/
+.sisyphus
