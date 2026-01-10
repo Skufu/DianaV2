@@ -102,6 +102,51 @@ func (r *pgPatientRepo) List(ctx context.Context, userID int32) ([]models.Patien
 	return mapPatientRows(rows), nil
 }
 
+func (r *pgPatientRepo) ListWithLatestAssessment(ctx context.Context, userID int32) ([]models.PatientSummary, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	rows, err := r.q.ListPatientsWithLatestAssessment(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	var out []models.PatientSummary
+	for _, r := range rows {
+		out = append(out, models.PatientSummary{
+			Patient: models.Patient{
+				ID:              int64(r.ID),
+				UserID:          int64(r.UserID),
+				Name:            r.Name,
+				Age:             intVal(r.Age),
+				MenopauseStatus: textVal(r.MenopauseStatus),
+				YearsMenopause:  intVal(r.YearsMenopause),
+				BMI:             numericVal(r.Bmi),
+				BPSystolic:      intVal(r.BpSystolic),
+				BPDiastolic:     intVal(r.BpDiastolic),
+				Activity:        textVal(r.Activity),
+				PhysActivity:    boolVal(r.PhysActivity),
+				Smoking:         textVal(r.Smoking),
+				Hypertension:    textVal(r.Hypertension),
+				HeartDisease:    textVal(r.HeartDisease),
+				FamilyHistory:   boolVal(r.FamilyHistory),
+				Chol:            intVal(r.Chol),
+				LDL:             intVal(r.Ldl),
+				HDL:             intVal(r.Hdl),
+				Triglycerides:   intVal(r.Triglycerides),
+				CreatedAt:       r.CreatedAt.Time,
+				UpdatedAt:       r.UpdatedAt.Time,
+			},
+			Cluster:   r.LatestCluster,
+			RiskScore: int(r.LatestRiskScore),
+			Risk:      int(r.LatestRiskScore),
+			FBS:       numericVal(r.LatestFbs),
+			HbA1c:     numericVal(r.LatestHba1c),
+			LastVisit: r.LatestAssessmentAt.Time,
+		})
+	}
+	return out, nil
+}
+
 func (r *pgPatientRepo) Create(ctx context.Context, p models.Patient) (*models.Patient, error) {
 	if r.q == nil {
 		return nil, errors.New("db not configured")
@@ -287,6 +332,43 @@ func (r *pgAssessmentRepo) TrendAverages(ctx context.Context) ([]models.TrendPoi
 	return res, nil
 }
 
+func (r *pgAssessmentRepo) ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterAnalytics, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	rows, err := r.q.ClusterCountsByUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	var res []models.ClusterAnalytics
+	for _, c := range rows {
+		res = append(res, models.ClusterAnalytics{
+			Cluster: c.Cluster,
+			Count:   int(c.Count),
+		})
+	}
+	return res, nil
+}
+
+func (r *pgAssessmentRepo) TrendAveragesByUser(ctx context.Context, userID int32) ([]models.TrendPoint, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	rows, err := r.q.TrendAveragesByUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	var res []models.TrendPoint
+	for _, t := range rows {
+		res = append(res, models.TrendPoint{
+			Label: t.Label,
+			HbA1c: t.Hba1c,
+			FBS:   t.Fbs,
+		})
+	}
+	return res, nil
+}
+
 func (r *pgAssessmentRepo) Get(ctx context.Context, id int32) (*models.Assessment, error) {
 	if r.q == nil {
 		return nil, errors.New("db not configured")
@@ -375,7 +457,7 @@ func (r *pgAssessmentRepo) GetTrend(ctx context.Context, patientID int64) ([]mod
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert to trend format and sort by date ascending
 	var trends []models.AssessmentTrend
 	for i := len(assessments) - 1; i >= 0; i-- {

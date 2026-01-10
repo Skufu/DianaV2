@@ -1,7 +1,7 @@
 // Analytics: comprehensive cohort-level analytics with multiple visualizations
 import React, { useEffect, useState, useMemo } from 'react';
 import {
-  fetchClusterDistributionApi, fetchTrendAnalyticsApi, fetchPatientsApi, fetchAssessmentsApi,
+  fetchClusterDistributionApi, fetchTrendAnalyticsApi, fetchAssessmentsApi,
   fetchMLMetricsApi, fetchMLInformationGainApi, fetchMLClustersApi, getMLVisualizationUrl
 } from '../../api';
 import {
@@ -106,10 +106,8 @@ const Analytics = ({ token, patients = [] }) => {
         setClusters(c || []);
         setTrends(t || []);
 
-        // Fetch all patient assessments for advanced analytics
-        const patientData = await fetchPatientsApi(token);
-        if (patientData && patientData.length > 0) {
-          const assessmentPromises = patientData.map(p =>
+        if (patients && patients.length > 0) {
+          const assessmentPromises = patients.map(p =>
             fetchAssessmentsApi(token, p.id).catch(() => [])
           );
           const assessmentArrays = await Promise.all(assessmentPromises);
@@ -123,7 +121,7 @@ const Analytics = ({ token, patients = [] }) => {
       }
     };
     load();
-  }, [token]);
+  }, [token, patients]);
 
   // Load ML model data
   useEffect(() => {

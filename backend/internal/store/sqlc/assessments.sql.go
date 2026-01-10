@@ -42,6 +42,39 @@ func (q *Queries) ClusterCounts(ctx context.Context) ([]ClusterCountsRow, error)
 	return items, nil
 }
 
+const clusterCountsByUser = `-- name: ClusterCountsByUser :many
+SELECT COALESCE(a.cluster, '') AS cluster, COUNT(*) AS count
+FROM assessments a
+INNER JOIN patients p ON a.patient_id = p.id
+WHERE p.user_id = $1
+GROUP BY COALESCE(a.cluster, '')
+`
+
+type ClusterCountsByUserRow struct {
+	Cluster string `json:"cluster"`
+	Count   int64  `json:"count"`
+}
+
+func (q *Queries) ClusterCountsByUser(ctx context.Context, userID int32) ([]ClusterCountsByUserRow, error) {
+	rows, err := q.db.Query(ctx, clusterCountsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ClusterCountsByUserRow
+	for rows.Next() {
+		var i ClusterCountsByUserRow
+		if err := rows.Scan(&i.Cluster, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createAssessment = `-- name: CreateAssessment :one
 INSERT INTO assessments (
   patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
@@ -425,6 +458,43 @@ func (q *Queries) TrendAverages(ctx context.Context) ([]TrendAveragesRow, error)
 	var items []TrendAveragesRow
 	for rows.Next() {
 		var i TrendAveragesRow
+		if err := rows.Scan(&i.Label, &i.Hba1c, &i.Fbs); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const trendAveragesByUser = `-- name: TrendAveragesByUser :many
+SELECT to_char(a.created_at, 'YYYY-MM') AS label,
+       COALESCE(avg(a.hba1c), 0)::float8 AS hba1c,
+       COALESCE(avg(a.fbs), 0)::float8 AS fbs
+FROM assessments a
+INNER JOIN patients p ON a.patient_id = p.id
+WHERE p.user_id = $1
+GROUP BY label
+ORDER BY label
+`
+
+type TrendAveragesByUserRow struct {
+	Label string  `json:"label"`
+	Hba1c float64 `json:"hba1c"`
+	Fbs   float64 `json:"fbs"`
+}
+
+func (q *Queries) TrendAveragesByUser(ctx context.Context, userID int32) ([]TrendAveragesByUserRow, error) {
+	rows, err := q.db.Query(ctx, trendAveragesByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TrendAveragesByUserRow
+	for rows.Next() {
+		var i TrendAveragesByUserRow
 		if err := rows.Scan(&i.Label, &i.Hba1c, &i.Fbs); err != nil {
 			return nil, err
 		}

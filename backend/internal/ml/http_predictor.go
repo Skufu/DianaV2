@@ -1,10 +1,11 @@
-// HTTPPredictor: posts assessments to a remote model inference endpoint.
 package ml
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -22,8 +23,6 @@ type predictResp struct {
 	RiskScore int    `json:"risk_score"`
 }
 
-// NewHTTPPredictor creates an HTTP-backed predictor that posts assessment data
-// to a model inference endpoint. Timeout applies to the entire request.
 func NewHTTPPredictor(url, version string, timeout time.Duration) *HTTPPredictor {
 	return &HTTPPredictor{
 		client:  &http.Client{Timeout: timeout},
@@ -34,16 +33,19 @@ func NewHTTPPredictor(url, version string, timeout time.Duration) *HTTPPredictor
 
 func (p *HTTPPredictor) Predict(input models.Assessment) (string, int) {
 	if p.url == "" {
+		log.Printf("[ML] URL not configured, returning unknown")
 		return "unknown", 0
 	}
 
 	body, err := json.Marshal(input)
 	if err != nil {
+		log.Printf("[ML] Failed to marshal input: %v", err)
 		return "error", 0
 	}
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, p.url, bytes.NewReader(body))
 	if err != nil {
+		log.Printf("[ML] Failed to create request: %v", err)
 		return "error", 0
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -53,19 +55,24 @@ func (p *HTTPPredictor) Predict(input models.Assessment) (string, int) {
 
 	resp, err := p.client.Do(req)
 	if err != nil {
+		log.Printf("[ML] Request failed: %v", err)
 		return "error", 0
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Printf("[ML] Non-OK status %d: %s", resp.StatusCode, string(respBody))
 		return "error", 0
 	}
 
 	var out predictResp
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		log.Printf("[ML] Failed to decode response: %v", err)
 		return "error", 0
 	}
 	if out.Cluster == "" {
+		log.Printf("[ML] Empty cluster in response")
 		return "error", 0
 	}
 	return out.Cluster, out.RiskScore

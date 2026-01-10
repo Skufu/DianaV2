@@ -30,7 +30,13 @@ func (h *ExportHandler) Register(rg *gin.RouterGroup) {
 func (h *ExportHandler) patientsCSV(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
-		c.Status(http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	patients, err := h.store.Patients().ListAllLimited(c.Request.Context(), userID, h.maxRows)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch patients"})
 		return
 	}
 
@@ -38,11 +44,6 @@ func (h *ExportHandler) patientsCSV(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename=\"patients.csv\"")
 	w := csv.NewWriter(c.Writer)
 	_ = w.Write([]string{"id", "name", "age", "menopause_status", "years_menopause", "bmi", "bp_systolic", "bp_diastolic", "activity", "phys_activity", "smoking", "hypertension", "heart_disease", "family_history", "chol", "ldl", "hdl", "triglycerides", "cluster"})
-	patients, err := h.store.Patients().ListAllLimited(c.Request.Context(), userID, h.maxRows)
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		return
-	}
 	for _, p := range patients {
 		_ = w.Write([]string{
 			strconv.FormatInt(p.ID, 10),
@@ -72,7 +73,13 @@ func (h *ExportHandler) patientsCSV(c *gin.Context) {
 func (h *ExportHandler) assessmentsCSV(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
-		c.Status(http.StatusUnauthorized)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	rows, err := h.store.Assessments().ListAllLimitedByUser(c.Request.Context(), userID, h.maxRows)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch assessments"})
 		return
 	}
 
@@ -80,12 +87,6 @@ func (h *ExportHandler) assessmentsCSV(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment; filename=\"assessments.csv\"")
 	w := csv.NewWriter(c.Writer)
 	_ = w.Write([]string{"id", "patient_id", "fbs", "hba1c", "cholesterol", "ldl", "hdl", "triglycerides", "systolic", "diastolic", "activity", "history_flag", "smoking", "hypertension", "heart_disease", "bmi", "cluster", "risk_score", "model_version", "dataset_hash", "validation_status", "created_at"})
-	// Only export assessments for patients owned by the authenticated user
-	rows, err := h.store.Assessments().ListAllLimitedByUser(c.Request.Context(), userID, h.maxRows)
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		return
-	}
 	for _, a := range rows {
 		_ = w.Write([]string{
 			strconv.FormatInt(a.ID, 10),

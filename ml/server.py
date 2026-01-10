@@ -34,6 +34,8 @@ import json
 import logging
 import threading
 import functools
+import time
+from collections import defaultdict
 import numpy as np
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
@@ -78,9 +80,62 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-# Configure CORS - restrict to allowed origins in production
 ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:8080,http://localhost:5173').split(',')
 CORS(app, origins=ALLOWED_ORIGINS if os.environ.get('ENV') == 'production' else '*')
+
+
+class RateLimiter:
+    def __init__(self, requests_per_minute=60, requests_per_second=10):
+        self.requests_per_minute = requests_per_minute
+        self.requests_per_second = requests_per_second
+        self.minute_requests = defaultdict(list)
+        self.second_requests = defaultdict(list)
+        self._lock = threading.Lock()
+    
+    def _get_client_id(self):
+        return request.headers.get('X-API-Key', request.remote_addr or 'unknown')
+    
+    def _cleanup_old(self, requests_list, window):
+        now = time.time()
+        cutoff = now - window
+        return [t for t in requests_list if t > cutoff]
+    
+    def is_allowed(self):
+        with self._lock:
+            now = time.time()
+            client_id = self._get_client_id()
+            
+            self.minute_requests[client_id] = self._cleanup_old(
+                self.minute_requests[client_id], 60
+            )
+            self.second_requests[client_id] = self._cleanup_old(
+                self.second_requests[client_id], 1
+            )
+            
+            if len(self.minute_requests[client_id]) >= self.requests_per_minute:
+                return False, "rate limit exceeded (per minute)"
+            if len(self.second_requests[client_id]) >= self.requests_per_second:
+                return False, "rate limit exceeded (per second)"
+            
+            self.minute_requests[client_id].append(now)
+            self.second_requests[client_id].append(now)
+            return True, None
+
+
+rate_limiter = RateLimiter(
+    requests_per_minute=int(os.environ.get('ML_RATE_LIMIT_MINUTE', 120)),
+    requests_per_second=int(os.environ.get('ML_RATE_LIMIT_SECOND', 20))
+)
+
+
+def rate_limit(f):
+    @functools.wraps(f)
+    def decorated_function(*args, **kwargs):
+        allowed, reason = rate_limiter.is_allowed()
+        if not allowed:
+            return jsonify({"error": reason}), 429
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 # Thread-safe predictor management
@@ -166,6 +221,7 @@ def health():
 
 @app.route('/predict', methods=['POST'])
 @require_api_key
+@rate_limit
 def predict():
     """
     Predict diabetes risk for a single patient.
@@ -225,6 +281,7 @@ def predict():
 
 @app.route('/predict/explain', methods=['POST'])
 @require_api_key
+@rate_limit
 def predict_explain():
     """
     Predict with SHAP explanation for clinicians.
@@ -581,6 +638,7 @@ def list_experiments():
 
 @app.route('/predict/batch', methods=['POST'])
 @require_api_key
+@rate_limit
 def predict_batch():
     """
     Predict for multiple patients.

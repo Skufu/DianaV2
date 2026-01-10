@@ -33,6 +33,7 @@ type UserRepository interface {
 
 type PatientRepository interface {
 	List(ctx context.Context, userID int32) ([]models.Patient, error)
+	ListWithLatestAssessment(ctx context.Context, userID int32) ([]models.PatientSummary, error)
 	Get(ctx context.Context, id int32, userID int32) (*models.Patient, error)
 	Create(ctx context.Context, p models.Patient) (*models.Patient, error)
 	Update(ctx context.Context, p models.Patient) (*models.Patient, error)
@@ -47,7 +48,9 @@ type AssessmentRepository interface {
 	Update(ctx context.Context, a models.Assessment) (*models.Assessment, error)
 	Delete(ctx context.Context, id int32) error
 	ClusterCounts(ctx context.Context) ([]models.ClusterAnalytics, error)
+	ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterAnalytics, error)
 	TrendAverages(ctx context.Context) ([]models.TrendPoint, error)
+	TrendAveragesByUser(ctx context.Context, userID int32) ([]models.TrendPoint, error)
 	ListAllLimited(ctx context.Context, limit int) ([]models.Assessment, error)
 	ListAllLimitedByUser(ctx context.Context, userID int32, limit int) ([]models.Assessment, error)
 	GetTrend(ctx context.Context, patientID int64) ([]models.AssessmentTrend, error)
@@ -94,4 +97,3 @@ type ModelRunRepository interface {
 	Create(ctx context.Context, run models.ModelRun) (*models.ModelRun, error)
 	SetActive(ctx context.Context, id int32) error
 }
-

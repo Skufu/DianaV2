@@ -225,7 +225,7 @@ export const createAssessmentApi = async (token, patientId, payload) => {
     },
     body: JSON.stringify(payload),
   });
-  invalidateCache(`/api/v1/patients/${patientId}`);
+  invalidateCache('/api/v1/patients');
   invalidateCache('/api/v1/analytics');
   return result;
 };
