@@ -188,6 +188,10 @@ func (f *fakePatientRepo) ListAllLimited(ctx context.Context, userID int32, limi
 	return nil, nil
 }
 
+func (f *fakePatientRepo) ListWithLatestAssessment(ctx context.Context, userID int32) ([]models.PatientSummary, error) {
+	return nil, nil
+}
+
 type fakeAssessmentRepo struct {
 	last models.Assessment
 }
@@ -231,5 +235,13 @@ func (f *fakeAssessmentRepo) GetTrend(ctx context.Context, patientID int64) ([]m
 }
 
 func (f *fakeAssessmentRepo) ListAllLimitedByUser(ctx context.Context, userID int32, limit int) ([]models.Assessment, error) {
+	return nil, nil
+}
+
+func (f *fakeAssessmentRepo) ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterAnalytics, error) {
+	return nil, nil
+}
+
+func (f *fakeAssessmentRepo) TrendAveragesByUser(ctx context.Context, userID int32) ([]models.TrendPoint, error) {
 	return nil, nil
 }
