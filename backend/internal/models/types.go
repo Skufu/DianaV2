@@ -65,6 +65,16 @@ type Assessment struct {
 	UpdatedAt        time.Time `json:"updated_at"`
 }
 
+type PatientSummary struct {
+	Patient
+	Cluster   string    `json:"cluster,omitempty"`
+	RiskScore int       `json:"risk_score,omitempty"`
+	Risk      int       `json:"risk,omitempty"`
+	FBS       float64   `json:"fbs,omitempty"`
+	HbA1c     float64   `json:"hba1c,omitempty"`
+	LastVisit time.Time `json:"lastVisit,omitempty"`
+}
+
 type RefreshToken struct {
 	ID        int64     `json:"id"`
 	UserID    int64     `json:"user_id"`

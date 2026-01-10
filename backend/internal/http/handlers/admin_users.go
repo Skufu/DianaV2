@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 	"golang.org/x/crypto/bcrypt"
@@ -114,10 +113,12 @@ func (h *AdminUsersHandler) createUser(c *gin.Context) {
 		return
 	}
 
-	// Get the current admin's ID as the creator
-	claims := c.MustGet("user").(middleware.UserClaims)
+	claims, err := getUserClaims(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return
+	}
 
-	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process password"})
@@ -143,16 +144,15 @@ func (h *AdminUsersHandler) createUser(c *gin.Context) {
 		return
 	}
 
-	// Log the audit event
 	_ = h.store.AuditEvents().Create(c.Request.Context(), models.AuditEvent{
 		Actor:      claims.Email,
 		Action:     "user.create",
 		TargetType: "user",
 		TargetID:   int(createdUser.ID),
-		Details: map[string]interface{}{
+		Details: sanitizeAuditDetails(map[string]interface{}{
 			"email": req.Email,
 			"role":  req.Role,
-		},
+		}),
 	})
 
 	c.JSON(http.StatusCreated, createdUser)
@@ -225,17 +225,16 @@ func (h *AdminUsersHandler) updateUser(c *gin.Context) {
 		return
 	}
 
-	// Log the audit event
-	claims := c.MustGet("user").(middleware.UserClaims)
+	claims, _ := getUserClaims(c)
 	_ = h.store.AuditEvents().Create(c.Request.Context(), models.AuditEvent{
 		Actor:      claims.Email,
 		Action:     "user.update",
 		TargetType: "user",
 		TargetID:   int(id),
-		Details: map[string]interface{}{
+		Details: sanitizeAuditDetails(map[string]interface{}{
 			"email": req.Email,
 			"role":  req.Role,
-		},
+		}),
 	})
 
 	c.JSON(http.StatusOK, updatedUser)
@@ -260,8 +259,11 @@ func (h *AdminUsersHandler) deactivateUser(c *gin.Context) {
 		return
 	}
 
-	// Prevent self-deactivation
-	claims := c.MustGet("user").(middleware.UserClaims)
+	claims, err := getUserClaims(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		return
+	}
 	if claims.UserID == id {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot deactivate your own account"})
 		return
@@ -307,8 +309,7 @@ func (h *AdminUsersHandler) activateUser(c *gin.Context) {
 		return
 	}
 
-	// Log the audit event
-	claims := c.MustGet("user").(middleware.UserClaims)
+	claims, _ := getUserClaims(c)
 	_ = h.store.AuditEvents().Create(c.Request.Context(), models.AuditEvent{
 		Actor:      claims.Email,
 		Action:     "user.activate",
@@ -322,8 +323,8 @@ func (h *AdminUsersHandler) activateUser(c *gin.Context) {
 // isDuplicateKeyError checks if the error is a PostgreSQL duplicate key violation
 func isDuplicateKeyError(err error) bool {
 	return err != nil && (
-		// PostgreSQL unique violation
-		containsString(err.Error(), "duplicate key") ||
+	// PostgreSQL unique violation
+	containsString(err.Error(), "duplicate key") ||
 		containsString(err.Error(), "23505") ||
 		containsString(err.Error(), "unique constraint"))
 }

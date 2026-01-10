@@ -90,7 +90,12 @@ func (h *AuthHandler) login(c *gin.Context) {
 		"access_token":  signedAccessToken,
 		"refresh_token": refreshToken,
 		"token_type":    "Bearer",
-		"expires_in":    900, // 15 minutes in seconds
+		"expires_in":    900,
+		"user": gin.H{
+			"id":    user.ID,
+			"email": user.Email,
+			"role":  user.Role,
+		},
 	})
 }
 
@@ -156,7 +161,12 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"access_token": signedAccessToken,
 		"token_type":   "Bearer",
-		"expires_in":   900, // 15 minutes in seconds
+		"expires_in":   900,
+		"user": gin.H{
+			"id":    user.ID,
+			"email": user.Email,
+			"role":  user.Role,
+		},
 	})
 }
 

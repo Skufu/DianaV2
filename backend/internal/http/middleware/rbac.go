@@ -46,11 +46,8 @@ func RoleRequired(allowedRoles ...string) gin.HandlerFunc {
 			}
 		}
 
-		// Role not allowed
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 			"error": "access denied - insufficient permissions",
-			"required_roles": allowedRoles,
-			"current_role":   claims.Role,
 		})
 	}
 }

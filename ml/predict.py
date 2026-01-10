@@ -78,9 +78,28 @@ class DianaPredictor:
             self.metrics = {}
     
     def validate_input(self, data: Dict[str, float]) -> tuple[bool, list]:
-        """Validate input data has all required features."""
         missing = [f for f in REQUIRED_FEATURES if f not in data or data[f] is None]
-        return len(missing) == 0, missing
+        if missing:
+            return False, missing
+        
+        errors = []
+        ranges = {
+            'hba1c': (2.0, 20.0),
+            'fbs': (20, 600),
+            'bmi': (10, 80),
+            'triglycerides': (20, 1500),
+            'ldl': (10, 400),
+            'hdl': (10, 150),
+        }
+        for feature, (min_val, max_val) in ranges.items():
+            if feature in data and data[feature] is not None:
+                val = data[feature]
+                if val < min_val or val > max_val:
+                    errors.append(f"{feature} value {val} out of range [{min_val}, {max_val}]")
+        
+        if errors:
+            return False, errors
+        return True, []
     
     def predict(self, data: Dict[str, float]) -> Dict[str, Any]:
         """
@@ -136,7 +155,7 @@ class DianaPredictor:
         return {
             "success": True,
             "medical_status": medical_status,
-            "cluster": cluster_label,
+            "risk_cluster": cluster_label,
             "risk_level": risk_level,
             "risk_score": risk_score,
             "probability": round(high_risk_prob, 3),
@@ -229,9 +248,27 @@ class ClinicalPredictor:
             self.metrics = {}
     
     def validate_input(self, data: Dict[str, float]) -> tuple[bool, list]:
-        """Validate input has all required clinical features."""
         missing = [f for f in CLINICAL_FEATURES if f not in data or data[f] is None]
-        return len(missing) == 0, missing
+        if missing:
+            return False, missing
+        
+        errors = []
+        ranges = {
+            'bmi': (10, 80),
+            'triglycerides': (20, 1500),
+            'ldl': (10, 400),
+            'hdl': (10, 150),
+            'age': (18, 120),
+        }
+        for feature, (min_val, max_val) in ranges.items():
+            if feature in data and data[feature] is not None:
+                val = data[feature]
+                if val < min_val or val > max_val:
+                    errors.append(f"{feature} value {val} out of range [{min_val}, {max_val}]")
+        
+        if errors:
+            return False, errors
+        return True, []
     
     def predict(self, data: Dict[str, float]) -> Dict[str, Any]:
         """
@@ -352,7 +389,6 @@ if __name__ == "__main__":
     print("Testing DIANA Predictors...")
     print(f"Input: {test_patient}")
     
-    # Test ADA model
     print("\n=== ADA Baseline Model ===")
     ada_result = predict(test_patient, model_type="ada")
     print(f"  Medical Status: {ada_result.get('medical_status')}")
