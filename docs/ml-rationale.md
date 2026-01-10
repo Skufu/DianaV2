@@ -222,33 +222,40 @@ For a dataset with 800 Normal, 200 Pre-diabetic, 100 Diabetic:
 
 ---
 
-## 5. Model Selection: LR, RF, XGBoost
+## 5. Model Selection: 7 Models Compared
 
 ### The Decision
-Compare three models: **Logistic Regression, Random Forest, XGBoost**.
+Compare seven models: **Logistic Regression, Random Forest, XGBoost, CatBoost, LightGBM, Voting Ensemble, Stacking Ensemble**.
 
 ### Rationale
 
 | Model | Complexity | Interpretability | Performance | Thesis Value |
 |-------|------------|------------------|-------------|--------------|
-| **Logistic Regression** | Low | High (coefficients = feature effects) | Baseline | Shows linear relationships |
-| **Random Forest** | Medium | Moderate (feature importance) | Good | Captures non-linear patterns |
-| **XGBoost** | High | Low (many trees) | State-of-art | Best tabular data performance |
+| **Logistic Regression** | Low | High (coefficients = feature effects) | Baseline (AUC 0.6683) | Shows linear relationships |
+| **Random Forest** | Medium | Moderate (feature importance) | Good (AUC 0.6534) | Captures non-linear patterns |
+| **XGBoost** ⭐ | High | Low (many trees) | **Best (AUC 0.6732)** | State-of-art for tabular data |
+| **CatBoost** | High | Low | Very close second (AUC 0.6726) | Handles categorical features |
+| **LightGBM** | High | Low | Lower (AUC 0.6452) | Fast gradient boosting |
+| **Voting Ensemble** | High | Very Low | Good (AUC 0.6632) | Combines base learners |
+| **Stacking Ensemble** | High | Very Low | Good (AUC 0.6689) | Meta-learner combination |
 
-**Why exactly three models:**
-- Logistic Regression = interpretable baseline (can explain odds ratios)
-- Random Forest = industry standard ensemble
-- XGBoost = current best-practice for structured clinical data
-- More models = more work with diminishing thesis value
+**Why seven models:**
+- **Core three** (LR, RF, XGBoost) = Standard progression from simple to complex
+- **Additional boosting** (CatBoost, LightGBM) = Test alternative gradient boosting algorithms
+- **Ensemble methods** (Voting, Stacking) = Explore model combination strategies
+- Demonstrates thorough exploration while maintaining thesis focus
 
 **Why NOT neural networks:**
-- Overkill for ~1,100 records and 7 features
+- Overkill for ~1,376 records and 25 features
 - Requires extensive hyperparameter tuning
 - Harder to explain to non-technical panel members
-- XGBoost typically outperforms NNs on tabular data anyway
+- Tree-based models (XGBoost) typically outperform NNs on tabular data
+
+**Key Finding:**
+XGBoost achieved the best performance (AUC 0.6732), with CatBoost very close (0.6726). The ensemble methods did not outperform the best individual model, suggesting XGBoost already captures the optimal signal from the data.
 
 ### Defense Script
-> "I compared three progressively complex algorithms. Logistic Regression provides an interpretable baseline where coefficients represent log-odds ratios. Random Forest captures non-linear feature interactions through ensemble learning. XGBoost represents the current state-of-the-art for structured clinical data, consistently winning Kaggle competitions on tabular datasets. This progression from simple to complex allows us to determine if the added complexity is justified by improved performance."
+> "I conducted a comprehensive comparison of seven algorithms spanning three categories: baseline models (Logistic Regression), tree ensembles (Random Forest, XGBoost, CatBoost, LightGBM), and meta-ensembles (Voting, Stacking). XGBoost emerged as the best performer with AUC 0.6732, closely followed by CatBoost at 0.6726. Interestingly, ensemble methods did not outperform XGBoost, indicating it already optimally combines the available features. This thorough comparison demonstrates due diligence in model selection while identifying XGBoost as the most suitable algorithm for deployment."
 
 ---
 
@@ -276,12 +283,21 @@ Prioritize **AUC-ROC ≥ 0.80** as primary metric, with **Recall** as clinical s
 
 | Scenario | Expected AUC | Assessment |
 |----------|--------------|------------|
-| **Current Result** | **0.6743** | **Acceptable for screening** |
+| **Current Result (XGBoost)** | **0.6732** | **Acceptable for screening** |
 | **Target** | 0.70-0.75 | Good |
 | **Excellent** | > 0.80 | Rare without HbA1c |
 
+**All Clinical Model Results:**
+- XGBoost: 0.6732 (best - selected)
+- CatBoost: 0.6726
+- Stacking Ensemble: 0.6689  
+- Logistic Regression: 0.6683
+- Voting Ensemble: 0.6632
+- Random Forest: 0.6534
+- LightGBM: 0.6452
+
 ### Defense Script
-> "I prioritized AUC-ROC because it measures discrimination across all thresholds. Our Clinical Predictor excludes HbA1c to avoid circularity and achieves AUC of 0.6743, which is comparable to the CDC Prediabetes Risk Test (AUC 0.72-0.79). Given the non-circular constraint, this represents acceptable performance for a screening tool."
+> "I prioritized AUC-ROC because it measures discrimination across all thresholds. After comparing seven models, XGBoost achieved the best performance with AUC 0.6732. Our Clinical Predictor excludes HbA1c and FBS to avoid circularity. An AUC of 0.67 is acceptable and comparable to the CDC Prediabetes Risk Test (AUC 0.72-0.79). Given the non-circular constraint, this represents realistic performance for a screening tool."
 
 ---
 
@@ -393,7 +409,7 @@ Use **5-fold stratified cross-validation** within the training set.
 - AUC 0.70-0.80 is realistic and clinically useful
 
 ### Defense Script
-> "We maintain two model types. The ADA Predictor includes HbA1c and achieves near-perfect AUC because HbA1c thresholds directly define diabetes status per ADA guidelines—this validates our implementation. The Clinical Predictor excludes diagnostic biomarkers (HbA1c, FBS) and predicts risk from the metabolic profile alone, achieving AUC of 0.6743. This model provides clinical value for screening patients who haven't yet received glucose-specific testing."
+> "We maintain two model types. The ADA Predictor includes HbA1c and achieves near-perfect AUC because HbA1c thresholds directly define diabetes status per ADA guidelines—this validates our implementation. The Clinical Predictor excludes diagnostic biomarkers (HbA1c, FBS) and predicts risk from the metabolic profile alone. After comparing seven algorithms, XGBoost achieved the best performance with AUC 0.6732. This model provides clinical value for screening patients who haven't yet received glucose-specific testing."
 
 ---
 
@@ -404,8 +420,9 @@ Use **5-fold stratified cross-validation** within the training set.
 | "Why Mutual Information?" | "Handles continuous features without arbitrary binning" |
 | "Why median imputation?" | "Robust to outliers in skewed clinical distributions" |
 | "Why balanced weights?" | "Penalizes missing diabetics without synthetic samples" |
-| "Why these three models?" | "Progression from interpretable baseline to state-of-art" |
-| "Why AUC 0.67?" | "Acceptable for non-circular screening; comparable to CDC tools" |
+| "Why seven models?" | "Comprehensive comparison: baseline (LR), tree ensembles (RF/XGB/Cat/LGB), meta-ensembles (Vote/Stack)" |
+| "Which model is best?" | "XGBoost at AUC 0.6732, closely followed by CatBoost at 0.6726" |
+| "Why AUC 0.67?" | "Acceptable for non-circular screening; comparable to CDC tools at 0.72-0.79" |
 | "Why K=4 clusters?" | "Matches Ahlqvist et al. T2DM subtype classification" |
 | "Why is ADA model perfect?" | "HbA1c defines both feature and label—validates implementation" |
-| "What's the real contribution?" | "Clinical Predictor screens without glucose testing at 0.67 AUC" |
+| "What's the real contribution?" | "Clinical Predictor screens without glucose testing; XGBoost achieves 0.6732 AUC" |

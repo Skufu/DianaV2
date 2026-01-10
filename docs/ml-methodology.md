@@ -74,16 +74,16 @@ For panel defense, also compute Information Gain using clinical thresholds.
 
 ## Supervised Classification
 
-### Algorithms
+### Algorithms (All 7 Models Trained)
 | Model | Parameters | Purpose |
 |-------|------------|---------|
 | Logistic Regression | C=0.1, balanced weights | Interpretable baseline |
-| Random Forest | max_depth=6, min_samples_leaf=15 | Captures nonlinear relationships |
-| XGBoost | max_depth=4, reg_lambda=10, early_stopping | Gradient boosting with regularization |
-| CatBoost | depth=5, l2_leaf_reg=5 | Optimized for small datasets |
-| LightGBM | num_leaves=31, reg_lambda=10 | Fast gradient boosting |
-| **Voting Ensemble** | soft voting, weighted | Combines LR+RF+XGB+LightGBM |
-| **Stacking Ensemble** | LR meta-learner | Learns optimal combination |
+| Random Forest | n_estimators=300, max_depth=6, min_samples_leaf=15 | Captures nonlinear relationships |
+| **XGBoost** ⭐ | n_estimators=300, max_depth=4, learning_rate=0.05, reg_lambda=2.0 | **Best performer (AUC 0.6732)** |
+| CatBoost | depth=5, iterations=300, l2_leaf_reg=5 | Handles categorical features natively |
+| LightGBM | num_leaves=31, n_estimators=300, reg_lambda=10 | Fast gradient boosting |
+| Voting Ensemble | soft voting, weighted (LR+RF+XGB+LightGBM) | Combines base learners |
+| Stacking Ensemble | LR meta-learner on 4 base models | Learns optimal combination |
 
 ### Feature Engineering (25 features)
 | Category | Features |
@@ -145,14 +145,22 @@ Clusters labeled using rank-based assignment for NHANES postmenopausal populatio
 2. **F1-Score** (secondary) - balance of precision/recall
 3. **Clinical Interpretability** (tertiary) - explainability
 
-### Target Performance (Verified)
-| Model Type | AUC Target | CV Score | Notes |
-|------------|------------|----------|-------|
-| ADA Predictor | ~1.0 | ~1.0 | HbA1c feature = perfect alignment |
-| Clinical Predictor | ≥ 0.70 | **0.85** | LightGBM/XGBoost with ensembles |
-| Previous Best | 0.70 | 0.6743 | Logistic Regression baseline |
+### Target Performance (Actual Results)
+| Model Type | AUC Target | Best Model | Test AUC | Notes |
+|------------|------------|------------|----------|-------|
+| ADA Predictor | ~1.0 | N/A | ~1.0 | HbA1c feature = circular, validates implementation |
+| **Clinical Predictor** | ≥ 0.70 | **XGBoost** | **0.6732** | Best non-circular screening model |
 
-> **Improvement**: Advanced feature engineering + ensemble methods increased AUC from 0.67 to 0.85.
+**All Clinical Model Results:**
+- XGBoost: **0.6732** (best) - Selected for deployment
+- CatBoost: 0.6726 (very close second)
+- Logistic Regression: 0.6683 
+- Stacking Ensemble: 0.6689
+- Voting Ensemble: 0.6632
+- Random Forest: 0.6534
+- LightGBM: 0.6452
+
+> **Note**: AUC ~0.67 is realistic and acceptable for non-circular screening (comparable to CDC tools at 0.72-0.79).
 
 ---
 

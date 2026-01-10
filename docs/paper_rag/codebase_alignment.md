@@ -30,10 +30,14 @@ The codebase implements most paper requirements correctly. Minor enhancements id
 
 | Requirement | Paper | Codebase | Status |
 |-------------|-------|----------|--------|
-| Logistic Regression | Required | train.py, train_enhanced.py | ✅ |
-| Random Forest | Required | train.py, train_enhanced.py | ✅ |
-| XGBoost | Required | train.py, train_enhanced.py | ✅ |
-| K-Means (K=4) | Required | clustering.py, train_enhanced.py | ✅ |
+| Logistic Regression | Required | train.py | ✅ |
+| Random Forest | Required | train.py | ✅ |
+| XGBoost | Required | train.py (best: AUC 0.6732) | ✅ |
+| CatBoost | Optional | train.py | ✅ |
+| LightGBM | Optional | train.py | ✅ |
+| Voting Ensemble | Optional | train.py | ✅ |
+| Stacking Ensemble | Optional | train.py | ✅ |
+| K-Means (K=4) | Required | clustering.py | ✅ |
 | SVM | Optional | Not implemented | ⚠️ Low priority |
 
 ---
