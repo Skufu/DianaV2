@@ -58,6 +58,8 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 
 	protected := api.Group("")
 	protected.Use(middleware.Auth(cfg.JWTSecret))
+	protectedRateLimiter := middleware.NewRateLimiter(100, time.Minute)
+	protected.Use(middleware.RateLimit(protectedRateLimiter))
 
 	patientHandler := handlers.NewPatientsHandler(st)
 	patientHandler.Register(protected.Group("/patients"))
@@ -109,4 +111,3 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 
 	return r
 }
-

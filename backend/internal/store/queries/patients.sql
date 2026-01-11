@@ -65,6 +65,18 @@ RETURNING id, user_id, name, age, menopause_status, years_menopause, bmi, bp_sys
 DELETE FROM patients
 WHERE id = $1 AND user_id = $2;
 
+-- name: CountPatientsByUser :one
+SELECT COUNT(*) FROM patients WHERE user_id = $1;
+
+-- name: ListPatientsPaginated :many
+SELECT id, user_id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
+       activity, phys_activity, smoking, hypertension, heart_disease, family_history, chol, ldl, hdl, triglycerides,
+       created_at, updated_at
+FROM patients
+WHERE user_id = $1
+ORDER BY id DESC
+LIMIT $2 OFFSET $3;
+
 -- name: ListPatientsWithLatestAssessment :many
 SELECT 
     p.id, p.user_id, p.name, p.age, p.menopause_status, p.years_menopause, 

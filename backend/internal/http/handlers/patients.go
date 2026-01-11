@@ -29,17 +29,18 @@ func (h *PatientsHandler) Register(rg *gin.RouterGroup) {
 func (h *PatientsHandler) list(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		ErrUnauthorized(c)
 		return
 	}
 
-	summaries, err := h.store.Patients().ListWithLatestAssessment(c.Request.Context(), userID)
+	pagination := ParsePagination(c)
+	patients, total, err := h.store.Patients().ListPaginated(c.Request.Context(), userID, pagination.PageSize, pagination.Offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list patients"})
+		ErrInternal(c, "failed to list patients")
 		return
 	}
 
-	c.JSON(http.StatusOK, summaries)
+	c.JSON(http.StatusOK, NewPaginatedResponse(patients, pagination, total))
 }
 
 func (h *PatientsHandler) create(c *gin.Context) {
@@ -151,7 +152,7 @@ func (h *PatientsHandler) delete(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete patient"})
 		return
 	}
-	c.JSON(http.StatusNoContent, nil)
+	c.Status(http.StatusNoContent)
 }
 
 // trend returns the assessment history for a patient for trend visualization

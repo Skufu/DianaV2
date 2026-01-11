@@ -15,8 +15,8 @@
 | JWT Middleware | `internal/http/middleware/auth.go` |
 | Patient CRUD | `internal/http/handlers/patients.go` |
 | Assessments | `internal/http/handlers/assessments.go` |
-| ML Integration | `internal/ml/predictor.go` |
-| Database Queries | `internal/store/sqlc/queries.sql` |
+| ML Integration | `internal/ml/http_predictor.go` |
+| Database Queries | `internal/store/sqlc/*.sql.go` |
 | Config | `internal/config/config.go` |
 
 ---
@@ -50,30 +50,34 @@ backend/
 │   │       └── ratelimit.go      # Rate limiting
 │   │
 │   ├── ml/                       # ML server integration
-│   │   ├── predictor.go          # HTTPPredictor client
+│   │   ├── http_predictor.go     # HTTPPredictor client
 │   │   ├── mock.go               # Mock predictor for testing
-│   │   └── types.go              # PredictionInput, PredictionResult
+│   │   └── validation.go         # Biomarker validation
 │   │
 │   ├── models/                   # Domain models
-│   │   └── models.go             # User, Patient, Assessment structs
+│   │   └── types.go              # User, Patient, Assessment structs
 │   │
 │   └── store/                    # Database layer
 │       ├── store.go              # Store interface
 │       └── sqlc/                 # Generated SQLC code
-│           ├── queries.sql       # SQL query definitions
 │           ├── models.go         # Generated Go structs
 │           ├── db.go             # Database connection
-│           └── queries.sql.go    # Generated query methods
+│           ├── users.sql.go      # User queries
+│           ├── patients.sql.go   # Patient queries
+│           ├── assessments.sql.go # Assessment queries
+│           └── *.sql.go          # Other generated queries
 │
 ├── migrations/                   # Goose SQL migrations
-│   ├── 0001_init.sql             # Users table
+│   ├── 0001_init.sql             # Users, patients, assessments, audit tables
 │   ├── 0002_*.sql                # Family history, physical activity
 │   ├── 0003_*.sql                # Updated_at, indexes
 │   ├── 0004_*.sql                # Refresh tokens
 │   ├── 0005_*.sql                # Patient user_id
 │   ├── 0006_*.sql                # Mock data seeding
 │   ├── 0007_*.sql                # Cluster name updates
-│   └── 0008_*.sql                # Cluster name corrections
+│   ├── 0008_*.sql                # Cluster name corrections
+│   ├── 0009_add_clinics.sql      # Clinic tables
+│   └── 0010_admin_features.sql   # Admin user features
 │
 ├── go.mod                        # Go module definition
 ├── go.sum                        # Dependency checksums
@@ -128,14 +132,14 @@ backend/
 - `Create(c *gin.Context)` - Create assessment, call ML predictor
 - `List(c *gin.Context)` - Get assessment history for patient
 
-### ML Predictor (`internal/ml/predictor.go`)
+### ML Predictor (`internal/ml/http_predictor.go`)
 - `Predict(input PredictionInput) (*PredictionResult, error)` - Call ML server
 
 ---
 
 ## Database Queries (SQLC)
 
-Location: `internal/store/sqlc/queries.sql`
+Location: `internal/store/sqlc/*.sql.go` (generated from SQL in sqlc.yaml)
 
 | Query Name | Type | Purpose |
 |------------|------|---------|

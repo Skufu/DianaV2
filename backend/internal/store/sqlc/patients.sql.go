@@ -11,6 +11,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countPatientsByUser = `-- name: CountPatientsByUser :one
+SELECT COUNT(*) FROM patients WHERE user_id = $1
+`
+
+func (q *Queries) CountPatientsByUser(ctx context.Context, userID int32) (int64, error) {
+	row := q.db.QueryRow(ctx, countPatientsByUser, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createPatient = `-- name: CreatePatient :one
 INSERT INTO patients (
   user_id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
@@ -323,6 +334,88 @@ func (q *Queries) ListPatientsLimited(ctx context.Context, arg ListPatientsLimit
 	var items []ListPatientsLimitedRow
 	for rows.Next() {
 		var i ListPatientsLimitedRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Age,
+			&i.MenopauseStatus,
+			&i.YearsMenopause,
+			&i.Bmi,
+			&i.BpSystolic,
+			&i.BpDiastolic,
+			&i.Activity,
+			&i.PhysActivity,
+			&i.Smoking,
+			&i.Hypertension,
+			&i.HeartDisease,
+			&i.FamilyHistory,
+			&i.Chol,
+			&i.Ldl,
+			&i.Hdl,
+			&i.Triglycerides,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPatientsPaginated = `-- name: ListPatientsPaginated :many
+SELECT id, user_id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
+       activity, phys_activity, smoking, hypertension, heart_disease, family_history, chol, ldl, hdl, triglycerides,
+       created_at, updated_at
+FROM patients
+WHERE user_id = $1
+ORDER BY id DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListPatientsPaginatedParams struct {
+	UserID int32 `json:"user_id"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type ListPatientsPaginatedRow struct {
+	ID              int32              `json:"id"`
+	UserID          int32              `json:"user_id"`
+	Name            string             `json:"name"`
+	Age             pgtype.Int4        `json:"age"`
+	MenopauseStatus pgtype.Text        `json:"menopause_status"`
+	YearsMenopause  pgtype.Int4        `json:"years_menopause"`
+	Bmi             pgtype.Numeric     `json:"bmi"`
+	BpSystolic      pgtype.Int4        `json:"bp_systolic"`
+	BpDiastolic     pgtype.Int4        `json:"bp_diastolic"`
+	Activity        pgtype.Text        `json:"activity"`
+	PhysActivity    pgtype.Bool        `json:"phys_activity"`
+	Smoking         pgtype.Text        `json:"smoking"`
+	Hypertension    pgtype.Text        `json:"hypertension"`
+	HeartDisease    pgtype.Text        `json:"heart_disease"`
+	FamilyHistory   pgtype.Bool        `json:"family_history"`
+	Chol            pgtype.Int4        `json:"chol"`
+	Ldl             pgtype.Int4        `json:"ldl"`
+	Hdl             pgtype.Int4        `json:"hdl"`
+	Triglycerides   pgtype.Int4        `json:"triglycerides"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) ListPatientsPaginated(ctx context.Context, arg ListPatientsPaginatedParams) ([]ListPatientsPaginatedRow, error) {
+	rows, err := q.db.Query(ctx, listPatientsPaginated, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPatientsPaginatedRow
+	for rows.Next() {
+		var i ListPatientsPaginatedRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
