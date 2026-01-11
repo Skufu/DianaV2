@@ -192,6 +192,10 @@ func (f *fakePatientRepo) ListWithLatestAssessment(ctx context.Context, userID i
 	return nil, nil
 }
 
+func (f *fakePatientRepo) ListPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.Patient, int, error) {
+	return nil, 0, nil
+}
+
 type fakeAssessmentRepo struct {
 	last models.Assessment
 }
@@ -244,4 +248,8 @@ func (f *fakeAssessmentRepo) ClusterCountsByUser(ctx context.Context, userID int
 
 func (f *fakeAssessmentRepo) TrendAveragesByUser(ctx context.Context, userID int32) ([]models.TrendPoint, error) {
 	return nil, nil
+}
+
+func (f *fakeAssessmentRepo) ListByPatientPaginated(ctx context.Context, patientID int64, limit, offset int) ([]models.Assessment, int, error) {
+	return nil, 0, nil
 }

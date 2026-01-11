@@ -77,8 +77,8 @@
 | Auth handler | `backend/internal/http/handlers/auth.go` |
 | Patient handler | `backend/internal/http/handlers/patients.go` |
 | Assessment handler | `backend/internal/http/handlers/assessments.go` |
-| ML predictor client | `backend/internal/ml/predictor.go` |
-| Database queries | `backend/internal/store/sqlc/queries.sql` |
+| ML predictor client | `backend/internal/ml/http_predictor.go` |
+| Database queries | `backend/internal/store/sqlc/*.sql.go` |
 
 ### Frontend (React)
 | Purpose | File |
@@ -86,7 +86,7 @@
 | Main app | `frontend/src/App.jsx` |
 | API wrapper | `frontend/src/api.js` |
 | Dashboard | `frontend/src/components/dashboard/Dashboard.jsx` |
-| Patients | `frontend/src/components/patients/PatientList.jsx` |
+| Patients | `frontend/src/components/patients/PatientHistory.jsx` |
 | Analytics | `frontend/src/components/analytics/Analytics.jsx` |
 
 ### ML (Python)
@@ -102,7 +102,7 @@
 ## Data Flow: Patient Assessment
 
 ```
-1. User enters biomarkers in Frontend (PatientList.jsx)
+1. User enters biomarkers in Frontend (PatientHistory.jsx)
 2. Frontend POST → Backend /api/v1/patients/:id/assessments
 3. Backend (assessments.go) → ML Server POST /predict?model_type=clinical
 4. ML Server (predict.py) → Returns prediction + cluster

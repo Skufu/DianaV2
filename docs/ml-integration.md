@@ -78,7 +78,7 @@ Open two terminals:
 # Using detected python (auto-detects venv/python3)
 make ml
 # OR explicitly using venv
-./venv/bin/python scripts/ml_server.py
+./venv/bin/python ml/server.py
 ```
 
 **Terminal 2 - Go Backend:**
@@ -91,3 +91,13 @@ MODEL_URL=http://localhost:5000/predict go run ./backend/cmd/server
 For production, run the ML server behind a reverse proxy:
 - Consider using Gunicorn: `gunicorn -w 4 -b 0.0.0.0:5000 scripts.ml_server:app`
 - Or containerize both services with Docker Compose
+
+## Clinical Model (Non-Circular)
+
+For screening without HbA1c/FBS (avoids circular reasoning):
+
+```bash
+curl -X POST "http://localhost:5000/predict?model_type=clinical" \
+  -H "Content-Type: application/json" \
+  -d '{"bmi": 28, "triglycerides": 150, "ldl": 130, "hdl": 45, "age": 55}'
+```

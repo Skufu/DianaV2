@@ -75,6 +75,17 @@ func (q *Queries) ClusterCountsByUser(ctx context.Context, userID int32) ([]Clus
 	return items, nil
 }
 
+const countAssessmentsByPatient = `-- name: CountAssessmentsByPatient :one
+SELECT COUNT(*) FROM assessments WHERE patient_id = $1
+`
+
+func (q *Queries) CountAssessmentsByPatient(ctx context.Context, patientID pgtype.Int4) (int64, error) {
+	row := q.db.QueryRow(ctx, countAssessmentsByPatient, patientID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createAssessment = `-- name: CreateAssessment :one
 INSERT INTO assessments (
   patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
@@ -278,6 +289,66 @@ ORDER BY created_at DESC
 
 func (q *Queries) ListAssessmentsByPatient(ctx context.Context, patientID pgtype.Int4) ([]Assessment, error) {
 	rows, err := q.db.Query(ctx, listAssessmentsByPatient, patientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Assessment
+	for rows.Next() {
+		var i Assessment
+		if err := rows.Scan(
+			&i.ID,
+			&i.PatientID,
+			&i.Fbs,
+			&i.Hba1c,
+			&i.Cholesterol,
+			&i.Ldl,
+			&i.Hdl,
+			&i.Triglycerides,
+			&i.Systolic,
+			&i.Diastolic,
+			&i.Activity,
+			&i.HistoryFlag,
+			&i.Smoking,
+			&i.Hypertension,
+			&i.HeartDisease,
+			&i.Bmi,
+			&i.Cluster,
+			&i.RiskScore,
+			&i.ModelVersion,
+			&i.DatasetHash,
+			&i.ValidationStatus,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAssessmentsByPatientPaginated = `-- name: ListAssessmentsByPatientPaginated :many
+SELECT id, patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
+       activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
+       model_version, dataset_hash, validation_status, created_at, updated_at
+FROM assessments
+WHERE patient_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListAssessmentsByPatientPaginatedParams struct {
+	PatientID pgtype.Int4 `json:"patient_id"`
+	Limit     int32       `json:"limit"`
+	Offset    int32       `json:"offset"`
+}
+
+func (q *Queries) ListAssessmentsByPatientPaginated(ctx context.Context, arg ListAssessmentsByPatientPaginatedParams) ([]Assessment, error) {
+	rows, err := q.db.Query(ctx, listAssessmentsByPatientPaginated, arg.PatientID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

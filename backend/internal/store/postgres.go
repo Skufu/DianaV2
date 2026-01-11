@@ -249,6 +249,25 @@ func (r *pgPatientRepo) ListAllLimited(ctx context.Context, userID int32, limit 
 	return mapPatientLimitedRows(rows), nil
 }
 
+func (r *pgPatientRepo) ListPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.Patient, int, error) {
+	if r.q == nil {
+		return nil, 0, errors.New("db not configured")
+	}
+	count, err := r.q.CountPatientsByUser(ctx, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := r.q.ListPatientsPaginated(ctx, sqlcgen.ListPatientsPaginatedParams{
+		UserID: userID,
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	return mapPatientPaginatedRows(rows), int(count), nil
+}
+
 type pgAssessmentRepo struct{ q *sqlcgen.Queries }
 
 func (r *pgAssessmentRepo) ListByPatient(ctx context.Context, patientID int64) ([]models.Assessment, error) {
@@ -260,6 +279,25 @@ func (r *pgAssessmentRepo) ListByPatient(ctx context.Context, patientID int64) (
 		return nil, err
 	}
 	return mapAssessmentsByPatientRows(rows), nil
+}
+
+func (r *pgAssessmentRepo) ListByPatientPaginated(ctx context.Context, patientID int64, limit, offset int) ([]models.Assessment, int, error) {
+	if r.q == nil {
+		return nil, 0, errors.New("db not configured")
+	}
+	count, err := r.q.CountAssessmentsByPatient(ctx, int64ToPgInt(patientID))
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := r.q.ListAssessmentsByPatientPaginated(ctx, sqlcgen.ListAssessmentsByPatientPaginatedParams{
+		PatientID: int64ToPgInt(patientID),
+		Limit:     int32(limit),
+		Offset:    int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	return mapAssessmentsByPatientRows(rows), int(count), nil
 }
 
 func (r *pgAssessmentRepo) Create(ctx context.Context, a models.Assessment) (*models.Assessment, error) {
@@ -580,6 +618,36 @@ func mapPatientRows(rows []sqlcgen.ListPatientsRow) []models.Patient {
 }
 
 func mapPatientLimitedRows(rows []sqlcgen.ListPatientsLimitedRow) []models.Patient {
+	var out []models.Patient
+	for _, r := range rows {
+		out = append(out, models.Patient{
+			ID:              int64(r.ID),
+			UserID:          int64(r.UserID),
+			Name:            r.Name,
+			Age:             intVal(r.Age),
+			MenopauseStatus: textVal(r.MenopauseStatus),
+			YearsMenopause:  intVal(r.YearsMenopause),
+			BMI:             numericVal(r.Bmi),
+			BPSystolic:      intVal(r.BpSystolic),
+			BPDiastolic:     intVal(r.BpDiastolic),
+			Activity:        textVal(r.Activity),
+			PhysActivity:    boolVal(r.PhysActivity),
+			Smoking:         textVal(r.Smoking),
+			Hypertension:    textVal(r.Hypertension),
+			HeartDisease:    textVal(r.HeartDisease),
+			FamilyHistory:   boolVal(r.FamilyHistory),
+			Chol:            intVal(r.Chol),
+			LDL:             intVal(r.Ldl),
+			HDL:             intVal(r.Hdl),
+			Triglycerides:   intVal(r.Triglycerides),
+			CreatedAt:       r.CreatedAt.Time,
+			UpdatedAt:       r.UpdatedAt.Time,
+		})
+	}
+	return out
+}
+
+func mapPatientPaginatedRows(rows []sqlcgen.ListPatientsPaginatedRow) []models.Patient {
 	var out []models.Patient
 	for _, r := range rows {
 		out = append(out, models.Patient{
