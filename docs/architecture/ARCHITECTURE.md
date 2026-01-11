@@ -96,7 +96,7 @@ Deployment & environments
 Local development & testing
 ---------------------------
 - Backend: `go run ./cmd/server`.
-- Frontend: `cd frontend && npm run dev` (default port 3000).
+- Frontend: `cd frontend && npm run dev` (default port 5173).
 - Combined helper: `./run-dev.sh` (expects Postgres reachable at `DB_DSN`).
 - Migrations: `DB_DSN=<url> make db_up` (goose).
 - Tests: `go test ./...` (integration needs `TEST_DB_DSN` with schema applied).

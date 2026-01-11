@@ -33,6 +33,7 @@ type UserRepository interface {
 
 type PatientRepository interface {
 	List(ctx context.Context, userID int32) ([]models.Patient, error)
+	ListPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.Patient, int, error)
 	ListWithLatestAssessment(ctx context.Context, userID int32) ([]models.PatientSummary, error)
 	Get(ctx context.Context, id int32, userID int32) (*models.Patient, error)
 	Create(ctx context.Context, p models.Patient) (*models.Patient, error)
@@ -43,6 +44,7 @@ type PatientRepository interface {
 
 type AssessmentRepository interface {
 	ListByPatient(ctx context.Context, patientID int64) ([]models.Assessment, error)
+	ListByPatientPaginated(ctx context.Context, patientID int64, limit, offset int) ([]models.Assessment, int, error)
 	Get(ctx context.Context, id int32) (*models.Assessment, error)
 	Create(ctx context.Context, a models.Assessment) (*models.Assessment, error)
 	Update(ctx context.Context, a models.Assessment) (*models.Assessment, error)

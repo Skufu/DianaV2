@@ -6,6 +6,18 @@ FROM assessments
 WHERE patient_id = $1
 ORDER BY created_at DESC;
 
+-- name: CountAssessmentsByPatient :one
+SELECT COUNT(*) FROM assessments WHERE patient_id = $1;
+
+-- name: ListAssessmentsByPatientPaginated :many
+SELECT id, patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
+       activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
+       model_version, dataset_hash, validation_status, created_at, updated_at
+FROM assessments
+WHERE patient_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3;
+
 -- name: ListAssessmentsLimited :many
 SELECT id, patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
        activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,

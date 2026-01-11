@@ -32,7 +32,7 @@ A full-stack health application that helps clinicians assess diabetes risk using
 | Admin Handlers | `backend/internal/http/handlers/admin_*.go` | User mgmt, audit, models |
 | RBAC Middleware | `backend/internal/http/middleware/rbac.go` | Role-based access control |
 | ML Predictor | `backend/internal/ml/predictor.go` | HTTP client for ML server |
-| DB Queries | `backend/internal/store/sqlc/queries.sql` | SQLC query definitions |
+| DB Queries | `backend/internal/store/sqlc/*.sql.go` | SQLC generated query code |
 | Config | `backend/internal/config/config.go` | Environment loading |
 
 ### Frontend (React)
@@ -41,7 +41,7 @@ A full-stack health application that helps clinicians assess diabetes risk using
 | Main App | `frontend/src/App.jsx` | Routing, auth state |
 | API Layer | `frontend/src/api.js` | Fetch wrapper, token refresh |
 | Dashboard | `frontend/src/components/dashboard/Dashboard.jsx` | Overview stats |
-| Patients | `frontend/src/components/patients/PatientList.jsx` | Patient CRUD UI |
+| Patients | `frontend/src/components/patients/PatientHistory.jsx` | Patient CRUD UI |
 | Analytics | `frontend/src/components/analytics/Analytics.jsx` | ML visualizations |
 | Login | `frontend/src/components/auth/Login.jsx` | Authentication forms |
 

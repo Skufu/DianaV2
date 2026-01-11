@@ -11,25 +11,36 @@ DIANA uses machine learning to predict Type 2 Diabetes risk in postmenopausal wo
 ```
 ml/
 ├── server.py             # Flask API server
-├── predict.py            # DianaPredictor class
-├── train.py              # Clinical model training (non-circular)
+├── predict.py            # DianaPredictor, ClinicalPredictor classes
+├── train.py              # Model training
 ├── clustering.py         # K-Means clustering (K=4 Ahlqvist)
-└── explainability.py     # SHAP explanations
+├── data_processing.py    # Data preparation
+├── explainability.py     # SHAP explanations
+├── explainer.py          # Additional explainability utilities
+├── ab_testing.py         # A/B testing infrastructure
+├── drift_detection.py    # Model drift monitoring
+└── mlflow_config.py      # MLflow experiment tracking
 
 scripts/
 ├── feature_selection.py  # MI + IG analysis
 ├── train_enhanced.py     # Combined training pipeline
+├── train_clusters.py     # Cluster training
+├── impute_missing_data.py # Data imputation
 ├── generate_thesis_outputs.py  # All-in-one thesis output generator
-└── process_nhanes_multi.py     # Data preprocessing
+├── process_nhanes_multi.py     # NHANES data preprocessing
+└── retrain-all.sh        # Full retraining pipeline
 
 models/
 ├── clinical/
-│   ├── best_model.joblib     # Best classifier
+│   ├── best_model.joblib     # Best classifier (XGBoost)
 │   ├── scaler.joblib         # StandardScaler
 │   ├── kmeans_model.joblib   # K-Means (K=4)
 │   ├── cluster_labels.json   # SIRD/SIDD/MOD/MARD mapping
 │   ├── results/              # Metrics and reports
 │   └── visualizations/       # PNG plots
+├── best_model.joblib         # ADA baseline model
+├── scaler.joblib             # ADA baseline scaler
+├── kmeans_model.joblib       # ADA baseline K-Means
 └── results/
     └── information_gain_results.json
 ```
@@ -55,6 +66,22 @@ models/
 
 ---
 
+## Model Types
+
+### 1. ADA Baseline Model
+Uses all biomarkers including HbA1c (diagnostic criterion):
+```python
+REQUIRED_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl']
+```
+
+### 2. Clinical Model (Non-Circular)
+Uses only metabolic features, excluding HbA1c/FBS:
+```python
+CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+```
+
+---
+
 ## Key Files
 
 ### `predict.py`
@@ -62,13 +89,20 @@ models/
 ```python
 class DianaPredictor:
     """Diabetes risk predictor using all biomarkers."""
-    FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+    FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl']
     
     def predict(self, features: dict) -> dict:
-        # Returns: prediction, cluster, risk_score
+        # Returns: medical_status, risk_cluster, probability, risk_score
+
+class ClinicalPredictor:
+    """Non-circular predictor excluding HbA1c from features."""
+    FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+    
+    def predict(self, features: dict) -> dict:
+        # Returns: predicted_status, risk_cluster, probability, risk_score
 ```
 
-### `ml_server.py`
+### `server.py`
 
 Flask API with these endpoints:
 
@@ -77,10 +111,19 @@ Flask API with these endpoints:
 | `/health` | GET | Health check |
 | `/predict` | POST | Single prediction |
 | `/predict/batch` | POST | Multiple predictions |
-| `/analytics/metrics` | GET | Model metrics |
+| `/predict/explain` | POST | Prediction with SHAP explanation |
+| `/analytics/metrics` | GET | Model metrics (both ADA and clinical) |
+| `/analytics/metrics/clinical` | GET | Clinical model metrics only |
 | `/analytics/clusters` | GET | Cluster analysis |
 | `/analytics/information-gain` | GET | Feature importance |
 | `/analytics/visualizations/<name>` | GET | PNG images |
+| `/ab-tests` | GET/POST | A/B testing management |
+| `/ab-tests/<id>/results` | GET | A/B test comparison |
+| `/monitoring/drift` | GET | Drift monitoring status |
+| `/monitoring/drift/check` | POST | Check for drift |
+| `/monitoring/alerts` | GET | Drift alerts |
+| `/models` | GET | List model versions (MLflow) |
+| `/models/<name>/<version>/promote` | POST | Promote model to production |
 
 ---
 
@@ -101,7 +144,7 @@ make ml
 ### Manual execution (via venv)
 ```bash
 # Full pipeline (recommended - processes data, imputes, trains, clusters)
-source venv/bin/activate && ./scripts/retrain_all.sh
+source venv/bin/activate && ./scripts/retrain-all.sh
 
 # Or run individual steps:
 ./venv/bin/python scripts/process_nhanes_multi.py
@@ -128,6 +171,49 @@ Based on Ahlqvist et al. diabetes subtype classification with DIANA NHANES resul
 | **SIRD** | Severe Insulin-Resistant Diabetes | 404 (29.4%) | BMI=38.28, TG=114.68 | High |
 | **MOD** | Mild Obesity-Related Diabetes | 370 (26.9%) | BMI=29.58, TG=176.37 | Moderate |
 | **MARD** | Mild Age-Related Diabetes | 505 (36.7%) | BMI=25.74, HDL=72.98 | Low |
+
+---
+
+## ML Infrastructure Features
+
+### SHAP Explanations
+```python
+from ml.explainability import SHAPExplainer, format_for_clinician
+
+explainer = SHAPExplainer(model, model_type="tree")
+explanation = explainer.explain(features, feature_names)
+```
+
+### A/B Testing
+```python
+from ml.ab_testing import get_ab_manager
+
+manager = get_ab_manager()
+test = manager.create_test(
+    test_name="xgboost-vs-catboost",
+    baseline_version="v1.0",
+    challenger_version="v1.1",
+    traffic_split=0.1
+)
+```
+
+### Drift Detection
+```python
+from ml.drift_detection import get_drift_monitor
+
+monitor = get_drift_monitor()
+report = monitor.check_feature_drift(current_data)
+if report.has_drift:
+    monitor.create_alert(report)
+```
+
+### MLflow Integration
+```python
+from ml.mlflow_config import get_mlflow_manager
+
+manager = get_mlflow_manager()
+versions = manager.get_model_versions("diana-clinical")
+```
 
 ---
 

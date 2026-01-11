@@ -123,29 +123,29 @@ func (h *AssessmentsHandler) create(c *gin.Context) {
 func (h *AssessmentsHandler) list(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		ErrUnauthorized(c)
 		return
 	}
 
 	patientID, err := parseIDParam(c, "id")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid patient id"})
+		ErrBadRequest(c, "invalid patient id")
 		return
 	}
 
-	// Verify patient exists and belongs to user
 	_, err = h.store.Patients().Get(c.Request.Context(), int32(patientID), userID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "patient not found"})
+		ErrNotFound(c, "patient")
 		return
 	}
 
-	records, err := h.store.Assessments().ListByPatient(c.Request.Context(), patientID)
+	pagination := ParsePagination(c)
+	records, total, err := h.store.Assessments().ListByPatientPaginated(c.Request.Context(), patientID, pagination.PageSize, pagination.Offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list assessments"})
+		ErrInternal(c, "failed to list assessments")
 		return
 	}
-	c.JSON(http.StatusOK, records)
+	c.JSON(http.StatusOK, NewPaginatedResponse(records, pagination, total))
 }
 
 func validationStatus(a models.Assessment) string {

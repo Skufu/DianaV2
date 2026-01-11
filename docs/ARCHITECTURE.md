@@ -28,13 +28,13 @@ DIANA V2 is a **three-tier web application** for diabetes risk prediction in pos
   - `internal/store/` — Database layer (SQLC)
 
 ### 3. ML Server (Python + Flask)
-- **Location:** `scripts/`
+- **Location:** `ml/`
 - **Port:** 5000
 - **Purpose:** Diabetes prediction, analytics, visualizations
 - **Key Files:**
-  - `ml_server.py` — Flask API
+  - `server.py` — Flask API
   - `predict.py` — DianaPredictor (ADA), ClinicalPredictor
-  - `train_models_v2.py` — Non-circular model training
+  - `train.py` — Model training
 
 ### 4. Database (PostgreSQL)
 - **Migrations:** `backend/migrations/`
