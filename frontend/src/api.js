@@ -159,11 +159,12 @@ export const fetchPatientsApi = async (token) => {
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  const data = await apiFetch('/api/v1/patients', {
+  const response = await apiFetch('/api/v1/patients', {
     headers: { Authorization: `Bearer ${token}` },
   });
-  setCache(cacheKey, data);
-  return data;
+  const patients = response?.data || response || [];
+  setCache(cacheKey, patients);
+  return patients;
 };
 
 export const fetchAssessmentsApi = async (token, patientId) => {
@@ -171,34 +172,35 @@ export const fetchAssessmentsApi = async (token, patientId) => {
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  const data = await apiFetch(cacheKey, {
+  const response = await apiFetch(cacheKey, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  setCache(cacheKey, data);
-  return data;
+  const assessments = response?.data || response || [];
+  setCache(cacheKey, assessments);
+  return assessments;
 };
 
 export const fetchClusterDistributionApi = async (token) => {
-  const cacheKey = '/api/v1/analytics/cluster-distribution';
+  const cacheKey = '/api/v1/insights/cluster-distribution';
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
   const data = await apiFetch(cacheKey, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  setCache(cacheKey, data, 60000); // 1 minute TTL for analytics
+  setCache(cacheKey, data, 60000); // 1 minute TTL for insights
   return data;
 };
 
-export const fetchTrendAnalyticsApi = async (token) => {
-  const cacheKey = '/api/v1/analytics/biomarker-trends';
+export const fetchTrendInsightsApi = async (token) => {
+  const cacheKey = '/api/v1/insights/biomarker-trends';
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
   const data = await apiFetch(cacheKey, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  setCache(cacheKey, data, 60000); // 1 minute TTL for analytics
+  setCache(cacheKey, data, 60000); // 1 minute TTL for insights
   return data;
 };
 
@@ -212,7 +214,7 @@ export const createPatientApi = async (token, payload) => {
     body: JSON.stringify(payload),
   });
   invalidateCache('/api/v1/patients');
-  invalidateCache('/api/v1/analytics');
+  invalidateCache('/api/v1/insights');
   return result;
 };
 
@@ -226,7 +228,8 @@ export const createAssessmentApi = async (token, patientId, payload) => {
     body: JSON.stringify(payload),
   });
   invalidateCache('/api/v1/patients');
-  invalidateCache('/api/v1/analytics');
+  invalidateCache('/api/v1/insights');
+  invalidateCache(`/api/v1/patients/${patientId}/assessments`);
   return result;
 };
 
@@ -306,19 +309,19 @@ const mlFetch = async (path) => {
 
 export const fetchMLHealthApi = () => mlFetch('/health');
 
-export const fetchMLMetricsApi = () => mlFetch('/analytics/metrics');
+export const fetchMLMetricsApi = () => mlFetch('/insights/metrics');
 
-export const fetchMLInformationGainApi = () => mlFetch('/analytics/information-gain');
+export const fetchMLInformationGainApi = () => mlFetch('/insights/information-gain');
 
-export const fetchMLClustersApi = () => mlFetch('/analytics/clusters');
+export const fetchMLClustersApi = () => mlFetch('/insights/clusters');
 
-export const getMLVisualizationUrl = (name) => `${ML_BASE}/analytics/visualizations/${name}`;
+export const getMLVisualizationUrl = (name) => `${ML_BASE}/insights/visualizations/${name}`;
 
 // ============================================================
 // Cohort Analysis API
 // ============================================================
 export const fetchCohortAnalysisApi = async (token, groupBy = 'cluster') => {
-  const cacheKey = `/api/v1/analytics/cohort?groupBy=${groupBy}`;
+  const cacheKey = `/api/v1/insights/cohort?groupBy=${groupBy}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 

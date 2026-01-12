@@ -85,7 +85,8 @@ func (h *AssessmentsHandler) create(c *gin.Context) {
 
 	var req assessmentReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		log.Printf("Assessment validation failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload", "details": err.Error()})
 		return
 	}
 	a := models.Assessment{

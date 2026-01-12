@@ -1,7 +1,7 @@
 # DIANA V2 - Documentation Hub
 
 > **Purpose**: Centralized documentation index for thesis defense and development  
-> **Last Updated**: January 10, 2026
+> **Last Updated**: January 12, 2026
 
 ---
 
@@ -26,7 +26,7 @@
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │   Frontend      │────▶│   Backend       │────▶│   ML Server     │
 │   (React/Vite)  │     │   (Go/Gin)      │     │   (Flask/Python)│
-│   Port: 5173    │     │   Port: 8080    │     │   Port: 5000    │
+│   Port: 4000    │     │   Port: 8080    │     │   Port: 5000    │
 └─────────────────┘     └────────┬────────┘     └─────────────────┘
                                  │
                         ┌────────▼────────┐
@@ -45,6 +45,7 @@
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System overview | Components, request flow, auth flow |
 | [architecture/ARCHITECTURE.md](./architecture/ARCHITECTURE.md) | Detailed architecture | Data models, API design |
 | [architecture/PROJECT_STRUCTURE.md](./architecture/PROJECT_STRUCTURE.md) | Directory layout | Folder organization |
+| [architecture/layout.md](./architecture/layout.md) | This high-level layout and boundary overview |
 
 ### Component Guides
 | Document | Description | Key Topics |
@@ -87,7 +88,18 @@
 | API wrapper | `frontend/src/api.js` |
 | Dashboard | `frontend/src/components/dashboard/Dashboard.jsx` |
 | Patients | `frontend/src/components/patients/PatientHistory.jsx` |
-| Analytics | `frontend/src/components/analytics/Analytics.jsx` |
+| Analytics | `frontend/src/components/insights/Insights.jsx` | ML visualizations, model metrics |
+| Cohort Analysis | `frontend/src/components/insights/CohortAnalysis.jsx` | Cohort comparison analysis |
+| Login | `frontend/src/components/auth/Login.jsx` |
+| Export | `frontend/src/components/export/Export.jsx` | CSV export functionality |
+| Education | `frontend/src/components/education/Education.jsx` | Educational content for clinicians |
+| Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` | Admin panel (users, audit, models) |
+| User Management | `frontend/src/components/admin/UserManagement.jsx` | User CRUD operations |
+| Audit Log Viewer | `frontend/src/components/admin/AuditLogViewer.jsx` | Audit log viewing |
+| Model Traceability | `frontend/src/components/admin/ModelTraceability.jsx` | ML model tracking |
+| Clinic Dashboard | `frontend/src/components/clinic/ClinicDashboard.jsx` | Clinic-specific dashboard |
+| Sidebar | `frontend/src/components/layout/Sidebar.jsx` | Navigation sidebar |
+| Biological Network | `frontend/src/components/layout/BiologicalNetwork.jsx` | Animated background |
 
 ### ML (Python)
 | Purpose | File |

@@ -43,7 +43,8 @@ func (p *HTTPPredictor) Predict(input models.Assessment) (string, int) {
 		return "error", 0
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, p.url, bytes.NewReader(body))
+	mlURL := p.url + "?model_type=ada"
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, mlURL, bytes.NewReader(body))
 	if err != nil {
 		log.Printf("[ML] Failed to create request: %v", err)
 		return "error", 0

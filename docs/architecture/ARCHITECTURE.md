@@ -21,6 +21,10 @@ Backend components (Go)
 - Handlers (`internal/http/handlers`):
   - Auth: `/auth/login` bcrypt check -> JWT (HS256, 24h, `scope=diana`, `role` claim).
   - Patients: list/create.
+   - Assessments: create/list.
+   - Insights: cluster counts, biomarker trend averages.
+  - Analytics: summary/stats.
+  - Export: CSV downloads.
   - Assessments: create/list per patient; computes validation warnings; invokes predictor; persists.
   - Analytics: cluster counts, biomarker trend averages.
   - Export: CSV for patients/assessments; dataset slice stub.
@@ -32,7 +36,7 @@ Backend components (Go)
 - Store: `internal/store`
   - Interfaces in `store.go`; Postgres impl in `postgres.go` using sqlc (`internal/store/sqlc`).
   - If `DB_DSN` is unset, repos return errors on access (handlers surface 500).
-- Models: `internal/models` define User/Patient/Assessment/analytics DTOs.
+- Models: `internal/models` define User/Patient/Assessment/insights DTOs.
 
 Frontend components (React)
 ---------------------------
@@ -65,7 +69,8 @@ Configuration (env) and defaults
 - `PORT` (default `8080`), `ENV` (`dev` default).
 - `DB_DSN` (Postgres URL). If empty, handlers fail on DB access.
 - `JWT_SECRET` (default `dev-secret`).
-- `CORS_ORIGINS` (comma list; default `http://localhost:3000`).
+- `PORT` (default `8080`).
+- `CORS_ORIGINS` (comma list; default `http://localhost:4000`).
 - `MODEL_URL` (optional), `MODEL_VERSION` (default `v0-placeholder`), `MODEL_DATASET_HASH` (optional), `MODEL_TIMEOUT_MS` (default `2000` ms).
 - `EXPORT_MAX_ROWS` (default `5000`).
 
@@ -96,7 +101,7 @@ Deployment & environments
 Local development & testing
 ---------------------------
 - Backend: `go run ./cmd/server`.
-- Frontend: `cd frontend && npm run dev` (default port 5173).
+- Frontend: `cd frontend && npm run dev` (default port 4000).
 - Combined helper: `./run-dev.sh` (expects Postgres reachable at `DB_DSN`).
 - Migrations: `DB_DSN=<url> make db_up` (goose).
 - Tests: `go test ./...` (integration needs `TEST_DB_DSN` with schema applied).

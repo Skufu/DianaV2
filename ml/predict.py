@@ -50,13 +50,24 @@ class DianaPredictor:
         
         # Load scaler
         self.scaler = joblib.load(self.models_dir / "scaler.joblib")
+        n_scaler_features = self.scaler.n_features_in_
         
-        # Load best classifier (for probability)
-        best_model_path = self.models_dir / "best_model.joblib"
-        if best_model_path.exists():
-            self.classifier = joblib.load(best_model_path)
+        # Load classifier that matches scaler feature count
+        rf_path = self.models_dir / "random_forest.joblib"
+        best_path = self.models_dir / "best_model.joblib"
+        
+        if rf_path.exists():
+            rf = joblib.load(rf_path)
+            if rf.n_features_in_ == n_scaler_features:
+                self.classifier = rf
+            elif best_path.exists():
+                self.classifier = joblib.load(best_path)
+            else:
+                self.classifier = rf
+        elif best_path.exists():
+            self.classifier = joblib.load(best_path)
         else:
-            self.classifier = joblib.load(self.models_dir / "random_forest.joblib")
+            raise FileNotFoundError("No classifier model found")
         
         # Load K-means (for risk cluster)
         self.kmeans = joblib.load(self.models_dir / "kmeans_model.joblib")
@@ -122,11 +133,10 @@ class DianaPredictor:
         # Get medical status from HbA1c
         medical_status = get_medical_status(data['hba1c'])
         
-        # Prepare features for models (6 features - must match training)
-        X = np.array([[data['hba1c'], data['fbs'], data['bmi'], 
-                      data['triglycerides'], data['ldl'], data['hdl']]])
-        
-        # Scale
+        # Prepare features for models
+        X = pd.DataFrame([[data['hba1c'], data['fbs'], data['bmi'], 
+                          data['triglycerides'], data['ldl'], data['hdl']]],
+                         columns=REQUIRED_FEATURES)
         X_scaled = self.scaler.transform(X)
         
         # Get risk cluster from K-means
@@ -137,19 +147,15 @@ class DianaPredictor:
         cluster_label = cluster_info.get("label", f"Cluster-{cluster_id}")
         risk_level = cluster_info.get("risk_level", "UNKNOWN")
         
-        # Get probability from classifier
-        # Classifier predicts cluster: 0=SIRD-like (HIGH), 1=MOD-like (MODERATE)
+        # Get diabetes probability from classifier (0-100%)
         try:
             proba = self.classifier.predict_proba(X_scaled)[0]
-            # proba[0] = probability of HIGH risk cluster (SIRD-like)
-            # proba[1] = probability of MODERATE risk cluster (MOD-like)
-            high_risk_prob = proba[0] if len(proba) >= 2 else proba[0]
-            # Risk score: weighted by HIGH risk probability
-            risk_score = int(high_risk_prob * 100)
+            diabetes_prob = float(proba[0]) if len(proba) == 2 else float(max(proba))
+            risk_score = int(diabetes_prob * 100)
             confidence = round(max(proba), 3)
-        except Exception as e:
-            high_risk_prob = 0.0
-            risk_score = 50  # Default moderate risk
+        except Exception:
+            diabetes_prob = 0.5
+            risk_score = 50
             confidence = 0.5
         
         return {
@@ -158,7 +164,7 @@ class DianaPredictor:
             "risk_cluster": cluster_label,
             "risk_level": risk_level,
             "risk_score": risk_score,
-            "probability": round(high_risk_prob, 3),
+            "probability": round(diabetes_prob, 3),
             "confidence": confidence,
             "model_info": {
                 "n_clusters": self.metrics.get("n_clusters", 2),

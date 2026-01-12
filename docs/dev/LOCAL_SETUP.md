@@ -17,21 +17,21 @@ From the repo root (after you’ve installed Go, Node, and Postgres – see **Pr
    - `cp env.example .env`
    - (Optional but recommended) edit `.env` to point `DB_DSN` at your local Postgres.
 3. **Run helper script once (recommended)**
-   - `./scripts/dev-setup.sh`
-   - This:
-     - Ensures `.env` exists (copies from `env.example` if missing),
-     - Installs frontend dependencies,
-     - Downloads Go modules,
-     - Optionally sanity-checks DB connectivity.
+   - `./scripts/setup.sh`
+    - This:
+      - Ensures `.env` exists (copies from `env.example` if missing),
+      - Installs frontend dependencies,
+      - Downloads Go modules,
+      - Optionally sanity-checks DB connectivity.
 4. **Start backend + frontend together**
    - Preferred:
      - `./scripts/run-dev.sh`
-   - Alternatively (legacy path mentioned in `README`):
-     - `./run-dev.sh`
+- Alternatively (via Makefile):
+      - `make run-dev`
 
 You should end up with:
-- API on something like `http://localhost:8082/api/v1` (from `scripts/run-dev.sh`, configurable),
-- Frontend on `http://localhost:3000` (Vite dev server).
+- API on something like `http://localhost:8080/api/v1` (from `scripts/run-dev.sh`, configurable),
+- Frontend on `http://localhost:4000` (Vite dev server).
 
 Use the demo user from `.env` (see **Demo account** below) to log in.
 
@@ -98,13 +98,13 @@ You do **not** need the real ML model to develop the app: with no `MODEL_URL` se
 
 The core env vars you’ll touch for local dev (all shown in `env.example` and `configs/env.example`):
 
-- `PORT` – backend HTTP port (default `8080`, scripts may override, e.g. `8082`).
+- `PORT` – backend HTTP port (default `8080`).
 - `ENV` – environment label; usually `dev` locally.
 - `DB_DSN` – Postgres connection string, e.g.  
   `postgres://diana:diana@localhost:5432/diana?sslmode=disable`
 - `JWT_SECRET` – secret for signing JWTs. **Change this** for any non-local environment.
 - `CORS_ORIGINS` – comma-separated list of allowed origins, e.g.  
-  `http://localhost:3000,http://localhost:5173`.
+  `http://localhost:4000`.
 - `MODEL_URL` – optional ML endpoint URL; leave empty to use mock model.
 - `MODEL_VERSION`, `MODEL_DATASET_HASH` – traceability metadata; safe to leave as defaults for dev.
 - `MODEL_TIMEOUT_MS` – timeout for model calls; lower in dev is fine.
@@ -159,13 +159,13 @@ npm run dev       # afterwards
 ```
 
 Notes:
-- The dev server defaults to `http://localhost:3000` (Vite).
+- The dev server defaults to `http://localhost:4000` (Vite).
 - Ensure `VITE_API_BASE` is set so the frontend knows where the backend lives:
-  - When using `./scripts/run-dev.sh`, it sets a default such as `http://localhost:8082/api/v1`.
+  - When using `./scripts/run-dev.sh`, it sets a default such as `http://localhost:8080/api/v1`.
   - Manually, you can run:
     - `VITE_API_BASE=http://localhost:8080/api/v1 npm run dev`
 - If you see CORS errors in the browser console, check:
-  - `CORS_ORIGINS` in `.env` includes your frontend origin (`http://localhost:3000` etc.),
+  - `CORS_ORIGINS` in `.env` includes your frontend origin (`http://localhost:4000` etc.),
   - You restarted the backend after changing envs.
 
 ---
@@ -227,9 +227,9 @@ Use these credentials in the frontend `Login` screen to obtain a JWT and access 
 
 1. **Start Postgres** (if you’re using a local DB).
 2. From repo root, launch stack:
-   - `./scripts/run-dev.sh`
+    - `./scripts/run-dev.sh`
 3. Visit frontend:
-   - `http://localhost:3000`
+    - `http://localhost:4000`
 4. Log in with the demo user.
 5. Develop in:
    - Go backend under `internal/` and `cmd/server`,
@@ -246,7 +246,7 @@ If something looks off (auth errors, CORS, DB issues), see `docs/dev/TROUBLESHOO
 - **Env consistency**
   - Ensure `.env` matches what your teammates use (at least for `DB_DSN` and `CORS_ORIGINS`) to avoid “works on my machine” issues.
 - **Ports**
-  - Scripts may use `8082` for backend; manual runs may default to `8080`. Adjust `VITE_API_BASE` accordingly.
+  - Scripts use `8080` for backend; manual runs default to `8080`. Frontend uses `4000`. Adjust `VITE_API_BASE` accordingly.
 - **DB optional**
   - For quick UI work, you can technically run without a DB (handlers that need data will fail). For anything realistic, configure `DB_DSN` and apply migrations.
 - **Model integration**

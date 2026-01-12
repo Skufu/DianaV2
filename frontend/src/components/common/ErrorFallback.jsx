@@ -5,7 +5,7 @@ import { AlertTriangle, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
  * ErrorFallback - User-friendly error display with retry option
  * 
  * Props:
- *   section: Name of the section that failed (e.g., "Analytics", "Dashboard")
+ *   section: Name of the section that failed (e.g., "Insights", "Dashboard")
  *   error: The error object
  *   errorInfo: React error info with component stack
  *   onRetry: Callback to reset the error boundary

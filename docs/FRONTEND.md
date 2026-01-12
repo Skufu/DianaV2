@@ -115,8 +115,8 @@ function App() {
 | `Dashboard` | `components/dashboard/Dashboard.jsx` | Summary stats, overview charts |
 | `PatientHistory` | `components/patients/PatientHistory.jsx` | Patient list & assessment history |
 | `RiskTrendChart` | `components/patients/RiskTrendChart.jsx` | Risk trend visualization |
-| `Analytics` | `components/analytics/Analytics.jsx` | ML visualizations, model metrics |
-| `CohortAnalysis` | `components/analytics/CohortAnalysis.jsx` | Cohort comparison analysis |
+| `Insights` | `components/insights/Insights.jsx` | ML visualizations, model metrics |
+| `CohortAnalysis` | `components/insights/CohortAnalysis.jsx` | Cohort comparison analysis |
 | `Export` | `components/export/Export.jsx` | CSV export functionality |
 | `Education` | `components/education/Education.jsx` | Educational content for clinicians |
 | `AdminDashboard` | `components/admin/AdminDashboard.jsx` | Admin panel (users, audit, models) |
@@ -150,14 +150,14 @@ The Analytics component fetches from ML server:
 const ML_BASE = import.meta.env.VITE_ML_BASE || 'http://localhost:5000';
 
 // Fetch metrics
-const metricsRes = await fetch(`${ML_BASE}/analytics/metrics`);
+const metricsRes = await fetch(`${ML_BASE}/insights/metrics`);
 const metrics = await metricsRes.json();
 
 // Display clinical model accuracy
 <p>Clinical Model AUC: {metrics.clinical.best_model.metrics.auc_roc}</p>
 
 // Show visualizations
-<img src={`${ML_BASE}/analytics/visualizations/roc_curve`} />
+<img src={`${ML_BASE}/insights/visualizations/roc_curve`} />
 ```
 
 ---
@@ -212,7 +212,7 @@ VITE_ML_BASE=http://localhost:5000    # Flask ML server
 ```bash
 cd frontend
 npm install
-npm run dev      # Development (port 5173)
+npm run dev      # Development (port 4000)
 npm run build    # Production build
 npm run preview  # Preview production build
 ```

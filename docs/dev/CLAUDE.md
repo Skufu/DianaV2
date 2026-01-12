@@ -56,7 +56,7 @@ cd frontend
 # Install dependencies
 npm install
 
-# Run dev server (port 3000)
+# Run dev server (port 4000)
 npm run dev
 
 # Build for production
@@ -264,7 +264,7 @@ DB_DSN=postgres://user:pass@host:port/dbname
 JWT_SECRET=your-strong-secret-here  # REQUIRED in production
 PORT=8080                            # Optional, defaults to 8080
 ENV=dev                              # Set to "production" in prod
-CORS_ORIGINS=http://localhost:3000  # Comma-separated allowed origins
+CORS_ORIGINS=http://localhost:4000  # Comma-separated allowed origins
 ```
 
 **Frontend** (`.env` or `.env.local`):

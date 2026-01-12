@@ -703,7 +703,7 @@ def model_info():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/analytics/metrics', methods=['GET'])
+@app.route('/insights/metrics', methods=['GET'])
 def get_metrics():
     """Get model performance metrics for dashboard - returns BOTH model sets."""
     try:
@@ -738,7 +738,7 @@ def get_metrics():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/analytics/metrics/clinical', methods=['GET'])
+@app.route('/insights/metrics/clinical', methods=['GET'])
 def get_clinical_metrics():
     """Get clinical model metrics only."""
     try:
@@ -772,7 +772,7 @@ def get_clinical_metrics():
 
 
 
-@app.route('/analytics/information-gain', methods=['GET'])
+@app.route('/insights/information-gain', methods=['GET'])
 def get_information_gain():
     """Get Information Gain scores for feature importance."""
     try:
@@ -788,7 +788,7 @@ def get_information_gain():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/analytics/clusters', methods=['GET'])
+@app.route('/insights/clusters', methods=['GET'])
 def get_clusters():
     """Get cluster analysis data."""
     try:
@@ -804,7 +804,7 @@ def get_clusters():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/analytics/visualizations/<name>', methods=['GET'])
+@app.route('/insights/visualizations/<name>', methods=['GET'])
 def get_visualization(name):
     """Serve visualization images."""
     from flask import send_file
@@ -832,5 +832,5 @@ if __name__ == '__main__':
     print(f"Starting DIANA ML Server on port {port}...")
     print(f"Health check: http://localhost:{port}/health")
     print(f"Predict endpoint: http://localhost:{port}/predict")
-    print(f"Analytics: http://localhost:{port}/analytics/metrics")
+    print(f"Insights: http://localhost:{port}/insights/metrics")
     app.run(host='0.0.0.0', port=port, debug=False)

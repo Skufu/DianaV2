@@ -5,6 +5,12 @@ import {
     AlertTriangle, Info, HelpCircle, Lightbulb, Target
 } from 'lucide-react';
 
+// Import cluster logos
+import SIDDLogo from '../../assets/clusters/sidd.png';
+import SIRDLogo from '../../assets/clusters/sird.png';
+import MODLogo from '../../assets/clusters/mod.png';
+import MARDLogo from '../../assets/clusters/mard.png';
+
 // Comprehensive cluster education data
 export const clusterEducation = {
     SIDD: {
@@ -12,6 +18,7 @@ export const clusterEducation = {
         shortDesc: 'Early onset, low BMI, poor metabolic control',
         color: '#EE5D50',
         bgColor: 'bg-[#EE5D50]/10',
+        logo: SIDDLogo,
         fullDesc: `SIDD is characterized by early diabetes onset with significantly reduced insulin secretion. 
     Patients in this cluster typically have lower BMI but experience poor glycemic control. 
     This subtype often requires early insulin therapy due to the body's inability to produce sufficient insulin.`,
@@ -41,6 +48,7 @@ export const clusterEducation = {
         shortDesc: 'High insulin resistance, elevated risk of kidney disease',
         color: '#FFB547',
         bgColor: 'bg-[#FFB547]/10',
+        logo: SIRDLogo,
         fullDesc: `SIRD is marked by severe insulin resistance where the body produces insulin but cells don't respond effectively. 
     This subtype is strongly associated with metabolic syndrome and carries a significantly higher risk of diabetic kidney disease 
     and fatty liver disease compared to other clusters.`,
@@ -70,6 +78,7 @@ export const clusterEducation = {
         shortDesc: 'High BMI but relatively stable metabolic state',
         color: '#6AD2FF',
         bgColor: 'bg-[#6AD2FF]/10',
+        logo: MODLogo,
         fullDesc: `MOD is primarily driven by obesity and excess body weight. Despite having high BMI, patients in this cluster 
     often maintain relatively normal metabolic function initially. Weight management is the key therapeutic target, 
     and many patients respond well to lifestyle interventions.`,
@@ -99,6 +108,7 @@ export const clusterEducation = {
         shortDesc: 'Later onset with modest metabolic changes',
         color: '#05CD99',
         bgColor: 'bg-[#05CD99]/10',
+        logo: MARDLogo,
         fullDesc: `MARD typically develops later in life and progresses more slowly than other subtypes. 
     These patients generally have modest metabolic abnormalities and a more favorable prognosis. 
     Standard diabetes management approaches are usually effective for this cluster.`,
@@ -282,12 +292,11 @@ const Education = () => {
                             <div className="p-6">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex items-center gap-3">
-                                        <div
-                                            className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg"
-                                            style={{ backgroundColor: cluster.color }}
-                                        >
-                                            {key}
-                                        </div>
+                                        <img
+                                            src={cluster.logo}
+                                            alt={`${key} logo`}
+                                            className="w-12 h-12 rounded-2xl object-cover"
+                                        />
                                         <div>
                                             <h4 className="font-bold text-white">{key}</h4>
                                             <p className="text-xs text-[#707EAE]">{cluster.name}</p>

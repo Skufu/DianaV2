@@ -99,3 +99,30 @@ LEFT JOIN LATERAL (
 WHERE p.user_id = $1
 ORDER BY p.id DESC;
 
+-- name: CountPatientsWithLatestAssessment :one
+SELECT COUNT(*) FROM patients WHERE user_id = $1;
+
+-- name: ListPatientsWithLatestAssessmentPaginated :many
+SELECT 
+    p.id, p.user_id, p.name, p.age, p.menopause_status, p.years_menopause, 
+    p.bmi, p.bp_systolic, p.bp_diastolic, p.activity, p.phys_activity, 
+    p.smoking, p.hypertension, p.heart_disease, p.family_history, 
+    p.chol, p.ldl, p.hdl, p.triglycerides, p.created_at, p.updated_at,
+    COALESCE(la.cluster, '') AS latest_cluster,
+    COALESCE(la.risk_score, 0) AS latest_risk_score,
+    COALESCE(la.fbs, 0) AS latest_fbs,
+    COALESCE(la.hba1c, 0) AS latest_hba1c,
+    la.created_at AS latest_assessment_at
+FROM patients p
+LEFT JOIN LATERAL (
+    SELECT a.cluster, a.risk_score, a.fbs, a.hba1c, a.created_at
+    FROM assessments a
+    WHERE a.patient_id = p.id
+    ORDER BY a.created_at DESC
+    LIMIT 1
+) la ON true
+WHERE p.user_id = $1
+ORDER BY p.id DESC
+LIMIT $2 OFFSET $3;
+
+

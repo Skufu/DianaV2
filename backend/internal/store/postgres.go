@@ -147,6 +147,60 @@ func (r *pgPatientRepo) ListWithLatestAssessment(ctx context.Context, userID int
 	return out, nil
 }
 
+func (r *pgPatientRepo) ListWithLatestAssessmentPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.PatientSummary, int, error) {
+	if r.q == nil {
+		return nil, 0, errors.New("db not configured")
+	}
+	countResult, err := r.q.CountPatientsWithLatestAssessment(ctx, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+	total := int(countResult)
+	rows, err := r.q.ListPatientsWithLatestAssessmentPaginated(ctx, sqlcgen.ListPatientsWithLatestAssessmentPaginatedParams{
+		UserID: userID,
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	var out []models.PatientSummary
+	for _, r := range rows {
+		out = append(out, models.PatientSummary{
+			Patient: models.Patient{
+				ID:              int64(r.ID),
+				UserID:          int64(r.UserID),
+				Name:            r.Name,
+				Age:             intVal(r.Age),
+				MenopauseStatus: textVal(r.MenopauseStatus),
+				YearsMenopause:  intVal(r.YearsMenopause),
+				BMI:             numericVal(r.Bmi),
+				BPSystolic:      intVal(r.BpSystolic),
+				BPDiastolic:     intVal(r.BpDiastolic),
+				Activity:        textVal(r.Activity),
+				PhysActivity:    boolVal(r.PhysActivity),
+				Smoking:         textVal(r.Smoking),
+				Hypertension:    textVal(r.Hypertension),
+				HeartDisease:    textVal(r.HeartDisease),
+				FamilyHistory:   boolVal(r.FamilyHistory),
+				Chol:            intVal(r.Chol),
+				LDL:             intVal(r.Ldl),
+				HDL:             intVal(r.Hdl),
+				Triglycerides:   intVal(r.Triglycerides),
+				CreatedAt:       r.CreatedAt.Time,
+				UpdatedAt:       r.UpdatedAt.Time,
+			},
+			Cluster:   r.LatestCluster,
+			RiskScore: int(r.LatestRiskScore),
+			Risk:      int(r.LatestRiskScore),
+			FBS:       numericVal(r.LatestFbs),
+			HbA1c:     numericVal(r.LatestHba1c),
+			LastVisit: r.LatestAssessmentAt.Time,
+		})
+	}
+	return out, total, nil
+}
+
 func (r *pgPatientRepo) Create(ctx context.Context, p models.Patient) (*models.Patient, error) {
 	if r.q == nil {
 		return nil, errors.New("db not configured")
@@ -333,7 +387,7 @@ func (r *pgAssessmentRepo) Create(ctx context.Context, a models.Assessment) (*mo
 	return &res, nil
 }
 
-func (r *pgAssessmentRepo) ClusterCounts(ctx context.Context) ([]models.ClusterAnalytics, error) {
+func (r *pgAssessmentRepo) ClusterCounts(ctx context.Context) ([]models.ClusterInsights, error) {
 	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
@@ -341,9 +395,9 @@ func (r *pgAssessmentRepo) ClusterCounts(ctx context.Context) ([]models.ClusterA
 	if err != nil {
 		return nil, err
 	}
-	var res []models.ClusterAnalytics
+	var res []models.ClusterInsights
 	for _, c := range rows {
-		res = append(res, models.ClusterAnalytics{
+		res = append(res, models.ClusterInsights{
 			Cluster: c.Cluster,
 			Count:   int(c.Count),
 		})
@@ -370,7 +424,7 @@ func (r *pgAssessmentRepo) TrendAverages(ctx context.Context) ([]models.TrendPoi
 	return res, nil
 }
 
-func (r *pgAssessmentRepo) ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterAnalytics, error) {
+func (r *pgAssessmentRepo) ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterInsights, error) {
 	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
@@ -378,9 +432,9 @@ func (r *pgAssessmentRepo) ClusterCountsByUser(ctx context.Context, userID int32
 	if err != nil {
 		return nil, err
 	}
-	var res []models.ClusterAnalytics
+	var res []models.ClusterInsights
 	for _, c := range rows {
-		res = append(res, models.ClusterAnalytics{
+		res = append(res, models.ClusterInsights{
 			Cluster: c.Cluster,
 			Count:   int(c.Count),
 		})

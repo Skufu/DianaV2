@@ -19,10 +19,13 @@ include $(ENV_FILE)
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE))
 endif
 
-.PHONY: dev seed build lint test db_up db_down db_status sqlc tidy setup run-dev test-db debug-neon
+.PHONY: dev air seed build lint test db_up db_down db_status sqlc tidy setup run-dev test-db debug-neon
 
 dev:
 	cd $(BACKEND_DIR) && $(GO) run ./cmd/server
+
+air:
+	cd $(BACKEND_DIR) && air
 
 seed:
 	cd $(BACKEND_DIR) && $(GO) run ./cmd/seed

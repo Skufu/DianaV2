@@ -1,7 +1,7 @@
 {
   "dataset_size": 1063,
-  "n_clusters": 2,
-  "silhouette_score": 0.48242425048287707,
+  "n_clusters": 4,
+  "silhouette_score": 0.1871,
   "random_forest": {
     "train_accuracy": 1.0,
     "test_accuracy": 0.9906103286384976,
