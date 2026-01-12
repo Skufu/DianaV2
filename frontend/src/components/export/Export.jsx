@@ -30,7 +30,7 @@ const Export = ({ token }) => {
         <h4 className="text-[#707EAE] font-medium text-sm mb-1">Data Management</h4>
         <h2 className="text-3xl font-bold text-white">Export Data</h2>
         <p className="text-slate-400 text-sm mt-1">
-          Download patient data and analytics reports for clinical records or research
+          Download patient data and insights reports for clinical records or research
         </p>
       </header>
 
@@ -59,12 +59,14 @@ const Export = ({ token }) => {
               ].map(option => (
                 <label
                   key={option.value}
+                  htmlFor={`export-menopause-${option.value}`}
                   className={`flex items-center p-3 rounded-xl border-2 cursor-pointer transition-all ${menopauseFilter === option.value
                     ? 'border-teal-500 bg-slate-700/30'
                     : 'border-slate-600/30 hover:border-[#A3AED0]'
                     }`}
                 >
                   <input
+                    id={`export-menopause-${option.value}`}
                     type="radio"
                     name="menopause"
                     value={option.value}
@@ -92,12 +94,14 @@ const Export = ({ token }) => {
               ].map(option => (
                 <label
                   key={option.value}
+                  htmlFor={`export-risk-${option.value}`}
                   className={`flex items-center p-3 rounded-xl border-2 cursor-pointer transition-all ${riskFilter === option.value
                     ? 'border-teal-500 bg-slate-700/30'
                     : 'border-slate-600/30 hover:border-[#A3AED0]'
                     }`}
                 >
                   <input
+                    id={`export-risk-${option.value}`}
                     type="radio"
                     name="risk"
                     value={option.value}
@@ -201,20 +205,20 @@ const Export = ({ token }) => {
         </div>
       </div>
 
-      {/* Analytics Report */}
+      {/* Insights Report */}
       <div className="glass-card p-6 rounded-3xl shadow-sm border border-slate-600/30">
         <div className="flex items-center gap-2 mb-4">
           <FileText size={20} className="text-teal-400" />
-          <h3 className="text-xl font-bold text-white">Analytics Report</h3>
+          <h3 className="text-xl font-bold text-white">Insights Report</h3>
         </div>
         <p className="text-slate-400 text-sm mb-6">
-          Generate comprehensive analytics report with visualizations and statistical summaries
+          Generate comprehensive insights report with visualizations and statistical summaries
         </p>
 
         <div className="p-4 border-2 border-slate-600/30 rounded-xl hover:border-teal-500 transition-all">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h4 className="font-bold text-white mb-1">Cohort Analytics Report</h4>
+              <h4 className="font-bold text-white mb-1">Cohort Insights Report</h4>
               <p className="text-sm text-slate-400">
                 Comprehensive PDF report including: risk distribution, cluster analysis, biomarker trends, and correlation matrices
               </p>
@@ -224,7 +228,7 @@ const Export = ({ token }) => {
             </div>
             <Button
               variant="outline"
-              onClick={() => alert('Analytics report generation coming soon!')}
+              onClick={() => alert('Insights report generation coming soon!')}
               className="ml-4 glass-card text-teal-400 border-2 border-teal-500 hover:bg-slate-700/30 flex items-center gap-2"
             >
               <FileText size={16} />

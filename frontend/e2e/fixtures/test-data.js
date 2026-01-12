@@ -37,7 +37,7 @@ export const SELECTORS = {
     sidebar: '[class*="sidebar"], nav',
     dashboardTab: '[data-testid="dashboard-tab"], button:has-text("Dashboard")',
     patientsTab: '[data-testid="patients-tab"], button:has-text("Patients")',
-    analyticsTab: '[data-testid="analytics-tab"], button:has-text("Analytics")',
+    insightsTab: '[data-testid="insights-tab"], button:has-text("Analytics")',
 
     // Dashboard
     patientCount: '[data-testid="patient-count"]',

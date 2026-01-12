@@ -99,10 +99,12 @@ const AuditLogViewer = ({ token }) => {
             <div className="glass-card p-4">
                 <form onSubmit={handleSearch} className="flex flex-wrap gap-4 items-end">
                     <div className="flex-1 min-w-[150px]">
-                        <label className="text-slate-400 text-sm block mb-1">Actor</label>
+                        <label htmlFor="audit-actor-search" className="text-slate-400 text-sm block mb-1">Actor</label>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                             <input
+                                id="audit-actor-search"
+                                name="actor"
                                 type="text"
                                 value={actor}
                                 onChange={(e) => setActor(e.target.value)}
@@ -112,8 +114,10 @@ const AuditLogViewer = ({ token }) => {
                         </div>
                     </div>
                     <div>
-                        <label className="text-slate-400 text-sm block mb-1">Action</label>
+                        <label htmlFor="audit-action-filter" className="text-slate-400 text-sm block mb-1">Action</label>
                         <select
+                            id="audit-action-filter"
+                            name="action"
                             value={action}
                             onChange={(e) => setAction(e.target.value)}
                             className="px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"
@@ -126,10 +130,12 @@ const AuditLogViewer = ({ token }) => {
                         </select>
                     </div>
                     <div>
-                        <label className="text-slate-400 text-sm block mb-1">From Date</label>
+                        <label htmlFor="audit-start-date" className="text-slate-400 text-sm block mb-1">From Date</label>
                         <div className="relative">
                             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                             <input
+                                id="audit-start-date"
+                                name="startDate"
                                 type="date"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
@@ -138,8 +144,10 @@ const AuditLogViewer = ({ token }) => {
                         </div>
                     </div>
                     <div>
-                        <label className="text-slate-400 text-sm block mb-1">To Date</label>
+                        <label htmlFor="audit-end-date" className="text-slate-400 text-sm block mb-1">To Date</label>
                         <input
+                            id="audit-end-date"
+                            name="endDate"
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}

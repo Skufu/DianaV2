@@ -50,6 +50,18 @@ cleanup() {
 }
 trap cleanup SIGINT SIGTERM
 
+# Function to kill process on a specific port (Windows/Bash compatible)
+kill_on_port() {
+    local port=$1
+    echo -e "${CYAN}Checking port $port...${NC}"
+    # Use netstat to find PID on Windows
+    local pid=$(netstat -ano | grep ":$port" | grep "LISTENING" | awk '{print $5}' | head -n 1)
+    if [ -n "$pid" ]; then
+        echo -e "${YELLOW}Killing process $pid on port $port...${NC}"
+        taskkill //F //PID "$pid" &>/dev/null || kill -9 "$pid" 2>/dev/null || true
+    fi
+}
+
 # Check if ML models exist
 if [ ! -f "models/random_forest.joblib" ] && [ ! -f "models/best_model.joblib" ]; then
     echo -e "${RED}ML models not found. Run '$PYTHON scripts/train_enhanced.py' first.${NC}"
@@ -81,6 +93,7 @@ ML_PORT=${ML_PORT:-5000}
 
 # Start ML Server
 echo -e "\n${YELLOW}[1/3] Starting ML Server...${NC}"
+kill_on_port $ML_PORT
 echo -e "${CYAN}   Port: $ML_PORT${NC}"
 $PYTHON ml/server.py &
 ML_PID=$!
@@ -97,8 +110,20 @@ echo -e "${GREEN}   ML Server running on port ${ML_PORT:-5000}${NC}"
 
 # Start Go Backend (port 8080)
 echo -e "\n${YELLOW}[2/3] Starting Go Backend...${NC}"
+kill_on_port ${PORT:-8080}
 cd backend
-go run ./cmd/server &
+
+# On Windows, air has issues with PowerShell - use go run directly
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$WINDIR" ]]; then
+    echo -e "${YELLOW}   Windows detected, using 'go run' (air has PowerShell issues)...${NC}"
+    go run ./cmd/server &
+elif command -v air &> /dev/null; then
+    echo -e "${GREEN}   Using 'air' for live reloading...${NC}"
+    air &
+else
+    echo -e "${YELLOW}   'air' not found, using 'go run'...${NC}"
+    go run ./cmd/server &
+fi
 BACKEND_PID=$!
 cd ..
 sleep 3
@@ -111,8 +136,9 @@ if ! kill -0 $BACKEND_PID 2>/dev/null; then
 fi
 echo -e "${GREEN}   Backend running on port ${PORT:-8080}${NC}"
 
-# Start Frontend (port 5173)
+# Start Frontend (port 4000)
 echo -e "\n${YELLOW}[3/3] Starting Frontend...${NC}"
+kill_on_port 4000
 cd frontend
 npm run dev &
 FRONTEND_PID=$!
@@ -127,7 +153,7 @@ echo ""
 echo "Services:"
 echo -e "  ${CYAN}ML Server:${NC}  http://localhost:${ML_PORT:-5000}/health"
 echo -e "  ${CYAN}Backend:${NC}    http://localhost:${PORT:-8080}/api/v1/healthz"
-echo -e "  ${CYAN}Frontend:${NC}   http://localhost:3000"
+echo -e "  ${CYAN}Frontend:${NC}   http://localhost:4000"
 echo ""
 echo "Press Ctrl+C to stop all services"
 echo ""

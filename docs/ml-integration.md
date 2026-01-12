@@ -16,10 +16,10 @@ This script will:
 
 ## Manual Setup
 
-Set these environment variables for the Go backend:
+Set these environment variables for Go backend (in `.env`):
 ```bash
-MODEL_URL=http://localhost:5000/predict
-MODEL_VERSION=1063
+MODEL_URL=http://localhost:5000
+MODEL_VERSION=v1.0
 MODEL_TIMEOUT_MS=5000
 ```
 
@@ -39,7 +39,7 @@ curl -X POST http://localhost:5000/predict \
   -d '{"hba1c": 6.5, "fbs": 126, "bmi": 28, "triglycerides": 150, "ldl": 130, "hdl": 45}'
 ```
 
-Expected response:
+Expected response (clinical model):
 ```json
 {
   "cluster": "MOD-like",
@@ -49,17 +49,31 @@ Expected response:
 }
 ```
 
+For clinical model (non-circular):
+```bash
+curl -X POST "http://localhost:5000/predict?model_type=clinical" \
+  -H "Content-Type: application/json" \
+  -d '{"bmi": 28, "triglycerides": 150, "ldl": 130, "hdl": 45, "age": 55}'
+```
+
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
-| `/predict` | POST | Single prediction |
+| `/predict` | POST | Single prediction (ADA model) |
+| `/predict?model_type=clinical` | POST | Single prediction (Clinical model) |
 | `/predict/batch` | POST | Multiple predictions |
-| `/model/info` | GET | Model metadata |
+| `/insights/metrics` | GET | Model performance metrics |
+| `/insights/clusters` | GET | Cluster distribution data |
+| `/predict/explain` | POST | Prediction with SHAP explanation |
+| `/insights/metrics` | GET | Model performance metrics |
+| `/insights/clusters` | GET | Cluster distribution data |
+| `/insights/visualizations/<name>` | GET | PNG images |
 
 ## Required Input Fields
 
+### ADA Model (default)
 | Field | Type | Unit | Example |
 |-------|------|------|---------|
 | `hba1c` | float | % | 6.5 |
@@ -68,6 +82,15 @@ Expected response:
 | `triglycerides` | float | mg/dL | 150 |
 | `ldl` | float | mg/dL | 130 |
 | `hdl` | float | mg/dL | 45 |
+
+### Clinical Model (non-circular, for screening)
+| Field | Type | Unit | Example |
+|-------|------|------|---------|
+| `bmi` | float | kg/m² | 28.0 |
+| `triglycerides` | float | mg/dL | 150 |
+| `ldl` | float | mg/dL | 130 |
+| `hdl` | float | mg/dL | 45 |
+| `age` | int | years | 55 |
 
 ## Running Both Services
 
@@ -83,7 +106,12 @@ make ml
 
 **Terminal 2 - Go Backend:**
 ```bash
-MODEL_URL=http://localhost:5000/predict go run ./backend/cmd/server
+MODEL_URL=http://localhost:5000 go run ./backend/cmd/server
+```
+
+**Terminal 2 - Go Backend:**
+```bash
+MODEL_URL=http://localhost:5000 go run ./backend/cmd/server
 ```
 
 ## Production Deployment

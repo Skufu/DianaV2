@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { TEST_USER, SELECTORS, waitForNetworkIdle } from './fixtures/test-data';
 
-test.describe('Analytics Dashboard', () => {
+test.describe('Insights Dashboard', () => {
     test.beforeEach(async ({ page }) => {
         // Login before each test
         await page.goto('/');
@@ -11,22 +11,22 @@ test.describe('Analytics Dashboard', () => {
         await waitForNetworkIdle(page);
     });
 
-    test('should navigate to analytics tab', async ({ page }) => {
-        // Click analytics tab
-        const analyticsTab = page.locator(SELECTORS.analyticsTab);
-        if (await analyticsTab.isVisible()) {
-            await analyticsTab.click();
+    test('should navigate to insights tab', async ({ page }) => {
+        // Click insights tab
+        const insightsTab = page.locator(SELECTORS.insightsTab);
+        if (await insightsTab.isVisible()) {
+            await insightsTab.click();
             await waitForNetworkIdle(page);
 
-            // Should see analytics content
-            const analyticsContent = page.locator('text=/analytics|cluster|metrics|chart/i');
-            await expect(analyticsContent.first()).toBeVisible({ timeout: 10000 });
+            // Should see insights content
+            const insightsContent = page.locator('text=/insights|cluster|metrics|chart/i');
+            await expect(insightsContent.first()).toBeVisible({ timeout: 10000 });
         }
     });
 
     test('should display cluster distribution', async ({ page }) => {
-        // Navigate to analytics
-        await page.click(SELECTORS.analyticsTab);
+        // Navigate to insights
+        await page.click(SELECTORS.insightsTab);
         await waitForNetworkIdle(page);
 
         // Look for cluster-related content or charts
@@ -35,8 +35,8 @@ test.describe('Analytics Dashboard', () => {
     });
 
     test('should display model metrics', async ({ page }) => {
-        // Navigate to analytics
-        await page.click(SELECTORS.analyticsTab);
+        // Navigate to insights
+        await page.click(SELECTORS.insightsTab);
         await waitForNetworkIdle(page);
 
         // Look for metrics (accuracy, precision, etc.)
@@ -47,8 +47,8 @@ test.describe('Analytics Dashboard', () => {
     });
 
     test('should handle empty data state', async ({ page }) => {
-        // Navigate to analytics
-        await page.click(SELECTORS.analyticsTab);
+        // Navigate to insights
+        await page.click(SELECTORS.insightsTab);
         await waitForNetworkIdle(page);
 
         // Should not show loading spinner indefinitely

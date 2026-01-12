@@ -184,10 +184,12 @@ const UserManagement = ({ token }) => {
             <div className="glass-card p-4">
                 <form onSubmit={handleSearch} className="flex flex-wrap gap-4 items-end">
                     <div className="flex-1 min-w-[200px]">
-                        <label className="text-slate-400 text-sm block mb-1">Search</label>
+                        <label htmlFor="user-search" className="text-slate-400 text-sm block mb-1">Search</label>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                             <input
+                                id="user-search"
+                                name="search"
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
@@ -197,8 +199,10 @@ const UserManagement = ({ token }) => {
                         </div>
                     </div>
                     <div>
-                        <label className="text-slate-400 text-sm block mb-1">Role</label>
+                        <label htmlFor="user-role-filter" className="text-slate-400 text-sm block mb-1">Role</label>
                         <select
+                            id="user-role-filter"
+                            name="roleFilter"
                             value={roleFilter}
                             onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
                             className="px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"
@@ -209,8 +213,10 @@ const UserManagement = ({ token }) => {
                         </select>
                     </div>
                     <div>
-                        <label className="text-slate-400 text-sm block mb-1">Status</label>
+                        <label htmlFor="user-status-filter" className="text-slate-400 text-sm block mb-1">Status</label>
                         <select
+                            id="user-status-filter"
+                            name="activeFilter"
                             value={activeFilter}
                             onChange={(e) => { setActiveFilter(e.target.value); setPage(1); }}
                             className="px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"
@@ -367,8 +373,10 @@ const UserManagement = ({ token }) => {
 
                         <form onSubmit={handleCreateUser} className="space-y-4">
                             <div>
-                                <label className="text-slate-300 text-sm block mb-1">Email</label>
+                                <label htmlFor="create-user-email" className="text-slate-300 text-sm block mb-1">Email</label>
                                 <input
+                                    id="create-user-email"
+                                    name="email"
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -377,8 +385,10 @@ const UserManagement = ({ token }) => {
                                 />
                             </div>
                             <div>
-                                <label className="text-slate-300 text-sm block mb-1">Password</label>
+                                <label htmlFor="create-user-password" className="text-slate-300 text-sm block mb-1">Password</label>
                                 <input
+                                    id="create-user-password"
+                                    name="password"
                                     type="password"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -389,8 +399,10 @@ const UserManagement = ({ token }) => {
                                 <p className="text-slate-500 text-xs mt-1">Minimum 8 characters</p>
                             </div>
                             <div>
-                                <label className="text-slate-300 text-sm block mb-1">Role</label>
+                                <label htmlFor="create-user-role" className="text-slate-300 text-sm block mb-1">Role</label>
                                 <select
+                                    id="create-user-role"
+                                    name="role"
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                     className="w-full px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"
@@ -439,8 +451,10 @@ const UserManagement = ({ token }) => {
 
                         <form onSubmit={handleUpdateUser} className="space-y-4">
                             <div>
-                                <label className="text-slate-300 text-sm block mb-1">Email</label>
+                                <label htmlFor="edit-user-email" className="text-slate-300 text-sm block mb-1">Email</label>
                                 <input
+                                    id="edit-user-email"
+                                    name="email"
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -448,8 +462,10 @@ const UserManagement = ({ token }) => {
                                 />
                             </div>
                             <div>
-                                <label className="text-slate-300 text-sm block mb-1">Role</label>
+                                <label htmlFor="edit-user-role" className="text-slate-300 text-sm block mb-1">Role</label>
                                 <select
+                                    id="edit-user-role"
+                                    name="role"
                                     value={formData.role}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                     className="w-full px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"

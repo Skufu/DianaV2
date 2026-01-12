@@ -23,7 +23,7 @@ import {
 // Lazy-loaded route components for code splitting
 const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
 const PatientHistory = lazy(() => import('./components/patients/PatientHistory'));
-const Analytics = lazy(() => import('./components/analytics/Analytics'));
+const Insights = lazy(() => import('./components/insights/Insights'));
 const Export = lazy(() => import('./components/export/Export'));
 const Education = lazy(() => import('./components/education/Education'));
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
@@ -188,26 +188,38 @@ const App = () => {
       triglycerides: parseInt(formData.triglycerides) || null,
     };
     const patient = await createPatientApi(token, patientPayload);
+    // Transform form values to backend-expected enum format
+    const mapActivity = (val) => {
+      const map = { 'No': '', 'Yes': 'active', 'sedentary': 'sedentary', 'light': 'light', 'moderate': 'moderate', 'active': 'active', 'very_active': 'very_active' };
+      return map[val] || '';
+    };
+    const mapSmoking = (val) => {
+      const map = { 'No': 'never', 'Yes': 'current', 'never': 'never', 'former': 'former', 'current': 'current' };
+      return map[val] || '';
+    };
+    const mapYesNo = (val) => {
+      if (val === 'Yes' || val === 'yes' || val === true) return 'yes';
+      if (val === 'No' || val === 'no' || val === false) return 'no';
+      return '';
+    };
+
     const assessmentPayload = {
       fbs: parseFloat(formData.fbs) || 0,
       hba1c: parseFloat(formData.hba1c) || 0,
-      cholesterol: parseInt(formData.cholesterol) || null,
-      ldl: parseInt(formData.ldl) || null,
-      hdl: parseInt(formData.hdl) || null,
-      triglycerides: parseInt(formData.triglycerides) || null,
-      systolic: parseInt(formData.systolic) || null,
-      diastolic: parseInt(formData.diastolic) || null,
-      activity: formData.activity,
+      cholesterol: parseInt(formData.cholesterol) || 0,
+      ldl: parseInt(formData.ldl) || 0,
+      hdl: parseInt(formData.hdl) || 0,
+      triglycerides: parseInt(formData.triglycerides) || 0,
+      systolic: parseInt(formData.systolic) || 0,
+      diastolic: parseInt(formData.diastolic) || 0,
+      activity: mapActivity(formData.activity),
       history_flag: !!formData.familyHistory,
-      smoking: formData.smoking,
-      hypertension: formData.hypertension,
-      heart_disease: formData.heartDisease,
-      bmi: bmi || null,
+      smoking: mapSmoking(formData.smoking),
+      hypertension: mapYesNo(formData.hypertension),
+      heart_disease: mapYesNo(formData.heartDisease),
+      bmi: bmi || 0,
     };
     const assessment = await createAssessmentApi(token, patient.id, assessmentPayload);
-    // Refresh patient list in background to get updated data with FBS/HbA1c
-    // Don't await - let it happen in background so Step 4 modal shows immediately
-    refreshPatients().catch(console.error);
     return assessment;
   };
 
@@ -222,7 +234,7 @@ const App = () => {
         return (
           <Dashboard
             token={token}
-            patientCount={patients.length}
+            patients={patients}
             onNavigateToPatient={() => setActiveTab('patients')}
             onStartAssessment={handleStartAssessment}
             loading={loadingPatients}
@@ -243,8 +255,8 @@ const App = () => {
             />
           </>
         );
-      case 'analytics':
-        return <Analytics token={token} patients={patients} />;
+      case 'insights':
+        return <Insights token={token} patients={patients} />;
       case 'education':
         return <Education />;
       case 'export':
@@ -255,7 +267,7 @@ const App = () => {
         ) : (
           <Dashboard
             token={token}
-            patientCount={patients.length}
+            patients={patients}
             onNavigateToPatient={() => setActiveTab('patients')}
             onStartAssessment={handleStartAssessment}
           />
@@ -264,7 +276,7 @@ const App = () => {
         return (
           <Dashboard
             token={token}
-            patientCount={patients.length}
+            patients={patients}
             onNavigateToPatient={() => setActiveTab('patients')}
             onStartAssessment={handleStartAssessment}
           />

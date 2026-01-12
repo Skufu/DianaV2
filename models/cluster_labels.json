@@ -1,10 +1,22 @@
 {
-  "0": {
-    "label": "MOD-like",
-    "description": "Mild Obesity-Related Diabetes pattern"
+  "3": {
+    "label": "SIDD",
+    "full_name": "Severe Insulin-Deficient Diabetes",
+    "risk_level": "HIGH"
   },
   "1": {
-    "label": "Cluster-1",
-    "description": "Unclassified pattern"
+    "label": "SIRD",
+    "full_name": "Severe Insulin-Resistant Diabetes",
+    "risk_level": "HIGH"
+  },
+  "2": {
+    "label": "MOD",
+    "full_name": "Mild Obesity-Related Diabetes",
+    "risk_level": "MODERATE"
+  },
+  "0": {
+    "label": "MARD",
+    "full_name": "Mild Age-Related Diabetes",
+    "risk_level": "LOW"
   }
 }

@@ -74,7 +74,7 @@ const CohortAnalysis = ({ token }) => {
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div>
                     <h4 className="text-slate-400 font-medium text-sm mb-1">Risk Factor Comparison</h4>
-                    <h2 className="text-3xl font-bold text-white">Cohort Analysis</h2>
+                    <h2 className="text-3xl font-bold text-white">Cohort Insights</h2>
                     <p className="text-slate-400 text-sm mt-1">
                         Compare risk factors across patient groups to identify patterns
                     </p>

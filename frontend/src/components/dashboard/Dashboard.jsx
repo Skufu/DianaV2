@@ -1,19 +1,19 @@
 // Dashboard: Clinical Precision cohort overview with comprehensive risk analysis
 import React, { useEffect, useMemo, useState } from 'react';
 import { Users, AlertCircle, Droplet, Activity, Plus, ArrowRight, TrendingUp, BarChart2, Filter, Info, Layers, Target, TrendingDown, Shield } from 'lucide-react';
-import { fetchClusterDistributionApi, fetchTrendAnalyticsApi, fetchPatientsApi, fetchAssessmentsApi } from '../../api';
+import { fetchClusterDistributionApi, fetchTrendInsightsApi, fetchPatientsApi, fetchAssessmentsApi } from '../../api';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   BarChart, Bar, ScatterChart, Scatter, LineChart, Line, Legend, ComposedChart
 } from 'recharts';
 
-const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssessment, loading: patientsLoading = false }) => {
+const Dashboard = ({ token, patients: patientsFromProps = [], onNavigateToPatient, onStartAssessment, loading: patientsLoading = false }) => {
   const [activeBiomarker, setActiveBiomarker] = useState('hba1c');
   const [clusterStats, setClusterStats] = useState([]);
   const [trends, setTrends] = useState([]);
   const [allPatients, setAllPatients] = useState([]);
   const [allAssessments, setAllAssessments] = useState([]);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [insightsLoading, setInsightsLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // Filter states
@@ -25,20 +25,19 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
   useEffect(() => {
     if (!token) return;
     const load = async () => {
-      setAnalyticsLoading(true);
+      setInsightsLoading(true);
       setError(null);
       try {
-        const [clusters, trendData, patients] = await Promise.all([
+        const [clusters, trendData] = await Promise.all([
           fetchClusterDistributionApi(token),
-          fetchTrendAnalyticsApi(token),
-          fetchPatientsApi(token),
+          fetchTrendInsightsApi(token),
         ]);
         setClusterStats(clusters || []);
         setTrends(trendData || []);
-        setAllPatients(patients || []);
+        setAllPatients(patientsFromProps || []);
 
         // Fetch all assessments for all patients
-        const assessmentsPromises = (patients || []).map(patient =>
+        const assessmentsPromises = (patientsFromProps || []).map(patient =>
           fetchAssessmentsApi(token, patient.id).catch(() => [])
         );
         const assessmentsArrays = await Promise.all(assessmentsPromises);
@@ -46,13 +45,13 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
         const flatAssessments = assessmentsArrays.flat().filter(Boolean);
         setAllAssessments(flatAssessments);
       } catch (_) {
-        setError('Unable to load analytics data');
+        setError('Unable to load insights data');
       } finally {
-        setAnalyticsLoading(false);
+        setInsightsLoading(false);
       }
     };
     load();
-  }, [token]);
+  }, [token, patientsFromProps]);
 
   // Calculate risk distribution
   const riskDistribution = useMemo(() => {
@@ -96,13 +95,13 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
 
   // Top-level summary cards
   const summaryCards = useMemo(() => [
-    { label: 'Total Patients Assessed', value: patientCount || '0', icon: Users, iconColor: '#14B8A6', bg: 'bg-teal-500/10' },
+    { label: 'Total Patients', value: patientsFromProps.length.toString(), icon: Users, iconColor: '#14B8A6', bg: 'bg-teal-500/10' },
+    { label: 'Total Assessments', value: allAssessments.length.toString(), icon: Activity, iconColor: '#10B981', bg: 'bg-emerald-500/10' },
     { label: 'High-Risk Count', value: riskDistribution.high.toString(), icon: AlertCircle, iconColor: '#F43F5E', bg: 'bg-rose-500/10' },
     { label: 'Moderate-Risk Count', value: riskDistribution.moderate.toString(), icon: Shield, iconColor: '#F59E0B', bg: 'bg-amber-500/10' },
     { label: 'Low-Risk Count', value: riskDistribution.low.toString(), icon: Target, iconColor: '#22D3EE', bg: 'bg-cyan-500/10' },
     { label: 'Average HbA1c', value: `${averages.hba1c}%`, icon: Droplet, iconColor: '#8B5CF6', bg: 'bg-purple-500/10' },
-    { label: 'Average FBS', value: averages.fbs === '0' ? '—' : `${averages.fbs} mg/dL`, icon: Activity, iconColor: '#10B981', bg: 'bg-emerald-500/10' },
-  ], [patientCount, riskDistribution, averages]);
+  ], [patientsFromProps, allAssessments, riskDistribution, averages]);
 
   // Risk distribution chart data
   const riskDistributionData = useMemo(() => [
@@ -289,7 +288,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
       </header>
 
       {/* Welcome Banner - Only for new users */}
-      {patientCount === 0 && !patientsLoading && (
+      {patientsFromProps.length === 0 && !patientsLoading && (
         <div className="glass-card p-6 border border-teal-500/20">
           <div className="relative z-10">
             <h3 className="text-xl font-bold text-white mb-2">Welcome to DIANA</h3>
@@ -314,7 +313,7 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
 
       {/* A. Top-Level Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {analyticsLoading || patientsLoading
+        {insightsLoading || patientsLoading
           ? Array.from({ length: 6 }).map((_, idx) => (
             <div key={`sk-${idx}`} className="glass-card p-5 animate-pulse space-y-3">
               <div className="w-10 h-10 rounded-xl bg-slate-700" />
@@ -637,8 +636,10 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
           </div>
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-400 uppercase mb-2 block">Risk Level</label>
+              <label htmlFor="dashboard-risk-filter" className="text-xs font-semibold text-slate-400 uppercase mb-2 block">Risk Level</label>
               <select
+                id="dashboard-risk-filter"
+                name="riskFilter"
                 value={riskFilter}
                 onChange={(e) => setRiskFilter(e.target.value)}
                 className="w-full bg-slate-700/50 border border-slate-600/30 rounded-lg px-3 py-2 text-white text-sm"
@@ -650,17 +651,23 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-400 uppercase mb-2 block">Age Range</label>
+              <label className="text-xs font-semibold text-slate-400 uppercase mb-2 block" id="dashboard-age-range-label">Age Range</label>
               <div className="flex gap-2">
                 <input
+                  id="dashboard-age-min"
+                  name="ageMin"
                   type="number"
+                  aria-labelledby="dashboard-age-range-label"
                   value={ageRange.min}
                   onChange={(e) => setAgeRange({ ...ageRange, min: parseInt(e.target.value) || 0 })}
                   className="w-full bg-slate-700/50 border border-slate-600/30 rounded-lg px-3 py-2 text-white text-sm"
                   placeholder="Min"
                 />
                 <input
+                  id="dashboard-age-max"
+                  name="ageMax"
                   type="number"
+                  aria-labelledby="dashboard-age-range-label"
                   value={ageRange.max}
                   onChange={(e) => setAgeRange({ ...ageRange, max: parseInt(e.target.value) || 100 })}
                   className="w-full bg-slate-700/50 border border-slate-600/30 rounded-lg px-3 py-2 text-white text-sm"
@@ -669,8 +676,10 @@ const Dashboard = ({ token, patientCount = 0, onNavigateToPatient, onStartAssess
               </div>
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-400 uppercase mb-2 block">Assessment Period</label>
+              <label htmlFor="dashboard-assessment-period" className="text-xs font-semibold text-slate-400 uppercase mb-2 block">Assessment Period</label>
               <select
+                id="dashboard-assessment-period"
+                name="assessmentPeriod"
                 value={assessmentPeriod}
                 onChange={(e) => setAssessmentPeriod(e.target.value)}
                 className="w-full bg-slate-700/50 border border-slate-600/30 rounded-lg px-3 py-2 text-white text-sm"
