@@ -1,0 +1,70 @@
+{
+  "model": "XGBoost",
+  "overall_metrics": {
+    "accuracy": 0.5225,
+    "auc_roc": 0.6732,
+    "f1_score": 0.5171,
+    "recall": 0.5225,
+    "precision": 0.5178
+  },
+  "per_class_metrics": {
+    "Normal": {
+      "Class_Index": 0,
+      "True_Positives": 75,
+      "False_Positives": 42,
+      "False_Negatives": 33,
+      "True_Negatives": 72,
+      "Support": 108,
+      "Precision": 0.641,
+      "Recall": 0.6944,
+      "F1_Score": 0.6667,
+      "NPV": 0.6857
+    },
+    "Pre-diabetic": {
+      "Class_Index": 1,
+      "True_Positives": 28,
+      "False_Positives": 37,
+      "False_Negatives": 54,
+      "True_Negatives": 103,
+      "Support": 82,
+      "Precision": 0.4308,
+      "Recall": 0.3415,
+      "F1_Score": 0.381,
+      "NPV": 0.6561
+    },
+    "Diabetic": {
+      "Class_Index": 2,
+      "True_Positives": 13,
+      "False_Positives": 27,
+      "False_Negatives": 19,
+      "True_Negatives": 163,
+      "Support": 32,
+      "Precision": 0.325,
+      "Recall": 0.4062,
+      "F1_Score": 0.3611,
+      "NPV": 0.8956
+    }
+  },
+  "class_names": [
+    "Normal",
+    "Pre-diabetic",
+    "Diabetic"
+  ],
+  "confusion_matrix": [
+    [
+      75,
+      22,
+      11
+    ],
+    [
+      38,
+      28,
+      16
+    ],
+    [
+      4,
+      15,
+      13
+    ]
+  ]
+}

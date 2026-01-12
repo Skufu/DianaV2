@@ -1,0 +1,4 @@
+Class,Class_Index,True_Positives,False_Positives,False_Negatives,True_Negatives,Support,Precision,Recall,F1_Score,NPV
+Normal,0,75,42,33,72,108,0.641,0.6944,0.6667,0.6857
+Pre-diabetic,1,28,37,54,103,82,0.4308,0.3415,0.381,0.6561
+Diabetic,2,13,27,19,163,32,0.325,0.4062,0.3611,0.8956
