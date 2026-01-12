@@ -1,0 +1,8 @@
+Model,AUC,Accuracy,Overfit_Gap,F1_Score,Brier_Score,CI,CI_Width,CI_Lower,CI_Upper,Diabetic_Recall,Diabetic_Precision,Diabetic_F1,NPV,Recommendation
+XGBoost,0.6732,0.5225,0.4011,0.5171,0.2006,"[0.5647, 0.7817]",0.217,0.5647,0.7817,0.4062,0.325,0.3611,0.8956,"RECOMMENDED: Best AUC (0.6732), good calibration, acceptable overfit gap (0.4011)"
+CatBoost,0.6726,0.5045,0.297,0.505,0.1966,"[0.5641, 0.7811]",0.2171,0.5641,0.7811,0.4062,0.325,0.3611,0.8956,"ALTERNATIVE: Competitive AUC (0.6726), lower overfit gap (0.2970), good for ensembling"
+Stacking Ensemble,0.6689,0.5,0.3772,0.5005,0.1964,"[0.5602, 0.7776]",0.2174,0.5602,0.7776,0.4062,0.325,0.3611,0.8956,"ENSEMBLE: Competitive AUC (0.6689), moderate overfit gap (0.3772), good backup"
+Logistic Regression,0.6683,0.4505,0.1233,0.4467,0.2042,"[0.5596, 0.7770]",0.2175,0.5596,0.777,0.4062,0.325,0.3611,0.8956,"BASELINE: Lowest overfit (0.1233), but modest AUC (0.6683). Use for interpretability"
+Voting Ensemble,0.6632,0.4955,0.4543,0.4922,0.2006,"[0.5542, 0.7722]",0.218,0.5542,0.7722,0.4062,0.325,0.3611,0.8956,"ENSEMBLE: Good AUC (0.6632), stable across models, suitable for production"
+Random Forest,0.6534,0.5135,0.2091,0.521,0.2018,"[0.5440, 0.7628]",0.2188,0.544,0.7628,0.4062,0.325,0.3611,0.8956,"MODERATE: Good AUC (0.6534), higher overfit gap (0.2091). Consider regularization"
+LightGBM,0.6452,0.5,0.4994,0.4972,0.2207,"[0.5355, 0.7549]",0.2195,0.5355,0.7549,0.4062,0.325,0.3611,0.8956,"NOT RECOMMENDED: Lowest AUC (0.6452), severe overfit (0.4994). Poor choice for this task"
