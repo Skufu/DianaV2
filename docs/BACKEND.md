@@ -43,7 +43,7 @@ protected.Use(middleware.Auth(cfg.JWTSecret))
 
 patientHandler.Register(protected.Group("/patients"))
 assessmentHandler.Register(protected.Group("/patients"))
-analyticsHandler.Register(protected.Group("/analytics"))
+insightsHandler.Register(protected.Group("/insights"))
 ```
 
 ### 2. Handlers (`internal/http/handlers/`)
@@ -111,7 +111,7 @@ SQLC generates type-safe Go code automatically.
 | POST | /patients | patientsHandler | Create patient |
 | GET | /patients/:id | patientsHandler | Get patient |
 | POST | /patients/:id/assessments | assessmentsHandler | Create assessment (calls ML) |
-| GET | /analytics/summary | analyticsHandler | Dashboard stats |
+| GET | /insights/summary | insightsHandler | Dashboard stats |
 | GET | /export/csv | exportHandler | Export data |
 
 ### Admin Endpoints (Admin Role Required)

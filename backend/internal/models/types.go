@@ -1,4 +1,4 @@
-// Domain models for users, patients, assessments, and analytics DTOs.
+// Domain models for users, patients, assessments, and insights DTOs.
 package models
 
 import "time"
@@ -85,7 +85,7 @@ type RefreshToken struct {
 	RevokedAt time.Time `json:"revoked_at,omitempty"`
 }
 
-type ClusterAnalytics struct {
+type ClusterInsights struct {
 	Cluster string `json:"cluster"`
 	Count   int    `json:"count"`
 }
@@ -137,7 +137,7 @@ type Clinic struct {
 // UserClinic represents a user's membership in a clinic
 type UserClinic struct {
 	Clinic
-	Role string `json:"role"` // 'member' or 'clinic_admin'
+	Role string `json:"role"` // 'member' or 'admin'
 }
 
 // ClinicAggregate represents aggregate statistics for a clinic

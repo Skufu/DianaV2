@@ -1,7 +1,7 @@
-// Analytics: comprehensive cohort-level analytics with multiple visualizations
+// Insights: comprehensive cohort-level insights with multiple visualizations
 import React, { useEffect, useState, useMemo } from 'react';
 import {
-  fetchClusterDistributionApi, fetchTrendAnalyticsApi, fetchAssessmentsApi,
+  fetchClusterDistributionApi, fetchTrendInsightsApi, fetchAssessmentsApi,
   fetchMLMetricsApi, fetchMLInformationGainApi, fetchMLClustersApi, getMLVisualizationUrl
 } from '../../api';
 import {
@@ -75,7 +75,7 @@ const getMLMetrics = (mlMetrics) => {
   return mlMetrics.clinical?.best_model ? mlMetrics.clinical : mlMetrics.ada_baseline;
 };
 
-const Analytics = ({ token, patients = [] }) => {
+const Insights = ({ token, patients = [] }) => {
   const [clusters, setClusters] = useState([]);
   const [trends, setTrends] = useState([]);
   const [allAssessments, setAllAssessments] = useState([]);
@@ -101,7 +101,7 @@ const Analytics = ({ token, patients = [] }) => {
       try {
         const [c, t] = await Promise.all([
           fetchClusterDistributionApi(token),
-          fetchTrendAnalyticsApi(token)
+          fetchTrendInsightsApi(token)
         ]);
         setClusters(c || []);
         setTrends(t || []);
@@ -115,7 +115,7 @@ const Analytics = ({ token, patients = [] }) => {
           setAllAssessments(flatAssessments);
         }
       } catch (err) {
-        setError('Failed to load analytics');
+        setError('Failed to load insights');
       } finally {
         setLoading(false);
       }
@@ -139,7 +139,7 @@ const Analytics = ({ token, patients = [] }) => {
         setMlClusters(clusters);
         // Check if all ML data failed
         if (!metrics && !ig && !clusters) {
-          setMlError('ML server is unavailable. Some analytics may be limited.');
+          setMlError('ML server is unavailable. Some insights may be limited.');
         }
       } catch (err) {
         console.error('Failed to load ML data:', err);
@@ -230,7 +230,7 @@ const Analytics = ({ token, patients = [] }) => {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8">
         <div>
           <h4 className="text-slate-400 font-medium text-sm mb-1">Insights & Clustering</h4>
-          <h2 className="text-3xl font-bold text-white">Advanced Analytics</h2>
+          <h2 className="text-3xl font-bold text-white">Advanced Insights</h2>
           <p className="text-slate-400 text-sm mt-1">
             Cohort-level analysis including risk factors, clustering, and biomarker correlations
           </p>
@@ -625,4 +625,4 @@ const Analytics = ({ token, patients = [] }) => {
   );
 };
 
-export default Analytics;
+export default Insights;

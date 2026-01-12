@@ -8,20 +8,20 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
-type AnalyticsHandler struct {
+type InsightsHandler struct {
 	store store.Store
 }
 
-func NewAnalyticsHandler(store store.Store) *AnalyticsHandler {
-	return &AnalyticsHandler{store: store}
+func NewInsightsHandler(store store.Store) *InsightsHandler {
+	return &InsightsHandler{store: store}
 }
 
-func (h *AnalyticsHandler) Register(rg *gin.RouterGroup) {
+func (h *InsightsHandler) Register(rg *gin.RouterGroup) {
 	rg.GET("/cluster-distribution", h.cluster)
 	rg.GET("/biomarker-trends", h.trends)
 }
 
-func (h *AnalyticsHandler) cluster(c *gin.Context) {
+func (h *InsightsHandler) cluster(c *gin.Context) {
 	claims, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
@@ -37,7 +37,7 @@ func (h *AnalyticsHandler) cluster(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-func (h *AnalyticsHandler) trends(c *gin.Context) {
+func (h *InsightsHandler) trends(c *gin.Context) {
 	claims, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})

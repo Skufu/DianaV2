@@ -7,7 +7,7 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, userRol
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'patients', icon: Users, label: 'Assessments' },
-    { id: 'analytics', icon: Activity, label: 'Analytics' },
+    { id: 'insights', icon: Activity, label: 'Insights' },
     { id: 'education', icon: BookOpen, label: 'Education' },
     { id: 'export', icon: Download, label: 'Export Data' },
     // Admin-only navigation item

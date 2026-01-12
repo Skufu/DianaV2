@@ -1,6 +1,6 @@
 // PatientHistory: list, profile, and assessment form for menopausal risk.
 import React, { useEffect, useState } from 'react';
-import { ChevronRight, ArrowLeft, Activity, Clipboard, FileText, CheckCircle, XCircle, Heart, TrendingUp, X, Users, Thermometer, Edit2, Trash2, Eye, AlertTriangle, Info } from 'lucide-react';
+import { ChevronRight, ArrowLeft, Activity, Clipboard, FileText, CheckCircle, XCircle, Heart, TrendingUp, X, Users, Thermometer, Edit2, Trash2, Eye, AlertTriangle, Info, Shuffle } from 'lucide-react';
 import Button from '../common/Button';
 import { updatePatientApi, deletePatientApi, updateAssessmentApi, deleteAssessmentApi } from '../../api';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -48,26 +48,35 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
   // Step validation
   const validateStep = (step) => {
     switch (step) {
-      case 1:
-        if (!formData.name.trim()) {
-          setFormError('Patient name is required');
-          return false;
-        }
-        if (!formData.age || Number(formData.age) <= 0) {
-          setFormError('Valid age is required');
-          return false;
-        }
+      case 1: {
+        const nameErr = validateField('name', formData.name);
+        if (nameErr) { setFormError(nameErr); return false; }
+        const ageErr = validateField('age', formData.age);
+        if (ageErr) { setFormError(ageErr); return false; }
         break;
-      case 2:
-        if (!formData.fbs || Number(formData.fbs) <= 0) {
-          setFormError('Fasting Blood Sugar is required');
-          return false;
-        }
-        if (!formData.hba1c || Number(formData.hba1c) <= 0) {
-          setFormError('HbA1c is required');
-          return false;
-        }
+      }
+      case 2: {
+        const fbsErr = validateField('fbs', formData.fbs);
+        if (fbsErr) { setFormError(fbsErr); return false; }
+        const hba1cErr = validateField('hba1c', formData.hba1c);
+        if (hba1cErr) { setFormError(hba1cErr); return false; }
+        const cholErr = validateField('cholesterol', formData.cholesterol);
+        if (formData.cholesterol && cholErr) { setFormError(cholErr); return false; }
+        const ldlErr = validateField('ldl', formData.ldl);
+        if (formData.ldl && ldlErr) { setFormError(ldlErr); return false; }
+        const hdlErr = validateField('hdl', formData.hdl);
+        if (formData.hdl && hdlErr) { setFormError(hdlErr); return false; }
+        const trigErr = validateField('triglycerides', formData.triglycerides);
+        if (formData.triglycerides && trigErr) { setFormError(trigErr); return false; }
         break;
+      }
+      case 3: {
+        const sysErr = validateField('systolic', formData.systolic);
+        if (formData.systolic && sysErr) { setFormError(sysErr); return false; }
+        const diaErr = validateField('diastolic', formData.diastolic);
+        if (formData.diastolic && diaErr) { setFormError(diaErr); return false; }
+        break;
+      }
       default:
         break;
     }
@@ -119,6 +128,105 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
       hypertension: 'No',
       heartDisease: 'No',
     });
+  };
+
+  const randomBetween = (min, max, decimals = 0) => {
+    const val = Math.random() * (max - min) + min;
+    return decimals > 0 ? parseFloat(val.toFixed(decimals)) : Math.round(val);
+  };
+
+  const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  const firstNames = ['Sarah', 'Maria', 'Jennifer', 'Lisa', 'Carmen', 'Patricia', 'Rachel', 'Diana', 'Amy', 'Michelle', 'Linda', 'Barbara', 'Susan', 'Nancy', 'Karen'];
+  const lastNames = ['Johnson', 'Rodriguez', 'Wang', 'Thompson', 'Silva', 'Davis', 'Kim', 'Martinez', 'Chen', 'Brown', 'Smith', 'Garcia', 'Miller', 'Wilson', 'Moore'];
+
+  const randomizeForm = () => {
+    const age = randomBetween(45, 70);
+    const height = randomBetween(150, 175);
+    const weight = randomBetween(55, 95);
+    
+    const profileType = Math.random();
+    let profile;
+    
+    if (profileType < 0.25) {
+      profile = { type: 'SIDD', hba1cMin: 8.0, hba1cMax: 12.0, fbsMin: 180, fbsMax: 300, bmiMin: 28, bmiMax: 40, tgMin: 120, tgMax: 200, ldlMin: 100, ldlMax: 150, hdlMin: 35, hdlMax: 55 };
+    } else if (profileType < 0.50) {
+      profile = { type: 'SIRD', hba1cMin: 5.5, hba1cMax: 6.5, fbsMin: 100, fbsMax: 120, bmiMin: 35, bmiMax: 45, tgMin: 80, tgMax: 120, ldlMin: 90, ldlMax: 130, hdlMin: 40, hdlMax: 55 };
+    } else if (profileType < 0.75) {
+      profile = { type: 'MOD', hba1cMin: 5.5, hba1cMax: 6.2, fbsMin: 100, fbsMax: 115, bmiMin: 28, bmiMax: 34, tgMin: 160, tgMax: 250, ldlMin: 130, ldlMax: 180, hdlMin: 38, hdlMax: 50 };
+    } else {
+      profile = { type: 'MARD', hba1cMin: 4.8, hba1cMax: 5.6, fbsMin: 75, fbsMax: 100, bmiMin: 20, bmiMax: 28, tgMin: 60, tgMax: 100, ldlMin: 90, ldlMax: 140, hdlMin: 55, hdlMax: 85 };
+    }
+    
+    const isHighRisk = profile.type === 'SIDD' || profile.type === 'SIRD';
+
+    setFormData({
+      name: `${randomChoice(firstNames)} ${randomChoice(lastNames)}`,
+      age: age.toString(),
+      height: height.toString(),
+      weight: weight.toString(),
+      fbs: randomBetween(profile.fbsMin, profile.fbsMax).toString(),
+      hba1c: randomBetween(profile.hba1cMin, profile.hba1cMax, 1).toString(),
+      menopauseStatus: 'Postmenopause',
+      yearsMenopause: randomBetween(0, 15),
+      familyHistory: Math.random() > 0.6,
+      physActivity: Math.random() > 0.4,
+      systolic: randomBetween(isHighRisk ? 130 : 100, isHighRisk ? 160 : 130).toString(),
+      diastolic: randomBetween(isHighRisk ? 85 : 60, isHighRisk ? 100 : 85).toString(),
+      activity: randomChoice(['No', 'Yes']),
+      cholesterol: randomBetween(isHighRisk ? 200 : 150, isHighRisk ? 280 : 200).toString(),
+      ldl: randomBetween(profile.ldlMin, profile.ldlMax).toString(),
+      hdl: randomBetween(profile.hdlMin, profile.hdlMax).toString(),
+      triglycerides: randomBetween(profile.tgMin, profile.tgMax).toString(),
+      smoking: randomChoice(['No', 'Yes']),
+      hypertension: isHighRisk ? randomChoice(['Yes', 'No']) : 'No',
+      heartDisease: isHighRisk && Math.random() > 0.7 ? 'Yes' : 'No',
+    });
+    setFormError(null);
+  };
+
+  const validationRules = {
+    name: { required: true, label: 'Name' },
+    age: { required: true, min: 18, max: 120, label: 'Age' },
+    height: { min: 100, max: 250, label: 'Height' },
+    weight: { min: 30, max: 300, label: 'Weight' },
+    fbs: { required: true, min: 50, max: 500, label: 'FBS' },
+    hba1c: { required: true, min: 3, max: 15, label: 'HbA1c' },
+    systolic: { min: 70, max: 250, label: 'Systolic BP' },
+    diastolic: { min: 40, max: 150, label: 'Diastolic BP' },
+    cholesterol: { min: 100, max: 400, label: 'Cholesterol' },
+    ldl: { min: 30, max: 300, label: 'LDL' },
+    hdl: { min: 20, max: 150, label: 'HDL' },
+    triglycerides: { min: 50, max: 600, label: 'Triglycerides' },
+  };
+
+  const validateField = (key, value) => {
+    const rule = validationRules[key];
+    if (!rule) return null;
+
+    if (rule.required && (!value || value === '')) {
+      return `${rule.label} is required`;
+    }
+
+    const numVal = parseFloat(value);
+    if (value && !isNaN(numVal)) {
+      if (rule.min !== undefined && numVal < rule.min) {
+        return `${rule.label} must be at least ${rule.min}`;
+      }
+      if (rule.max !== undefined && numVal > rule.max) {
+        return `${rule.label} must be at most ${rule.max}`;
+      }
+    }
+    return null;
+  };
+
+  const validateAllFields = () => {
+    const errors = [];
+    for (const [key, rule] of Object.entries(validationRules)) {
+      const error = validateField(key, formData[key]);
+      if (error) errors.push(error);
+    }
+    return errors;
   };
 
   // Step Indicator Component
@@ -269,7 +377,6 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
         const result = await onSubmitAssessment(formData, bmi);
         setCluster(result?.cluster || 'N/A');
         setPrediction(result?.risk_score ?? result?.riskScore ?? null);
-        // Advance to Step 4 results
         setCurrentStep(4);
       } else {
         const bmi = parseFloat(calculatedBMI) || 20;
@@ -289,8 +396,11 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
         setCurrentStep(4);
       }
     } catch (err) {
+      console.error('Assessment error:', err);
       setCluster('Error');
       setPrediction(null);
+      // Still advance to Step 4 to show error state
+      setCurrentStep(4);
     } finally {
       setIsComputing(false);
     }
@@ -732,226 +842,276 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             <StepIndicator />
           </header>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-            <div className={`${currentStep === 3 ? 'lg:col-span-2' : 'lg:col-span-3'} space-y-6`}>
-              <div className="glass-card p-4 md:p-8 rounded-3xl shadow-sm border border-slate-600/30">
-                {formError && <div className="mb-4 p-3 bg-[#FFF5F5] border border-[#EE5D50]/30 rounded-xl text-sm text-[#EE5D50] font-semibold flex items-center gap-2"><XCircle size={16} /> {formError}</div>}
+            {currentStep < 4 && (
+              <div className={`${currentStep === 3 ? 'lg:col-span-2' : 'lg:col-span-3'} space-y-6`}>
+                <div className="glass-card p-4 md:p-8 rounded-3xl shadow-sm border border-slate-600/30">
+                  {formError && <div className="mb-4 p-3 bg-[#FFF5F5] border border-[#EE5D50]/30 rounded-xl text-sm text-[#EE5D50] font-semibold flex items-center gap-2"><XCircle size={16} /> {formError}</div>}
 
-                {/* Step 1: Demographics */}
-                {currentStep === 1 && (
-                  <div className="animate-fade-in">
-                    <h3 className="text-white text-lg font-bold mb-6 flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
-                        <Users size={18} />
-                      </div>
-                      Patient Demographics
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-white text-sm font-bold ml-1">Name</label>
-                        <input
-                          type="text"
-                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-white text-sm font-bold ml-1">Age</label>
-                        <input
-                          type="number"
-                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
-                          onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-white text-sm font-bold ml-1">Weight (kg)</label>
-                        <input
-                          type="number"
-                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
-                          onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-white text-sm font-bold ml-1">Height (cm)</label>
-                        <input
-                          type="number"
-                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
-                          onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2 col-span-2 md:col-span-1">
-                        <label className="text-white text-sm font-bold ml-1">Menopausal Status</label>
-                        <div className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white font-medium">
-                          Postmenopausal
-                        </div>
-                      </div>
-                      <div className="space-y-2 col-span-2 md:col-span-2 animate-fade-in">
-                        <label className="text-white text-sm font-bold ml-1">Years Since Menopause</label>
-                        <input
-                          type="number"
-                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
-                          value={formData.yearsMenopause}
-                          onChange={(e) => setFormData({ ...formData, yearsMenopause: e.target.value })}
-                        />
-                      </div>
+                  {/* Randomize Button - visible on steps 1-3 */}
+                  {currentStep < 4 && (
+                    <div className="mb-4 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={randomizeForm}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 rounded-xl text-purple-300 text-sm font-medium transition-all"
+                      >
+                        <Shuffle size={16} />
+                        Randomize Test Data
+                      </button>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Step 2: Biomarkers */}
-                {currentStep === 2 && (
-                  <div className="animate-fade-in">
-                    <div className="mb-8">
+                  {/* Step 1: Demographics */}
+                  {currentStep === 1 && (
+                    <div className="animate-fade-in">
                       <h3 className="text-white text-lg font-bold mb-6 flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
-                          <Thermometer size={18} />
+                          <Users size={18} />
                         </div>
-                        Blood Biomarkers
+                        Patient Demographics
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                          <label htmlFor="patient-name" className="text-white text-sm font-bold ml-1">Name</label>
+                          <input
+                            id="patient-name"
+                            name="name"
+                            type="text"
+                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label htmlFor="patient-age" className="text-white text-sm font-bold ml-1">Age</label>
+                          <input
+                            id="patient-age"
+                            name="age"
+                            type="number"
+                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
+                            value={formData.age}
+                            onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label htmlFor="patient-weight" className="text-white text-sm font-bold ml-1">Weight (kg)</label>
+                          <input
+                            id="patient-weight"
+                            name="weight"
+                            type="number"
+                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
+                            value={formData.weight}
+                            onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label htmlFor="patient-height" className="text-white text-sm font-bold ml-1">Height (cm)</label>
+                          <input
+                            id="patient-height"
+                            name="height"
+                            type="number"
+                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
+                            value={formData.height}
+                            onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2 col-span-2 md:col-span-1">
+                          <label className="text-white text-sm font-bold ml-1">Menopausal Status</label>
+                          <div className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white font-medium">
+                            Postmenopausal
+                          </div>
+                        </div>
+                        <div className="space-y-2 col-span-2 md:col-span-2 animate-fade-in">
+                          <label htmlFor="patient-years-menopause" className="text-white text-sm font-bold ml-1">Years Since Menopause</label>
+                          <input
+                            id="patient-years-menopause"
+                            name="yearsMenopause"
+                            type="number"
+                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
+                            value={formData.yearsMenopause}
+                            onChange={(e) => setFormData({ ...formData, yearsMenopause: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 2: Biomarkers */}
+                  {currentStep === 2 && (
+                    <div className="animate-fade-in">
+                      <div className="mb-8">
+                        <h3 className="text-white text-lg font-bold mb-6 flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
+                            <Thermometer size={18} />
+                          </div>
+                          Blood Biomarkers
+                        </h3>
+                        <div className="grid grid-cols-2 gap-6 mb-6">
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <label htmlFor="patient-fbs" className="text-white text-sm font-bold ml-1">Fasting Blood Sugar</label>
+                              <span className="text-slate-400 text-xs">Normal: &lt;100</span>
+                            </div>
+                            <input
+                              id="patient-fbs"
+                              name="fbs"
+                              type="number"
+                              className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
+                              placeholder="mg/dL"
+                              value={formData.fbs}
+                              onChange={(e) => setFormData({ ...formData, fbs: e.target.value })}
+                            />
+                            <p className="text-[11px] text-slate-400">Refer to lab ranges (FBS/OGTT) from study tables.</p>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex justify-between">
+                              <label htmlFor="patient-hba1c" className="text-white text-sm font-bold ml-1">HbA1c (%)</label>
+                              <span className="text-slate-400 text-xs">Normal: &lt;5.7%</span>
+                            </div>
+                            <input
+                              id="patient-hba1c"
+                              name="hba1c"
+                              type="number"
+                              step="0.1"
+                              className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
+                              placeholder="%"
+                              value={formData.hba1c}
+                              onChange={(e) => setFormData({ ...formData, hba1c: e.target.value })}
+                            />
+                            <p className="text-[11px] text-slate-400">Use recent lab value; long-term control indicator.</p>
+                          </div>
+                        </div>
+                        <div className="bg-slate-700/30 p-6 rounded-2xl border border-slate-600/30">
+                          <h4 className="text-[#707EAE] font-bold text-sm uppercase mb-4">Lipid Profile</h4>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {[
+                              { key: 'cholesterol', label: 'Total Cholesterol' },
+                              { key: 'triglycerides', label: 'Triglycerides' },
+                              { key: 'ldl', label: 'LDL-C' },
+                              { key: 'hdl', label: 'HDL-C' },
+                            ].map((field) => (
+                              <div className="space-y-2" key={field.key}>
+                                <label htmlFor={`patient-lipid-${field.key}`} className="text-white text-xs font-bold ml-1">{field.label}</label>
+                                <input
+                                  id={`patient-lipid-${field.key}`}
+                                  name={field.key}
+                                  type="number"
+                                  className="w-full glass-card border border-transparent p-3 rounded-lg text-white focus:border-teal-500 outline-none transition-all shadow-sm"
+                                  placeholder="mg/dL"
+                                  value={formData[field.key]}
+                                  onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 3: Medical History */}
+                  {currentStep === 3 && (
+                    <div className="animate-fade-in">
+                      <h3 className="text-white text-lg font-bold mb-6 flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
+                          <Clipboard size={18} />
+                        </div>
+                        Medical History &amp; Lifestyle
                       </h3>
                       <div className="grid grid-cols-2 gap-6 mb-6">
                         <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <label className="text-white text-sm font-bold ml-1">Fasting Blood Sugar</label>
-                            <span className="text-slate-400 text-xs">Normal: &lt;100</span>
-                          </div>
+                          <label htmlFor="patient-systolic" className="text-white text-sm font-bold ml-1">Systolic BP</label>
                           <input
+                            id="patient-systolic"
+                            name="systolic"
                             type="number"
-                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
-                            placeholder="mg/dL"
-                            onChange={(e) => setFormData({ ...formData, fbs: e.target.value })}
+                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 outline-none transition-all"
+                            placeholder="mmHg"
+                            value={formData.systolic}
+                            onChange={(e) => setFormData({ ...formData, systolic: e.target.value })}
                           />
-                          <p className="text-[11px] text-slate-400">Refer to lab ranges (FBS/OGTT) from study tables.</p>
                         </div>
                         <div className="space-y-2">
-                          <div className="flex justify-between">
-                            <label className="text-white text-sm font-bold ml-1">HbA1c (%)</label>
-                            <span className="text-slate-400 text-xs">Normal: &lt;5.7%</span>
-                          </div>
+                          <label htmlFor="patient-diastolic" className="text-white text-sm font-bold ml-1">Diastolic BP</label>
                           <input
+                            id="patient-diastolic"
+                            name="diastolic"
                             type="number"
-                            step="0.1"
-                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 outline-none transition-all"
-                            placeholder="%"
-                            onChange={(e) => setFormData({ ...formData, hba1c: e.target.value })}
+                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 outline-none transition-all"
+                            placeholder="mmHg"
+                            value={formData.diastolic}
+                            onChange={(e) => setFormData({ ...formData, diastolic: e.target.value })}
                           />
-                          <p className="text-[11px] text-slate-400">Use recent lab value; long-term control indicator.</p>
                         </div>
-                      </div>
-                      <div className="bg-slate-700/30 p-6 rounded-2xl border border-slate-600/30">
-                        <h4 className="text-[#707EAE] font-bold text-sm uppercase mb-4">Lipid Profile</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          {[
-                            { key: 'cholesterol', label: 'Total Cholesterol' },
-                            { key: 'triglycerides', label: 'Triglycerides' },
-                            { key: 'ldl', label: 'LDL-C' },
-                            { key: 'hdl', label: 'HDL-C' },
-                          ].map((field) => (
-                            <div className="space-y-2" key={field.key}>
-                              <label className="text-white text-xs font-bold ml-1">{field.label}</label>
-                              <input
-                                type="number"
-                                className="w-full glass-card border border-transparent p-3 rounded-lg text-white focus:border-teal-500 outline-none transition-all shadow-sm"
-                                placeholder="mg/dL"
-                                onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Step 3: Medical History */}
-                {currentStep === 3 && (
-                  <div className="animate-fade-in">
-                    <h3 className="text-white text-lg font-bold mb-6 flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center">
-                        <Clipboard size={18} />
-                      </div>
-                      Medical History &amp; Lifestyle
-                    </h3>
-                    <div className="grid grid-cols-2 gap-6 mb-6">
-                      <div className="space-y-2">
-                        <label className="text-white text-sm font-bold ml-1">Systolic BP</label>
-                        <input
-                          type="number"
-                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 outline-none transition-all"
-                          placeholder="mmHg"
-                          onChange={(e) => setFormData({ ...formData, systolic: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-white text-sm font-bold ml-1">Diastolic BP</label>
-                        <input
-                          type="number"
-                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 outline-none transition-all"
-                          placeholder="mmHg"
-                          onChange={(e) => setFormData({ ...formData, diastolic: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <label className="text-white text-sm font-bold ml-1">Physical Activity (Yes/No)</label>
-                        <select
-                          className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 outline-none transition-all appearance-none"
-                          value={formData.physActivity ? 'Yes' : 'No'}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              physActivity: e.target.value === 'Yes',
-                              activity: e.target.value,
-                            })
-                          }
-                        >
-                          <option value="No">No</option>
-                          <option value="Yes">Yes</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {[
-                        { key: 'familyHistory', label: 'Family History of Diabetes' },
-                        { key: 'smoking', label: 'Smoking History', checkboxVal: 'Yes', fallback: 'No' },
-                        { key: 'hypertension', label: 'History of Hypertension', checkboxVal: 'Yes', fallback: 'No' },
-                        { key: 'heartDisease', label: 'History of Heart Disease', checkboxVal: 'Yes', fallback: 'No' },
-                      ].map((item) => (
-                        <label
-                          key={item.key}
-                          className="flex items-center gap-3 p-4 rounded-xl border border-slate-600/30 cursor-pointer hover:bg-slate-700/30 transition-colors"
-                        >
-                          <input
-                            type="checkbox"
-                            className="w-5 h-5 rounded text-teal-400 focus:ring-teal-500"
+                        <div className="space-y-2 col-span-2">
+                          <label htmlFor="patient-phys-activity" className="text-white text-sm font-bold ml-1">Physical Activity (Yes/No)</label>
+                          <select
+                            id="patient-phys-activity"
+                            name="physActivity"
+                            className="w-full bg-slate-700/30 border border-transparent p-4 rounded-xl text-white focus:glass-card focus:border-teal-500 outline-none transition-all appearance-none"
+                            value={formData.physActivity ? 'Yes' : 'No'}
                             onChange={(e) =>
                               setFormData({
                                 ...formData,
-                                [item.key]: item.checkboxVal ? (e.target.checked ? item.checkboxVal : item.fallback || 'No') : e.target.checked,
+                                physActivity: e.target.value === 'Yes',
+                                activity: e.target.value,
                               })
                             }
-                          />
-                          <span className="text-white font-medium">{item.label}</span>
-                        </label>
-                      ))}
+                          >
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {[
+                          { key: 'familyHistory', label: 'Family History of Diabetes' },
+                          { key: 'smoking', label: 'Smoking History', checkboxVal: 'Yes', fallback: 'No' },
+                          { key: 'hypertension', label: 'History of Hypertension', checkboxVal: 'Yes', fallback: 'No' },
+                          { key: 'heartDisease', label: 'History of Heart Disease', checkboxVal: 'Yes', fallback: 'No' },
+                        ].map((item) => (
+                          <label
+                            key={item.key}
+                            htmlFor={`patient-${item.key}`}
+                            className="flex items-center gap-3 p-4 rounded-xl border border-slate-600/30 cursor-pointer hover:bg-slate-700/30 transition-colors"
+                          >
+                            <input
+                              id={`patient-${item.key}`}
+                              name={item.key}
+                              type="checkbox"
+                              className="w-5 h-5 rounded text-teal-400 focus:ring-teal-500"
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  [item.key]: item.checkboxVal ? (e.target.checked ? item.checkboxVal : item.fallback || 'No') : e.target.checked,
+                                })
+                              }
+                            />
+                            <span className="text-white font-medium">{item.label}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Step Navigation */}
-                <div className="flex justify-between items-center mt-8 pt-6 border-t border-slate-600/30">
-                  {currentStep > 1 && currentStep < 4 ? (
-                    <Button variant="ghost" onClick={prevStep}>
-                      ← Back
-                    </Button>
-                  ) : (
-                    <div />
                   )}
-                  {currentStep < 4 ? (
-                    <Button onClick={nextStep} disabled={isComputing}>
-                      {currentStep === 3 ? (isComputing ? 'Analyzing...' : 'Submit & Analyze →') : 'Continue →'}
-                    </Button>
-                  ) : null}
+
+                  {/* Step Navigation */}
+                  <div className="flex justify-between items-center mt-8 pt-6 border-t border-slate-600/30">
+                    {currentStep > 1 && currentStep < 4 ? (
+                      <Button variant="ghost" onClick={prevStep}>
+                        ← Back
+                      </Button>
+                    ) : (
+                      <div />
+                    )}
+                    {currentStep < 4 ? (
+                      <Button onClick={nextStep} disabled={isComputing}>
+                        {currentStep === 3 ? (isComputing ? 'Analyzing...' : 'Submit & Analyze →') : 'Continue →'}
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Step 3 Live Analysis Sidebar */}
             {currentStep === 3 && (
@@ -993,13 +1153,15 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                     }}
                   >
                     <div className="relative z-10">
-                      <p className="text-white/70 text-sm mb-2">Identified Cluster</p>
-                      <h2 className="text-5xl font-bold mb-2">{cluster}</h2>
-                      <p className="text-white/90 text-lg">{clusterEducation[cluster?.toUpperCase()]?.name || 'Diabetes Subtype'}</p>
+                      <p className="text-white/70 text-sm mb-1">Identified Cluster</p>
+                      <h2 className="text-4xl font-bold mb-1">{clusterEducation[cluster?.toUpperCase()]?.name || cluster}</h2>
+                      {clusterEducation[cluster?.toUpperCase()] && (
+                        <p className="text-white/90 text-lg font-medium opacity-80 italic">{cluster}</p>
+                      )}
                       <div className="mt-6 pt-6 border-t border-white/20 flex items-center gap-8">
                         <div>
                           <p className="text-white/70 text-sm mb-1">Risk Probability</p>
-                          <span className="text-4xl font-bold">{prediction}%</span>
+                          <span className="text-4xl font-bold">{prediction ?? '--'}%</span>
                         </div>
                         <div>
                           <p className="text-white/70 text-sm mb-1">Risk Level</p>
@@ -1059,8 +1221,8 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                     <div className="flex items-start gap-3">
                       <AlertTriangle size={24} className="text-[#FFB547] flex-shrink-0 mt-1" />
                       <div>
-                        <h4 className="font-bold text-white mb-2">Important Notice</h4>
-                        <p className="text-sm text-white leading-relaxed">
+                        <h4 className="font-bold text-amber-900 mb-1">Important Notice</h4>
+                        <p className="text-sm text-amber-800 leading-relaxed">
                           This assessment is for informational purposes. Please discuss these results with your healthcare provider
                           for proper diagnosis and personalized treatment recommendations.
                         </p>
@@ -1079,7 +1241,7 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                     </Button>
                     <Button
                       fullWidth
-                      onClick={() => { resetForm(); setViewState('list'); }}
+                      onClick={() => { resetForm(); setViewState('list'); if (onRefreshPatients) onRefreshPatients(); }}
                     >
                       Back to Patients
                     </Button>
@@ -1108,8 +1270,10 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             <h2 className="text-2xl font-bold text-white mb-6">Edit Patient</h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">Name</label>
+                <label htmlFor="edit-patient-name" className="block text-sm font-medium text-white mb-2">Name</label>
                 <input
+                  id="edit-patient-name"
+                  name="name"
                   type="text"
                   value={editingPatient.name || ''}
                   onChange={(e) => setEditingPatient({ ...editingPatient, name: e.target.value })}
@@ -1118,8 +1282,10 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-white mb-2">Age</label>
+                  <label htmlFor="edit-patient-age" className="block text-sm font-medium text-white mb-2">Age</label>
                   <input
+                    id="edit-patient-age"
+                    name="age"
                     type="number"
                     value={editingPatient.age || ''}
                     onChange={(e) => setEditingPatient({ ...editingPatient, age: e.target.value })}
@@ -1155,8 +1321,10 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
             <h2 className="text-2xl font-bold text-white mb-6">Edit Assessment</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-white mb-2">FBS (mg/dL)</label>
+                <label htmlFor="edit-assessment-fbs" className="block text-sm font-medium text-white mb-2">FBS (mg/dL)</label>
                 <input
+                  id="edit-assessment-fbs"
+                  name="fbs"
                   type="number"
                   step="0.01"
                   value={editingAssessment.fbs || ''}
@@ -1165,8 +1333,10 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white mb-2">HbA1c (%)</label>
+                <label htmlFor="edit-assessment-hba1c" className="block text-sm font-medium text-white mb-2">HbA1c (%)</label>
                 <input
+                  id="edit-assessment-hba1c"
+                  name="hba1c"
                   type="number"
                   step="0.01"
                   value={editingAssessment.hba1c || ''}
@@ -1175,8 +1345,10 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white mb-2">Cholesterol</label>
+                <label htmlFor="edit-assessment-cholesterol" className="block text-sm font-medium text-white mb-2">Cholesterol</label>
                 <input
+                  id="edit-assessment-cholesterol"
+                  name="cholesterol"
                   type="number"
                   value={editingAssessment.cholesterol || ''}
                   onChange={(e) => setEditingAssessment({ ...editingAssessment, cholesterol: e.target.value })}
@@ -1184,8 +1356,10 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white mb-2">LDL</label>
+                <label htmlFor="edit-assessment-ldl" className="block text-sm font-medium text-white mb-2">LDL</label>
                 <input
+                  id="edit-assessment-ldl"
+                  name="ldl"
                   type="number"
                   value={editingAssessment.ldl || ''}
                   onChange={(e) => setEditingAssessment({ ...editingAssessment, ldl: e.target.value })}
@@ -1193,8 +1367,10 @@ const PatientHistory = ({ viewState, setViewState, patients = [], loadAssessment
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-white mb-2">HDL</label>
+                <label htmlFor="edit-assessment-hdl" className="block text-sm font-medium text-white mb-2">HDL</label>
                 <input
+                  id="edit-assessment-hdl"
+                  name="hdl"
                   type="number"
                   value={editingAssessment.hdl || ''}
                   onChange={(e) => setEditingAssessment({ ...editingAssessment, hdl: e.target.value })}

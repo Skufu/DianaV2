@@ -192,6 +192,10 @@ func (f *fakePatientRepo) ListWithLatestAssessment(ctx context.Context, userID i
 	return nil, nil
 }
 
+func (f *fakePatientRepo) ListWithLatestAssessmentPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.PatientSummary, int, error) {
+	return nil, 0, nil
+}
+
 func (f *fakePatientRepo) ListPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.Patient, int, error) {
 	return nil, 0, nil
 }
@@ -222,7 +226,7 @@ func (f *fakeAssessmentRepo) Delete(ctx context.Context, id int32) error {
 	return nil
 }
 
-func (f *fakeAssessmentRepo) ClusterCounts(ctx context.Context) ([]models.ClusterAnalytics, error) {
+func (f *fakeAssessmentRepo) ClusterCounts(ctx context.Context) ([]models.ClusterInsights, error) {
 	return nil, nil
 }
 
@@ -242,7 +246,7 @@ func (f *fakeAssessmentRepo) ListAllLimitedByUser(ctx context.Context, userID in
 	return nil, nil
 }
 
-func (f *fakeAssessmentRepo) ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterAnalytics, error) {
+func (f *fakeAssessmentRepo) ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterInsights, error) {
 	return nil, nil
 }
 

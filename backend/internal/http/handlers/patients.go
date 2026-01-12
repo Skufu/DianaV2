@@ -34,7 +34,7 @@ func (h *PatientsHandler) list(c *gin.Context) {
 	}
 
 	pagination := ParsePagination(c)
-	patients, total, err := h.store.Patients().ListPaginated(c.Request.Context(), userID, pagination.PageSize, pagination.Offset)
+	patients, total, err := h.store.Patients().ListWithLatestAssessmentPaginated(c.Request.Context(), userID, pagination.PageSize, pagination.Offset)
 	if err != nil {
 		ErrInternal(c, "failed to list patients")
 		return

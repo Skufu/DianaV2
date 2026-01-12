@@ -74,15 +74,15 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 	assessmentHandler := handlers.NewAssessmentsHandler(st, predictor, cfg.ModelVersion, cfg.DatasetHash)
 	assessmentHandler.Register(protected.Group("/patients"))
 
-	analyticsHandler := handlers.NewAnalyticsHandler(st)
-	analyticsHandler.Register(protected.Group("/analytics"))
+	insightsHandler := handlers.NewInsightsHandler(st)
+	insightsHandler.Register(protected.Group("/insights"))
 
 	exportHandler := handlers.NewExportHandler(st, cfg.ExportMaxRows)
 	exportHandler.Register(protected.Group("/export"))
 
-	// Cohort analysis handler (extends analytics group)
+	// Cohort analysis handler (extends insights group)
 	cohortHandler := handlers.NewCohortHandler(st)
-	cohortHandler.Register(protected.Group("/analytics"))
+	cohortHandler.Register(protected.Group("/insights"))
 
 	// Clinic dashboard handler
 	clinicHandler := handlers.NewClinicDashboardHandler(st)

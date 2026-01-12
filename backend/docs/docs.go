@@ -272,13 +272,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/analytics/clusters": {
+        "/insights/clusters": {
             "get": {
                 "security": [{"BearerAuth": []}],
-                "description": "Get cluster distribution analytics",
+                "description": "Get cluster distribution insights",
                 "produces": ["application/json"],
-                "tags": ["Analytics"],
-                "summary": "Get cluster analytics",
+                "tags": ["Insights"],
+                "summary": "Get cluster insights",
                 "responses": {
                     "200": {
                         "description": "Cluster distribution data"
@@ -286,13 +286,13 @@ const docTemplate = `{
                 }
             }
         },
-        "/analytics/trends": {
+        "/insights/trends": {
             "get": {
                 "security": [{"BearerAuth": []}],
                 "description": "Get trend averages over time",
                 "produces": ["application/json"],
-                "tags": ["Analytics"],
-                "summary": "Get trend analytics",
+                "tags": ["Insights"],
+                "summary": "Get trend insights",
                 "responses": {
                     "200": {
                         "description": "Trend data"

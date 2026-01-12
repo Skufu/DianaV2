@@ -22,6 +22,17 @@ func (q *Queries) CountPatientsByUser(ctx context.Context, userID int32) (int64,
 	return count, err
 }
 
+const countPatientsWithLatestAssessment = `-- name: CountPatientsWithLatestAssessment :one
+SELECT COUNT(*) FROM patients WHERE user_id = $1
+`
+
+func (q *Queries) CountPatientsWithLatestAssessment(ctx context.Context, userID int32) (int64, error) {
+	row := q.db.QueryRow(ctx, countPatientsWithLatestAssessment, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createPatient = `-- name: CreatePatient :one
 INSERT INTO patients (
   user_id, name, age, menopause_status, years_menopause, bmi, bp_systolic, bp_diastolic,
@@ -510,6 +521,112 @@ func (q *Queries) ListPatientsWithLatestAssessment(ctx context.Context, userID i
 	var items []ListPatientsWithLatestAssessmentRow
 	for rows.Next() {
 		var i ListPatientsWithLatestAssessmentRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Age,
+			&i.MenopauseStatus,
+			&i.YearsMenopause,
+			&i.Bmi,
+			&i.BpSystolic,
+			&i.BpDiastolic,
+			&i.Activity,
+			&i.PhysActivity,
+			&i.Smoking,
+			&i.Hypertension,
+			&i.HeartDisease,
+			&i.FamilyHistory,
+			&i.Chol,
+			&i.Ldl,
+			&i.Hdl,
+			&i.Triglycerides,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.LatestCluster,
+			&i.LatestRiskScore,
+			&i.LatestFbs,
+			&i.LatestHba1c,
+			&i.LatestAssessmentAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPatientsWithLatestAssessmentPaginated = `-- name: ListPatientsWithLatestAssessmentPaginated :many
+SELECT 
+    p.id, p.user_id, p.name, p.age, p.menopause_status, p.years_menopause, 
+    p.bmi, p.bp_systolic, p.bp_diastolic, p.activity, p.phys_activity, 
+    p.smoking, p.hypertension, p.heart_disease, p.family_history, 
+    p.chol, p.ldl, p.hdl, p.triglycerides, p.created_at, p.updated_at,
+    COALESCE(la.cluster, '') AS latest_cluster,
+    COALESCE(la.risk_score, 0) AS latest_risk_score,
+    COALESCE(la.fbs, 0) AS latest_fbs,
+    COALESCE(la.hba1c, 0) AS latest_hba1c,
+    la.created_at AS latest_assessment_at
+FROM patients p
+LEFT JOIN LATERAL (
+    SELECT a.cluster, a.risk_score, a.fbs, a.hba1c, a.created_at
+    FROM assessments a
+    WHERE a.patient_id = p.id
+    ORDER BY a.created_at DESC
+    LIMIT 1
+) la ON true
+WHERE p.user_id = $1
+ORDER BY p.id DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListPatientsWithLatestAssessmentPaginatedParams struct {
+	UserID int32 `json:"user_id"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type ListPatientsWithLatestAssessmentPaginatedRow struct {
+	ID                 int32              `json:"id"`
+	UserID             int32              `json:"user_id"`
+	Name               string             `json:"name"`
+	Age                pgtype.Int4        `json:"age"`
+	MenopauseStatus    pgtype.Text        `json:"menopause_status"`
+	YearsMenopause     pgtype.Int4        `json:"years_menopause"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	BpSystolic         pgtype.Int4        `json:"bp_systolic"`
+	BpDiastolic        pgtype.Int4        `json:"bp_diastolic"`
+	Activity           pgtype.Text        `json:"activity"`
+	PhysActivity       pgtype.Bool        `json:"phys_activity"`
+	Smoking            pgtype.Text        `json:"smoking"`
+	Hypertension       pgtype.Text        `json:"hypertension"`
+	HeartDisease       pgtype.Text        `json:"heart_disease"`
+	FamilyHistory      pgtype.Bool        `json:"family_history"`
+	Chol               pgtype.Int4        `json:"chol"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	LatestCluster      string             `json:"latest_cluster"`
+	LatestRiskScore    int32              `json:"latest_risk_score"`
+	LatestFbs          pgtype.Numeric     `json:"latest_fbs"`
+	LatestHba1c        pgtype.Numeric     `json:"latest_hba1c"`
+	LatestAssessmentAt pgtype.Timestamptz `json:"latest_assessment_at"`
+}
+
+func (q *Queries) ListPatientsWithLatestAssessmentPaginated(ctx context.Context, arg ListPatientsWithLatestAssessmentPaginatedParams) ([]ListPatientsWithLatestAssessmentPaginatedRow, error) {
+	rows, err := q.db.Query(ctx, listPatientsWithLatestAssessmentPaginated, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPatientsWithLatestAssessmentPaginatedRow
+	for rows.Next() {
+		var i ListPatientsWithLatestAssessmentPaginatedRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,

@@ -103,7 +103,7 @@ func (q *Queries) GetUserClinicRole(ctx context.Context, arg GetUserClinicRolePa
 const isClinicAdmin = `-- name: IsClinicAdmin :one
 SELECT EXISTS(
     SELECT 1 FROM user_clinics
-    WHERE user_id = $1 AND clinic_id = $2 AND role = 'clinic_admin'
+    WHERE user_id = $1 AND clinic_id = $2 AND role = 'admin'
 ) AS is_admin
 `
 

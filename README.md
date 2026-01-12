@@ -102,7 +102,7 @@ make run-dev
 ### Access Points
 | Service | URL |
 |---------|-----|
-| Frontend | http://localhost:5173 |
+| Frontend | http://localhost:4000 |
 | Backend | http://localhost:8080/api/v1/healthz |
 | ML Server | http://localhost:5000/health |
 
@@ -141,7 +141,7 @@ make run-dev
 |--------|------|-------------|
 | GET | `/health` | ML health check |
 | POST | `/predict` | Single prediction |
-| GET | `/analytics/metrics` | Model performance |
+| GET | `/insights/metrics` | Model performance |
 
 ---
 
@@ -176,7 +176,7 @@ PORT=8080
 ENV=dev
 DB_DSN=postgres://user:pass@localhost:5432/diana?sslmode=disable
 JWT_SECRET=your-secure-secret-min-32-chars
-CORS_ORIGINS=http://localhost:5173
+CORS_ORIGINS=http://localhost:4000
 MODEL_URL=http://localhost:5000
 ```
 

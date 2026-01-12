@@ -35,6 +35,7 @@ type PatientRepository interface {
 	List(ctx context.Context, userID int32) ([]models.Patient, error)
 	ListPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.Patient, int, error)
 	ListWithLatestAssessment(ctx context.Context, userID int32) ([]models.PatientSummary, error)
+	ListWithLatestAssessmentPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.PatientSummary, int, error)
 	Get(ctx context.Context, id int32, userID int32) (*models.Patient, error)
 	Create(ctx context.Context, p models.Patient) (*models.Patient, error)
 	Update(ctx context.Context, p models.Patient) (*models.Patient, error)
@@ -49,8 +50,8 @@ type AssessmentRepository interface {
 	Create(ctx context.Context, a models.Assessment) (*models.Assessment, error)
 	Update(ctx context.Context, a models.Assessment) (*models.Assessment, error)
 	Delete(ctx context.Context, id int32) error
-	ClusterCounts(ctx context.Context) ([]models.ClusterAnalytics, error)
-	ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterAnalytics, error)
+	ClusterCounts(ctx context.Context) ([]models.ClusterInsights, error)
+	ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterInsights, error)
 	TrendAverages(ctx context.Context) ([]models.TrendPoint, error)
 	TrendAveragesByUser(ctx context.Context, userID int32) ([]models.TrendPoint, error)
 	ListAllLimited(ctx context.Context, limit int) ([]models.Assessment, error)

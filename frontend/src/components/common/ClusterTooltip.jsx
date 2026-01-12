@@ -110,8 +110,19 @@ const ClusterTooltip = ({
                             >
                                 <X size={14} />
                             </button>
-                            <div className="text-2xl font-bold mb-1">{cluster}</div>
-                            <div className="text-sm opacity-90">{clusterData.name}</div>
+                            <div className="flex items-center gap-3">
+                                {clusterData.logo && (
+                                    <img
+                                        src={clusterData.logo}
+                                        alt={`${cluster} logo`}
+                                        className="w-10 h-10 rounded-xl object-cover"
+                                    />
+                                )}
+                                <div>
+                                    <div className="text-2xl font-bold">{cluster}</div>
+                                    <div className="text-sm opacity-90">{clusterData.name}</div>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Body */}
