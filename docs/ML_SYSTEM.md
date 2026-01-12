@@ -103,9 +103,9 @@ class ClinicalPredictor:
 ```
 
 ### `server.py`
-
+ 
 Flask API with these endpoints:
-
+ 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/health` | GET | Health check |
@@ -113,10 +113,10 @@ Flask API with these endpoints:
 | `/predict/batch` | POST | Multiple predictions |
 | `/predict/explain` | POST | Prediction with SHAP explanation |
 | `/analytics/metrics` | GET | Model metrics (both ADA and clinical) |
-| `/analytics/metrics/clinical` | GET | Clinical model metrics only |
-| `/analytics/clusters` | GET | Cluster analysis |
-| `/analytics/information-gain` | GET | Feature importance |
-| `/analytics/visualizations/<name>` | GET | PNG images |
+| `/insights/metrics/clinical` | GET | Clinical model metrics only |
+| `/insights/clusters` | GET | Cluster analysis |
+| `/insights/information-gain` | GET | Feature importance |
+| `/insights/visualizations/<name>` | GET | PNG images |
 | `/ab-tests` | GET/POST | A/B testing management |
 | `/ab-tests/<id>/results` | GET | A/B test comparison |
 | `/monitoring/drift` | GET | Drift monitoring status |
@@ -124,6 +124,39 @@ Flask API with these endpoints:
 | `/monitoring/alerts` | GET | Drift alerts |
 | `/models` | GET | List model versions (MLflow) |
 | `/models/<name>/<version>/promote` | POST | Promote model to production |
+
+---
+
+## Dual-Output Architecture
+
+The system provides **two complementary outputs** that serve different clinical purposes:
+
+### Output 1: Diabetes Probability (Continuous Risk Quantification)
+- **Source**: XGBoost Binary Classifier
+- **Output**: 0-100% probability representing likelihood patient currently has T2DM or prediabetes
+- **Clinical Meaning**: Based on HbA1c and FBS (diagnostic biomarkers)
+- **Example**: 96% probability for a patient with HbA1c=9.5% → High diabetes likelihood
+
+### Output 2: Metabolic Subtype (Qualitative Phenotype Classification)
+- **Source**: K-Means Clustering (K=4, per Ahlqvist et al. 2018)
+- **Output**: SIRD, SIDD, MOD, or MARD cluster assignment
+- **Clinical Meaning**: Based on full biomarker profile (metabolic phenotype pattern)
+- **Literature Backing**: Ahlqvist et al. identified 4 T2DM subtypes in Swedish cohort
+
+### Why Both Outputs Are Complementary
+
+| Aspect | Classifier | Clustering |
+|--------|-----------|------------|
+| **Primary Goal** | Predict current diabetes status | Identify metabolic phenotype |
+| **Strength** | High accuracy when HbA1c/FBS included | Reveals subtype patterns |
+| **Limitation** | Circular (HbA1c defines diagnosis) | No probability output |
+| **Key Finding** | SIRD patients (high BMI, normal HbA1c) receive **low** classifier probability but are classified as **HIGH risk** by clustering |
+| **Clinical Value** | Detects metabolic risk patterns classifier would miss | Enables phenotype-specific treatment |
+
+This dual-output architecture enables clinicians to understand:
+1. **What is the diabetes likelihood?** (from classifier)
+2. **What metabolic subtype pattern does this represent?** (from clustering)
+3. **What treatment implications?** (subtype-specific per Ahlqvist framework)
 
 ---
 
