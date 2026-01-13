@@ -34,7 +34,7 @@ const LoadingSkeleton = () => (
     <div className="h-8 w-48 bg-slate-700/50 rounded" />
     <div className="h-4 w-full max-w-md bg-slate-700/30 rounded" />
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-      {[1, 2, 3].map((i) => (
+      {[1, 2, 3].map(i => (
         <div key={i} className="h-40 bg-slate-700/20 rounded-2xl" />
       ))}
     </div>
@@ -144,10 +144,10 @@ const App = () => {
     load();
   }, [token]);
 
-  const loadAssessments = async (patientId) => {
+  const loadAssessments = async patientId => {
     if (assessmentsCache[patientId]) return assessmentsCache[patientId];
     const data = await fetchAssessmentsApi(token, patientId);
-    setAssessmentsCache((prev) => ({ ...prev, [patientId]: data || [] }));
+    setAssessmentsCache(prev => ({ ...prev, [patientId]: data || [] }));
     return data || [];
   };
 
@@ -189,15 +189,29 @@ const App = () => {
     };
     const patient = await createPatientApi(token, patientPayload);
     // Transform form values to backend-expected enum format
-    const mapActivity = (val) => {
-      const map = { 'No': '', 'Yes': 'active', 'sedentary': 'sedentary', 'light': 'light', 'moderate': 'moderate', 'active': 'active', 'very_active': 'very_active' };
+    const mapActivity = val => {
+      const map = {
+        No: '',
+        Yes: 'active',
+        sedentary: 'sedentary',
+        light: 'light',
+        moderate: 'moderate',
+        active: 'active',
+        very_active: 'very_active',
+      };
       return map[val] || '';
     };
-    const mapSmoking = (val) => {
-      const map = { 'No': 'never', 'Yes': 'current', 'never': 'never', 'former': 'former', 'current': 'current' };
+    const mapSmoking = val => {
+      const map = {
+        No: 'never',
+        Yes: 'current',
+        never: 'never',
+        former: 'former',
+        current: 'current',
+      };
       return map[val] || '';
     };
-    const mapYesNo = (val) => {
+    const mapYesNo = val => {
       if (val === 'Yes' || val === 'yes' || val === true) return 'yes';
       if (val === 'No' || val === 'no' || val === false) return 'no';
       return '';
@@ -243,7 +257,11 @@ const App = () => {
       case 'patients':
         return (
           <>
-            {patientsError && <div className="text-rose-400 text-sm mb-2 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">{patientsError}</div>}
+            {patientsError && (
+              <div className="text-rose-400 text-sm mb-2 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+                {patientsError}
+              </div>
+            )}
             <PatientHistory
               viewState={patientViewState}
               setViewState={setPatientViewState}
@@ -298,24 +316,34 @@ const App = () => {
         >
           {/* Animated Background - disabled on low-end devices */}
           {animationNodeCount > 0 && (
-            <BiologicalNetwork nodeCount={animationNodeCount} connectionDistance={200} speed={0.15} />
+            <BiologicalNetwork
+              nodeCount={animationNodeCount}
+              connectionDistance={200}
+              speed={0.15}
+            />
           )}
 
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5 pointer-events-none" />
 
           {!isAssessmentOpen && (
-            <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onStartAssessment={handleStartAssessment} onLogout={handleLogout} userRole={userRole} />
+            <Sidebar
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              onStartAssessment={handleStartAssessment}
+              onLogout={handleLogout}
+              userRole={userRole}
+            />
           )}
 
-          <main className={`relative z-10 flex-1 ${isAssessmentOpen ? '' : 'ml-20 lg:ml-72'} p-6 lg:p-8`}>
+          <main
+            className={`relative z-10 flex-1 ${isAssessmentOpen ? '' : 'ml-20 lg:ml-72'} p-6 lg:p-8`}
+          >
             {loadingPatients ? (
               <LoadingSkeleton />
             ) : (
               <ErrorBoundary section={activeTab}>
-                <Suspense fallback={<LoadingSkeleton />}>
-                  {renderContent()}
-                </Suspense>
+                <Suspense fallback={<LoadingSkeleton />}>{renderContent()}</Suspense>
               </ErrorBoundary>
             )}
           </main>
