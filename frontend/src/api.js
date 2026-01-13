@@ -15,7 +15,7 @@ const DEFAULT_CACHE_TTL = 30000; // 30 seconds default TTL
  * @param {string} key - Cache key (usually the URL path)
  * @returns {object|null} - Cached data or null if expired/missing
  */
-const getCached = (key) => {
+const getCached = key => {
   const cached = apiCache.get(key);
   if (!cached) return null;
   if (Date.now() > cached.expiry) {
@@ -44,7 +44,7 @@ const setCache = (key, data, ttl = DEFAULT_CACHE_TTL) => {
  * Used after mutations to ensure fresh data
  * @param {string} prefix - URL prefix to match (e.g., '/api/v1/patients')
  */
-export const invalidateCache = (prefix) => {
+export const invalidateCache = prefix => {
   for (const key of apiCache.keys()) {
     if (key.startsWith(prefix)) {
       apiCache.delete(key);
@@ -154,7 +154,7 @@ export const loginApi = (email, password) =>
     body: JSON.stringify({ email, password }),
   });
 
-export const fetchPatientsApi = async (token) => {
+export const fetchPatientsApi = async token => {
   const cacheKey = '/api/v1/patients';
   const cached = getCached(cacheKey);
   if (cached) return cached;
@@ -180,7 +180,7 @@ export const fetchAssessmentsApi = async (token, patientId) => {
   return assessments;
 };
 
-export const fetchClusterDistributionApi = async (token) => {
+export const fetchClusterDistributionApi = async token => {
   const cacheKey = '/api/v1/insights/cluster-distribution';
   const cached = getCached(cacheKey);
   if (cached) return cached;
@@ -192,7 +192,7 @@ export const fetchClusterDistributionApi = async (token) => {
   return data;
 };
 
-export const fetchTrendInsightsApi = async (token) => {
+export const fetchTrendInsightsApi = async token => {
   const cacheKey = '/api/v1/insights/biomarker-trends';
   const cached = getCached(cacheKey);
   if (cached) return cached;
@@ -278,14 +278,14 @@ export const deleteAssessmentApi = (token, patientId, assessmentId) =>
   });
 
 // Auth operations
-export const refreshTokenApi = (refreshToken) =>
+export const refreshTokenApi = refreshToken =>
   apiFetch('/api/v1/auth/refresh', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
 
-export const logoutApi = (refreshToken) =>
+export const logoutApi = refreshToken =>
   apiFetch('/api/v1/auth/logout', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -295,9 +295,10 @@ export const logoutApi = (refreshToken) =>
 // ============================================================
 // ML Server API (default port 5001, configurable via VITE_ML_BASE or VITE_ML_PORT)
 // ============================================================
-const ML_BASE = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
+const ML_BASE =
+  import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
-const mlFetch = async (path) => {
+const mlFetch = async path => {
   const res = await fetch(`${ML_BASE}${path}`);
   if (!res.ok) throw new Error(`ML API error: ${res.status}`);
   const ct = res.headers.get('content-type') || '';
@@ -315,7 +316,7 @@ export const fetchMLInformationGainApi = () => mlFetch('/insights/information-ga
 
 export const fetchMLClustersApi = () => mlFetch('/insights/clusters');
 
-export const getMLVisualizationUrl = (name) => `${ML_BASE}/insights/visualizations/${name}`;
+export const getMLVisualizationUrl = name => `${ML_BASE}/insights/visualizations/${name}`;
 
 // ============================================================
 // Cohort Analysis API
@@ -335,7 +336,7 @@ export const fetchCohortAnalysisApi = async (token, groupBy = 'cluster') => {
 // ============================================================
 // Clinic Dashboard API
 // ============================================================
-export const fetchUserClinicsApi = async (token) => {
+export const fetchUserClinicsApi = async token => {
   const cacheKey = '/api/v1/clinics';
   const cached = getCached(cacheKey);
   if (cached) return cached;
@@ -362,7 +363,7 @@ export const fetchClinicDashboardApi = async (token, clinicId) => {
 // ============================================================
 // Admin Dashboard API
 // ============================================================
-export const fetchAdminDashboardApi = async (token) => {
+export const fetchAdminDashboardApi = async token => {
   const cacheKey = '/api/v1/admin/dashboard';
   const cached = getCached(cacheKey);
   if (cached) return cached;
@@ -374,7 +375,7 @@ export const fetchAdminDashboardApi = async (token) => {
   return data;
 };
 
-export const fetchAdminClinicsApi = async (token) => {
+export const fetchAdminClinicsApi = async token => {
   const cacheKey = '/api/v1/admin/clinics';
   const cached = getCached(cacheKey);
   if (cached) return cached;
@@ -386,7 +387,7 @@ export const fetchAdminClinicsApi = async (token) => {
   return data;
 };
 
-export const fetchClinicComparisonApi = async (token) => {
+export const fetchClinicComparisonApi = async token => {
   const cacheKey = '/api/v1/admin/clinic-comparison';
   const cached = getCached(cacheKey);
   if (cached) return cached;
@@ -467,9 +468,8 @@ export const fetchModelRunsApi = async (token, params = {}) => {
   });
 };
 
-export const fetchActiveModelApi = async (token) => {
+export const fetchActiveModelApi = async token => {
   return apiFetch('/api/v1/admin/models/active', {
     headers: { Authorization: `Bearer ${token}` },
   });
 };
-
