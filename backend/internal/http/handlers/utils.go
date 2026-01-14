@@ -122,12 +122,12 @@ func parseIDParam(c *gin.Context, name string) (int64, error) {
 	return strconv.ParseInt(raw, 10, 64)
 }
 
-func getUserID(c *gin.Context) (int32, error) {
+func getUserID(c *gin.Context) (int64, error) {
 	claims, err := getUserClaims(c)
 	if err != nil {
 		return 0, err
 	}
-	return int32(claims.UserID), nil
+	return int64(claims.UserID), nil
 }
 
 func getUserClaims(c *gin.Context) (middleware.UserClaims, error) {

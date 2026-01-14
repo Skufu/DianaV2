@@ -1,475 +1,245 @@
-export const API_BASE = import.meta.env.VITE_API_BASE || '';
+// DIANA V2 - User-Focused API Layer
+// Simplified version for menopausal user platform
 
-// Track if we're currently refreshing to prevent multiple refresh attempts
-let isRefreshing = false;
-let refreshPromise = null;
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api/v1';
+export { API_BASE };
+const ML_BASE = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
-// ============================================================
-// API Request Cache for GET requests
-// ============================================================
-const apiCache = new Map();
-const DEFAULT_CACHE_TTL = 30000; // 30 seconds default TTL
+// Simple fetch wrapper - no caching, no complex token refresh
+const apiFetch = async (endpoint, options = {}) => {
+  const token = localStorage.getItem('diana_token');
+  const headers = {
+    'Content-Type': 'application/json',
+  };
 
-/**
- * Get cached data if still valid
- * @param {string} key - Cache key (usually the URL path)
- * @returns {object|null} - Cached data or null if expired/missing
- */
-const getCached = key => {
-  const cached = apiCache.get(key);
-  if (!cached) return null;
-  if (Date.now() > cached.expiry) {
-    apiCache.delete(key);
-    return null;
-  }
-  return cached.data;
-};
-
-/**
- * Set cache data with TTL
- * @param {string} key - Cache key
- * @param {*} data - Data to cache
- * @param {number} ttl - Time to live in ms
- */
-const setCache = (key, data, ttl = DEFAULT_CACHE_TTL) => {
-  apiCache.set(key, {
-    data,
-    expiry: Date.now() + ttl,
-    timestamp: Date.now(),
-  });
-};
-
-/**
- * Invalidate cache entries matching a prefix
- * Used after mutations to ensure fresh data
- * @param {string} prefix - URL prefix to match (e.g., '/api/v1/patients')
- */
-export const invalidateCache = prefix => {
-  for (const key of apiCache.keys()) {
-    if (key.startsWith(prefix)) {
-      apiCache.delete(key);
-    }
-  }
-};
-
-/**
- * Clear entire cache (useful on logout)
- */
-export const clearCache = () => {
-  apiCache.clear();
-};
-
-const attemptTokenRefresh = async () => {
-  const refreshToken = localStorage.getItem('diana_refresh_token');
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshToken }),
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    method: options.method || 'GET',
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
-  if (!res.ok) {
-    // Refresh failed - clear tokens
-    localStorage.removeItem('diana_token');
-    localStorage.removeItem('diana_refresh_token');
-    throw new Error('Session expired. Please log in again.');
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Request failed');
   }
 
-  const data = await res.json();
-  localStorage.setItem('diana_token', data.access_token);
-  return data.access_token;
+  return response.json();
 };
-
-const apiFetch = async (path, options = {}, isRetry = false) => {
-  const res = await fetch(`${API_BASE}${path}`, options);
-
-  // Handle 401 - try to refresh token (but not for auth endpoints or retries)
-  if (res.status === 401 && !isRetry && !path.includes('/auth/')) {
-    // If already refreshing, wait for that to complete
-    if (isRefreshing) {
-      try {
-        await refreshPromise;
-        // Retry with new token
-        const newToken = localStorage.getItem('diana_token');
-        if (newToken && options.headers?.Authorization) {
-          options.headers.Authorization = `Bearer ${newToken}`;
-        }
-        return apiFetch(path, options, true);
-      } catch {
-        throw new Error('Session expired. Please log in again.');
-      }
-    }
-
-    // Start refresh
-    isRefreshing = true;
-    refreshPromise = attemptTokenRefresh();
-
-    try {
-      const newToken = await refreshPromise;
-      isRefreshing = false;
-
-      // Retry original request with new token
-      if (options.headers?.Authorization) {
-        options.headers.Authorization = `Bearer ${newToken}`;
-      }
-      return apiFetch(path, options, true);
-    } catch (err) {
-      isRefreshing = false;
-      throw err;
-    }
-  }
-
-  if (!res.ok) {
-    let msg = `Request failed ${res.status}`;
-    try {
-      const text = await res.text();
-      if (text && text.trim().toLowerCase().startsWith('<html')) {
-        msg = 'Backend responded with HTML. Verify API is running and VITE_API_BASE is set.';
-      } else if (text) {
-        msg = text;
-      }
-    } catch (_) {
-      /* ignore */
-    }
-    throw new Error(msg);
-  }
-  // Handle 204 No Content (DELETE responses) - no body to parse
-  if (res.status === 204) {
-    return null;
-  }
-  const ct = res.headers.get('content-type') || '';
-  if (ct.includes('application/json')) {
-    return res.json();
-  }
-  return res.text();
-};
-
-export const loginApi = (email, password) =>
-  apiFetch('/api/v1/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-
-export const fetchPatientsApi = async token => {
-  const cacheKey = '/api/v1/patients';
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const response = await apiFetch('/api/v1/patients', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const patients = response?.data || response || [];
-  setCache(cacheKey, patients);
-  return patients;
-};
-
-export const fetchAssessmentsApi = async (token, patientId) => {
-  const cacheKey = `/api/v1/patients/${patientId}/assessments`;
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const response = await apiFetch(cacheKey, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  const assessments = response?.data || response || [];
-  setCache(cacheKey, assessments);
-  return assessments;
-};
-
-export const fetchClusterDistributionApi = async token => {
-  const cacheKey = '/api/v1/insights/cluster-distribution';
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const data = await apiFetch(cacheKey, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  setCache(cacheKey, data, 60000); // 1 minute TTL for insights
-  return data;
-};
-
-export const fetchTrendInsightsApi = async token => {
-  const cacheKey = '/api/v1/insights/biomarker-trends';
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const data = await apiFetch(cacheKey, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  setCache(cacheKey, data, 60000); // 1 minute TTL for insights
-  return data;
-};
-
-export const createPatientApi = async (token, payload) => {
-  const result = await apiFetch('/api/v1/patients', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-  invalidateCache('/api/v1/patients');
-  invalidateCache('/api/v1/insights');
-  return result;
-};
-
-export const createAssessmentApi = async (token, patientId, payload) => {
-  const result = await apiFetch(`/api/v1/patients/${patientId}/assessments`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-  invalidateCache('/api/v1/patients');
-  invalidateCache('/api/v1/insights');
-  invalidateCache(`/api/v1/patients/${patientId}/assessments`);
-  return result;
-};
-
-// Patient individual operations
-export const getPatientApi = (token, patientId) =>
-  apiFetch(`/api/v1/patients/${patientId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-export const updatePatientApi = (token, patientId, payload) =>
-  apiFetch(`/api/v1/patients/${patientId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-export const deletePatientApi = (token, patientId) =>
-  apiFetch(`/api/v1/patients/${patientId}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-// Assessment individual operations
-export const getAssessmentApi = (token, patientId, assessmentId) =>
-  apiFetch(`/api/v1/patients/${patientId}/assessments/${assessmentId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-export const updateAssessmentApi = (token, patientId, assessmentId, payload) =>
-  apiFetch(`/api/v1/patients/${patientId}/assessments/${assessmentId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-export const deleteAssessmentApi = (token, patientId, assessmentId) =>
-  apiFetch(`/api/v1/patients/${patientId}/assessments/${assessmentId}`, {
-    method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-// Auth operations
-export const refreshTokenApi = refreshToken =>
-  apiFetch('/api/v1/auth/refresh', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
-
-export const logoutApi = refreshToken =>
-  apiFetch('/api/v1/auth/logout', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
-
-// ============================================================
-// ML Server API (default port 5001, configurable via VITE_ML_BASE or VITE_ML_PORT)
-// ============================================================
-const ML_BASE =
-  import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
 const mlFetch = async path => {
   const res = await fetch(`${ML_BASE}${path}`);
   if (!res.ok) throw new Error(`ML API error: ${res.status}`);
-  const ct = res.headers.get('content-type') || '';
-  if (ct.includes('application/json')) {
-    return res.json();
-  }
-  return res.blob();
+  return res.json();
 };
 
 export const fetchMLHealthApi = () => mlFetch('/health');
-
 export const fetchMLMetricsApi = () => mlFetch('/insights/metrics');
-
 export const fetchMLInformationGainApi = () => mlFetch('/insights/information-gain');
-
 export const fetchMLClustersApi = () => mlFetch('/insights/clusters');
-
 export const getMLVisualizationUrl = name => `${ML_BASE}/insights/visualizations/${name}`;
 
-// ============================================================
-// Cohort Analysis API
-// ============================================================
-export const fetchCohortAnalysisApi = async (token, groupBy = 'cluster') => {
-  const cacheKey = `/api/v1/insights/cohort?groupBy=${groupBy}`;
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
+// ============================================================================
+// USER PROFILE ENDPOINTS
+// ============================================================================
 
-  const data = await apiFetch(cacheKey, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  setCache(cacheKey, data, 60000);
-  return data;
+// Get current user's full profile
+export const getUserProfileApi = async () => {
+  return apiFetch('/users/me/profile');
 };
 
-// ============================================================
-// Clinic Dashboard API
-// ============================================================
-export const fetchUserClinicsApi = async token => {
-  const cacheKey = '/api/v1/clinics';
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const data = await apiFetch(cacheKey, {
-    headers: { Authorization: `Bearer ${token}` },
+// Update user's profile
+export const updateUserProfileApi = async (data) => {
+  return apiFetch('/users/me/profile', {
+    method: 'PUT',
+    body: JSON.stringify(data),
   });
-  setCache(cacheKey, data, 60000);
-  return data;
 };
 
-export const fetchClinicDashboardApi = async (token, clinicId) => {
-  const cacheKey = `/api/v1/clinics/${clinicId}/dashboard`;
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const data = await apiFetch(cacheKey, {
-    headers: { Authorization: `Bearer ${token}` },
+// Complete onboarding
+export const completeOnboardingApi = async (data) => {
+  return apiFetch('/users/me/onboarding', {
+    method: 'POST',
+    body: JSON.stringify(data),
   });
-  setCache(cacheKey, data, 60000);
-  return data;
 };
 
-// ============================================================
-// Admin Dashboard API
-// ============================================================
+// Get user's consent settings
+export const getConsentSettingsApi = async () => {
+  return apiFetch('/users/me/consent');
+};
+
+// Update consent settings
+export const updateConsentSettingsApi = async (data) => {
+  return apiFetch('/users/me/consent', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+};
+
+// Get user's assessment trends
+export const getTrendsApi = async (months = 12) => {
+  return apiFetch(`/users/me/trends?months=${months}`);
+};
+
+// Soft delete user account
+export const deleteAccountApi = async () => {
+  return apiFetch('/users/me/account', {
+    method: 'DELETE',
+  });
+};
+
+// ============================================================================
+// ASSESSMENT ENDPOINTS
+// ============================================================================
+
+// Get user's assessments
+export const getAssessmentsApi = async () => {
+  return apiFetch('/users/me/assessments');
+};
+export const fetchAssessmentsApi = getAssessmentsApi;
+
+// Create new assessment for logged-in user
+export const createAssessmentApi = async (data) => {
+  return apiFetch('/users/me/assessments', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+// Get single assessment
+export const getAssessmentApi = async (assessmentId) => {
+  return apiFetch(`/users/me/assessments/${assessmentId}`);
+};
+
+// Update assessment
+export const updateAssessmentApi = async (assessmentId, data) => {
+  return apiFetch(`/users/me/assessments/${assessmentId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+};
+
+// Delete assessment
+export const deleteAssessmentApi = async (assessmentId) => {
+  return apiFetch(`/users/me/assessments/${assessmentId}`, {
+    method: 'DELETE',
+  });
+};
+
+// ============================================================================
+// EXPORT ENDPOINTS
+// ============================================================================
+
+// Export user's health data as PDF for doctor
+export const exportPDFApi = async () => {
+  const response = await apiFetch('/users/me/export/pdf');
+  
+  if (!response.ok) {
+    throw new Error('Failed to generate PDF');
+  }
+  
+  // Get blob from response
+  const blob = await response.blob();
+  
+  // Create download link
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'diana_health_report.pdf';
+  a.click();
+};
+
+// ============================================================================
+// ADMIN ENDPOINTS (if user is admin)
+// ============================================================================
+
+// List all users
+export const adminListUsersApi = async (params) => {
+  const query = new URLSearchParams(params);
+  return apiFetch(`/admin/users?${query}`);
+};
+
 export const fetchAdminDashboardApi = async token => {
-  const cacheKey = '/api/v1/admin/dashboard';
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const data = await apiFetch(cacheKey, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  setCache(cacheKey, data, 60000);
-  return data;
-};
-
-export const fetchAdminClinicsApi = async token => {
-  const cacheKey = '/api/v1/admin/clinics';
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const data = await apiFetch(cacheKey, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  setCache(cacheKey, data, 60000);
-  return data;
+  return apiFetch('/admin/dashboard');
 };
 
 export const fetchClinicComparisonApi = async token => {
-  const cacheKey = '/api/v1/admin/clinic-comparison';
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const data = await apiFetch(cacheKey, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  setCache(cacheKey, data, 60000);
-  return data;
+  return apiFetch('/admin/clinics/comparison');
 };
-
-// ============================================================
-// Admin User Management API
-// ============================================================
-export const fetchAdminUsersApi = async (token, params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  const path = `/api/v1/admin/users${query ? `?${query}` : ''}`;
-  return apiFetch(path, { headers: { Authorization: `Bearer ${token}` } });
+export const fetchAdminUsersApi = adminListUsersApi;
+export const fetchAdminClinicsApi = async token => {
+  return apiFetch('/admin/clinics');
+};
+export const fetchAuditLogsApi = async (token, params = {}) => {
+  const query = new URLSearchParams(params);
+  return apiFetch(`/admin/audit?${query}`);
+};
+export const fetchModelRunsApi = async (token, params = {}) => {
+  const query = new URLSearchParams(params);
+  return apiFetch(`/admin/models?${query}`);
+};
+export const fetchActiveModelApi = async token => {
+  return apiFetch('/admin/models/active');
 };
 
 export const createAdminUserApi = async (token, userData) => {
-  const result = await apiFetch('/api/v1/admin/users', {
+  return apiFetch('/admin/users', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(userData),
+    body: userData,
   });
-  invalidateCache('/api/v1/admin/users');
-  invalidateCache('/api/v1/admin/dashboard');
-  return result;
 };
 
 export const updateAdminUserApi = async (token, userId, userData) => {
-  const result = await apiFetch(`/api/v1/admin/users/${userId}`, {
+  return apiFetch(`/admin/users/${userId}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify(userData),
+    body: userData,
   });
-  invalidateCache('/api/v1/admin/users');
-  return result;
 };
 
 export const deactivateAdminUserApi = async (token, userId) => {
-  const result = await apiFetch(`/api/v1/admin/users/${userId}`, {
+  return apiFetch(`/admin/users/${userId}`, {
     method: 'DELETE',
-    headers: { Authorization: `Bearer ${token}` },
   });
-  invalidateCache('/api/v1/admin/users');
-  invalidateCache('/api/v1/admin/dashboard');
-  return result;
 };
 
 export const activateAdminUserApi = async (token, userId) => {
-  const result = await apiFetch(`/api/v1/admin/users/${userId}/activate`, {
+  return apiFetch(`/admin/users/${userId}/activate`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  invalidateCache('/api/v1/admin/users');
-  return result;
-};
-
-// ============================================================
-// Admin Audit Logs API
-// ============================================================
-export const fetchAuditLogsApi = async (token, params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  return apiFetch(`/api/v1/admin/audit?${query}`, {
-    headers: { Authorization: `Bearer ${token}` },
   });
 };
 
-// ============================================================
-// Admin Model Runs API
-// ============================================================
-export const fetchModelRunsApi = async (token, params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  return apiFetch(`/api/v1/admin/models?${query}`, {
-    headers: { Authorization: `Bearer ${token}` },
+// Get system statistics
+export const adminGetStatsApi = async () => {
+  return apiFetch('/admin/stats');
+};
+
+// Export research data (anonymized, consented users only)
+export const adminExportResearchDataApi = async () => {
+  return apiFetch('/admin/export/research');
+};
+
+export const loginApi = async (email, password) => {
+  return apiFetch('/auth/login', {
+    method: 'POST',
+    body: { email, password },
   });
 };
 
-export const fetchActiveModelApi = async token => {
-  return apiFetch('/api/v1/admin/models/active', {
-    headers: { Authorization: `Bearer ${token}` },
+export const logoutApi = async refreshToken => {
+  return apiFetch('/auth/logout', {
+    method: 'POST',
+    body: { refresh_token: refreshToken },
   });
+};
+
+export const fetchClusterDistributionApi = async token => {
+  return apiFetch('/insights/cluster-distribution');
+};
+
+export const fetchTrendInsightsApi = async token => {
+  return apiFetch('/insights/biomarker-trends');
 };

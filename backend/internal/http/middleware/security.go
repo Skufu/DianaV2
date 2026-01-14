@@ -18,8 +18,8 @@ func SecurityHeaders() gin.HandlerFunc {
 		// In production, you should also configure this at the load balancer/proxy level
 		c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 
-		// Content Security Policy - adjust as needed for your app
-		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
+		// Content Security Policy - stricter policy without unsafe-inline
+		c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'")
 
 		// Don't send referrer to external sites
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")

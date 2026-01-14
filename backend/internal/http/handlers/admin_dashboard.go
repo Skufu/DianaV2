@@ -22,7 +22,7 @@ func NewAdminDashboardHandler(store store.Store) *AdminDashboardHandler {
 func (h *AdminDashboardHandler) Register(rg *gin.RouterGroup) {
 	rg.GET("/dashboard", h.getDashboard)
 	rg.GET("/clinics", h.listAllClinics)
-	rg.GET("/clinic-comparison", h.getClinicComparison)
+	rg.GET("/clinics/comparison", h.getClinicComparison)
 }
 
 // getDashboard returns system-wide statistics

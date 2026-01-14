@@ -11,21 +11,124 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const addUserToClinic = `-- name: AddUserToClinic :exec
-INSERT INTO user_clinics (user_id, clinic_id, role)
-VALUES ($1, $2, $3)
-ON CONFLICT (user_id, clinic_id) DO UPDATE SET role = $3
+const adminClinicComparison = `-- name: AdminClinicComparison :many
+SELECT 
+    c.id AS clinic_id,
+    c.name AS clinic_name,
+    COUNT(DISTINCT uc.user_id)::int AS patient_count,
+    COUNT(a.id)::int AS assessment_count,
+    COALESCE(AVG(a.risk_score), 0)::float8 AS avg_risk_score,
+    COUNT(CASE WHEN a.risk_score >= 70 THEN 1 END)::int AS high_risk_count
+FROM clinics c
+LEFT JOIN user_clinics uc ON c.id = uc.clinic_id
+LEFT JOIN assessments a ON uc.user_id = a.user_id
+GROUP BY c.id, c.name
+ORDER BY c.name
 `
 
-type AddUserToClinicParams struct {
-	UserID   int32  `json:"user_id"`
-	ClinicID int32  `json:"clinic_id"`
-	Role     string `json:"role"`
+type AdminClinicComparisonRow struct {
+	ClinicID        int32   `json:"clinic_id"`
+	ClinicName      string  `json:"clinic_name"`
+	PatientCount    int32   `json:"patient_count"`
+	AssessmentCount int32   `json:"assessment_count"`
+	AvgRiskScore    float64 `json:"avg_risk_score"`
+	HighRiskCount   int32   `json:"high_risk_count"`
 }
 
-func (q *Queries) AddUserToClinic(ctx context.Context, arg AddUserToClinicParams) error {
-	_, err := q.db.Exec(ctx, addUserToClinic, arg.UserID, arg.ClinicID, arg.Role)
-	return err
+func (q *Queries) AdminClinicComparison(ctx context.Context) ([]AdminClinicComparisonRow, error) {
+	rows, err := q.db.Query(ctx, adminClinicComparison)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminClinicComparisonRow
+	for rows.Next() {
+		var i AdminClinicComparisonRow
+		if err := rows.Scan(
+			&i.ClinicID,
+			&i.ClinicName,
+			&i.PatientCount,
+			&i.AssessmentCount,
+			&i.AvgRiskScore,
+			&i.HighRiskCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminSystemStats = `-- name: AdminSystemStats :one
+SELECT
+    (SELECT COUNT(*) FROM users)::int AS total_users,
+    (SELECT COUNT(*) FROM users WHERE role = 'patient')::int AS total_patients,
+    (SELECT COUNT(*) FROM assessments)::int AS total_assessments,
+    (SELECT COUNT(*) FROM clinics)::int AS total_clinics,
+    COALESCE((SELECT AVG(risk_score) FROM assessments), 0)::float8 AS avg_risk_score,
+    (SELECT COUNT(*) FROM assessments WHERE risk_score >= 70)::int AS high_risk_count,
+    (SELECT COUNT(*) FROM assessments WHERE created_at >= DATE_TRUNC('month', NOW()))::int AS assessments_this_month,
+    (SELECT COUNT(*) FROM users WHERE created_at >= DATE_TRUNC('month', NOW()))::int AS new_users_this_month
+`
+
+type AdminSystemStatsRow struct {
+	TotalUsers           int32   `json:"total_users"`
+	TotalPatients        int32   `json:"total_patients"`
+	TotalAssessments     int32   `json:"total_assessments"`
+	TotalClinics         int32   `json:"total_clinics"`
+	AvgRiskScore         float64 `json:"avg_risk_score"`
+	HighRiskCount        int32   `json:"high_risk_count"`
+	AssessmentsThisMonth int32   `json:"assessments_this_month"`
+	NewUsersThisMonth    int32   `json:"new_users_this_month"`
+}
+
+func (q *Queries) AdminSystemStats(ctx context.Context) (AdminSystemStatsRow, error) {
+	row := q.db.QueryRow(ctx, adminSystemStats)
+	var i AdminSystemStatsRow
+	err := row.Scan(
+		&i.TotalUsers,
+		&i.TotalPatients,
+		&i.TotalAssessments,
+		&i.TotalClinics,
+		&i.AvgRiskScore,
+		&i.HighRiskCount,
+		&i.AssessmentsThisMonth,
+		&i.NewUsersThisMonth,
+	)
+	return i, err
+}
+
+const clinicAggregate = `-- name: ClinicAggregate :one
+SELECT 
+    (SELECT COUNT(*) FROM user_clinics uc1 WHERE uc1.clinic_id = $1)::int AS total_patients,
+    (SELECT COUNT(*) FROM assessments a JOIN user_clinics uc2 ON a.user_id = uc2.user_id WHERE uc2.clinic_id = $1)::int AS total_assessments,
+    COALESCE((SELECT AVG(risk_score) FROM assessments a JOIN user_clinics uc3 ON a.user_id = uc3.user_id WHERE uc3.clinic_id = $1), 0)::float8 AS avg_risk_score,
+    (SELECT COUNT(*) FROM assessments a JOIN user_clinics uc4 ON a.user_id = uc4.user_id WHERE uc4.clinic_id = $1 AND a.risk_score >= 70)::int AS high_risk_count,
+    (SELECT COUNT(*) FROM assessments a JOIN user_clinics uc5 ON a.user_id = uc5.user_id WHERE uc5.clinic_id = $1 AND a.created_at >= DATE_TRUNC('month', NOW()))::int AS assessments_this_month
+`
+
+type ClinicAggregateRow struct {
+	TotalPatients        int32   `json:"total_patients"`
+	TotalAssessments     int32   `json:"total_assessments"`
+	AvgRiskScore         float64 `json:"avg_risk_score"`
+	HighRiskCount        int32   `json:"high_risk_count"`
+	AssessmentsThisMonth int32   `json:"assessments_this_month"`
+}
+
+func (q *Queries) ClinicAggregate(ctx context.Context, clinicID int32) (ClinicAggregateRow, error) {
+	row := q.db.QueryRow(ctx, clinicAggregate, clinicID)
+	var i ClinicAggregateRow
+	err := row.Scan(
+		&i.TotalPatients,
+		&i.TotalAssessments,
+		&i.AvgRiskScore,
+		&i.HighRiskCount,
+		&i.AssessmentsThisMonth,
+	)
+	return i, err
 }
 
 const createClinic = `-- name: CreateClinic :one
@@ -81,30 +184,11 @@ func (q *Queries) GetClinic(ctx context.Context, id int32) (Clinic, error) {
 	return i, err
 }
 
-const getUserClinicRole = `-- name: GetUserClinicRole :one
-SELECT role
-FROM user_clinics
-WHERE user_id = $1 AND clinic_id = $2
-LIMIT 1
-`
-
-type GetUserClinicRoleParams struct {
-	UserID   int32 `json:"user_id"`
-	ClinicID int32 `json:"clinic_id"`
-}
-
-func (q *Queries) GetUserClinicRole(ctx context.Context, arg GetUserClinicRoleParams) (string, error) {
-	row := q.db.QueryRow(ctx, getUserClinicRole, arg.UserID, arg.ClinicID)
-	var role string
-	err := row.Scan(&role)
-	return role, err
-}
-
 const isClinicAdmin = `-- name: IsClinicAdmin :one
 SELECT EXISTS(
-    SELECT 1 FROM user_clinics
+    SELECT 1 FROM user_clinics 
     WHERE user_id = $1 AND clinic_id = $2 AND role = 'admin'
-) AS is_admin
+)
 `
 
 type IsClinicAdminParams struct {
@@ -114,51 +198,9 @@ type IsClinicAdminParams struct {
 
 func (q *Queries) IsClinicAdmin(ctx context.Context, arg IsClinicAdminParams) (bool, error) {
 	row := q.db.QueryRow(ctx, isClinicAdmin, arg.UserID, arg.ClinicID)
-	var is_admin bool
-	err := row.Scan(&is_admin)
-	return is_admin, err
-}
-
-const listClinicUsers = `-- name: ListClinicUsers :many
-SELECT u.id, u.email, u.role AS user_role, uc.role AS clinic_role, u.created_at
-FROM users u
-JOIN user_clinics uc ON u.id = uc.user_id
-WHERE uc.clinic_id = $1
-ORDER BY u.email
-`
-
-type ListClinicUsersRow struct {
-	ID         int32              `json:"id"`
-	Email      string             `json:"email"`
-	UserRole   string             `json:"user_role"`
-	ClinicRole string             `json:"clinic_role"`
-	CreatedAt  pgtype.Timestamptz `json:"created_at"`
-}
-
-func (q *Queries) ListClinicUsers(ctx context.Context, clinicID int32) ([]ListClinicUsersRow, error) {
-	rows, err := q.db.Query(ctx, listClinicUsers, clinicID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListClinicUsersRow
-	for rows.Next() {
-		var i ListClinicUsersRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Email,
-			&i.UserRole,
-			&i.ClinicRole,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
 
 const listClinics = `-- name: ListClinics :many
@@ -237,21 +279,6 @@ func (q *Queries) ListUserClinics(ctx context.Context, userID int32) ([]ListUser
 		return nil, err
 	}
 	return items, nil
-}
-
-const removeUserFromClinic = `-- name: RemoveUserFromClinic :exec
-DELETE FROM user_clinics
-WHERE user_id = $1 AND clinic_id = $2
-`
-
-type RemoveUserFromClinicParams struct {
-	UserID   int32 `json:"user_id"`
-	ClinicID int32 `json:"clinic_id"`
-}
-
-func (q *Queries) RemoveUserFromClinic(ctx context.Context, arg RemoveUserFromClinicParams) error {
-	_, err := q.db.Exec(ctx, removeUserFromClinic, arg.UserID, arg.ClinicID)
-	return err
 }
 
 const updateClinic = `-- name: UpdateClinic :one

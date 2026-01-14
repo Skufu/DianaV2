@@ -1,113 +1,176 @@
+// Package router wires HTTP handlers, middleware, and routes for the DIANA API.
 package router
 
 import (
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
-
 	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/http/handlers"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/ml"
 	"github.com/skufu/DianaV2/backend/internal/store"
-
-	// Import docs for swagger registration
-	_ "github.com/skufu/DianaV2/backend/docs"
 )
 
+// New creates and configures the Gin router with all routes and middleware.
 func New(cfg config.Config, st store.Store) *gin.Engine {
-	r := gin.New()
-	r.Use(gin.Logger(), gin.Recovery())
+	// Set Gin mode based on environment
+	if cfg.Env == "production" || cfg.Env == "prod" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
-	// Add security headers to all responses
+	r := gin.New()
+
+	// Recovery middleware
+	r.Use(gin.Recovery())
+
+	// Request ID (must be before Logger)
+	r.Use(middleware.RequestID())
+
+	// Logging middleware
+	r.Use(middleware.Logger())
+
+	// Security headers
 	r.Use(middleware.SecurityHeaders())
 
-	corsCfg := cors.Config{
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+	// CORS configuration
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     cfg.CORSOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
-	}
-	// In dev mode, allow all origins; in production, use configured origins
-	if cfg.Env == "dev" || cfg.Env == "development" {
-		corsCfg.AllowAllOrigins = true
-		corsCfg.AllowCredentials = false // Can't use AllowCredentials with AllowAllOrigins
-	} else {
-		corsCfg.AllowOrigins = cfg.CORSOrigins
-	}
-	r.Use(cors.New(corsCfg))
+	}))
 
-	// Swagger UI route - available at /swagger/index.html
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// Rate limiting (100 requests per minute per IP/user)
+	rateLimiter := middleware.NewRateLimiter(100, time.Minute)
+	r.Use(middleware.RateLimit(rateLimiter))
 
-	api := r.Group("/api/v1")
+	// Request body size limit (1MB max to prevent DoS via large payloads)
+	r.Use(middleware.MaxBodySize(1 << 20))
 
-	handlers.RegisterHealth(api)
-
-	// Create rate limiter: 30 requests per minute for auth endpoints
-	rateLimiter := middleware.NewRateLimiter(30, time.Minute)
-
-	// Auth endpoints with rate limiting
-	authGroup := api.Group("/auth")
-	authGroup.Use(middleware.RateLimit(rateLimiter))
-	authHandler := handlers.NewAuthHandler(cfg, st)
-	authHandler.Register(authGroup)
-
-	protected := api.Group("")
-	protected.Use(middleware.Auth(cfg.JWTSecret))
-	protectedRateLimiter := middleware.NewRateLimiter(100, time.Minute)
-	protected.Use(middleware.RateLimit(protectedRateLimiter))
-
-	patientHandler := handlers.NewPatientsHandler(st)
-	patientHandler.Register(protected.Group("/patients"))
-
-	timeout := time.Duration(cfg.ModelTimeoutMS) * time.Millisecond
+	// Create ML predictor
 	var predictor ml.Predictor
 	if cfg.ModelURL != "" {
-		predictor = ml.NewHTTPPredictor(cfg.ModelURL, cfg.ModelVersion, timeout)
+		predictor = ml.NewHTTPPredictor(
+			cfg.ModelURL,
+			cfg.ModelVersion,
+			time.Duration(cfg.ModelTimeoutMS)*time.Millisecond,
+		)
 	} else {
 		predictor = ml.NewMockPredictor()
 	}
-	assessmentHandler := handlers.NewAssessmentsHandler(st, predictor, cfg.ModelVersion, cfg.DatasetHash)
-	assessmentHandler.Register(protected.Group("/patients"))
 
-	insightsHandler := handlers.NewInsightsHandler(st)
-	insightsHandler.Register(protected.Group("/insights"))
+	// =========================================================================
+	// API v1 Routes
+	// =========================================================================
+	api := r.Group("/api/v1")
 
-	exportHandler := handlers.NewExportHandler(st, cfg.ExportMaxRows)
-	exportHandler.Register(protected.Group("/export"))
+	// -------------------------------------------------------------------------
+	// Public routes (no authentication required)
+	// -------------------------------------------------------------------------
 
-	// Cohort analysis handler (extends insights group)
-	cohortHandler := handlers.NewCohortHandler(st)
-	cohortHandler.Register(protected.Group("/insights"))
+	// Health checks
+	handlers.RegisterHealth(api)
 
-	// Clinic dashboard handler
-	clinicHandler := handlers.NewClinicDashboardHandler(st)
-	clinicHandler.Register(protected.Group("/clinics"))
+	// Authentication (with stricter rate limiting: 10 requests/minute for brute-force protection)
+	authGroup := api.Group("/auth")
+	authGroup.Use(middleware.AuthRateLimit(10))
+	authHandler := handlers.NewAuthHandler(cfg, st)
+	authHandler.Register(authGroup)
 
-	// Admin routes - protected by RBAC middleware (admin role required)
-	adminGroup := protected.Group("/admin")
-	adminGroup.Use(middleware.RoleRequired("admin"))
+	// -------------------------------------------------------------------------
+	// Protected routes (JWT authentication required)
+	// -------------------------------------------------------------------------
+	protected := api.Group("")
+	protected.Use(middleware.Auth(cfg.JWTSecret))
+
+	// User profile and self-service endpoints (/users/me/...)
+	userGroup := protected.Group("/users/me")
 	{
-		// Dashboard statistics handler
-		adminHandler := handlers.NewAdminDashboardHandler(st)
-		adminHandler.Register(adminGroup)
+		usersHandler := handlers.NewUsersHandler(st)
+		usersHandler.Register(userGroup)
 
-		// User management handler
+		// User's own assessments
+		assessmentsHandler := handlers.NewAssessmentsHandler(st, predictor, cfg.ModelVersion, cfg.DatasetHash)
+		assessmentsHandler.Register(userGroup.Group("/assessments"))
+
+		// User's export functionality
+		exportHandler := handlers.NewExportHandler(st)
+		exportHandler.Register(userGroup.Group("/export"))
+	}
+
+	// Insights endpoints (user-scoped)
+	insightsGroup := protected.Group("/insights")
+	{
+		insightsHandler := handlers.NewInsightsHandler(st)
+		insightsHandler.Register(insightsGroup)
+
+		cohortHandler := handlers.NewCohortHandler(st)
+		cohortHandler.Register(insightsGroup)
+	}
+
+	// Clinics endpoints (for clinic members)
+	clinicsGroup := protected.Group("/clinics")
+	{
+		clinicDashboardHandler := handlers.NewClinicDashboardHandler(st)
+		clinicDashboardHandler.Register(clinicsGroup)
+	}
+
+	// -------------------------------------------------------------------------
+	// Admin routes (requires admin role)
+	// -------------------------------------------------------------------------
+	admin := protected.Group("/admin")
+	admin.Use(middleware.RoleRequired("admin"))
+	{
+		// Admin dashboard and system stats
+		adminDashboardHandler := handlers.NewAdminDashboardHandler(st)
+		adminDashboardHandler.Register(admin)
+
+		// User management
 		adminUsersHandler := handlers.NewAdminUsersHandler(st)
-		adminUsersHandler.Register(adminGroup)
+		adminUsersHandler.Register(admin)
 
-		// Audit logs handler
+		// Audit logs
 		adminAuditHandler := handlers.NewAdminAuditHandler(st)
-		adminAuditHandler.Register(adminGroup)
+		adminAuditHandler.Register(admin)
 
-		// Model traceability handler
+		// Model traceability
 		adminModelsHandler := handlers.NewAdminModelsHandler(st)
-		adminModelsHandler.Register(adminGroup)
+		adminModelsHandler.Register(admin)
+	}
+
+	// =========================================================================
+	// Debug: Print registered routes (development only)
+	// =========================================================================
+	if cfg.Env != "production" && cfg.Env != "prod" {
+		printRoutes(r)
 	}
 
 	return r
+}
+
+// printRoutes logs all registered routes (for debugging)
+func printRoutes(r *gin.Engine) {
+	routes := r.Routes()
+	maxMethod := 0
+	maxPath := 0
+	for _, route := range routes {
+		if len(route.Method) > maxMethod {
+			maxMethod = len(route.Method)
+		}
+		if len(route.Path) > maxPath {
+			maxPath = len(route.Path)
+		}
+	}
+
+	gin.DefaultWriter.Write([]byte("\n=== Registered Routes ===\n"))
+	for _, route := range routes {
+		method := route.Method + strings.Repeat(" ", maxMethod-len(route.Method))
+		gin.DefaultWriter.Write([]byte(method + " " + route.Path + "\n"))
+	}
+	gin.DefaultWriter.Write([]byte("=========================\n\n"))
 }

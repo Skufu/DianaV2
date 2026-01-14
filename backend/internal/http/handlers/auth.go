@@ -158,10 +158,30 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 		return
 	}
 
+	// Revoke the old refresh token (token rotation for security)
+	_ = h.store.RefreshTokens().RevokeRefreshToken(c.Request.Context(), tokenHash)
+
+	// Generate new refresh token
+	newRefreshTokenBytes := make([]byte, 32)
+	if _, err := rand.Read(newRefreshTokenBytes); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+		return
+	}
+	newRefreshToken := base64.URLEncoding.EncodeToString(newRefreshTokenBytes)
+	newRefreshTokenHash := hashToken(newRefreshToken)
+
+	// Store new refresh token in database
+	_, err = h.store.RefreshTokens().CreateRefreshToken(c.Request.Context(), newRefreshTokenHash, int32(user.ID), time.Now().Add(7*24*time.Hour))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create refresh token"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"access_token": signedAccessToken,
-		"token_type":   "Bearer",
-		"expires_in":   900,
+		"access_token":  signedAccessToken,
+		"refresh_token": newRefreshToken,
+		"token_type":    "Bearer",
+		"expires_in":    900,
 		"user": gin.H{
 			"id":    user.ID,
 			"email": user.Email,

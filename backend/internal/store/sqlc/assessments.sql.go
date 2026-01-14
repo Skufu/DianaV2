@@ -43,11 +43,10 @@ func (q *Queries) ClusterCounts(ctx context.Context) ([]ClusterCountsRow, error)
 }
 
 const clusterCountsByUser = `-- name: ClusterCountsByUser :many
-SELECT COALESCE(a.cluster, '') AS cluster, COUNT(*) AS count
-FROM assessments a
-INNER JOIN patients p ON a.patient_id = p.id
-WHERE p.user_id = $1
-GROUP BY COALESCE(a.cluster, '')
+SELECT COALESCE(cluster, '') AS cluster, COUNT(*) AS count
+FROM assessments
+WHERE user_id = $1
+GROUP BY COALESCE(cluster, '')
 `
 
 type ClusterCountsByUserRow struct {
@@ -55,7 +54,7 @@ type ClusterCountsByUserRow struct {
 	Count   int64  `json:"count"`
 }
 
-func (q *Queries) ClusterCountsByUser(ctx context.Context, userID int32) ([]ClusterCountsByUserRow, error) {
+func (q *Queries) ClusterCountsByUser(ctx context.Context, userID pgtype.Int4) ([]ClusterCountsByUserRow, error) {
 	rows, err := q.db.Query(ctx, clusterCountsByUser, userID)
 	if err != nil {
 		return nil, err
@@ -75,12 +74,12 @@ func (q *Queries) ClusterCountsByUser(ctx context.Context, userID int32) ([]Clus
 	return items, nil
 }
 
-const countAssessmentsByPatient = `-- name: CountAssessmentsByPatient :one
-SELECT COUNT(*) FROM assessments WHERE patient_id = $1
+const countAssessmentsByUser = `-- name: CountAssessmentsByUser :one
+SELECT COUNT(*) FROM assessments WHERE user_id = $1
 `
 
-func (q *Queries) CountAssessmentsByPatient(ctx context.Context, patientID pgtype.Int4) (int64, error) {
-	row := q.db.QueryRow(ctx, countAssessmentsByPatient, patientID)
+func (q *Queries) CountAssessmentsByUser(ctx context.Context, userID pgtype.Int4) (int64, error) {
+	row := q.db.QueryRow(ctx, countAssessmentsByUser, userID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -88,21 +87,21 @@ func (q *Queries) CountAssessmentsByPatient(ctx context.Context, patientID pgtyp
 
 const createAssessment = `-- name: CreateAssessment :one
 INSERT INTO assessments (
-  patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-  activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-  model_version, dataset_hash, validation_status
+   user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
+   activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
+   model_version, dataset_hash, validation_status, is_self_reported, source, notes
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9,
-  $10, $11, $12, $13, $14, $15, $16, $17,
-  $18, $19, $20
+   $1, $2, $3, $4, $5, $6, $7, $8, $9,
+   $10, $11, $12, $13, $14, $15, $16, $17, $18,
+   $19, $20, $21, $22, $23
 )
-RETURNING id, patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-          activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-          model_version, dataset_hash, validation_status, created_at, updated_at
+RETURNING id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
+           activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
+           model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
 `
 
 type CreateAssessmentParams struct {
-	PatientID        pgtype.Int4    `json:"patient_id"`
+	UserID           pgtype.Int4    `json:"user_id"`
 	Fbs              pgtype.Numeric `json:"fbs"`
 	Hba1c            pgtype.Numeric `json:"hba1c"`
 	Cholesterol      pgtype.Int4    `json:"cholesterol"`
@@ -122,11 +121,43 @@ type CreateAssessmentParams struct {
 	ModelVersion     pgtype.Text    `json:"model_version"`
 	DatasetHash      pgtype.Text    `json:"dataset_hash"`
 	ValidationStatus pgtype.Text    `json:"validation_status"`
+	IsSelfReported   pgtype.Bool    `json:"is_self_reported"`
+	Source           pgtype.Text    `json:"source"`
+	Notes            pgtype.Text    `json:"notes"`
 }
 
-func (q *Queries) CreateAssessment(ctx context.Context, arg CreateAssessmentParams) (Assessment, error) {
+type CreateAssessmentRow struct {
+	ID               int32              `json:"id"`
+	UserID           pgtype.Int4        `json:"user_id"`
+	Fbs              pgtype.Numeric     `json:"fbs"`
+	Hba1c            pgtype.Numeric     `json:"hba1c"`
+	Cholesterol      pgtype.Int4        `json:"cholesterol"`
+	Ldl              pgtype.Int4        `json:"ldl"`
+	Hdl              pgtype.Int4        `json:"hdl"`
+	Triglycerides    pgtype.Int4        `json:"triglycerides"`
+	Systolic         pgtype.Int4        `json:"systolic"`
+	Diastolic        pgtype.Int4        `json:"diastolic"`
+	Activity         pgtype.Text        `json:"activity"`
+	HistoryFlag      pgtype.Bool        `json:"history_flag"`
+	Smoking          pgtype.Text        `json:"smoking"`
+	Hypertension     pgtype.Text        `json:"hypertension"`
+	HeartDisease     pgtype.Text        `json:"heart_disease"`
+	Bmi              pgtype.Numeric     `json:"bmi"`
+	Cluster          pgtype.Text        `json:"cluster"`
+	RiskScore        pgtype.Int4        `json:"risk_score"`
+	ModelVersion     pgtype.Text        `json:"model_version"`
+	DatasetHash      pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus pgtype.Text        `json:"validation_status"`
+	IsSelfReported   bool               `json:"is_self_reported"`
+	Source           string             `json:"source"`
+	Notes            pgtype.Text        `json:"notes"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) CreateAssessment(ctx context.Context, arg CreateAssessmentParams) (CreateAssessmentRow, error) {
 	row := q.db.QueryRow(ctx, createAssessment,
-		arg.PatientID,
+		arg.UserID,
 		arg.Fbs,
 		arg.Hba1c,
 		arg.Cholesterol,
@@ -146,11 +177,14 @@ func (q *Queries) CreateAssessment(ctx context.Context, arg CreateAssessmentPara
 		arg.ModelVersion,
 		arg.DatasetHash,
 		arg.ValidationStatus,
+		arg.IsSelfReported,
+		arg.Source,
+		arg.Notes,
 	)
-	var i Assessment
+	var i CreateAssessmentRow
 	err := row.Scan(
 		&i.ID,
-		&i.PatientID,
+		&i.UserID,
 		&i.Fbs,
 		&i.Hba1c,
 		&i.Cholesterol,
@@ -170,6 +204,9 @@ func (q *Queries) CreateAssessment(ctx context.Context, arg CreateAssessmentPara
 		&i.ModelVersion,
 		&i.DatasetHash,
 		&i.ValidationStatus,
+		&i.IsSelfReported,
+		&i.Source,
+		&i.Notes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -187,20 +224,49 @@ func (q *Queries) DeleteAssessment(ctx context.Context, id int32) error {
 }
 
 const getAssessment = `-- name: GetAssessment :one
-SELECT id, patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-       activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-       model_version, dataset_hash, validation_status, created_at, updated_at
+SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
+    activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
+    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
 FROM assessments
 WHERE id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetAssessment(ctx context.Context, id int32) (Assessment, error) {
+type GetAssessmentRow struct {
+	ID               int32              `json:"id"`
+	UserID           pgtype.Int4        `json:"user_id"`
+	Fbs              pgtype.Numeric     `json:"fbs"`
+	Hba1c            pgtype.Numeric     `json:"hba1c"`
+	Cholesterol      pgtype.Int4        `json:"cholesterol"`
+	Ldl              pgtype.Int4        `json:"ldl"`
+	Hdl              pgtype.Int4        `json:"hdl"`
+	Triglycerides    pgtype.Int4        `json:"triglycerides"`
+	Systolic         pgtype.Int4        `json:"systolic"`
+	Diastolic        pgtype.Int4        `json:"diastolic"`
+	Activity         pgtype.Text        `json:"activity"`
+	HistoryFlag      pgtype.Bool        `json:"history_flag"`
+	Smoking          pgtype.Text        `json:"smoking"`
+	Hypertension     pgtype.Text        `json:"hypertension"`
+	HeartDisease     pgtype.Text        `json:"heart_disease"`
+	Bmi              pgtype.Numeric     `json:"bmi"`
+	Cluster          pgtype.Text        `json:"cluster"`
+	RiskScore        pgtype.Int4        `json:"risk_score"`
+	ModelVersion     pgtype.Text        `json:"model_version"`
+	DatasetHash      pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus pgtype.Text        `json:"validation_status"`
+	IsSelfReported   bool               `json:"is_self_reported"`
+	Source           string             `json:"source"`
+	Notes            pgtype.Text        `json:"notes"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetAssessment(ctx context.Context, id int32) (GetAssessmentRow, error) {
 	row := q.db.QueryRow(ctx, getAssessment, id)
-	var i Assessment
+	var i GetAssessmentRow
 	err := row.Scan(
 		&i.ID,
-		&i.PatientID,
+		&i.UserID,
 		&i.Fbs,
 		&i.Hba1c,
 		&i.Cholesterol,
@@ -220,21 +286,24 @@ func (q *Queries) GetAssessment(ctx context.Context, id int32) (Assessment, erro
 		&i.ModelVersion,
 		&i.DatasetHash,
 		&i.ValidationStatus,
+		&i.IsSelfReported,
+		&i.Source,
+		&i.Notes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const getPatientAssessmentTrend = `-- name: GetPatientAssessmentTrend :many
+const getAssessmentTrendByUser = `-- name: GetAssessmentTrendByUser :many
 SELECT id, created_at, risk_score, cluster, hba1c, bmi, fbs, 
-       triglycerides, ldl, hdl
+    triglycerides, ldl, hdl
 FROM assessments
-WHERE patient_id = $1
+WHERE user_id = $1
 ORDER BY created_at ASC
 `
 
-type GetPatientAssessmentTrendRow struct {
+type GetAssessmentTrendByUserRow struct {
 	ID            int32              `json:"id"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 	RiskScore     pgtype.Int4        `json:"risk_score"`
@@ -247,15 +316,15 @@ type GetPatientAssessmentTrendRow struct {
 	Hdl           pgtype.Int4        `json:"hdl"`
 }
 
-func (q *Queries) GetPatientAssessmentTrend(ctx context.Context, patientID pgtype.Int4) ([]GetPatientAssessmentTrendRow, error) {
-	rows, err := q.db.Query(ctx, getPatientAssessmentTrend, patientID)
+func (q *Queries) GetAssessmentTrendByUser(ctx context.Context, userID pgtype.Int4) ([]GetAssessmentTrendByUserRow, error) {
+	rows, err := q.db.Query(ctx, getAssessmentTrendByUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetPatientAssessmentTrendRow
+	var items []GetAssessmentTrendByUserRow
 	for rows.Next() {
-		var i GetPatientAssessmentTrendRow
+		var i GetAssessmentTrendByUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.CreatedAt,
@@ -278,27 +347,143 @@ func (q *Queries) GetPatientAssessmentTrend(ctx context.Context, patientID pgtyp
 	return items, nil
 }
 
-const listAssessmentsByPatient = `-- name: ListAssessmentsByPatient :many
-SELECT id, patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-       activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-       model_version, dataset_hash, validation_status, created_at, updated_at
+const getLatestAssessmentByUser = `-- name: GetLatestAssessmentByUser :one
+SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
+    activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
+    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
 FROM assessments
-WHERE patient_id = $1
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+type GetLatestAssessmentByUserRow struct {
+	ID               int32              `json:"id"`
+	UserID           pgtype.Int4        `json:"user_id"`
+	Fbs              pgtype.Numeric     `json:"fbs"`
+	Hba1c            pgtype.Numeric     `json:"hba1c"`
+	Cholesterol      pgtype.Int4        `json:"cholesterol"`
+	Ldl              pgtype.Int4        `json:"ldl"`
+	Hdl              pgtype.Int4        `json:"hdl"`
+	Triglycerides    pgtype.Int4        `json:"triglycerides"`
+	Systolic         pgtype.Int4        `json:"systolic"`
+	Diastolic        pgtype.Int4        `json:"diastolic"`
+	Activity         pgtype.Text        `json:"activity"`
+	HistoryFlag      pgtype.Bool        `json:"history_flag"`
+	Smoking          pgtype.Text        `json:"smoking"`
+	Hypertension     pgtype.Text        `json:"hypertension"`
+	HeartDisease     pgtype.Text        `json:"heart_disease"`
+	Bmi              pgtype.Numeric     `json:"bmi"`
+	Cluster          pgtype.Text        `json:"cluster"`
+	RiskScore        pgtype.Int4        `json:"risk_score"`
+	ModelVersion     pgtype.Text        `json:"model_version"`
+	DatasetHash      pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus pgtype.Text        `json:"validation_status"`
+	IsSelfReported   bool               `json:"is_self_reported"`
+	Source           string             `json:"source"`
+	Notes            pgtype.Text        `json:"notes"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetLatestAssessmentByUser(ctx context.Context, userID pgtype.Int4) (GetLatestAssessmentByUserRow, error) {
+	row := q.db.QueryRow(ctx, getLatestAssessmentByUser, userID)
+	var i GetLatestAssessmentByUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Fbs,
+		&i.Hba1c,
+		&i.Cholesterol,
+		&i.Ldl,
+		&i.Hdl,
+		&i.Triglycerides,
+		&i.Systolic,
+		&i.Diastolic,
+		&i.Activity,
+		&i.HistoryFlag,
+		&i.Smoking,
+		&i.Hypertension,
+		&i.HeartDisease,
+		&i.Bmi,
+		&i.Cluster,
+		&i.RiskScore,
+		&i.ModelVersion,
+		&i.DatasetHash,
+		&i.ValidationStatus,
+		&i.IsSelfReported,
+		&i.Source,
+		&i.Notes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getLatestAssessmentDateByUser = `-- name: GetLatestAssessmentDateByUser :one
+SELECT created_at FROM assessments
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestAssessmentDateByUser(ctx context.Context, userID pgtype.Int4) (pgtype.Timestamptz, error) {
+	row := q.db.QueryRow(ctx, getLatestAssessmentDateByUser, userID)
+	var created_at pgtype.Timestamptz
+	err := row.Scan(&created_at)
+	return created_at, err
+}
+
+const listAssessmentsByUser = `-- name: ListAssessmentsByUser :many
+SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
+    activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
+    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+FROM assessments
+WHERE user_id = $1
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListAssessmentsByPatient(ctx context.Context, patientID pgtype.Int4) ([]Assessment, error) {
-	rows, err := q.db.Query(ctx, listAssessmentsByPatient, patientID)
+type ListAssessmentsByUserRow struct {
+	ID               int32              `json:"id"`
+	UserID           pgtype.Int4        `json:"user_id"`
+	Fbs              pgtype.Numeric     `json:"fbs"`
+	Hba1c            pgtype.Numeric     `json:"hba1c"`
+	Cholesterol      pgtype.Int4        `json:"cholesterol"`
+	Ldl              pgtype.Int4        `json:"ldl"`
+	Hdl              pgtype.Int4        `json:"hdl"`
+	Triglycerides    pgtype.Int4        `json:"triglycerides"`
+	Systolic         pgtype.Int4        `json:"systolic"`
+	Diastolic        pgtype.Int4        `json:"diastolic"`
+	Activity         pgtype.Text        `json:"activity"`
+	HistoryFlag      pgtype.Bool        `json:"history_flag"`
+	Smoking          pgtype.Text        `json:"smoking"`
+	Hypertension     pgtype.Text        `json:"hypertension"`
+	HeartDisease     pgtype.Text        `json:"heart_disease"`
+	Bmi              pgtype.Numeric     `json:"bmi"`
+	Cluster          pgtype.Text        `json:"cluster"`
+	RiskScore        pgtype.Int4        `json:"risk_score"`
+	ModelVersion     pgtype.Text        `json:"model_version"`
+	DatasetHash      pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus pgtype.Text        `json:"validation_status"`
+	IsSelfReported   bool               `json:"is_self_reported"`
+	Source           string             `json:"source"`
+	Notes            pgtype.Text        `json:"notes"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) ListAssessmentsByUser(ctx context.Context, userID pgtype.Int4) ([]ListAssessmentsByUserRow, error) {
+	rows, err := q.db.Query(ctx, listAssessmentsByUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Assessment
+	var items []ListAssessmentsByUserRow
 	for rows.Next() {
-		var i Assessment
+		var i ListAssessmentsByUserRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.PatientID,
+			&i.UserID,
 			&i.Fbs,
 			&i.Hba1c,
 			&i.Cholesterol,
@@ -318,6 +503,9 @@ func (q *Queries) ListAssessmentsByPatient(ctx context.Context, patientID pgtype
 			&i.ModelVersion,
 			&i.DatasetHash,
 			&i.ValidationStatus,
+			&i.IsSelfReported,
+			&i.Source,
+			&i.Notes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -331,34 +519,63 @@ func (q *Queries) ListAssessmentsByPatient(ctx context.Context, patientID pgtype
 	return items, nil
 }
 
-const listAssessmentsByPatientPaginated = `-- name: ListAssessmentsByPatientPaginated :many
-SELECT id, patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-       activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-       model_version, dataset_hash, validation_status, created_at, updated_at
+const listAssessmentsByUserPaginated = `-- name: ListAssessmentsByUserPaginated :many
+SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
+    activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
+    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
 FROM assessments
-WHERE patient_id = $1
+WHERE user_id = $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3
 `
 
-type ListAssessmentsByPatientPaginatedParams struct {
-	PatientID pgtype.Int4 `json:"patient_id"`
-	Limit     int32       `json:"limit"`
-	Offset    int32       `json:"offset"`
+type ListAssessmentsByUserPaginatedParams struct {
+	UserID pgtype.Int4 `json:"user_id"`
+	Limit  int32       `json:"limit"`
+	Offset int32       `json:"offset"`
 }
 
-func (q *Queries) ListAssessmentsByPatientPaginated(ctx context.Context, arg ListAssessmentsByPatientPaginatedParams) ([]Assessment, error) {
-	rows, err := q.db.Query(ctx, listAssessmentsByPatientPaginated, arg.PatientID, arg.Limit, arg.Offset)
+type ListAssessmentsByUserPaginatedRow struct {
+	ID               int32              `json:"id"`
+	UserID           pgtype.Int4        `json:"user_id"`
+	Fbs              pgtype.Numeric     `json:"fbs"`
+	Hba1c            pgtype.Numeric     `json:"hba1c"`
+	Cholesterol      pgtype.Int4        `json:"cholesterol"`
+	Ldl              pgtype.Int4        `json:"ldl"`
+	Hdl              pgtype.Int4        `json:"hdl"`
+	Triglycerides    pgtype.Int4        `json:"triglycerides"`
+	Systolic         pgtype.Int4        `json:"systolic"`
+	Diastolic        pgtype.Int4        `json:"diastolic"`
+	Activity         pgtype.Text        `json:"activity"`
+	HistoryFlag      pgtype.Bool        `json:"history_flag"`
+	Smoking          pgtype.Text        `json:"smoking"`
+	Hypertension     pgtype.Text        `json:"hypertension"`
+	HeartDisease     pgtype.Text        `json:"heart_disease"`
+	Bmi              pgtype.Numeric     `json:"bmi"`
+	Cluster          pgtype.Text        `json:"cluster"`
+	RiskScore        pgtype.Int4        `json:"risk_score"`
+	ModelVersion     pgtype.Text        `json:"model_version"`
+	DatasetHash      pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus pgtype.Text        `json:"validation_status"`
+	IsSelfReported   bool               `json:"is_self_reported"`
+	Source           string             `json:"source"`
+	Notes            pgtype.Text        `json:"notes"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) ListAssessmentsByUserPaginated(ctx context.Context, arg ListAssessmentsByUserPaginatedParams) ([]ListAssessmentsByUserPaginatedRow, error) {
+	rows, err := q.db.Query(ctx, listAssessmentsByUserPaginated, arg.UserID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Assessment
+	var items []ListAssessmentsByUserPaginatedRow
 	for rows.Next() {
-		var i Assessment
+		var i ListAssessmentsByUserPaginatedRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.PatientID,
+			&i.UserID,
 			&i.Fbs,
 			&i.Hba1c,
 			&i.Cholesterol,
@@ -378,6 +595,9 @@ func (q *Queries) ListAssessmentsByPatientPaginated(ctx context.Context, arg Lis
 			&i.ModelVersion,
 			&i.DatasetHash,
 			&i.ValidationStatus,
+			&i.IsSelfReported,
+			&i.Source,
+			&i.Notes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -392,26 +612,55 @@ func (q *Queries) ListAssessmentsByPatientPaginated(ctx context.Context, arg Lis
 }
 
 const listAssessmentsLimited = `-- name: ListAssessmentsLimited :many
-SELECT id, patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-       activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-       model_version, dataset_hash, validation_status, created_at, updated_at
+SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
+    activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
+    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
 FROM assessments
 ORDER BY created_at DESC
 LIMIT $1
 `
 
-func (q *Queries) ListAssessmentsLimited(ctx context.Context, limit int32) ([]Assessment, error) {
+type ListAssessmentsLimitedRow struct {
+	ID               int32              `json:"id"`
+	UserID           pgtype.Int4        `json:"user_id"`
+	Fbs              pgtype.Numeric     `json:"fbs"`
+	Hba1c            pgtype.Numeric     `json:"hba1c"`
+	Cholesterol      pgtype.Int4        `json:"cholesterol"`
+	Ldl              pgtype.Int4        `json:"ldl"`
+	Hdl              pgtype.Int4        `json:"hdl"`
+	Triglycerides    pgtype.Int4        `json:"triglycerides"`
+	Systolic         pgtype.Int4        `json:"systolic"`
+	Diastolic        pgtype.Int4        `json:"diastolic"`
+	Activity         pgtype.Text        `json:"activity"`
+	HistoryFlag      pgtype.Bool        `json:"history_flag"`
+	Smoking          pgtype.Text        `json:"smoking"`
+	Hypertension     pgtype.Text        `json:"hypertension"`
+	HeartDisease     pgtype.Text        `json:"heart_disease"`
+	Bmi              pgtype.Numeric     `json:"bmi"`
+	Cluster          pgtype.Text        `json:"cluster"`
+	RiskScore        pgtype.Int4        `json:"risk_score"`
+	ModelVersion     pgtype.Text        `json:"model_version"`
+	DatasetHash      pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus pgtype.Text        `json:"validation_status"`
+	IsSelfReported   bool               `json:"is_self_reported"`
+	Source           string             `json:"source"`
+	Notes            pgtype.Text        `json:"notes"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) ListAssessmentsLimited(ctx context.Context, limit int32) ([]ListAssessmentsLimitedRow, error) {
 	rows, err := q.db.Query(ctx, listAssessmentsLimited, limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Assessment
+	var items []ListAssessmentsLimitedRow
 	for rows.Next() {
-		var i Assessment
+		var i ListAssessmentsLimitedRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.PatientID,
+			&i.UserID,
 			&i.Fbs,
 			&i.Hba1c,
 			&i.Cholesterol,
@@ -431,67 +680,9 @@ func (q *Queries) ListAssessmentsLimited(ctx context.Context, limit int32) ([]As
 			&i.ModelVersion,
 			&i.DatasetHash,
 			&i.ValidationStatus,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listAssessmentsLimitedByUser = `-- name: ListAssessmentsLimitedByUser :many
-SELECT a.id, a.patient_id, a.fbs, a.hba1c, a.cholesterol, a.ldl, a.hdl, a.triglycerides,
-       a.systolic, a.diastolic, a.activity, a.history_flag, a.smoking, a.hypertension,
-       a.heart_disease, a.bmi, a.cluster, a.risk_score, a.model_version, a.dataset_hash,
-       a.validation_status, a.created_at, a.updated_at
-FROM assessments a
-INNER JOIN patients p ON a.patient_id = p.id
-WHERE p.user_id = $1
-ORDER BY a.created_at DESC
-LIMIT $2
-`
-
-type ListAssessmentsLimitedByUserParams struct {
-	UserID int32 `json:"user_id"`
-	Limit  int32 `json:"limit"`
-}
-
-func (q *Queries) ListAssessmentsLimitedByUser(ctx context.Context, arg ListAssessmentsLimitedByUserParams) ([]Assessment, error) {
-	rows, err := q.db.Query(ctx, listAssessmentsLimitedByUser, arg.UserID, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Assessment
-	for rows.Next() {
-		var i Assessment
-		if err := rows.Scan(
-			&i.ID,
-			&i.PatientID,
-			&i.Fbs,
-			&i.Hba1c,
-			&i.Cholesterol,
-			&i.Ldl,
-			&i.Hdl,
-			&i.Triglycerides,
-			&i.Systolic,
-			&i.Diastolic,
-			&i.Activity,
-			&i.HistoryFlag,
-			&i.Smoking,
-			&i.Hypertension,
-			&i.HeartDisease,
-			&i.Bmi,
-			&i.Cluster,
-			&i.RiskScore,
-			&i.ModelVersion,
-			&i.DatasetHash,
-			&i.ValidationStatus,
+			&i.IsSelfReported,
+			&i.Source,
+			&i.Notes,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
@@ -507,8 +698,8 @@ func (q *Queries) ListAssessmentsLimitedByUser(ctx context.Context, arg ListAsse
 
 const trendAverages = `-- name: TrendAverages :many
 SELECT to_char(created_at, 'YYYY-MM') AS label,
-       COALESCE(avg(hba1c), 0)::float8 AS hba1c,
-       COALESCE(avg(fbs), 0)::float8 AS fbs
+    COALESCE(avg(hba1c), 0)::float8 AS hba1c,
+    COALESCE(avg(fbs), 0)::float8 AS fbs
 FROM assessments
 GROUP BY label
 ORDER BY label
@@ -541,12 +732,11 @@ func (q *Queries) TrendAverages(ctx context.Context) ([]TrendAveragesRow, error)
 }
 
 const trendAveragesByUser = `-- name: TrendAveragesByUser :many
-SELECT to_char(a.created_at, 'YYYY-MM') AS label,
-       COALESCE(avg(a.hba1c), 0)::float8 AS hba1c,
-       COALESCE(avg(a.fbs), 0)::float8 AS fbs
-FROM assessments a
-INNER JOIN patients p ON a.patient_id = p.id
-WHERE p.user_id = $1
+SELECT to_char(created_at, 'YYYY-MM') AS label,
+    COALESCE(avg(hba1c), 0)::float8 AS hba1c,
+    COALESCE(avg(fbs), 0)::float8 AS fbs
+FROM assessments
+WHERE user_id = $1
 GROUP BY label
 ORDER BY label
 `
@@ -557,7 +747,7 @@ type TrendAveragesByUserRow struct {
 	Fbs   float64 `json:"fbs"`
 }
 
-func (q *Queries) TrendAveragesByUser(ctx context.Context, userID int32) ([]TrendAveragesByUserRow, error) {
+func (q *Queries) TrendAveragesByUser(ctx context.Context, userID pgtype.Int4) ([]TrendAveragesByUserRow, error) {
 	rows, err := q.db.Query(ctx, trendAveragesByUser, userID)
 	if err != nil {
 		return nil, err
@@ -579,36 +769,36 @@ func (q *Queries) TrendAveragesByUser(ctx context.Context, userID int32) ([]Tren
 
 const updateAssessment = `-- name: UpdateAssessment :one
 UPDATE assessments
-SET patient_id = $2,
-    fbs = $3,
-    hba1c = $4,
-    cholesterol = $5,
-    ldl = $6,
-    hdl = $7,
-    triglycerides = $8,
-    systolic = $9,
-    diastolic = $10,
-    activity = $11,
-    history_flag = $12,
-    smoking = $13,
-    hypertension = $14,
-    heart_disease = $15,
-    bmi = $16,
-    cluster = $17,
-    risk_score = $18,
-    model_version = $19,
-    dataset_hash = $20,
-    validation_status = $21,
+SET user_id = $1,
+    fbs = $2,
+    hba1c = $3,
+    cholesterol = $4,
+    ldl = $5,
+    hdl = $6,
+    triglycerides = $7,
+    systolic = $8,
+    diastolic = $9,
+    activity = $10,
+    history_flag = $11,
+    smoking = $12,
+    hypertension = $13,
+    heart_disease = $14,
+    bmi = $15,
+    cluster = $16,
+    risk_score = $17,
+    model_version = $18,
+    dataset_hash = $19,
+    validation_status = $20,
+    notes = $21,
     updated_at = NOW()
-WHERE id = $1
-RETURNING id, patient_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
+WHERE id = $22
+RETURNING id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
           activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-          model_version, dataset_hash, validation_status, created_at, updated_at
+          model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
 `
 
 type UpdateAssessmentParams struct {
-	ID               int32          `json:"id"`
-	PatientID        pgtype.Int4    `json:"patient_id"`
+	UserID           pgtype.Int4    `json:"user_id"`
 	Fbs              pgtype.Numeric `json:"fbs"`
 	Hba1c            pgtype.Numeric `json:"hba1c"`
 	Cholesterol      pgtype.Int4    `json:"cholesterol"`
@@ -628,12 +818,42 @@ type UpdateAssessmentParams struct {
 	ModelVersion     pgtype.Text    `json:"model_version"`
 	DatasetHash      pgtype.Text    `json:"dataset_hash"`
 	ValidationStatus pgtype.Text    `json:"validation_status"`
+	Notes            pgtype.Text    `json:"notes"`
+	ID               int32          `json:"id"`
 }
 
-func (q *Queries) UpdateAssessment(ctx context.Context, arg UpdateAssessmentParams) (Assessment, error) {
+type UpdateAssessmentRow struct {
+	ID               int32              `json:"id"`
+	UserID           pgtype.Int4        `json:"user_id"`
+	Fbs              pgtype.Numeric     `json:"fbs"`
+	Hba1c            pgtype.Numeric     `json:"hba1c"`
+	Cholesterol      pgtype.Int4        `json:"cholesterol"`
+	Ldl              pgtype.Int4        `json:"ldl"`
+	Hdl              pgtype.Int4        `json:"hdl"`
+	Triglycerides    pgtype.Int4        `json:"triglycerides"`
+	Systolic         pgtype.Int4        `json:"systolic"`
+	Diastolic        pgtype.Int4        `json:"diastolic"`
+	Activity         pgtype.Text        `json:"activity"`
+	HistoryFlag      pgtype.Bool        `json:"history_flag"`
+	Smoking          pgtype.Text        `json:"smoking"`
+	Hypertension     pgtype.Text        `json:"hypertension"`
+	HeartDisease     pgtype.Text        `json:"heart_disease"`
+	Bmi              pgtype.Numeric     `json:"bmi"`
+	Cluster          pgtype.Text        `json:"cluster"`
+	RiskScore        pgtype.Int4        `json:"risk_score"`
+	ModelVersion     pgtype.Text        `json:"model_version"`
+	DatasetHash      pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus pgtype.Text        `json:"validation_status"`
+	IsSelfReported   bool               `json:"is_self_reported"`
+	Source           string             `json:"source"`
+	Notes            pgtype.Text        `json:"notes"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) UpdateAssessment(ctx context.Context, arg UpdateAssessmentParams) (UpdateAssessmentRow, error) {
 	row := q.db.QueryRow(ctx, updateAssessment,
-		arg.ID,
-		arg.PatientID,
+		arg.UserID,
 		arg.Fbs,
 		arg.Hba1c,
 		arg.Cholesterol,
@@ -653,11 +873,13 @@ func (q *Queries) UpdateAssessment(ctx context.Context, arg UpdateAssessmentPara
 		arg.ModelVersion,
 		arg.DatasetHash,
 		arg.ValidationStatus,
+		arg.Notes,
+		arg.ID,
 	)
-	var i Assessment
+	var i UpdateAssessmentRow
 	err := row.Scan(
 		&i.ID,
-		&i.PatientID,
+		&i.UserID,
 		&i.Fbs,
 		&i.Hba1c,
 		&i.Cholesterol,
@@ -677,6 +899,9 @@ func (q *Queries) UpdateAssessment(ctx context.Context, arg UpdateAssessmentPara
 		&i.ModelVersion,
 		&i.DatasetHash,
 		&i.ValidationStatus,
+		&i.IsSelfReported,
+		&i.Source,
+		&i.Notes,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
