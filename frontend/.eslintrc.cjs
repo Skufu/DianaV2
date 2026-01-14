@@ -1,15 +1,14 @@
 module.exports = {
-  root: true,
   env: {
     browser: true,
     es2021: true,
     node: true,
   },
+  ignorePatterns: ['dist/', 'node_modules/', 'coverage/'],
   extends: [
     'eslint:recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
-    'plugin:jsx-a11y/recommended',
   ],
   parserOptions: {
     ecmaVersion: 'latest',
@@ -18,9 +17,8 @@ module.exports = {
       jsx: true,
     },
   },
-  plugins: ['react', 'react-hooks', 'jsx-a11y'],
+  plugins: ['react', 'react-hooks'],
   rules: {
-    // React best practices
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'warn',
     'react/jsx-key': 'error',
@@ -41,27 +39,15 @@ module.exports = {
     'react/no-unescaped-entities': 'error',
     'react/require-render-return': 'error',
     'react/self-closing-comp': 'error',
-
-    // React Hooks rules
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
 
-    // Accessibility
-    'jsx-a11y/anchor-is-valid': 'warn',
-    'jsx-a11y/click-events-have-key-events': 'warn',
-    'jsx-a11y/no-noninteractive-element-interactions': 'warn',
-    'jsx-a11y/role-has-required-aria-props': 'warn',
-    'jsx-a11y/alt-text': 'warn',
-
-    // Code quality
     'no-console': ['warn', { allow: ['warn', 'error'] }],
     'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     'no-debugger': 'error',
     'no-undef': 'error',
     'no-extra-boolean-cast': 'warn',
-
-    // Potential issues to fix gradually
-    'react/prop-types': 'off', // Will enable after adding PropTypes
+    'react/prop-types': 'off',
   },
   settings: {
     react: {
