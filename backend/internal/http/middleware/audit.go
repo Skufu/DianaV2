@@ -99,6 +99,31 @@ func buildAuditDetails(c *gin.Context) map[string]interface{} {
 	return details
 }
 
+func redactSensitiveFields(data map[string]interface{}, fields []string) {
+	for k, v := range data {
+		if containsField(fields, k) {
+			data[k] = "[REDACTED]"
+		} else if nested, ok := v.(map[string]interface{}); ok {
+			redactSensitiveFields(nested, fields)
+		} else if arr, ok := v.([]interface{}); ok {
+			for _, item := range arr {
+				if nestedMap, ok := item.(map[string]interface{}); ok {
+					redactSensitiveFields(nestedMap, fields)
+				}
+			}
+		}
+	}
+}
+
+func containsField(fields []string, target string) bool {
+	for _, f := range fields {
+		if f == target {
+			return true
+		}
+	}
+	return false
+}
+
 // CaptureRequestBody is a helper middleware that captures the request body
 // for audit logging. Should be used before handlers that need body auditing.
 // It stores a sanitized version of the body (without sensitive fields like passwords).
@@ -120,11 +145,13 @@ func CaptureRequestBody() gin.HandlerFunc {
 		// Try to parse as JSON and sanitize
 		var bodyMap map[string]interface{}
 		if err := json.Unmarshal(bodyBytes, &bodyMap); err == nil {
-			// Remove sensitive fields
-			delete(bodyMap, "password")
-			delete(bodyMap, "password_hash")
-			delete(bodyMap, "token")
-			delete(bodyMap, "refresh_token")
+			sensitiveFields := []string{
+				"password", "password_hash", "token", "refresh_token",
+				"first_name", "last_name", "email", "phone", "address", "date_of_birth",
+				"hba1c", "fbs", "cholesterol", "ldl", "hdl", "triglycerides",
+				"systolic", "diastolic", "bmi",
+			}
+			redactSensitiveFields(bodyMap, sensitiveFields)
 
 			c.Set("audit_body", bodyMap)
 		}

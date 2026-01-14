@@ -22,13 +22,21 @@ type Store interface {
 type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*models.User, error)
 	FindByID(ctx context.Context, id int32) (*models.User, error)
-	// Admin user management methods
+	GetUserByID(ctx context.Context, id int32) (*models.User, error)
 	List(ctx context.Context, params models.UserListParams) ([]models.User, int, error)
 	Create(ctx context.Context, user models.User) (*models.User, error)
 	Update(ctx context.Context, user models.User) (*models.User, error)
+	UpdateUser(ctx context.Context, user models.User) (*models.User, error)
 	Deactivate(ctx context.Context, id int32) error
 	Activate(ctx context.Context, id int32) error
 	UpdateLastLogin(ctx context.Context, id int32) error
+	GetLatestAssessmentByUser(ctx context.Context, userID int64) (*models.Assessment, error)
+	GetAssessmentCountByUser(ctx context.Context, userID int64) (int, error)
+	GetUserTrends(ctx context.Context, userID int64, months int) (*models.TrendData, error)
+	SoftDeleteUser(ctx context.Context, userID int64) error
+	UpdateUserOnboarding(ctx context.Context, userID int64, completed bool) error
+	UpdateUserConsent(ctx context.Context, userID int64, consent models.ConsentSettings) error
+	GetUsersForNotification(ctx context.Context) ([]models.UserForNotification, error)
 }
 
 type PatientRepository interface {

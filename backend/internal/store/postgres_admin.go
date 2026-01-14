@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/skufu/DianaV2/backend/internal/models"
+	sqlcgen "github.com/skufu/DianaV2/backend/internal/store/sqlc"
 )
 
 // ============================================================================
@@ -495,3 +496,169 @@ func itoa(n int) string {
 	return itoa(n/10) + string(rune('0'+n%10))
 }
 
+// ============================================================================
+// Missing UserRepository methods implementation (using sqlc)
+// ============================================================================
+
+func (r *pgUserRepo) UpdateUser(ctx context.Context, user models.User) (*models.User, error) {
+	// UpdateUser in interface seems to be same as Update.
+	return r.Update(ctx, user)
+}
+
+func (r *pgUserRepo) GetUserByID(ctx context.Context, id int32) (*models.User, error) {
+	return r.FindByID(ctx, id)
+}
+
+func (r *pgUserRepo) GetAssessmentCountByUser(ctx context.Context, userID int64) (int, error) {
+	if r.q == nil {
+		return 0, errors.New("db not configured")
+	}
+	// CountAssessmentsByUser takes pgtype.Int4 (user_id) if nullable, or if generated that way.
+	count, err := r.q.CountAssessmentsByUser(ctx, pgtype.Int4{Int32: int32(userID), Valid: true})
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
+func (r *pgUserRepo) GetLatestAssessmentByUser(ctx context.Context, userID int64) (*models.Assessment, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	// Note: sqlc generated GetLatestAssessmentByUser takes int32.
+	// The error log said 'cannot use int32(userID) ... as pgtype.Int4'.
+	// This implies it takes pgtype.Int4?
+	// But in 'backend/internal/store/queries/assessments.sql' line 10, it uses 'user_id = $1'.
+	// If the earlier error persisted, it means I should use pgtype.Int4?
+	// But user_id IS NOT NULL usually.
+	// Let's rely on the previous error: 'cannot use int32(userID) ... as pgtype.Int4'.
+	// Wait, that error was for CountAssessmentsByUser (line 513).
+	// Line 524 (GetLatestAssessmentByUser) ALSO had 'cannot use int32(userID) ... as pgtype.Int4'.
+	// So both take pgtype.Int4.
+
+	row, err := r.q.GetLatestAssessmentByUser(ctx, pgtype.Int4{Int32: int32(userID), Valid: true})
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	// Fix types: Source is string, IsSelfReported is bool (from row struct).
+	// Row struct 'GetLatestAssessmentByUserRow' definition (or Assessment struct).
+	// If source/is_self_reported are standard types, use them directly.
+	// Earlier error: 'cannot use row.Source (string) as pgtype.Text'.
+	// So row.Source IS string. row.IsSelfReported IS bool.
+
+	// Helper for pgtype.Text -> string
+	stringVal := func(t pgtype.Text) string {
+		if !t.Valid {
+			return ""
+		}
+		return t.String
+	}
+
+	return &models.Assessment{
+		ID:               int64(row.ID),
+		UserID:           int64(intVal(row.UserID)),
+		FBS:              numericVal(row.Fbs),
+		HbA1c:            numericVal(row.Hba1c),
+		Cholesterol:      intVal(row.Cholesterol),
+		LDL:              intVal(row.Ldl),
+		HDL:              intVal(row.Hdl),
+		Triglycerides:    intVal(row.Triglycerides),
+		Systolic:         intVal(row.Systolic),
+		Diastolic:        intVal(row.Diastolic),
+		Activity:         stringVal(row.Activity),
+		HistoryFlag:      boolVal(row.HistoryFlag),
+		Smoking:          stringVal(row.Smoking),
+		Hypertension:     stringVal(row.Hypertension),
+		HeartDisease:     stringVal(row.HeartDisease),
+		BMI:              numericVal(row.Bmi),
+		Cluster:          stringVal(row.Cluster),
+		RiskScore:        intVal(row.RiskScore),
+		ModelVersion:     stringVal(row.ModelVersion),
+		DatasetHash:      stringVal(row.DatasetHash),
+		ValidationStatus: stringVal(row.ValidationStatus),
+		IsSelfReported:   row.IsSelfReported,
+		Source:           row.Source,
+		Notes:            stringVal(row.Notes),
+		CreatedAt:        row.CreatedAt.Time,
+		UpdatedAt:        row.UpdatedAt.Time,
+	}, nil
+}
+
+func (r *pgUserRepo) GetUserTrends(ctx context.Context, userID int64, months int) (*models.TrendData, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+
+	rows, err := r.q.GetAssessmentTrendByUser(ctx, pgtype.Int4{Int32: int32(userID), Valid: true})
+	if err != nil {
+		return nil, err
+	}
+
+	data := &models.TrendData{
+		Dates:               []string{},
+		HbA1cValues:         []float64{},
+		BMIValues:           []float64{},
+		SystolicValues:      []int{},
+		DiastolicValues:     []int{},
+		LDLValues:           []int{},
+		HDLValues:           []int{},
+		TriglyceridesValues: []int{},
+		FBSValues:           []float64{},
+		RiskScores:          []string{},
+	}
+
+	for _, row := range rows {
+		data.Dates = append(data.Dates, row.CreatedAt.Time.Format("2006-01-02"))
+		data.HbA1cValues = append(data.HbA1cValues, numericVal(row.Hba1c))
+		data.BMIValues = append(data.BMIValues, numericVal(row.Bmi))
+		data.FBSValues = append(data.FBSValues, numericVal(row.Fbs))
+		data.TriglyceridesValues = append(data.TriglyceridesValues, intVal(row.Triglycerides))
+		data.LDLValues = append(data.LDLValues, intVal(row.Ldl))
+		data.HDLValues = append(data.HDLValues, intVal(row.Hdl))
+
+		rs := intVal(row.RiskScore)
+		level := "high"
+		if rs < 30 {
+			level = "low"
+		} else if rs < 70 {
+			level = "medium"
+		}
+		data.RiskScores = append(data.RiskScores, level)
+	}
+
+	return data, nil
+}
+
+func (r *pgUserRepo) SoftDeleteUser(ctx context.Context, userID int64) error {
+	if r.q == nil {
+		return errors.New("db not configured")
+	}
+	return r.q.SoftDeleteUser(ctx, int32(userID))
+}
+
+func (r *pgUserRepo) UpdateUserOnboarding(ctx context.Context, userID int64, completed bool) error {
+	if r.q == nil {
+		return errors.New("db not configured")
+	}
+	return r.q.UpdateUserOnboarding(ctx, sqlcgen.UpdateUserOnboardingParams{
+		ID:                  int32(userID),
+		OnboardingCompleted: completed,
+	})
+}
+
+func (r *pgUserRepo) UpdateUserConsent(ctx context.Context, userID int64, consent models.ConsentSettings) error {
+	if r.q == nil {
+		return errors.New("db not configured")
+	}
+	return r.q.UpdateUserConsent(ctx, sqlcgen.UpdateUserConsentParams{
+		ID:                           int32(userID),
+		ConsentPersonalData:          consent.ConsentPersonalData,
+		ConsentResearchParticipation: consent.ConsentResearchParticipation,
+		ConsentEmailUpdates:          consent.ConsentEmailUpdates,
+		ConsentAnalytics:             consent.ConsentAnalytics,
+	})
+}

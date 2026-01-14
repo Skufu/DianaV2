@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"container/heap"
 	"net/http"
 	"sync"
 	"time"
@@ -10,28 +11,67 @@ import (
 
 // RateLimiter implements a token bucket rate limiter
 type RateLimiter struct {
-	visitors map[string]*visitor
-	mu       sync.RWMutex
-	rate     int           // requests per duration
-	duration time.Duration // time window
+	visitors   map[string]*visitor
+	evictHeap  visitorHeap
+	mu         sync.RWMutex
+	rate       int
+	duration   time.Duration
+	maxEntries int
 }
 
 type visitor struct {
+	key        string
 	tokens     int
 	lastUpdate time.Time
+	heapIndex  int
 }
+
+type visitorHeap []*visitor
+
+func (h visitorHeap) Len() int           { return len(h) }
+func (h visitorHeap) Less(i, j int) bool { return h[i].lastUpdate.Before(h[j].lastUpdate) }
+func (h visitorHeap) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+	h[i].heapIndex = i
+	h[j].heapIndex = j
+}
+
+func (h *visitorHeap) Push(x interface{}) {
+	v := x.(*visitor)
+	v.heapIndex = len(*h)
+	*h = append(*h, v)
+}
+
+func (h *visitorHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	v := old[n-1]
+	old[n-1] = nil
+	v.heapIndex = -1
+	*h = old[0 : n-1]
+	return v
+}
+
+const defaultMaxEntries = 100000
 
 // NewRateLimiter creates a new rate limiter
 // rate: maximum number of requests allowed per duration
 // duration: time window for rate limiting
 func NewRateLimiter(rate int, duration time.Duration) *RateLimiter {
-	rl := &RateLimiter{
-		visitors: make(map[string]*visitor),
-		rate:     rate,
-		duration: duration,
-	}
+	return NewRateLimiterWithMax(rate, duration, defaultMaxEntries)
+}
 
-	// Clean up stale visitors every 5 minutes
+// NewRateLimiterWithMax creates a rate limiter with custom max entries
+func NewRateLimiterWithMax(rate int, duration time.Duration, maxEntries int) *RateLimiter {
+	rl := &RateLimiter{
+		visitors:   make(map[string]*visitor),
+		evictHeap:  make(visitorHeap, 0),
+		rate:       rate,
+		duration:   duration,
+		maxEntries: maxEntries,
+	}
+	heap.Init(&rl.evictHeap)
+
 	go rl.cleanup()
 
 	return rl
@@ -44,14 +84,19 @@ func (rl *RateLimiter) Allow(identifier string) bool {
 
 	v, exists := rl.visitors[identifier]
 	if !exists {
-		rl.visitors[identifier] = &visitor{
+		if len(rl.visitors) >= rl.maxEntries {
+			rl.evictOldestLocked()
+		}
+		v = &visitor{
+			key:        identifier,
 			tokens:     rl.rate - 1,
 			lastUpdate: time.Now(),
 		}
+		rl.visitors[identifier] = v
+		heap.Push(&rl.evictHeap, v)
 		return true
 	}
 
-	// Refill tokens based on time elapsed
 	now := time.Now()
 	elapsed := now.Sub(v.lastUpdate)
 	tokensToAdd := int(elapsed / rl.duration * time.Duration(rl.rate))
@@ -62,6 +107,7 @@ func (rl *RateLimiter) Allow(identifier string) bool {
 			v.tokens = rl.rate
 		}
 		v.lastUpdate = now
+		heap.Fix(&rl.evictHeap, v.heapIndex)
 	}
 
 	if v.tokens > 0 {
@@ -72,6 +118,13 @@ func (rl *RateLimiter) Allow(identifier string) bool {
 	return false
 }
 
+func (rl *RateLimiter) evictOldestLocked() {
+	if rl.evictHeap.Len() > 0 {
+		oldest := heap.Pop(&rl.evictHeap).(*visitor)
+		delete(rl.visitors, oldest.key)
+	}
+}
+
 // cleanup removes stale visitor entries
 func (rl *RateLimiter) cleanup() {
 	ticker := time.NewTicker(5 * time.Minute)
@@ -79,10 +132,10 @@ func (rl *RateLimiter) cleanup() {
 
 	for range ticker.C {
 		rl.mu.Lock()
-		for id, v := range rl.visitors {
-			if time.Since(v.lastUpdate) > rl.duration*2 {
-				delete(rl.visitors, id)
-			}
+		cutoff := time.Now().Add(-rl.duration * 2)
+		for rl.evictHeap.Len() > 0 && rl.evictHeap[0].lastUpdate.Before(cutoff) {
+			oldest := heap.Pop(&rl.evictHeap).(*visitor)
+			delete(rl.visitors, oldest.key)
 		}
 		rl.mu.Unlock()
 	}
@@ -109,4 +162,21 @@ func RateLimit(limiter *RateLimiter) gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// MaxBodySize returns a middleware that limits request body size.
+// This prevents DoS attacks via large JSON payloads.
+func MaxBodySize(maxBytes int64) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Body != nil {
+			c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBytes)
+		}
+		c.Next()
+	}
+}
+
+// AuthRateLimit returns a stricter rate limiter for authentication endpoints
+func AuthRateLimit(requestsPerMinute int) gin.HandlerFunc {
+	limiter := NewRateLimiter(requestsPerMinute, time.Minute)
+	return RateLimit(limiter)
 }

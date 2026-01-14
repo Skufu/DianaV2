@@ -12,9 +12,10 @@ import (
 )
 
 const findUserByEmail = `-- name: FindUserByEmail :one
-SELECT id, email, password_hash, role, created_at, updated_at
+
+SELECT id, email, password_hash, is_admin, is_active, created_at, updated_at
 FROM users
-WHERE email = $1
+WHERE email = $1 AND account_status = 'active'
 LIMIT 1
 `
 
@@ -22,11 +23,13 @@ type FindUserByEmailRow struct {
 	ID           int32              `json:"id"`
 	Email        string             `json:"email"`
 	PasswordHash string             `json:"password_hash"`
-	Role         string             `json:"role"`
+	IsAdmin      bool               `json:"is_admin"`
+	IsActive     bool               `json:"is_active"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
+// users.sql: SQLC queries for user management
 func (q *Queries) FindUserByEmail(ctx context.Context, email string) (FindUserByEmailRow, error) {
 	row := q.db.QueryRow(ctx, findUserByEmail, email)
 	var i FindUserByEmailRow
@@ -34,7 +37,8 @@ func (q *Queries) FindUserByEmail(ctx context.Context, email string) (FindUserBy
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
-		&i.Role,
+		&i.IsAdmin,
+		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -42,19 +46,49 @@ func (q *Queries) FindUserByEmail(ctx context.Context, email string) (FindUserBy
 }
 
 const findUserByID = `-- name: FindUserByID :one
-SELECT id, email, password_hash, role, created_at, updated_at
+SELECT id, email, password_hash, is_admin, is_active, created_at, updated_at,
+    first_name, last_name, date_of_birth, phone, address,
+    menopause_status, menopause_type, years_menopause,
+    hypertension, heart_disease, family_history_diabetes, smoking_status,
+    consent_personal_data, consent_research_participation, 
+    consent_email_updates, consent_analytics, consent_updated_at,
+    assessment_frequency_months, reminder_email, last_assessment_reminder_sent,
+    onboarding_completed, account_status, deleted_at
 FROM users
-WHERE id = $1
-LIMIT 1
+WHERE id = $1 LIMIT 1
 `
 
 type FindUserByIDRow struct {
-	ID           int32              `json:"id"`
-	Email        string             `json:"email"`
-	PasswordHash string             `json:"password_hash"`
-	Role         string             `json:"role"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	ID                           int32              `json:"id"`
+	Email                        string             `json:"email"`
+	PasswordHash                 string             `json:"password_hash"`
+	IsAdmin                      bool               `json:"is_admin"`
+	IsActive                     bool               `json:"is_active"`
+	CreatedAt                    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                    pgtype.Timestamptz `json:"updated_at"`
+	FirstName                    pgtype.Text        `json:"first_name"`
+	LastName                     pgtype.Text        `json:"last_name"`
+	DateOfBirth                  pgtype.Date        `json:"date_of_birth"`
+	Phone                        pgtype.Text        `json:"phone"`
+	Address                      pgtype.Text        `json:"address"`
+	MenopauseStatus              pgtype.Text        `json:"menopause_status"`
+	MenopauseType                pgtype.Text        `json:"menopause_type"`
+	YearsMenopause               pgtype.Int4        `json:"years_menopause"`
+	Hypertension                 pgtype.Text        `json:"hypertension"`
+	HeartDisease                 pgtype.Text        `json:"heart_disease"`
+	FamilyHistoryDiabetes        bool               `json:"family_history_diabetes"`
+	SmokingStatus                pgtype.Text        `json:"smoking_status"`
+	ConsentPersonalData          bool               `json:"consent_personal_data"`
+	ConsentResearchParticipation bool               `json:"consent_research_participation"`
+	ConsentEmailUpdates          bool               `json:"consent_email_updates"`
+	ConsentAnalytics             bool               `json:"consent_analytics"`
+	ConsentUpdatedAt             pgtype.Timestamptz `json:"consent_updated_at"`
+	AssessmentFrequencyMonths    int32              `json:"assessment_frequency_months"`
+	ReminderEmail                bool               `json:"reminder_email"`
+	LastAssessmentReminderSent   pgtype.Timestamptz `json:"last_assessment_reminder_sent"`
+	OnboardingCompleted          bool               `json:"onboarding_completed"`
+	AccountStatus                string             `json:"account_status"`
+	DeletedAt                    pgtype.Timestamptz `json:"deleted_at"`
 }
 
 func (q *Queries) FindUserByID(ctx context.Context, id int32) (FindUserByIDRow, error) {
@@ -64,9 +98,255 @@ func (q *Queries) FindUserByID(ctx context.Context, id int32) (FindUserByIDRow, 
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
-		&i.Role,
+		&i.IsAdmin,
+		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FirstName,
+		&i.LastName,
+		&i.DateOfBirth,
+		&i.Phone,
+		&i.Address,
+		&i.MenopauseStatus,
+		&i.MenopauseType,
+		&i.YearsMenopause,
+		&i.Hypertension,
+		&i.HeartDisease,
+		&i.FamilyHistoryDiabetes,
+		&i.SmokingStatus,
+		&i.ConsentPersonalData,
+		&i.ConsentResearchParticipation,
+		&i.ConsentEmailUpdates,
+		&i.ConsentAnalytics,
+		&i.ConsentUpdatedAt,
+		&i.AssessmentFrequencyMonths,
+		&i.ReminderEmail,
+		&i.LastAssessmentReminderSent,
+		&i.OnboardingCompleted,
+		&i.AccountStatus,
+		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const getUsersForNotification = `-- name: GetUsersForNotification :many
+SELECT id, email, first_name, last_name, 
+    assessment_frequency_months, last_assessment_reminder_sent
+FROM users
+WHERE reminder_email = true
+    AND account_status = 'active'
+    AND is_active = true
+ORDER BY last_assessment_reminder_sent ASC NULLS FIRST
+`
+
+type GetUsersForNotificationRow struct {
+	ID                         int32              `json:"id"`
+	Email                      string             `json:"email"`
+	FirstName                  pgtype.Text        `json:"first_name"`
+	LastName                   pgtype.Text        `json:"last_name"`
+	AssessmentFrequencyMonths  int32              `json:"assessment_frequency_months"`
+	LastAssessmentReminderSent pgtype.Timestamptz `json:"last_assessment_reminder_sent"`
+}
+
+func (q *Queries) GetUsersForNotification(ctx context.Context) ([]GetUsersForNotificationRow, error) {
+	rows, err := q.db.Query(ctx, getUsersForNotification)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUsersForNotificationRow
+	for rows.Next() {
+		var i GetUsersForNotificationRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.FirstName,
+			&i.LastName,
+			&i.AssessmentFrequencyMonths,
+			&i.LastAssessmentReminderSent,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchUsers = `-- name: SearchUsers :many
+SELECT id, email, first_name, last_name, created_at, is_active,
+    onboarding_completed, account_status
+FROM users
+WHERE ($1::text IS NULL OR email ILIKE '%' || $1 || '%' OR first_name ILIKE '%' || $1 || '%' OR last_name ILIKE '%' || $1 || '%')
+    AND ($2::boolean IS NULL OR is_active = $2)
+ORDER BY created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type SearchUsersParams struct {
+	Column1 string `json:"column_1"`
+	Column2 bool   `json:"column_2"`
+	Limit   int32  `json:"limit"`
+	Offset  int32  `json:"offset"`
+}
+
+type SearchUsersRow struct {
+	ID                  int32              `json:"id"`
+	Email               string             `json:"email"`
+	FirstName           pgtype.Text        `json:"first_name"`
+	LastName            pgtype.Text        `json:"last_name"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	IsActive            bool               `json:"is_active"`
+	OnboardingCompleted bool               `json:"onboarding_completed"`
+	AccountStatus       string             `json:"account_status"`
+}
+
+func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]SearchUsersRow, error) {
+	rows, err := q.db.Query(ctx, searchUsers,
+		arg.Column1,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SearchUsersRow
+	for rows.Next() {
+		var i SearchUsersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.FirstName,
+			&i.LastName,
+			&i.CreatedAt,
+			&i.IsActive,
+			&i.OnboardingCompleted,
+			&i.AccountStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const softDeleteUser = `-- name: SoftDeleteUser :exec
+UPDATE users SET deleted_at = NOW(), is_active = false, updated_at = NOW() WHERE id = $1
+`
+
+func (q *Queries) SoftDeleteUser(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, softDeleteUser, id)
+	return err
+}
+
+const updateLastLogin = `-- name: UpdateLastLogin :exec
+UPDATE users SET
+    last_login_at = NOW(),
+    updated_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) UpdateLastLogin(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, updateLastLogin, id)
+	return err
+}
+
+const updateUser = `-- name: UpdateUser :exec
+UPDATE users SET
+    first_name = $2, last_name = $3, date_of_birth = $4, phone = $5,
+    address = $6, menopause_status = $7, menopause_type = $8, years_menopause = $9,
+    hypertension = $10, heart_disease = $11, family_history_diabetes = $12, smoking_status = $13,
+    assessment_frequency_months = $14, reminder_email = $15,
+    updated_at = NOW()
+WHERE id = $1
+`
+
+type UpdateUserParams struct {
+	ID                        int32       `json:"id"`
+	FirstName                 pgtype.Text `json:"first_name"`
+	LastName                  pgtype.Text `json:"last_name"`
+	DateOfBirth               pgtype.Date `json:"date_of_birth"`
+	Phone                     pgtype.Text `json:"phone"`
+	Address                   pgtype.Text `json:"address"`
+	MenopauseStatus           pgtype.Text `json:"menopause_status"`
+	MenopauseType             pgtype.Text `json:"menopause_type"`
+	YearsMenopause            pgtype.Int4 `json:"years_menopause"`
+	Hypertension              pgtype.Text `json:"hypertension"`
+	HeartDisease              pgtype.Text `json:"heart_disease"`
+	FamilyHistoryDiabetes     bool        `json:"family_history_diabetes"`
+	SmokingStatus             pgtype.Text `json:"smoking_status"`
+	AssessmentFrequencyMonths int32       `json:"assessment_frequency_months"`
+	ReminderEmail             bool        `json:"reminder_email"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.Exec(ctx, updateUser,
+		arg.ID,
+		arg.FirstName,
+		arg.LastName,
+		arg.DateOfBirth,
+		arg.Phone,
+		arg.Address,
+		arg.MenopauseStatus,
+		arg.MenopauseType,
+		arg.YearsMenopause,
+		arg.Hypertension,
+		arg.HeartDisease,
+		arg.FamilyHistoryDiabetes,
+		arg.SmokingStatus,
+		arg.AssessmentFrequencyMonths,
+		arg.ReminderEmail,
+	)
+	return err
+}
+
+const updateUserConsent = `-- name: UpdateUserConsent :exec
+UPDATE users SET 
+    consent_personal_data = $2,
+    consent_research_participation = $3,
+    consent_email_updates = $4,
+    consent_analytics = $5,
+    consent_updated_at = NOW(),
+    updated_at = NOW()
+WHERE id = $1
+`
+
+type UpdateUserConsentParams struct {
+	ID                           int32 `json:"id"`
+	ConsentPersonalData          bool  `json:"consent_personal_data"`
+	ConsentResearchParticipation bool  `json:"consent_research_participation"`
+	ConsentEmailUpdates          bool  `json:"consent_email_updates"`
+	ConsentAnalytics             bool  `json:"consent_analytics"`
+}
+
+func (q *Queries) UpdateUserConsent(ctx context.Context, arg UpdateUserConsentParams) error {
+	_, err := q.db.Exec(ctx, updateUserConsent,
+		arg.ID,
+		arg.ConsentPersonalData,
+		arg.ConsentResearchParticipation,
+		arg.ConsentEmailUpdates,
+		arg.ConsentAnalytics,
+	)
+	return err
+}
+
+const updateUserOnboarding = `-- name: UpdateUserOnboarding :exec
+UPDATE users SET onboarding_completed = $2, updated_at = NOW() WHERE id = $1
+`
+
+type UpdateUserOnboardingParams struct {
+	ID                  int32 `json:"id"`
+	OnboardingCompleted bool  `json:"onboarding_completed"`
+}
+
+func (q *Queries) UpdateUserOnboarding(ctx context.Context, arg UpdateUserOnboardingParams) error {
+	_, err := q.db.Exec(ctx, updateUserOnboarding, arg.ID, arg.OnboardingCompleted)
+	return err
 }

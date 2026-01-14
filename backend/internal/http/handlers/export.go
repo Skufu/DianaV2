@@ -1,144 +1,133 @@
-// ExportHandler: CSV export endpoints for patients, assessments, and dataset slices.
 package handlers
 
 import (
-	"encoding/csv"
 	"fmt"
+	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/skufu/DianaV2/backend/internal/models"
+	"github.com/skufu/DianaV2/backend/internal/services"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
 type ExportHandler struct {
-	maxRows int
-	store   store.Store
+	store      store.Store
+	pdfService *services.PDFExportService
 }
 
-func NewExportHandler(store store.Store, maxRows int) *ExportHandler {
-	return &ExportHandler{store: store, maxRows: maxRows}
+// NewExportHandler creates a new export handler with PDF service
+func NewExportHandler(store store.Store) *ExportHandler {
+	return &ExportHandler{
+		store:      store,
+		pdfService: services.NewPDFExportService(),
+	}
 }
 
-func (h *ExportHandler) Register(rg *gin.RouterGroup) {
-	rg.GET("/patients.csv", h.patientsCSV)
-	rg.GET("/assessments.csv", h.assessmentsCSV)
-	rg.GET("/datasets/:slice", h.datasetSlice)
+// Register registers the handler routes
+func (h *ExportHandler) Register(r *gin.RouterGroup) {
+	r.GET("/pdf", h.ExportPDF)
+	// r.GET("/research", h.ExportResearchData) // Uncomment when needed
 }
 
-func (h *ExportHandler) patientsCSV(c *gin.Context) {
+// ExportPDF generates a PDF health report for the logged-in user
+func (h *ExportHandler) ExportPDF(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		ErrUnauthorized(c)
 		return
 	}
 
-	patients, err := h.store.Patients().ListAllLimited(c.Request.Context(), userID, h.maxRows)
+	user, err := h.store.Users().GetUserByID(c, int32(userID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch patients"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user profile"})
 		return
 	}
 
-	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=\"patients.csv\"")
-	w := csv.NewWriter(c.Writer)
-	_ = w.Write([]string{"id", "name", "age", "menopause_status", "years_menopause", "bmi", "bp_systolic", "bp_diastolic", "activity", "phys_activity", "smoking", "hypertension", "heart_disease", "family_history", "chol", "ldl", "hdl", "triglycerides", "cluster"})
-	for _, p := range patients {
-		_ = w.Write([]string{
-			strconv.FormatInt(p.ID, 10),
-			p.Name,
-			intToStr(p.Age),
-			p.MenopauseStatus,
-			intToStr(p.YearsMenopause),
-			floatToStr(p.BMI),
-			intToStr(p.BPSystolic),
-			intToStr(p.BPDiastolic),
-			p.Activity,
-			boolToStr(p.PhysActivity),
-			p.Smoking,
-			p.Hypertension,
-			p.HeartDisease,
-			boolToStr(p.FamilyHistory),
-			intToStr(p.Chol),
-			intToStr(p.LDL),
-			intToStr(p.HDL),
-			intToStr(p.Triglycerides),
-			"", // cluster not stored on patient
-		})
+	// Get user's assessments (limit to reasonable number e.g. 100)
+	assessments, err := h.store.Assessments().ListAllLimitedByUser(c, int32(userID), 100)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch assessments"})
+		return
 	}
-	w.Flush()
+
+	// Generate PDF
+	// Construct basic UserProfile from User since we fetch assessments separately
+	userProfile := models.UserProfile{
+		User: *user,
+	}
+	pdfData, err := h.pdfService.GenerateHealthReport(userProfile, assessments)
+	if err != nil {
+		log.Printf("Failed to generate PDF: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate PDF report"})
+		return
+	}
+
+	// Set headers for PDF download
+	filename := fmt.Sprintf("diana_health_report_%s_%s_%s.pdf",
+		user.FirstName, user.LastName,
+		time.Now().Format("2006-01-02"))
+
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	c.Header("Content-Length", fmt.Sprintf("%d", len(pdfData)))
+
+	// Send PDF data
+	c.Data(http.StatusOK, "application/pdf", pdfData)
+
+	log.Printf("PDF report generated and downloaded for user %d", userID)
 }
 
-func (h *ExportHandler) assessmentsCSV(c *gin.Context) {
-	userID, err := getUserID(c)
+// ExportResearchData exports anonymized data for research (admin only)
+func (h *ExportHandler) ExportResearchData(c *gin.Context) {
+	claims, err := getUserClaims(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		ErrUnauthorized(c)
 		return
 	}
 
-	rows, err := h.store.Assessments().ListAllLimitedByUser(c.Request.Context(), userID, h.maxRows)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch assessments"})
+	if claims.Role != "admin" {
+		ErrForbidden(c)
 		return
 	}
 
-	c.Header("Content-Type", "text/csv")
-	c.Header("Content-Disposition", "attachment; filename=\"assessments.csv\"")
-	w := csv.NewWriter(c.Writer)
-	_ = w.Write([]string{"id", "patient_id", "fbs", "hba1c", "cholesterol", "ldl", "hdl", "triglycerides", "systolic", "diastolic", "activity", "history_flag", "smoking", "hypertension", "heart_disease", "bmi", "cluster", "risk_score", "model_version", "dataset_hash", "validation_status", "created_at"})
-	for _, a := range rows {
-		_ = w.Write([]string{
-			strconv.FormatInt(a.ID, 10),
-			strconv.FormatInt(a.PatientID, 10),
-			floatToStr(a.FBS),
-			floatToStr(a.HbA1c),
-			intToStr(a.Cholesterol),
-			intToStr(a.LDL),
-			intToStr(a.HDL),
-			intToStr(a.Triglycerides),
-			intToStr(a.Systolic),
-			intToStr(a.Diastolic),
-			a.Activity,
-			boolToStr(a.HistoryFlag),
-			a.Smoking,
-			a.Hypertension,
-			a.HeartDisease,
-			floatToStr(a.BMI),
-			a.Cluster,
-			intToStr(a.RiskScore),
-			a.ModelVersion,
-			a.DatasetHash,
-			a.ValidationStatus,
-			a.CreatedAt.Format(time.RFC3339),
-		})
+	// Get users who consented to research
+	// Assuming GetUsersForNotification is available or using List
+	// Or maybe ListUsers?
+	// Based on errors, GetUsersForNotification was called.
+	// We'll use Users().GetUsersForNotification if it exists, otherwise placeholder
+	// For now, let's assume Users().List with filter?
+	// Or Users().GetUsersForNotification()
+	users, err := h.store.Users().GetUsersForNotification(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+		return
 	}
-	w.Flush()
-}
 
-func (h *ExportHandler) datasetSlice(c *gin.Context) {
-	slice := c.Param("slice")
-	hash := fmt.Sprintf("mock-hash-%s-%d", slice, time.Now().Unix())
+	// TODO: Generate CSV with anonymized data
+	// This would include:
+	// - Age range (not exact DOB)
+	// - Menopause status (not names)
+	// - Biomarker values (aggregated or per-user without identifying info)
+	// - Cluster assignments
+	// - Risk levels
+	// - Assessment dates (relative, not exact)
+
+	// For now, just return a placeholder
 	c.JSON(http.StatusOK, gin.H{
-		"slice":        slice,
-		"dataset_hash": hash,
-		"rows":         0,
-		"max_rows":     h.maxRows,
-		"note":         "dataset slice stub; extend to filtered exports",
+		"message":     "Research data export feature - TODO: Implement anonymized CSV generation",
+		"total_users": len(users),
 	})
 }
 
-func intToStr(v int) string {
-	return strconv.Itoa(v)
+// Legacy methods from original export handler
+func (h *ExportHandler) PatientsCSV(c *gin.Context) {
+	// This is deprecated - users now export their own data
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "Patient CSV export is deprecated. Users can export their own data via /users/me/export/pdf"})
 }
 
-func floatToStr(v float64) string {
-	return strconv.FormatFloat(v, 'f', -1, 64)
-}
-
-func boolToStr(v bool) string {
-	if v {
-		return "true"
-	}
-	return "false"
+func (h *ExportHandler) AssessmentsCSV(c *gin.Context) {
+	// This is deprecated - use ExportPDF instead
+	c.JSON(http.StatusNotImplemented, gin.H{"error": "Assessment CSV export is deprecated. Use PDF export for professional reports"})
 }
