@@ -27,7 +27,7 @@ SELECT COUNT(*)
 FROM users
 WHERE 
     ($1::text = '' OR email ILIKE '%' || $1 || '%')
-    AND ($2::text = '' OR role = $2)
+    AND ($2::text = '' OR is_admin = $2)
     AND ($3::boolean IS NULL OR is_active = $3)
 `
 
@@ -45,23 +45,22 @@ func (q *Queries) CountUsers(ctx context.Context, arg CountUsersParams) (int64, 
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, password_hash, role, is_active, created_by, created_at, updated_at)
-VALUES ($1, $2, $3, true, $4, NOW(), NOW())
-RETURNING id, email, password_hash, role, is_active, last_login_at, created_by, created_at, updated_at
+INSERT INTO users (email, password_hash, is_admin, is_active, created_at, updated_at)
+VALUES ($1, $2, $3, true, NOW(), NOW())
+RETURNING id, email, password_hash, is_admin, is_active, last_login_at, created_by, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	Email        string      `json:"email"`
-	PasswordHash string      `json:"password_hash"`
-	Role         string      `json:"role"`
-	CreatedBy    pgtype.Int4 `json:"created_by"`
+	Email        string `json:"email"`
+	PasswordHash string `json:"password_hash"`
+	IsAdmin      bool   `json:"is_admin"`
 }
 
 type CreateUserRow struct {
 	ID           int32              `json:"id"`
 	Email        string             `json:"email"`
 	PasswordHash string             `json:"password_hash"`
-	Role         string             `json:"role"`
+	IsAdmin      bool               `json:"is_admin"`
 	IsActive     bool               `json:"is_active"`
 	LastLoginAt  pgtype.Timestamptz `json:"last_login_at"`
 	CreatedBy    pgtype.Int4        `json:"created_by"`
@@ -70,18 +69,13 @@ type CreateUserRow struct {
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
-	row := q.db.QueryRow(ctx, createUser,
-		arg.Email,
-		arg.PasswordHash,
-		arg.Role,
-		arg.CreatedBy,
-	)
+	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.PasswordHash, arg.IsAdmin)
 	var i CreateUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
-		&i.Role,
+		&i.IsAdmin,
 		&i.IsActive,
 		&i.LastLoginAt,
 		&i.CreatedBy,
@@ -103,11 +97,12 @@ func (q *Queries) DeactivateUser(ctx context.Context, id int32) error {
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, password_hash, role, is_active, last_login_at, created_by, created_at, updated_at
+SELECT id, email, is_admin, is_active, created_at, updated_at,
+    first_name, last_name, account_status, onboarding_completed
 FROM users
 WHERE 
     ($1::text = '' OR email ILIKE '%' || $1 || '%')
-    AND ($2::text = '' OR role = $2)
+    AND ($2::text = '' OR is_admin = $2)
     AND ($3::boolean IS NULL OR is_active = $3)
 ORDER BY created_at DESC
 LIMIT $4 OFFSET $5
@@ -122,15 +117,16 @@ type ListUsersParams struct {
 }
 
 type ListUsersRow struct {
-	ID           int32              `json:"id"`
-	Email        string             `json:"email"`
-	PasswordHash string             `json:"password_hash"`
-	Role         string             `json:"role"`
-	IsActive     bool               `json:"is_active"`
-	LastLoginAt  pgtype.Timestamptz `json:"last_login_at"`
-	CreatedBy    pgtype.Int4        `json:"created_by"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	ID                  int32              `json:"id"`
+	Email               string             `json:"email"`
+	IsAdmin             bool               `json:"is_admin"`
+	IsActive            bool               `json:"is_active"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `json:"updated_at"`
+	FirstName           pgtype.Text        `json:"first_name"`
+	LastName            pgtype.Text        `json:"last_name"`
+	AccountStatus       string             `json:"account_status"`
+	OnboardingCompleted bool               `json:"onboarding_completed"`
 }
 
 func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {
@@ -151,13 +147,14 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUse
 		if err := rows.Scan(
 			&i.ID,
 			&i.Email,
-			&i.PasswordHash,
-			&i.Role,
+			&i.IsAdmin,
 			&i.IsActive,
-			&i.LastLoginAt,
-			&i.CreatedBy,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.FirstName,
+			&i.LastName,
+			&i.AccountStatus,
+			&i.OnboardingCompleted,
 		); err != nil {
 			return nil, err
 		}
@@ -185,38 +182,27 @@ func (q *Queries) ResetPassword(ctx context.Context, arg ResetPasswordParams) er
 	return err
 }
 
-const updateLastLogin = `-- name: UpdateLastLogin :exec
-UPDATE users
-SET last_login_at = NOW(), updated_at = NOW()
-WHERE id = $1
-`
-
-func (q *Queries) UpdateLastLogin(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, updateLastLogin, id)
-	return err
-}
-
-const updateUser = `-- name: UpdateUser :one
+const updateUserAdmin = `-- name: UpdateUserAdmin :one
 UPDATE users
 SET 
-    email = COALESCE(NULLIF($2, ''), email),
-    role = COALESCE(NULLIF($3, ''), role),
+    email = COALESCE($1, email),
+    is_admin = COALESCE($2, is_admin),
     updated_at = NOW()
-WHERE id = $1
-RETURNING id, email, password_hash, role, is_active, last_login_at, created_by, created_at, updated_at
+WHERE id = $3
+RETURNING id, email, password_hash, is_admin, is_active, last_login_at, created_by, created_at, updated_at
 `
 
-type UpdateUserParams struct {
-	ID      int32       `json:"id"`
-	Column2 interface{} `json:"column_2"`
-	Column3 interface{} `json:"column_3"`
+type UpdateUserAdminParams struct {
+	Email   string `json:"email"`
+	IsAdmin bool   `json:"is_admin"`
+	ID      int32  `json:"id"`
 }
 
-type UpdateUserRow struct {
+type UpdateUserAdminRow struct {
 	ID           int32              `json:"id"`
 	Email        string             `json:"email"`
 	PasswordHash string             `json:"password_hash"`
-	Role         string             `json:"role"`
+	IsAdmin      bool               `json:"is_admin"`
 	IsActive     bool               `json:"is_active"`
 	LastLoginAt  pgtype.Timestamptz `json:"last_login_at"`
 	CreatedBy    pgtype.Int4        `json:"created_by"`
@@ -224,14 +210,14 @@ type UpdateUserRow struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
-	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Column2, arg.Column3)
-	var i UpdateUserRow
+func (q *Queries) UpdateUserAdmin(ctx context.Context, arg UpdateUserAdminParams) (UpdateUserAdminRow, error) {
+	row := q.db.QueryRow(ctx, updateUserAdmin, arg.Email, arg.IsAdmin, arg.ID)
+	var i UpdateUserAdminRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
-		&i.Role,
+		&i.IsAdmin,
 		&i.IsActive,
 		&i.LastLoginAt,
 		&i.CreatedBy,
@@ -239,4 +225,15 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const updateUserLastLogin = `-- name: UpdateUserLastLogin :exec
+UPDATE users
+SET last_login_at = NOW(), updated_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) UpdateUserLastLogin(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, updateUserLastLogin, id)
+	return err
 }

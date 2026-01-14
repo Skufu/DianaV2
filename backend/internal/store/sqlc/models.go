@@ -10,7 +10,6 @@ import (
 
 type Assessment struct {
 	ID               int32              `json:"id"`
-	PatientID        pgtype.Int4        `json:"patient_id"`
 	Fbs              pgtype.Numeric     `json:"fbs"`
 	Hba1c            pgtype.Numeric     `json:"hba1c"`
 	Cholesterol      pgtype.Int4        `json:"cholesterol"`
@@ -32,6 +31,10 @@ type Assessment struct {
 	ValidationStatus pgtype.Text        `json:"validation_status"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	UserID           pgtype.Int4        `json:"user_id"`
+	IsSelfReported   bool               `json:"is_self_reported"`
+	Source           string             `json:"source"`
+	Notes            pgtype.Text        `json:"notes"`
 }
 
 type AuditEvent struct {
@@ -60,28 +63,18 @@ type ModelRun struct {
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
-type Patient struct {
-	ID              int32              `json:"id"`
-	Name            string             `json:"name"`
-	Age             pgtype.Int4        `json:"age"`
-	MenopauseStatus pgtype.Text        `json:"menopause_status"`
-	YearsMenopause  pgtype.Int4        `json:"years_menopause"`
-	Bmi             pgtype.Numeric     `json:"bmi"`
-	BpSystolic      pgtype.Int4        `json:"bp_systolic"`
-	BpDiastolic     pgtype.Int4        `json:"bp_diastolic"`
-	Activity        pgtype.Text        `json:"activity"`
-	Smoking         pgtype.Text        `json:"smoking"`
-	Hypertension    pgtype.Text        `json:"hypertension"`
-	HeartDisease    pgtype.Text        `json:"heart_disease"`
-	Chol            pgtype.Int4        `json:"chol"`
-	Ldl             pgtype.Int4        `json:"ldl"`
-	Hdl             pgtype.Int4        `json:"hdl"`
-	Triglycerides   pgtype.Int4        `json:"triglycerides"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
-	FamilyHistory   pgtype.Bool        `json:"family_history"`
-	PhysActivity    pgtype.Bool        `json:"phys_activity"`
-	UserID          int32              `json:"user_id"`
+type NotificationQueue struct {
+	ID               int32              `json:"id"`
+	UserID           int32              `json:"user_id"`
+	NotificationType string             `json:"notification_type"`
+	Subject          string             `json:"subject"`
+	Body             string             `json:"body"`
+	Priority         int32              `json:"priority"`
+	ScheduledFor     pgtype.Timestamptz `json:"scheduled_for"`
+	SentAt           pgtype.Timestamptz `json:"sent_at"`
+	Status           string             `json:"status"`
+	ErrorMessage     pgtype.Text        `json:"error_message"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
 type RefreshToken struct {
@@ -95,15 +88,38 @@ type RefreshToken struct {
 }
 
 type User struct {
-	ID           int32              `json:"id"`
-	Email        string             `json:"email"`
-	PasswordHash string             `json:"password_hash"`
-	Role         string             `json:"role"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
-	IsActive     bool               `json:"is_active"`
-	LastLoginAt  pgtype.Timestamptz `json:"last_login_at"`
-	CreatedBy    pgtype.Int4        `json:"created_by"`
+	ID                           int32              `json:"id"`
+	Email                        string             `json:"email"`
+	PasswordHash                 string             `json:"password_hash"`
+	CreatedAt                    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt                    pgtype.Timestamptz `json:"updated_at"`
+	IsActive                     bool               `json:"is_active"`
+	LastLoginAt                  pgtype.Timestamptz `json:"last_login_at"`
+	CreatedBy                    pgtype.Int4        `json:"created_by"`
+	FirstName                    pgtype.Text        `json:"first_name"`
+	LastName                     pgtype.Text        `json:"last_name"`
+	DateOfBirth                  pgtype.Date        `json:"date_of_birth"`
+	Phone                        pgtype.Text        `json:"phone"`
+	Address                      pgtype.Text        `json:"address"`
+	MenopauseStatus              pgtype.Text        `json:"menopause_status"`
+	MenopauseType                pgtype.Text        `json:"menopause_type"`
+	YearsMenopause               pgtype.Int4        `json:"years_menopause"`
+	Hypertension                 pgtype.Text        `json:"hypertension"`
+	HeartDisease                 pgtype.Text        `json:"heart_disease"`
+	FamilyHistoryDiabetes        bool               `json:"family_history_diabetes"`
+	SmokingStatus                pgtype.Text        `json:"smoking_status"`
+	ConsentPersonalData          bool               `json:"consent_personal_data"`
+	ConsentResearchParticipation bool               `json:"consent_research_participation"`
+	ConsentEmailUpdates          bool               `json:"consent_email_updates"`
+	ConsentAnalytics             bool               `json:"consent_analytics"`
+	ConsentUpdatedAt             pgtype.Timestamptz `json:"consent_updated_at"`
+	AssessmentFrequencyMonths    int32              `json:"assessment_frequency_months"`
+	ReminderEmail                bool               `json:"reminder_email"`
+	LastAssessmentReminderSent   pgtype.Timestamptz `json:"last_assessment_reminder_sent"`
+	OnboardingCompleted          bool               `json:"onboarding_completed"`
+	AccountStatus                string             `json:"account_status"`
+	DeletedAt                    pgtype.Timestamptz `json:"deleted_at"`
+	IsAdmin                      bool               `json:"is_admin"`
 }
 
 type UserClinic struct {

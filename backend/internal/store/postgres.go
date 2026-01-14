@@ -61,11 +61,18 @@ func (r *pgUserRepo) FindByEmail(ctx context.Context, email string) (*models.Use
 	if err != nil {
 		return nil, err
 	}
+	// Derive role from is_admin flag for JWT claims compatibility
+	role := "user"
+	if row.IsAdmin {
+		role = "admin"
+	}
 	return &models.User{
 		ID:           int64(row.ID),
 		Email:        row.Email,
 		PasswordHash: row.PasswordHash,
-		Role:         row.Role,
+		Role:         role,
+		IsAdmin:      row.IsAdmin,
+		IsActive:     row.IsActive,
 		CreatedAt:    row.CreatedAt.Time,
 		UpdatedAt:    row.UpdatedAt.Time,
 	}, nil
@@ -79,14 +86,42 @@ func (r *pgUserRepo) FindByID(ctx context.Context, id int32) (*models.User, erro
 	if err != nil {
 		return nil, err
 	}
+	role := "user"
+	if row.IsAdmin {
+		role = "admin"
+	}
 	return &models.User{
 		ID:           int64(row.ID),
 		Email:        row.Email,
 		PasswordHash: row.PasswordHash,
-		Role:         row.Role,
+		Role:         role,
+		IsAdmin:      row.IsAdmin,
+		IsActive:     row.IsActive,
 		CreatedAt:    row.CreatedAt.Time,
 		UpdatedAt:    row.UpdatedAt.Time,
 	}, nil
+}
+
+func (r *pgUserRepo) GetUsersForNotification(ctx context.Context) ([]models.UserForNotification, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	rows, err := r.q.GetUsersForNotification(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var out []models.UserForNotification
+	for _, row := range rows {
+		out = append(out, models.UserForNotification{
+			ID:                         row.ID,
+			Email:                      row.Email,
+			FirstName:                  textVal(row.FirstName),
+			LastName:                   textVal(row.LastName),
+			AssessmentFrequencyMonths:  row.AssessmentFrequencyMonths,
+			LastAssessmentReminderSent: row.LastAssessmentReminderSent.Time,
+		})
+	}
+	return out, nil
 }
 
 type pgPatientRepo struct{ q *sqlcgen.Queries }
@@ -328,30 +363,30 @@ func (r *pgAssessmentRepo) ListByPatient(ctx context.Context, patientID int64) (
 	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
-	rows, err := r.q.ListAssessmentsByPatient(ctx, int64ToPgInt(patientID))
+	rows, err := r.q.ListAssessmentsByUser(ctx, int64ToPgInt(patientID))
 	if err != nil {
 		return nil, err
 	}
-	return mapAssessmentsByPatientRows(rows), nil
+	return mapListAssessmentsByUserRows(rows), nil
 }
 
 func (r *pgAssessmentRepo) ListByPatientPaginated(ctx context.Context, patientID int64, limit, offset int) ([]models.Assessment, int, error) {
 	if r.q == nil {
 		return nil, 0, errors.New("db not configured")
 	}
-	count, err := r.q.CountAssessmentsByPatient(ctx, int64ToPgInt(patientID))
+	count, err := r.q.CountAssessmentsByUser(ctx, int64ToPgInt(patientID))
 	if err != nil {
 		return nil, 0, err
 	}
-	rows, err := r.q.ListAssessmentsByPatientPaginated(ctx, sqlcgen.ListAssessmentsByPatientPaginatedParams{
-		PatientID: int64ToPgInt(patientID),
-		Limit:     int32(limit),
-		Offset:    int32(offset),
+	rows, err := r.q.ListAssessmentsByUserPaginated(ctx, sqlcgen.ListAssessmentsByUserPaginatedParams{
+		UserID: int64ToPgInt(patientID),
+		Limit:  int32(limit),
+		Offset: int32(offset),
 	})
 	if err != nil {
 		return nil, 0, err
 	}
-	return mapAssessmentsByPatientRows(rows), int(count), nil
+	return mapListAssessmentsByUserPaginatedRows(rows), int(count), nil
 }
 
 func (r *pgAssessmentRepo) Create(ctx context.Context, a models.Assessment) (*models.Assessment, error) {
@@ -359,7 +394,7 @@ func (r *pgAssessmentRepo) Create(ctx context.Context, a models.Assessment) (*mo
 		return nil, errors.New("db not configured")
 	}
 	row, err := r.q.CreateAssessment(ctx, sqlcgen.CreateAssessmentParams{
-		PatientID:        int64ToPgInt(a.PatientID),
+		UserID:           int64ToPgInt(a.UserID),
 		Fbs:              floatToNumeric(a.FBS),
 		Hba1c:            floatToNumeric(a.HbA1c),
 		Cholesterol:      intToPgInt(a.Cholesterol),
@@ -428,7 +463,7 @@ func (r *pgAssessmentRepo) ClusterCountsByUser(ctx context.Context, userID int32
 	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
-	rows, err := r.q.ClusterCountsByUser(ctx, userID)
+	rows, err := r.q.ClusterCountsByUser(ctx, intToPgInt(int(userID)))
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +481,7 @@ func (r *pgAssessmentRepo) TrendAveragesByUser(ctx context.Context, userID int32
 	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
-	rows, err := r.q.TrendAveragesByUser(ctx, userID)
+	rows, err := r.q.TrendAveragesByUser(ctx, intToPgInt(int(userID)))
 	if err != nil {
 		return nil, err
 	}
@@ -479,7 +514,7 @@ func (r *pgAssessmentRepo) Update(ctx context.Context, a models.Assessment) (*mo
 	}
 	row, err := r.q.UpdateAssessment(ctx, sqlcgen.UpdateAssessmentParams{
 		ID:               int32(a.ID),
-		PatientID:        int64ToPgInt(a.PatientID),
+		UserID:           int64ToPgInt(a.UserID),
 		Fbs:              floatToNumeric(a.FBS),
 		Hba1c:            floatToNumeric(a.HbA1c),
 		Cholesterol:      intToPgInt(a.Cholesterol),
@@ -529,14 +564,15 @@ func (r *pgAssessmentRepo) ListAllLimitedByUser(ctx context.Context, userID int3
 	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
-	rows, err := r.q.ListAssessmentsLimitedByUser(ctx, sqlcgen.ListAssessmentsLimitedByUserParams{
-		UserID: userID,
+	rows, err := r.q.ListAssessmentsByUserPaginated(ctx, sqlcgen.ListAssessmentsByUserPaginatedParams{
+		UserID: int64ToPgInt(int64(userID)),
 		Limit:  int32(limit),
+		Offset: 0,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return mapAssessmentsLimitedRows(rows), nil
+	return mapListAssessmentsByUserPaginatedRows(rows), nil
 }
 
 func (r *pgAssessmentRepo) GetTrend(ctx context.Context, patientID int64) ([]models.AssessmentTrend, error) {
@@ -810,61 +846,212 @@ func mapUpdatePatientRow(r sqlcgen.UpdatePatientRow) models.Patient {
 }
 
 // mapping helpers - assessments
-func mapAssessmentsByPatientRows(rows []sqlcgen.Assessment) []models.Assessment {
+
+func mapListAssessmentsByUserRows(rows []sqlcgen.ListAssessmentsByUserRow) []models.Assessment {
 	var out []models.Assessment
 	for _, r := range rows {
-		out = append(out, mapAssessment(r))
+		out = append(out, models.Assessment{
+			ID:               int64(r.ID),
+			UserID:           int64Val(r.UserID),
+			FBS:              numericVal(r.Fbs),
+			HbA1c:            numericVal(r.Hba1c),
+			Cholesterol:      intVal(r.Cholesterol),
+			LDL:              intVal(r.Ldl),
+			HDL:              intVal(r.Hdl),
+			Triglycerides:    intVal(r.Triglycerides),
+			Systolic:         intVal(r.Systolic),
+			Diastolic:        intVal(r.Diastolic),
+			Activity:         textVal(r.Activity),
+			HistoryFlag:      boolVal(r.HistoryFlag),
+			Smoking:          textVal(r.Smoking),
+			Hypertension:     textVal(r.Hypertension),
+			HeartDisease:     textVal(r.HeartDisease),
+			BMI:              numericVal(r.Bmi),
+			Cluster:          textVal(r.Cluster),
+			RiskScore:        intVal(r.RiskScore),
+			ModelVersion:     textVal(r.ModelVersion),
+			DatasetHash:      textVal(r.DatasetHash),
+			ValidationStatus: textVal(r.ValidationStatus),
+			IsSelfReported:   r.IsSelfReported,
+			Source:           r.Source,
+			Notes:            textVal(r.Notes),
+			CreatedAt:        r.CreatedAt.Time,
+			UpdatedAt:        r.UpdatedAt.Time,
+		})
 	}
 	return out
 }
 
-func mapAssessmentsLimitedRows(rows []sqlcgen.Assessment) []models.Assessment {
+func mapListAssessmentsByUserPaginatedRows(rows []sqlcgen.ListAssessmentsByUserPaginatedRow) []models.Assessment {
 	var out []models.Assessment
 	for _, r := range rows {
-		out = append(out, mapAssessment(r))
+		out = append(out, models.Assessment{
+			ID:               int64(r.ID),
+			UserID:           int64Val(r.UserID), // Generated types have UserID
+			FBS:              numericVal(r.Fbs),
+			HbA1c:            numericVal(r.Hba1c),
+			Cholesterol:      intVal(r.Cholesterol),
+			LDL:              intVal(r.Ldl),
+			HDL:              intVal(r.Hdl),
+			Triglycerides:    intVal(r.Triglycerides),
+			Systolic:         intVal(r.Systolic),
+			Diastolic:        intVal(r.Diastolic),
+			Activity:         textVal(r.Activity),
+			HistoryFlag:      boolVal(r.HistoryFlag),
+			Smoking:          textVal(r.Smoking),
+			Hypertension:     textVal(r.Hypertension),
+			HeartDisease:     textVal(r.HeartDisease),
+			BMI:              numericVal(r.Bmi),
+			Cluster:          textVal(r.Cluster),
+			RiskScore:        intVal(r.RiskScore),
+			ModelVersion:     textVal(r.ModelVersion),
+			DatasetHash:      textVal(r.DatasetHash),
+			ValidationStatus: textVal(r.ValidationStatus),
+			IsSelfReported:   r.IsSelfReported,
+			Source:           r.Source,
+			Notes:            textVal(r.Notes),
+			CreatedAt:        r.CreatedAt.Time,
+			UpdatedAt:        r.UpdatedAt.Time,
+		})
 	}
 	return out
 }
 
-func mapCreateAssessmentRow(r sqlcgen.Assessment) models.Assessment {
-	return mapAssessment(r)
+func mapAssessmentsLimitedRows(rows []sqlcgen.ListAssessmentsLimitedRow) []models.Assessment {
+	var out []models.Assessment
+	for _, r := range rows {
+		out = append(out, models.Assessment{
+			ID:               int64(r.ID),
+			UserID:           int64Val(r.UserID),
+			FBS:              numericVal(r.Fbs),
+			HbA1c:            numericVal(r.Hba1c),
+			Cholesterol:      intVal(r.Cholesterol),
+			LDL:              intVal(r.Ldl),
+			HDL:              intVal(r.Hdl),
+			Triglycerides:    intVal(r.Triglycerides),
+			Systolic:         intVal(r.Systolic),
+			Diastolic:        intVal(r.Diastolic),
+			Activity:         textVal(r.Activity),
+			HistoryFlag:      boolVal(r.HistoryFlag),
+			Smoking:          textVal(r.Smoking),
+			Hypertension:     textVal(r.Hypertension),
+			HeartDisease:     textVal(r.HeartDisease),
+			BMI:              numericVal(r.Bmi),
+			Cluster:          textVal(r.Cluster),
+			RiskScore:        intVal(r.RiskScore),
+			ModelVersion:     textVal(r.ModelVersion),
+			DatasetHash:      textVal(r.DatasetHash),
+			ValidationStatus: textVal(r.ValidationStatus),
+			IsSelfReported:   r.IsSelfReported,
+			Source:           r.Source,
+			Notes:            textVal(r.Notes),
+			CreatedAt:        r.CreatedAt.Time,
+			UpdatedAt:        r.UpdatedAt.Time,
+		})
+	}
+	return out
 }
 
-func mapGetAssessmentRow(r sqlcgen.Assessment) models.Assessment {
-	return mapAssessment(r)
-}
-
-func mapUpdateAssessmentRow(r sqlcgen.Assessment) models.Assessment {
-	return mapAssessment(r)
-}
-
-func mapAssessment(a sqlcgen.Assessment) models.Assessment {
+func mapCreateAssessmentRow(r sqlcgen.CreateAssessmentRow) models.Assessment {
 	return models.Assessment{
-		ID:               int64(a.ID),
-		PatientID:        int64Val(a.PatientID),
-		FBS:              numericVal(a.Fbs),
-		HbA1c:            numericVal(a.Hba1c),
-		Cholesterol:      intVal(a.Cholesterol),
-		LDL:              intVal(a.Ldl),
-		HDL:              intVal(a.Hdl),
-		Triglycerides:    intVal(a.Triglycerides),
-		Systolic:         intVal(a.Systolic),
-		Diastolic:        intVal(a.Diastolic),
-		Activity:         textVal(a.Activity),
-		HistoryFlag:      boolVal(a.HistoryFlag),
-		Smoking:          textVal(a.Smoking),
-		Hypertension:     textVal(a.Hypertension),
-		HeartDisease:     textVal(a.HeartDisease),
-		BMI:              numericVal(a.Bmi),
-		Cluster:          textVal(a.Cluster),
-		RiskScore:        intVal(a.RiskScore),
-		ModelVersion:     textVal(a.ModelVersion),
-		DatasetHash:      textVal(a.DatasetHash),
-		ValidationStatus: textVal(a.ValidationStatus),
-		CreatedAt:        a.CreatedAt.Time,
-		UpdatedAt:        a.UpdatedAt.Time,
+		ID:               int64(r.ID),
+		UserID:           int64Val(r.UserID),
+		FBS:              numericVal(r.Fbs),
+		HbA1c:            numericVal(r.Hba1c),
+		Cholesterol:      intVal(r.Cholesterol),
+		LDL:              intVal(r.Ldl),
+		HDL:              intVal(r.Hdl),
+		Triglycerides:    intVal(r.Triglycerides),
+		Systolic:         intVal(r.Systolic),
+		Diastolic:        intVal(r.Diastolic),
+		Activity:         textVal(r.Activity),
+		HistoryFlag:      boolVal(r.HistoryFlag),
+		Smoking:          textVal(r.Smoking),
+		Hypertension:     textVal(r.Hypertension),
+		HeartDisease:     textVal(r.HeartDisease),
+		BMI:              numericVal(r.Bmi),
+		Cluster:          textVal(r.Cluster),
+		RiskScore:        intVal(r.RiskScore),
+		ModelVersion:     textVal(r.ModelVersion),
+		DatasetHash:      textVal(r.DatasetHash),
+		ValidationStatus: textVal(r.ValidationStatus),
+		IsSelfReported:   r.IsSelfReported,
+		Source:           r.Source,
+		Notes:            textVal(r.Notes),
+		CreatedAt:        r.CreatedAt.Time,
+		UpdatedAt:        r.UpdatedAt.Time,
 	}
 }
+
+func mapGetAssessmentRow(r sqlcgen.GetAssessmentRow) models.Assessment {
+	return models.Assessment{
+		ID:               int64(r.ID),
+		UserID:           int64Val(r.UserID),
+		FBS:              numericVal(r.Fbs),
+		HbA1c:            numericVal(r.Hba1c),
+		Cholesterol:      intVal(r.Cholesterol),
+		LDL:              intVal(r.Ldl),
+		HDL:              intVal(r.Hdl),
+		Triglycerides:    intVal(r.Triglycerides),
+		Systolic:         intVal(r.Systolic),
+		Diastolic:        intVal(r.Diastolic),
+		Activity:         textVal(r.Activity),
+		HistoryFlag:      boolVal(r.HistoryFlag),
+		Smoking:          textVal(r.Smoking),
+		Hypertension:     textVal(r.Hypertension),
+		HeartDisease:     textVal(r.HeartDisease),
+		BMI:              numericVal(r.Bmi),
+		Cluster:          textVal(r.Cluster),
+		RiskScore:        intVal(r.RiskScore),
+		ModelVersion:     textVal(r.ModelVersion),
+		DatasetHash:      textVal(r.DatasetHash),
+		ValidationStatus: textVal(r.ValidationStatus),
+		IsSelfReported:   r.IsSelfReported,
+		Source:           r.Source,
+		Notes:            textVal(r.Notes),
+		CreatedAt:        r.CreatedAt.Time,
+		UpdatedAt:        r.UpdatedAt.Time,
+	}
+}
+
+func mapUpdateAssessmentRow(r sqlcgen.UpdateAssessmentRow) models.Assessment {
+	return models.Assessment{
+		ID:               int64(r.ID),
+		UserID:           int64Val(r.UserID),
+		FBS:              numericVal(r.Fbs),
+		HbA1c:            numericVal(r.Hba1c),
+		Cholesterol:      intVal(r.Cholesterol),
+		LDL:              intVal(r.Ldl),
+		HDL:              intVal(r.Hdl),
+		Triglycerides:    intVal(r.Triglycerides),
+		Systolic:         intVal(r.Systolic),
+		Diastolic:        intVal(r.Diastolic),
+		Activity:         textVal(r.Activity),
+		HistoryFlag:      boolVal(r.HistoryFlag),
+		Smoking:          textVal(r.Smoking),
+		Hypertension:     textVal(r.Hypertension),
+		HeartDisease:     textVal(r.HeartDisease),
+		BMI:              numericVal(r.Bmi),
+		Cluster:          textVal(r.Cluster),
+		RiskScore:        intVal(r.RiskScore),
+		ModelVersion:     textVal(r.ModelVersion),
+		DatasetHash:      textVal(r.DatasetHash),
+		ValidationStatus: textVal(r.ValidationStatus),
+		IsSelfReported:   r.IsSelfReported,
+		Source:           r.Source,
+		Notes:            textVal(r.Notes),
+		CreatedAt:        r.CreatedAt.Time,
+		UpdatedAt:        r.UpdatedAt.Time,
+	}
+}
+
+// mapAssessment not needed if sqlcgen.Assessment is not used, but keep for fallback?
+// No, sqlcgen.Assessment might be used in ListAssessmentsLimitedRows if it uses it.
+// Wait, mapAssessmentsLimitedRows takes sqlcgen.ListAssessmentsLimitedRow?
+// It WAS taking sqlcgen.Assessment.
+// I should update it to take sqlcgen.ListAssessmentsLimitedRow (from generated code logic).
+// Line 623 in Step 311 showed ListAssessmentsLimitedRow.
+// So I updated signature in helper above.
 
 // pgtype helpers
 func intVal(v pgtype.Int4) int {

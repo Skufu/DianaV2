@@ -1,12 +1,8 @@
-// App: auth gate, tab routing, and data fetching for patients/assessments.
+// App: auth gate, tab routing, and user-centric data management
 import React, { useEffect, useState, Suspense, lazy, useMemo } from 'react';
 import {
-  createAssessmentApi,
-  createPatientApi,
-  fetchAssessmentsApi,
-  fetchPatientsApi,
   loginApi,
-  clearCache,
+  getUserProfileApi,
 } from './api';
 import Sidebar from './components/layout/Sidebar';
 import Login from './components/auth/Login';
@@ -21,11 +17,13 @@ import {
 } from './utils/deviceCapabilities';
 
 // Lazy-loaded route components for code splitting
-const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
-const PatientHistory = lazy(() => import('./components/patients/PatientHistory'));
+const Dashboard_user = lazy(() => import('./components/user/Dashboard_user'));
+const UserProfile = lazy(() => import('./components/user/UserProfile'));
+const Onboarding = lazy(() => import('./components/user/Onboarding'));
+const PersonalTrends = lazy(() => import('./components/user/PersonalTrends'));
 const Insights = lazy(() => import('./components/insights/Insights'));
-const Export = lazy(() => import('./components/export/Export'));
 const Education = lazy(() => import('./components/education/Education'));
+const Export = lazy(() => import('./components/export/Export'));
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
 
 // Loading skeleton for lazy components
@@ -46,12 +44,12 @@ const App = () => {
   const [token, setToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userId, setUserId] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [patientViewState, setPatientViewState] = useState('list');
-  const [patients, setPatients] = useState([]);
-  const [assessmentsCache, setAssessmentsCache] = useState({});
-  const [patientsError, setPatientsError] = useState(null);
-  const [loadingPatients, setLoadingPatients] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   // Device performance detection (computed once)
   const performanceTier = useMemo(() => getPerformanceTier(), []);
@@ -76,12 +74,15 @@ const App = () => {
     if (!res?.access_token) throw new Error('login failed');
     setToken(res.access_token);
     setRefreshToken(res.refresh_token);
-    // Decode JWT to extract user role
+    // Decode JWT to extract user role and ID
     try {
       const payload = JSON.parse(atob(res.access_token.split('.')[1]));
-      setUserRole(payload.role || 'clinician');
+      setUserRole(payload.role || 'user');
+      setIsAdmin(payload.is_admin || false);
+      setUserId(payload.user_id || payload.sub);
     } catch {
-      setUserRole('clinician');
+      setUserRole('user');
+      setIsAdmin(false);
     }
     setIsAuthenticated(true);
     localStorage.setItem('diana_token', res.access_token);
@@ -103,8 +104,10 @@ const App = () => {
       setToken(null);
       setRefreshToken(null);
       setUserRole(null);
-      setPatients([]);
-      setAssessmentsCache({});
+      setIsAdmin(false);
+      setUserId(null);
+      setUserProfile(null);
+      setShowOnboarding(false);
       localStorage.removeItem('diana_token');
       localStorage.removeItem('diana_refresh_token');
     }
@@ -116,193 +119,72 @@ const App = () => {
     if (savedToken) {
       setToken(savedToken);
       setRefreshToken(savedRefreshToken);
-      // Decode JWT to extract user role
+      // Decode JWT to extract user role and ID
       try {
         const payload = JSON.parse(atob(savedToken.split('.')[1]));
-        setUserRole(payload.role || 'clinician');
+        setUserRole(payload.role || 'user');
+        setIsAdmin(payload.is_admin || false);
+        setUserId(payload.user_id || payload.sub);
       } catch {
-        setUserRole('clinician');
+        setUserRole('user');
+        setIsAdmin(false);
       }
       setIsAuthenticated(true);
     }
   }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !userId) return;
     const load = async () => {
-      setLoadingPatients(true);
-      setPatientsError(null);
+      setLoadingProfile(true);
       try {
-        const data = await fetchPatientsApi(token);
-        setPatients(data || []);
+        const profile = await getUserProfileApi(token);
+        setUserProfile(profile);
+        setShowOnboarding(!profile || !profile.name || !profile.email);
       } catch (err) {
-        setPatientsError('Failed to load patients.');
+        console.error('Failed to load user profile:', err);
+        setShowOnboarding(true);
       } finally {
-        setLoadingPatients(false);
+        setLoadingProfile(false);
       }
     };
     load();
-  }, [token]);
-
-  const loadAssessments = async patientId => {
-    if (assessmentsCache[patientId]) return assessmentsCache[patientId];
-    const data = await fetchAssessmentsApi(token, patientId);
-    setAssessmentsCache(prev => ({ ...prev, [patientId]: data || [] }));
-    return data || [];
-  };
-
-  const refreshPatients = async () => {
-    if (!token) return;
-    setLoadingPatients(true);
-    setPatientsError(null);
-    try {
-      const data = await fetchPatientsApi(token);
-      setPatients(data || []);
-      setAssessmentsCache({});
-    } catch (err) {
-      setPatientsError('Failed to refresh patients.');
-    } finally {
-      setLoadingPatients(false);
-    }
-  };
-
-  const handleAssessmentSubmit = async (formData, bmi) => {
-    if (!token) throw new Error('not authenticated');
-    const patientPayload = {
-      name: formData.name || 'New Patient',
-      age: parseInt(formData.age) || null,
-      menopause_status: formData.menopauseStatus,
-      years_menopause: parseInt(formData.yearsMenopause) || null,
-      bmi: bmi || null,
-      bp_systolic: parseInt(formData.systolic) || null,
-      bp_diastolic: parseInt(formData.diastolic) || null,
-      activity: formData.activity,
-      phys_activity: !!formData.physActivity,
-      smoking: formData.smoking,
-      hypertension: formData.hypertension,
-      heart_disease: formData.heartDisease,
-      family_history: !!formData.familyHistory,
-      chol: parseInt(formData.cholesterol) || null,
-      ldl: parseInt(formData.ldl) || null,
-      hdl: parseInt(formData.hdl) || null,
-      triglycerides: parseInt(formData.triglycerides) || null,
-    };
-    const patient = await createPatientApi(token, patientPayload);
-    // Transform form values to backend-expected enum format
-    const mapActivity = val => {
-      const map = {
-        No: '',
-        Yes: 'active',
-        sedentary: 'sedentary',
-        light: 'light',
-        moderate: 'moderate',
-        active: 'active',
-        very_active: 'very_active',
-      };
-      return map[val] || '';
-    };
-    const mapSmoking = val => {
-      const map = {
-        No: 'never',
-        Yes: 'current',
-        never: 'never',
-        former: 'former',
-        current: 'current',
-      };
-      return map[val] || '';
-    };
-    const mapYesNo = val => {
-      if (val === 'Yes' || val === 'yes' || val === true) return 'yes';
-      if (val === 'No' || val === 'no' || val === false) return 'no';
-      return '';
-    };
-
-    const assessmentPayload = {
-      fbs: parseFloat(formData.fbs) || 0,
-      hba1c: parseFloat(formData.hba1c) || 0,
-      cholesterol: parseInt(formData.cholesterol) || 0,
-      ldl: parseInt(formData.ldl) || 0,
-      hdl: parseInt(formData.hdl) || 0,
-      triglycerides: parseInt(formData.triglycerides) || 0,
-      systolic: parseInt(formData.systolic) || 0,
-      diastolic: parseInt(formData.diastolic) || 0,
-      activity: mapActivity(formData.activity),
-      history_flag: !!formData.familyHistory,
-      smoking: mapSmoking(formData.smoking),
-      hypertension: mapYesNo(formData.hypertension),
-      heart_disease: mapYesNo(formData.heartDisease),
-      bmi: bmi || 0,
-    };
-    const assessment = await createAssessmentApi(token, patient.id, assessmentPayload);
-    return assessment;
-  };
+  }, [token, userId]);
 
   const handleStartAssessment = () => {
-    setActiveTab('patients');
-    setPatientViewState('form');
+    setActiveTab('profile');
   };
 
   const renderContent = () => {
+    if (showOnboarding) {
+      return <Onboarding token={token} userId={userId} onComplete={() => setShowOnboarding(false)} />;
+    }
+
     switch (activeTab) {
       case 'dashboard':
-        return (
-          <Dashboard
-            token={token}
-            patients={patients}
-            onNavigateToPatient={() => setActiveTab('patients')}
-            onStartAssessment={handleStartAssessment}
-            loading={loadingPatients}
-          />
-        );
-      case 'patients':
-        return (
-          <>
-            {patientsError && (
-              <div className="text-rose-400 text-sm mb-2 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
-                {patientsError}
-              </div>
-            )}
-            <PatientHistory
-              viewState={patientViewState}
-              setViewState={setPatientViewState}
-              patients={patients}
-              loadAssessments={loadAssessments}
-              onSubmitAssessment={handleAssessmentSubmit}
-              token={token}
-              onRefreshPatients={refreshPatients}
-            />
-          </>
-        );
+        return <Dashboard_user token={token} userId={userId} />;
+      case 'profile':
+        return <UserProfile token={token} userId={userId} />;
+      case 'trends':
+        return <PersonalTrends token={token} userId={userId} />;
       case 'insights':
-        return <Insights token={token} patients={patients} />;
+        return <Insights token={token} />;
       case 'education':
         return <Education />;
       case 'export':
         return <Export token={token} />;
       case 'admin':
-        return userRole === 'admin' ? (
+        return isAdmin ? (
           <AdminDashboard token={token} userRole={userRole} />
         ) : (
-          <Dashboard
-            token={token}
-            patients={patients}
-            onNavigateToPatient={() => setActiveTab('patients')}
-            onStartAssessment={handleStartAssessment}
-          />
+          <Dashboard_user token={token} userId={userId} />
         );
       default:
-        return (
-          <Dashboard
-            token={token}
-            patients={patients}
-            onNavigateToPatient={() => setActiveTab('patients')}
-            onStartAssessment={handleStartAssessment}
-          />
-        );
+        return <Dashboard_user token={token} userId={userId} />;
     }
   };
 
-  const isAssessmentOpen = activeTab === 'patients' && patientViewState === 'form';
+  const isAssessmentOpen = activeTab === 'profile';
 
   return (
     <>
@@ -333,19 +215,16 @@ const App = () => {
               onStartAssessment={handleStartAssessment}
               onLogout={handleLogout}
               userRole={userRole}
+              isAdmin={isAdmin}
             />
           )}
 
           <main
             className={`relative z-10 flex-1 ${isAssessmentOpen ? '' : 'ml-20 lg:ml-72'} p-6 lg:p-8`}
           >
-            {loadingPatients ? (
-              <LoadingSkeleton />
-            ) : (
-              <ErrorBoundary section={activeTab}>
-                <Suspense fallback={<LoadingSkeleton />}>{renderContent()}</Suspense>
-              </ErrorBoundary>
-            )}
+            <ErrorBoundary section={activeTab}>
+              <Suspense fallback={<LoadingSkeleton />}>{renderContent()}</Suspense>
+            </ErrorBoundary>
           </main>
         </div>
       )}
