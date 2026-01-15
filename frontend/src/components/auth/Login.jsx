@@ -45,8 +45,8 @@ const Login = ({ onLogin }) => {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-teal-500/25">
-              <Activity size={24} className="text-white" />
+            <div className="w-12 h-12 flex items-center justify-center">
+              <img src="/logo.png" alt="DIANA Logo" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
             <span className="text-4xl font-bold text-gradient tracking-tight">DIANA</span>
           </div>
