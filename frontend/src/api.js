@@ -63,7 +63,7 @@ export const updateUserProfileApi = async (data) => {
 export const completeOnboardingApi = async (data) => {
   return apiFetch('/users/me/onboarding', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: data,
   });
 };
 
@@ -229,11 +229,23 @@ export const loginApi = async (email, password) => {
   });
 };
 
-export const logoutApi = async refreshToken => {
-  return apiFetch('/auth/logout', {
-    method: 'POST',
-    body: { refresh_token: refreshToken },
-  });
+export const logoutApi = async (refreshToken) => {
+	return apiFetch('/auth/logout', {
+		method: 'POST',
+		body: { refresh_token: refreshToken },
+	});
+};
+
+export const signupApi = async (email, password, firstName, lastName) => {
+	return apiFetch('/auth/signup', {
+		method: 'POST',
+		body: {
+			email,
+			password,
+			first_name: firstName,
+			last_name: lastName,
+		},
+	});
 };
 
 export const fetchClusterDistributionApi = async _token => {

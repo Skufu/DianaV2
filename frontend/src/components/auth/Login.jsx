@@ -5,8 +5,11 @@ import { Activity } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
   const [mounted, setMounted] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -17,12 +20,25 @@ const Login = ({ onLogin }) => {
     setError(null);
     setLoading(true);
     try {
-      await onLogin(email, password);
+      let res;
+      if (isSignup) {
+        const { signupApi } = await import('../../api');
+        res = await signupApi(email, password, firstName, lastName);
+      } else {
+        const { loginApi } = await import('../../api');
+        res = await loginApi(email, password);
+      }
+      await onLogin(res);
     } catch (err) {
-      setError('Invalid credentials or server unavailable.');
+      setError(err.message || 'Authentication failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleMode = () => {
+    setIsSignup(!isSignup);
+    setError(null);
   };
 
   return (
@@ -54,17 +70,51 @@ const Login = ({ onLogin }) => {
         {/* Glass Card */}
         <div className="glass rounded-3xl p-8 border-glow">
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
-            <p className="text-slate-400 text-sm">Enter your credentials to access patient data</p>
+            <h2 className="text-2xl font-bold text-white mb-2">{isSignup ? 'Create Account' : 'Welcome Back'}</h2>
+            <p className="text-slate-400 text-sm">
+              {isSignup ? 'Enter your details to get started' : 'Enter your credentials to access patient data'}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {isSignup && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-slate-300 text-sm font-medium ml-1">First Name</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    required
+                    className="w-full bg-slate-800/50 border border-slate-700/50 text-white p-4 rounded-xl 
+                             focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 
+                             transition-all placeholder-slate-500"
+                    placeholder="Jane"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-slate-300 text-sm font-medium ml-1">Last Name</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    required
+                    className="w-full bg-slate-800/50 border border-slate-700/50 text-white p-4 rounded-xl 
+                             focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 
+                             transition-all placeholder-slate-500"
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-slate-300 text-sm font-medium ml-1">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
+                required
                 className="w-full bg-slate-800/50 border border-slate-700/50 text-white p-4 rounded-xl 
                          focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 
                          transition-all placeholder-slate-500"
@@ -78,6 +128,8 @@ const Login = ({ onLogin }) => {
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
+                required
+                minLength={8}
                 className="w-full bg-slate-800/50 border border-slate-700/50 text-white p-4 rounded-xl 
                          focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 
                          transition-all placeholder-slate-500"
@@ -118,13 +170,22 @@ const Login = ({ onLogin }) => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                     />
                   </svg>
-                  Signing In...
+                  {isSignup ? 'Creating Account...' : 'Signing In...'}
                 </span>
               ) : (
-                'Sign In'
+                isSignup ? 'Create Account' : 'Sign In'
               )}
             </button>
           </form>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={toggleMode}
+              className="text-slate-400 text-sm hover:text-white transition-colors"
+            >
+              {isSignup ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+            </button>
+          </div>
 
           <p className="text-center text-slate-500 text-xs mt-6">
             For menopausal women diabetes risk assessment
