@@ -9,7 +9,6 @@ import (
 
 type Store interface {
 	Users() UserRepository
-	Patients() PatientRepository
 	Assessments() AssessmentRepository
 	RefreshTokens() RefreshTokenRepository
 	Cohort() CohortRepository
@@ -37,18 +36,6 @@ type UserRepository interface {
 	UpdateUserOnboarding(ctx context.Context, userID int64, completed bool) error
 	UpdateUserConsent(ctx context.Context, userID int64, consent models.ConsentSettings) error
 	GetUsersForNotification(ctx context.Context) ([]models.UserForNotification, error)
-}
-
-type PatientRepository interface {
-	List(ctx context.Context, userID int32) ([]models.Patient, error)
-	ListPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.Patient, int, error)
-	ListWithLatestAssessment(ctx context.Context, userID int32) ([]models.PatientSummary, error)
-	ListWithLatestAssessmentPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.PatientSummary, int, error)
-	Get(ctx context.Context, id int32, userID int32) (*models.Patient, error)
-	Create(ctx context.Context, p models.Patient) (*models.Patient, error)
-	Update(ctx context.Context, p models.Patient) (*models.Patient, error)
-	Delete(ctx context.Context, id int32, userID int32) error
-	ListAllLimited(ctx context.Context, userID int32, limit int) ([]models.Patient, error)
 }
 
 type AssessmentRepository interface {
@@ -80,7 +67,7 @@ type CohortRepository interface {
 	StatsByRiskLevel(ctx context.Context) ([]models.CohortGroup, error)
 	StatsByAgeGroup(ctx context.Context) ([]models.CohortGroup, error)
 	StatsByMenopauseStatus(ctx context.Context) ([]models.CohortGroup, error)
-	TotalPatientCount(ctx context.Context) (int, error)
+	TotalUserCount(ctx context.Context) (int, error)
 	TotalAssessmentCount(ctx context.Context) (int, error)
 }
 

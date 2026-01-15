@@ -312,6 +312,7 @@ func TestSanitizeForAudit(t *testing.T) {
 	}{
 		{
 			name:     "normal string",
+			input:    "normal string",
 			expected: "normal string",
 		},
 		{

@@ -58,12 +58,14 @@ func (h *CohortHandler) getCohortStats(c *gin.Context) {
 		return
 	}
 
-	totalPatients, _ := cohortRepo.TotalPatientCount(c.Request.Context())
+	totalUsers, _ := cohortRepo.TotalUserCount(c.Request.Context())
 	totalAssessments, _ := cohortRepo.TotalAssessmentCount(c.Request.Context())
 
 	c.JSON(http.StatusOK, gin.H{
 		"groups":            groups,
-		"total_patients":    totalPatients,
+		// Keep both keys for backwards compatibility during refactor.
+		"total_users":       totalUsers,
+		"total_patients":    totalUsers,
 		"total_assessments": totalAssessments,
 		"group_by":          groupBy,
 	})

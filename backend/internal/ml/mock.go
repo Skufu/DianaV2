@@ -20,7 +20,7 @@ func (m *MockPredictor) Predict(input models.Assessment) (string, int) {
 		return "SIRD", 85 // Severe Insulin-Resistant Diabetes
 	case input.HbA1c > 6.5 && input.BMI < 27:
 		return "SIDD", 92 // Severe Insulin-Deficient Diabetes
-	case input.PatientID%2 == 0:
+	case input.UserID%2 == 0:
 		return "MARD", 45 // Mild Age-Related Diabetes
 	default:
 		return "MOD", 30 // Mild Obesity-Related Diabetes
