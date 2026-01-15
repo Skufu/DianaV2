@@ -36,20 +36,15 @@ const ModelTraceability = lazy(() => import('./ModelTraceability'));
 
 const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'];
 
-const AdminDashboard = ({ token, userRole }) => {
-  const [activeView, setActiveView] = useState('overview');
+const AdminDashboard = ({ token, userRole, activeView }) => {
   const [data, setData] = useState(null);
   const [clinics, setClinics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const animateCharts = useMemo(() => shouldAnimateCharts(), []);
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'users', label: 'Users', icon: Users },
-    { id: 'audit', label: 'Audit Logs', icon: FileText },
-    { id: 'models', label: 'Model Tracking', icon: Cpu },
-  ];
+  // Tabs are now handled by AdminLayout/AdminSidebar
+  // We just render content based on activeView prop
 
   useEffect(() => {
     if (!token || userRole !== 'admin' || activeView !== 'overview') return;
@@ -104,6 +99,7 @@ const AdminDashboard = ({ token, userRole }) => {
             <ModelTraceability token={token} />
           </Suspense>
         );
+      case 'overview':
       default:
         return renderOverview();
     }
@@ -313,33 +309,11 @@ const AdminDashboard = ({ token, userRole }) => {
       {/* Header */}
       <header>
         <div className="flex items-center gap-3 mb-2">
-          <Shield className="text-violet-400" size={28} />
+          <Shield className="text-indigo-400" size={28} />
           <h4 className="text-slate-400 font-medium text-sm">System Administration</h4>
         </div>
         <h2 className="text-3xl font-bold text-white">Admin Dashboard</h2>
       </header>
-
-      {/* Tab Navigation */}
-      <div className="glass-card p-1 flex flex-wrap gap-1">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeView === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveView(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
-                isActive
-                  ? 'bg-teal-500/20 text-teal-400'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <Icon size={18} />
-              <span className="font-medium">{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
 
       {/* Content */}
       {renderContent()}

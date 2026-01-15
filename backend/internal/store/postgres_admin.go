@@ -49,8 +49,11 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 	offset := (page - 1) * pageSize
 
 	// Build query with filters
+	// Note: role column was removed in migration 0011, use is_admin instead
+	// Derive role as 'admin' if is_admin is true, otherwise 'clinician'
 	query := `
-		SELECT id, email, password_hash, role, 
+		SELECT id, email, password_hash, 
+		       CASE WHEN COALESCE(is_admin, false) THEN 'admin' ELSE 'clinician' END as role,
 		       COALESCE(is_active, true) as is_active, 
 		       last_login_at, created_by, created_at, updated_at
 		FROM users
@@ -68,10 +71,14 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 	}
 
 	if params.Role != "" {
-		query += ` AND role = $` + itoa(argNum)
-		countQuery += ` AND role = $` + itoa(argNum)
-		args = append(args, params.Role)
-		argNum++
+		// Convert role filter to is_admin filter
+		if params.Role == "admin" {
+			query += ` AND COALESCE(is_admin, false) = true`
+			countQuery += ` AND COALESCE(is_admin, false) = true`
+		} else {
+			query += ` AND COALESCE(is_admin, false) = false`
+			countQuery += ` AND COALESCE(is_admin, false) = false`
+		}
 	}
 
 	if params.IsActive != nil {

@@ -57,12 +57,13 @@ func (h *AuthHandler) login(c *gin.Context) {
 	// Generate access token (short-lived, 15 minutes)
 	now := time.Now()
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":     user.Email,
-		"user_id": user.ID,
-		"role":    user.Role,
-		"exp":     now.Add(15 * time.Minute).Unix(),
-		"iat":     now.Unix(),
-		"scope":   "diana",
+		"sub":      user.Email,
+		"user_id":  user.ID,
+		"role":     user.Role,
+		"is_admin": user.IsAdmin,
+		"exp":      now.Add(15 * time.Minute).Unix(),
+		"iat":      now.Unix(),
+		"scope":    "diana",
 	})
 	signedAccessToken, err := accessToken.SignedString([]byte(h.cfg.JWTSecret))
 	if err != nil {
@@ -145,12 +146,13 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 	// Generate new access token
 	now := time.Now()
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":     user.Email,
-		"user_id": user.ID,
-		"role":    user.Role,
-		"exp":     now.Add(15 * time.Minute).Unix(),
-		"iat":     now.Unix(),
-		"scope":   "diana",
+		"sub":      user.Email,
+		"user_id":  user.ID,
+		"role":     user.Role,
+		"is_admin": user.IsAdmin,
+		"exp":      now.Add(15 * time.Minute).Unix(),
+		"iat":      now.Unix(),
+		"scope":    "diana",
 	})
 	signedAccessToken, err := accessToken.SignedString([]byte(h.cfg.JWTSecret))
 	if err != nil {
