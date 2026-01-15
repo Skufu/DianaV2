@@ -75,7 +75,7 @@ const getMLMetrics = (mlMetrics) => {
   return mlMetrics.clinical?.best_model ? mlMetrics.clinical : mlMetrics.ada_baseline;
 };
 
-const Insights = ({ token, patients = [] }) => {
+const Insights = ({ token, users = [] }) => {
   const [clusters, setClusters] = useState([]);
   const [trends, setTrends] = useState([]);
   const [allAssessments, setAllAssessments] = useState([]);
@@ -178,11 +178,13 @@ const Insights = ({ token, patients = [] }) => {
 
     return allAssessments
       .map(assessment => {
-        const patient = patients.find(p => p.id === assessment.patient_id);
-        if (!patient || !patient.bmi || !assessment.fbs) return null;
+        // assessment.user_id references user ID, not patient
+        // User profile now contains BMI and health data directly
+        const user = users.find(u => u.id === assessment.user_id);
+        if (!user || !user.bmi || !assessment.fbs) return null;
 
         return {
-          bmi: parseFloat(patient.bmi),
+          bmi: parseFloat(user.bmi),
           fbs: parseFloat(assessment.fbs),
           hba1c: parseFloat(assessment.hba1c) || 0,
           risk: assessment.risk_score || 0

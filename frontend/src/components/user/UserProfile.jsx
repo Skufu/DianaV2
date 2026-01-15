@@ -40,8 +40,25 @@ const UserProfile = ({ token, userId }) => {
     setSaving(true);
     setError(null);
     try {
-      await updateUserProfileApi(token, formData);
-      setProfile(formData);
+      // Map camelCase to snake_case to match backend JSON tags
+      const snakeCasePayload = {
+        first_name: formData.name,
+        last_name: formData.name, // Temporarily split name until separate fields are added
+        date_of_birth: formData.dob?.split('T')[0] || formData.dob,
+        phone: formData.phone,
+        address: formData.address,
+        menopause_status: formData.menopauseStatus,
+        menopause_type: formData.menopauseType,
+        years_menopause: formData.yearsMenopause,
+        hypertension: formData.hypertension,
+        heart_disease: formData.heartDisease,
+        family_history_diabetes: formData.familyHistory === 'yes',
+        smoking_status: formData.smoking,
+        assessment_frequency_months: formData.assessmentFrequency === 'weekly' ? 1 : formData.assessmentFrequency === 'monthly' ? 3 : formData.assessmentFrequency === 'quarterly' ? 12 : null,
+        reminder_email: formData.assessmentFrequency !== 'none',
+      };
+      await updateUserProfileApi(token, snakeCasePayload);
+      setProfile({...formData, ...snakeCasePayload});
       alert('Profile updated successfully!');
     } catch (err) {
       setError(err.message || 'Failed to update profile');
