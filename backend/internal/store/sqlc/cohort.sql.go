@@ -264,7 +264,7 @@ func (q *Queries) TotalAssessmentCount(ctx context.Context) (int32, error) {
 }
 
 const totalPatientCount = `-- name: TotalPatientCount :one
-SELECT COUNT(*)::int AS count FROM users WHERE role = 'patient'
+SELECT COUNT(*)::int AS count FROM users WHERE is_admin = false
 `
 
 func (q *Queries) TotalPatientCount(ctx context.Context) (int32, error) {

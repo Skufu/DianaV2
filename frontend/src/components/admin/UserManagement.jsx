@@ -57,7 +57,7 @@ const UserManagement = ({ token }) => {
       if (roleFilter) params.role = roleFilter;
       if (activeFilter !== '') params.is_active = activeFilter === 'active';
 
-      const response = await fetchAdminUsersApi(token, params);
+      const response = await fetchAdminUsersApi(params);
       setUsers(response.data || []);
       setTotal(response.total || 0);
       setTotalPages(response.total_pages || 1);
@@ -294,22 +294,20 @@ const UserManagement = ({ token }) => {
                       <td className="px-4 py-3 text-white">{user.email}</td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user.role === 'admin'
+                          className={`px-2 py-1 rounded text-xs font-medium ${user.role === 'admin'
                               ? 'bg-violet-500/20 text-violet-400'
                               : 'bg-teal-500/20 text-teal-400'
-                          }`}
+                            }`}
                         >
                           {user.role}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user.is_active !== false
+                          className={`px-2 py-1 rounded text-xs font-medium ${user.is_active !== false
                               ? 'bg-emerald-500/20 text-emerald-400'
                               : 'bg-slate-500/20 text-slate-400'
-                          }`}
+                            }`}
                         >
                           {user.is_active !== false ? 'Active' : 'Inactive'}
                         </span>

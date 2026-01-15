@@ -25,6 +25,7 @@ const Insights = lazy(() => import('./components/insights/Insights'));
 const Education = lazy(() => import('./components/education/Education'));
 const Export = lazy(() => import('./components/export/Export'));
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
+const AdminLayout = lazy(() => import('./components/layout/AdminLayout'));
 
 // Loading skeleton for lazy components
 const LoadingSkeleton = () => (
@@ -80,6 +81,13 @@ const App = () => {
       setUserRole(payload.role || 'user');
       setIsAdmin(payload.is_admin || false);
       setUserId(payload.user_id || payload.sub);
+
+      // Reset active tab on login based on role
+      if (payload.is_admin) {
+        setActiveTab('overview');
+      } else {
+        setActiveTab('dashboard');
+      }
     } catch {
       setUserRole('user');
       setIsAdmin(false);
@@ -140,7 +148,12 @@ const App = () => {
       try {
         const profile = await getUserProfileApi(token);
         setUserProfile(profile);
-        setShowOnboarding(!profile || !profile.name || !profile.email);
+        // Skip onboarding for admin users
+        if (userRole === 'admin') {
+          setShowOnboarding(false);
+        } else {
+          setShowOnboarding(!profile || !profile.name || !profile.email);
+        }
       } catch (err) {
         console.error('Failed to load user profile:', err);
         setShowOnboarding(true);
@@ -156,6 +169,21 @@ const App = () => {
   };
 
   const renderContent = () => {
+    // Admin specific rendering
+    if (isAdmin) {
+      return (
+        <AdminLayout
+          activeView={activeTab} // We reuse activeTab state for admin views
+          setActiveView={setActiveTab}
+          onLogout={handleLogout}
+          animationNodeCount={animationNodeCount}
+        >
+          <AdminDashboard activeView={activeTab} token={token} userRole={userRole} />
+        </AdminLayout>
+      );
+    }
+
+    // User specific rendering
     if (showOnboarding) {
       return <Onboarding token={token} userId={userId} onComplete={() => setShowOnboarding(false)} />;
     }
@@ -173,12 +201,6 @@ const App = () => {
         return <Education />;
       case 'export':
         return <Export token={token} />;
-      case 'admin':
-        return isAdmin ? (
-          <AdminDashboard token={token} userRole={userRole} />
-        ) : (
-          <Dashboard_user token={token} userId={userId} />
-        );
       default:
         return <Dashboard_user token={token} userId={userId} />;
     }
@@ -191,6 +213,17 @@ const App = () => {
       <CustomCursor isLoggedIn={isAuthenticated} />
       {!isAuthenticated ? (
         <Login onLogin={handleLogin} />
+      ) : isAdmin ? (
+        <Suspense fallback={<LoadingSkeleton />}>
+          <AdminLayout
+            activeView={activeTab} // We reuse activeTab state for admin views
+            setActiveView={setActiveTab}
+            onLogout={handleLogout}
+            animationNodeCount={animationNodeCount}
+          >
+            <AdminDashboard activeView={activeTab} token={token} userRole={userRole} />
+          </AdminLayout>
+        </Suspense>
       ) : (
         <div
           className="flex min-h-screen relative overflow-hidden"
@@ -208,6 +241,7 @@ const App = () => {
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5 pointer-events-none" />
 
+          {/* Standard User Layout */}
           {!isAssessmentOpen && (
             <Sidebar
               activeTab={activeTab}
