@@ -21,8 +21,8 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, userRol
     >
       {/* Logo */}
       <div className="p-6 lg:p-8 flex items-center justify-center lg:justify-start gap-3 border-b border-slate-700/50">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-400 flex items-center justify-center shrink-0 shadow-lg shadow-teal-500/20">
-          <Activity size={20} className="text-white" />
+        <div className="w-10 h-10 flex items-center justify-center shrink-0">
+          <img src="/logo.png" alt="DIANA Logo" className="w-full h-full object-contain drop-shadow-sm" />
         </div>
         <span className="text-2xl text-white font-bold hidden lg:block tracking-wide">DIANA</span>
       </div>
