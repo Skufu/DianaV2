@@ -4,7 +4,7 @@ SELECT id, email, is_admin, is_active, created_at, updated_at,
 FROM users
 WHERE 
     ($1::text = '' OR email ILIKE '%' || $1 || '%')
-    AND ($2::text = '' OR ($2 = 'admin' AND is_admin = true) OR ($2 = 'clinician' AND is_admin = false))
+    AND ($2::text = '' OR ($2 = 'admin' AND is_admin = true) OR ($2 = 'user' AND is_admin = false))
     AND ($3::boolean IS NULL OR is_active = $3)
 ORDER BY created_at DESC
 LIMIT $4 OFFSET $5;
