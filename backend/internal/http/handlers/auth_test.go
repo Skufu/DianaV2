@@ -163,10 +163,6 @@ func (f *fakeStoreAuth) Users() store.UserRepository {
 	return f.userRepo
 }
 
-func (f *fakeStoreAuth) Patients() store.PatientRepository {
-	return &fakePatientRepo{}
-}
-
 func (f *fakeStoreAuth) Assessments() store.AssessmentRepository {
 	return &fakeAssessmentRepo{}
 }

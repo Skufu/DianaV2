@@ -56,8 +56,7 @@ type User struct {
 
 type Assessment struct {
 	ID            int64   `json:"id"`
-	UserID        int64   `json:"user_id"` // Changed from PatientID
-	PatientID     int64   `json:"patient_id,omitempty"`
+	UserID        int64   `json:"user_id"`
 	RiskLevel     string  `json:"risk_level,omitempty"`
 	FBS           float64 `json:"fbs,omitempty"`
 	HbA1c         float64 `json:"hba1c,omitempty"`
@@ -207,45 +206,10 @@ type UpdateAssessmentRequest struct {
 	Notes         string   `json:"notes" binding:"omitempty,max=2000"`
 }
 
-// -----------------------------------------------------------------------------
-// Legacy / Admin Models (Ported from types_old.go)
-// -----------------------------------------------------------------------------
+// Patient struct removed - patients table dropped in migration 0011
+// All patient data now stored in User model directly
 
-type Patient struct {
-	ID              int64     `json:"id"`
-	UserID          int64     `json:"user_id,omitempty"`
-	Name            string    `json:"name"`
-	Age             int       `json:"age,omitempty"`
-	MenopauseStatus string    `json:"menopause_status,omitempty"`
-	YearsMenopause  int       `json:"years_menopause,omitempty"`
-	BMI             float64   `json:"bmi,omitempty"`
-	BPSystolic      int       `json:"bp_systolic,omitempty"`
-	BPDiastolic     int       `json:"bp_diastolic,omitempty"`
-	Activity        string    `json:"activity,omitempty"`
-	PhysActivity    bool      `json:"phys_activity,omitempty"`
-	Smoking         string    `json:"smoking,omitempty"`
-	Hypertension    string    `json:"hypertension,omitempty"`
-	HeartDisease    string    `json:"heart_disease,omitempty"`
-	FamilyHistory   bool      `json:"family_history,omitempty"`
-	Chol            int       `json:"chol,omitempty"`
-	LDL             int       `json:"ldl,omitempty"`
-	HDL             int       `json:"hdl,omitempty"`
-	Triglycerides   int       `json:"triglycerides,omitempty"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
-}
-
-type PatientSummary struct {
-	Patient
-	Cluster   string    `json:"cluster,omitempty"`
-	RiskScore int       `json:"risk_score,omitempty"`
-	Risk      int       `json:"risk,omitempty"`
-	FBS       float64   `json:"fbs,omitempty"`
-	HbA1c     float64   `json:"hba1c,omitempty"`
-	LastVisit time.Time `json:"lastVisit,omitempty"`
-}
-
-// CohortGroup represents aggregated statistics for a patient group
+// CohortGroup represents aggregated statistics for a user group
 type CohortGroup struct {
 	Name              string  `json:"name"`
 	Count             int     `json:"count"`

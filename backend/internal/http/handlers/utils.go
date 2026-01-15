@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -115,8 +114,6 @@ func ErrInternal(c *gin.Context, message string) {
 	errorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", message)
 }
 
-var controlCharRegex = regexp.MustCompile(`[\x00-\x1f\x7f]`)
-
 func parseIDParam(c *gin.Context, name string) (int64, error) {
 	raw := c.Param(name)
 	return strconv.ParseInt(raw, 10, 64)
@@ -143,11 +140,28 @@ func getUserClaims(c *gin.Context) (middleware.UserClaims, error) {
 }
 
 func sanitizeForAudit(s string) string {
-	sanitized := controlCharRegex.ReplaceAllString(s, "")
-	if len(sanitized) > 500 {
-		sanitized = sanitized[:500]
+	// Defense-in-depth against audit/log injection:
+	// - strip non-printable ASCII control characters
+	// - remove LF entirely (keep single-line logs)
+	// - stop at CR or TAB (common injection vectors / formatting disruptions)
+	// - cap output length
+	var out []rune
+	for _, r := range s {
+		if r == '\r' || r == '\t' {
+			break
+		}
+		if r == '\n' {
+			continue
+		}
+		if r < 0x20 || r == 0x7f {
+			continue
+		}
+		out = append(out, r)
+		if len(out) >= 500 {
+			break
+		}
 	}
-	return sanitized
+	return string(out)
 }
 
 func sanitizeAuditDetails(details map[string]interface{}) map[string]interface{} {
