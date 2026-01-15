@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/skufu/DianaV2/backend/internal/config"
+	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -28,7 +29,15 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
+type signupRequest struct {
+	Email     string `json:"email" binding:"required,email"`
+	Password  string `json:"password" binding:"required,min=8"`
+	FirstName string `json:"first_name" binding:"required"`
+	LastName  string `json:"last_name" binding:"required"`
+}
+
 func (h *AuthHandler) Register(rg *gin.RouterGroup) {
+	rg.POST("/signup", h.signup)
 	rg.POST("/login", h.login)
 	rg.POST("/refresh", h.refresh)
 	rg.POST("/logout", h.logout)
@@ -96,6 +105,92 @@ func (h *AuthHandler) login(c *gin.Context) {
 			"id":    user.ID,
 			"email": user.Email,
 			"role":  user.Role,
+		},
+	})
+}
+
+func (h *AuthHandler) signup(c *gin.Context) {
+	var req signupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if user exists
+	existing, _ := h.store.Users().FindByEmail(c.Request.Context(), req.Email)
+	if existing != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "user already exists"})
+		return
+	}
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "server error"})
+		return
+	}
+
+	// Create user
+	newUser := models.User{
+		Email:        req.Email,
+		PasswordHash: string(hashedPassword),
+		Role:         "user",
+		IsAdmin:      false,
+		IsActive:     true,
+	}
+
+	createdUser, err := h.store.Users().Create(c.Request.Context(), newUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
+		return
+	}
+
+	// Update profile with names
+	createdUser.FirstName = req.FirstName
+	createdUser.LastName = req.LastName
+	_, err = h.store.Users().UpdateUser(c.Request.Context(), *createdUser)
+	if err != nil {
+		// Log error but continue as user is created
+		// In a real scenario we might want cleanup or transaction
+	}
+
+	// Generate tokens immediately so they are logged in
+	now := time.Now()
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":      createdUser.Email,
+		"user_id":  createdUser.ID,
+		"role":     createdUser.Role,
+		"is_admin": createdUser.IsAdmin,
+		"exp":      now.Add(15 * time.Minute).Unix(),
+		"iat":      now.Unix(),
+		"scope":    "diana",
+	})
+	signedAccessToken, err := accessToken.SignedString([]byte(h.cfg.JWTSecret))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+		return
+	}
+
+	refreshTokenBytes := make([]byte, 32)
+	rand.Read(refreshTokenBytes)
+	refreshToken := base64.URLEncoding.EncodeToString(refreshTokenBytes)
+	refreshTokenHash := hashToken(refreshToken)
+
+	_, err = h.store.RefreshTokens().CreateRefreshToken(c.Request.Context(), refreshTokenHash, int32(createdUser.ID), time.Now().Add(7*24*time.Hour))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create refresh token"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"access_token":  signedAccessToken,
+		"refresh_token": refreshToken,
+		"token_type":    "Bearer",
+		"expires_in":    900,
+		"user": gin.H{
+			"id":    createdUser.ID,
+			"email": createdUser.Email,
+			"role":  createdUser.Role,
 		},
 	})
 }

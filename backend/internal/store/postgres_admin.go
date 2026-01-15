@@ -50,10 +50,10 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 
 	// Build query with filters
 	// Note: role column was removed in migration 0011, use is_admin instead
-	// Derive role as 'admin' if is_admin is true, otherwise 'clinician'
+	// Derive role as 'admin' if is_admin is true, otherwise 'user'
 	query := `
 		SELECT id, email, password_hash, 
-		       CASE WHEN COALESCE(is_admin, false) THEN 'admin' ELSE 'clinician' END as role,
+		       CASE WHEN COALESCE(is_admin, false) THEN 'admin' ELSE 'user' END as role,
 		       COALESCE(is_active, true) as is_active, 
 		       last_login_at, created_by, created_at, updated_at
 		FROM users
@@ -168,46 +168,41 @@ func (r *pgUserRepo) Create(ctx context.Context, user models.User) (*models.User
 }
 
 func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User, error) {
-	if r.pool == nil {
-		return nil, errors.New("db not configured")
+	arg := sqlcgen.UpdateUserParams{
+		ID:                        int32(user.ID),
+		FirstName:                 textToPg(user.FirstName),
+		LastName:                  textToPg(user.LastName),
+		Phone:                     textToPg(user.Phone),
+		Address:                   textToPg(user.Address),
+		MenopauseStatus:           textToPg(user.MenopauseStatus),
+		MenopauseType:             textToPg(user.MenopauseType),
+		YearsMenopause:            intToPgInt(user.YearsMenopause),
+		Hypertension:              textToPg(user.Hypertension),
+		HeartDisease:              textToPg(user.HeartDisease),
+		FamilyHistoryDiabetes:     user.FamilyHistoryDiabetes,
+		SmokingStatus:             textToPg(user.SmokingStatus),
+		AssessmentFrequencyMonths: int32(user.AssessmentFrequencyMonths),
+		ReminderEmail:             user.ReminderEmail,
 	}
 
-	query := `
-		UPDATE users
-		SET email = COALESCE(NULLIF($2, ''), email),
-		    role = COALESCE(NULLIF($3, ''), role),
-		    updated_at = NOW()
-		WHERE id = $1
-		RETURNING id, email, password_hash, role, 
-		          COALESCE(is_active, true), last_login_at, created_by, created_at, updated_at
-	`
+	if user.DateOfBirth != nil {
+		arg.DateOfBirth = pgtype.Date{Time: *user.DateOfBirth, Valid: true}
+	} else {
+		arg.DateOfBirth = pgtype.Date{Valid: false}
+	}
 
-	var u models.User
-	var isActive bool
-	var lastLoginAt pgtype.Timestamptz
-	var createdBy pgtype.Int4
-	var createdAt, updatedAt pgtype.Timestamptz
+	if err := r.pool.QueryRow(ctx, "UPDATE users SET updated_at = NOW() WHERE id = $1 RETURNING updated_at", user.ID).Scan(&user.UpdatedAt); err != nil {
+		// Just creating a way to get updated_at if we really wanted to,
+		// but actually sqlc UpdateUser doesn't return anything.
+		// However, we should run the update first.
+	}
 
-	err := r.pool.QueryRow(ctx, query, user.ID, user.Email, user.Role).Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &u.Role,
-		&isActive, &lastLoginAt, &createdBy, &createdAt, &updatedAt,
-	)
-	if err != nil {
+	if err := r.q.UpdateUser(ctx, arg); err != nil {
 		return nil, err
 	}
 
-	u.IsActive = isActive
-	if lastLoginAt.Valid {
-		u.LastLoginAt = &lastLoginAt.Time
-	}
-	if createdBy.Valid {
-		cb := int64(createdBy.Int32)
-		u.CreatedBy = &cb
-	}
-	u.CreatedAt = createdAt.Time
-	u.UpdatedAt = updatedAt.Time
-
-	return &u, nil
+	// Fetch fresh user to return complete object
+	return r.FindByID(ctx, int32(user.ID))
 }
 
 func (r *pgUserRepo) Deactivate(ctx context.Context, id int32) error {

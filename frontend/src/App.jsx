@@ -70,8 +70,7 @@ const App = () => {
     };
   }, [disableHeavyEffects, performanceTier]);
 
-  const handleLogin = async (email, password) => {
-    const res = await loginApi(email, password);
+  const handleLogin = async (res) => {
     if (!res?.access_token) throw new Error('login failed');
     setToken(res.access_token);
     setRefreshToken(res.refresh_token);
@@ -185,7 +184,7 @@ const App = () => {
 
     // User specific rendering
     if (showOnboarding) {
-      return <Onboarding token={token} userId={userId} onComplete={() => setShowOnboarding(false)} />;
+      return <Onboarding token={token} userId={userId} userProfile={userProfile} onComplete={() => setShowOnboarding(false)} />;
     }
 
     switch (activeTab) {
