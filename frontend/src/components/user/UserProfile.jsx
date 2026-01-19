@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { User, Calendar, Shield, Mail, Phone, MapPin, Save, AlertTriangle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { User, Calendar, Shield, Mail, Save, AlertTriangle } from 'lucide-react';
 import { getUserProfileApi, updateUserProfileApi, deleteAccountApi } from '../../api';
 
-const UserProfile = ({ token, userId }) => {
-  const [profile, setProfile] = useState(null);
+const UserProfile = ({ token }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -14,8 +13,7 @@ const UserProfile = ({ token, userId }) => {
     const loadProfile = async () => {
       setLoading(true);
       try {
-        const data = await getUserProfileApi(token);
-        setProfile(data);
+        const data = await getUserProfileApi();
         setFormData(data || {});
       } catch (err) {
         setError('Failed to load profile');
@@ -40,25 +38,16 @@ const UserProfile = ({ token, userId }) => {
     setSaving(true);
     setError(null);
     try {
-      // Map camelCase to snake_case to match backend JSON tags
-      const snakeCasePayload = {
-        first_name: formData.name,
-        last_name: formData.name, // Temporarily split name until separate fields are added
-        date_of_birth: formData.dob?.split('T')[0] || formData.dob,
-        phone: formData.phone,
-        address: formData.address,
-        menopause_status: formData.menopauseStatus,
-        menopause_type: formData.menopauseType,
-        years_menopause: formData.yearsMenopause,
-        hypertension: formData.hypertension,
-        heart_disease: formData.heartDisease,
-        family_history_diabetes: formData.familyHistory === 'yes',
-        smoking_status: formData.smoking,
-        assessment_frequency_months: formData.assessmentFrequency === 'weekly' ? 1 : formData.assessmentFrequency === 'monthly' ? 3 : formData.assessmentFrequency === 'quarterly' ? 12 : null,
-        reminder_email: formData.assessmentFrequency !== 'none',
+      const payload = {
+        ...formData,
+        years_menopause: formData.years_menopause ? parseInt(formData.years_menopause, 10) : 0,
+        assessment_frequency_months: formData.assessment_frequency_months ? parseInt(formData.assessment_frequency_months, 10) : 3,
+        reminder_email: !!formData.reminder_email,
+        family_history_diabetes: !!formData.family_history_diabetes,
       };
-      await updateUserProfileApi(token, snakeCasePayload);
-      setProfile({...formData, ...snakeCasePayload});
+
+      await updateUserProfileApi(payload);
+      setFormData(payload);
       alert('Profile updated successfully!');
     } catch (err) {
       setError(err.message || 'Failed to update profile');
@@ -107,11 +96,22 @@ const UserProfile = ({ token, userId }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">First Name</label>
               <input
                 type="text"
-                name="name"
-                value={formData.name || ''}
+                name="first_name"
+                value={formData.first_name || ''}
+                onChange={handleChange}
+                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">Last Name</label>
+              <input
+                type="text"
+                name="last_name"
+                value={formData.last_name || ''}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
               />
@@ -132,8 +132,8 @@ const UserProfile = ({ token, userId }) => {
               <label className="block text-sm font-medium text-slate-300 mb-2">Date of Birth</label>
               <input
                 type="date"
-                name="dob"
-                value={formData.dob?.split('T')[0] || ''}
+                name="date_of_birth"
+                value={formData.date_of_birth ? new Date(formData.date_of_birth).toISOString().split('T')[0] : ''}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
               />
@@ -173,15 +173,15 @@ const UserProfile = ({ token, userId }) => {
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Menopause Status</label>
               <select
-                name="menopauseStatus"
-                value={formData.menopauseStatus || ''}
+                name="menopause_status"
+                value={formData.menopause_status || ''}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
               >
                 <option value="">Select status</option>
-                <option value="premenopausal">Premenopausal</option>
-                <option value="perimenopausal">Perimenopausal</option>
-                <option value="postmenopausal">Postmenopausal</option>
+                <option value="pre">Premenopausal</option>
+                <option value="peri">Perimenopausal</option>
+                <option value="post">Postmenopausal</option>
                 <option value="surgical">Surgical Menopause</option>
               </select>
             </div>
@@ -189,14 +189,14 @@ const UserProfile = ({ token, userId }) => {
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Type (if postmenopausal)</label>
               <select
-                name="menopauseType"
-                value={formData.menopauseType || ''}
+                name="menopause_type"
+                value={formData.menopause_type || ''}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
               >
                 <option value="">Select type</option>
                 <option value="natural">Natural</option>
-                <option value="hormonal">Hormonal</option>
+                <option value="surgical">Surgical</option>
               </select>
             </div>
 
@@ -204,8 +204,8 @@ const UserProfile = ({ token, userId }) => {
               <label className="block text-sm font-medium text-slate-300 mb-2">Years Post-Menopause</label>
               <input
                 type="number"
-                name="yearsMenopause"
-                value={formData.yearsMenopause || ''}
+                name="years_menopause"
+                value={formData.years_menopause || ''}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
               />
@@ -229,16 +229,17 @@ const UserProfile = ({ token, userId }) => {
                 className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
               >
                 <option value="">Select</option>
-                <option value="yes">Yes</option>
                 <option value="no">No</option>
+                <option value="controlled">Yes (Controlled)</option>
+                <option value="uncontrolled">Yes (Uncontrolled)</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Heart Disease</label>
               <select
-                name="heartDisease"
-                value={formData.heartDisease || ''}
+                name="heart_disease"
+                value={formData.heart_disease || ''}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
               >
@@ -251,22 +252,24 @@ const UserProfile = ({ token, userId }) => {
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Family History of Diabetes</label>
               <select
-                name="familyHistory"
-                value={formData.familyHistory || ''}
-                onChange={handleChange}
+                name="family_history_diabetes"
+                value={formData.family_history_diabetes ? 'yes' : 'no'}
+                onChange={(e) => setFormData(prev => ({
+                  ...prev,
+                  family_history_diabetes: e.target.value === 'yes'
+                }))}
                 className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
               >
-                <option value="">Select</option>
-                <option value="yes">Yes</option>
                 <option value="no">No</option>
+                <option value="yes">Yes</option>
               </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Smoking Status</label>
               <select
-                name="smoking"
-                value={formData.smoking || ''}
+                name="smoking_status"
+                value={formData.smoking_status || ''}
                 onChange={handleChange}
                 className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
               >
@@ -288,16 +291,27 @@ const UserProfile = ({ token, userId }) => {
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">Assessment Reminder Frequency</label>
             <select
-              name="assessmentFrequency"
-              value={formData.assessmentFrequency || 'monthly'}
+              name="assessment_frequency_months"
+              value={formData.assessment_frequency_months || 1}
               onChange={handleChange}
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
+              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500 mb-4"
             >
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="none">No Reminders</option>
+              <option value="1">Monthly</option>
+              <option value="3">Quarterly (Every 3 months)</option>
+              <option value="6">Biannually (Every 6 months)</option>
+              <option value="12">Annually (Every 12 months)</option>
             </select>
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                name="reminder_email"
+                checked={formData.reminder_email || false}
+                onChange={handleChange}
+                className="w-4 h-4 rounded border-slate-700 bg-slate-900/50 text-teal-500 focus:ring-teal-500 focus:ring-offset-0"
+              />
+              <span className="text-sm text-slate-300">Receive email reminders</span>
+            </label>
           </div>
         </div>
 

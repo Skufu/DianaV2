@@ -1,9 +1,8 @@
-// PostgresStore: pgx-backed repositories for users and assessments.
+// PostgresStore: pgx-backed repositories for users, patients, and assessments.
 package store
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -37,165 +36,16 @@ func (s *PostgresStore) Users() UserRepository {
 	return &pgUserRepo{q: s.q, pool: s.pool}
 }
 
+func (s *PostgresStore) Patients() PatientRepository {
+	return &pgPatientRepo{q: s.q}
+}
+
 func (s *PostgresStore) Assessments() AssessmentRepository {
 	return &pgAssessmentRepo{q: s.q}
 }
 
 func (s *PostgresStore) RefreshTokens() RefreshTokenRepository {
 	return &pgRefreshTokenRepo{q: s.q}
-}
-
-func (s *PostgresStore) AuthEvents() AuthEventRepository {
-	return &pgAuthEventRepo{pool: s.pool}
-}
-
-type pgAuthEventRepo struct {
-	pool *pgxpool.Pool
-}
-
-func (r *pgAuthEventRepo) Create(ctx context.Context, event models.AuthEvent) error {
-	if r.pool == nil {
-		return nil
-	}
-
-	ipAddress := &event.IPAddress
-	if event.IPAddress == "" {
-		ipAddress = nil
-	}
-
-	_, err := r.pool.Exec(ctx, `
-		INSERT INTO auth_events (event_type, email, ip_address, user_agent, success, metadata, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, NOW())
-	`,
-		event.EventType,
-		ipAddress,
-		event.Email,
-		event.UserAgent,
-		event.Success,
-		event.Metadata,
-	)
-	return err
-}
-
-func (r *pgAuthEventRepo) List(ctx context.Context, eventType, email, startDate, endDate string, limit, offset int) ([]models.AuthEvent, int, error) {
-	if r.pool == nil {
-		return nil, 0, errors.New("db not configured")
-	}
-
-	query := `
-		SELECT id, event_type, email, ip_address, user_agent, success, device_info, location, metadata, created_at
-		FROM auth_events
-		WHERE 1=1
-	`
-
-	args := []interface{}{1}
-	argIndex := 2
-
-	if eventType != "" {
-		query += ` AND event_type = $` + fmt.Sprint(argIndex)
-		args = append(args, eventType)
-		argIndex++
-	}
-
-	if email != "" {
-		query += ` AND email ILIKE '%' || $` + fmt.Sprint(argIndex) + ` || '%'`
-		args = append(args, email)
-		argIndex++
-	}
-
-	if startDate != "" {
-		query += ` AND created_at >= $` + fmt.Sprint(argIndex)
-		args = append(args, startDate)
-		argIndex++
-	}
-
-	if endDate != "" {
-		query += ` AND created_at <= $` + fmt.Sprint(argIndex)
-		args = append(args, endDate)
-		argIndex++
-	}
-
-	query += ` ORDER BY created_at DESC LIMIT $` + fmt.Sprint(argIndex) + ` OFFSET $` + fmt.Sprint(argIndex+1)
-	args = append(args, limit, offset)
-
-	rows, err := r.pool.Query(ctx, query, args...)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer rows.Close()
-
-	var events []models.AuthEvent
-	for rows.Next() {
-		var e models.AuthEvent
-		var deviceInfoJSON, locationJSON, metadataJSON []byte
-
-		err := rows.Scan(
-			&e.ID,
-			&e.EventType,
-			&e.Email,
-			&e.IPAddress,
-			&e.UserAgent,
-			&e.Success,
-			&deviceInfoJSON,
-			&locationJSON,
-			&metadataJSON,
-			&e.CreatedAt,
-		)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		if len(deviceInfoJSON) > 0 {
-			_ = json.Unmarshal(deviceInfoJSON, &e.DeviceInfo)
-		}
-		if len(locationJSON) > 0 {
-			_ = json.Unmarshal(locationJSON, &e.Location)
-		}
-		if len(metadataJSON) > 0 {
-			_ = json.Unmarshal(metadataJSON, &e.Metadata)
-		}
-
-		events = append(events, e)
-	}
-
-	countQuery := `
-		SELECT COUNT(*)
-		FROM auth_events
-		WHERE 1=1
-	`
-	countArgs := []interface{}{1}
-	countIndex := 2
-
-	if eventType != "" {
-		countQuery += ` AND event_type = $` + fmt.Sprint(countIndex)
-		countArgs = append(countArgs, eventType)
-		countIndex++
-	}
-
-	if email != "" {
-		countQuery += ` AND email ILIKE '%' || $` + fmt.Sprint(countIndex) + ` || '%'`
-		countArgs = append(countArgs, email)
-		countIndex++
-	}
-
-	if startDate != "" {
-		countQuery += ` AND created_at >= $` + fmt.Sprint(countIndex)
-		countArgs = append(countArgs, startDate)
-		countIndex++
-	}
-
-	if endDate != "" {
-		countQuery += ` AND created_at <= $` + fmt.Sprint(countIndex)
-		countArgs = append(countArgs, endDate)
-	}
-
-	var total int
-	err = r.pool.QueryRow(ctx, countQuery, countArgs...).Scan(&total)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return events, total, nil
 }
 
 type pgUserRepo struct {
@@ -240,15 +90,59 @@ func (r *pgUserRepo) FindByID(ctx context.Context, id int32) (*models.User, erro
 	if row.IsAdmin {
 		role = "admin"
 	}
+
+	var dob *time.Time
+	if row.DateOfBirth.Valid {
+		dob = &row.DateOfBirth.Time
+	}
+
+	var consentUpdatedAt time.Time
+	if row.ConsentUpdatedAt.Valid {
+		consentUpdatedAt = row.ConsentUpdatedAt.Time
+	}
+
+	var lastAssessmentReminderSent *time.Time
+	if row.LastAssessmentReminderSent.Valid {
+		lastAssessmentReminderSent = &row.LastAssessmentReminderSent.Time
+	}
+
+	var deletedAt *time.Time
+	if row.DeletedAt.Valid {
+		deletedAt = &row.DeletedAt.Time
+	}
+
 	return &models.User{
-		ID:           int64(row.ID),
-		Email:        row.Email,
-		PasswordHash: row.PasswordHash,
-		Role:         role,
-		IsAdmin:      row.IsAdmin,
-		IsActive:     row.IsActive,
-		CreatedAt:    row.CreatedAt.Time,
-		UpdatedAt:    row.UpdatedAt.Time,
+		ID:                           int64(row.ID),
+		Email:                        row.Email,
+		PasswordHash:                 row.PasswordHash,
+		FirstName:                    textVal(row.FirstName),
+		LastName:                     textVal(row.LastName),
+		DateOfBirth:                  dob,
+		Phone:                        textVal(row.Phone),
+		Address:                      textVal(row.Address),
+		MenopauseStatus:              textVal(row.MenopauseStatus),
+		MenopauseType:                textVal(row.MenopauseType),
+		YearsMenopause:               intVal(row.YearsMenopause),
+		Hypertension:                 textVal(row.Hypertension),
+		HeartDisease:                 textVal(row.HeartDisease),
+		FamilyHistoryDiabetes:        row.FamilyHistoryDiabetes,
+		SmokingStatus:                textVal(row.SmokingStatus),
+		ConsentPersonalData:          row.ConsentPersonalData,
+		ConsentResearchParticipation: row.ConsentResearchParticipation,
+		ConsentEmailUpdates:          row.ConsentEmailUpdates,
+		ConsentAnalytics:             row.ConsentAnalytics,
+		ConsentUpdatedAt:             consentUpdatedAt,
+		AssessmentFrequencyMonths:    int(row.AssessmentFrequencyMonths),
+		ReminderEmail:                row.ReminderEmail,
+		LastAssessmentReminderSent:   lastAssessmentReminderSent,
+		OnboardingCompleted:          row.OnboardingCompleted,
+		Role:                         role,
+		IsAdmin:                      row.IsAdmin,
+		IsActive:                     row.IsActive,
+		AccountStatus:                row.AccountStatus,
+		DeletedAt:                    deletedAt,
+		CreatedAt:                    row.CreatedAt.Time,
+		UpdatedAt:                    row.UpdatedAt.Time,
 	}, nil
 }
 
@@ -272,6 +166,239 @@ func (r *pgUserRepo) GetUsersForNotification(ctx context.Context) ([]models.User
 		})
 	}
 	return out, nil
+}
+
+type pgPatientRepo struct{ q *sqlcgen.Queries }
+
+func (r *pgPatientRepo) List(ctx context.Context, userID int32) ([]models.Patient, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	rows, err := r.q.ListPatients(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return mapPatientRows(rows), nil
+}
+
+func (r *pgPatientRepo) ListWithLatestAssessment(ctx context.Context, userID int32) ([]models.PatientSummary, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	rows, err := r.q.ListPatientsWithLatestAssessment(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	var out []models.PatientSummary
+	for _, r := range rows {
+		out = append(out, models.PatientSummary{
+			Patient: models.Patient{
+				ID:              int64(r.ID),
+				UserID:          int64(r.UserID),
+				Name:            r.Name,
+				Age:             intVal(r.Age),
+				MenopauseStatus: textVal(r.MenopauseStatus),
+				YearsMenopause:  intVal(r.YearsMenopause),
+				BMI:             numericVal(r.Bmi),
+				BPSystolic:      intVal(r.BpSystolic),
+				BPDiastolic:     intVal(r.BpDiastolic),
+				Activity:        textVal(r.Activity),
+				PhysActivity:    boolVal(r.PhysActivity),
+				Smoking:         textVal(r.Smoking),
+				Hypertension:    textVal(r.Hypertension),
+				HeartDisease:    textVal(r.HeartDisease),
+				FamilyHistory:   boolVal(r.FamilyHistory),
+				Chol:            intVal(r.Chol),
+				LDL:             intVal(r.Ldl),
+				HDL:             intVal(r.Hdl),
+				Triglycerides:   intVal(r.Triglycerides),
+				CreatedAt:       r.CreatedAt.Time,
+				UpdatedAt:       r.UpdatedAt.Time,
+			},
+			Cluster:   r.LatestCluster,
+			RiskScore: int(r.LatestRiskScore),
+			Risk:      int(r.LatestRiskScore),
+			FBS:       numericVal(r.LatestFbs),
+			HbA1c:     numericVal(r.LatestHba1c),
+			LastVisit: r.LatestAssessmentAt.Time,
+		})
+	}
+	return out, nil
+}
+
+func (r *pgPatientRepo) ListWithLatestAssessmentPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.PatientSummary, int, error) {
+	if r.q == nil {
+		return nil, 0, errors.New("db not configured")
+	}
+	countResult, err := r.q.CountPatientsWithLatestAssessment(ctx, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+	total := int(countResult)
+	rows, err := r.q.ListPatientsWithLatestAssessmentPaginated(ctx, sqlcgen.ListPatientsWithLatestAssessmentPaginatedParams{
+		UserID: userID,
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	var out []models.PatientSummary
+	for _, r := range rows {
+		out = append(out, models.PatientSummary{
+			Patient: models.Patient{
+				ID:              int64(r.ID),
+				UserID:          int64(r.UserID),
+				Name:            r.Name,
+				Age:             intVal(r.Age),
+				MenopauseStatus: textVal(r.MenopauseStatus),
+				YearsMenopause:  intVal(r.YearsMenopause),
+				BMI:             numericVal(r.Bmi),
+				BPSystolic:      intVal(r.BpSystolic),
+				BPDiastolic:     intVal(r.BpDiastolic),
+				Activity:        textVal(r.Activity),
+				PhysActivity:    boolVal(r.PhysActivity),
+				Smoking:         textVal(r.Smoking),
+				Hypertension:    textVal(r.Hypertension),
+				HeartDisease:    textVal(r.HeartDisease),
+				FamilyHistory:   boolVal(r.FamilyHistory),
+				Chol:            intVal(r.Chol),
+				LDL:             intVal(r.Ldl),
+				HDL:             intVal(r.Hdl),
+				Triglycerides:   intVal(r.Triglycerides),
+				CreatedAt:       r.CreatedAt.Time,
+				UpdatedAt:       r.UpdatedAt.Time,
+			},
+			Cluster:   r.LatestCluster,
+			RiskScore: int(r.LatestRiskScore),
+			Risk:      int(r.LatestRiskScore),
+			FBS:       numericVal(r.LatestFbs),
+			HbA1c:     numericVal(r.LatestHba1c),
+			LastVisit: r.LatestAssessmentAt.Time,
+		})
+	}
+	return out, total, nil
+}
+
+func (r *pgPatientRepo) Create(ctx context.Context, p models.Patient) (*models.Patient, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	row, err := r.q.CreatePatient(ctx, sqlcgen.CreatePatientParams{
+		UserID:          int32(p.UserID),
+		Name:            p.Name,
+		Age:             intToPgInt(p.Age),
+		MenopauseStatus: textToPg(p.MenopauseStatus),
+		YearsMenopause:  intToPgInt(p.YearsMenopause),
+		Bmi:             floatToNumeric(p.BMI),
+		BpSystolic:      intToPgInt(p.BPSystolic),
+		BpDiastolic:     intToPgInt(p.BPDiastolic),
+		Activity:        textToPg(p.Activity),
+		PhysActivity:    boolToPg(p.PhysActivity),
+		Smoking:         textToPg(p.Smoking),
+		Hypertension:    textToPg(p.Hypertension),
+		HeartDisease:    textToPg(p.HeartDisease),
+		FamilyHistory:   boolToPg(p.FamilyHistory),
+		Chol:            intToPgInt(p.Chol),
+		Ldl:             intToPgInt(p.LDL),
+		Hdl:             intToPgInt(p.HDL),
+		Triglycerides:   intToPgInt(p.Triglycerides),
+	})
+	if err != nil {
+		return nil, err
+	}
+	res := mapCreatePatientRow(row)
+	return &res, nil
+}
+
+func (r *pgPatientRepo) Get(ctx context.Context, id int32, userID int32) (*models.Patient, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	row, err := r.q.GetPatient(ctx, sqlcgen.GetPatientParams{
+		ID:     int32(id),
+		UserID: userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	res := mapGetPatientRow(row)
+	return &res, nil
+}
+
+func (r *pgPatientRepo) Update(ctx context.Context, p models.Patient) (*models.Patient, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	row, err := r.q.UpdatePatient(ctx, sqlcgen.UpdatePatientParams{
+		ID:              int32(p.ID),
+		UserID:          int32(p.UserID),
+		Name:            p.Name,
+		Age:             intToPgInt(p.Age),
+		MenopauseStatus: textToPg(p.MenopauseStatus),
+		YearsMenopause:  intToPgInt(p.YearsMenopause),
+		Bmi:             floatToNumeric(p.BMI),
+		BpSystolic:      intToPgInt(p.BPSystolic),
+		BpDiastolic:     intToPgInt(p.BPDiastolic),
+		Activity:        textToPg(p.Activity),
+		PhysActivity:    boolToPg(p.PhysActivity),
+		Smoking:         textToPg(p.Smoking),
+		Hypertension:    textToPg(p.Hypertension),
+		HeartDisease:    textToPg(p.HeartDisease),
+		FamilyHistory:   boolToPg(p.FamilyHistory),
+		Chol:            intToPgInt(p.Chol),
+		Ldl:             intToPgInt(p.LDL),
+		Hdl:             intToPgInt(p.HDL),
+		Triglycerides:   intToPgInt(p.Triglycerides),
+	})
+	if err != nil {
+		return nil, err
+	}
+	res := mapUpdatePatientRow(row)
+	return &res, nil
+}
+
+func (r *pgPatientRepo) Delete(ctx context.Context, id int32, userID int32) error {
+	if r.q == nil {
+		return errors.New("db not configured")
+	}
+	return r.q.DeletePatient(ctx, sqlcgen.DeletePatientParams{
+		ID:     int32(id),
+		UserID: userID,
+	})
+}
+
+func (r *pgPatientRepo) ListAllLimited(ctx context.Context, userID int32, limit int) ([]models.Patient, error) {
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+	rows, err := r.q.ListPatientsLimited(ctx, sqlcgen.ListPatientsLimitedParams{
+		UserID: userID,
+		Limit:  int32(limit),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapPatientLimitedRows(rows), nil
+}
+
+func (r *pgPatientRepo) ListPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.Patient, int, error) {
+	if r.q == nil {
+		return nil, 0, errors.New("db not configured")
+	}
+	count, err := r.q.CountPatientsByUser(ctx, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := r.q.ListPatientsPaginated(ctx, sqlcgen.ListPatientsPaginatedParams{
+		UserID: userID,
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	return mapPatientPaginatedRows(rows), int(count), nil
 }
 
 type pgAssessmentRepo struct{ q *sqlcgen.Queries }
@@ -591,6 +718,175 @@ func (r *pgRefreshTokenRepo) DeleteExpiredTokens(ctx context.Context) error {
 		return errors.New("db not configured")
 	}
 	return r.q.DeleteExpiredTokens(ctx)
+}
+
+// mapping helpers - patients
+func mapPatientRows(rows []sqlcgen.ListPatientsRow) []models.Patient {
+	var out []models.Patient
+	for _, r := range rows {
+		out = append(out, models.Patient{
+			ID:              int64(r.ID),
+			UserID:          int64(r.UserID),
+			Name:            r.Name,
+			Age:             intVal(r.Age),
+			MenopauseStatus: textVal(r.MenopauseStatus),
+			YearsMenopause:  intVal(r.YearsMenopause),
+			BMI:             numericVal(r.Bmi),
+			BPSystolic:      intVal(r.BpSystolic),
+			BPDiastolic:     intVal(r.BpDiastolic),
+			Activity:        textVal(r.Activity),
+			PhysActivity:    boolVal(r.PhysActivity),
+			Smoking:         textVal(r.Smoking),
+			Hypertension:    textVal(r.Hypertension),
+			HeartDisease:    textVal(r.HeartDisease),
+			FamilyHistory:   boolVal(r.FamilyHistory),
+			Chol:            intVal(r.Chol),
+			LDL:             intVal(r.Ldl),
+			HDL:             intVal(r.Hdl),
+			Triglycerides:   intVal(r.Triglycerides),
+			CreatedAt:       r.CreatedAt.Time,
+			UpdatedAt:       r.UpdatedAt.Time,
+		})
+	}
+	return out
+}
+
+func mapPatientLimitedRows(rows []sqlcgen.ListPatientsLimitedRow) []models.Patient {
+	var out []models.Patient
+	for _, r := range rows {
+		out = append(out, models.Patient{
+			ID:              int64(r.ID),
+			UserID:          int64(r.UserID),
+			Name:            r.Name,
+			Age:             intVal(r.Age),
+			MenopauseStatus: textVal(r.MenopauseStatus),
+			YearsMenopause:  intVal(r.YearsMenopause),
+			BMI:             numericVal(r.Bmi),
+			BPSystolic:      intVal(r.BpSystolic),
+			BPDiastolic:     intVal(r.BpDiastolic),
+			Activity:        textVal(r.Activity),
+			PhysActivity:    boolVal(r.PhysActivity),
+			Smoking:         textVal(r.Smoking),
+			Hypertension:    textVal(r.Hypertension),
+			HeartDisease:    textVal(r.HeartDisease),
+			FamilyHistory:   boolVal(r.FamilyHistory),
+			Chol:            intVal(r.Chol),
+			LDL:             intVal(r.Ldl),
+			HDL:             intVal(r.Hdl),
+			Triglycerides:   intVal(r.Triglycerides),
+			CreatedAt:       r.CreatedAt.Time,
+			UpdatedAt:       r.UpdatedAt.Time,
+		})
+	}
+	return out
+}
+
+func mapPatientPaginatedRows(rows []sqlcgen.ListPatientsPaginatedRow) []models.Patient {
+	var out []models.Patient
+	for _, r := range rows {
+		out = append(out, models.Patient{
+			ID:              int64(r.ID),
+			UserID:          int64(r.UserID),
+			Name:            r.Name,
+			Age:             intVal(r.Age),
+			MenopauseStatus: textVal(r.MenopauseStatus),
+			YearsMenopause:  intVal(r.YearsMenopause),
+			BMI:             numericVal(r.Bmi),
+			BPSystolic:      intVal(r.BpSystolic),
+			BPDiastolic:     intVal(r.BpDiastolic),
+			Activity:        textVal(r.Activity),
+			PhysActivity:    boolVal(r.PhysActivity),
+			Smoking:         textVal(r.Smoking),
+			Hypertension:    textVal(r.Hypertension),
+			HeartDisease:    textVal(r.HeartDisease),
+			FamilyHistory:   boolVal(r.FamilyHistory),
+			Chol:            intVal(r.Chol),
+			LDL:             intVal(r.Ldl),
+			HDL:             intVal(r.Hdl),
+			Triglycerides:   intVal(r.Triglycerides),
+			CreatedAt:       r.CreatedAt.Time,
+			UpdatedAt:       r.UpdatedAt.Time,
+		})
+	}
+	return out
+}
+
+func mapCreatePatientRow(r sqlcgen.CreatePatientRow) models.Patient {
+	return models.Patient{
+		ID:              int64(r.ID),
+		UserID:          int64(r.UserID),
+		Name:            r.Name,
+		Age:             intVal(r.Age),
+		MenopauseStatus: textVal(r.MenopauseStatus),
+		YearsMenopause:  intVal(r.YearsMenopause),
+		BMI:             numericVal(r.Bmi),
+		BPSystolic:      intVal(r.BpSystolic),
+		BPDiastolic:     intVal(r.BpDiastolic),
+		Activity:        textVal(r.Activity),
+		PhysActivity:    boolVal(r.PhysActivity),
+		Smoking:         textVal(r.Smoking),
+		Hypertension:    textVal(r.Hypertension),
+		HeartDisease:    textVal(r.HeartDisease),
+		FamilyHistory:   boolVal(r.FamilyHistory),
+		Chol:            intVal(r.Chol),
+		LDL:             intVal(r.Ldl),
+		HDL:             intVal(r.Hdl),
+		Triglycerides:   intVal(r.Triglycerides),
+		CreatedAt:       r.CreatedAt.Time,
+		UpdatedAt:       r.UpdatedAt.Time,
+	}
+}
+
+func mapGetPatientRow(r sqlcgen.GetPatientRow) models.Patient {
+	return models.Patient{
+		ID:              int64(r.ID),
+		UserID:          int64(r.UserID),
+		Name:            r.Name,
+		Age:             intVal(r.Age),
+		MenopauseStatus: textVal(r.MenopauseStatus),
+		YearsMenopause:  intVal(r.YearsMenopause),
+		BMI:             numericVal(r.Bmi),
+		BPSystolic:      intVal(r.BpSystolic),
+		BPDiastolic:     intVal(r.BpDiastolic),
+		Activity:        textVal(r.Activity),
+		PhysActivity:    boolVal(r.PhysActivity),
+		Smoking:         textVal(r.Smoking),
+		Hypertension:    textVal(r.Hypertension),
+		HeartDisease:    textVal(r.HeartDisease),
+		FamilyHistory:   boolVal(r.FamilyHistory),
+		Chol:            intVal(r.Chol),
+		LDL:             intVal(r.Ldl),
+		HDL:             intVal(r.Hdl),
+		Triglycerides:   intVal(r.Triglycerides),
+		CreatedAt:       r.CreatedAt.Time,
+		UpdatedAt:       r.UpdatedAt.Time,
+	}
+}
+
+func mapUpdatePatientRow(r sqlcgen.UpdatePatientRow) models.Patient {
+	return models.Patient{
+		ID:              int64(r.ID),
+		UserID:          int64(r.UserID),
+		Name:            r.Name,
+		Age:             intVal(r.Age),
+		MenopauseStatus: textVal(r.MenopauseStatus),
+		YearsMenopause:  intVal(r.YearsMenopause),
+		BMI:             numericVal(r.Bmi),
+		BPSystolic:      intVal(r.BpSystolic),
+		BPDiastolic:     intVal(r.BpDiastolic),
+		Activity:        textVal(r.Activity),
+		PhysActivity:    boolVal(r.PhysActivity),
+		Smoking:         textVal(r.Smoking),
+		Hypertension:    textVal(r.Hypertension),
+		HeartDisease:    textVal(r.HeartDisease),
+		FamilyHistory:   boolVal(r.FamilyHistory),
+		Chol:            intVal(r.Chol),
+		LDL:             intVal(r.Ldl),
+		HDL:             intVal(r.Hdl),
+		Triglycerides:   intVal(r.Triglycerides),
+		CreatedAt:       r.CreatedAt.Time,
+		UpdatedAt:       r.UpdatedAt.Time,
+	}
 }
 
 // mapping helpers - assessments

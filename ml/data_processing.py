@@ -6,7 +6,7 @@ Prepares final dataset with:
 - All required biomarkers
 - Data quality checks (outliers, duplicates)
 
-Usage: python ml/data_processing.py
+Usage: python scripts/prepare_dataset.py
 """
 
 import pandas as pd

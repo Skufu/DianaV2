@@ -53,7 +53,8 @@ func (h *AuthEventHandler) streamAuthEvents(c *gin.Context) {
 		return
 	}
 
-	if claims.Role != "admin" {
+	role, ok := claims["role"].(string)
+	if !ok || role != "admin" {
 		c.Header("Content-Type", "text/event-stream")
 		c.Header("Cache-Control", "no-cache")
 		c.String(http.StatusForbidden, "event: error\ndata: "+`{"message":"Admin role required"}`+"\n\n")

@@ -36,9 +36,8 @@ func main() {
 	defer pool.Close()
 
 	users := []SeedUser{
-		{Email: "admin@example.com", Password: "password123", IsAdmin: true},
-		{Email: "user@example.com", Password: "password123", IsAdmin: false},
-		{Email: "jane.doe@example.com", Password: "password123", IsAdmin: false},
+		{Email: "admin@diana.app", Password: "adminpassword123", IsAdmin: true},
+		{Email: "demo@diana.app", Password: "demopassword123", IsAdmin: false},
 	}
 
 	for _, u := range users {

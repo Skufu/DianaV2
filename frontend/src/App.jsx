@@ -1,5 +1,4 @@
-// App: auth gate, tab routing, and user-centric data management
-import React, { useEffect, useState, Suspense, lazy, useMemo } from 'react';
+import { useEffect, useState, Suspense, lazy, useMemo } from 'react';
 import {
   loginApi,
   getUserProfileApi,
@@ -25,7 +24,7 @@ const Insights = lazy(() => import('./components/insights/Insights'));
 const Education = lazy(() => import('./components/education/Education'));
 const Export = lazy(() => import('./components/export/Export'));
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
-const AdminLayout = lazy(() => import('./components/layout/AdminLayout'));
+const Signup = lazy(() => import('./components/auth/Signup'));
 
 // Loading skeleton for lazy components
 const LoadingSkeleton = () => (
@@ -48,9 +47,8 @@ const App = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [userProfile, setUserProfile] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   // Device performance detection (computed once)
   const performanceTier = useMemo(() => getPerformanceTier(), []);
@@ -70,7 +68,8 @@ const App = () => {
     };
   }, [disableHeavyEffects, performanceTier]);
 
-  const handleLogin = async (res) => {
+  const handleLogin = async (email, password) => {
+    const res = await loginApi(email, password);
     if (!res?.access_token) throw new Error('login failed');
     setToken(res.access_token);
     setRefreshToken(res.refresh_token);
@@ -80,13 +79,6 @@ const App = () => {
       setUserRole(payload.role || 'user');
       setIsAdmin(payload.is_admin || false);
       setUserId(payload.user_id || payload.sub);
-
-      // Reset active tab on login based on role
-      if (payload.is_admin) {
-        setActiveTab('overview');
-      } else {
-        setActiveTab('dashboard');
-      }
     } catch {
       setUserRole('user');
       setIsAdmin(false);
@@ -113,9 +105,8 @@ const App = () => {
       setUserRole(null);
       setIsAdmin(false);
       setUserId(null);
-      setUserProfile(null);
-      setShowOnboarding(false);
       localStorage.removeItem('diana_token');
+
       localStorage.removeItem('diana_refresh_token');
     }
   };
@@ -143,21 +134,16 @@ const App = () => {
   useEffect(() => {
     if (!token || !userId) return;
     const load = async () => {
-      setLoadingProfile(true);
       try {
         const profile = await getUserProfileApi(token);
-        setUserProfile(profile);
-        // Skip onboarding for admin users
-        if (userRole === 'admin') {
+        if (profile?.onboarding_completed === true) {
           setShowOnboarding(false);
         } else {
-          setShowOnboarding(!profile || !profile.name || !profile.email);
+          setShowOnboarding(!profile || !profile.first_name || !profile.last_name);
         }
       } catch (err) {
         console.error('Failed to load user profile:', err);
         setShowOnboarding(true);
-      } finally {
-        setLoadingProfile(false);
       }
     };
     load();
@@ -168,23 +154,8 @@ const App = () => {
   };
 
   const renderContent = () => {
-    // Admin specific rendering
-    if (isAdmin) {
-      return (
-        <AdminLayout
-          activeView={activeTab} // We reuse activeTab state for admin views
-          setActiveView={setActiveTab}
-          onLogout={handleLogout}
-          animationNodeCount={animationNodeCount}
-        >
-          <AdminDashboard activeView={activeTab} token={token} userRole={userRole} />
-        </AdminLayout>
-      );
-    }
-
-    // User specific rendering
     if (showOnboarding) {
-      return <Onboarding token={token} userId={userId} userProfile={userProfile} onComplete={() => setShowOnboarding(false)} />;
+      return <Onboarding onComplete={() => setShowOnboarding(false)} />;
     }
 
     switch (activeTab) {
@@ -200,9 +171,33 @@ const App = () => {
         return <Education />;
       case 'export':
         return <Export token={token} />;
+      case 'admin':
+        return isAdmin ? (
+          <AdminDashboard token={token} userRole={userRole} />
+        ) : (
+          <Dashboard_user token={token} userId={userId} />
+        );
       default:
         return <Dashboard_user token={token} userId={userId} />;
     }
+  };
+
+  const handleSignupSuccess = (res) => {
+    if (!res?.access_token) throw new Error('signup failed');
+    setToken(res.access_token);
+    setRefreshToken(res.refresh_token);
+    try {
+      const payload = JSON.parse(atob(res.access_token.split('.')[1]));
+      setUserRole(payload.role || 'user');
+      setIsAdmin(payload.is_admin || false);
+      setUserId(payload.user_id || payload.sub);
+    } catch {
+      setUserRole('user');
+      setIsAdmin(false);
+    }
+    setIsAuthenticated(true);
+    localStorage.setItem('diana_token', res.access_token);
+    localStorage.setItem('diana_refresh_token', res.refresh_token);
   };
 
   const isAssessmentOpen = activeTab === 'profile';
@@ -211,18 +206,11 @@ const App = () => {
     <>
       <CustomCursor isLoggedIn={isAuthenticated} />
       {!isAuthenticated ? (
-        <Login onLogin={handleLogin} />
-      ) : isAdmin ? (
-        <Suspense fallback={<LoadingSkeleton />}>
-          <AdminLayout
-            activeView={activeTab} // We reuse activeTab state for admin views
-            setActiveView={setActiveTab}
-            onLogout={handleLogout}
-            animationNodeCount={animationNodeCount}
-          >
-            <AdminDashboard activeView={activeTab} token={token} userRole={userRole} />
-          </AdminLayout>
-        </Suspense>
+        showSignup ? (
+          <Signup onSignup={handleSignupSuccess} onShowLogin={() => setShowSignup(false)} />
+        ) : (
+          <Login onLogin={handleLogin} onShowSignup={() => setShowSignup(true)} />
+        )
       ) : (
         <div
           className="flex min-h-screen relative overflow-hidden"
@@ -240,7 +228,6 @@ const App = () => {
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5 pointer-events-none" />
 
-          {/* Standard User Layout */}
           {!isAssessmentOpen && (
             <Sidebar
               activeTab={activeTab}

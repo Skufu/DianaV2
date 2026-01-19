@@ -100,6 +100,15 @@ backend/
 ### Protected (JWT Required)
 | Method | Path | Handler | Purpose |
 |--------|------|---------|---------|
+| GET | `/api/v1/users/me` | `users.go` | Get current user profile |
+| PUT | `/api/v1/users/me/profile` | `users.go` | Update user profile |
+| POST | `/api/v1/users/me/onboarding` | `users.go` | Complete onboarding flow |
+| GET | `/api/v1/users/me/consent` | `users.go` | Get consent settings |
+| PUT | `/api/v1/users/me/consent` | `users.go` | Update consent settings |
+| GET | `/api/v1/users/me/assessments` | `users.go` | Get user assessments |
+| GET | `/api/v1/users/me/trends` | `users.go` | Get assessment trends |
+| GET | `/api/v1/users/me/account` | `users.go` | Get user account |
+| DELETE | `/api/v1/users/me/account` | `users.go` | Delete user account |
 | GET | `/api/v1/patients` | `patients.go` | List all patients |
 | POST | `/api/v1/patients` | `patients.go` | Create patient |
 | GET | `/api/v1/patients/:id` | `patients.go` | Get patient by ID |
@@ -120,6 +129,15 @@ backend/
 - `Login(c *gin.Context)` - Validate credentials, return JWT
 - `Register(c *gin.Context)` - Create user, hash password
 - `RefreshToken(c *gin.Context)` - Issue new access token
+
+### Users (`internal/http/handlers/users.go`)
+- `CompleteOnboarding(c *gin.Context)` - Handle onboarding data submission, validate consent, update user profile
+- `GetUserProfile(c *gin.Context)` - Get current user profile data
+- `UpdateUserProfile(c *gin.Context)` - Update user profile fields
+- `GetConsentSettings(c *gin.Context)` - Retrieve user consent preferences
+- `UpdateConsentSettings(c *gin.Context)` - Update user consent settings
+- `GetTrends(c *gin.Context)` - Get assessment trends over time
+- `DeleteAccount(c *gin.Context)` - Soft delete user account
 
 ### Patients (`internal/http/handlers/patients.go`)
 - `List(c *gin.Context)` - Get all patients for user
@@ -145,6 +163,10 @@ Location: `internal/store/sqlc/*.sql.go` (generated from SQL in sqlc.yaml)
 |------------|------|---------|
 | `GetUserByEmail` | `:one` | Find user by email (login) |
 | `CreateUser` | `:one` | Insert new user |
+| `UpdateUser` | `:exec` | Update user profile fields |
+| `UpdateUserConsent` | `:exec` | Update consent settings |
+| `UpdateUserOnboarding` | `:exec` | Mark onboarding completed |
+| `GetUserByID` | `:one` | Get user by ID with profile |
 | `ListPatients` | `:many` | Get all patients for user |
 | `GetPatient` | `:one` | Get patient by ID |
 | `CreatePatient` | `:one` | Insert new patient |
@@ -222,4 +244,4 @@ go tool cover -html=coverage.out
 
 ## Search Keywords
 
-`authentication` `JWT` `login` `register` `patients` `assessments` `diabetes` `prediction` `ML` `machine learning` `PostgreSQL` `SQLC` `Gin` `REST API` `handlers` `middleware` `router` `biomarkers` `risk cluster` `analytics` `export` `CSV`
+`authentication` `JWT` `login` `register` `users` `user profile` `onboarding` `consent` `patients` `assessments` `diabetes` `prediction` `ML` `machine learning` `PostgreSQL` `SQLC` `Gin` `REST API` `handlers` `middleware` `router` `biomarkers` `risk cluster` `analytics` `export` `CSV` `trends`
