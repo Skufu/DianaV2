@@ -202,10 +202,14 @@ VITE_ML_BASE=http://localhost:5000
 
 ## Demo Credentials
 
+These accounts are created automatically when migrations run (`make db_up`):
+
 | Role | Email | Password |
 |------|-------|----------|
-| User | demo@diana.app | demo123 |
+| Clinician | demo@diana.app | demo123 |
 | Admin | admin@diana.app | admin123 |
+
+> See [docs/DATABASE.md](./docs/DATABASE.md#database-seeding) for all available demo accounts and details on how seeding works.
 
 ---
 

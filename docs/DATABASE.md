@@ -195,6 +195,103 @@ make db_up
 
 ---
 
+## Database Seeding
+
+Diana V2 has **two separate seeding mechanisms**. Understanding the difference is important to avoid credential confusion.
+
+### 1. Migration-Based Seeding (Automatic)
+
+When you run `make db_up`, migration `0006_add_mock_data.sql` automatically creates demo users **with sample patients and assessments**:
+
+| Email | Password | Role | Notes |
+|-------|----------|------|-------|
+| `demo@diana.app` | `demo123` | Clinician | 3 sample patients, 7 assessments |
+| `admin@diana.app` | `admin123` | Admin | 2 sample patients, 5 assessments |
+| `clinician@example.com` | `password123` | Clinician | 4 sample patients |
+| `researcher@diana.app` | `research456` | Researcher | 1 sample patient |
+
+> [!TIP]
+> **For most development work, use these credentials.** They are automatically created when migrations run and include realistic sample data.
+
+### 2. Manual Seed Command (Optional)
+
+Running `make seed` creates **different users without patient data**:
+
+| Email | Password | Role |
+|-------|----------|------|
+| `admin@example.com` | `password123` | Admin |
+| `user@example.com` | `password123` | User |
+| `jane.doe@example.com` | `password123` | User |
+
+> [!NOTE]
+> The seed command uses `ON CONFLICT DO UPDATE`, so it will reset passwords for these specific emails if they already exist.
+
+### Which Should I Use?
+
+| Scenario | Use |
+|----------|-----|
+| Fresh setup, need demo data | `make db_up` (migrations include seed data) |
+| Reset a specific user's password | `make seed` |
+| Production deployment | Neither - create users through admin UI |
+
+---
+
+## NeonDB Setup
+
+This project supports [NeonDB](https://neon.tech) as a serverless PostgreSQL provider.
+
+### Connection String Format
+
+```bash
+DB_DSN=postgres://[user]:[password]@[endpoint].neon.tech/[database]?sslmode=require
+```
+
+Example:
+```bash
+DB_DSN=postgres://diana_owner:AbCdEfGh@ep-cool-name-123456.us-east-2.aws.neon.tech/diana?sslmode=require
+```
+
+> [!IMPORTANT]
+> NeonDB **requires** `sslmode=require` or `sslmode=verify-full`. Without it, connections will fail.
+
+### Debug Script
+
+Use the debug script to verify NeonDB connectivity:
+
+```bash
+./scripts/debug-neon.sh
+```
+
+This script will:
+1. Parse your `DB_DSN` from `.env`
+2. Test SSL connection to the Neon endpoint
+3. Run a simple query to verify database access
+4. Report any connection issues
+
+### Common NeonDB Issues
+
+| Issue | Solution |
+|-------|----------|
+| `SSL connection is required` | Add `?sslmode=require` to DB_DSN |
+| `endpoint not found` | Check the endpoint name in your Neon dashboard |
+| `password authentication failed` | Reset password in Neon dashboard, update .env |
+| Slow cold starts | First request after inactivity may take 1-2s (Neon wakes the database) |
+
+### Migrations with NeonDB
+
+```bash
+# Set your Neon connection string
+export DB_DSN="postgres://user:pass@ep-xyz.neon.tech/diana?sslmode=require"
+
+# Run migrations
+make db_up
+
+# Check status
+make db_status
+```
+
+---
+
 ## SQLC
 
 Queries are defined in separate `.sql` files in `backend/internal/store/sqlc/`:
