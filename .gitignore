@@ -13,7 +13,10 @@ bin/
 *.so
 *.dylib
 *.test
+*.test
 diana-backend
+seed
+server
 
 # Go workspace state
 *.out
@@ -89,9 +92,6 @@ desktop.ini
 *.temp
 *.bak
 *.backup
-*.swp
-*.swo
-*~
 
 # Docker
 .dockerignore
@@ -116,6 +116,10 @@ internal/store/sqlc/
 *.pid.lock
 .cache/
 .temp/
+venv/
+.venv/
+env/
+.env/
 
 # Python cache
 __pycache__/
@@ -132,3 +136,20 @@ frontend/test-results/
 
 # Generated summaries
 GIT_CHANGES_SUMMARY.md
+ARCHITECTURE_CHANGES.md
+FILE_CHANGES.md
+IMPLEMENTATION_PLAN.md
+MIGRATION_SUMMARY.txt
+PLANNING_COMPLETE.md
+PLANNING_INDEX.txt
+REFACTORING_README.md
+
+# Backups
+**/*_old.js
+**/backup/
+
+# Large files
+*.pdf
+!docs/**/*.pdf
+catboost_info/
+.sisyphus

@@ -27,6 +27,11 @@ ml/
 ├── train.py              # Train classification models
 ├── clustering.py         # K-Means cluster training
 ├── data_processing.py    # Prepare NHANES data for training
+├── explainability.py     # SHAP explanations
+├── explainer.py          # Explainer utilities
+├── ab_testing.py         # A/B testing infrastructure
+├── drift_detection.py    # Model drift monitoring
+├── mlflow_config.py      # MLflow experiment tracking
 └── requirements.txt      # Python dependencies
 ```
 
@@ -39,10 +44,17 @@ ml/
 | `/health` | GET | Health check | `{"status": "healthy"}` |
 | `/predict` | POST | Single prediction | Prediction + cluster |
 | `/predict/batch` | POST | Batch predictions | Array of predictions |
+| `/predict/explain` | POST | Prediction with SHAP | Prediction + explanation |
 | `/analytics/metrics` | GET | Model performance | AUC, accuracy, etc. |
+| `/analytics/metrics/clinical` | GET | Clinical model metrics | Clinical-only metrics |
 | `/analytics/clusters` | GET | Cluster distribution | Counts per cluster |
 | `/analytics/information-gain` | GET | Feature importance | IG scores |
 | `/analytics/visualizations/<name>` | GET | PNG images | Binary image |
+| `/ab-tests` | GET/POST | A/B testing | Test management |
+| `/ab-tests/<id>/results` | GET | A/B test results | Comparison data |
+| `/monitoring/drift` | GET | Drift status | Drift monitoring |
+| `/monitoring/alerts` | GET | Drift alerts | Alert list |
+| `/models` | GET | Model versions | MLflow versions |
 
 ---
 
@@ -72,10 +84,9 @@ class DianaPredictor:
 ### ClinicalPredictor (`predict.py`)
 ```python
 class ClinicalPredictor:
-    """Non-circular predictor excluding HbA1c from features."""
+    """Non-circular predictor excluding HbA1c and FBS from features."""
     
-    FEATURES = ['fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age',
-                'smoking_status', 'physical_activity', 'alcohol_use']
+    FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
 ```
 
 ---
@@ -116,8 +127,8 @@ POST /predict?model_type=clinical
 
 | Type | Query Param | Features | Use Case |
 |------|-------------|----------|----------|
-| ADA | `?model_type=ada` | All 7 biomarkers | Diagnostic confirmation |
-| Clinical | `?model_type=clinical` | 9 features (no HbA1c) | Screening without lab test |
+| ADA | `?model_type=ada` | 6 biomarkers (hba1c, fbs, bmi, tg, ldl, hdl) | Diagnostic confirmation |
+| Clinical | `?model_type=clinical` | 5 features (bmi, tg, ldl, hdl, age) | Screening without lab test |
 
 ---
 

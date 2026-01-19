@@ -44,7 +44,7 @@ func main() {
 
 	var pool *pgxpool.Pool
 	if cfg.DBDSN != "" {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		var err error
 		pool, err = pgxpool.New(ctx, cfg.DBDSN)

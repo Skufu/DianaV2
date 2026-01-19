@@ -10,8 +10,8 @@ import ErrorFallback from './ErrorFallback';
  *   </ErrorBoundary>
  * 
  * Or with section name for default fallback:
- *   <ErrorBoundary section="Analytics">
- *     <Analytics />
+ *   <ErrorBoundary section="Insights">
+ *     <Insights />
  *   </ErrorBoundary>
  */
 class ErrorBoundary extends Component {

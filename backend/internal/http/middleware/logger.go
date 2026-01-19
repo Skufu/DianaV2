@@ -39,7 +39,11 @@ func Logger() gin.HandlerFunc {
 		start := time.Now()
 		path := c.Request.URL.Path
 		raw := c.Request.URL.RawQuery
-		requestID, _ := c.Get("request_id")
+
+		requestID := "unknown"
+		if rid, exists := c.Get("request_id"); exists && rid != nil {
+			requestID = rid.(string)
+		}
 
 		// Skip health check endpoints in production to reduce noise
 		if shouldSkipLogging(path) {
@@ -49,7 +53,7 @@ func Logger() gin.HandlerFunc {
 
 		// Log incoming request
 		log.Debug().
-			Str("request_id", requestID.(string)).
+			Str("request_id", requestID).
 			Str("method", c.Request.Method).
 			Str("path", path).
 			Str("query", raw).
@@ -67,7 +71,7 @@ func Logger() gin.HandlerFunc {
 
 		// Build base log event with common fields
 		event := getLogEventForStatus(c.Writer.Status()).
-			Str("request_id", requestID.(string)).
+			Str("request_id", requestID).
 			Str("method", c.Request.Method).
 			Str("path", path).
 			Int("status", c.Writer.Status()).

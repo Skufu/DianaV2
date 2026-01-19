@@ -81,11 +81,11 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 	defer modelSrv.Close()
 
 	repo := &fakeAssessmentRepo{}
-	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
+	h := NewAssessmentsHandler(&fakeStore{repo: repo, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
 
 	r := gin.New()
 	r.Use(mockAuthMiddleware())
-	r.POST("/:id/assessments", h.create)
+	r.POST("/:id/assessments", h.Create)
 
 	body := bytes.NewBufferString(`{"fbs":110,"hba1c":6.1,"cholesterol":205,"bmi":25}`)
 	req, _ := http.NewRequest(http.MethodPost, "/123/assessments", body)
@@ -111,11 +111,11 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 	defer modelSrv.Close()
 
 	repo := &fakeAssessmentRepo{}
-	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
+	h := NewAssessmentsHandler(&fakeStore{repo: repo, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
 
 	r := gin.New()
 	r.Use(mockAuthMiddleware())
-	r.POST("/:id/assessments", h.create)
+	r.POST("/:id/assessments", h.Create)
 
 	body := bytes.NewBufferString(`{"fbs":95,"bmi":22}`)
 	req, _ := http.NewRequest(http.MethodPost, "/5/assessments", body)
@@ -136,16 +136,16 @@ const defaultTestTimeout = 2 * time.Second
 
 type fakeStore struct {
 	repo        *fakeAssessmentRepo
-	patientRepo *fakePatientRepo
+	userRepo    *fakeUserRepo
 }
 
-func (f *fakeStore) Users() store.UserRepository                 { return nil }
-func (f *fakeStore) Patients() store.PatientRepository           { return f.patientRepo }
+func (f *fakeStore) Users() store.UserRepository                 { return f.userRepo }
 func (f *fakeStore) Assessments() store.AssessmentRepository     { return f.repo }
 func (f *fakeStore) RefreshTokens() store.RefreshTokenRepository { return nil }
 func (f *fakeStore) Cohort() store.CohortRepository              { return nil }
 func (f *fakeStore) Clinics() store.ClinicRepository             { return nil }
 func (f *fakeStore) AuditEvents() store.AuditEventRepository     { return nil }
+func (f *fakeStore) AuthEvents() store.AuthEventRepository       { return nil }
 func (f *fakeStore) ModelRuns() store.ModelRunRepository         { return nil }
 func (f *fakeStore) Close()                                      {}
 
@@ -159,33 +159,6 @@ func mockAuthMiddleware() gin.HandlerFunc {
 		})
 		c.Next()
 	}
-}
-
-// fakePatientRepo mocks patient repository for tests
-type fakePatientRepo struct{}
-
-func (f *fakePatientRepo) List(ctx context.Context, userID int32) ([]models.Patient, error) {
-	return nil, nil
-}
-
-func (f *fakePatientRepo) Get(ctx context.Context, id int32, userID int32) (*models.Patient, error) {
-	return &models.Patient{ID: int64(id), UserID: int64(userID), Name: "Test"}, nil
-}
-
-func (f *fakePatientRepo) Create(ctx context.Context, p models.Patient) (*models.Patient, error) {
-	return &p, nil
-}
-
-func (f *fakePatientRepo) Update(ctx context.Context, p models.Patient) (*models.Patient, error) {
-	return &p, nil
-}
-
-func (f *fakePatientRepo) Delete(ctx context.Context, id int32, userID int32) error {
-	return nil
-}
-
-func (f *fakePatientRepo) ListAllLimited(ctx context.Context, userID int32, limit int) ([]models.Patient, error) {
-	return nil, nil
 }
 
 type fakeAssessmentRepo struct {
@@ -214,7 +187,7 @@ func (f *fakeAssessmentRepo) Delete(ctx context.Context, id int32) error {
 	return nil
 }
 
-func (f *fakeAssessmentRepo) ClusterCounts(ctx context.Context) ([]models.ClusterAnalytics, error) {
+func (f *fakeAssessmentRepo) ClusterCounts(ctx context.Context) ([]models.ClusterInsights, error) {
 	return nil, nil
 }
 
@@ -232,4 +205,73 @@ func (f *fakeAssessmentRepo) GetTrend(ctx context.Context, patientID int64) ([]m
 
 func (f *fakeAssessmentRepo) ListAllLimitedByUser(ctx context.Context, userID int32, limit int) ([]models.Assessment, error) {
 	return nil, nil
+}
+
+func (f *fakeAssessmentRepo) ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterInsights, error) {
+	return nil, nil
+}
+
+func (f *fakeAssessmentRepo) TrendAveragesByUser(ctx context.Context, userID int32) ([]models.TrendPoint, error) {
+	return nil, nil
+}
+
+func (f *fakeAssessmentRepo) ListByPatientPaginated(ctx context.Context, patientID int64, limit, offset int) ([]models.Assessment, int, error) {
+	return nil, 0, nil
+}
+
+// fakeUserRepo mocks user repository for tests
+type fakeUserRepo struct{}
+
+func (f *fakeUserRepo) FindByEmail(ctx context.Context, email string) (*models.User, error) {
+	return nil, nil
+}
+func (f *fakeUserRepo) FindByID(ctx context.Context, id int32) (*models.User, error) {
+	return nil, nil
+}
+func (f *fakeUserRepo) GetUserByID(ctx context.Context, id int32) (*models.User, error) {
+	return nil, nil
+}
+func (f *fakeUserRepo) List(ctx context.Context, params models.UserListParams) ([]models.User, int, error) {
+	return nil, 0, nil
+}
+func (f *fakeUserRepo) Create(ctx context.Context, user models.User) (*models.User, error) {
+	return &user, nil
+}
+func (f *fakeUserRepo) Update(ctx context.Context, user models.User) (*models.User, error) {
+	return &user, nil
+}
+func (f *fakeUserRepo) UpdateUser(ctx context.Context, user models.User) (*models.User, error) {
+	return &user, nil
+}
+func (f *fakeUserRepo) Deactivate(ctx context.Context, id int32) error {
+	return nil
+}
+func (f *fakeUserRepo) Activate(ctx context.Context, id int32) error {
+	return nil
+}
+func (f *fakeUserRepo) UpdateLastLogin(ctx context.Context, id int32) error {
+	return nil
+}
+func (f *fakeUserRepo) GetUsersForNotification(ctx context.Context) ([]models.UserForNotification, error) {
+	return nil, nil
+}
+
+// Add missing methods to satisfy updated UserRepository interface
+func (f *fakeUserRepo) GetLatestAssessmentByUser(ctx context.Context, userID int64) (*models.Assessment, error) {
+	return nil, nil
+}
+func (f *fakeUserRepo) GetAssessmentCountByUser(ctx context.Context, userID int64) (int, error) {
+	return 0, nil
+}
+func (f *fakeUserRepo) GetUserTrends(ctx context.Context, userID int64, months int) (*models.TrendData, error) {
+	return nil, nil
+}
+func (f *fakeUserRepo) SoftDeleteUser(ctx context.Context, userID int64) error {
+	return nil
+}
+func (f *fakeUserRepo) UpdateUserOnboarding(ctx context.Context, userID int64, completed bool) error {
+	return nil
+}
+func (f *fakeUserRepo) UpdateUserConsent(ctx context.Context, userID int64, consent models.ConsentSettings) error {
+	return nil
 }

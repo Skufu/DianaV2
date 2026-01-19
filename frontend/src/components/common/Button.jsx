@@ -1,7 +1,15 @@
 // Button: shared styled button with variant/size helpers.
 import React from 'react';
 
-const Button = ({ children, variant = 'primary', className = '', onClick, icon: Icon, fullWidth, disabled }) => {
+const Button = ({
+  children,
+  variant = 'primary',
+  className = '',
+  onClick,
+  icon: Icon,
+  fullWidth,
+  disabled,
+}) => {
   const baseStyle =
     'relative overflow-hidden group px-5 py-3 transition-all duration-300 ease-out flex items-center justify-center gap-2 rounded-xl font-medium tracking-wide shadow-sm hover:shadow-md active:scale-95 disabled:opacity-60';
   const variants = {
@@ -24,4 +32,3 @@ const Button = ({ children, variant = 'primary', className = '', onClick, icon: 
 };
 
 export default Button;
-

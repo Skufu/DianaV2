@@ -6,7 +6,7 @@ A full-stack health application that helps clinicians assess diabetes risk using
 
 ---
 
-## AI Quick Reference - Directory Index
+## - Directory Index
 
 | Directory | Purpose | Key Files | README |
 |-----------|---------|-----------|--------|
@@ -27,12 +27,12 @@ A full-stack health application that helps clinicians assess diabetes risk using
 |------|---------------|---------|
 | API Routes | `backend/internal/http/router/router.go` | Route definitions |
 | Auth Handler | `backend/internal/http/handlers/auth.go` | Login, register, JWT |
-| Patient Handler | `backend/internal/http/handlers/patients.go` | Patient CRUD |
+| Users Handler | `backend/internal/http/handlers/users.go` | User profile, onboarding |
 | Assessment Handler | `backend/internal/http/handlers/assessments.go` | Create assessments, call ML |
 | Admin Handlers | `backend/internal/http/handlers/admin_*.go` | User mgmt, audit, models |
 | RBAC Middleware | `backend/internal/http/middleware/rbac.go` | Role-based access control |
 | ML Predictor | `backend/internal/ml/predictor.go` | HTTP client for ML server |
-| DB Queries | `backend/internal/store/sqlc/queries.sql` | SQLC query definitions |
+| DB Queries | `backend/internal/store/sqlc/*.sql.go` | SQLC generated query code |
 | Config | `backend/internal/config/config.go` | Environment loading |
 
 ### Frontend (React)
@@ -40,9 +40,11 @@ A full-stack health application that helps clinicians assess diabetes risk using
 |------|---------------|---------|
 | Main App | `frontend/src/App.jsx` | Routing, auth state |
 | API Layer | `frontend/src/api.js` | Fetch wrapper, token refresh |
-| Dashboard | `frontend/src/components/dashboard/Dashboard.jsx` | Overview stats |
-| Patients | `frontend/src/components/patients/PatientList.jsx` | Patient CRUD UI |
-| Analytics | `frontend/src/components/analytics/Analytics.jsx` | ML visualizations |
+| User Dashboard | `frontend/src/components/user/Dashboard_user.jsx` | Overview stats |
+| User Profile | `frontend/src/components/user/UserProfile.jsx` | Profile & assessments |
+| Onboarding | `frontend/src/components/user/Onboarding.jsx` | New user onboarding |
+| Personal Trends | `frontend/src/components/user/PersonalTrends.jsx` | Biomarker trends |
+| Insights | `frontend/src/components/insights/Insights.jsx` | ML visualizations |
 | Login | `frontend/src/components/auth/Login.jsx` | Authentication forms |
 
 ### ML (Python)
@@ -52,9 +54,9 @@ A full-stack health application that helps clinicians assess diabetes risk using
 | Predictors | `ml/predict.py` | DianaPredictor, ClinicalPredictor |
 | Training | `ml/train.py` | Clinical model training (non-circular) |
 | Clustering | `ml/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
-| Data Processing | `scripts/process_nhanes_multi.py` | NHANES data pipeline |
-| Feature Selection | `scripts/feature_selection.py` | Mutual Information + IG analysis |
-| Thesis Outputs | `scripts/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
+| Data Processing | `scripts/data/process_nhanes_multi.py` | NHANES data pipeline |
+| Feature Selection | `scripts/eval/feature_selection.py` | Mutual Information + IG analysis |
+| Thesis Outputs | `scripts/thesis/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
 | ML Rationale | `docs/ml-rationale.md` | Defense-ready methodology justification |
 
 ---
@@ -102,7 +104,7 @@ make run-dev
 ### Access Points
 | Service | URL |
 |---------|-----|
-| Frontend | http://localhost:5173 |
+| Frontend | http://localhost:4000 |
 | Backend | http://localhost:8080/api/v1/healthz |
 | ML Server | http://localhost:5000/health |
 
@@ -116,19 +118,29 @@ make run-dev
 | GET | `/api/v1/healthz` | Health check |
 | POST | `/api/v1/auth/login` | User login |
 | POST | `/api/v1/auth/register` | Create account |
+| POST | `/api/v1/auth/refresh` | Refresh token |
 
-### Protected (JWT Required)
+### User Self-Service (JWT Required)
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/patients` | List patients |
-| POST | `/api/v1/patients` | Create patient |
-| POST | `/api/v1/patients/:id/assessments` | Create assessment (calls ML) |
-| GET | `/api/v1/analytics/summary` | Dashboard stats |
-| GET | `/api/v1/export/patients.csv` | Export CSV |
+| GET | `/api/v1/users/me/profile` | Get user profile |
+| PUT | `/api/v1/users/me/profile` | Update profile |
+| POST | `/api/v1/users/me/onboarding` | Complete onboarding |
+| GET | `/api/v1/users/me/trends` | Get biomarker trends |
+| POST | `/api/v1/users/me/assessments` | Create assessment (calls ML) |
+| GET | `/api/v1/users/me/assessments` | List assessments |
+| GET | `/api/v1/users/me/export` | Export user data |
+
+### Insights (JWT Required)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/insights/summary` | Dashboard stats |
+| GET | `/api/v1/insights/cohort` | Cohort analysis |
 
 ### Admin (JWT + Admin Role Required)
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/api/v1/admin/dashboard` | Admin dashboard stats |
 | GET | `/api/v1/admin/users` | List users (paginated) |
 | POST | `/api/v1/admin/users` | Create user |
 | PUT | `/api/v1/admin/users/:id` | Update user |
@@ -141,7 +153,7 @@ make run-dev
 |--------|------|-------------|
 | GET | `/health` | ML health check |
 | POST | `/predict` | Single prediction |
-| GET | `/analytics/metrics` | Model performance |
+| GET | `/insights/metrics` | Model performance |
 
 ---
 
@@ -176,7 +188,7 @@ PORT=8080
 ENV=dev
 DB_DSN=postgres://user:pass@localhost:5432/diana?sslmode=disable
 JWT_SECRET=your-secure-secret-min-32-chars
-CORS_ORIGINS=http://localhost:5173
+CORS_ORIGINS=http://localhost:4000
 MODEL_URL=http://localhost:5000
 ```
 
@@ -190,11 +202,14 @@ VITE_ML_BASE=http://localhost:5000
 
 ## Demo Credentials
 
+These accounts are created automatically when migrations run (`make db_up`):
+
 | Role | Email | Password |
 |------|-------|----------|
-| Demo | demo@diana.app | demo123 |
-| Clinician | clinician@example.com | password123 |
+| Clinician | demo@diana.app | demo123 |
 | Admin | admin@diana.app | admin123 |
+
+> See [docs/DATABASE.md](./docs/DATABASE.md#database-seeding) for all available demo accounts and details on how seeding works.
 
 ---
 
@@ -221,6 +236,8 @@ VITE_ML_BASE=http://localhost:5000
 | ML System | [docs/ML_SYSTEM.md](./docs/ML_SYSTEM.md) |
 | Database | [docs/DATABASE.md](./docs/DATABASE.md) |
 | API Contract | [docs/ml-api-contract.md](./docs/ml-api-contract.md) |
+| **Known Issues** | [docs/KNOWN_ISSUES.md](./docs/KNOWN_ISSUES.md) |
+| Code Review | [code-review-analysis.md](./code-review-analysis.md) |
 
 ---
 

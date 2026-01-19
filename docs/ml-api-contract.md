@@ -62,9 +62,9 @@ Example request:
 ## Response Schema
 - Success (HTTP 200):
   ```json
-  { "cluster": "<non-empty string>", "risk_score": <int> }
+  { "risk_cluster": "<non-empty string>", "risk_score": <int> }
   ```
-  - `cluster` must be non-empty; otherwise treated as an error.
+  - `risk_cluster` must be non-empty; otherwise treated as an error.
   - `risk_score` is an integer (0 is acceptable).
 
 ## Error & Timeout Handling (backend behavior)
