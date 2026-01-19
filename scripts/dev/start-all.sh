@@ -5,7 +5,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 cd "$PROJECT_DIR"
 
 # Colors
@@ -50,15 +50,25 @@ cleanup() {
 }
 trap cleanup SIGINT SIGTERM
 
-# Function to kill process on a specific port (Windows/Bash compatible)
+# Function to kill process on a specific port (cross-platform)
 kill_on_port() {
     local port=$1
     echo -e "${CYAN}Checking port $port...${NC}"
-    # Use netstat to find PID on Windows
-    local pid=$(netstat -ano | grep ":$port" | grep "LISTENING" | awk '{print $5}' | head -n 1)
-    if [ -n "$pid" ]; then
-        echo -e "${YELLOW}Killing process $pid on port $port...${NC}"
-        taskkill //F //PID "$pid" &>/dev/null || kill -9 "$pid" 2>/dev/null || true
+    
+    # Use lsof on macOS/Linux, netstat on Windows
+    if [[ "$OSTYPE" == "darwin"* ]] || [[ "$OSTYPE" == "linux"* ]]; then
+        local pid=$(lsof -ti :$port 2>/dev/null | head -n 1)
+        if [ -n "$pid" ]; then
+            echo -e "${YELLOW}Killing process $pid on port $port...${NC}"
+            kill -9 "$pid" 2>/dev/null || true
+        fi
+    else
+        # Windows/Git Bash
+        local pid=$(netstat -ano 2>/dev/null | grep ":$port" | grep "LISTENING" | awk '{print $5}' | head -n 1)
+        if [ -n "$pid" ]; then
+            echo -e "${YELLOW}Killing process $pid on port $port...${NC}"
+            taskkill //F //PID "$pid" &>/dev/null || kill -9 "$pid" 2>/dev/null || true
+        fi
     fi
 }
 
