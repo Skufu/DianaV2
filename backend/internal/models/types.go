@@ -3,6 +3,19 @@ package models
 
 import "time"
 
+type AuthEvent struct {
+	ID         string                 `json:"id"`
+	EventType  string                 `json:"event_type"`
+	Email      string                 `json:"email,omitempty"`
+	IPAddress  string                 `json:"ip_address,omitempty"`
+	UserAgent  string                 `json:"user_agent,omitempty"`
+	Success    bool                   `json:"success"`
+	DeviceInfo map[string]interface{} `json:"device_info,omitempty"`
+	Location   map[string]interface{} `json:"location,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt  time.Time              `json:"created_at"`
+}
+
 type User struct {
 	ID           int64  `json:"id"`
 	Email        string `json:"email"`
@@ -56,7 +69,8 @@ type User struct {
 
 type Assessment struct {
 	ID            int64   `json:"id"`
-	UserID        int64   `json:"user_id"`
+	UserID        int64   `json:"user_id"` // Changed from PatientID
+	PatientID     int64   `json:"patient_id,omitempty"`
 	RiskLevel     string  `json:"risk_level,omitempty"`
 	FBS           float64 `json:"fbs,omitempty"`
 	HbA1c         float64 `json:"hba1c,omitempty"`
@@ -168,12 +182,12 @@ type OnboardingRequest struct {
 	HeartDisease                 string `json:"heart_disease" binding:"omitempty,oneof=no yes"`
 	FamilyHistoryDiabetes        bool   `json:"family_history_diabetes"`
 	SmokingStatus                string `json:"smoking_status" binding:"omitempty,oneof=never former current"`
-	ConsentPersonalData          bool   `json:"consent_personal_data" binding:"required"`
-	ConsentResearchParticipation bool   `json:"consent_research_participation" binding:"required"`
-	ConsentEmailUpdates          bool   `json:"consent_email_updates" binding:"required"`
-	ConsentAnalytics             bool   `json:"consent_analytics" binding:"required"`
-	AssessmentFrequencyMonths    int    `json:"assessment_frequency_months" binding:"omitempty,min=1,max=12,default=3"`
-	ReminderEmail                bool   `json:"reminder_email" binding:"omitempty,default=true"`
+	ConsentPersonalData          bool   `json:"consent_personal_data"`
+	ConsentResearchParticipation bool   `json:"consent_research_participation"`
+	ConsentEmailUpdates          bool   `json:"consent_email_updates"`
+	ConsentAnalytics             bool   `json:"consent_analytics"`
+	AssessmentFrequencyMonths    int    `json:"assessment_frequency_months" binding:"omitempty,min=1,max=12"`
+	ReminderEmail                bool   `json:"reminder_email"`
 }
 
 // NotificationQueue represents email notification
@@ -206,10 +220,45 @@ type UpdateAssessmentRequest struct {
 	Notes         string   `json:"notes" binding:"omitempty,max=2000"`
 }
 
-// Patient struct removed - patients table dropped in migration 0011
-// All patient data now stored in User model directly
+// -----------------------------------------------------------------------------
+// Legacy / Admin Models (Ported from types_old.go)
+// -----------------------------------------------------------------------------
 
-// CohortGroup represents aggregated statistics for a user group
+type Patient struct {
+	ID              int64     `json:"id"`
+	UserID          int64     `json:"user_id,omitempty"`
+	Name            string    `json:"name"`
+	Age             int       `json:"age,omitempty"`
+	MenopauseStatus string    `json:"menopause_status,omitempty"`
+	YearsMenopause  int       `json:"years_menopause,omitempty"`
+	BMI             float64   `json:"bmi,omitempty"`
+	BPSystolic      int       `json:"bp_systolic,omitempty"`
+	BPDiastolic     int       `json:"bp_diastolic,omitempty"`
+	Activity        string    `json:"activity,omitempty"`
+	PhysActivity    bool      `json:"phys_activity,omitempty"`
+	Smoking         string    `json:"smoking,omitempty"`
+	Hypertension    string    `json:"hypertension,omitempty"`
+	HeartDisease    string    `json:"heart_disease,omitempty"`
+	FamilyHistory   bool      `json:"family_history,omitempty"`
+	Chol            int       `json:"chol,omitempty"`
+	LDL             int       `json:"ldl,omitempty"`
+	HDL             int       `json:"hdl,omitempty"`
+	Triglycerides   int       `json:"triglycerides,omitempty"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+type PatientSummary struct {
+	Patient
+	Cluster   string    `json:"cluster,omitempty"`
+	RiskScore int       `json:"risk_score,omitempty"`
+	Risk      int       `json:"risk,omitempty"`
+	FBS       float64   `json:"fbs,omitempty"`
+	HbA1c     float64   `json:"hba1c,omitempty"`
+	LastVisit time.Time `json:"lastVisit,omitempty"`
+}
+
+// CohortGroup represents aggregated statistics for a patient group
 type CohortGroup struct {
 	Name              string  `json:"name"`
 	Count             int     `json:"count"`
@@ -318,19 +367,6 @@ type AuditListParams struct {
 	Action    string    `form:"action"`
 	StartDate time.Time `form:"start_date"`
 	EndDate   time.Time `form:"end_date"`
-}
-
-type AuthEvent struct {
-	ID         string                 `json:"id"`
-	EventType  string                 `json:"event_type"`
-	Email      string                 `json:"email,omitempty"`
-	IPAddress  string                 `json:"ip_address,omitempty"`
-	UserAgent  string                 `json:"user_agent,omitempty"`
-	Success    bool                   `json:"success"`
-	DeviceInfo map[string]interface{} `json:"device_info,omitempty"`
-	Location   map[string]interface{} `json:"location,omitempty"`
-	Metadata   map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt  time.Time              `json:"created_at"`
 }
 
 // PaginatedResponse is a generic wrapper for paginated API responses

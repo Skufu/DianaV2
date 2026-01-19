@@ -27,7 +27,7 @@ A full-stack health application that helps clinicians assess diabetes risk using
 |------|---------------|---------|
 | API Routes | `backend/internal/http/router/router.go` | Route definitions |
 | Auth Handler | `backend/internal/http/handlers/auth.go` | Login, register, JWT |
-| Users Handler | `backend/internal/http/handlers/users.go` | User profile, onboarding |
+| Patient Handler | `backend/internal/http/handlers/patients.go` | Patient CRUD |
 | Assessment Handler | `backend/internal/http/handlers/assessments.go` | Create assessments, call ML |
 | Admin Handlers | `backend/internal/http/handlers/admin_*.go` | User mgmt, audit, models |
 | RBAC Middleware | `backend/internal/http/middleware/rbac.go` | Role-based access control |
@@ -40,11 +40,9 @@ A full-stack health application that helps clinicians assess diabetes risk using
 |------|---------------|---------|
 | Main App | `frontend/src/App.jsx` | Routing, auth state |
 | API Layer | `frontend/src/api.js` | Fetch wrapper, token refresh |
-| User Dashboard | `frontend/src/components/user/Dashboard_user.jsx` | Overview stats |
-| User Profile | `frontend/src/components/user/UserProfile.jsx` | Profile & assessments |
-| Onboarding | `frontend/src/components/user/Onboarding.jsx` | New user onboarding |
-| Personal Trends | `frontend/src/components/user/PersonalTrends.jsx` | Biomarker trends |
-| Insights | `frontend/src/components/insights/Insights.jsx` | ML visualizations |
+| Dashboard | `frontend/src/components/dashboard/Dashboard.jsx` | Overview stats |
+| Patients | `frontend/src/components/patients/PatientHistory.jsx` | Patient CRUD UI |
+| Analytics | `frontend/src/components/analytics/Analytics.jsx` | ML visualizations |
 | Login | `frontend/src/components/auth/Login.jsx` | Authentication forms |
 
 ### ML (Python)
@@ -54,9 +52,9 @@ A full-stack health application that helps clinicians assess diabetes risk using
 | Predictors | `ml/predict.py` | DianaPredictor, ClinicalPredictor |
 | Training | `ml/train.py` | Clinical model training (non-circular) |
 | Clustering | `ml/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
-| Data Processing | `scripts/data/process_nhanes_multi.py` | NHANES data pipeline |
-| Feature Selection | `scripts/eval/feature_selection.py` | Mutual Information + IG analysis |
-| Thesis Outputs | `scripts/thesis/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
+| Data Processing | `scripts/process_nhanes_multi.py` | NHANES data pipeline |
+| Feature Selection | `scripts/feature_selection.py` | Mutual Information + IG analysis |
+| Thesis Outputs | `scripts/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
 | ML Rationale | `docs/ml-rationale.md` | Defense-ready methodology justification |
 
 ---
@@ -118,29 +116,19 @@ make run-dev
 | GET | `/api/v1/healthz` | Health check |
 | POST | `/api/v1/auth/login` | User login |
 | POST | `/api/v1/auth/register` | Create account |
-| POST | `/api/v1/auth/refresh` | Refresh token |
 
-### User Self-Service (JWT Required)
+### Protected (JWT Required)
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/users/me/profile` | Get user profile |
-| PUT | `/api/v1/users/me/profile` | Update profile |
-| POST | `/api/v1/users/me/onboarding` | Complete onboarding |
-| GET | `/api/v1/users/me/trends` | Get biomarker trends |
-| POST | `/api/v1/users/me/assessments` | Create assessment (calls ML) |
-| GET | `/api/v1/users/me/assessments` | List assessments |
-| GET | `/api/v1/users/me/export` | Export user data |
-
-### Insights (JWT Required)
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/v1/insights/summary` | Dashboard stats |
-| GET | `/api/v1/insights/cohort` | Cohort analysis |
+| GET | `/api/v1/patients` | List patients |
+| POST | `/api/v1/patients` | Create patient |
+| POST | `/api/v1/patients/:id/assessments` | Create assessment (calls ML) |
+| GET | `/api/v1/analytics/summary` | Dashboard stats |
+| GET | `/api/v1/export/patients.csv` | Export CSV |
 
 ### Admin (JWT + Admin Role Required)
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/admin/dashboard` | Admin dashboard stats |
 | GET | `/api/v1/admin/users` | List users (paginated) |
 | POST | `/api/v1/admin/users` | Create user |
 | PUT | `/api/v1/admin/users/:id` | Update user |
@@ -202,14 +190,10 @@ VITE_ML_BASE=http://localhost:5000
 
 ## Demo Credentials
 
-These accounts are created automatically when migrations run (`make db_up`):
-
 | Role | Email | Password |
 |------|-------|----------|
-| Clinician | demo@diana.app | demo123 |
+| Demo (User) | demo@diana.app | demo123 |
 | Admin | admin@diana.app | admin123 |
-
-> See [docs/DATABASE.md](./docs/DATABASE.md#database-seeding) for all available demo accounts and details on how seeding works.
 
 ---
 
@@ -236,8 +220,6 @@ These accounts are created automatically when migrations run (`make db_up`):
 | ML System | [docs/ML_SYSTEM.md](./docs/ML_SYSTEM.md) |
 | Database | [docs/DATABASE.md](./docs/DATABASE.md) |
 | API Contract | [docs/ml-api-contract.md](./docs/ml-api-contract.md) |
-| **Known Issues** | [docs/KNOWN_ISSUES.md](./docs/KNOWN_ISSUES.md) |
-| Code Review | [code-review-analysis.md](./code-review-analysis.md) |
 
 ---
 

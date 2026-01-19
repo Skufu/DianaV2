@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
@@ -120,11 +121,33 @@ func (h *UsersHandler) CompleteOnboarding(c *gin.Context) {
 		return
 	}
 
+	if !req.ConsentPersonalData {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "consent to personal data usage is required"})
+		return
+	}
+
+	// Apply defaults for optional fields
+	if req.AssessmentFrequencyMonths == 0 {
+		req.AssessmentFrequencyMonths = 3
+	}
+
+	// Parse DOB
+	var dob *time.Time
+	if req.DateOfBirth != "" {
+		parsed, err := time.Parse("2006-01-02", req.DateOfBirth)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD"})
+			return
+		}
+		dob = &parsed
+	}
+
 	// 1. Update User Profile fields
 	userUpdate := models.User{
 		ID:                        userClaims.UserID,
 		FirstName:                 req.FirstName,
 		LastName:                  req.LastName,
+		DateOfBirth:               dob,
 		MenopauseStatus:           req.MenopauseStatus,
 		MenopauseType:             req.MenopauseType,
 		YearsMenopause:            req.YearsMenopause,
@@ -135,8 +158,6 @@ func (h *UsersHandler) CompleteOnboarding(c *gin.Context) {
 		AssessmentFrequencyMonths: req.AssessmentFrequencyMonths,
 		ReminderEmail:             req.ReminderEmail,
 	}
-	// Parse DOB
-	// if req.DateOfBirth != "" { ... } // Assuming basic string or handle parsing if needed
 
 	// 2. Update Consent
 	consent := models.ConsentSettings{

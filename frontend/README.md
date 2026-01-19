@@ -61,9 +61,12 @@ frontend/
 |-----------|----------|---------|
 | `App` | `src/App.jsx` | Root component, auth state, routing |
 | `Login` | `components/auth/Login.jsx` | Authentication forms |
-| `Dashboard` | `components/dashboard/Dashboard.jsx` | Summary stats, overview charts |
-| `PatientList` | `components/patients/PatientList.jsx` | Patient CRUD operations |
-| `Analytics` | `components/analytics/Analytics.jsx` | ML visualizations, model metrics |
+| `Signup` | `components/auth/Signup.jsx` | Registration form |
+| `Onboarding` | `components/user/Onboarding.jsx` | Multi-step user profile setup |
+| `Dashboard_user` | `components/user/Dashboard_user.jsx` | User overview, assessments |
+| `UserProfile` | `components/user/UserProfile.jsx` | Profile management |
+| `PersonalTrends` | `components/user/PersonalTrends.jsx` | Assessment trend charts |
+| `Insights` | `components/insights/Insights.jsx` | ML visualizations, model metrics |
 | `Export` | `components/export/Export.jsx` | CSV export functionality |
 
 ---
@@ -74,12 +77,24 @@ frontend/
 | Function | Purpose | Endpoint Called |
 |----------|---------|-----------------|
 | `loginApi(email, password)` | User login | `POST /api/v1/auth/login` |
+| `logoutApi(refreshToken)` | User logout | `POST /api/v1/auth/logout` |
 | `registerApi(data)` | Create account | `POST /api/v1/auth/register` |
-| `fetchPatientsApi(token)` | List patients | `GET /api/v1/patients` |
-| `createPatientApi(token, data)` | Add patient | `POST /api/v1/patients` |
-| `fetchAssessmentsApi(token, patientId)` | Get history | `GET /api/v1/patients/:id/assessments` |
-| `createAssessmentApi(token, patientId, data)` | New assessment | `POST /api/v1/patients/:id/assessments` |
-| `fetchInsightsApi(token)` | Dashboard stats | `GET /api/v1/insights/summary` |
+| `getUserProfileApi()` | Get current user | `GET /api/v1/users/me/profile` |
+| `updateUserProfileApi(data)` | Update profile | `PUT /api/v1/users/me/profile` |
+| `completeOnboardingApi(data)` | Complete onboarding | `POST /api/v1/users/me/onboarding` |
+| `getConsentSettingsApi()` | Get consent flags | `GET /api/v1/users/me/consent` |
+| `updateConsentSettingsApi(data)` | Update consent | `PUT /api/v1/users/me/consent` |
+| `getTrendsApi(months)` | Get assessment trends | `GET /api/v1/users/me/trends` |
+| `deleteAccountApi()` | Delete account | `DELETE /api/v1/users/me/account` |
+| `getAssessmentsApi()` | Get user assessments | `GET /api/v1/users/me/assessments` |
+| `createAssessmentApi(data)` | New assessment | `POST /api/v1/users/me/assessments` |
+| `updateAssessmentApi(id, data)` | Update assessment | `PUT /api/v1/users/me/assessments/:id` |
+| `deleteAssessmentApi(id)` | Delete assessment | `DELETE /api/v1/users/me/assessments/:id` |
+| `fetchMLHealthApi()` | Check ML server | `GET /health` |
+| `fetchMLMetricsApi()` | Model performance | `GET /insights/metrics` |
+| `fetchMLInformationGainApi()` | Feature ranking | `GET /insights/information-gain` |
+| `fetchMLClustersApi()` | Cluster data | `GET /insights/clusters` |
+| `getMLVisualizationUrl(name)` | Visualization image URL | `/insights/visualizations/` |
 
 ### Token Management
 - `apiFetch(path, options, isRetry)` - Core fetch wrapper with 401 handling
@@ -95,9 +110,13 @@ frontend/
 | State | Location | Purpose |
 |-------|----------|---------|
 | `token` | `App.jsx` | JWT access token |
-| `patients` | `App.jsx` | Patient list cache |
+| `refreshToken` | `App.jsx` | JWT refresh token |
+| `isAuthenticated` | `App.jsx` | Login status |
+| `userRole` | `App.jsx` | User role (admin/user) |
+| `userId` | `App.jsx` | Current user ID |
+| `userProfile` | `App.jsx` | Cached user profile data |
 | `activeTab` | `App.jsx` | Current navigation tab |
-| `selectedPatient` | `PatientList.jsx` | Currently selected patient |
+| `showOnboarding` | `App.jsx` | Show onboarding flow |
 
 ---
 
@@ -141,4 +160,4 @@ npm run preview       # Preview production build
 
 ## Search Keywords
 
-`React` `Vite` `Tailwind` `components` `authentication` `login` `register` `token` `JWT` `patients` `assessments` `dashboard` `analytics` `export` `CSV` `API` `fetch` `state management` `ML visualizations` `charts`
+`React` `Vite` `Tailwind` `components` `authentication` `login` `register` `signup` `token` `JWT` `users` `user profile` `onboarding` `consent` `assessments` `dashboard` `trends` `insights` `export` `CSV` `API` `fetch` `state management` `ML visualizations` `charts`
