@@ -9,6 +9,9 @@ Usage:
     result = predictor.predict(patient_data)
 """
 
+import hashlib
+import logging
+import os
 import pandas as pd
 import numpy as np
 import joblib
@@ -16,12 +19,60 @@ import json
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+logger = logging.getLogger(__name__)
+
 MODELS_DIR = Path(__file__).parent.parent / "models"
 RESULTS_DIR = MODELS_DIR / "results"
+MODEL_HASHES_FILE = MODELS_DIR / "model_hashes.json"
 
 # Features expected by the model
 REQUIRED_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl']
 ALL_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+
+
+def compute_file_hash(filepath: Path) -> str:
+    sha256 = hashlib.sha256()
+    with open(filepath, 'rb') as f:
+        for chunk in iter(lambda: f.read(8192), b''):
+            sha256.update(chunk)
+    return sha256.hexdigest()
+
+
+def verify_model_integrity(filepath: Path) -> bool:
+    if not MODEL_HASHES_FILE.exists():
+        if os.environ.get('ENV') == 'production':
+            logger.error(f"Model hashes file not found in production: {MODEL_HASHES_FILE}")
+            return False
+        logger.warning(f"Model hashes file not found, skipping integrity check: {MODEL_HASHES_FILE}")
+        return True
+    
+    with open(MODEL_HASHES_FILE) as f:
+        expected_hashes = json.load(f)
+    
+    filename = filepath.name
+    if filename not in expected_hashes:
+        if os.environ.get('ENV') == 'production':
+            logger.error(f"No hash found for model file in production: {filename}")
+            return False
+        logger.warning(f"No hash found for model file, skipping check: {filename}")
+        return True
+    
+    actual_hash = compute_file_hash(filepath)
+    if actual_hash != expected_hashes[filename]:
+        logger.error(f"Model integrity check failed for {filename}: hash mismatch")
+        return False
+    
+    return True
+
+
+def safe_load_model(filepath: Path):
+    if not verify_model_integrity(filepath):
+        raise SecurityError(f"Model integrity verification failed: {filepath}")
+    return joblib.load(filepath)
+
+
+class SecurityError(Exception):
+    pass
 
 # Medical status thresholds (per ADA guidelines)
 def get_medical_status(hba1c):
@@ -48,20 +99,27 @@ class DianaPredictor:
         self.models_dir = models_dir or MODELS_DIR
         self.results_dir = RESULTS_DIR
         
-        # Load scaler
-        self.scaler = joblib.load(self.models_dir / "scaler.joblib")
+        self.scaler = safe_load_model(self.models_dir / "scaler.joblib")
+        n_scaler_features = self.scaler.n_features_in_
         
-        # Load best classifier (for probability)
-        best_model_path = self.models_dir / "best_model.joblib"
-        if best_model_path.exists():
-            self.classifier = joblib.load(best_model_path)
+        rf_path = self.models_dir / "random_forest.joblib"
+        best_path = self.models_dir / "best_model.joblib"
+        
+        if rf_path.exists():
+            rf = safe_load_model(rf_path)
+            if rf.n_features_in_ == n_scaler_features:
+                self.classifier = rf
+            elif best_path.exists():
+                self.classifier = safe_load_model(best_path)
+            else:
+                self.classifier = rf
+        elif best_path.exists():
+            self.classifier = safe_load_model(best_path)
         else:
-            self.classifier = joblib.load(self.models_dir / "random_forest.joblib")
+            raise FileNotFoundError("No classifier model found")
         
-        # Load K-means (for risk cluster)
-        self.kmeans = joblib.load(self.models_dir / "kmeans_model.joblib")
+        self.kmeans = safe_load_model(self.models_dir / "kmeans_model.joblib")
         
-        # Load cluster labels
         cluster_labels_path = self.models_dir / "cluster_labels.json"
         if cluster_labels_path.exists():
             with open(cluster_labels_path) as f:
@@ -69,7 +127,6 @@ class DianaPredictor:
         else:
             self.cluster_labels = {"0": {"label": "HIGH", "risk_level": "HIGH"}, "1": {"label": "MODERATE", "risk_level": "MODERATE"}}
         
-        # Load model metrics
         metrics_path = self.models_dir / "model_metrics.json"
         if metrics_path.exists():
             with open(metrics_path) as f:
@@ -78,9 +135,28 @@ class DianaPredictor:
             self.metrics = {}
     
     def validate_input(self, data: Dict[str, float]) -> tuple[bool, list]:
-        """Validate input data has all required features."""
         missing = [f for f in REQUIRED_FEATURES if f not in data or data[f] is None]
-        return len(missing) == 0, missing
+        if missing:
+            return False, missing
+        
+        errors = []
+        ranges = {
+            'hba1c': (2.0, 20.0),
+            'fbs': (20, 600),
+            'bmi': (10, 80),
+            'triglycerides': (20, 1500),
+            'ldl': (10, 400),
+            'hdl': (10, 150),
+        }
+        for feature, (min_val, max_val) in ranges.items():
+            if feature in data and data[feature] is not None:
+                val = data[feature]
+                if val < min_val or val > max_val:
+                    errors.append(f"{feature} value {val} out of range [{min_val}, {max_val}]")
+        
+        if errors:
+            return False, errors
+        return True, []
     
     def predict(self, data: Dict[str, float]) -> Dict[str, Any]:
         """
@@ -103,11 +179,10 @@ class DianaPredictor:
         # Get medical status from HbA1c
         medical_status = get_medical_status(data['hba1c'])
         
-        # Prepare features for models (6 features - must match training)
-        X = np.array([[data['hba1c'], data['fbs'], data['bmi'], 
-                      data['triglycerides'], data['ldl'], data['hdl']]])
-        
-        # Scale
+        # Prepare features for models
+        X = pd.DataFrame([[data['hba1c'], data['fbs'], data['bmi'], 
+                          data['triglycerides'], data['ldl'], data['hdl']]],
+                         columns=REQUIRED_FEATURES)
         X_scaled = self.scaler.transform(X)
         
         # Get risk cluster from K-means
@@ -118,28 +193,26 @@ class DianaPredictor:
         cluster_label = cluster_info.get("label", f"Cluster-{cluster_id}")
         risk_level = cluster_info.get("risk_level", "UNKNOWN")
         
-        # Get probability from classifier
-        # Classifier predicts cluster: 0=SIRD-like (HIGH), 1=MOD-like (MODERATE)
+        # Get diabetes probability from classifier (0-100%)
         try:
             proba = self.classifier.predict_proba(X_scaled)[0]
-            # proba[0] = probability of HIGH risk cluster (SIRD-like)
-            # proba[1] = probability of MODERATE risk cluster (MOD-like)
-            high_risk_prob = proba[0] if len(proba) >= 2 else proba[0]
-            # Risk score: weighted by HIGH risk probability
-            risk_score = int(high_risk_prob * 100)
+            diabetes_prob = float(proba[0]) if len(proba) == 2 else float(max(proba))
+            risk_score = int(diabetes_prob * 100)
             confidence = round(max(proba), 3)
-        except Exception as e:
-            high_risk_prob = 0.0
-            risk_score = 50  # Default moderate risk
+        except (ValueError, IndexError, AttributeError) as e:
+            import logging
+            logging.warning(f"Classifier prediction failed: {e}")
+            diabetes_prob = 0.5
+            risk_score = 50
             confidence = 0.5
         
         return {
             "success": True,
             "medical_status": medical_status,
-            "cluster": cluster_label,
+            "risk_cluster": cluster_label,
             "risk_level": risk_level,
             "risk_score": risk_score,
-            "probability": round(high_risk_prob, 3),
+            "probability": round(diabetes_prob, 3),
             "confidence": confidence,
             "model_info": {
                 "n_clusters": self.metrics.get("n_clusters", 2),
@@ -192,23 +265,19 @@ class ClinicalPredictor:
         self.results_dir = CLINICAL_RESULTS_DIR
         self.features = CLINICAL_FEATURES
         
-        # Check if clinical models exist
         if not (self.models_dir / "best_model.joblib").exists():
             raise FileNotFoundError(
                 f"Clinical models not found at {self.models_dir}. "
                 "Run 'python scripts/train_models_v2.py' first."
             )
         
-        # Load scaler
-        self.scaler = joblib.load(self.models_dir / "scaler.joblib")
+        self.scaler = safe_load_model(self.models_dir / "scaler.joblib")
         
-        # Load best classifier
-        self.classifier = joblib.load(self.models_dir / "best_model.joblib")
+        self.classifier = safe_load_model(self.models_dir / "best_model.joblib")
         
-        # Load K-means (for risk cluster)
         kmeans_path = self.models_dir / "kmeans_model.joblib"
         if kmeans_path.exists():
-            self.kmeans = joblib.load(kmeans_path)
+            self.kmeans = safe_load_model(kmeans_path)
         else:
             self.kmeans = None
         
@@ -229,9 +298,27 @@ class ClinicalPredictor:
             self.metrics = {}
     
     def validate_input(self, data: Dict[str, float]) -> tuple[bool, list]:
-        """Validate input has all required clinical features."""
         missing = [f for f in CLINICAL_FEATURES if f not in data or data[f] is None]
-        return len(missing) == 0, missing
+        if missing:
+            return False, missing
+        
+        errors = []
+        ranges = {
+            'bmi': (10, 80),
+            'triglycerides': (20, 1500),
+            'ldl': (10, 400),
+            'hdl': (10, 150),
+            'age': (18, 120),
+        }
+        for feature, (min_val, max_val) in ranges.items():
+            if feature in data and data[feature] is not None:
+                val = data[feature]
+                if val < min_val or val > max_val:
+                    errors.append(f"{feature} value {val} out of range [{min_val}, {max_val}]")
+        
+        if errors:
+            return False, errors
+        return True, []
     
     def predict(self, data: Dict[str, float]) -> Dict[str, Any]:
         """
@@ -352,7 +439,6 @@ if __name__ == "__main__":
     print("Testing DIANA Predictors...")
     print(f"Input: {test_patient}")
     
-    # Test ADA model
     print("\n=== ADA Baseline Model ===")
     ada_result = predict(test_patient, model_type="ada")
     print(f"  Medical Status: {ada_result.get('medical_status')}")

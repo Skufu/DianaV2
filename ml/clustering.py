@@ -87,52 +87,70 @@ def analyze_k_range(X_scaled, k_range=(2, 7)):
 def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     """
     Assign Ahlqvist subtype labels to clusters based on centroid characteristics.
-    Uses standardized values to compare feature patterns.
+    Uses ranking to ensure correct relative assignment (e.g. Highest HbA1c -> SIDD).
+    
+    Logic based on Ahlqvist et al (2018):
+    1. SIDD (Severe Insulin-Deficient): Highest HbA1c / FBS
+    2. SIRD (Severe Insulin-Resistant): Highest BMI / TG (of remaining)
+    3. MOD (Mild Obesity-Related): Highest BMI (of remaining)
+    4. MARD (Mild Age-Related): Remaining (typically lowest metabolic risk)
     """
     centers_df = pd.DataFrame(cluster_centers, columns=feature_names)
-    
-    labels = {}
-    used_labels = set()
-    
-    # Score each cluster for each subtype
-    for cluster_id in range(k):
-        scores = {}
-        c = centers_df.iloc[cluster_id]
-        
-        # SIRD: High BMI, High TG, Low HDL (metabolic syndrome)
-        scores['SIRD'] = c.get('bmi', 0) + c.get('triglycerides', 0) - c.get('hdl', 0)
-        
-        # SIDD: Highest HbA1c, lower BMI
-        scores['SIDD'] = c.get('hba1c', 0) * 2 + c.get('fbs', 0) - c.get('bmi', 0) * 0.5
-        
-        # MOD: High BMI, moderate others
-        scores['MOD'] = c.get('bmi', 0) * 1.5
-        
-        # MARD: Older age, mild elevations
-        scores['MARD'] = c.get('age', 0) * 1.5 - abs(c.get('hba1c', 0)) * 0.5
-        
-        labels[cluster_id] = scores
-    
-    # Assign labels greedily by highest score, avoiding duplicates
+    available_clusters = list(range(k))
     final_labels = {}
-    subtype_order = ['SIDD', 'SIRD', 'MOD', 'MARD']  # Priority order
     
-    for subtype in subtype_order:
-        if len(final_labels) >= k:
-            break
-        best_cluster = None
-        best_score = -np.inf
-        for cid in range(k):
-            if cid not in final_labels and labels[cid][subtype] > best_score:
-                best_score = labels[cid][subtype]
-                best_cluster = cid
-        if best_cluster is not None:
-            final_labels[best_cluster] = subtype
+    # 1. Identify SIDD: Highest HbA1c (primary def: insulin deficiency -> hyperglycemia)
+    # If HbA1c missing, use FBS
+    glucose_metric = 'hba1c' if 'hba1c' in centers_df.columns else 'fbs'
+    if glucose_metric in centers_df.columns:
+        sidd_id = centers_df.loc[available_clusters, glucose_metric].idxmax()
+        final_labels[sidd_id] = 'SIDD'
+        available_clusters.remove(sidd_id)
+    else:
+        # Fallback if no glucose metrics (unlikely in this dataset)
+        print("[WARN] No glucose metrics found for SIDD identification!")
     
-    # Fill remaining with generic labels if K != 4
-    for cid in range(k):
-        if cid not in final_labels:
-            final_labels[cid] = f"Cluster-{cid}"
+    # If we have run out of clusters (shouldn't happen with k=4), stop
+    if not available_clusters:
+        return final_labels
+        
+    # 2. Identify SIRD: Highest Insulin Resistance markers (TG, BMI, Low HDL)
+    # Using simple proxy: BMI + TG - HDL (standardized)
+    # Note: SIRD has HIGHEST residency/BMI usually, but SIDD is distinct by glucose.
+    # SIRD vs MOD: SIRD has higher metabolic derangement than just obesity.
+    
+    # We score the remaining for SIRD characteristics
+    sird_scores = {}
+    for cid in available_clusters:
+        c = centers_df.iloc[cid]
+        # High BMI + High TG - High HDL
+        score = c.get('bmi', 0) + c.get('triglycerides', 0) - c.get('hdl', 0)
+        sird_scores[cid] = score
+        
+    sird_id = max(sird_scores, key=sird_scores.get)
+    final_labels[sird_id] = 'SIRD'
+    available_clusters.remove(sird_id)
+    
+    if not available_clusters:
+        return final_labels
+
+    # 3. Identify MOD: Highest BMI of the remaining
+    # MOD is "Mild Obesity-Related", so it's obese but less metabolic derangement than SIRD
+    mod_scores = {}
+    for cid in available_clusters:
+        mod_scores[cid] = centers_df.iloc[cid].get('bmi', 0)
+        
+    mod_id = max(mod_scores, key=mod_scores.get)
+    final_labels[mod_id] = 'MOD'
+    available_clusters.remove(mod_id)
+    
+    if not available_clusters:
+        return final_labels
+
+    # 4. Identify MARD: The last one
+    # Typically lowest BMI/risk, mostly driven by Age
+    mard_id = available_clusters[0]
+    final_labels[mard_id] = 'MARD'
     
     return final_labels
 

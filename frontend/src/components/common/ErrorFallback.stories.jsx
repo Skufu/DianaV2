@@ -28,7 +28,7 @@ const Template = (args) => <ErrorFallback {...args} />;
 // Default state - no error details
 export const Default = Template.bind({});
 Default.args = {
-    section: 'Analytics',
+    section: 'Insights',
 };
 
 // With error (dev mode shows details)

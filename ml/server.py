@@ -34,6 +34,9 @@ import json
 import logging
 import threading
 import functools
+import time
+import hmac
+from collections import defaultdict
 import numpy as np
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
@@ -46,7 +49,7 @@ from ml.predict import DianaPredictor, ClinicalPredictor, REQUIRED_FEATURES, CLI
 # Configuration
 MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB max request size
 MAX_BATCH_SIZE = 1000  # Maximum patients per batch request
-API_KEY = os.environ.get('ML_API_KEY', '')  # API key for authentication
+API_KEY = os.environ.get('ML_API_KEY')  # API key for authentication (required in production)
 
 # Import new ML infrastructure modules
 try:
@@ -78,9 +81,62 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-# Configure CORS - restrict to allowed origins in production
 ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:8080,http://localhost:5173').split(',')
 CORS(app, origins=ALLOWED_ORIGINS if os.environ.get('ENV') == 'production' else '*')
+
+
+class RateLimiter:
+    def __init__(self, requests_per_minute=60, requests_per_second=10):
+        self.requests_per_minute = requests_per_minute
+        self.requests_per_second = requests_per_second
+        self.minute_requests = defaultdict(list)
+        self.second_requests = defaultdict(list)
+        self._lock = threading.Lock()
+    
+    def _get_client_id(self):
+        return request.headers.get('X-API-Key', request.remote_addr or 'unknown')
+    
+    def _cleanup_old(self, requests_list, window):
+        now = time.time()
+        cutoff = now - window
+        return [t for t in requests_list if t > cutoff]
+    
+    def is_allowed(self):
+        with self._lock:
+            now = time.time()
+            client_id = self._get_client_id()
+            
+            self.minute_requests[client_id] = self._cleanup_old(
+                self.minute_requests[client_id], 60
+            )
+            self.second_requests[client_id] = self._cleanup_old(
+                self.second_requests[client_id], 1
+            )
+            
+            if len(self.minute_requests[client_id]) >= self.requests_per_minute:
+                return False, "rate limit exceeded (per minute)"
+            if len(self.second_requests[client_id]) >= self.requests_per_second:
+                return False, "rate limit exceeded (per second)"
+            
+            self.minute_requests[client_id].append(now)
+            self.second_requests[client_id].append(now)
+            return True, None
+
+
+rate_limiter = RateLimiter(
+    requests_per_minute=int(os.environ.get('ML_RATE_LIMIT_MINUTE', 120)),
+    requests_per_second=int(os.environ.get('ML_RATE_LIMIT_SECOND', 20))
+)
+
+
+def rate_limit(f):
+    @functools.wraps(f)
+    def decorated_function(*args, **kwargs):
+        allowed, reason = rate_limiter.is_allowed()
+        if not allowed:
+            return jsonify({"error": reason}), 429
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 # Thread-safe predictor management
@@ -133,13 +189,17 @@ def require_api_key(f):
     """Decorator to require API key authentication for endpoints."""
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
-        # Skip authentication if no API key is configured (development mode)
-        if not API_KEY:
+        env = os.environ.get('ENV', 'development')
+        
+        if env == 'production' and not API_KEY:
+            logger.error("ML_API_KEY not configured in production")
+            return jsonify({"error": "Server misconfigured"}), 500
+        
+        if not API_KEY and env != 'production':
             return f(*args, **kwargs)
 
-        # Check for API key in header
         provided_key = request.headers.get('X-API-Key', '')
-        if not provided_key or provided_key != API_KEY:
+        if not provided_key or not hmac.compare_digest(provided_key, API_KEY):
             return jsonify({"error": "Invalid or missing API key"}), 401
 
         return f(*args, **kwargs)
@@ -166,6 +226,7 @@ def health():
 
 @app.route('/predict', methods=['POST'])
 @require_api_key
+@rate_limit
 def predict():
     """
     Predict diabetes risk for a single patient.
@@ -220,11 +281,13 @@ def predict():
         return jsonify(result)
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Prediction failed")
+        return jsonify({"error": "Prediction failed"}), 500
 
 
 @app.route('/predict/explain', methods=['POST'])
 @require_api_key
+@rate_limit
 def predict_explain():
     """
     Predict with SHAP explanation for clinicians.
@@ -301,8 +364,8 @@ def predict_explain():
         return jsonify(result)
         
     except Exception as e:
-        logger.error(f"Explain prediction failed: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Explain prediction failed")
+        return jsonify({"error": "Explain prediction failed"}), 500
 
 
 # =============================================================================
@@ -310,6 +373,8 @@ def predict_explain():
 # =============================================================================
 
 @app.route('/ab-tests', methods=['GET', 'POST'])
+@require_api_key
+@rate_limit
 def ab_tests():
     """List or create A/B tests."""
     if not AB_TESTING_AVAILABLE:
@@ -351,6 +416,8 @@ def ab_tests():
 
 
 @app.route('/ab-tests/<test_id>', methods=['GET', 'PATCH', 'DELETE'])
+@require_api_key
+@rate_limit
 def ab_test_detail(test_id):
     """Get, update, or delete a specific A/B test."""
     if not AB_TESTING_AVAILABLE:
@@ -388,6 +455,8 @@ def ab_test_detail(test_id):
 
 
 @app.route('/ab-tests/<test_id>/results', methods=['GET'])
+@require_api_key
+@rate_limit
 def ab_test_results(test_id):
     """Get comparison results for an A/B test."""
     if not AB_TESTING_AVAILABLE:
@@ -407,6 +476,8 @@ def ab_test_results(test_id):
 # =============================================================================
 
 @app.route('/monitoring/drift', methods=['GET'])
+@require_api_key
+@rate_limit
 def drift_status():
     """Get current drift monitoring status."""
     if not DRIFT_AVAILABLE:
@@ -417,6 +488,8 @@ def drift_status():
 
 
 @app.route('/monitoring/drift/check', methods=['POST'])
+@require_api_key
+@rate_limit
 def check_drift():
     """Check for drift in provided data."""
     if not DRIFT_AVAILABLE:
@@ -443,11 +516,13 @@ def check_drift():
         return jsonify(report.to_dict())
         
     except Exception as e:
-        logger.error(f"Drift check failed: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Drift check failed")
+        return jsonify({"error": "Drift check failed"}), 500
 
 
 @app.route('/monitoring/drift/reference', methods=['POST'])
+@require_api_key
+@rate_limit
 def set_drift_reference():
     """Set reference data for drift detection."""
     if not DRIFT_AVAILABLE:
@@ -470,11 +545,13 @@ def set_drift_reference():
         return jsonify({"success": True, "features": list(reference_data.keys())})
         
     except Exception as e:
-        logger.error(f"Set reference failed: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Set reference failed")
+        return jsonify({"error": "Set reference failed"}), 500
 
 
 @app.route('/monitoring/alerts', methods=['GET'])
+@require_api_key
+@rate_limit
 def get_alerts():
     """Get recent drift alerts."""
     if not DRIFT_AVAILABLE:
@@ -489,6 +566,8 @@ def get_alerts():
 
 
 @app.route('/monitoring/alerts/<timestamp>/acknowledge', methods=['POST'])
+@require_api_key
+@rate_limit
 def acknowledge_alert(timestamp):
     """Acknowledge a drift alert."""
     if not DRIFT_AVAILABLE:
@@ -507,6 +586,8 @@ def acknowledge_alert(timestamp):
 # =============================================================================
 
 @app.route('/models', methods=['GET'])
+@require_api_key
+@rate_limit
 def list_models():
     """List all model versions from MLflow registry."""
     if not MLFLOW_AVAILABLE:
@@ -527,6 +608,8 @@ def list_models():
 
 
 @app.route('/models/<name>/runs', methods=['GET'])
+@require_api_key
+@rate_limit
 def list_model_runs(name):
     """List training runs for a model."""
     if not MLFLOW_AVAILABLE:
@@ -544,6 +627,8 @@ def list_model_runs(name):
 
 
 @app.route('/models/<name>/<int:version>/promote', methods=['POST'])
+@require_api_key
+@rate_limit
 def promote_model(name, version):
     """Promote a model version to production."""
     if not MLFLOW_AVAILABLE:
@@ -565,6 +650,8 @@ def promote_model(name, version):
 
 
 @app.route('/models/experiments', methods=['GET'])
+@require_api_key
+@rate_limit
 def list_experiments():
     """List all MLflow experiments."""
     if not MLFLOW_AVAILABLE:
@@ -581,6 +668,7 @@ def list_experiments():
 
 @app.route('/predict/batch', methods=['POST'])
 @require_api_key
+@rate_limit
 def predict_batch():
     """
     Predict for multiple patients.
@@ -623,10 +711,13 @@ def predict_batch():
         })
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Batch prediction failed")
+        return jsonify({"error": "Batch prediction failed"}), 500
 
 
 @app.route('/model/info', methods=['GET'])
+@require_api_key
+@rate_limit
 def model_info():
     """Get model information."""
     try:
@@ -642,10 +733,13 @@ def model_info():
             "clusters": p.cluster_labels
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Model info failed")
+        return jsonify({"error": "Model info failed"}), 500
 
 
-@app.route('/analytics/metrics', methods=['GET'])
+@app.route('/insights/metrics', methods=['GET'])
+@require_api_key
+@rate_limit
 def get_metrics():
     """Get model performance metrics for dashboard - returns BOTH model sets."""
     try:
@@ -677,10 +771,13 @@ def get_metrics():
         
         return jsonify(response)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Get metrics failed")
+        return jsonify({"error": "Get metrics failed"}), 500
 
 
-@app.route('/analytics/metrics/clinical', methods=['GET'])
+@app.route('/insights/metrics/clinical', methods=['GET'])
+@require_api_key
+@rate_limit
 def get_clinical_metrics():
     """Get clinical model metrics only."""
     try:
@@ -710,11 +807,14 @@ def get_clinical_metrics():
             "best_model": best_model
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Get clinical metrics failed")
+        return jsonify({"error": "Get clinical metrics failed"}), 500
 
 
 
-@app.route('/analytics/information-gain', methods=['GET'])
+@app.route('/insights/information-gain', methods=['GET'])
+@require_api_key
+@rate_limit
 def get_information_gain():
     """Get Information Gain scores for feature importance."""
     try:
@@ -727,10 +827,13 @@ def get_information_gain():
         else:
             return jsonify({"error": "Information gain results not found"}), 404
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Get information gain failed")
+        return jsonify({"error": "Get information gain failed"}), 500
 
 
-@app.route('/analytics/clusters', methods=['GET'])
+@app.route('/insights/clusters', methods=['GET'])
+@require_api_key
+@rate_limit
 def get_clusters():
     """Get cluster analysis data."""
     try:
@@ -743,10 +846,13 @@ def get_clusters():
         else:
             return jsonify({"error": "Cluster analysis not found"}), 404
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.exception("Get clusters failed")
+        return jsonify({"error": "Get clusters failed"}), 500
 
 
-@app.route('/analytics/visualizations/<name>', methods=['GET'])
+@app.route('/insights/visualizations/<name>', methods=['GET'])
+@require_api_key
+@rate_limit
 def get_visualization(name):
     """Serve visualization images."""
     from flask import send_file
@@ -754,14 +860,14 @@ def get_visualization(name):
     
     allowed = ['confusion_matrix', 'roc_curve', 'information_gain_chart', 
                'cluster_heatmap', 'cluster_scatter', 'cluster_distribution', 
-               'k_optimization', 'feature_importance']
+               'k_optimization', 'feature_importance', 'feature_importance_comparison']
     
     if name not in allowed:
         return jsonify({"error": "Visualization not found"}), 404
     
     # Use absolute path from project root (parent of ml/)
     project_root = Path(__file__).parent.parent
-    viz_path = project_root / "models" / "visualizations" / f"{name}.png"
+    viz_path = project_root / "models" / "clinical" / "visualizations" / f"{name}.png"
     
     if viz_path.exists():
         return send_file(str(viz_path), mimetype='image/png')
@@ -774,5 +880,5 @@ if __name__ == '__main__':
     print(f"Starting DIANA ML Server on port {port}...")
     print(f"Health check: http://localhost:{port}/health")
     print(f"Predict endpoint: http://localhost:{port}/predict")
-    print(f"Analytics: http://localhost:{port}/analytics/metrics")
+    print(f"Insights: http://localhost:{port}/insights/metrics")
     app.run(host='0.0.0.0', port=port, debug=False)

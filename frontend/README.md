@@ -2,7 +2,7 @@
 
 > **Purpose**: Web client for DIANA diabetes risk assessment application  
 > **Framework**: React 18 + Vite | **Styling**: Tailwind CSS  
-> **Port**: 5173 (dev)
+> **Port**: 4000 (dev)
 
 ---
 
@@ -31,8 +31,8 @@ frontend/
 │   ├── main.jsx                  # React entry point
 │   ├── index.css                 # Global Tailwind styles
 │   └── components/
-│       ├── analytics/
-│       │   └── Analytics.jsx     # ML metrics, visualizations
+│       ├── insights/
+│       │   └── Insights.jsx     # ML metrics, visualizations
 │       ├── auth/
 │       │   └── Login.jsx         # Login/register forms
 │       ├── common/
@@ -79,7 +79,7 @@ frontend/
 | `createPatientApi(token, data)` | Add patient | `POST /api/v1/patients` |
 | `fetchAssessmentsApi(token, patientId)` | Get history | `GET /api/v1/patients/:id/assessments` |
 | `createAssessmentApi(token, patientId, data)` | New assessment | `POST /api/v1/patients/:id/assessments` |
-| `fetchAnalyticsApi(token)` | Dashboard stats | `GET /api/v1/analytics/summary` |
+| `fetchInsightsApi(token)` | Dashboard stats | `GET /api/v1/insights/summary` |
 
 ### Token Management
 - `apiFetch(path, options, isRetry)` - Core fetch wrapper with 401 handling
@@ -132,7 +132,7 @@ VITE_ML_BASE=http://localhost:5000    # Flask ML server URL
 ```bash
 cd frontend
 npm install           # Install dependencies
-npm run dev           # Development server (port 5173)
+npm run dev           # Development server (port 4000)
 npm run build         # Production build → dist/
 npm run preview       # Preview production build
 ```

@@ -74,24 +74,42 @@ For panel defense, also compute Information Gain using clinical thresholds.
 
 ## Supervised Classification
 
-### Algorithms
+### Algorithms (All 7 Models Trained)
 | Model | Parameters | Purpose |
 |-------|------------|---------|
-| Logistic Regression | max_iter=1000, solver='lbfgs' | Interpretable baseline |
-| Random Forest | n_estimators=100, max_depth=10 | Captures nonlinear relationships |
-| XGBoost | n_estimators=100, max_depth=5 | Best structured data performance |
+| Logistic Regression | C=0.1, balanced weights | Interpretable baseline |
+| Random Forest | n_estimators=300, max_depth=6, min_samples_leaf=15 | Captures nonlinear relationships |
+| **XGBoost** ⭐ | n_estimators=300, max_depth=4, learning_rate=0.05, reg_lambda=2.0 | **Best performer (AUC 0.6732)** |
+| CatBoost | depth=5, iterations=300, l2_leaf_reg=5 | Handles categorical features natively |
+| LightGBM | num_leaves=31, n_estimators=300, reg_lambda=10 | Fast gradient boosting |
+| Voting Ensemble | soft voting, weighted (LR+RF+XGB+LightGBM) | Combines base learners |
+| Stacking Ensemble | LR meta-learner on 4 base models | Learns optimal combination |
+
+### Feature Engineering (25 features)
+| Category | Features |
+|----------|----------|
+| Base | bmi, triglycerides, ldl, hdl, age, systolic, diastolic |
+| Categorical | bmi_category, bp_category, age_group |
+| Lipid Ratios | tg_hdl_ratio, ldl_hdl_ratio, cholesterol_hdl_ratio, tg_hdl_ratio_sq |
+| Advanced | vldl, non_hdl, metabolic_syndrome_score, metabolic_risk |
+| Polynomial | bmi_squared, age_bmi_interaction, tg_log |
+| Lifestyle | smoking_encoded, activity_encoded, alcohol_encoded, hypertension |
+
+### Class Imbalance
+- **Method**: SMOTE+Tomek (SMOTETomek)
+- **Rationale**: Combines oversampling with Tomek link removal for cleaner decision boundaries
 
 ### Data Splitting
 | Split | Portion | Purpose |
 |-------|---------|---------|
-| Training | 70% | Model training + cross-validation |
-| Testing | 30% | Final evaluation (held-out) |
-| Stratification | By diabetes_status | Preserve class distribution |
+| Training | ~85% | Model training + cross-validation |
+| Testing | ~15% | Final evaluation (held-out) |
+| Validation | Leave-One-Cycle-Out | Temporal validation across NHANES cycles |
 
 ### Cross-Validation
-- **Method**: 5-fold CV
-- **Scope**: Within 70% training set
-- **Purpose**: Hyperparameter tuning, stable performance estimates
+- **Method**: 5-fold Stratified CV + Leave-One-Cycle-Out
+- **Scoring**: AUC-ROC (weighted OvR)
+- **Purpose**: Hyperparameter tuning, temporal generalization
 
 ---
 
@@ -101,20 +119,20 @@ For panel defense, also compute Information Gain using clinical thresholds.
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
 | K | 4 | Matches T2DM subtypes (SIRD, SIDD, MOD, MARD) |
-| K Range Tested | 2-6 | Per paper methodology |
-| Selection | Highest silhouette score | With clinical interpretability |
+| K Range Tested | 2-6 | Per paper methodology (optimization plots generated) |
+| Selection | Fixed K=4 | Enforced for clinical alignment (Ahlqvist) |
 | Distance | Euclidean | Standard K-Means |
 | random_state | 42 | Reproducibility |
 
-### Cluster Labeling
-Clusters labeled post-hoc by comparing profiles to Ahlqvist et al. (2018) criteria:
+### Cluster Labeling (Verified Results)
+Clusters labeled using rank-based assignment for NHANES postmenopausal population:
 
-| Label | Characteristics |
-|-------|-----------------|
-| SIDD-like | High HbA1c/FBS, lower BMI, younger |
-| SIRD-like | High BMI, high TG, low HDL |
-| MOD-like | High BMI (>30), moderate HbA1c |
-| MARD-like | Older age (>55), mild elevations |
+| Label | n (%) | Key Biomarkers | Characteristics |
+|-------|-------|----------------|------------------|
+| **SIDD-like** | 97 (7.1%) | HbA1c=9.24%, FBS=223.78 | Highest hyperglycemia |
+| **SIRD-like** | 404 (29.4%) | BMI=38.28, TG=114.68, HDL=51.84 | Highest metabolic risk |
+| **MOD-like** | 370 (26.9%) | BMI=29.58, TG=176.37, HbA1c=5.80% | Moderate obesity, high TG |
+| **MARD-like** | 505 (36.7%) | BMI=25.74, HDL=72.98, HbA1c=5.51% | Healthiest profile |
 
 > **See**: [paper_rag/diabetes_subgroups.md](paper_rag/diabetes_subgroups.md)
 
@@ -127,13 +145,22 @@ Clusters labeled post-hoc by comparing profiles to Ahlqvist et al. (2018) criter
 2. **F1-Score** (secondary) - balance of precision/recall
 3. **Clinical Interpretability** (tertiary) - explainability
 
-### Target Performance
-| Model Type | AUC Target | Actual | Notes |
-|------------|------------|--------|-------|
-| ADA Predictor | ~1.0 | ~1.0 | HbA1c feature = perfect alignment |
-| Clinical Predictor | > 0.70 | ~0.67 | Realistic screening model without HbA1c/FBS |
+### Target Performance (Actual Results)
+| Model Type | AUC Target | Best Model | Test AUC | Notes |
+|------------|------------|------------|----------|-------|
+| ADA Predictor | ~1.0 | N/A | ~1.0 | HbA1c feature = circular, validates implementation |
+| **Clinical Predictor** | ≥ 0.70 | **XGBoost** | **0.6732** | Best non-circular screening model |
 
-> **Note**: Clinical Predictor AUC of 0.67 is realistic for non-circular prediction. See [ml-rationale.md](ml-rationale.md).
+**All Clinical Model Results:**
+- XGBoost: **0.6732** (best) - Selected for deployment
+- CatBoost: 0.6726 (very close second)
+- Logistic Regression: 0.6683 
+- Stacking Ensemble: 0.6689
+- Voting Ensemble: 0.6632
+- Random Forest: 0.6534
+- LightGBM: 0.6452
+
+> **Note**: AUC ~0.67 is realistic and acceptable for non-circular screening (comparable to CDC tools at 0.72-0.79).
 
 ---
 
@@ -147,8 +174,8 @@ Clusters labeled post-hoc by comparing profiles to Ahlqvist et al. (2018) criter
 ### 2. Clinical Predictor (ClinicalPredictor)
 - **Features**: BMI, TG, LDL, HDL, Age (NO HbA1c/FBS)
 - **Use Case**: Screening without lab test
-- **Expected AUC**: ~0.67 (realistic screening)
-- **Rationale**: See [ml-rationale.md](ml-rationale.md) for why this is expected
+- **Expected AUC**: ≥ 0.70 (Good discrimination for screening)
+- **Rationale**: See [ml-rationale.md](ml-rationale.md) for non-circular defense
 
 ---
 

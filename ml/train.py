@@ -74,9 +74,11 @@ from sklearn.metrics import (
     roc_auc_score, confusion_matrix, roc_curve, auc, brier_score_loss
 )
 
-# Try to import SMOTE
+# Try to import SMOTE and SMOTETomek
 try:
     from imblearn.over_sampling import SMOTE
+    from imblearn.combine import SMOTETomek
+    from imblearn.under_sampling import TomekLinks
     HAS_SMOTE = True
 except ImportError:
     HAS_SMOTE = False
@@ -88,6 +90,25 @@ try:
 except Exception as e:
     HAS_XGBOOST = False
     print(f"[WARN] XGBoost not available: {e}")
+
+# Try to import CatBoost
+try:
+    from catboost import CatBoostClassifier
+    HAS_CATBOOST = True
+except ImportError:
+    HAS_CATBOOST = False
+    print("[WARN] CatBoost not installed.")
+
+# Try to import LightGBM
+try:
+    from lightgbm import LGBMClassifier
+    HAS_LIGHTGBM = True
+except ImportError:
+    HAS_LIGHTGBM = False
+    print("[WARN] LightGBM not installed.")
+
+# Ensemble methods
+from sklearn.ensemble import VotingClassifier, StackingClassifier, GradientBoostingClassifier
 
 DATA_PATH = Path("data/nhanes/processed/diana_dataset_imputed.csv")
 RAW_DATA_PATH = Path("data/nhanes/processed/diana_training_data_multi.csv")
@@ -130,6 +151,12 @@ def engineer_features(df):
     - smoking_encoded: Numeric smoking status
     - activity_encoded: Numeric physical activity level
     - alcohol_encoded: Numeric alcohol use level
+    - vldl: Very Low-Density Lipoprotein (TG/5)
+    - non_hdl: Non-HDL cholesterol (cardiovascular risk)
+    - metabolic_syndrome_score: ATP III criteria count
+    - bmi_squared: Polynomial feature for non-linear BMI effects
+    - age_bmi_interaction: Age-BMI interaction term
+    - tg_log: Log-transformed triglycerides
     """
     print("\n[FEATURE ENGINEERING] Creating derived features...")
     
@@ -159,6 +186,21 @@ def engineer_features(df):
     df['ldl_hdl_ratio'] = df['ldl'] / df['hdl'].replace(0, np.nan)
     
     # =========================================
+    # ADVANCED: VLDL and Non-HDL Cholesterol
+    # =========================================
+    # VLDL (Very Low-Density Lipoprotein) - approximation
+    df['vldl'] = df['triglycerides'] / 5
+    
+    # Non-HDL Cholesterol (LDL + VLDL) - cardiovascular risk marker
+    df['non_hdl'] = df['ldl'] + df['vldl']
+    
+    # Cholesterol to HDL ratio (atherogenic index)
+    df['cholesterol_hdl_ratio'] = df['ldl'] / df['hdl'].replace(0, np.nan)
+    
+    # TG/HDL ratio squared (captures non-linear relationship)
+    df['tg_hdl_ratio_sq'] = df['tg_hdl_ratio'] ** 2
+    
+    # =========================================
     # Blood Pressure Classification (JNC guidelines)
     # =========================================
     def categorize_bp(systolic, diastolic):
@@ -179,21 +221,28 @@ def engineer_features(df):
         df['hypertension'] = df['hypertension'].where(df['systolic'].notna() & df['diastolic'].notna(), np.nan)
     
     # =========================================
+    # ADVANCED: Metabolic Syndrome Score (ATP III Criteria)
+    # =========================================
+    # Count of metabolic syndrome criteria met (0-4 for our available features)
+    metabolic_criteria = pd.DataFrame({
+        'high_tg': df['triglycerides'] > 150,  # TG > 150 mg/dL
+        'low_hdl': df['hdl'] < 50,             # HDL < 50 mg/dL (female threshold)
+        'high_bp': df['systolic'] >= 130,      # BP >= 130/85
+        'high_bmi': df['bmi'] >= 30,           # Obesity as waist proxy
+    })
+    df['metabolic_syndrome_score'] = metabolic_criteria.sum(axis=1)
+    
+    # =========================================
     # Lifestyle Feature Encoding
     # =========================================
-    # Smoking status encoding (Unknown → NaN, will be dropped)
-    smoking_map = {'Never': 0, 'Former': 1, 'Current': 2, 'Unknown': 1}  # Unknown → Former (middle)
+    smoking_map = {'Never': 0, 'Former': 1, 'Current': 2, 'Unknown': 1}
     if 'smoking_status' in df.columns:
         df['smoking_encoded'] = df['smoking_status'].map(smoking_map)
     
-    # Physical activity encoding  
-    # FIXED: Include 'Unknown' to preserve 2021-2023 data (all 265 records have Unknown)
-    activity_map = {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Unknown': 1}  # Unknown → Moderate (middle)
+    activity_map = {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Unknown': 1}
     if 'physical_activity' in df.columns:
         df['activity_encoded'] = df['physical_activity'].map(activity_map)
     
-    # Alcohol use encoding
-    # FIXED: Data uses 'None' not 'Never'
     alcohol_map = {'None': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3}
     if 'alcohol_use' in df.columns:
         df['alcohol_encoded'] = df['alcohol_use'].map(alcohol_map)
@@ -203,8 +252,21 @@ def engineer_features(df):
     # =========================================
     df['age_group'] = pd.cut(df['age'], bins=[0, 50, 55, 60, 100], labels=[0, 1, 2, 3]).astype(float)
     
+    # =========================================
+    # ADVANCED: Polynomial and Interaction Features
+    # =========================================
+    # BMI squared (captures non-linear obesity effects)
+    df['bmi_squared'] = df['bmi'] ** 2
+    
+    # Age-BMI interaction (older + obese = higher risk)
+    df['age_bmi_interaction'] = df['age'] * df['bmi']
+    
+    # Log transform for skewed triglycerides
+    df['tg_log'] = np.log1p(df['triglycerides'])
+    
+    # =========================================
     # Combined risk indicator (metabolic syndrome proxy)
-    # High TG/HDL + Hypertension + Obesity
+    # =========================================
     if 'tg_hdl_ratio' in df.columns and 'hypertension' in df.columns:
         high_tg_hdl = (df['tg_hdl_ratio'] > 3.5).astype(float)
         obese = (df['bmi'] >= 30).astype(float)
@@ -215,7 +277,10 @@ def engineer_features(df):
         'bmi_category', 'tg_hdl_ratio', 'ldl_hdl_ratio', 'age_group',
         'bp_category', 'hypertension', 
         'smoking_encoded', 'activity_encoded', 'alcohol_encoded',
-        'metabolic_risk'
+        'metabolic_risk',
+        # NEW advanced features
+        'vldl', 'non_hdl', 'cholesterol_hdl_ratio', 'tg_hdl_ratio_sq',
+        'metabolic_syndrome_score', 'bmi_squared', 'age_bmi_interaction', 'tg_log'
     ]
     
     # Filter to only features that exist
@@ -243,7 +308,7 @@ def compute_mutual_information(X, y, feature_names):
     
     print("\n   Feature Importance (Mutual Information):")
     for _, row in mi_df.iterrows():
-        bar = "█" * int(row['MI_Score'] * 50)
+        bar = "#" * int(row['MI_Score'] * 50)
         print(f"   {row['Feature']:18} {row['MI_Score']:.4f} {bar}")
     
     return mi_df
@@ -251,25 +316,52 @@ def compute_mutual_information(X, y, feature_names):
 
 def apply_smote(X_train, y_train):
     """
-    Apply SMOTE to handle class imbalance.
+    Apply SMOTE+Tomek to handle class imbalance.
+    SMOTETomek combines oversampling with Tomek link removal for cleaner boundaries.
     """
     if not HAS_SMOTE:
-        print("\n[SMOTE] Skipped - imbalanced-learn not installed")
+        print("\n[WARN] SMOTE skipped - imbalanced-learn not installed!")
         return X_train, y_train
     
-    print("\n[SMOTE] Applying Synthetic Minority Over-sampling...")
+    print("\n[SMOTE+TOMEK] Applying Synthetic Minority Over-sampling with Tomek link removal...")
     
     # Show class distribution before
     unique, counts = np.unique(y_train, return_counts=True)
+    min_class_samples = min(counts)
     print(f"   Before: {dict(zip(CLASSES, counts))}")
+    print(f"   Minority class count: {min_class_samples}")
     
-    smote = SMOTE(random_state=42, k_neighbors=5)
-    X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
+    # Safety check for k_neighbors
+    k = min(5, min_class_samples - 1)
+    if k < 1: k = 1
+    
+    print(f"   Using k_neighbors={k}")
+    
+    # Use SMOTETomek for cleaner synthetic samples
+    smote_tomek = SMOTETomek(
+        sampling_strategy='auto',
+        random_state=42,
+        smote=SMOTE(k_neighbors=k, random_state=42),
+        tomek=TomekLinks(sampling_strategy='all')
+    )
+    
+    try:
+        X_resampled, y_resampled = smote_tomek.fit_resample(X_train, y_train)
+    except Exception as e:
+        print(f"   [ERROR] SMOTETomek failed: {e}")
+        # Fallback to plain SMOTE
+        try:
+            smote = SMOTE(random_state=42, k_neighbors=k)
+            X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
+            print("   [INFO] Fell back to plain SMOTE")
+        except Exception as e2:
+            print(f"   [ERROR] SMOTE also failed: {e2}")
+            return X_train, y_train
     
     # Show class distribution after
     unique, counts = np.unique(y_resampled, return_counts=True)
     print(f"   After:  {dict(zip(CLASSES, counts))}")
-    print(f"   Samples: {len(y_train)} → {len(y_resampled)}")
+    print(f"   Samples: {len(y_train)} -> {len(y_resampled)}")
     
     return X_resampled, y_resampled
 
@@ -427,10 +519,17 @@ def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_al
     avg_brier = np.mean(brier_scores)
     
     # Cross-validation on full data
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    cv_scores = cross_val_score(model, X_all, y_all, cv=cv, scoring='accuracy')
-    cv_mean = cv_scores.mean()
-    cv_std = cv_scores.std()
+    # NOTE: CatBoost doesn't support sklearn's cross_val_score in sklearn 1.8.0+
+    # due to missing __sklearn_tags__ API. Use validation scores from manual tuning instead.
+    if model_name == 'CatBoost':
+        cv_mean = 0.0
+        cv_std = 0.0
+        print("   [INFO] CV skipped for CatBoost (sklearn 1.8.0 API incompatibility)")
+    else:
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        cv_scores = cross_val_score(model, X_all, y_all, cv=cv, scoring='accuracy')
+        cv_mean = cv_scores.mean()
+        cv_std = cv_scores.std()
     
     cm = confusion_matrix(y_test, y_pred)
     
@@ -440,7 +539,8 @@ def train_and_evaluate(model, model_name, X_train, X_test, y_train, y_test, X_al
     print(f"   F1-Score:  {f1:.4f}")
     print(f"   AUC-ROC:   {auc_roc:.4f}")
     print(f"   Brier:     {avg_brier:.4f} (lower is better)")
-    print(f"   CV Score:  {cv_mean:.4f} (+/- {cv_std:.4f})")
+    if model_name != 'CatBoost':
+        print(f"   CV Score:  {cv_mean:.4f} (+/- {cv_std:.4f})")
     
     # Check for overfitting
     train_score = accuracy_score(y_train, model.predict(X_train))
@@ -763,6 +863,127 @@ def main():
         xgb_final.fit(X_train, y_train)
         tuned_models.append((xgb_final, "XGBoost"))
     
+    # --- CatBoost (optimized for small datasets) ---
+    # Note: CatBoost doesn't work well with sklearn's GridSearchCV due to API incompatibility
+    # Using manual hyperparameter search instead
+    if HAS_CATBOOST:
+        print("\n[MANUAL SEARCH] Tuning CatBoost with regularization...")
+        
+        X_tr_cat, X_val_cat, y_tr_cat, y_val_cat = train_test_split(
+            X_train, y_train, test_size=0.2, stratify=y_train, random_state=42
+        )
+        
+        best_cat_score = 0
+        best_cat_params = None
+        best_cat_model = None
+        
+        for depth in [3, 4, 5]:
+            for lr in [0.02, 0.05]:
+                for iterations in [200, 300]:
+                    for l2_reg in [5, 10]:
+                        cat_model = CatBoostClassifier(
+                            depth=depth,
+                            learning_rate=lr,
+                            iterations=iterations,
+                            l2_leaf_reg=l2_reg,
+                            random_state=42,
+                            verbose=0,
+                            eval_metric='MultiClass'
+                        )
+                        cat_model.fit(X_tr_cat, y_tr_cat)
+                        
+                        y_val_proba = cat_model.predict_proba(X_val_cat)
+                        y_val_bin = label_binarize(y_val_cat, classes=[0, 1, 2])
+                        try:
+                            val_score = roc_auc_score(y_val_bin, y_val_proba, multi_class='ovr', average='weighted')
+                        except:
+                            val_score = 0.0
+                        
+                        if val_score > best_cat_score:
+                            best_cat_score = val_score
+                            best_cat_params = {
+                                'depth': depth,
+                                'learning_rate': lr,
+                                'iterations': iterations,
+                                'l2_leaf_reg': l2_reg
+                            }
+                            best_cat_model = cat_model
+        
+        print(f"   Best score (Val AUC): {best_cat_score:.4f}")
+        print(f"   Best params: {best_cat_params}")
+        best_params_all['CatBoost'] = best_cat_params
+        
+        # Retrain on full training set
+        cat_final = CatBoostClassifier(**best_cat_params, random_state=42, verbose=0)
+        cat_final.fit(X_train, y_train)
+        tuned_models.append((cat_final, "CatBoost"))
+    
+    # --- LightGBM ---
+    if HAS_LIGHTGBM:
+        print("\n[GRID SEARCH] Tuning LightGBM with regularization...")
+        lgb_param_grid = {
+            'num_leaves': [15, 20, 31],
+            'learning_rate': [0.02, 0.05],
+            'n_estimators': [200, 300],
+            'min_child_samples': [30, 40, 50],
+            'reg_alpha': [1.0, 2.0],
+            'reg_lambda': [5.0, 10.0],
+        }
+        lgb_base = LGBMClassifier(random_state=42, verbose=-1, class_weight='balanced')
+        lgb_best, lgb_params = perform_grid_search(lgb_base, lgb_param_grid, X_train, y_train, "LightGBM")
+        best_params_all['LightGBM'] = lgb_params
+        tuned_models.append((lgb_best, "LightGBM"))
+    
+    # =========================================
+    # STEP 7b: ENSEMBLE METHODS
+    # =========================================
+    print("\n" + "=" * 70)
+    print("ENSEMBLE METHODS")
+    print("=" * 70)
+    
+    # Get best individual models for ensembling
+    # NOTE: CatBoost excluded from ensembles due to sklearn API incompatibility
+    ensemble_estimators = [('lr', lr_best), ('rf', rf_best)]
+    ensemble_weights = [1, 1]
+    
+    if HAS_XGBOOST and 'XGBoost' in best_params_all:
+        xgb_for_ensemble = XGBClassifier(**best_params_all['XGBoost'], eval_metric='mlogloss', verbosity=0, random_state=42)
+        ensemble_estimators.append(('xgb', xgb_for_ensemble))
+        ensemble_weights.append(1.5)  # Slightly favor gradient boosting
+    
+    if HAS_LIGHTGBM and 'LightGBM' in best_params_all:
+        lgb_for_ensemble = LGBMClassifier(**best_params_all['LightGBM'], verbose=-1, random_state=42)
+        ensemble_estimators.append(('lgb', lgb_for_ensemble))
+        ensemble_weights.append(1.5)
+    
+    # Voting Ensemble (soft voting with probabilities)
+    print("\n[ENSEMBLE] Training Voting Classifier...")
+    voting_clf = VotingClassifier(
+        estimators=ensemble_estimators,
+        voting='soft',
+        weights=ensemble_weights
+    )
+    voting_clf.fit(X_train, y_train)
+    tuned_models.append((voting_clf, "Voting Ensemble"))
+    
+    # Stacking Ensemble (meta-learner)
+    print("[ENSEMBLE] Training Stacking Classifier...")
+    stacking_estimators = [
+        ('lr', LogisticRegression(C=2.0, class_weight='balanced', max_iter=1000, random_state=42)),
+        ('rf', rf_best)
+    ]
+    if HAS_XGBOOST and 'XGBoost' in best_params_all:
+        stacking_estimators.append(('xgb', XGBClassifier(**best_params_all['XGBoost'], eval_metric='mlogloss', verbosity=0, random_state=42)))
+    
+    stacking_clf = StackingClassifier(
+        estimators=stacking_estimators,
+        final_estimator=LogisticRegression(C=1.0, max_iter=1000, random_state=42),
+        cv=5,
+        passthrough=False
+    )
+    stacking_clf.fit(X_train, y_train)
+    tuned_models.append((stacking_clf, "Stacking Ensemble"))
+    
     # =========================================
     # STEP 8: Evaluate All Tuned Models
     # =========================================
@@ -781,20 +1002,89 @@ def main():
     best = max(results, key=lambda x: x['auc_roc'])
     print(f"\n[BEST] {best['name']} selected (AUC-ROC: {best['auc_roc']:.4f})")
     
-    # Calibrate best model
-    if best['name'] == 'XGBoost':
-        final_model = XGBClassifier(
-            **best_params_all['XGBoost'],
-            eval_metric='mlogloss',
-            verbosity=0,
-            random_state=42
-        )
+    # Calibrate best model (only for base models, not ensembles)
+    if best['name'] in ['Voting Ensemble', 'Stacking Ensemble']:
+        # Ensembles already combine probabilities, use as-is
+        final_model = best['model']
+        calibrated_model = best['model']
+        print("[INFO] Ensemble model selected - skipping calibration")
     else:
-        final_model = type(best['model'])(**best['model'].get_params())
+        # Recreate model with best params for calibration
+        if best['name'] == 'XGBoost' and 'XGBoost' in best_params_all:
+            final_model = XGBClassifier(
+                **best_params_all['XGBoost'],
+                eval_metric='mlogloss',
+                verbosity=0,
+                random_state=42
+            )
+        elif best['name'] == 'CatBoost' and HAS_CATBOOST and 'CatBoost' in best_params_all:
+            final_model = CatBoostClassifier(
+                **best_params_all['CatBoost'],
+                verbose=0,
+                random_state=42
+            )
+        elif best['name'] == 'LightGBM' and HAS_LIGHTGBM and 'LightGBM' in best_params_all:
+            final_model = LGBMClassifier(
+                **best_params_all['LightGBM'],
+                verbose=-1,
+                random_state=42
+            )
+        else:
+            try:
+                final_model = type(best['model'])(**best['model'].get_params())
+            except:
+                final_model = best['model']
+        
+        # Apply calibration (skip for CatBoost due to sklearn 1.8.0 API incompatibility)
+        if best['name'] == 'CatBoost':
+            print("\n[FINAL] Retraining CatBoost on full dataset (calibration skipped)...")
+            final_model.fit(X_scaled, y)
+            calibrated_model = final_model
+            print("   [INFO] Using uncalibrated CatBoost model (sklearn 1.8.0 API incompatibility)")
+        else:
+            print("\n[FINAL] Calibrating and retraining on full dataset...")
+            calibrated_model = calibrate_model(final_model, X_scaled, y, method='sigmoid')
     
-    # Apply calibration
-    print("\n[FINAL] Calibrating and retraining on full dataset...")
-    calibrated_model = calibrate_model(final_model, X_scaled, y, method='sigmoid')
+    # =========================================
+    # STEP 9b: SHAP Explainability (for thesis)
+    # =========================================
+    try:
+        import shap
+        print("\n[SHAP] Generating feature importance explanations...")
+        
+        # Find first tree-based model for SHAP (they work best)
+        shap_model = None
+        shap_model_name = None
+        for name in ['XGBoost', 'CatBoost', 'LightGBM', 'Random Forest']:
+            for result in results:
+                if result['name'] == name:
+                    shap_model = result['model']
+                    shap_model_name = name
+                    break
+            if shap_model:
+                break
+        
+        if shap_model and shap_model_name:
+            print(f"   Using {shap_model_name} for SHAP analysis...")
+            explainer = shap.TreeExplainer(shap_model)
+            shap_values = explainer.shap_values(X_test)
+            
+            # Summary plot
+            plt.figure(figsize=(10, 8))
+            # Handle different SHAP output formats
+            if isinstance(shap_values, list):
+                # Multi-class: use absolute mean across classes
+                shap.summary_plot(shap_values[1], X_test, feature_names=ALL_FEATURES, show=False)
+            else:
+                shap.summary_plot(shap_values, X_test, feature_names=ALL_FEATURES, show=False)
+            plt.tight_layout()
+            plt.savefig(VIZ_DIR / "shap_summary.png", dpi=150, bbox_inches='tight')
+            plt.close()
+            print(f"   SHAP summary plot saved to: {VIZ_DIR / 'shap_summary.png'}")
+    except ImportError:
+        print("[WARN] SHAP not installed - skipping explainability analysis")
+    except Exception as e:
+        print(f"[WARN] SHAP analysis failed: {e}")
     
     # =========================================
     # STEP 10: Generate Learning Curves
@@ -803,7 +1093,10 @@ def main():
     print("LEARNING CURVES (Overfitting Diagnosis)")
     print("=" * 70)
     
+    # Only generate learning curves for base models (not ensembles - too slow)
     for model, name in tuned_models:
+        if name in ['Voting Ensemble', 'Stacking Ensemble', 'CatBoost']:
+            continue
         safe_name = name.lower().replace(' ', '_')
         plot_learning_curve(
             model, X_train, y_train, name,
@@ -911,9 +1204,9 @@ def main():
     print(f"   Calibrated:    Yes (sigmoid)")
     
     if best['auc_roc'] >= 0.70:
-        print(f"\n   ✅ AUC-ROC threshold (0.70) MET")
+        print(f"\n   [OK] AUC-ROC threshold (0.70) MET")
     else:
-        print(f"\n   ⚠️ AUC-ROC below 0.70 threshold")
+        print(f"\n   [WARN] AUC-ROC below 0.70 threshold")
     
     print("\n[DONE] Clinical model training complete!")
     

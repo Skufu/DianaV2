@@ -55,8 +55,8 @@ This document outlines the comprehensive logging improvements implemented to mee
 
 #### Development Mode
 ```
-13:34:52 INF starting server cors_origins=["http://localhost:3000","http://localhost:5173"] 
-          env=dev go_version=go1.21 jwt_secret=dev-default port=8082 service=diana-api
+13:34:52 INF starting server cors_origins=["http://localhost:4000"] 
+          env=dev go_version=go1.21 jwt_secret=dev-default port=8080 service=diana-api
 ```
 
 #### Production Mode (JSON)
@@ -165,7 +165,7 @@ This document outlines the comprehensive logging improvements implemented to mee
   "service": "diana-api",
   "request_id": "err987654321",
   "method": "GET",
-  "path": "/api/v1/analytics/cluster-distribution", 
+  "path": "/api/v1/insights/cluster-distribution", 
   "status": 500,
   "latency": "120ms",
   "ip": "127.0.0.1",

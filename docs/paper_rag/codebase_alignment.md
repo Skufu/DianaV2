@@ -30,10 +30,14 @@ The codebase implements most paper requirements correctly. Minor enhancements id
 
 | Requirement | Paper | Codebase | Status |
 |-------------|-------|----------|--------|
-| Logistic Regression | Required | train.py, train_enhanced.py | ✅ |
-| Random Forest | Required | train.py, train_enhanced.py | ✅ |
-| XGBoost | Required | train.py, train_enhanced.py | ✅ |
-| K-Means (K=4) | Required | clustering.py, train_enhanced.py | ✅ |
+| Logistic Regression | Required | train.py | ✅ |
+| Random Forest | Required | train.py | ✅ |
+| XGBoost | Required | train.py (best: AUC 0.6732) | ✅ |
+| CatBoost | Optional | train.py | ✅ |
+| LightGBM | Optional | train.py | ✅ |
+| Voting Ensemble | Optional | train.py | ✅ |
+| Stacking Ensemble | Optional | train.py | ✅ |
+| K-Means (K=4) | Required | clustering.py | ✅ |
 | SVM | Optional | Not implemented | ⚠️ Low priority |
 
 ---
@@ -122,11 +126,11 @@ The codebase implements most paper requirements correctly. Minor enhancements id
 
 | Paper Component | Files |
 |-----------------|-------|
-| Data Download | `scripts/download_nhanes_*.py` |
-| Data Processing | `scripts/process_nhanes_multi.py` |
-| Feature Selection | `scripts/feature_selection.py` |
-| Model Training | `scripts/train_enhanced.py`, `ml/train.py` |
-| Clustering | `ml/clustering.py`, `scripts/train_clusters.py` |
+| Data Download | `scripts/data/download_nhanes_*.py` |
+| Data Processing | `scripts/data/process_nhanes_multi.py` |
+| Feature Selection | `scripts/eval/feature_selection.py` |
+| Model Training | `legacy/train_enhanced.py`, `ml/train.py` |
+| Clustering | `ml/clustering.py`, `scripts/train/train_clusters.py` |
 | Prediction | `ml/predict.py` |
 | Server API | `ml/server.py` |
 | Frontend UI | `frontend/src/components/*` |
