@@ -12,11 +12,20 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/config"
 )
 
-const migrationsDir = "./migrations"
+
 
 func main() {
 	// Load .env file if it exists
 	_ = godotenv.Load()
+
+	// Resolve migrations directory
+	migrationsDir := "./migrations"
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		// Try looking up two directories (case where running from cmd/migrate)
+		if _, err := os.Stat("../../migrations"); err == nil {
+			migrationsDir = "../../migrations"
+		}
+	}
 
 	cfg := config.Load()
 	if cfg.DBDSN == "" {

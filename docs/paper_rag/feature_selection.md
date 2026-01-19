@@ -95,7 +95,7 @@ Actual Mutual Information scores from DIANA dataset:
 ## Implementation
 
 ```python
-# scripts/feature_selection.py
+# scripts/eval/feature_selection.py
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.ensemble import RandomForestClassifier
 
