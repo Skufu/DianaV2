@@ -54,9 +54,9 @@ A full-stack health application that helps clinicians assess diabetes risk using
 | Predictors | `ml/predict.py` | DianaPredictor, ClinicalPredictor |
 | Training | `ml/train.py` | Clinical model training (non-circular) |
 | Clustering | `ml/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
-| Data Processing | `scripts/process_nhanes_multi.py` | NHANES data pipeline |
-| Feature Selection | `scripts/feature_selection.py` | Mutual Information + IG analysis |
-| Thesis Outputs | `scripts/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
+| Data Processing | `scripts/data/process_nhanes_multi.py` | NHANES data pipeline |
+| Feature Selection | `scripts/eval/feature_selection.py` | Mutual Information + IG analysis |
+| Thesis Outputs | `scripts/thesis/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
 | ML Rationale | `docs/ml-rationale.md` | Defense-ready methodology justification |
 
 ---

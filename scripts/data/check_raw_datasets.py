@@ -81,5 +81,7 @@ def check_datasets(data_dir):
     print("-" * 55 + "\n")
 
 if __name__ == "__main__":
-    RAW_DATA_DIR = r"c:\Users\ADRIAN\Github\skufu\DianaV2\data\nhanes\raw"
+    SCRIPT_DIR = Path(__file__).parent
+    PROJECT_ROOT = SCRIPT_DIR.parent
+    RAW_DATA_DIR = PROJECT_ROOT / "data" / "nhanes" / "raw"
     check_datasets(RAW_DATA_DIR)

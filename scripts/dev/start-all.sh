@@ -63,8 +63,8 @@ kill_on_port() {
 }
 
 # Check if ML models exist
-if [ ! -f "models/random_forest.joblib" ] && [ ! -f "models/best_model.joblib" ]; then
-    echo -e "${RED}ML models not found. Run '$PYTHON scripts/train_enhanced.py' first.${NC}"
+if [ ! -f "models/clinical/random_forest.joblib" ] && [ ! -f "models/clinical/xgboost.joblib" ] && [ ! -f "models/clinical/best_model.joblib" ]; then
+    echo -e "${RED}ML models not found. Run 'bash scripts/dev/retrain-all.sh' first.${NC}"
     exit 1
 fi
 

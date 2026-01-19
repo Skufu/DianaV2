@@ -68,30 +68,30 @@ else
     echo "   Dataset not found. Running full pipeline..."
     
     echo "   Downloading NHANES data..."
-    $PYTHON scripts/download_nhanes_multi.py
-    
+    $PYTHON scripts/data/download_nhanes_multi.py
+
     echo "   Processing data..."
-    $PYTHON scripts/process_nhanes_multi.py
-    
+    $PYTHON scripts/data/process_nhanes_multi.py
+
     echo "   Preparing final dataset..."
-    $PYTHON scripts/prepare_dataset.py
+    $PYTHON ml/data_processing.py
 fi
 
 # Check if models need training
 echo -e "\n${YELLOW}[4/6] Checking models...${NC}"
-if [ -f "models/best_model.joblib" ] && [ -f "models/results/model_comparison.csv" ]; then
+if [ -f "models/clinical/best_model.joblib" ] && [ -f "models/clinical/results/model_comparison.csv" ]; then
     echo "   Models already trained"
 else
     echo "   Training models..."
-    
+
     echo "   Feature selection..."
-    $PYTHON scripts/feature_selection.py
-    
+    $PYTHON scripts/eval/feature_selection.py
+
     echo "   Training classifiers..."
-    $PYTHON scripts/train_models.py
-    
+    $PYTHON ml/train.py
+
     echo "   Clustering..."
-    $PYTHON scripts/clustering.py
+    $PYTHON ml/clustering.py
 fi
 
 # Verify everything is ready
@@ -101,20 +101,20 @@ from pathlib import Path
 import json
 
 models = ['scaler.joblib', 'best_model.joblib', 'kmeans_model.joblib']
-results = ['model_comparison.csv', 'information_gain_results.json', 'cluster_analysis.json']
+results = ['model_comparison.csv', 'confidence_intervals.json', 'cluster_analysis.json']
 
 all_ok = True
 for m in models:
-    if not (Path('models') / m).exists():
+    if not (Path('models/clinical') / m).exists():
         print(f'   MISSING: {m}')
         all_ok = False
 for r in results:
-    if not (Path('models/results') / r).exists():
+    if not (Path('models/clinical/results') / r).exists():
         print(f'   MISSING: {r}')
         all_ok = False
 
 if all_ok:
-    with open('models/results/best_model_report.json') as f:
+    with open('models/clinical/results/best_model_report.json') as f:
         report = json.load(f)
     print(f'   Best Model: {report[\"best_model\"]}')
     print(f'   AUC-ROC: {report[\"metrics\"][\"auc_roc\"]}')
@@ -135,4 +135,4 @@ echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
 
-$PYTHON scripts/ml_server.py
+$PYTHON ml/server.py
