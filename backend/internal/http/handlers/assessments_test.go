@@ -145,6 +145,7 @@ func (f *fakeStore) RefreshTokens() store.RefreshTokenRepository { return nil }
 func (f *fakeStore) Cohort() store.CohortRepository              { return nil }
 func (f *fakeStore) Clinics() store.ClinicRepository             { return nil }
 func (f *fakeStore) AuditEvents() store.AuditEventRepository     { return nil }
+func (f *fakeStore) AuthEvents() store.AuthEventRepository       { return nil }
 func (f *fakeStore) ModelRuns() store.ModelRunRepository         { return nil }
 func (f *fakeStore) Close()                                      {}
 
