@@ -29,7 +29,7 @@ export default defineConfig({
     // Shared settings for all projects
     use: {
         // Base URL for the frontend
-        baseURL: 'http://localhost:3000',
+        baseURL: 'http://localhost:4000',
 
         // Collect trace when retrying the failed test
         trace: 'on-first-retry',
@@ -61,7 +61,7 @@ export default defineConfig({
     // Run local dev server before starting tests
     webServer: {
         command: 'npm run dev',
-        url: 'http://localhost:3000',
+        url: 'http://localhost:4000',
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,
     },

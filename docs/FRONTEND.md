@@ -17,38 +17,42 @@ frontend/
 │       │   ├── UserManagement.jsx
 │       │   ├── AuditLogViewer.jsx
 │       │   └── ModelTraceability.jsx
-│       ├── analytics/            # ML visualizations
-│       │   ├── Analytics.jsx
-│       │   └── CohortAnalysis.jsx
 │       ├── auth/
 │       │   └── Login.jsx         # Login forms
-│       ├── clinic/
-│       │   └── ClinicDashboard.jsx
 │       ├── common/               # Reusable UI components
+│       │   ├── BiomarkerInput.jsx
 │       │   ├── Button.jsx
+│       │   ├── ClusterRecommendations.jsx
 │       │   ├── ClusterTooltip.jsx
 │       │   ├── CustomCursor.jsx
 │       │   ├── ErrorBoundary.jsx
 │       │   ├── ErrorFallback.jsx
+│       │   ├── PDFExport.jsx
+│       │   ├── RiskIndicator.jsx
 │       │   └── SHAPExplanation.jsx
 │       ├── dashboard/
-│       │   └── Dashboard.jsx     # Overview stats, charts
+│       │   └── Dashboard_user.jsx # User dashboard
 │       ├── education/
 │       │   └── Education.jsx     # Educational content
 │       ├── export/
 │       │   └── Export.jsx        # CSV download
+│       ├── insights/             # ML visualizations
+│       │   ├── Insights.jsx
+│       │   └── CohortAnalysis.jsx
 │       ├── layout/
 │       │   ├── Sidebar.jsx       # Navigation sidebar
 │       │   ├── BiologicalNetwork.jsx
 │       │   └── MouseGlow.jsx
-│       └── patients/
-│           ├── PatientHistory.jsx  # Patient list & assessment history
-│           └── RiskTrendChart.jsx
+│       └── user/                 # User-focused components
+│           ├── Dashboard_user.jsx  # User dashboard
+│           ├── Onboarding.jsx      # User onboarding flow
+│           ├── PersonalTrends.jsx  # Biomarker trends
+│           └── UserProfile.jsx     # Profile & assessment
 │
 ├── e2e/                          # Playwright E2E tests
 │   ├── auth.spec.js
 │   ├── assessment.spec.js
-│   └── analytics.spec.js
+│   └── navigation.spec.js
 ├── index.html                    # HTML entry
 ├── vite.config.js                # Vite build config
 ├── tailwind.config.cjs           # Tailwind configuration
@@ -82,23 +86,32 @@ const apiFetch = async (path, options = {}, isRetry = false) => {
 
 // Exported API functions
 export const loginApi = (email, password) => apiFetch('/api/v1/auth/login', {...});
-export const fetchPatientsApi = (token) => apiFetch('/api/v1/patients', {...});
-export const createAssessmentApi = (token, patientId, data) => apiFetch(...);
+export const getUserProfileApi = (token) => apiFetch('/api/v1/users/me/profile', {...});
+export const createAssessmentApi = (token, data) => apiFetch('/api/v1/users/me/assessments', {...});
+export const getUserTrendsApi = (token) => apiFetch('/api/v1/users/me/trends', {...});
 ```
 
 ### 2. `App.jsx` — Main Component
 
 ```jsx
-function App() {
-  const [token, setToken] = useState(localStorage.getItem('diana_token'));
-  const [patients, setPatients] = useState([]);
-  const [activeTab, setActiveTab] = useState('dashboard');
+const App = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [userProfile, setUserProfile] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Lazy-loaded route components for code splitting
-  const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
-  const PatientHistory = lazy(() => import('./components/patients/PatientHistory'));
-  const Analytics = lazy(() => import('./components/analytics/Analytics'));
+  const Dashboard_user = lazy(() => import('./components/user/Dashboard_user'));
+  const UserProfile = lazy(() => import('./components/user/UserProfile'));
+  const Onboarding = lazy(() => import('./components/user/Onboarding'));
+  const PersonalTrends = lazy(() => import('./components/user/PersonalTrends'));
+  const Insights = lazy(() => import('./components/insights/Insights'));
+  const Education = lazy(() => import('./components/education/Education'));
+  const Export = lazy(() => import('./components/export/Export'));
   const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
   // ...
 }
@@ -112,21 +125,25 @@ function App() {
 |-----------|----------|---------|
 | `App` | `src/App.jsx` | Root component, auth state, routing |
 | `Login` | `components/auth/Login.jsx` | Authentication forms |
-| `Dashboard` | `components/dashboard/Dashboard.jsx` | Summary stats, overview charts |
-| `PatientHistory` | `components/patients/PatientHistory.jsx` | Patient list & assessment history |
-| `RiskTrendChart` | `components/patients/RiskTrendChart.jsx` | Risk trend visualization |
+| `Dashboard_user` | `components/user/Dashboard_user.jsx` | User dashboard with risk overview |
+| `UserProfile` | `components/user/UserProfile.jsx` | User profile & assessment entry |
+| `Onboarding` | `components/user/Onboarding.jsx` | New user onboarding flow |
+| `PersonalTrends` | `components/user/PersonalTrends.jsx` | Biomarker trend visualization |
 | `Insights` | `components/insights/Insights.jsx` | ML visualizations, model metrics |
 | `CohortAnalysis` | `components/insights/CohortAnalysis.jsx` | Cohort comparison analysis |
 | `Export` | `components/export/Export.jsx` | CSV export functionality |
-| `Education` | `components/education/Education.jsx` | Educational content for clinicians |
+| `Education` | `components/education/Education.jsx` | Educational content |
 | `AdminDashboard` | `components/admin/AdminDashboard.jsx` | Admin panel (users, audit, models) |
 | `UserManagement` | `components/admin/UserManagement.jsx` | User CRUD operations |
 | `AuditLogViewer` | `components/admin/AuditLogViewer.jsx` | Audit log viewing |
 | `ModelTraceability` | `components/admin/ModelTraceability.jsx` | ML model tracking |
-| `ClinicDashboard` | `components/clinic/ClinicDashboard.jsx` | Clinic-specific dashboard |
 | `Sidebar` | `components/layout/Sidebar.jsx` | Navigation sidebar |
 | `BiologicalNetwork` | `components/layout/BiologicalNetwork.jsx` | Animated background |
 | `ErrorBoundary` | `components/common/ErrorBoundary.jsx` | Error handling wrapper |
+| `BiomarkerInput` | `components/common/BiomarkerInput.jsx` | Biomarker input fields |
+| `ClusterRecommendations` | `components/common/ClusterRecommendations.jsx` | Cluster-based recommendations |
+| `RiskIndicator` | `components/common/RiskIndicator.jsx` | Risk level indicator |
+| `PDFExport` | `components/common/PDFExport.jsx` | PDF report generation |
 | `SHAPExplanation` | `components/common/SHAPExplanation.jsx` | SHAP feature explanations |
 | `ClusterTooltip` | `components/common/ClusterTooltip.jsx` | Cluster info tooltips |
 
@@ -137,6 +154,7 @@ function App() {
 - **No Redux/Context** — Simple React state + prop drilling
 - **Token Storage:** `localStorage.getItem('diana_token')`
 - **Refresh Token:** `localStorage.getItem('diana_refresh_token')`
+- **User Profile:** Fetched on login, triggers onboarding if incomplete
 - **Lazy Loading:** Code splitting with `React.lazy()` and `Suspense`
 - **Performance Detection:** Device capability detection for animations
 
@@ -168,13 +186,15 @@ The app supports role-based UI:
 
 | Role | Access |
 |------|--------|
-| `clinician` | Dashboard, Patients, Analytics, Export, Education |
-| `admin` | All clinician features + Admin Dashboard |
+| `user` | Dashboard, Profile, Trends, Insights, Export, Education |
+| `admin` | All user features + Admin Dashboard |
 
-Role is extracted from JWT token on login:
+Role and admin status are extracted from JWT token on login:
 ```javascript
 const payload = JSON.parse(atob(token.split('.')[1]));
-setUserRole(payload.role || 'clinician');
+setUserRole(payload.role || 'user');
+setIsAdmin(payload.is_admin || false);
+setUserId(payload.user_id || payload.sub);
 ```
 
 ---
