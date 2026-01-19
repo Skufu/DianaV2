@@ -40,3 +40,34 @@ The DianaV2 project has undergone a comprehensive security review and remediatio
 
 - **Audit Log Sanitization**: Implemented a sanitization layer for the audit trail. Control characters are stripped from log entries, and the length of detail fields is limited to 500 characters to prevent log injection and resource exhaustion.
 - **Admin Action Tracking**: All administrative actions are automatically recorded in the `audit_events` table, providing a transparent trail of user management and system configuration changes.
+
+---
+
+## Known Security Gaps
+
+> For full details, see [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) and [code-review-analysis.md](../code-review-analysis.md)
+
+The following security gaps were identified during the January 2026 code review and are pending remediation:
+
+### Critical
+
+| Issue | Impact | Status |
+|-------|--------|--------|
+| Silent audit logging failures | Audit events may be lost without detection | ⏳ Pending |
+| No password complexity rules | Weak passwords like "password1" are allowed | ⏳ Pending |
+| Token revocation error ignored | Old refresh tokens may remain valid after rotation | ⏳ Pending |
+
+### High Priority
+
+| Issue | Impact | Status |
+|-------|--------|--------|
+| No rate limiting on `/auth/*` | Brute-force attacks not mitigated | ⏳ Pending |
+| No HSTS header | HTTPS downgrade attacks possible | ⏳ Pending |
+| Default JWT secret in docs | Production deployments may use weak secret | ⚠️ User responsibility |
+
+### Recommendations
+
+1. **Immediate**: Add error logging to audit middleware
+2. **Short-term**: Implement password complexity validation
+3. **Medium-term**: Add account lockout after failed login attempts
+4. **Long-term**: Add dependency vulnerability scanning (Dependabot/Snyk)

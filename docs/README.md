@@ -1,7 +1,7 @@
 # DIANA V2 - Documentation Hub
 
 > **Purpose**: Centralized documentation index for thesis defense and development  
-> **Last Updated**: January 12, 2026
+> **Last Updated**: January 19, 2026
 
 ---
 
@@ -14,6 +14,8 @@
 | Frontend Components | [FRONTEND.md](./FRONTEND.md) |
 | ML System | [ML_SYSTEM.md](./ML_SYSTEM.md) |
 | Database Schema | [DATABASE.md](./DATABASE.md) |
+| Security | [SECURITY.md](./SECURITY.md) |
+| **⚠️ Known Issues** | [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) |
 | ML API Contract | [ml-api-contract.md](./ml-api-contract.md) |
 | Paper Requirements | [paper-requirements.md](./paper-requirements.md) |
 | **📖 Paper RAG (AI)** | [paper_rag/README.md](./paper_rag/README.md) |
