@@ -26,6 +26,7 @@ import {
   FileText,
   Cpu,
   LayoutDashboard,
+  Wifi,
 } from 'lucide-react';
 import { shouldAnimateCharts } from '../../utils/deviceCapabilities';
 
@@ -33,6 +34,7 @@ import { shouldAnimateCharts } from '../../utils/deviceCapabilities';
 const UserManagement = lazy(() => import('./UserManagement'));
 const AuditLogViewer = lazy(() => import('./AuditLogViewer'));
 const ModelTraceability = lazy(() => import('./ModelTraceability'));
+const AuthEventLogViewer = lazy(() => import('./AuthEventLogViewer'));
 
 const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'];
 
@@ -99,7 +101,12 @@ const AdminDashboard = ({ token, userRole, activeView }) => {
             <ModelTraceability token={token} />
           </Suspense>
         );
-      case 'overview':
+      case 'auth-events':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <AuthEventLogViewer token={token} />
+          </Suspense>
+        );
       default:
         return renderOverview();
     }

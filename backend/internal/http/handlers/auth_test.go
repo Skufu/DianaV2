@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/skufu/DianaV2/backend/internal/config"
+	"github.com/skufu/DianaV2/backend/internal/http/sse"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 	"golang.org/x/crypto/bcrypt"
@@ -183,6 +184,10 @@ func (f *fakeStoreAuth) AuditEvents() store.AuditEventRepository {
 	return nil
 }
 
+func (f *fakeStoreAuth) AuthEvents() store.AuthEventRepository {
+	return nil
+}
+
 func (f *fakeStoreAuth) ModelRuns() store.ModelRunRepository {
 	return nil
 }
@@ -210,7 +215,7 @@ func TestAuthHandler_Login_Success(t *testing.T) {
 	}
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, fakeStoreAuth)
+	h := NewAuthHandler(cfg, fakeStoreAuth, sse.NewBroker(1))
 
 	r := gin.New()
 	r.POST("/login", h.login)
@@ -278,7 +283,7 @@ func TestAuthHandler_Login_InvalidCredentials(t *testing.T) {
 			}
 
 			cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-			h := NewAuthHandler(cfg, fakeStoreAuth)
+			h := NewAuthHandler(cfg, fakeStoreAuth, sse.NewBroker(1))
 
 			r := gin.New()
 			r.POST("/login", h.login)
@@ -306,7 +311,7 @@ func TestAuthHandler_Login_InvalidPayload(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, &fakeStoreAuth{})
+	h := NewAuthHandler(cfg, &fakeStoreAuth{}, sse.NewBroker(1))
 
 	r := gin.New()
 	r.POST("/login", h.login)
@@ -365,7 +370,7 @@ func TestAuthHandler_Refresh_Success(t *testing.T) {
 	}
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, fakeStoreAuth)
+	h := NewAuthHandler(cfg, fakeStoreAuth, sse.NewBroker(1))
 
 	r := gin.New()
 	r.POST("/refresh", h.refresh)
@@ -455,7 +460,7 @@ func TestAuthHandler_Refresh_InvalidToken(t *testing.T) {
 			}
 
 			cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-			h := NewAuthHandler(cfg, fakeStoreAuth)
+			h := NewAuthHandler(cfg, fakeStoreAuth, sse.NewBroker(1))
 
 			r := gin.New()
 			r.POST("/refresh", h.refresh)
@@ -485,13 +490,18 @@ func TestAuthHandler_Logout_Success(t *testing.T) {
 	}
 
 	fakeStoreAuth := &fakeStoreAuth{
+		userRepo: &fakeUserRepoAuth{
+			usersByID: map[int32]*models.User{
+				1: {ID: 1, Email: "test@example.com", Role: "clinician"},
+			},
+		},
 		refreshTokenRepo: &fakeRefreshTokenRepoAuth{
 			tokensByHash: map[string]*models.RefreshToken{refreshTokenHash: &tokenRecord},
 		},
 	}
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, fakeStoreAuth)
+	h := NewAuthHandler(cfg, fakeStoreAuth, sse.NewBroker(1))
 
 	r := gin.New()
 	r.POST("/logout", h.logout)
@@ -515,7 +525,7 @@ func TestAuthHandler_Logout_NoToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, &fakeStoreAuth{})
+	h := NewAuthHandler(cfg, &fakeStoreAuth{}, sse.NewBroker(1))
 
 	r := gin.New()
 	r.POST("/logout", h.logout)
@@ -554,7 +564,7 @@ func TestAuthHandler_JWTTokenGeneration(t *testing.T) {
 	}
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, fakeStoreAuth)
+	h := NewAuthHandler(cfg, fakeStoreAuth, sse.NewBroker(1))
 	r.POST("/login", h.login)
 
 	body := `{"email":"test@example.com","password":"password123"}`

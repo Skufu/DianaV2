@@ -14,6 +14,7 @@ type Store interface {
 	Cohort() CohortRepository
 	Clinics() ClinicRepository
 	AuditEvents() AuditEventRepository
+	AuthEvents() AuthEventRepository
 	ModelRuns() ModelRunRepository
 	Close()
 }
@@ -94,4 +95,10 @@ type ModelRunRepository interface {
 	GetActive(ctx context.Context) (*models.ModelRun, error)
 	Create(ctx context.Context, run models.ModelRun) (*models.ModelRun, error)
 	SetActive(ctx context.Context, id int32) error
+}
+
+// AuthEventRepository provides access to authentication event logs for real-time streaming
+type AuthEventRepository interface {
+	Create(ctx context.Context, event models.AuthEvent) error
+	List(ctx context.Context, eventType, email, startDate, endDate string, limit, offset int) ([]models.AuthEvent, int, error)
 }

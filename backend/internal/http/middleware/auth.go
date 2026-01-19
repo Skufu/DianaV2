@@ -81,3 +81,48 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// ValidateToken validates a JWT token and returns user claims
+func ValidateToken(tokenStr, jwtSecret string) (*UserClaims, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return []byte(jwtSecret), nil
+	}, jwt.WithValidMethods([]string{"HS256"}))
+
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, jwt.ErrInvalidKeyType
+	}
+
+	sub, ok := claims["sub"].(string)
+	if !ok || sub == "" {
+		return nil, jwt.ErrInvalidKeyType
+	}
+
+	role, ok := claims["role"].(string)
+	if !ok || role == "" {
+		return nil, jwt.ErrInvalidKeyType
+	}
+
+	scope, ok := claims["scope"].(string)
+	if !ok || scope != "diana" {
+		return nil, jwt.ErrInvalidKeyType
+	}
+
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		return nil, jwt.ErrInvalidKeyType
+	}
+
+	return &UserClaims{
+		UserID: int64(userID),
+		Email:  sub,
+		Role:   role,
+	}, nil
+}

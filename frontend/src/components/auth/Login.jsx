@@ -87,8 +87,8 @@ const Login = ({ onLogin }) => {
       >
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-teal-500/30 animate-pulse-glow">
-              <Activity size={28} className="text-white animate-pulse" />
+            <div className="w-12 h-12 flex items-center justify-center">
+              <img src="/logo.png" alt="DIANA Logo" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
             <span className="text-4xl font-bold text-gradient tracking-tight">DIANA</span>
           </div>
@@ -154,9 +154,9 @@ const Login = ({ onLogin }) => {
                   className={`w-full bg-slate-800/50 text-white p-4 rounded-xl 
                            focus:outline-none focus:ring-2 
                            transition-all duration-300 placeholder-slate-500 pr-10
-                           ${emailValid === false ? 'border-rose-500/60 border focus:border-rose-400 focus:ring-rose-400/30' : 
-                             emailValid === true ? 'border-emerald-500/60 border focus:border-emerald-400 focus:ring-emerald-400/30' :
-                             'border-slate-600/60 focus:border-teal-400/70 focus:ring-teal-400/30'}`}
+                           ${emailValid === false ? 'border-rose-500/60 border focus:border-rose-400 focus:ring-rose-400/30' :
+                      emailValid === true ? 'border-emerald-500/60 border focus:border-emerald-400 focus:ring-emerald-400/30' :
+                        'border-slate-600/60 focus:border-teal-400/70 focus:ring-teal-400/30'}`}
                   placeholder="doctor@clinic.com"
                 />
               </div>
@@ -182,8 +182,8 @@ const Login = ({ onLogin }) => {
                            focus:outline-none focus:ring-2 
                            transition-all duration-300 placeholder-slate-500
                            ${passwordStrength && !passwordStrength.valid ? 'border-amber-500/60 border focus:border-amber-400 focus:ring-amber-400/30' :
-                             passwordStrength && passwordStrength.valid ? 'border-emerald-500/60 border focus:border-emerald-400 focus:ring-emerald-400/30' :
-                             'border-slate-600/60 focus:border-teal-400/70 focus:ring-teal-400/30'}`}
+                      passwordStrength && passwordStrength.valid ? 'border-emerald-500/60 border focus:border-emerald-400 focus:ring-emerald-400/30' :
+                        'border-slate-600/60 focus:border-teal-400/70 focus:ring-teal-400/30'}`}
                   placeholder="••••••••"
                 />
                 <button

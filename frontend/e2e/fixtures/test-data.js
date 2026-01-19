@@ -8,6 +8,28 @@ export const TEST_USER = {
     name: 'E2E Test User',
 };
 
+export const TEST_PROFILE = {
+    name: 'E2E Test User',
+    email: 'clinician@example.com',
+};
+
+export const TEST_TRENDS = {
+    biomarkerHistory: [],
+    clusterHistory: [],
+    riskLevels: null,
+};
+
+export const createMockJwt = (payload = {}) => {
+    const basePayload = {
+        role: 'user',
+        is_admin: false,
+        user_id: 'e2e-user',
+        ...payload,
+    };
+    const encodedPayload = Buffer.from(JSON.stringify(basePayload)).toString('base64');
+    return `test.${encodedPayload}.signature`;
+};
+
 export const TEST_PATIENT = {
     name: 'John Test Patient',
     age: 55,
@@ -31,17 +53,21 @@ export const SELECTORS = {
     loginEmailInput: 'input[type="email"]',
     loginPasswordInput: 'input[type="password"]',
     loginButton: 'button:has-text("Sign In"), button:has-text("Login")',
-    logoutButton: '[data-testid="logout-button"], button:has-text("Logout")',
+    logoutButton: '[data-testid="logout-button"], button:has-text("Log Out"), button:has-text("Logout")',
+    brandLogo: 'img[alt="DIANA Logo"]',
 
     // Navigation
     sidebar: '[class*="sidebar"], nav',
     dashboardTab: '[data-testid="dashboard-tab"], button:has-text("Dashboard")',
-    patientsTab: '[data-testid="patients-tab"], button:has-text("Patients")',
-    insightsTab: '[data-testid="insights-tab"], button:has-text("Analytics")',
+    profileTab: '[data-testid="profile-tab"], button:has-text("My Profile")',
+    trendsTab: '[data-testid="trends-tab"], button:has-text("Health Trends")',
+    insightsTab: '[data-testid="insights-tab"], button:has-text("Insights")',
+    educationTab: '[data-testid="education-tab"], button:has-text("Education")',
+    exportTab: '[data-testid="export-tab"], button:has-text("Export Data")',
 
     // Dashboard
     patientCount: '[data-testid="patient-count"]',
-    startAssessmentButton: 'button:has-text("Start Assessment"), button:has-text("New Assessment")',
+    startAssessmentButton: 'button:has-text("Log Assessment"), button:has-text("Start Assessment"), button:has-text("New Assessment")',
 
     // Patient form
     patientNameInput: 'input[name="name"], input[placeholder*="name"]',

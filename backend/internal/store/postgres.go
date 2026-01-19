@@ -3,6 +3,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -42,6 +43,159 @@ func (s *PostgresStore) Assessments() AssessmentRepository {
 
 func (s *PostgresStore) RefreshTokens() RefreshTokenRepository {
 	return &pgRefreshTokenRepo{q: s.q}
+}
+
+func (s *PostgresStore) AuthEvents() AuthEventRepository {
+	return &pgAuthEventRepo{pool: s.pool}
+}
+
+type pgAuthEventRepo struct {
+	pool *pgxpool.Pool
+}
+
+func (r *pgAuthEventRepo) Create(ctx context.Context, event models.AuthEvent) error {
+	if r.pool == nil {
+		return nil
+	}
+
+	ipAddress := &event.IPAddress
+	if event.IPAddress == "" {
+		ipAddress = nil
+	}
+
+	_, err := r.pool.Exec(ctx, `
+		INSERT INTO auth_events (event_type, email, ip_address, user_agent, success, metadata, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, NOW())
+	`,
+		event.EventType,
+		ipAddress,
+		event.Email,
+		event.UserAgent,
+		event.Success,
+		event.Metadata,
+	)
+	return err
+}
+
+func (r *pgAuthEventRepo) List(ctx context.Context, eventType, email, startDate, endDate string, limit, offset int) ([]models.AuthEvent, int, error) {
+	if r.pool == nil {
+		return nil, 0, errors.New("db not configured")
+	}
+
+	query := `
+		SELECT id, event_type, email, ip_address, user_agent, success, device_info, location, metadata, created_at
+		FROM auth_events
+		WHERE 1=1
+	`
+
+	args := []interface{}{1}
+	argIndex := 2
+
+	if eventType != "" {
+		query += ` AND event_type = $` + fmt.Sprint(argIndex)
+		args = append(args, eventType)
+		argIndex++
+	}
+
+	if email != "" {
+		query += ` AND email ILIKE '%' || $` + fmt.Sprint(argIndex) + ` || '%'`
+		args = append(args, email)
+		argIndex++
+	}
+
+	if startDate != "" {
+		query += ` AND created_at >= $` + fmt.Sprint(argIndex)
+		args = append(args, startDate)
+		argIndex++
+	}
+
+	if endDate != "" {
+		query += ` AND created_at <= $` + fmt.Sprint(argIndex)
+		args = append(args, endDate)
+		argIndex++
+	}
+
+	query += ` ORDER BY created_at DESC LIMIT $` + fmt.Sprint(argIndex) + ` OFFSET $` + fmt.Sprint(argIndex+1)
+	args = append(args, limit, offset)
+
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var events []models.AuthEvent
+	for rows.Next() {
+		var e models.AuthEvent
+		var deviceInfoJSON, locationJSON, metadataJSON []byte
+
+		err := rows.Scan(
+			&e.ID,
+			&e.EventType,
+			&e.Email,
+			&e.IPAddress,
+			&e.UserAgent,
+			&e.Success,
+			&deviceInfoJSON,
+			&locationJSON,
+			&metadataJSON,
+			&e.CreatedAt,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		if len(deviceInfoJSON) > 0 {
+			_ = json.Unmarshal(deviceInfoJSON, &e.DeviceInfo)
+		}
+		if len(locationJSON) > 0 {
+			_ = json.Unmarshal(locationJSON, &e.Location)
+		}
+		if len(metadataJSON) > 0 {
+			_ = json.Unmarshal(metadataJSON, &e.Metadata)
+		}
+
+		events = append(events, e)
+	}
+
+	countQuery := `
+		SELECT COUNT(*)
+		FROM auth_events
+		WHERE 1=1
+	`
+	countArgs := []interface{}{1}
+	countIndex := 2
+
+	if eventType != "" {
+		countQuery += ` AND event_type = $` + fmt.Sprint(countIndex)
+		countArgs = append(countArgs, eventType)
+		countIndex++
+	}
+
+	if email != "" {
+		countQuery += ` AND email ILIKE '%' || $` + fmt.Sprint(countIndex) + ` || '%'`
+		countArgs = append(countArgs, email)
+		countIndex++
+	}
+
+	if startDate != "" {
+		countQuery += ` AND created_at >= $` + fmt.Sprint(countIndex)
+		countArgs = append(countArgs, startDate)
+		countIndex++
+	}
+
+	if endDate != "" {
+		countQuery += ` AND created_at <= $` + fmt.Sprint(countIndex)
+		countArgs = append(countArgs, endDate)
+	}
+
+	var total int
+	err = r.pool.QueryRow(ctx, countQuery, countArgs...).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return events, total, nil
 }
 
 type pgUserRepo struct {
