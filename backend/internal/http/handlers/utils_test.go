@@ -329,7 +329,7 @@ func TestSanitizeForAudit(t *testing.T) {
 		},
 		{
 			input:    "a\nb\rc\td",
-			expected: "ab",
+			expected: "abcd",
 		},
 		{
 			input:    "\x00a",
