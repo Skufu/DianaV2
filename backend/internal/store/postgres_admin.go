@@ -49,11 +49,8 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 	offset := (page - 1) * pageSize
 
 	// Build query with filters
-	// Note: role column was removed in migration 0011, use is_admin instead
-	// Derive role as 'admin' if is_admin is true, otherwise 'user'
 	query := `
-		SELECT id, email, password_hash, 
-		       CASE WHEN COALESCE(is_admin, false) THEN 'admin' ELSE 'user' END as role,
+		SELECT id, email, password_hash, role, 
 		       COALESCE(is_active, true) as is_active, 
 		       last_login_at, created_by, created_at, updated_at
 		FROM users
@@ -71,14 +68,10 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 	}
 
 	if params.Role != "" {
-		// Convert role filter to is_admin filter
-		if params.Role == "admin" {
-			query += ` AND COALESCE(is_admin, false) = true`
-			countQuery += ` AND COALESCE(is_admin, false) = true`
-		} else {
-			query += ` AND COALESCE(is_admin, false) = false`
-			countQuery += ` AND COALESCE(is_admin, false) = false`
-		}
+		query += ` AND role = $` + itoa(argNum)
+		countQuery += ` AND role = $` + itoa(argNum)
+		args = append(args, params.Role)
+		argNum++
 	}
 
 	if params.IsActive != nil {
@@ -168,41 +161,46 @@ func (r *pgUserRepo) Create(ctx context.Context, user models.User) (*models.User
 }
 
 func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User, error) {
-	arg := sqlcgen.UpdateUserParams{
-		ID:                        int32(user.ID),
-		FirstName:                 textToPg(user.FirstName),
-		LastName:                  textToPg(user.LastName),
-		Phone:                     textToPg(user.Phone),
-		Address:                   textToPg(user.Address),
-		MenopauseStatus:           textToPg(user.MenopauseStatus),
-		MenopauseType:             textToPg(user.MenopauseType),
-		YearsMenopause:            intToPgInt(user.YearsMenopause),
-		Hypertension:              textToPg(user.Hypertension),
-		HeartDisease:              textToPg(user.HeartDisease),
-		FamilyHistoryDiabetes:     user.FamilyHistoryDiabetes,
-		SmokingStatus:             textToPg(user.SmokingStatus),
-		AssessmentFrequencyMonths: int32(user.AssessmentFrequencyMonths),
-		ReminderEmail:             user.ReminderEmail,
+	if r.pool == nil {
+		return nil, errors.New("db not configured")
 	}
 
-	if user.DateOfBirth != nil {
-		arg.DateOfBirth = pgtype.Date{Time: *user.DateOfBirth, Valid: true}
-	} else {
-		arg.DateOfBirth = pgtype.Date{Valid: false}
-	}
+	query := `
+		UPDATE users
+		SET email = COALESCE(NULLIF($2, ''), email),
+		    role = COALESCE(NULLIF($3, ''), role),
+		    updated_at = NOW()
+		WHERE id = $1
+		RETURNING id, email, password_hash, role, 
+		          COALESCE(is_active, true), last_login_at, created_by, created_at, updated_at
+	`
 
-	if err := r.pool.QueryRow(ctx, "UPDATE users SET updated_at = NOW() WHERE id = $1 RETURNING updated_at", user.ID).Scan(&user.UpdatedAt); err != nil {
-		// Just creating a way to get updated_at if we really wanted to,
-		// but actually sqlc UpdateUser doesn't return anything.
-		// However, we should run the update first.
-	}
+	var u models.User
+	var isActive bool
+	var lastLoginAt pgtype.Timestamptz
+	var createdBy pgtype.Int4
+	var createdAt, updatedAt pgtype.Timestamptz
 
-	if err := r.q.UpdateUser(ctx, arg); err != nil {
+	err := r.pool.QueryRow(ctx, query, user.ID, user.Email, user.Role).Scan(
+		&u.ID, &u.Email, &u.PasswordHash, &u.Role,
+		&isActive, &lastLoginAt, &createdBy, &createdAt, &updatedAt,
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	// Fetch fresh user to return complete object
-	return r.FindByID(ctx, int32(user.ID))
+	u.IsActive = isActive
+	if lastLoginAt.Valid {
+		u.LastLoginAt = &lastLoginAt.Time
+	}
+	if createdBy.Valid {
+		cb := int64(createdBy.Int32)
+		u.CreatedBy = &cb
+	}
+	u.CreatedAt = createdAt.Time
+	u.UpdatedAt = updatedAt.Time
+
+	return &u, nil
 }
 
 func (r *pgUserRepo) Deactivate(ctx context.Context, id int32) error {
@@ -503,8 +501,37 @@ func itoa(n int) string {
 // ============================================================================
 
 func (r *pgUserRepo) UpdateUser(ctx context.Context, user models.User) (*models.User, error) {
-	// UpdateUser in interface seems to be same as Update.
-	return r.Update(ctx, user)
+	if r.q == nil {
+		return nil, errors.New("db not configured")
+	}
+
+	var dob pgtype.Date
+	if user.DateOfBirth != nil {
+		dob = pgtype.Date{Time: *user.DateOfBirth, Valid: true}
+	}
+
+	err := r.q.UpdateUser(ctx, sqlcgen.UpdateUserParams{
+		ID:                        int32(user.ID),
+		FirstName:                 pgtype.Text{String: user.FirstName, Valid: user.FirstName != ""},
+		LastName:                  pgtype.Text{String: user.LastName, Valid: user.LastName != ""},
+		DateOfBirth:               dob,
+		Phone:                     pgtype.Text{String: user.Phone, Valid: user.Phone != ""},
+		Address:                   pgtype.Text{String: user.Address, Valid: user.Address != ""},
+		MenopauseStatus:           pgtype.Text{String: user.MenopauseStatus, Valid: user.MenopauseStatus != ""},
+		MenopauseType:             pgtype.Text{String: user.MenopauseType, Valid: user.MenopauseType != ""},
+		YearsMenopause:            pgtype.Int4{Int32: int32(user.YearsMenopause), Valid: true},
+		Hypertension:              pgtype.Text{String: user.Hypertension, Valid: user.Hypertension != ""},
+		HeartDisease:              pgtype.Text{String: user.HeartDisease, Valid: user.HeartDisease != ""},
+		FamilyHistoryDiabetes:     user.FamilyHistoryDiabetes,
+		SmokingStatus:             pgtype.Text{String: user.SmokingStatus, Valid: user.SmokingStatus != ""},
+		AssessmentFrequencyMonths: int32(user.AssessmentFrequencyMonths),
+		ReminderEmail:             user.ReminderEmail,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetUserByID(ctx, int32(user.ID))
 }
 
 func (r *pgUserRepo) GetUserByID(ctx context.Context, id int32) (*models.User, error) {

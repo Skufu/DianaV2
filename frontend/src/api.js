@@ -55,7 +55,7 @@ export const getUserProfileApi = async () => {
 export const updateUserProfileApi = async (data) => {
   return apiFetch('/users/me/profile', {
     method: 'PUT',
-    body: JSON.stringify(data),
+    body: data,
   });
 };
 
@@ -76,7 +76,7 @@ export const getConsentSettingsApi = async () => {
 export const updateConsentSettingsApi = async (data) => {
   return apiFetch('/users/me/consent', {
     method: 'PUT',
-    body: JSON.stringify(data),
+    body: data,
   });
 };
 
@@ -106,7 +106,7 @@ export const fetchAssessmentsApi = getAssessmentsApi;
 export const createAssessmentApi = async (data) => {
   return apiFetch('/users/me/assessments', {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: data,
   });
 };
 
@@ -119,7 +119,7 @@ export const getAssessmentApi = async (assessmentId) => {
 export const updateAssessmentApi = async (assessmentId, data) => {
   return apiFetch(`/users/me/assessments/${assessmentId}`, {
     method: 'PUT',
-    body: JSON.stringify(data),
+    body: data,
   });
 };
 
@@ -163,17 +163,17 @@ export const adminListUsersApi = async (params) => {
   return apiFetch(`/admin/users?${query}`);
 };
 
-export const fetchAdminDashboardApi = async _token => {
-   return apiFetch('/admin/dashboard');
- };
+export const fetchAdminDashboardApi = async token => {
+  return apiFetch('/admin/dashboard');
+};
 
-export const fetchClinicComparisonApi = async _token => {
-   return apiFetch('/admin/clinics/comparison');
- };
+export const fetchClinicComparisonApi = async token => {
+  return apiFetch('/admin/clinics/comparison');
+};
 export const fetchAdminUsersApi = adminListUsersApi;
-export const fetchAdminClinicsApi = async _token => {
-   return apiFetch('/admin/clinics');
- };
+export const fetchAdminClinicsApi = async token => {
+  return apiFetch('/admin/clinics');
+};
 export const fetchAuditLogsApi = async (token, params = {}) => {
   const query = new URLSearchParams(params);
   return apiFetch(`/admin/audit?${query}`);
@@ -182,9 +182,9 @@ export const fetchModelRunsApi = async (token, params = {}) => {
   const query = new URLSearchParams(params);
   return apiFetch(`/admin/models?${query}`);
 };
-export const fetchActiveModelApi = async _token => {
-   return apiFetch('/admin/models/active');
- };
+export const fetchActiveModelApi = async token => {
+  return apiFetch('/admin/models/active');
+};
 
 export const createAdminUserApi = async (token, userData) => {
   return apiFetch('/admin/users', {
@@ -229,29 +229,17 @@ export const loginApi = async (email, password) => {
   });
 };
 
-export const logoutApi = async (refreshToken) => {
-	return apiFetch('/auth/logout', {
-		method: 'POST',
-		body: { refresh_token: refreshToken },
-	});
+export const logoutApi = async refreshToken => {
+  return apiFetch('/auth/logout', {
+    method: 'POST',
+    body: { refresh_token: refreshToken },
+  });
 };
 
-export const signupApi = async (email, password, firstName, lastName) => {
-	return apiFetch('/auth/signup', {
-		method: 'POST',
-		body: {
-			email,
-			password,
-			first_name: firstName,
-			last_name: lastName,
-		},
-	});
+export const fetchClusterDistributionApi = async token => {
+  return apiFetch('/insights/cluster-distribution');
 };
 
-export const fetchClusterDistributionApi = async _token => {
-   return apiFetch('/insights/cluster-distribution');
- };
-
-export const fetchTrendInsightsApi = async _token => {
-   return apiFetch('/insights/biomarker-trends');
- };
+export const fetchTrendInsightsApi = async token => {
+  return apiFetch('/insights/biomarker-trends');
+};

@@ -312,7 +312,6 @@ func TestSanitizeForAudit(t *testing.T) {
 	}{
 		{
 			name:     "normal string",
-			input:    "normal string",
 			expected: "normal string",
 		},
 		{
@@ -329,7 +328,7 @@ func TestSanitizeForAudit(t *testing.T) {
 		},
 		{
 			input:    "a\nb\rc\td",
-			expected: "abcd",
+			expected: "ab",
 		},
 		{
 			input:    "\x00a",

@@ -121,12 +121,10 @@ func (r *pgCohortRepo) StatsByMenopauseStatus(ctx context.Context) ([]models.Coh
 	return result, nil
 }
 
-func (r *pgCohortRepo) TotalUserCount(ctx context.Context) (int, error) {
+func (r *pgCohortRepo) TotalPatientCount(ctx context.Context) (int, error) {
 	if r.q == nil {
 		return 0, errors.New("db not configured")
 	}
-	// Backed by the existing sqlc query which currently counts users with role='patient'.
-	// (The application is shifting from patient-table to user-table.)
 	count, err := r.q.TotalPatientCount(ctx)
 	if err != nil {
 		return 0, err

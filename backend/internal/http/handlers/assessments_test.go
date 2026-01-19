@@ -81,7 +81,7 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 	defer modelSrv.Close()
 
 	repo := &fakeAssessmentRepo{}
-	h := NewAssessmentsHandler(&fakeStore{repo: repo, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
+	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
 
 	r := gin.New()
 	r.Use(mockAuthMiddleware())
@@ -111,7 +111,7 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 	defer modelSrv.Close()
 
 	repo := &fakeAssessmentRepo{}
-	h := NewAssessmentsHandler(&fakeStore{repo: repo, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
+	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
 
 	r := gin.New()
 	r.Use(mockAuthMiddleware())
@@ -136,16 +136,17 @@ const defaultTestTimeout = 2 * time.Second
 
 type fakeStore struct {
 	repo        *fakeAssessmentRepo
+	patientRepo *fakePatientRepo
 	userRepo    *fakeUserRepo
 }
 
 func (f *fakeStore) Users() store.UserRepository                 { return f.userRepo }
+func (f *fakeStore) Patients() store.PatientRepository           { return f.patientRepo }
 func (f *fakeStore) Assessments() store.AssessmentRepository     { return f.repo }
 func (f *fakeStore) RefreshTokens() store.RefreshTokenRepository { return nil }
 func (f *fakeStore) Cohort() store.CohortRepository              { return nil }
 func (f *fakeStore) Clinics() store.ClinicRepository             { return nil }
 func (f *fakeStore) AuditEvents() store.AuditEventRepository     { return nil }
-func (f *fakeStore) AuthEvents() store.AuthEventRepository       { return nil }
 func (f *fakeStore) ModelRuns() store.ModelRunRepository         { return nil }
 func (f *fakeStore) Close()                                      {}
 
@@ -159,6 +160,45 @@ func mockAuthMiddleware() gin.HandlerFunc {
 		})
 		c.Next()
 	}
+}
+
+// fakePatientRepo mocks patient repository for tests
+type fakePatientRepo struct{}
+
+func (f *fakePatientRepo) List(ctx context.Context, userID int32) ([]models.Patient, error) {
+	return nil, nil
+}
+
+func (f *fakePatientRepo) Get(ctx context.Context, id int32, userID int32) (*models.Patient, error) {
+	return &models.Patient{ID: int64(id), UserID: int64(userID), Name: "Test"}, nil
+}
+
+func (f *fakePatientRepo) Create(ctx context.Context, p models.Patient) (*models.Patient, error) {
+	return &p, nil
+}
+
+func (f *fakePatientRepo) Update(ctx context.Context, p models.Patient) (*models.Patient, error) {
+	return &p, nil
+}
+
+func (f *fakePatientRepo) Delete(ctx context.Context, id int32, userID int32) error {
+	return nil
+}
+
+func (f *fakePatientRepo) ListAllLimited(ctx context.Context, userID int32, limit int) ([]models.Patient, error) {
+	return nil, nil
+}
+
+func (f *fakePatientRepo) ListWithLatestAssessment(ctx context.Context, userID int32) ([]models.PatientSummary, error) {
+	return nil, nil
+}
+
+func (f *fakePatientRepo) ListWithLatestAssessmentPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.PatientSummary, int, error) {
+	return nil, 0, nil
+}
+
+func (f *fakePatientRepo) ListPaginated(ctx context.Context, userID int32, limit, offset int) ([]models.Patient, int, error) {
+	return nil, 0, nil
 }
 
 type fakeAssessmentRepo struct {

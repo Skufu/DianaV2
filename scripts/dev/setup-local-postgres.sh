@@ -188,7 +188,7 @@ PORT=8080
 ENV=dev
 DB_DSN=postgres://diana:diana@localhost:5432/diana?sslmode=disable
 JWT_SECRET=${JWT_SECRET}
-CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+CORS_ORIGINS=http://localhost:3000,http://localhost:4000,http://localhost:5173
 MODEL_URL=http://localhost:5001/predict
 ML_PORT=5001
 MODEL_VERSION=v0-mock
@@ -198,7 +198,7 @@ EXPORT_MAX_ROWS=5000
 
 # Demo credentials (for quick testing)
 DEMO_EMAIL=demo@diana.app
-DEMO_PASSWORD=demo123
+DEMO_PASSWORD=demopassword123
 EOF
 
 print_success ".env configured for local PostgreSQL"
@@ -215,18 +215,16 @@ echo -e "${GREEN}Database:${NC} diana (localhost:5432)"
 echo -e "${GREEN}User:${NC}     diana / diana"
 echo ""
 echo -e "${BLUE}Pre-loaded accounts:${NC}"
-echo "┌──────────────────────────────┬─────────────────┬────────────┐"
-echo "│ Email                        │ Password        │ Role       │"
-echo "├──────────────────────────────┼─────────────────┼────────────┤"
-echo "│ demo@diana.app               │ demo123         │ clinician  │"
-echo "│ clinician@example.com        │ password123     │ clinician  │"
-echo "│ admin@diana.app              │ admin123        │ admin      │"
-echo "│ researcher@diana.app         │ research456     │ researcher │"
-echo "└──────────────────────────────┴─────────────────┴────────────┘"
+echo "┌──────────────────────────────┬───────────────────┬────────────┐"
+echo "│ Email                        │ Password          │ Role       │"
+echo "├──────────────────────────────┼───────────────────┼────────────┤"
+echo "│ demo@diana.app               │ demopassword123   │ user       │"
+echo "│ admin@diana.app              │ adminpassword123  │ admin      │"
+echo "└──────────────────────────────┴───────────────────┴────────────┘"
 echo ""
 echo -e "${BLUE}Pre-loaded data:${NC}"
-echo "  • 10 patients with realistic medical profiles"
-echo "  • 22 assessments (low/moderate/high risk)"
+echo "  • Sample users with realistic profiles"
+echo "  • Sample assessments (low/moderate/high risk)"
 echo "  • Audit events and model runs"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
@@ -236,6 +234,6 @@ echo ""
 echo "  2. Start the frontend:"
 echo "     cd frontend && npm run dev"
 echo ""
-echo "  3. Open http://localhost:5173 and login with:"
-echo "     admin@diana.app / admin123"
+echo "  3. Open http://localhost:4000 and login with:"
+echo "     admin@diana.app / adminpassword123"
 echo ""

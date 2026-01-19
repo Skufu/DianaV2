@@ -10,7 +10,6 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/http/handlers"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
-	"github.com/skufu/DianaV2/backend/internal/http/sse"
 	"github.com/skufu/DianaV2/backend/internal/ml"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
@@ -80,8 +79,7 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 	// Authentication (with stricter rate limiting: 10 requests/minute for brute-force protection)
 	authGroup := api.Group("/auth")
 	authGroup.Use(middleware.AuthRateLimit(10))
-	sseBroker := sse.NewBroker(10)
-	authHandler := handlers.NewAuthHandler(cfg, st, sseBroker)
+	authHandler := handlers.NewAuthHandler(cfg, st)
 	authHandler.Register(authGroup)
 
 	// -------------------------------------------------------------------------
@@ -139,10 +137,6 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 		// Audit logs
 		adminAuditHandler := handlers.NewAdminAuditHandler(st)
 		adminAuditHandler.Register(admin)
-
-		// Auth events streaming
-		authEventsHandler := handlers.NewAuthEventHandler(cfg, st, sseBroker)
-		authEventsHandler.Register(admin)
 
 		// Model traceability
 		adminModelsHandler := handlers.NewAdminModelsHandler(st)

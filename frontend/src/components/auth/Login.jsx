@@ -1,76 +1,26 @@
-// Login: Clinical Precision auth screen with biological network background
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import BiologicalNetwork from '../layout/BiologicalNetwork';
-import { Activity, Eye, EyeOff, Lock, Shield, AlertCircle, CheckCircle } from 'lucide-react';
 
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, onShowSignup }) => {
   const [mounted, setMounted] = useState(false);
-  const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [emailValid, setEmailValid] = useState(null);
-  const [passwordStrength, setPasswordStrength] = useState(null);
 
   useEffect(() => setMounted(true), []);
-
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
-
-  const checkPasswordStrength = (password) => {
-    if (password.length < 8) return { valid: false, text: 'Too short' };
-    if (password.length < 12) return { valid: true, text: 'Good' };
-    return { valid: true, text: 'Strong' };
-  };
-
-  const handleEmailChange = (e) => {
-    const value = e.target.value;
-    setEmail(value);
-    setEmailValid(value.length > 0 ? validateEmail(value) : null);
-  };
-
-  const handlePasswordChange = (e) => {
-    const value = e.target.value;
-    setPassword(value);
-    setPasswordStrength(value.length > 0 ? checkPasswordStrength(value) : null);
-  };
 
   const handleSubmit = async e => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      let res;
-      if (isSignup) {
-        const { signupApi } = await import('../../api');
-        res = await signupApi(email, password, firstName, lastName);
-      } else {
-        const { loginApi } = await import('../../api');
-        res = await loginApi(email, password);
-      }
-      await onLogin(res);
+      await onLogin(email, password);
     } catch (err) {
-      setError(err.message || 'Authentication failed. Please check your credentials.');
+      setError('Invalid credentials or server unavailable.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleMode = () => {
-    setIsSignup(!isSignup);
-    setError(null);
-    setEmailValid(null);
-    setPasswordStrength(null);
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
   };
 
   return (
@@ -78,140 +28,64 @@ const Login = ({ onLogin }) => {
       className="min-h-screen w-full flex items-center justify-center relative overflow-hidden"
       style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1E293B 100%)' }}
     >
-      <BiologicalNetwork nodeCount={55} connectionDistance={180} speed={0.25} />
+      {/* Animated Background */}
+      <BiologicalNetwork nodeCount={80} connectionDistance={180} speed={0.25} />
 
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5" />
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-900/10 via-transparent to-cyan-900/10" />
 
+      {/* Login Card */}
       <div
         className={`relative z-10 w-full max-w-md mx-4 transition-all duration-1000 transform ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}
       >
-        <div className="text-center mb-10">
+        {/* Logo */}
+        <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
             <div className="w-12 h-12 flex items-center justify-center">
               <img src="/logo.png" alt="DIANA Logo" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
             <span className="text-4xl font-bold text-gradient tracking-tight">DIANA</span>
           </div>
-          <p className="text-slate-300 text-sm font-medium">Diabetes Identification & Analysis</p>
+          <p className="text-slate-400 text-sm">Diabetes Identification & Analysis</p>
         </div>
 
-        <div className="glass rounded-3xl p-10 border-glow hover-lift">
+        {/* Glass Card */}
+        <div className="glass rounded-3xl p-8 border-glow">
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white mb-2">{isSignup ? 'Create Account' : 'Welcome Back'}</h2>
-            <p className="text-slate-300 text-sm">
-              {isSignup ? 'Enter your details to get started' : 'Enter your credentials to access patient data'}
-            </p>
+            <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
+            <p className="text-slate-400 text-sm">Enter your credentials to access patient data</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {isSignup && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-slate-300 text-sm font-medium ml-1">First Name</label>
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={e => setFirstName(e.target.value)}
-                    required
-                    className="w-full bg-slate-800/50 border border-slate-600/60 text-white p-4 rounded-xl 
-                             focus:outline-none focus:border-teal-400/70 focus:ring-2 focus:ring-teal-400/30 
-                             transition-all duration-300 placeholder-slate-500"
-                    placeholder="Jane"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-slate-300 text-sm font-medium ml-1">Last Name</label>
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={e => setLastName(e.target.value)}
-                    required
-                    className="w-full bg-slate-800/50 border border-slate-600/60 text-white p-4 rounded-xl 
-                             focus:outline-none focus:border-teal-400/70 focus:ring-2 focus:ring-teal-400/30 
-                             transition-all duration-300 placeholder-slate-500"
-                    placeholder="Doe"
-                  />
-                </div>
-              </div>
-            )}
-
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <div className="flex items-center justify-between ml-1">
-                <label className="text-slate-300 text-sm font-medium">Email</label>
-                {emailValid === true && (
-                  <CheckCircle size={16} className="text-emerald-400" />
-                )}
-                {emailValid === false && (
-                  <AlertCircle size={16} className="text-rose-400" />
-                )}
-              </div>
-              <div className="relative">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={handleEmailChange}
-                  required
-                  className={`w-full bg-slate-800/50 text-white p-4 rounded-xl 
-                           focus:outline-none focus:ring-2 
-                           transition-all duration-300 placeholder-slate-500 pr-10
-                           ${emailValid === false ? 'border-rose-500/60 border focus:border-rose-400 focus:ring-rose-400/30' :
-                      emailValid === true ? 'border-emerald-500/60 border focus:border-emerald-400 focus:ring-emerald-400/30' :
-                        'border-slate-600/60 focus:border-teal-400/70 focus:ring-teal-400/30'}`}
-                  placeholder="doctor@clinic.com"
-                />
-              </div>
+              <label className="text-slate-300 text-sm font-medium ml-1">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full bg-slate-800/50 border border-slate-700/50 text-white p-4 rounded-xl 
+                         focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 
+                         transition-all placeholder-slate-500"
+                placeholder="doctor@clinic.com"
+              />
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between ml-1">
-                <label className="text-slate-300 text-sm font-medium">Password</label>
-                {passwordStrength && (
-                  <span className={`text-xs font-medium ${passwordStrength.valid ? 'text-emerald-400' : 'text-amber-400'}`}>
-                    {passwordStrength.text}
-                  </span>
-                )}
-              </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={handlePasswordChange}
-                  required
-                  minLength={8}
-                  className={`w-full bg-slate-800/50 text-white p-4 rounded-xl pr-12
-                           focus:outline-none focus:ring-2 
-                           transition-all duration-300 placeholder-slate-500
-                           ${passwordStrength && !passwordStrength.valid ? 'border-amber-500/60 border focus:border-amber-400 focus:ring-amber-400/30' :
-                      passwordStrength && passwordStrength.valid ? 'border-emerald-500/60 border focus:border-emerald-400 focus:ring-emerald-400/30' :
-                        'border-slate-600/60 focus:border-teal-400/70 focus:ring-teal-400/30'}`}
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={togglePasswordVisibility}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-teal-400 transition-colors p-1"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
+              <label className="text-slate-300 text-sm font-medium ml-1">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full bg-slate-800/50 border border-slate-700/50 text-white p-4 rounded-xl 
+                         focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 
+                         transition-all placeholder-slate-500"
+                placeholder="••••••••"
+              />
             </div>
-
-            {!isSignup && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="text-sm text-teal-400 hover:text-teal-300 transition-colors"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-            )}
 
             {error && (
-              <div className="text-rose-400 text-sm bg-rose-500/10 border border-rose-500/30 rounded-lg p-4 flex items-start gap-3">
-                <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
-                <span>{error}</span>
+              <div className="text-rose-400 text-sm bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+                {error}
               </div>
             )}
 
@@ -221,13 +95,11 @@ const Login = ({ onLogin }) => {
               className={`w-full py-4 rounded-xl font-semibold text-white transition-all duration-300
                          bg-gradient-to-r from-teal-500 to-cyan-500 
                          hover:from-teal-400 hover:to-cyan-400 
-                         hover:shadow-xl hover:shadow-teal-500/40 hover:-translate-y-0.5
-                         active:scale-[0.98] active:translate-y-0
-                         disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none
-                         disabled:translate-y-0 flex items-center justify-center gap-2`}
+                         hover:shadow-lg hover:shadow-teal-500/25
+                         active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed`}
             >
               {loading ? (
-                <>
+                <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                     <circle
                       className="opacity-25"
@@ -244,38 +116,22 @@ const Login = ({ onLogin }) => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                     />
                   </svg>
-                  {isSignup ? 'Creating Account...' : 'Signing In...'}
-                </>
+                  Signing In...
+                </span>
               ) : (
-                <>
-                  <Lock size={20} />
-                  {isSignup ? 'Create Account' : 'Sign In'}
-                </>
+                'Sign In'
               )}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <button
-              onClick={toggleMode}
+              type="button"
+              onClick={onShowSignup}
               className="text-slate-300 text-sm hover:text-white transition-colors font-medium"
             >
-              {isSignup ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+              Don't have an account? Sign Up
             </button>
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-slate-700/50">
-            <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
-              <div className="flex items-center gap-1.5">
-                <Shield size={14} className="text-teal-400" />
-                <span>HIPAA Compliant</span>
-              </div>
-              <span>•</span>
-              <div className="flex items-center gap-1.5">
-                <Lock size={14} className="text-teal-400" />
-                <span>256-bit Encryption</span>
-              </div>
-            </div>
           </div>
 
           <p className="text-center text-slate-500 text-xs mt-6">

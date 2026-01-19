@@ -75,4 +75,4 @@ GROUP BY 1;
 SELECT COUNT(*)::int AS count FROM assessments;
 
 -- name: TotalPatientCount :one
-SELECT COUNT(*)::int AS count FROM users WHERE is_admin = false;
+SELECT COUNT(*)::int AS count FROM users WHERE role = 'patient';

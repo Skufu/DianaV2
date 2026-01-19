@@ -1,4 +1,4 @@
-// Package pdf provides PDF report generation for assessments.
+// Package pdf provides PDF report generation for patient assessments.
 package pdf
 
 import (
@@ -22,7 +22,7 @@ func NewReportGenerator(logoPath string) *ReportGenerator {
 
 // GenerateAssessmentReport creates a PDF report for a patient assessment
 func (g *ReportGenerator) GenerateAssessmentReport(
-	user models.User,
+	patient models.Patient,
 	assessment models.Assessment,
 	shapData map[string]interface{},
 ) ([]byte, error) {
@@ -31,10 +31,10 @@ func (g *ReportGenerator) GenerateAssessmentReport(
 	pdf.AddPage()
 
 	// Header
-	g.addHeader(pdf, user)
+	g.addHeader(pdf, patient)
 
 	// Patient Information Section
-	g.addPatientInfo(pdf, user)
+	g.addPatientInfo(pdf, patient)
 
 	// Biomarker Values Section
 	g.addBiomarkerSection(pdf, assessment)
@@ -63,7 +63,7 @@ func (g *ReportGenerator) GenerateAssessmentReport(
 	return buf.Bytes(), nil
 }
 
-func (g *ReportGenerator) addHeader(pdf *fpdf.Fpdf, _ models.User) {
+func (g *ReportGenerator) addHeader(pdf *fpdf.Fpdf, patient models.Patient) {
 	pdf.SetFont("Arial", "B", 20)
 	pdf.SetTextColor(75, 0, 130) // Indigo color
 
@@ -78,7 +78,7 @@ func (g *ReportGenerator) addHeader(pdf *fpdf.Fpdf, _ models.User) {
 	pdf.Ln(8)
 }
 
-func (g *ReportGenerator) addPatientInfo(pdf *fpdf.Fpdf, user models.User) {
+func (g *ReportGenerator) addPatientInfo(pdf *fpdf.Fpdf, patient models.Patient) {
 	pdf.SetFont("Arial", "B", 14)
 	pdf.SetTextColor(0, 0, 0)
 	pdf.CellFormat(180, 8, "Patient Information", "", 1, "L", false, 0, "")
@@ -90,50 +90,15 @@ func (g *ReportGenerator) addPatientInfo(pdf *fpdf.Fpdf, user models.User) {
 	col1Width := 40.0
 	col2Width := 50.0
 
-	g.addInfoRow(pdf, "Name:", userDisplayName(user), col1Width, col2Width)
-	if age := userAge(user); age > 0 {
-		g.addInfoRow(pdf, "Age:", fmt.Sprintf("%d years", age), col1Width, col2Width)
-	}
-	if user.MenopauseStatus != "" {
-		g.addInfoRow(pdf, "Menopause Status:", user.MenopauseStatus, col1Width, col2Width)
-	}
-	if user.YearsMenopause > 0 {
-		g.addInfoRow(pdf, "Years Menopause:", fmt.Sprintf("%d", user.YearsMenopause), col1Width, col2Width)
+	g.addInfoRow(pdf, "Name:", patient.Name, col1Width, col2Width)
+	g.addInfoRow(pdf, "Age:", fmt.Sprintf("%d years", patient.Age), col1Width, col2Width)
+	g.addInfoRow(pdf, "Menopause Status:", patient.MenopauseStatus, col1Width, col2Width)
+	if patient.YearsMenopause > 0 {
+		g.addInfoRow(pdf, "Years Menopause:", fmt.Sprintf("%d", patient.YearsMenopause), col1Width, col2Width)
 	}
 	g.addInfoRow(pdf, "Report Date:", time.Now().Format("January 2, 2006"), col1Width, col2Width)
 
 	pdf.Ln(8)
-}
-
-func userDisplayName(u models.User) string {
-	name := (u.FirstName + " " + u.LastName)
-	if name == " " {
-		return u.Email
-	}
-	// Trim without importing strings: handle simple cases.
-	if u.FirstName == "" {
-		return u.LastName
-	}
-	if u.LastName == "" {
-		return u.FirstName
-	}
-	return name
-}
-
-func userAge(u models.User) int {
-	if u.DateOfBirth == nil {
-		return 0
-	}
-	dob := *u.DateOfBirth
-	now := time.Now()
-	age := now.Year() - dob.Year()
-	if now.Month() < dob.Month() || (now.Month() == dob.Month() && now.Day() < dob.Day()) {
-		age--
-	}
-	if age < 0 || age > 130 {
-		return 0
-	}
-	return age
 }
 
 func (g *ReportGenerator) addInfoRow(pdf *fpdf.Fpdf, label, value string, labelWidth, valueWidth float64) {

@@ -67,7 +67,7 @@
 
 | Component | File | Description |
 |-----------|------|-------------|
-| Training Pipeline | `legacy/train_enhanced.py` | Deprecated training script |
+| Training Pipeline | `scripts/train_enhanced.py` | Main training script |
 | Cluster Training | `scripts/train_clusters.py` | K-Means only |
 | Clinical Model | `ml/train.py` | Non-circular model training |
 | Prediction | `ml/predict.py` | Inference module |

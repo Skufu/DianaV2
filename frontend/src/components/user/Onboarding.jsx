@@ -1,29 +1,27 @@
-import React, { useState } from 'react';
-import { User, Heart, Shield, FileText, Activity, Check } from 'lucide-react';
+import { useState } from 'react';
+import { User, Heart, Shield, FileText, Check } from 'lucide-react';
 import { completeOnboardingApi } from '../../api';
 
-const Onboarding = ({ token, userId, onComplete }) => {
+const Onboarding = ({ onComplete }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    dob: '',
-    password: '',
-    menopauseStatus: '',
-    menopauseType: '',
-    yearsMenopause: '',
+    first_name: '',
+    last_name: '',
+    date_of_birth: '',
+    menopause_status: '',
+    years_menopause: '',
     hypertension: '',
-    heartDisease: '',
-    familyHistory: '',
-    smoking: '',
-    consentResearch: false,
-    consentEmail: false,
-    consentMarketing: false,
-    consentDataUsage: false,
-    assessmentFrequency: 'monthly',
+    heart_disease: '',
+    family_history_diabetes: false,
+    smoking_status: '',
+    consent_research_participation: false,
+    consent_email_updates: false,
+    consent_marketing: false,
+    consent_data_usage: false,
+    assessment_frequency_months: '3',
   });
 
   const handleInputChange = (e) => {
@@ -34,38 +32,31 @@ const Onboarding = ({ token, userId, onComplete }) => {
     }));
   };
 
-
   const handleSubmit = async () => {
+    if (!formData.consent_data_usage) {
+      setError('You must agree to the Data Usage Agreement to continue');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      // Transform frontend form data to backend OnboardingRequest schema
-      const nameParts = formData.name.trim().split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ') || '';
-
-      // Map frontend values to backend expected values
-      const menopauseStatusMap = {
-        'premenopausal': 'pre',
-        'perimenopausal': 'peri',
-        'postmenopausal': 'post',
-        'surgical': 'surgical',
-      };
-
-      const assessmentFrequencyMap = {
-        'weekly': 1,
-        'monthly': 1,
-        'quarterly': 3,
-        'none': 12,
-      };
-
       const payload = {
-        first_name: firstName,
-        ...formData,
-        consent_personal_data: formData.consent_data_usage || formData.consent_personal_data, // UI used Checkbox "Data Usage"
-        consent_analytics: formData.consent_marketing || formData.consent_analytics, // UI used "Marketing" roughly
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        date_of_birth: formData.date_of_birth,
+        menopause_status: formData.menopause_status,
+        years_menopause: parseInt(formData.years_menopause, 10) || 0,
+        hypertension: formData.hypertension,
+        heart_disease: formData.heart_disease,
+        family_history_diabetes: formData.family_history_diabetes || false,
+        smoking_status: formData.smoking_status,
+        consent_personal_data: formData.consent_data_usage,
+        consent_research_participation: formData.consent_research_participation,
+        consent_email_updates: formData.consent_email_updates,
+        consent_analytics: formData.consent_marketing,
+        assessment_frequency_months: parseInt(formData.assessment_frequency_months, 10) || 3,
+        reminder_email: true,
       };
-
       await completeOnboardingApi(payload);
       onComplete();
     } catch (err) {
@@ -75,14 +66,39 @@ const Onboarding = ({ token, userId, onComplete }) => {
     }
   };
 
-  const nextStep = () => setStep(prev => prev + 1);
+  const validateStep = (stepNum) => {
+    switch (stepNum) {
+      case 1:
+        if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.date_of_birth) {
+          setError('Please fill in all required fields (First Name, Last Name, Date of Birth)');
+          return false;
+        }
+        break;
+      case 2:
+        if (!formData.menopause_status) {
+          setError('Please select your menopause status');
+          return false;
+        }
+        break;
+      default:
+        break;
+    }
+    setError(null);
+    return true;
+  };
+
+  const nextStep = () => {
+    if (validateStep(step)) {
+      setStep(prev => prev + 1);
+    }
+  };
   const prevStep = () => setStep(prev => prev - 1);
 
   return (
     <div className="max-w-2xl mx-auto p-8">
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Welcome{formData.first_name ? `, ${formData.first_name}` : ''}</h1>
-        <p className="text-slate-400 mb-8">Let's finish your health profile</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Welcome to DIANA</h1>
+        <p className="text-slate-400 mb-8">Let's set up your health profile{formData.first_name ? `, ${formData.first_name}` : ''}</p>
 
         {error && (
           <div className="text-rose-400 text-sm mb-4 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
@@ -96,10 +112,37 @@ const Onboarding = ({ token, userId, onComplete }) => {
               <div className="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center">
                 <User size={24} className="text-teal-400" />
               </div>
-              <h2 className="text-xl font-semibold text-white">Basic Information</h2>
+              <h2 className="text-xl font-semibold text-white">Personal Information</h2>
             </div>
 
             <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">First Name</label>
+                  <input
+                    type="text"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-colors"
+                    placeholder="Jane"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Last Name</label>
+                  <input
+                    type="text"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-colors"
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Date of Birth</label>
                 <input
@@ -107,6 +150,7 @@ const Onboarding = ({ token, userId, onComplete }) => {
                   name="date_of_birth"
                   value={formData.date_of_birth}
                   onChange={handleInputChange}
+                  required
                   className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500 transition-colors"
                 />
               </div>
@@ -130,6 +174,7 @@ const Onboarding = ({ token, userId, onComplete }) => {
                   name="menopause_status"
                   value={formData.menopause_status}
                   onChange={handleInputChange}
+                  required
                   className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500 transition-colors"
                 >
                   <option value="">Select status</option>
@@ -137,22 +182,6 @@ const Onboarding = ({ token, userId, onComplete }) => {
                   <option value="peri">Perimenopausal</option>
                   <option value="post">Postmenopausal</option>
                   <option value="surgical">Surgical Menopause</option>
-                </select>
-              </div>
-
-              {/* Show Type if Post or Surgical? Backend allows Type for all? Usually relevant for Post */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Type</label>
-                <select
-                  name="menopause_type"
-                  value={formData.menopause_type}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500 transition-colors"
-                >
-                  <option value="">Select type</option>
-                  <option value="natural">Natural</option>
-                  <option value="hormonal">Hormonal</option>
-                  <option value="surgical">Surgical</option>
                 </select>
               </div>
 
@@ -213,9 +242,9 @@ const Onboarding = ({ token, userId, onComplete }) => {
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Family History of Diabetes</label>
                 <select
-                  name="family_history_diabetes" // bool in backend
-                  value={formData.family_history_diabetes ? "true" : "false"}
-                  onChange={(e) => setFormData(prev => ({ ...prev, family_history_diabetes: e.target.value === 'true' }))}
+                  name="family_history_diabetes"
+                  value={formData.family_history_diabetes ? 'true' : 'false'}
+                  onChange={e => setFormData(prev => ({ ...prev, family_history_diabetes: e.target.value === 'true' }))}
                   className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500 transition-colors"
                 >
                   <option value="false">No</option>
@@ -262,7 +291,7 @@ const Onboarding = ({ token, userId, onComplete }) => {
                   <option value="1">Monthly</option>
                   <option value="3">Quarterly (3 Months)</option>
                   <option value="6">Semi-Annually (6 Months)</option>
-                  <option value="12">Annually</option>
+                  <option value="12">Annually (12 Months)</option>
                 </select>
               </div>
             </div>
@@ -285,6 +314,7 @@ const Onboarding = ({ token, userId, onComplete }) => {
                   name="consent_research_participation"
                   checked={formData.consent_research_participation}
                   onChange={handleInputChange}
+                  required
                   className="mt-1 w-5 h-5 rounded border-slate-700 bg-slate-900/50 text-teal-500 focus:ring-teal-500 focus:ring-offset-0"
                 />
                 <div className="flex-1">
@@ -299,6 +329,7 @@ const Onboarding = ({ token, userId, onComplete }) => {
                   name="consent_email_updates"
                   checked={formData.consent_email_updates}
                   onChange={handleInputChange}
+                  required
                   className="mt-1 w-5 h-5 rounded border-slate-700 bg-slate-900/50 text-teal-500 focus:ring-teal-500 focus:ring-offset-0"
                 />
                 <div className="flex-1">
@@ -310,9 +341,10 @@ const Onboarding = ({ token, userId, onComplete }) => {
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  name="consent_marketing" // Will map to analytics or ignored
+                  name="consent_marketing"
                   checked={formData.consent_marketing}
                   onChange={handleInputChange}
+                  required
                   className="mt-1 w-5 h-5 rounded border-slate-700 bg-slate-900/50 text-teal-500 focus:ring-teal-500 focus:ring-offset-0"
                 />
                 <div className="flex-1">
@@ -324,14 +356,15 @@ const Onboarding = ({ token, userId, onComplete }) => {
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  name="consent_data_usage" // Maps to personal_data
+                  name="consent_data_usage"
                   checked={formData.consent_data_usage}
                   onChange={handleInputChange}
+                  required
                   className="mt-1 w-5 h-5 rounded border-slate-700 bg-slate-900/50 text-teal-500 focus:ring-teal-500 focus:ring-offset-0"
                 />
                 <div className="flex-1">
                   <p className="text-sm text-white font-medium">Data Usage Agreement</p>
-                  <p className="text-xs text-slate-400 mt-1">I understand my health data will be stored securely and used according to the privacy policy</p>
+                  <p className="text-xs text-slate-400 mt-1">I understand my health data will be stored securely and used according to privacy policy</p>
                 </div>
               </label>
             </div>

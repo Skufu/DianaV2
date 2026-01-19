@@ -1,7 +1,7 @@
 # DIANA V2 - Documentation Hub
 
 > **Purpose**: Centralized documentation index for thesis defense and development  
-> **Last Updated**: January 19, 2026
+> **Last Updated**: January 12, 2026
 
 ---
 
@@ -9,17 +9,14 @@
 
 | Topic | Document |
 |-------|----------|
-| **Codebase Map** | [CODEBASE_MAP.md](./CODEBASE_MAP.md) |
 | System Architecture | [ARCHITECTURE.md](./ARCHITECTURE.md) |
 | Backend API | [BACKEND.md](./BACKEND.md) |
 | Frontend Components | [FRONTEND.md](./FRONTEND.md) |
 | ML System | [ML_SYSTEM.md](./ML_SYSTEM.md) |
 | Database Schema | [DATABASE.md](./DATABASE.md) |
-| Security | [SECURITY.md](./SECURITY.md) |
-| **⚠️ Known Issues** | [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) |
 | ML API Contract | [ml-api-contract.md](./ml-api-contract.md) |
 | Paper Requirements | [paper-requirements.md](./paper-requirements.md) |
-| **Paper RAG** | [paper_rag/README.md](./paper_rag/README.md) |
+| **📖 Paper RAG (AI)** | [paper_rag/README.md](./paper_rag/README.md) |
 
 ---
 
@@ -79,9 +76,8 @@
 |---------|------|
 | Route definitions | `backend/internal/http/router/router.go` |
 | Auth handler | `backend/internal/http/handlers/auth.go` |
-| Users handler | `backend/internal/http/handlers/users.go` |
+| Patient handler | `backend/internal/http/handlers/patients.go` |
 | Assessment handler | `backend/internal/http/handlers/assessments.go` |
-| Admin handlers | `backend/internal/http/handlers/admin_*.go` |
 | ML predictor client | `backend/internal/ml/http_predictor.go` |
 | Database queries | `backend/internal/store/sqlc/*.sql.go` |
 
@@ -90,21 +86,20 @@
 |---------|------|
 | Main app | `frontend/src/App.jsx` |
 | API wrapper | `frontend/src/api.js` |
-| User Dashboard | `frontend/src/components/user/Dashboard_user.jsx` |
-| User Profile | `frontend/src/components/user/UserProfile.jsx` |
-| Onboarding | `frontend/src/components/user/Onboarding.jsx` |
-| Personal Trends | `frontend/src/components/user/PersonalTrends.jsx` |
-| Insights | `frontend/src/components/insights/Insights.jsx` |
-| Cohort Analysis | `frontend/src/components/insights/CohortAnalysis.jsx` |
+| Dashboard | `frontend/src/components/dashboard/Dashboard.jsx` |
+| Patients | `frontend/src/components/patients/PatientHistory.jsx` |
+| Analytics | `frontend/src/components/insights/Insights.jsx` | ML visualizations, model metrics |
+| Cohort Analysis | `frontend/src/components/insights/CohortAnalysis.jsx` | Cohort comparison analysis |
 | Login | `frontend/src/components/auth/Login.jsx` |
-| Export | `frontend/src/components/export/Export.jsx` |
-| Education | `frontend/src/components/education/Education.jsx` |
-| Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` |
-| User Management | `frontend/src/components/admin/UserManagement.jsx` |
-| Audit Log Viewer | `frontend/src/components/admin/AuditLogViewer.jsx` |
-| Model Traceability | `frontend/src/components/admin/ModelTraceability.jsx` |
-| Sidebar | `frontend/src/components/layout/Sidebar.jsx` |
-| Biological Network | `frontend/src/components/layout/BiologicalNetwork.jsx` |
+| Export | `frontend/src/components/export/Export.jsx` | CSV export functionality |
+| Education | `frontend/src/components/education/Education.jsx` | Educational content for clinicians |
+| Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` | Admin panel (users, audit, models) |
+| User Management | `frontend/src/components/admin/UserManagement.jsx` | User CRUD operations |
+| Audit Log Viewer | `frontend/src/components/admin/AuditLogViewer.jsx` | Audit log viewing |
+| Model Traceability | `frontend/src/components/admin/ModelTraceability.jsx` | ML model tracking |
+| Clinic Dashboard | `frontend/src/components/clinic/ClinicDashboard.jsx` | Clinic-specific dashboard |
+| Sidebar | `frontend/src/components/layout/Sidebar.jsx` | Navigation sidebar |
+| Biological Network | `frontend/src/components/layout/BiologicalNetwork.jsx` | Animated background |
 
 ### ML (Python)
 | Purpose | File |
@@ -116,11 +111,11 @@
 
 ---
 
-## Data Flow: User Assessment
+## Data Flow: Patient Assessment
 
 ```
-1. User enters biomarkers in Frontend (UserProfile.jsx)
-2. Frontend POST → Backend /api/v1/users/me/assessments
+1. User enters biomarkers in Frontend (PatientHistory.jsx)
+2. Frontend POST → Backend /api/v1/patients/:id/assessments
 3. Backend (assessments.go) → ML Server POST /predict?model_type=clinical
 4. ML Server (predict.py) → Returns prediction + cluster
 5. Backend → Saves to database (sqlc) → Returns to Frontend
