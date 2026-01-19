@@ -35,15 +35,28 @@ api := r.Group("/api/v1")
 
 // Public routes
 handlers.RegisterHealth(api)
-authHandler.Register(authGroup)  // /auth/login, /auth/register
+authHandler.Register(authGroup)  // /auth/login, /auth/register, /auth/refresh
 
 // Protected routes (require JWT)
 protected := api.Group("")
 protected.Use(middleware.Auth(cfg.JWTSecret))
 
-patientHandler.Register(protected.Group("/patients"))
-assessmentHandler.Register(protected.Group("/patients"))
+// User self-service endpoints (/users/me/...)
+userGroup := protected.Group("/users/me")
+usersHandler.Register(userGroup)
+assessmentsHandler.Register(userGroup.Group("/assessments"))
+exportHandler.Register(userGroup.Group("/export"))
+
+// Insights endpoints
 insightsHandler.Register(protected.Group("/insights"))
+cohortHandler.Register(protected.Group("/insights"))
+
+// Clinics endpoints
+clinicDashboardHandler.Register(protected.Group("/clinics"))
+
+// Admin routes (requires admin role)
+admin := protected.Group("/admin")
+admin.Use(middleware.RoleRequired("admin"))
 ```
 
 ### 2. Handlers (`internal/http/handlers/`)
@@ -51,19 +64,23 @@ insightsHandler.Register(protected.Group("/insights"))
 Each handler follows this pattern:
 
 ```go
-type PatientsHandler struct {
+type UsersHandler struct {
     store store.Store
 }
 
-func (h *PatientsHandler) Register(g *gin.RouterGroup) {
-    g.GET("", h.list)
-    g.POST("", h.create)
-    g.GET("/:id", h.get)
+func (h *UsersHandler) Register(rg *gin.RouterGroup) {
+    rg.GET("/profile", h.GetUserProfile)
+    rg.PUT("/profile", h.UpdateUserProfile)
+    rg.POST("/onboarding", h.CompleteOnboarding)
+    rg.GET("/consent", h.GetConsentSettings)
+    rg.PUT("/consent", h.UpdateConsentSettings)
+    rg.GET("/trends", h.GetTrends)
+    rg.DELETE("/account", h.DeleteAccount)
 }
 
-func (h *PatientsHandler) list(c *gin.Context) {
-    userID := c.GetInt64("user_id")  // From JWT
-    patients, err := h.store.ListPatients(c, userID)
+func (h *UsersHandler) GetUserProfile(c *gin.Context) {
+    claims := c.Get("user").(middleware.UserClaims)
+    user, err := h.store.Users().GetUserByID(c, int32(claims.UserID))
     // ...
 }
 ```
@@ -102,22 +119,49 @@ SQLC generates type-safe Go code automatically.
 
 ## API Endpoints
 
+### Authentication (Public)
+
 | Method | Path | Handler | Description |
 |--------|------|---------|-------------|
 | POST | /auth/register | authHandler | Create account |
 | POST | /auth/login | authHandler | Get JWT token |
 | POST | /auth/refresh | authHandler | Refresh token |
-| GET | /patients | patientsHandler | List patients |
-| POST | /patients | patientsHandler | Create patient |
-| GET | /patients/:id | patientsHandler | Get patient |
-| POST | /patients/:id/assessments | assessmentsHandler | Create assessment (calls ML) |
+| POST | /auth/logout | authHandler | Revoke refresh token |
+
+### User Self-Service (JWT Required)
+
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
+| GET | /users/me/profile | usersHandler | Get user profile |
+| PUT | /users/me/profile | usersHandler | Update profile |
+| POST | /users/me/onboarding | usersHandler | Complete onboarding |
+| GET | /users/me/consent | usersHandler | Get consent settings |
+| PUT | /users/me/consent | usersHandler | Update consent |
+| GET | /users/me/trends | usersHandler | Get biomarker trends |
+| DELETE | /users/me/account | usersHandler | Delete account |
+| POST | /users/me/assessments | assessmentsHandler | Create assessment (calls ML) |
+| GET | /users/me/assessments | assessmentsHandler | List assessments |
+| GET | /users/me/assessments/:id | assessmentsHandler | Get assessment |
+| GET | /users/me/export | exportHandler | Export user data |
+
+### Insights (JWT Required)
+
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
 | GET | /insights/summary | insightsHandler | Dashboard stats |
-| GET | /export/csv | exportHandler | Export data |
+| GET | /insights/cohort | cohortHandler | Cohort analysis |
+
+### Clinics (JWT Required)
+
+| Method | Path | Handler | Description |
+|--------|------|---------|-------------|
+| GET | /clinics/dashboard | clinicDashboardHandler | Clinic dashboard |
 
 ### Admin Endpoints (Admin Role Required)
 
 | Method | Path | Handler | Description |
 |--------|------|---------|-------------|
+| GET | /admin/dashboard | adminDashboardHandler | Admin dashboard stats |
 | GET | /admin/users | adminUsersHandler | List users |
 | POST | /admin/users | adminUsersHandler | Create user |
 | PUT | /admin/users/:id | adminUsersHandler | Update user |
