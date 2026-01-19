@@ -320,6 +320,19 @@ type AuditListParams struct {
 	EndDate   time.Time `form:"end_date"`
 }
 
+type AuthEvent struct {
+	ID         string                 `json:"id"`
+	EventType  string                 `json:"event_type"`
+	Email      string                 `json:"email,omitempty"`
+	IPAddress  string                 `json:"ip_address,omitempty"`
+	UserAgent  string                 `json:"user_agent,omitempty"`
+	Success    bool                   `json:"success"`
+	DeviceInfo map[string]interface{} `json:"device_info,omitempty"`
+	Location   map[string]interface{} `json:"location,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	CreatedAt  time.Time              `json:"created_at"`
+}
+
 // PaginatedResponse is a generic wrapper for paginated API responses
 type PaginatedResponse struct {
 	Data       interface{} `json:"data"`
