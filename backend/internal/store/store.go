@@ -9,12 +9,12 @@ import (
 
 type Store interface {
 	Users() UserRepository
-	Patients() PatientRepository
 	Assessments() AssessmentRepository
 	RefreshTokens() RefreshTokenRepository
 	Cohort() CohortRepository
 	Clinics() ClinicRepository
 	AuditEvents() AuditEventRepository
+	AuthEvents() AuthEventRepository
 	ModelRuns() ModelRunRepository
 	Close()
 }
@@ -22,32 +22,34 @@ type Store interface {
 type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*models.User, error)
 	FindByID(ctx context.Context, id int32) (*models.User, error)
-	// Admin user management methods
+	GetUserByID(ctx context.Context, id int32) (*models.User, error)
 	List(ctx context.Context, params models.UserListParams) ([]models.User, int, error)
 	Create(ctx context.Context, user models.User) (*models.User, error)
 	Update(ctx context.Context, user models.User) (*models.User, error)
+	UpdateUser(ctx context.Context, user models.User) (*models.User, error)
 	Deactivate(ctx context.Context, id int32) error
 	Activate(ctx context.Context, id int32) error
 	UpdateLastLogin(ctx context.Context, id int32) error
-}
-
-type PatientRepository interface {
-	List(ctx context.Context, userID int32) ([]models.Patient, error)
-	Get(ctx context.Context, id int32, userID int32) (*models.Patient, error)
-	Create(ctx context.Context, p models.Patient) (*models.Patient, error)
-	Update(ctx context.Context, p models.Patient) (*models.Patient, error)
-	Delete(ctx context.Context, id int32, userID int32) error
-	ListAllLimited(ctx context.Context, userID int32, limit int) ([]models.Patient, error)
+	GetLatestAssessmentByUser(ctx context.Context, userID int64) (*models.Assessment, error)
+	GetAssessmentCountByUser(ctx context.Context, userID int64) (int, error)
+	GetUserTrends(ctx context.Context, userID int64, months int) (*models.TrendData, error)
+	SoftDeleteUser(ctx context.Context, userID int64) error
+	UpdateUserOnboarding(ctx context.Context, userID int64, completed bool) error
+	UpdateUserConsent(ctx context.Context, userID int64, consent models.ConsentSettings) error
+	GetUsersForNotification(ctx context.Context) ([]models.UserForNotification, error)
 }
 
 type AssessmentRepository interface {
 	ListByPatient(ctx context.Context, patientID int64) ([]models.Assessment, error)
+	ListByPatientPaginated(ctx context.Context, patientID int64, limit, offset int) ([]models.Assessment, int, error)
 	Get(ctx context.Context, id int32) (*models.Assessment, error)
 	Create(ctx context.Context, a models.Assessment) (*models.Assessment, error)
 	Update(ctx context.Context, a models.Assessment) (*models.Assessment, error)
 	Delete(ctx context.Context, id int32) error
-	ClusterCounts(ctx context.Context) ([]models.ClusterAnalytics, error)
+	ClusterCounts(ctx context.Context) ([]models.ClusterInsights, error)
+	ClusterCountsByUser(ctx context.Context, userID int32) ([]models.ClusterInsights, error)
 	TrendAverages(ctx context.Context) ([]models.TrendPoint, error)
+	TrendAveragesByUser(ctx context.Context, userID int32) ([]models.TrendPoint, error)
 	ListAllLimited(ctx context.Context, limit int) ([]models.Assessment, error)
 	ListAllLimitedByUser(ctx context.Context, userID int32, limit int) ([]models.Assessment, error)
 	GetTrend(ctx context.Context, patientID int64) ([]models.AssessmentTrend, error)
@@ -66,7 +68,7 @@ type CohortRepository interface {
 	StatsByRiskLevel(ctx context.Context) ([]models.CohortGroup, error)
 	StatsByAgeGroup(ctx context.Context) ([]models.CohortGroup, error)
 	StatsByMenopauseStatus(ctx context.Context) ([]models.CohortGroup, error)
-	TotalPatientCount(ctx context.Context) (int, error)
+	TotalUserCount(ctx context.Context) (int, error)
 	TotalAssessmentCount(ctx context.Context) (int, error)
 }
 
@@ -95,3 +97,8 @@ type ModelRunRepository interface {
 	SetActive(ctx context.Context, id int32) error
 }
 
+// AuthEventRepository provides access to authentication event logs for real-time streaming
+type AuthEventRepository interface {
+	Create(ctx context.Context, event models.AuthEvent) error
+	List(ctx context.Context, eventType, email, startDate, endDate string, limit, offset int) ([]models.AuthEvent, int, error)
+}

@@ -13,7 +13,7 @@
   - `PORT` (Render provides)
   - `DB_DSN` = Neon connection string (add `?sslmode=require` if needed)
   - `JWT_SECRET` = strong secret
-  - `CORS_ORIGINS` = `https://<vercel-domain>,http://localhost:3000`
+  - `CORS_ORIGINS` = `https://<vercel-domain>,http://localhost:4000`
   - `MODEL_VERSION` = `v0-placeholder`
   - `EXPORT_MAX_ROWS` = `5000`
 - Health path: `/api/v1/healthz`

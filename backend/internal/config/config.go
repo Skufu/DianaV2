@@ -43,7 +43,7 @@ func Load() Config {
 		DatasetHash:    getEnv("MODEL_DATASET_HASH", ""),
 		ModelTimeoutMS: 2000,
 	}
-	cfg.CORSOrigins = splitAndTrim(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"))
+	cfg.CORSOrigins = splitAndTrim(getEnv("CORS_ORIGINS", "http://localhost:4000,http://localhost:3000,http://localhost:3001"))
 	if v := os.Getenv("EXPORT_MAX_ROWS"); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			cfg.ExportMaxRows = n

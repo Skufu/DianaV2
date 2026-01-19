@@ -10,7 +10,7 @@ DIANA V2 is a **three-tier web application** for diabetes risk prediction in pos
 
 ### 1. Frontend (React + Vite)
 - **Location:** `frontend/`
-- **Port:** 5173 (dev), served from backend in production
+- **Port:** 4000 (dev), served from backend in production
 - **Key Files:**
   - `src/App.jsx` — Routing, authentication state
   - `src/api.js` — All API calls, token refresh logic
@@ -28,13 +28,13 @@ DIANA V2 is a **three-tier web application** for diabetes risk prediction in pos
   - `internal/store/` — Database layer (SQLC)
 
 ### 3. ML Server (Python + Flask)
-- **Location:** `scripts/`
+- **Location:** `ml/`
 - **Port:** 5000
-- **Purpose:** Diabetes prediction, analytics, visualizations
+- **Purpose:** Diabetes prediction, insights, visualizations
 - **Key Files:**
-  - `ml_server.py` — Flask API
+  - `server.py` — Flask API
   - `predict.py` — DianaPredictor (ADA), ClinicalPredictor
-  - `train_models_v2.py` — Non-circular model training
+  - `train.py` — Model training
 
 ### 4. Database (PostgreSQL)
 - **Migrations:** `backend/migrations/`
@@ -75,7 +75,7 @@ DIANA V2 is a **three-tier web application** for diabetes risk prediction in pos
 DATABASE_URL=postgres://...
 JWT_SECRET=...
 MODEL_URL=http://localhost:5000  # ML server
-CORS_ORIGINS=http://localhost:5173
+CORS_ORIGINS=http://localhost:4000
 ```
 
 ### Frontend (`frontend/.env.local`)

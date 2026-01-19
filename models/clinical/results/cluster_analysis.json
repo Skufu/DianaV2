@@ -12,7 +12,7 @@
   "n_samples": 1063,
   "k_selected": 4,
   "k_optimal_by_silhouette": 2,
-  "silhouette_score": 0.1871,
+  "silhouette_score": 0.1867,
   "k_range_analysis": [
     {
       "k": 2,
@@ -21,23 +21,23 @@
     },
     {
       "k": 3,
-      "silhouette": 0.1817,
-      "wcss": 4891.35
+      "silhouette": 0.1815,
+      "wcss": 4891.37
     },
     {
       "k": 4,
-      "silhouette": 0.1871,
-      "wcss": 4298.18
+      "silhouette": 0.1867,
+      "wcss": 4298.28
     },
     {
       "k": 5,
-      "silhouette": 0.1812,
-      "wcss": 3903.28
+      "silhouette": 0.1808,
+      "wcss": 3903.53
     },
     {
       "k": 6,
-      "silhouette": 0.1779,
-      "wcss": 3585.09
+      "silhouette": 0.1784,
+      "wcss": 3584.91
     }
   ],
   "cluster_profiles": {
@@ -72,23 +72,23 @@
     },
     "SIRD": {
       "label": "SIRD",
-      "count": 292,
-      "percentage": 27.5,
+      "count": 289,
+      "percentage": 27.2,
       "means": {
-        "hba1c": 5.87,
-        "fbs": 106.53,
-        "bmi": 30.08,
-        "triglycerides": 186.81,
-        "ldl": 149.38,
-        "hdl": 48.62,
-        "age": 55.83
+        "hba1c": 5.85,
+        "fbs": 106.48,
+        "bmi": 30.12,
+        "triglycerides": 188.09,
+        "ldl": 149.25,
+        "hdl": 48.44,
+        "age": 55.77
       },
       "medians": {
         "hba1c": 5.8,
         "fbs": 103.0,
-        "bmi": 29.55,
-        "triglycerides": 173.0,
-        "ldl": 148.5,
+        "bmi": 29.5,
+        "triglycerides": 174.0,
+        "ldl": 148.0,
         "hdl": 48.0,
         "age": 56.0
       },
@@ -101,24 +101,24 @@
     },
     "MOD": {
       "label": "MOD",
-      "count": 294,
-      "percentage": 27.7,
+      "count": 300,
+      "percentage": 28.2,
       "means": {
-        "hba1c": 5.92,
-        "fbs": 109.69,
-        "bmi": 38.51,
-        "triglycerides": 104.46,
-        "ldl": 111.71,
-        "hdl": 52.86,
-        "age": 52.42
+        "hba1c": 5.93,
+        "fbs": 109.42,
+        "bmi": 38.28,
+        "triglycerides": 103.62,
+        "ldl": 111.49,
+        "hdl": 52.98,
+        "age": 52.43
       },
       "medians": {
         "hba1c": 5.85,
-        "fbs": 105.0,
-        "bmi": 37.55,
-        "triglycerides": 100.5,
+        "fbs": 104.5,
+        "bmi": 37.35,
+        "triglycerides": 100.0,
         "ldl": 112.0,
-        "hdl": 51.5,
+        "hdl": 52.0,
         "age": 52.0
       },
       "info": {
@@ -130,23 +130,23 @@
     },
     "MARD": {
       "label": "MARD",
-      "count": 407,
-      "percentage": 38.3,
+      "count": 404,
+      "percentage": 38.0,
       "means": {
         "hba1c": 5.54,
-        "fbs": 98.23,
-        "bmi": 25.62,
-        "triglycerides": 77.73,
-        "ldl": 121.65,
-        "hdl": 72.12,
-        "age": 54.9
+        "fbs": 98.36,
+        "bmi": 25.61,
+        "triglycerides": 77.86,
+        "ldl": 122.26,
+        "hdl": 72.28,
+        "age": 54.98
       },
       "medians": {
         "hba1c": 5.5,
         "fbs": 97.0,
-        "bmi": 25.3,
+        "bmi": 25.35,
         "triglycerides": 75.0,
-        "ldl": 120.0,
+        "ldl": 121.0,
         "hdl": 71.0,
         "age": 55.0
       },

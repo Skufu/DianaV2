@@ -25,12 +25,12 @@ func (h *CohortHandler) Register(rg *gin.RouterGroup) {
 // getCohortStats returns aggregated statistics grouped by the specified parameter
 // @Summary Get cohort analysis statistics
 // @Description Returns risk factor comparison across patient groups
-// @Tags Analytics
+// @Tags Insights
 // @Produce json
 // @Param groupBy query string false "Grouping parameter: cluster, risk_level, age_group, menopause_status" default(cluster)
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]string
-// @Router /analytics/cohort [get]
+// @Router /insights/cohort [get]
 func (h *CohortHandler) getCohortStats(c *gin.Context) {
 	groupBy := c.DefaultQuery("groupBy", "cluster")
 
@@ -58,12 +58,14 @@ func (h *CohortHandler) getCohortStats(c *gin.Context) {
 		return
 	}
 
-	totalPatients, _ := cohortRepo.TotalPatientCount(c.Request.Context())
+	totalUsers, _ := cohortRepo.TotalUserCount(c.Request.Context())
 	totalAssessments, _ := cohortRepo.TotalAssessmentCount(c.Request.Context())
 
 	c.JSON(http.StatusOK, gin.H{
 		"groups":            groups,
-		"total_patients":    totalPatients,
+		// Keep both keys for backwards compatibility during refactor.
+		"total_users":       totalUsers,
+		"total_patients":    totalUsers,
 		"total_assessments": totalAssessments,
 		"group_by":          groupBy,
 	})

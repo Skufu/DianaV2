@@ -12,7 +12,7 @@ CREATE TABLE clinics (
 CREATE TABLE user_clinics (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     clinic_id INT NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
-    role TEXT NOT NULL DEFAULT 'member', -- 'member' or 'clinic_admin'
+    role TEXT NOT NULL DEFAULT 'member', -- 'member' or 'admin'
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, clinic_id)
 );

@@ -95,7 +95,7 @@ grep VITE_API_BASE .env          # Should match backend port
 **CORS configuration**:
 ```bash
 # Add your frontend URL to CORS_ORIGINS
-CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+CORS_ORIGINS=http://localhost:4000
 ```
 
 **API base path**:

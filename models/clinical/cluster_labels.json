@@ -1,10 +1,18 @@
 {
-  "0": {
+  "3": {
+    "label": "SIDD-like",
+    "description": "Severe Insulin-Deficient Diabetes pattern (Highest HbA1c)"
+  },
+  "2": {
     "label": "SIRD-like",
-    "description": "Severe Insulin-Resistant Diabetes pattern"
+    "description": "Severe Insulin-Resistant Diabetes pattern (Highest Metabolic Risk)"
+  },
+  "0": {
+    "label": "MOD-like",
+    "description": "Mild Obesity-Related Diabetes pattern (High BMI)"
   },
   "1": {
-    "label": "MOD-like",
-    "description": "Mild Obesity-Related Diabetes pattern"
+    "label": "MARD-like",
+    "description": "Mild Age-Related Diabetes pattern (Lowest overall risk)"
   }
 }
