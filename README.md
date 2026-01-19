@@ -221,6 +221,8 @@ VITE_ML_BASE=http://localhost:5000
 | ML System | [docs/ML_SYSTEM.md](./docs/ML_SYSTEM.md) |
 | Database | [docs/DATABASE.md](./docs/DATABASE.md) |
 | API Contract | [docs/ml-api-contract.md](./docs/ml-api-contract.md) |
+| **Known Issues** | [docs/KNOWN_ISSUES.md](./docs/KNOWN_ISSUES.md) |
+| Code Review | [code-review-analysis.md](./code-review-analysis.md) |
 
 ---
 
