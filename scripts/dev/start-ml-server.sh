@@ -28,4 +28,4 @@ else
   exit 1
 fi
 
-$PYTHON scripts/ml_server.py
+$PYTHON ml/server.py

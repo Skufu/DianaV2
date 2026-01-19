@@ -13,7 +13,7 @@ Outputs:
 - Cross-validation with Random Forest importance
 - Bar chart visualization
 
-Usage: python scripts/feature_selection.py
+Usage: python scripts/eval/feature_selection.py
 """
 
 import pandas as pd

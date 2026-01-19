@@ -2,9 +2,9 @@
 # =============================================================================
 # DIANA ML Pipeline - Full Retrain Script
 # Runs all steps: process raw data → impute → train models
-# 
+#
 # Usage: source venv/bin/activate (Mac/Linux) or source venv/Scripts/activate (Windows)
-#        Then run: ./scripts/retrain-all.sh
+#        Then run: ./scripts/dev/retrain-all.sh
 # =============================================================================
 
 set -e  # Exit on first error
@@ -98,7 +98,7 @@ fi
 echo ""
 echo -e "${BLUE}Step 1/6: Processing raw NHANES data...${NC}"
 echo "------------------------------------------------------------"
-python scripts/process_nhanes_multi.py
+python scripts/data/process_nhanes_multi.py
 if [ $? -ne 0 ]; then
     echo -e "${RED}ERROR: Data processing failed${NC}"
     exit 1
@@ -120,7 +120,7 @@ echo -e "${GREEN}✓ Data cleaning complete${NC}"
 echo ""
 echo -e "${BLUE}Step 3/6: Imputing missing values...${NC}"
 echo "------------------------------------------------------------"
-python scripts/impute_missing_data.py
+python scripts/data/impute_missing_data.py
 if [ $? -ne 0 ]; then
     echo -e "${RED}ERROR: Imputation failed${NC}"
     exit 1
@@ -142,7 +142,7 @@ echo -e "${GREEN}✓ Model training complete${NC}"
 echo ""
 echo -e "${BLUE}Step 5/6: Training K-Means clustering...${NC}"
 echo "------------------------------------------------------------"
-python scripts/train_clusters.py
+python scripts/train/train_clusters.py
 if [ $? -ne 0 ]; then
     echo -e "${YELLOW}WARNING: Clustering failed (non-critical)${NC}"
 fi

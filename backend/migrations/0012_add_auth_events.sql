@@ -1,3 +1,4 @@
+-- +goose Up
 -- Auth Events Table: Stores real-time authentication events for admin monitoring
 -- Supports login, logout, failed_login, and token_refresh events
 
@@ -30,3 +31,6 @@ COMMENT ON COLUMN auth_events.success IS 'Whether the event was successful';
 COMMENT ON COLUMN auth_events.device_info IS 'Parsed device information (browser, os, device)';
 COMMENT ON COLUMN auth_events.location IS 'Geolocation data (country, city, lat, long)';
 COMMENT ON COLUMN auth_events.metadata IS 'Additional event-specific data (failure_reason, session_id, etc.)';
+
+-- +goose Down
+DROP TABLE IF EXISTS auth_events;
