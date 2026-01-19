@@ -193,31 +193,29 @@ Then set in `.env`:
 DB_DSN=postgres://diana:diana@localhost:5432/diana?sslmode=disable
 ```
 
-### Migrations & seed user
+### Migrations & Seeding
 
 From repo root (requires `DB_DSN` set to a reachable Postgres):
 
-- Apply migrations:
-  - `DB_DSN=<url> make db_up`
-- Rollback:
-  - `DB_DSN=<url> make db_down`
-- Status:
-  - `DB_DSN=<url> make db_status`
-- Seed demo user:
-  - `go run ./cmd/seed`
+```bash
+make db_up      # Apply migrations (includes demo data!)
+make db_down    # Rollback last migration
+make db_status  # Check migration status
+```
 
-The seeded/demo user credentials line up with the `DEMO_EMAIL` and `DEMO_PASSWORD` values in your env file.
+> [!TIP]
+> Migrations automatically create demo users with sample data. See [DATABASE.md → Database Seeding](./DATABASE.md#database-seeding) for details.
 
 ---
 
 ## Demo Account & Logging In
 
-By default (see `env.example` and `configs/env.example`), you’ll have a clinician/demo user like:
+After running `make db_up`, these demo users are available:
 
-- `DEMO_EMAIL`: `clinician@example.com` **or** `demo@diana.app`
-- `DEMO_PASSWORD`: `password123` **or** `demo123`
-
-Check your current `.env` to know exactly which values you’re using.
+| Email | Password | Role |
+|-------|----------|------|
+| `demo@diana.app` | `demo123` | Clinician |
+| `admin@diana.app` | `admin123` | Admin |
 
 Use these credentials in the frontend `Login` screen to obtain a JWT and access the app.
 
