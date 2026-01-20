@@ -31,6 +31,25 @@ jobs:
           args: --timeout=5m
         continue-on-error: true
 
+      - name: Validate sqlc schema (detect API drift)
+        run: |
+          go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+          sqlc generate
+        working-directory: backend
+
+      - name: Check for uncommitted sqlc changes
+        run: |
+          if ! git diff --quiet internal/store/sqlc/; then
+            echo "❌ ERROR: sqlc-generated code is out of sync with schema!"
+            echo "Run 'cd backend && sqlc generate' to regenerate."
+            git diff internal/store/sqlc/
+            exit 1
+          fi
+        working-directory: backend
+
+      - name: Run API drift detection script
+        run: bash scripts/check-api-drift.sh
+
       - name: Test
         run: go test -v -race -coverprofile=coverage.out ./...
 
