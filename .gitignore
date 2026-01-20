@@ -4,6 +4,8 @@
 .env.*.local
 *.env
 frontend/.env.local
+.env.backup*
+
 
 # Build and binary artifacts
 bin/
