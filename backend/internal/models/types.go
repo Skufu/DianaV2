@@ -54,6 +54,8 @@ type User struct {
 
 	// Account Management
 	// Authorization
+	// Role is derived from is_admin for JWT claims compatibility
+	// Not stored directly in database (removed in migration 0011)
 	Role      string `json:"role"`
 	CreatedBy *int64 `json:"created_by,omitempty"`
 
