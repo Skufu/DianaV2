@@ -19,8 +19,8 @@ const Onboarding = ({ onComplete }) => {
     smoking_status: '',
     consent_research_participation: false,
     consent_email_updates: false,
-    consent_marketing: false,
-    consent_data_usage: false,
+    consent_analytics: false,
+    consent_personal_data: false,
     assessment_frequency_months: '3',
   });
 
@@ -33,8 +33,8 @@ const Onboarding = ({ onComplete }) => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.consent_data_usage) {
-      setError('You must agree to the Data Usage Agreement to continue');
+    if (!formData.consent_personal_data) {
+      setError('You must agree to Data Usage Agreement to continue');
       return;
     }
     setLoading(true);
@@ -50,10 +50,10 @@ const Onboarding = ({ onComplete }) => {
         heart_disease: formData.heart_disease,
         family_history_diabetes: formData.family_history_diabetes || false,
         smoking_status: formData.smoking_status,
-        consent_personal_data: formData.consent_data_usage,
+        consent_personal_data: formData.consent_personal_data,
         consent_research_participation: formData.consent_research_participation,
         consent_email_updates: formData.consent_email_updates,
-        consent_analytics: formData.consent_marketing,
+        consent_analytics: formData.consent_analytics,
         assessment_frequency_months: parseInt(formData.assessment_frequency_months, 10) || 3,
         reminder_email: true,
       };
@@ -341,29 +341,29 @@ const Onboarding = ({ onComplete }) => {
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  name="consent_marketing"
-                  checked={formData.consent_marketing}
+                  name="consent_analytics"
+                  checked={formData.consent_analytics}
                   onChange={handleInputChange}
                   required
                   className="mt-1 w-5 h-5 rounded border-slate-700 bg-slate-900/50 text-teal-500 focus:ring-teal-500 focus:ring-offset-0"
                 />
                 <div className="flex-1">
-                  <p className="text-sm text-white font-medium">Marketing Communications</p>
-                  <p className="text-xs text-slate-400 mt-1">Receive promotional offers and product updates</p>
+                  <p className="text-sm text-white font-medium">Analytics & Usage Data</p>
+                  <p className="text-xs text-slate-400 mt-1">Allow anonymized usage analytics to help improve the platform</p>
                 </div>
               </label>
 
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  name="consent_data_usage"
-                  checked={formData.consent_data_usage}
+                  name="consent_personal_data"
+                  checked={formData.consent_personal_data}
                   onChange={handleInputChange}
                   required
                   className="mt-1 w-5 h-5 rounded border-slate-700 bg-slate-900/50 text-teal-500 focus:ring-teal-500 focus:ring-offset-0"
                 />
                 <div className="flex-1">
-                  <p className="text-sm text-white font-medium">Data Usage Agreement</p>
+                  <p className="text-sm text-white font-medium">Data Usage Agreement (Required)</p>
                   <p className="text-xs text-slate-400 mt-1">I understand my health data will be stored securely and used according to privacy policy</p>
                 </div>
               </label>
