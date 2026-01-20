@@ -71,6 +71,78 @@ Once these are installed and on your `PATH`, you can follow the TL;DR steps abov
 
 ---
 
+## Windows Setup (Step-by-Step)
+
+If you're on Windows using **Git Bash**, follow these steps:
+
+### 1. Install Prerequisites
+- **Git for Windows**: https://git-scm.com/download/win
+- **Go 1.21+**: https://go.dev/dl/
+- **Node.js 18+**: https://nodejs.org/
+- **PostgreSQL**: https://www.postgresql.org/download/windows/
+  - During installation, remember your **postgres** user password!
+- **Goose** (migration tool):
+  ```bash
+  go install github.com/pressly/goose/v3/cmd/goose@latest
+  ```
+
+### 2. Clone & Setup Environment
+```bash
+git clone git@github.com:Skufu/DianaV2.git
+cd DianaV2
+bash scripts/dev/setup.sh
+```
+
+> **Note**: The setup script may fail on ML dependencies (catboost). This is OK – the app works without the ML server using a mock predictor.
+
+### 3. Create Database User & Database
+
+Replace `YOUR_POSTGRES_PASSWORD` with the password you set during PostgreSQL installation:
+
+```bash
+PGPASSWORD=YOUR_POSTGRES_PASSWORD psql -U postgres -c "CREATE USER diana WITH PASSWORD 'diana' SUPERUSER;"
+PGPASSWORD=YOUR_POSTGRES_PASSWORD psql -U postgres -c "CREATE DATABASE diana OWNER diana;"
+```
+
+### 4. Run Migrations
+```bash
+goose -dir ./backend/migrations postgres "postgres://diana:diana@localhost:5432/diana?sslmode=disable" up
+```
+
+### 5. Configure Backend Environment
+
+Edit `backend/.env` and set:
+```bash
+DB_DSN=postgres://diana:diana@localhost:5432/diana?sslmode=disable
+```
+
+### 6. Build & Run
+
+**Terminal 1 – Backend:**
+```bash
+cd backend
+go build -o server.exe ./cmd/server
+./server.exe
+```
+
+**Terminal 2 – Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+
+### 7. Access the App
+- **Frontend**: http://localhost:4000
+- **Backend Health**: http://localhost:8080/api/v1/healthz
+
+### Login Credentials
+| Email | Password | Role |
+|-------|----------|------|
+| demo@diana.app | demo123 | User |
+| admin@diana.app | admin123 | Admin |
+
+---
+
 ## Stack Overview (What You’re Working With)
 
 - **Backend**
