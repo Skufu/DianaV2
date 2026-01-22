@@ -92,7 +92,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) *gin.Engine {
 	// User profile and self-service endpoints (/users/me/...)
 	userGroup := protected.Group("/users/me")
 	{
-		usersHandler := handlers.NewUsersHandler(st)
+		usersHandler := handlers.NewUsersHandler(st, cache)
 		usersHandler.Register(userGroup)
 
 		// User's own assessments
