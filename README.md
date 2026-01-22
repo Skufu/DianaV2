@@ -182,7 +182,7 @@ MODEL_URL=http://localhost:5000
 
 **Important**: `JWT_SECRET` is **required** for all non-local environments (production, staging). The application will fail to start with a fatal error if `JWT_SECRET` is missing in production. For local development with `ENV=local`, a fallback secret is used if not provided.
 
-### Frontend (frontend/.env.local)
+### Frontend (frontend/.env)
 ```bash
 VITE_API_BASE=http://localhost:8080
 VITE_ML_BASE=http://localhost:5000
