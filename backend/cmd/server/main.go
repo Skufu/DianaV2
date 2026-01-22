@@ -97,7 +97,7 @@ func main() {
 		redisCache = nil
 	}
 
-	r := router.New(cfg, st)
+	r := router.New(cfg, st, redisCache)
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: r,
