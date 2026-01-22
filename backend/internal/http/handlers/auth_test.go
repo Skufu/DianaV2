@@ -299,7 +299,7 @@ func TestAuthHandler_Login_InvalidCredentials(t *testing.T) {
 
 			var response map[string]interface{}
 			json.Unmarshal(w.Body.Bytes(), &response)
-			if response["error"] == nil {
+			if response["message"] == nil {
 				t.Fatal("expected error in response")
 			}
 		})

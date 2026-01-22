@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"log"
 	"net/http"
 	"time"
 
@@ -37,20 +38,22 @@ func (h *AuthHandler) Register(rg *gin.RouterGroup) {
 func (h *AuthHandler) login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		ErrBadRequest(c, "invalid payload")
 		return
 	}
 	if req.Email == "" || req.Password == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		ErrBadRequest(c, "email and password are required")
 		return
 	}
 	user, err := h.store.Users().FindByEmail(c.Request.Context(), req.Email)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		log.Printf("[ERROR] Login failed for email %s: %v", req.Email, err)
+		ErrUnauthorized(c)
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		log.Printf("[WARN] Invalid password attempt for email %s", req.Email)
+		ErrUnauthorized(c)
 		return
 	}
 
@@ -66,14 +69,16 @@ func (h *AuthHandler) login(c *gin.Context) {
 	})
 	signedAccessToken, err := accessToken.SignedString([]byte(h.cfg.JWTSecret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+		log.Printf("[ERROR] Failed to sign access token: %v", err)
+		ErrInternal(c, "Failed to generate token")
 		return
 	}
 
 	// Generate refresh token (long-lived, 7 days)
 	refreshTokenBytes := make([]byte, 32)
 	if _, err := rand.Read(refreshTokenBytes); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+		log.Printf("[ERROR] Failed to generate refresh token: %v", err)
+		ErrInternal(c, "Failed to generate token")
 		return
 	}
 	refreshToken := base64.URLEncoding.EncodeToString(refreshTokenBytes)
@@ -82,7 +87,8 @@ func (h *AuthHandler) login(c *gin.Context) {
 	// Store refresh token in database
 	_, err = h.store.RefreshTokens().CreateRefreshToken(c.Request.Context(), refreshTokenHash, int32(user.ID), time.Now().Add(7*24*time.Hour))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create refresh token"})
+		log.Printf("[ERROR] Failed to create refresh token: %v", err)
+		ErrInternal(c, "Failed to create refresh token")
 		return
 	}
 
@@ -104,41 +110,45 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		ErrBadRequest(c, "invalid payload")
 		return
 	}
 
 	if req.RefreshToken == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing refresh token"})
+		ErrUnauthorized(c)
 		return
 	}
 
-	// Hash the refresh token to look it up in the database
+	// Hash refresh token to look it up in database
 	tokenHash := hashToken(req.RefreshToken)
 
 	// Validate refresh token
 	tokenRecord, err := h.store.RefreshTokens().FindRefreshToken(c.Request.Context(), tokenHash)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid refresh token"})
+		log.Printf("[WARN] Invalid refresh token attempted: %v", err)
+		ErrUnauthorized(c)
 		return
 	}
 
 	// Check if token has been revoked
 	if tokenRecord.Revoked {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token has been revoked"})
+		log.Printf("[WARN] Attempted to use revoked refresh token for user ID %d", tokenRecord.UserID)
+		ErrUnauthorized(c)
 		return
 	}
 
 	// Check if token has expired
 	if time.Now().After(tokenRecord.ExpiresAt) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token has expired"})
+		log.Printf("[WARN] Attempted to use expired refresh token for user ID %d", tokenRecord.UserID)
+		ErrUnauthorized(c)
 		return
 	}
 
 	// Get user details
 	user, err := h.store.Users().FindByID(c.Request.Context(), int32(tokenRecord.UserID))
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		log.Printf("[ERROR] User not found during token refresh for user ID %d: %v", tokenRecord.UserID, err)
+		ErrNotFound(c, "user")
 		return
 	}
 
@@ -154,20 +164,21 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 	})
 	signedAccessToken, err := accessToken.SignedString([]byte(h.cfg.JWTSecret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+		log.Printf("[ERROR] Failed to sign access token during refresh: %v", err)
+		ErrInternal(c, "Failed to generate token")
 		return
 	}
 
-	// Revoke the old refresh token (token rotation for security)
+	// Revoke old refresh token (token rotation for security)
 	if err := h.store.RefreshTokens().RevokeRefreshToken(c.Request.Context(), tokenHash); err != nil {
-		// Log but don't fail refresh - old token revocation is best-effort
-		// In production, this should be sent to monitoring
+		log.Printf("[WARN] Failed to revoke old refresh token during refresh: %v", err)
 	}
 
 	// Generate new refresh token
 	newRefreshTokenBytes := make([]byte, 32)
 	if _, err := rand.Read(newRefreshTokenBytes); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "token error"})
+		log.Printf("[ERROR] Failed to generate new refresh token: %v", err)
+		ErrInternal(c, "Failed to generate token")
 		return
 	}
 	newRefreshToken := base64.URLEncoding.EncodeToString(newRefreshTokenBytes)
@@ -176,7 +187,8 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 	// Store new refresh token in database
 	_, err = h.store.RefreshTokens().CreateRefreshToken(c.Request.Context(), newRefreshTokenHash, int32(user.ID), time.Now().Add(7*24*time.Hour))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create refresh token"})
+		log.Printf("[ERROR] Failed to create new refresh token: %v", err)
+		ErrInternal(c, "Failed to create refresh token")
 		return
 	}
 
@@ -198,23 +210,22 @@ func (h *AuthHandler) logout(c *gin.Context) {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+		ErrBadRequest(c, "invalid payload")
 		return
 	}
 
 	if req.RefreshToken != "" {
 		tokenHash := hashToken(req.RefreshToken)
-		// Revoke the refresh token (ignore errors as token may already be invalid)
+		// Revoke refresh token (log errors for monitoring, don't fail logout)
 		if err := h.store.RefreshTokens().RevokeRefreshToken(c.Request.Context(), tokenHash); err != nil {
-			// Log but don't fail logout - token may already be expired/revoked
-			// In production, this should be sent to monitoring
+			log.Printf("[WARN] Failed to revoke refresh token during logout: %v", err)
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
 }
 
-// hashToken creates a SHA-256 hash of the token for storage
+// hashToken creates a SHA-256 hash of token for storage
 func hashToken(token string) string {
 	hash := sha256.Sum256([]byte(token))
 	return base64.URLEncoding.EncodeToString(hash[:])
