@@ -107,7 +107,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) *gin.Engine {
 	// Insights endpoints (user-scoped)
 	insightsGroup := protected.Group("/insights")
 	{
-		insightsHandler := handlers.NewInsightsHandler(st)
+		insightsHandler := handlers.NewInsightsHandler(st, cache)
 		insightsHandler.Register(insightsGroup)
 
 		cohortHandler := handlers.NewCohortHandler(st)

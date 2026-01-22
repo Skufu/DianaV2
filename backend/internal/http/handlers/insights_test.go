@@ -116,7 +116,7 @@ func setupInsightsRouter() (*gin.Engine, *mockInsightsStore) {
 	}
 
 	store := &mockInsightsStore{assessments: assessments}
-	handler := NewInsightsHandler(store)
+	handler := NewInsightsHandler(store, nil)
 
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
@@ -154,7 +154,7 @@ func TestInsightsHandler_ClusterDistribution_AuthRequired(t *testing.T) {
 	router = gin.New()
 	handler := NewInsightsHandler(&mockInsightsStore{
 		assessments: &mockAssessmentRepo{},
-	})
+	}, nil)
 	handler.Register(router.Group("/insights"))
 
 	req, _ := http.NewRequest("GET", "/insights/cluster-distribution", nil)
@@ -193,7 +193,7 @@ func TestInsightsHandler_BiomarkerTrends_AuthRequired(t *testing.T) {
 	router = gin.New()
 	handler := NewInsightsHandler(&mockInsightsStore{
 		assessments: &mockAssessmentRepo{},
-	})
+	}, nil)
 	handler.Register(router.Group("/insights"))
 
 	req, _ := http.NewRequest("GET", "/insights/biomarker-trends", nil)
