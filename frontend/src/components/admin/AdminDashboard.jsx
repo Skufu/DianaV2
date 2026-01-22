@@ -202,8 +202,8 @@ const AdminDashboard = ({ token, userRole }) => {
                     label={({ cluster, count }) => `${cluster}: ${count}`}
                     isAnimationActive={animateCharts}
                   >
-                    {clusterDist.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    {clusterDist.map((c) => (
+                      <Cell key={c.cluster} fill={COLORS[clusterDist.indexOf(c) % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -285,7 +285,7 @@ const AdminDashboard = ({ token, userRole }) => {
                 </tr>
               </thead>
               <tbody>
-                {clinics.map((clinic, i) => (
+                {clinics.map((clinic) => (
                   <tr
                     key={clinic.clinic_id}
                     className="border-b border-slate-700/50 text-white hover:bg-slate-700/30"
@@ -293,7 +293,7 @@ const AdminDashboard = ({ token, userRole }) => {
                     <td className="py-3 px-4 font-medium flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                        style={{ backgroundColor: COLORS[clinics.indexOf(clinic) % COLORS.length] }}
                       />
                       {clinic.clinic_name}
                     </td>

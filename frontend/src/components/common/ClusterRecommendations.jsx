@@ -77,8 +77,8 @@ const ClusterRecommendations = ({ cluster }) => {
           <div className="space-y-2">
             <h4 className="text-sm font-semibold text-gray-700">Focus Areas:</h4>
             <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-              {clusterInfo.focus.map((item, index) => (
-                <li key={index}>{item}</li>
+              {clusterInfo.focus.map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
           </div>

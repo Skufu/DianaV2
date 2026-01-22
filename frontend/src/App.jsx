@@ -32,8 +32,8 @@ const LoadingSkeleton = () => (
     <div className="h-8 w-48 bg-slate-700/50 rounded" />
     <div className="h-4 w-full max-w-md bg-slate-700/30 rounded" />
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-      {[1, 2, 3].map(i => (
-        <div key={i} className="h-40 bg-slate-700/20 rounded-2xl" />
+      {['skeleton-1', 'skeleton-2', 'skeleton-3'].map(id => (
+        <div key={id} className="h-40 bg-slate-700/20 rounded-2xl" />
       ))}
     </div>
   </div>
