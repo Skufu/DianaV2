@@ -18,6 +18,9 @@ type Config struct {
 	DatasetHash    string
 	ModelTimeoutMS int
 	ExportMaxRows  int
+	RedisAddr      string
+	RedisPassword  string
+	RedisDB        int
 }
 
 func Load() Config {
@@ -40,6 +43,9 @@ func Load() Config {
 		ModelVersion:   getEnv("MODEL_VERSION", "v0-placeholder"),
 		DatasetHash:    getEnv("MODEL_DATASET_HASH", ""),
 		ModelTimeoutMS: 2000,
+		RedisAddr:      getEnv("REDIS_ADDR", "localhost:6379"),
+		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
+		RedisDB:        0,
 	}
 	cfg.CORSOrigins = splitAndTrim(getEnv("CORS_ORIGINS", "http://localhost:4000,http://localhost:3000,http://localhost:3001"))
 	if v := os.Getenv("EXPORT_MAX_ROWS"); v != "" {
