@@ -445,13 +445,10 @@ const AuthEventLogViewer = ({ token }) => {
                         )}
                       </div>
                     </div>
-                  </React.Fragment>
-                );
-              })}
-            </div>
                   </div>
                 </React.Fragment>
-              ))}
+                );
+              })}
             </div>
             <div ref={eventsEndRef} />
           </div>
