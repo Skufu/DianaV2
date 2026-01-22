@@ -31,7 +31,19 @@ const apiFetch = async (endpoint, options = {}) => {
 };
 
 const mlFetch = async path => {
-  const res = await fetch(`${ML_BASE}${path}`);
+  const apiKey = import.meta.env.VITE_ML_API_KEY;
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  if (apiKey) {
+    headers['X-API-Key'] = apiKey;
+  }
+
+  const res = await fetch(`${ML_BASE}${path}`, {
+    headers,
+  });
+
   if (!res.ok) throw new Error(`ML API error: ${res.status}`);
   return res.json();
 };
