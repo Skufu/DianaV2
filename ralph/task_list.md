@@ -14,12 +14,12 @@
 **Description**: Admin users endpoint must not expose password hashes in API responses.
 
 **Tasks**:
-- [ ] Add `json:"-"` tag to `password_hash` field in `backend/internal/models/types.go`
-- [ ] Verify all API endpoints returning User struct exclude password_hash from serialization
-- [ ] Write unit test: `TestUserStructJSONSerialization`
-- [ ] Write integration test: `TestAdminGetUsers_NoPasswordHashExposed`
-- [ ] Test admin user list/create/update operations for regression
-- [ ] Run full test suite to ensure no regressions
+- [x] Add `json:"-"` tag to `password_hash` field in `backend/internal/models/types.go`
+- [x] Verify all API endpoints returning User struct exclude password_hash from serialization
+- [x] Write unit test: `TestUserStructJSONSerialization`
+- [x] Write integration test: `TestAdminGetUsers_NoPasswordHashExposed`
+- [x] Test admin user list/create/update operations for regression
+- [x] Run full test suite to ensure no regressions
 
 **Files**:
 - `backend/internal/models/types.go`
@@ -466,12 +466,12 @@
 ## Progress Tracking
 
 ### Phase 1: Critical Security Fixes (Week 1)
-- [ ] REQ-1.1: Prevent Password Hash Leakage
+- [x] REQ-1.1: Prevent Password Hash Leakage
 - [ ] REQ-1.2: Standardize Error Responses
 - [ ] REQ-1.3: Remove Weak JWT Secret Fallback
 - [ ] REQ-1.4: Fix Audit Context Cancellation
 
-**Status**: Not Started
+**Status**: 1 of 4 complete
 
 ### Phase 2: High Priority Fixes (Weeks 2-4)
 - [ ] REQ-2.1: Configure Database Connection Pool
