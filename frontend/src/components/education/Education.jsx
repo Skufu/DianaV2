@@ -312,8 +312,8 @@ const Education = () => {
                                         <div>
                                             <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Risk Factors</h5>
                                             <ul className="space-y-1">
-                                                {cluster.riskFactors.map((factor, i) => (
-                                                    <li key={`${key}-risk-${i}`} className="text-sm text-white flex items-start gap-2">
+                                                {cluster.riskFactors.map((factor) => (
+                                                    <li key={`${key}-risk-${factor.substring(0, 20).replace(/\s+/g, '-')}`} className="text-sm text-white flex items-start gap-2">
                                                         <span className="text-teal-400 mt-1">•</span> {factor}
                                                     </li>
                                                 ))}
@@ -323,8 +323,8 @@ const Education = () => {
                                         <div>
                                             <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Recommendations</h5>
                                             <ul className="space-y-1">
-                                                {cluster.recommendations.map((rec, i) => (
-                                                    <li key={`${key}-rec-${i}`} className="text-sm text-white flex items-start gap-2">
+                                                {cluster.recommendations.map((rec) => (
+                                                    <li key={`${key}-rec-${rec.substring(0, 20).replace(/\s+/g, '-')}`} className="text-sm text-white flex items-start gap-2">
                                                         <span className="text-[#05CD99] mt-1">✓</span> {rec}
                                                     </li>
                                                 ))}
@@ -334,8 +334,8 @@ const Education = () => {
                                         <div className={`p-4 rounded-xl ${cluster.bgColor}`}>
                                             <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Clinical Implications</h5>
                                             <ul className="space-y-1">
-                                                {cluster.clinicalImplications.map((imp, i) => (
-                                                    <li key={`${key}-imp-${i}`} className="text-sm text-white flex items-start gap-2">
+                                                {cluster.clinicalImplications.map((imp) => (
+                                                    <li key={`${key}-imp-${imp.substring(0, 20).replace(/\s+/g, '-')}`} className="text-sm text-white flex items-start gap-2">
                                                         <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" style={{ color: cluster.color }} />
                                                         {imp}
                                                     </li>
