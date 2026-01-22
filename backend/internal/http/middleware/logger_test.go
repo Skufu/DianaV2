@@ -37,7 +37,6 @@ func TestRequestID(t *testing.T) {
 				c.Request.Header.Set("X-Request-ID", tc.headerValue)
 			}
 
-			c.Request = c.Request
 			middleware(c)
 
 			id := c.GetString("request_id")

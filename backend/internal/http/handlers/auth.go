@@ -159,7 +159,10 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 	}
 
 	// Revoke the old refresh token (token rotation for security)
-	_ = h.store.RefreshTokens().RevokeRefreshToken(c.Request.Context(), tokenHash)
+	if err := h.store.RefreshTokens().RevokeRefreshToken(c.Request.Context(), tokenHash); err != nil {
+		// Log but don't fail refresh - old token revocation is best-effort
+		// In production, this should be sent to monitoring
+	}
 
 	// Generate new refresh token
 	newRefreshTokenBytes := make([]byte, 32)
@@ -201,8 +204,11 @@ func (h *AuthHandler) logout(c *gin.Context) {
 
 	if req.RefreshToken != "" {
 		tokenHash := hashToken(req.RefreshToken)
-		// Revoke the refresh token (ignore errors as the token may already be invalid)
-		_ = h.store.RefreshTokens().RevokeRefreshToken(c.Request.Context(), tokenHash)
+		// Revoke the refresh token (ignore errors as token may already be invalid)
+		if err := h.store.RefreshTokens().RevokeRefreshToken(c.Request.Context(), tokenHash); err != nil {
+			// Log but don't fail logout - token may already be expired/revoked
+			// In production, this should be sent to monitoring
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})

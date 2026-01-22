@@ -3,7 +3,7 @@ import { Activity, TrendingUp, AlertCircle, Plus, Download } from 'lucide-react'
 import RiskIndicator from '../common/RiskIndicator';
 import { getAssessmentsApi } from '../../api';
 
-const Dashboard_user = ({ token, userId }) => {
+const Dashboard_user = ({ token, userId, setActiveTab }) => {
   const [loading, setLoading] = useState(true);
   const [assessments, setAssessments] = useState([]);
   const [latestAssessment, setLatestAssessment] = useState(null);
@@ -98,7 +98,10 @@ const Dashboard_user = ({ token, userId }) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <button className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 text-left hover:border-teal-500/50 transition-colors group">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 text-left hover:border-teal-500/50 transition-colors group"
+            >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center shrink-0 group-hover:bg-teal-500/20 transition-colors">
                   <Plus size={24} className="text-teal-400" />
@@ -110,7 +113,10 @@ const Dashboard_user = ({ token, userId }) => {
               </div>
             </button>
 
-            <button className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 text-left hover:border-teal-500/50 transition-colors group">
+            <button
+              onClick={() => setActiveTab('trends')}
+              className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 text-left hover:border-teal-500/50 transition-colors group"
+            >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center shrink-0 group-hover:bg-cyan-500/20 transition-colors">
                   <TrendingUp size={24} className="text-cyan-400" />
@@ -122,7 +128,10 @@ const Dashboard_user = ({ token, userId }) => {
               </div>
             </button>
 
-            <button className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 text-left hover:border-teal-500/50 transition-colors group">
+            <button
+              onClick={() => setActiveTab('export')}
+              className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 text-left hover:border-teal-500/50 transition-colors group"
+            >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0 group-hover:bg-amber-500/20 transition-colors">
                   <Download size={24} className="text-amber-400" />
@@ -134,7 +143,10 @@ const Dashboard_user = ({ token, userId }) => {
               </div>
             </button>
 
-            <button className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 text-left hover:border-teal-500/50 transition-colors group">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 text-left hover:border-teal-500/50 transition-colors group"
+            >
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0 group-hover:bg-purple-500/20 transition-colors">
                   <Activity size={24} className="text-purple-400" />

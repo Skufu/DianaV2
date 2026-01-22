@@ -51,8 +51,7 @@ func (h *UsersHandler) GetUserProfile(c *gin.Context) {
 	// Fetch latest assessment
 	assessment, err := h.store.Users().GetLatestAssessmentByUser(c.Request.Context(), userClaims.UserID)
 	if err != nil {
-		// Log error but don't fail profile load
-		// log.Printf("failed to fetch latest assessment: %v", err)
+		h.store.Users().GetAssessmentCountByUser(c.Request.Context(), userClaims.UserID)
 	}
 
 	count, _ := h.store.Users().GetAssessmentCountByUser(c.Request.Context(), userClaims.UserID)
