@@ -371,26 +371,28 @@ const AuthEventLogViewer = ({ token }) => {
         ) : (
           <div className="max-h-[600px] overflow-y-auto">
             <div className="divide-y divide-slate-700/30">
-              {filteredEvents.map((event, index) => (
-                <React.Fragment key={event.id || index}>
-                  <div
-                    className="px-4 py-3 hover:bg-slate-700/20 transition-colors"
-                    style={{
-                      animation: 'fadeIn 0.3s ease-out',
-                      animationDelay: `${Math.min(index * 0.05, 0.5)}s`,
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <button
-                        onClick={() => toggleExpand(event.id || index)}
-                        className="text-slate-500 hover:text-slate-300 mt-1"
-                      >
-                        {expandedRows.has(event.id || index) ? (
-                          <ChevronUp size={16} />
-                        ) : (
-                          <ChevronDown size={16} />
-                        )}
-                      </button>
+              {filteredEvents.map((event, index) => {
+                const eventKey = event.id || `${event.event_type}-${event.timestamp || event.created_at}-${event.email || event.user_email || 'unknown'}`;
+                return (
+                  <React.Fragment key={eventKey}>
+                    <div
+                      className="px-4 py-3 hover:bg-slate-700/20 transition-colors"
+                      style={{
+                        animation: 'fadeIn 0.3s ease-out',
+                        animationDelay: `${Math.min(index * 0.05, 0.5)}s`,
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <button
+                          onClick={() => toggleExpand(eventKey)}
+                          className="text-slate-500 hover:text-slate-300 mt-1"
+                        >
+                          {expandedRows.has(eventKey) ? (
+                            <ChevronUp size={16} />
+                          ) : (
+                            <ChevronDown size={16} />
+                          )}
+                        </button>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 flex-wrap">
@@ -417,7 +419,7 @@ const AuthEventLogViewer = ({ token }) => {
                           ) : null}
                         </div>
 
-                        {expandedRows.has(event.id || index) && (
+                        {expandedRows.has(eventKey) && (
                           <div className="mt-3 bg-slate-800/50 rounded-lg p-3">
                             <h4 className="text-slate-400 text-sm font-medium mb-2">
                               Event Details:
@@ -443,6 +445,10 @@ const AuthEventLogViewer = ({ token }) => {
                         )}
                       </div>
                     </div>
+                  </React.Fragment>
+                );
+              })}
+            </div>
                   </div>
                 </React.Fragment>
               ))}

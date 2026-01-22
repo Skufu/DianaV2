@@ -222,13 +222,13 @@ const CohortAnalysis = ({ token }) => {
                                         }}
                                     />
                                     <Legend />
-                                    {groups.map((g, i) => (
+                                    {groups.map((g) => (
                                         <Radar
                                             key={g.name}
                                             name={g.name}
                                             dataKey={g.name}
-                                            stroke={GROUP_COLORS[i % GROUP_COLORS.length]}
-                                            fill={GROUP_COLORS[i % GROUP_COLORS.length]}
+                                            stroke={GROUP_COLORS[groups.indexOf(g) % GROUP_COLORS.length]}
+                                            fill={GROUP_COLORS[groups.indexOf(g) % GROUP_COLORS.length]}
                                             fillOpacity={0.2}
                                             isAnimationActive={animateCharts}
                                         />
@@ -254,12 +254,12 @@ const CohortAnalysis = ({ token }) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {groups.map((g, i) => (
+                                {groups.map((g) => (
                                     <tr key={g.name} className="border-b border-slate-700/50 text-white hover:bg-slate-700/30">
                                         <td className="py-3 px-4 font-medium flex items-center gap-2">
                                             <div
                                                 className="w-3 h-3 rounded-full"
-                                                style={{ backgroundColor: GROUP_COLORS[i % GROUP_COLORS.length] }}
+                                                style={{ backgroundColor: GROUP_COLORS[groups.indexOf(g) % GROUP_COLORS.length] }}
                                             />
                                             {g.name}
                                         </td>

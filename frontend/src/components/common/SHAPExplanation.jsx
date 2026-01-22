@@ -175,9 +175,9 @@ const SHAPExplanation = ({
                                 />
                                 <ReferenceLine x={0} stroke="#6b7280" />
                                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                                    {chartData.map((entry, index) => (
+                                    {chartData.map((entry) => (
                                         <Cell
-                                            key={`cell-${index}`}
+                                            key={entry.feature}
                                             fill={entry.value >= 0 ? '#10b981' : '#f43f5e'}
                                         />
                                     ))}

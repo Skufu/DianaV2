@@ -24,8 +24,8 @@ const MLMetricsSkeleton = () => (
       <LoadingSkeleton className="w-48 h-7 !bg-slate-600" />
     </div>
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      {[1, 2, 3, 4].map(i => (
-        <div key={i} className="bg-slate-700/30 p-4 rounded-2xl">
+      {['skeleton-1', 'skeleton-2', 'skeleton-3', 'skeleton-4'].map(id => (
+        <div key={id} className="bg-slate-700/30 p-4 rounded-2xl">
           <LoadingSkeleton className="w-20 h-4 mb-2 !bg-slate-600" />
           <LoadingSkeleton className="w-16 h-6 !bg-slate-600" />
         </div>
@@ -337,8 +337,8 @@ const Insights = ({ token, patients = [] }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {modelComparison.map((m, i) => (
-                      <tr key={i} className="border-b border-slate-700/50 text-white">
+                    {modelComparison.map((m) => (
+                      <tr key={m.Model} className="border-b border-slate-700/50 text-white">
                         <td className="py-2 font-medium">{m.Model}</td>
                         <td className="text-right py-2">{formatMetric(m.Accuracy, true)}</td>
                         <td className="text-right py-2">{formatMetric(m.Precision, true)}</td>
@@ -393,8 +393,8 @@ const Insights = ({ token, patients = [] }) => {
               formatter={(value) => `${(value * 100).toFixed(1)}%`}
             />
             <Bar dataKey="importance" radius={[0, 8, 8, 0]} isAnimationActive={animateCharts}>
-              {riskFactorImportance.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
+              {riskFactorImportance.map((entry) => (
+                <Cell key={entry.factor} fill={entry.color} />
               ))}
             </Bar>
           </BarChart>
@@ -479,8 +479,8 @@ const Insights = ({ token, patients = [] }) => {
                   ]}
                 />
                 <Bar dataKey="value" radius={[8, 8, 0, 0]} isAnimationActive={animateCharts}>
-                  {riskDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {riskDistribution.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
                   ))}
                 </Bar>
               </BarChart>
@@ -521,8 +521,8 @@ const Insights = ({ token, patients = [] }) => {
                   dataKey="value"
                   isAnimationActive={animateCharts}
                 >
-                  {clusters.map((c, index) => (
-                    <Cell key={`cell-${index}`} fill={clusterColor(c.cluster)} />
+                  {clusters.map((c) => (
+                    <Cell key={c.cluster} fill={clusterColor(c.cluster)} />
                   ))}
                 </Pie>
                 <Tooltip
