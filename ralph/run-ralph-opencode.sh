@@ -47,9 +47,9 @@ acquire_lock() {
 # ─────────────────────────────────────────────────────────────────
 preflight() {
     local err=0
-    [ ! -f "$CONTEXT_PIN" ] && echo "❌ Missing $CONTEXT_PIN" && ((err++))
-    [ ! -f "$TASK_FILE" ] && echo "❌ Missing $TASK_FILE" && ((err++))
-    [ ! -f "$PRD_FILE" ] && echo "❌ Missing $PRD_FILE" && ((err++))
+    [ ! -f "$CONTEXT_PIN" ] && echo "❌ Missing $CONTEXT_PIN" && err=$((err+1))
+    [ ! -f "$TASK_FILE" ] && echo "❌ Missing $TASK_FILE" && err=$((err+1))
+    [ ! -f "$PRD_FILE" ] && echo "❌ Missing $PRD_FILE" && err=$((err+1))
     [ $err -gt 0 ] && exit 1
     echo "✅ Preflight passed"
 }
@@ -171,9 +171,9 @@ Read @$ERROR_LOG, @$TASK_FILE. Either break down the task or add a rule to @$SYS
     
     # Progress
     rem=$(grep -cEi "\- ?\[ \]" "$TASK_FILE" 2>/dev/null || echo "0")
-    done=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
+    completed=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
     blk=$(grep -ci "BLOCKED" "$TASK_FILE" 2>/dev/null || echo "0")
-    echo "📊 $done done | $rem remaining | $blk blocked"
+    echo "📊 $completed done | $rem remaining | $blk blocked"
     
     [ "$rem" -eq 0 ] && echo "🎉 All complete!" && break
     sleep 3
