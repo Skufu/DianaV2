@@ -175,10 +175,12 @@ make build      # Build backend
 PORT=8080
 ENV=dev
 DB_DSN=postgres://user:pass@localhost:5432/diana?sslmode=disable
-JWT_SECRET=your-secure-secret-min-32-chars
+JWT_SECRET=your-secure-secret-min-32-chars  # REQUIRED for production/staging
 CORS_ORIGINS=http://localhost:4000
 MODEL_URL=http://localhost:5000
 ```
+
+**Important**: `JWT_SECRET` is **required** for all non-local environments (production, staging). The application will fail to start with a fatal error if `JWT_SECRET` is missing in production. For local development with `ENV=local`, a fallback secret is used if not provided.
 
 ### Frontend (frontend/.env.local)
 ```bash
