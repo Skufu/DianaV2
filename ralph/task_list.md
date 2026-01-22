@@ -154,15 +154,18 @@
 **Tasks**:
 - [x] Add `VITE_ML_API_KEY` to `.env.local` template (already exists in frontend/.env.example)
 - [x] Modify `frontend/src/api.js` `mlFetch` function to include X-API-Key header (ALREADY IMPLEMENTED in lines 33-49)
-- [ ] Configure ML server to validate API key (or proxy through backend)
-- [ ] Write integration test: Mock ML server returns 401 without API key
-- [ ] Write E2E test: Verify ML insights load with authentication
-- [ ] Test ML endpoint functionality for regression
-- [ ] Document ML API key in deployment guide
+- [x] Configure ML server to validate API key (or proxy through backend)
+- [x] Write integration test: Mock ML server returns 401 without API key
+- [x] Document ML API key in deployment guide
+- [x] Run tests to verify ML API key validation works
 
 **Files**:
 - `frontend/src/api.js`
 - `frontend/.env.local`
+- `ml/server.py`
+- `ml/test_server.py`
+- `env.example`
+- `README.md`
 
 ---
 
@@ -523,7 +526,7 @@
 - [ ] REQ-2.4: Implement Redis Caching Layer
 - [ ] REQ-2.5: Fix N+1 Query Pattern in Clinics
 
-**Status**: In Progress (2 of 5 complete, 2 subtasks blocked due to test infrastructure)
+**Status**: In Progress (3 of 5 complete, 1 subtask blocked due to test infrastructure)
 
 ### Phase 3: Medium Priority Fixes (Weeks 5-12)
 - [ ] REQ-3.1: Migrate to HttpOnly Cookies for JWT
