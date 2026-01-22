@@ -6,10 +6,11 @@ import (
 )
 
 func TestLoad_Defaults(t *testing.T) {
-	// Clear environment
+	os.Setenv("JWT_SECRET", "test-secret")
+	defer os.Unsetenv("JWT_SECRET")
+
 	os.Unsetenv("PORT")
 	os.Unsetenv("ENV")
-	os.Unsetenv("JWT_SECRET")
 	os.Unsetenv("CORS_ORIGINS")
 	os.Unsetenv("EXPORT_MAX_ROWS")
 	os.Unsetenv("MODEL_TIMEOUT_MS")
@@ -21,6 +22,9 @@ func TestLoad_Defaults(t *testing.T) {
 	}
 	if cfg.Env != "dev" {
 		t.Errorf("Env = %q, want %q", cfg.Env, "dev")
+	}
+	if cfg.JWTSecret != "test-secret" {
+		t.Errorf("JWTSecret = %q, want %q", cfg.JWTSecret, "test-secret")
 	}
 	if cfg.ExportMaxRows != 5000 {
 		t.Errorf("ExportMaxRows = %d, want 5000", cfg.ExportMaxRows)
@@ -120,9 +124,11 @@ func TestSplitAndTrim(t *testing.T) {
 }
 
 func TestLoad_InvalidNumbers(t *testing.T) {
+	os.Setenv("JWT_SECRET", "test-secret-for-invalid-numbers-test")
 	os.Setenv("EXPORT_MAX_ROWS", "not-a-number")
 	os.Setenv("MODEL_TIMEOUT_MS", "invalid")
 	defer func() {
+		os.Unsetenv("JWT_SECRET")
 		os.Unsetenv("EXPORT_MAX_ROWS")
 		os.Unsetenv("MODEL_TIMEOUT_MS")
 	}()
@@ -135,5 +141,22 @@ func TestLoad_InvalidNumbers(t *testing.T) {
 	}
 	if cfg.ModelTimeoutMS != 2000 {
 		t.Errorf("ModelTimeoutMS = %d, want 2000 (default)", cfg.ModelTimeoutMS)
+	}
+}
+
+func TestConfigLoad_MissingJWTSecret_LocalAllowed(t *testing.T) {
+	os.Unsetenv("JWT_SECRET")
+	os.Setenv("ENV", "local")
+	defer func() {
+		os.Unsetenv("ENV")
+	}()
+
+	cfg := Load()
+
+	if cfg.JWTSecret == "" {
+		t.Errorf("JWTSecret should not be empty in local (should use default)")
+	}
+	if cfg.JWTSecret != "dev-secret-change-in-production" {
+		t.Errorf("JWTSecret = %q, want default fallback", cfg.JWTSecret)
 	}
 }
