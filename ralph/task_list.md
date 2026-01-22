@@ -49,10 +49,10 @@
 - [x] **cohort.go**: No vulnerable instances found (all errors generic)
 - [x] **export.go**: No vulnerable instances found (all errors generic). Added server-side logging for DB errors.
 - [x] **health.go**: No vulnerable instances found (all errors generic)
-- [x] **insights.go**: No vulnerable instances found (all errors generic)
+- [x] **insights.go**: No vulnerable instances found (all errors generic). Updated to use ErrInternal/ErrUnauthorized helpers.
 - [x] **auth_events.go**: No vulnerable instances found (all errors generic)
-- [ ] Write integration test: `TestErrorResponse_FormatConsistency`
-- [ ] Full test suite execution
+- [x] Write integration test: `TestErrorResponse_FormatConsistency`
+- [x] Full test suite execution (fixed pre-existing test assertions to match new error format)
 
 **Per-File Process**:
 1. Run: `grep -n 'c.JSON.*gin\.H{"error"' handlers/<file>.go`
@@ -508,7 +508,7 @@
 
 ### Phase 1: Critical Security Fixes (Week 1)
 - [x] REQ-1.1: Prevent Password Hash Leakage
-- [ ] REQ-1.2: Standardize Error Responses
+- [x] REQ-1.2: Standardize Error Responses
 - [ ] REQ-1.3: Remove Weak JWT Secret Fallback
 - [ ] REQ-1.4: Fix Audit Context Cancellation
 
