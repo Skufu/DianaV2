@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -38,13 +39,14 @@ func (h *AdminDashboardHandler) getDashboard(c *gin.Context) {
 	claims := c.MustGet("user").(middleware.UserClaims)
 
 	if claims.Role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "access denied - admin role required"})
+		ErrForbidden(c)
 		return
 	}
 
 	stats, err := h.store.Clinics().AdminSystemStats(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load system statistics"})
+		log.Printf("[ERROR] Failed to load system statistics: %v", err)
+		ErrInternal(c, "Failed to load system statistics")
 		return
 	}
 
@@ -74,13 +76,14 @@ func (h *AdminDashboardHandler) listAllClinics(c *gin.Context) {
 	claims := c.MustGet("user").(middleware.UserClaims)
 
 	if claims.Role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "access denied - admin role required"})
+		ErrForbidden(c)
 		return
 	}
 
 	clinics, err := h.store.Clinics().List(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load clinics"})
+		log.Printf("[ERROR] Failed to load clinics: %v", err)
+		ErrInternal(c, "Failed to load clinics")
 		return
 	}
 
@@ -100,13 +103,14 @@ func (h *AdminDashboardHandler) getClinicComparison(c *gin.Context) {
 	claims := c.MustGet("user").(middleware.UserClaims)
 
 	if claims.Role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "access denied - admin role required"})
+		ErrForbidden(c)
 		return
 	}
 
 	comparison, err := h.store.Clinics().AdminClinicComparison(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load clinic comparison"})
+		log.Printf("[ERROR] Failed to load clinic comparison: %v", err)
+		ErrInternal(c, "Failed to load clinic comparison")
 		return
 	}
 
