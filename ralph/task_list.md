@@ -31,17 +31,58 @@
 
 **Description**: Eliminate raw error information leakage by using standardized error helpers.
 
-**Tasks**:
-- [ ] Find all instances of `c.JSON(..., gin.H{"error": err.Error()})` in handlers
-- [ ] Replace with `ErrBadRequest(c, "message")`, `ErrInternal(c, "message")`, etc.
-- [ ] Add server-side logging for database errors (not returned to client)
-- [ ] Verify error messages are generic for security
+**Discovery**:
+- Total instances found: 105 (not 155 as originally estimated)
+- Two patterns identified:
+  1. **Vulnerable**: `c.JSON(http.Status, gin.H{"error": err.Error()})` - leaks internal details
+  2. **Safe**: `c.JSON(http.Status, gin.H{"error": "message"})` - already generic
+
+**Tasks** (FILE-BY-FILE, sequential):
+- [ ] **auth.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **assessments.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **users.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **admin_users.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **admin_audit.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **admin_dashboard.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **admin_models.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **clinic_dashboard.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **cohort.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **export.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **health.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **insights.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [ ] **auth_events.go**: Find vulnerable instances, replace with utils helpers, add logging
 - [ ] Write integration test: `TestErrorResponse_FormatConsistency`
-- [ ] Run AST search/replace verification
 - [ ] Full test suite execution
 
+**Per-File Process**:
+1. Run: `grep -n 'c.JSON.*gin\.H{"error"' handlers/<file>.go`
+2. Identify which instances leak `err.Error()` (vulnerable)
+3. Replace vulnerable instances with:
+   ```go
+   if err != nil {
+       log.Printf("[ERROR] <context>: %v", err) // Server-side logging
+       ErrInternal(c, "Failed to process request")
+       return
+   }
+   ```
+4. Run tests for that file only
+5. Git commit: `fix(security): standardize error responses in <file>`
+6. Move to next file
+
 **Files**:
-- `backend/internal/http/handlers/*.go` (all handlers)
+- `backend/internal/http/handlers/auth.go`
+- `backend/internal/http/handlers/assessments.go`
+- `backend/internal/http/handlers/users.go`
+- `backend/internal/http/handlers/admin_users.go`
+- `backend/internal/http/handlers/admin_audit.go`
+- `backend/internal/http/handlers/admin_dashboard.go`
+- `backend/internal/http/handlers/admin_models.go`
+- `backend/internal/http/handlers/clinic_dashboard.go`
+- `backend/internal/http/handlers/cohort.go`
+- `backend/internal/http/handlers/export.go`
+- `backend/internal/http/handlers/health.go`
+- `backend/internal/http/handlers/insights.go`
+- `backend/internal/http/handlers/auth_events.go`
 
 ---
 
