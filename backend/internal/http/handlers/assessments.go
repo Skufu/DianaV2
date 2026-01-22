@@ -137,14 +137,14 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 
 	var req models.UpdateAssessmentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("Assessment validation failed: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] Assessment validation failed: %v", err)
+		ErrBadRequest(c, "Invalid request payload")
 		return
 	}
 
 	// Validate that at least required biomarkers are provided
 	if req.FBS == nil && req.HbA1c == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "At least FBS or HbA1c must be provided"})
+		ErrBadRequest(c, "At least FBS or HbA1c must be provided")
 		return
 	}
 
@@ -215,7 +215,8 @@ func (h *AssessmentsHandler) List(c *gin.Context) {
 
 	assessments, err := h.store.Assessments().ListAllLimitedByUser(c.Request.Context(), int32(userID), 100)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] Failed to list assessments: %v", err)
+		ErrInternal(c, "Failed to retrieve assessments")
 		return
 	}
 
@@ -232,19 +233,19 @@ func (h *AssessmentsHandler) Get(c *gin.Context) {
 	assessmentIDStr := c.Param("assessmentID")
 	assessmentID, err := strconv.ParseInt(assessmentIDStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid assessment ID"})
+		ErrBadRequest(c, "Invalid assessment ID")
 		return
 	}
 
 	assessment, err := h.store.Assessments().Get(c.Request.Context(), int32(assessmentID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Assessment not found"})
+		ErrNotFound(c, "Assessment")
 		return
 	}
 
 	// Verify ownership
 	if assessment.UserID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		ErrForbidden(c)
 		return
 	}
 
@@ -261,26 +262,26 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	assessmentIDStr := c.Param("assessmentID")
 	assessmentID, err := strconv.ParseInt(assessmentIDStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid assessment ID"})
+		ErrBadRequest(c, "Invalid assessment ID")
 		return
 	}
 
 	var req models.UpdateAssessmentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("Assessment validation failed: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] Assessment validation failed: %v", err)
+		ErrBadRequest(c, "Invalid request payload")
 		return
 	}
 
 	// Verify ownership first
 	assessment, err := h.store.Assessments().Get(c.Request.Context(), int32(assessmentID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Assessment not found"})
+		ErrNotFound(c, "Assessment")
 		return
 	}
 
 	if assessment.UserID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		ErrForbidden(c)
 		return
 	}
 
@@ -333,26 +334,26 @@ func (h *AssessmentsHandler) Delete(c *gin.Context) {
 	assessmentIDStr := c.Param("assessmentID")
 	assessmentID, err := strconv.ParseInt(assessmentIDStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid assessment ID"})
+		ErrBadRequest(c, "Invalid assessment ID")
 		return
 	}
 
 	assessment, err := h.store.Assessments().Get(c.Request.Context(), int32(assessmentID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Assessment not found"})
+		ErrNotFound(c, "Assessment")
 		return
 	}
 
 	// Verify ownership
 	if assessment.UserID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		ErrForbidden(c)
 		return
 	}
 
 	err = h.store.Assessments().Delete(c.Request.Context(), int32(assessmentID))
 	if err != nil {
-		log.Printf("Failed to delete assessment: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete assessment"})
+		log.Printf("[ERROR] Failed to delete assessment: %v", err)
+		ErrInternal(c, "Failed to delete assessment")
 		return
 	}
 
