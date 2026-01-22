@@ -144,7 +144,7 @@ func setupTestRouter() (*gin.Engine, *UsersHandler, *mockUsersStore) {
 	}
 	mockUserRepo := &mockUserRepo{user: user}
 	mockStore := &mockUsersStore{user: mockUserRepo}
-	handler := NewUsersHandler(mockStore)
+	handler := NewUsersHandler(mockStore, nil)
 
 	router := gin.New()
 	// No global user claim here so AuthRequired tests can fail as expected

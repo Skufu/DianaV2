@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/skufu/DianaV2/backend/internal/cache"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
@@ -14,10 +16,11 @@ import (
 
 type UsersHandler struct {
 	store store.Store
+	cache *cache.Cache
 }
 
-func NewUsersHandler(store store.Store) *UsersHandler {
-	return &UsersHandler{store: store}
+func NewUsersHandler(store store.Store, cache *cache.Cache) *UsersHandler {
+	return &UsersHandler{store: store, cache: cache}
 }
 
 func (h *UsersHandler) Register(rg *gin.RouterGroup) {
@@ -261,11 +264,27 @@ func (h *UsersHandler) GetTrends(c *gin.Context) {
 		months = 12
 	}
 
+	cacheKey := fmt.Sprintf("trends:%d:%d", userClaims.UserID, months)
+
+	if h.cache != nil {
+		var cachedTrends []interface{}
+		if err := h.cache.Get(c.Request.Context(), cacheKey, &cachedTrends); err == nil {
+			c.JSON(http.StatusOK, cachedTrends)
+			return
+		}
+	}
+
 	trends, err := h.store.Users().GetUserTrends(c.Request.Context(), userClaims.UserID, months)
 	if err != nil {
 		log.Printf("[ERROR] Failed to fetch trends: %v", err)
 		ErrInternal(c, "Failed to fetch trends")
 		return
+	}
+
+	if h.cache != nil {
+		if err := h.cache.Set(c.Request.Context(), cacheKey, trends, 5*time.Minute); err != nil {
+			log.Printf("[WARN] Failed to cache trends for user %d: %v", userClaims.UserID, err)
+		}
 	}
 
 	c.JSON(http.StatusOK, trends)
