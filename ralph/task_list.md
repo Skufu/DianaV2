@@ -201,7 +201,7 @@
 - [x] Add caching to `/api/v1/analytics/summary` (5 min TTL) - ALREADY IMPLEMENTED in analytics.go lines 49-92
 - [x] Add caching to `/api/v1/analytics/cluster-distribution` (10 min TTL) - Implemented in insights.go cluster() handler
 - [x] Add caching to `/api/v1/users/me/trends` (5 min TTL)
-- [ ] Implement cache invalidation on assessment creation/update
+- [x] Implement cache invalidation on assessment creation/update
 - [ ] Add monitoring for cache hit/miss rates
 - [ ] Write unit test: `TestCache_GetSet`
 - [ ] Write integration test: Verify cache hit/miss behavior

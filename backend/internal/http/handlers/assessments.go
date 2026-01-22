@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/skufu/DianaV2/backend/internal/cache"
 	"github.com/skufu/DianaV2/backend/internal/ml"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
@@ -14,14 +17,16 @@ import (
 type AssessmentsHandler struct {
 	store       store.Store
 	predictor   ml.Predictor
+	cache       *cache.Cache
 	modelVer    string
 	datasetHash string
 }
 
-func NewAssessmentsHandler(store store.Store, predictor ml.Predictor, modelVer, datasetHash string) *AssessmentsHandler {
+func NewAssessmentsHandler(store store.Store, predictor ml.Predictor, cache *cache.Cache, modelVer, datasetHash string) *AssessmentsHandler {
 	return &AssessmentsHandler{
 		store:       store,
 		predictor:   predictor,
+		cache:       cache,
 		modelVer:    modelVer,
 		datasetHash: datasetHash,
 	}
@@ -34,6 +39,34 @@ func (h *AssessmentsHandler) Register(r *gin.RouterGroup) {
 	r.GET("/:assessmentID", h.Get)
 	r.PUT("/:assessmentID", h.Update)
 	r.DELETE("/:assessmentID", h.Delete)
+}
+
+// invalidateUserCache invalidates all cache keys for a given user
+func (h *AssessmentsHandler) invalidateUserCache(ctx context.Context, userID int64) {
+	if h.cache == nil {
+		return
+	}
+
+	keys := []string{
+		fmt.Sprintf("summary:%d", userID),
+		fmt.Sprintf("cluster-distribution:%d", userID),
+	}
+
+	patterns := []string{
+		fmt.Sprintf("trends:%d:*", userID),
+	}
+
+	for _, key := range keys {
+		if err := h.cache.Delete(ctx, key); err != nil {
+			log.Printf("[WARN] Failed to delete cache key %s for user %d: %v", key, userID, err)
+		}
+	}
+
+	for _, pattern := range patterns {
+		if err := h.cache.DeleteByPattern(ctx, pattern); err != nil {
+			log.Printf("[WARN] Failed to delete cache pattern %s for user %d: %v", pattern, userID, err)
+		}
+	}
 }
 
 // Helper functions reused from other handlers in package
@@ -196,6 +229,8 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	assessment.ModelVersion = h.modelVer
 	assessment.DatasetHash = h.datasetHash
 
+	h.invalidateUserCache(c.Request.Context(), userID)
+
 	// Reset last assessment reminder sent date (UpdateLastLogin as proxy, or ignore)
 	if err := h.store.Users().UpdateLastLogin(c.Request.Context(), int32(userID)); err != nil {
 		// Log but don't fail response - this is a non-critical update
@@ -321,6 +356,8 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	assessment.ModelVersion = h.modelVer
 	assessment.DatasetHash = h.datasetHash
 
+	h.invalidateUserCache(c.Request.Context(), userID)
+
 	c.JSON(http.StatusOK, assessment)
 }
 
@@ -356,6 +393,8 @@ func (h *AssessmentsHandler) Delete(c *gin.Context) {
 		ErrInternal(c, "Failed to delete assessment")
 		return
 	}
+
+	h.invalidateUserCache(c.Request.Context(), userID)
 
 	c.Status(http.StatusNoContent)
 }
