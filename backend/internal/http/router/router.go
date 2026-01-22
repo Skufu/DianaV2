@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/skufu/DianaV2/backend/internal/cache"
 	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/http/handlers"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
@@ -15,7 +16,7 @@ import (
 )
 
 // New creates and configures the Gin router with all routes and middleware.
-func New(cfg config.Config, st store.Store) *gin.Engine {
+func New(cfg config.Config, st store.Store, cache *cache.Cache) *gin.Engine {
 	// Set Gin mode based on environment
 	if cfg.Env == "production" || cfg.Env == "prod" {
 		gin.SetMode(gin.ReleaseMode)
@@ -111,6 +112,12 @@ func New(cfg config.Config, st store.Store) *gin.Engine {
 
 		cohortHandler := handlers.NewCohortHandler(st)
 		cohortHandler.Register(insightsGroup)
+	}
+
+	analyticsGroup := protected.Group("/analytics")
+	{
+		analyticsHandler := handlers.NewAnalyticsHandler(st, cache)
+		analyticsHandler.Register(analyticsGroup)
 	}
 
 	// Clinics endpoints (for clinic members)
