@@ -31,7 +31,7 @@ func (h *InsightsHandler) cluster(c *gin.Context) {
 
 	data, err := h.store.Assessments().ClusterCountsByUser(c.Request.Context(), int32(userClaims.UserID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load distribution"})
+		ErrInternal(c, "Failed to load cluster distribution")
 		return
 	}
 	c.JSON(http.StatusOK, data)
@@ -40,14 +40,14 @@ func (h *InsightsHandler) cluster(c *gin.Context) {
 func (h *InsightsHandler) trends(c *gin.Context) {
 	claims, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 	userClaims := claims.(middleware.UserClaims)
 
 	data, err := h.store.Assessments().TrendAveragesByUser(c.Request.Context(), int32(userClaims.UserID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load trends"})
+		ErrInternal(c, "Failed to load biomarker trends")
 		return
 	}
 	c.JSON(http.StatusOK, data)

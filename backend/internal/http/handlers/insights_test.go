@@ -183,7 +183,7 @@ func TestInsightsHandler_BiomarkerTrends_Success(t *testing.T) {
 	assert.Equal(t, "HbA1c", hba1c.Label)
 	assert.Equal(t, 6.8, hba1c.HbA1c)
 	assert.Equal(t, "FBS", fbs.Label)
-	assert.Equal(t, 120, fbs.FBS)
+	assert.Equal(t, float64(120), fbs.FBS)
 	assert.Equal(t, "BMI", bmi.Label)
 	assert.Equal(t, float64(6.8), bmi.HbA1c)
 }
@@ -216,7 +216,8 @@ func TestInsightsHandler_ClusterDistribution_StoreError(t *testing.T) {
 
 	var response map[string]interface{}
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Contains(t, "error", response)
+	assert.Contains(t, response, "code")
+	assert.Contains(t, response, "message")
 }
 
 func TestInsightsHandler_BiomarkerTrends_StoreError(t *testing.T) {
@@ -232,7 +233,8 @@ func TestInsightsHandler_BiomarkerTrends_StoreError(t *testing.T) {
 
 	var response map[string]interface{}
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Contains(t, "error", response)
+	assert.Contains(t, response, "code")
+	assert.Contains(t, response, "message")
 }
 
 func TestInsightsHandler_ResponseStructure(t *testing.T) {
