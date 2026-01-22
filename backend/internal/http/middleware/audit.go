@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"context"
 	"encoding/json"
+	"log"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -63,6 +65,7 @@ func (a *AuditLogger) LogAction(action, targetType string) gin.HandlerFunc {
 
 		// Create audit event (fire and forget - don't block the response)
 		go func() {
+			ctx := context.WithoutCancel(c.Request.Context())
 			event := models.AuditEvent{
 				Actor:      claims.Email,
 				Action:     action,
@@ -70,7 +73,9 @@ func (a *AuditLogger) LogAction(action, targetType string) gin.HandlerFunc {
 				TargetID:   targetID,
 				Details:    details,
 			}
-			_ = a.store.AuditEvents().Create(c.Request.Context(), event)
+			if err := a.store.AuditEvents().Create(ctx, event); err != nil {
+				log.Printf("[AUDIT FAILURE] Failed to log %s on %s: %v", action, targetType, err)
+			}
 		}()
 	}
 }
