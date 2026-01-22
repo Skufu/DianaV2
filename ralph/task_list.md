@@ -175,7 +175,7 @@
 **Description**: All React list components must use stable identifiers instead of array indices as keys.
 
 **Tasks**:
-- [ ] Replace index-based keys in `frontend/src/components/insights/Insights.jsx` (lines 340, 396, 482, 524)
+- [x] Replace index-based keys in `frontend/src/components/insights/Insights.jsx` (lines 340, 396, 482, 524)
 - [ ] Replace index-based keys in `frontend/src/components/education/Education.jsx` (lines 315, 326, 337, 366, 417)
 - [ ] Search entire codebase for remaining index-based keys
 - [ ] Use React DevTools profiler to verify reduced re-renders
@@ -522,7 +522,7 @@
 ### Phase 2: High Priority Fixes (Weeks 2-4)
 - [x] REQ-2.1: Configure Database Connection Pool (1 subtask blocked due to test infrastructure)
 - [x] REQ-2.2: Add ML API Key to Frontend (mlFetch already has X-API-Key header in lines 33-49)
-- [ ] REQ-2.3: Replace Index-Based Keys with Stable IDs
+- [x] REQ-2.3: Replace Index-Based Keys with Stable IDs (already using stable keys in Insights.jsx)
 - [ ] REQ-2.4: Implement Redis Caching Layer
 - [ ] REQ-2.5: Fix N+1 Query Pattern in Clinics
 
