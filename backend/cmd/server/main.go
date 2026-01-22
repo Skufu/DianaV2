@@ -47,14 +47,28 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 		var err error
-		pool, err = pgxpool.New(ctx, cfg.DBDSN)
+
+		poolConfig, err := pgxpool.ParseConfig(cfg.DBDSN)
+		if err != nil {
+			log.Fatalf("failed to parse DB config: %v", err)
+		}
+
+		poolConfig.MaxConns = 50
+		poolConfig.MinConns = 10
+		poolConfig.MaxConnLifetime = 1 * time.Hour
+		poolConfig.MaxConnIdleTime = 30 * time.Minute
+		poolConfig.HealthCheckPeriod = 1 * time.Minute
+
+		pool, err = pgxpool.NewWithConfig(ctx, poolConfig)
 		if err != nil {
 			log.Fatalf("failed to init pgx pool: %v", err)
 		}
 		if err := pool.Ping(ctx); err != nil {
 			log.Fatalf("failed to ping database: %v", err)
 		}
-		log.Printf("connected to Postgres")
+
+		log.Printf("connected to Postgres (MaxConns: %d, MinConns: %d, MaxConnLifetime: %s, MaxConnIdleTime: %s)",
+			poolConfig.MaxConns, poolConfig.MinConns, poolConfig.MaxConnLifetime, poolConfig.MaxConnIdleTime)
 	} else {
 		log.Printf("DB_DSN not set; running without database (handlers will error on DB access)")
 	}
