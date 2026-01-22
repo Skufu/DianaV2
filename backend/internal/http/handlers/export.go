@@ -48,6 +48,7 @@ func (h *ExportHandler) ExportPDF(c *gin.Context) {
 	// Get user's assessments (limit to reasonable number e.g. 100)
 	assessments, err := h.store.Assessments().ListAllLimitedByUser(c, int32(userID), 100)
 	if err != nil {
+		log.Printf("[ERROR] Failed to fetch assessments for user %d: %v", userID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch assessments"})
 		return
 	}

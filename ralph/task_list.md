@@ -39,18 +39,18 @@
 
 **Tasks** (FILE-BY-FILE, sequential):
 - [x] **auth.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **assessments.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **users.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **admin_users.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **admin_audit.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **admin_dashboard.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **admin_models.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **clinic_dashboard.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **cohort.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **export.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **health.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **insights.go**: Find vulnerable instances, replace with utils helpers, add logging
-- [ ] **auth_events.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [x] **assessments.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [x] **users.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [x] **admin_users.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [x] **admin_audit.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [x] **admin_dashboard.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [x] **admin_models.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [x] **clinic_dashboard.go**: No vulnerable instances found (all errors generic)
+- [x] **cohort.go**: No vulnerable instances found (all errors generic)
+- [x] **export.go**: No vulnerable instances found (all errors generic). Added server-side logging for DB errors.
+- [x] **health.go**: No vulnerable instances found (all errors generic)
+- [x] **insights.go**: No vulnerable instances found (all errors generic)
+- [x] **auth_events.go**: No vulnerable instances found (all errors generic)
 - [ ] Write integration test: `TestErrorResponse_FormatConsistency`
 - [ ] Full test suite execution
 
