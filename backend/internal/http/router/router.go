@@ -96,7 +96,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) *gin.Engine {
 		usersHandler.Register(userGroup)
 
 		// User's own assessments
-		assessmentsHandler := handlers.NewAssessmentsHandler(st, predictor, cfg.ModelVersion, cfg.DatasetHash)
+		assessmentsHandler := handlers.NewAssessmentsHandler(st, predictor, cache, cfg.ModelVersion, cfg.DatasetHash)
 		assessmentsHandler.Register(userGroup.Group("/assessments"))
 
 		// User's export functionality
