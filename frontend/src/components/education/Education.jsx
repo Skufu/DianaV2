@@ -313,7 +313,7 @@ const Education = () => {
                                             <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Risk Factors</h5>
                                             <ul className="space-y-1">
                                                 {cluster.riskFactors.map((factor, i) => (
-                                                    <li key={i} className="text-sm text-white flex items-start gap-2">
+                                                    <li key={`${key}-risk-${i}`} className="text-sm text-white flex items-start gap-2">
                                                         <span className="text-teal-400 mt-1">•</span> {factor}
                                                     </li>
                                                 ))}
@@ -324,7 +324,7 @@ const Education = () => {
                                             <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Recommendations</h5>
                                             <ul className="space-y-1">
                                                 {cluster.recommendations.map((rec, i) => (
-                                                    <li key={i} className="text-sm text-white flex items-start gap-2">
+                                                    <li key={`${key}-rec-${i}`} className="text-sm text-white flex items-start gap-2">
                                                         <span className="text-[#05CD99] mt-1">✓</span> {rec}
                                                     </li>
                                                 ))}
@@ -335,7 +335,7 @@ const Education = () => {
                                             <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Clinical Implications</h5>
                                             <ul className="space-y-1">
                                                 {cluster.clinicalImplications.map((imp, i) => (
-                                                    <li key={i} className="text-sm text-white flex items-start gap-2">
+                                                    <li key={`${key}-imp-${i}`} className="text-sm text-white flex items-start gap-2">
                                                         <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" style={{ color: cluster.color }} />
                                                         {imp}
                                                     </li>
@@ -363,8 +363,8 @@ const Education = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {biomarkerReference.map((bio, i) => (
-                                <tr key={i} className="border-b border-slate-600/30">
+                            {biomarkerReference.map((bio) => (
+                                <tr key={bio.name} className="border-b border-slate-600/30">
                                     <td className="py-4">
                                         <div className="font-bold text-white">{bio.name}</div>
                                         <div className="text-xs text-slate-400 mt-1">{bio.description}</div>
@@ -414,8 +414,8 @@ const Education = () => {
                     Frequently Asked Questions
                 </h3>
                 <div className="space-y-3">
-                    {faqData.map((faq, i) => (
-                        <ExpandableCard key={i} title={faq.question} icon={Info}>
+                    {faqData.map((faq) => (
+                        <ExpandableCard key={faq.question} title={faq.question} icon={Info}>
                             <p className="text-white leading-relaxed">{faq.answer}</p>
                         </ExpandableCard>
                     ))}

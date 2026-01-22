@@ -132,8 +132,8 @@ const PersonalTrends = ({ token, userId }) => {
         <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Risk Evolution</h2>
           <div className="space-y-3">
-            {trends.clusterHistory.map((entry, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
+            {trends.clusterHistory.map((entry) => (
+              <div key={`${entry.date}-${entry.cluster}`} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <Calendar size={18} className="text-slate-400" />
                   <span className="text-white text-sm">{entry.date}</span>
