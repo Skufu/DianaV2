@@ -115,6 +115,10 @@ func ErrInternal(c *gin.Context, message string) {
 	errorResponse(c, http.StatusInternalServerError, "INTERNAL_ERROR", message)
 }
 
+func ErrConflict(c *gin.Context, message string) {
+	errorResponse(c, http.StatusConflict, "CONFLICT", message)
+}
+
 var controlCharRegex = regexp.MustCompile(`[\x00-\x1f\x7f]`)
 
 func parseIDParam(c *gin.Context, name string) (int64, error) {

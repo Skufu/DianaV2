@@ -142,7 +142,8 @@ func (h *AdminUsersHandler) createUser(c *gin.Context) {
 	if err != nil {
 		// Check for duplicate email
 		if isDuplicateKeyError(err) {
-			c.JSON(http.StatusConflict, gin.H{"error": "email already exists"})
+			log.Printf("[ERROR] Duplicate email error: %v", err)
+			ErrConflict(c, "email already exists")
 			return
 		}
 		log.Printf("[ERROR] Failed to create user: %v", err)
