@@ -4,14 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
+// CacheMetrics holds cache performance statistics
+type CacheMetrics struct {
+	Hits   uint64
+	Misses uint64
+}
+
 // Cache wraps Redis client for caching operations
 type Cache struct {
-	client *redis.Client
+	client  *redis.Client
+	metrics CacheMetrics
+	mu      sync.RWMutex
 }
 
 // NewCache creates a new Redis cache instance
@@ -39,6 +48,9 @@ func (c *Cache) Get(ctx context.Context, key string, dest interface{}) error {
 	val, err := c.client.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
+			c.mu.Lock()
+			c.metrics.Misses++
+			c.mu.Unlock()
 			return nil
 		}
 		return fmt.Errorf("failed to get cache key %s: %w", key, err)
@@ -47,6 +59,10 @@ func (c *Cache) Get(ctx context.Context, key string, dest interface{}) error {
 	if err := json.Unmarshal([]byte(val), dest); err != nil {
 		return fmt.Errorf("failed to unmarshal cached value for key %s: %w", key, err)
 	}
+
+	c.mu.Lock()
+	c.metrics.Hits++
+	c.mu.Unlock()
 
 	return nil
 }
@@ -86,6 +102,13 @@ func (c *Cache) DeleteByPattern(ctx context.Context, pattern string) error {
 		return fmt.Errorf("failed to scan keys with pattern %s: %w", pattern, err)
 	}
 	return nil
+}
+
+// GetMetrics returns a copy of current cache statistics including hit rate
+func (c *Cache) GetMetrics() CacheMetrics {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.metrics
 }
 
 // Close closes the Redis connection
