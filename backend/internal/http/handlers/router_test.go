@@ -43,7 +43,7 @@ func setupTestServer(t *testing.T) (*gin.Engine, func()) {
 		ModelVersion:  "test-model",
 		ExportMaxRows: 100,
 	}
-	r := appRouter.New(cfg, st)
+	r := appRouter.New(cfg, st, nil)
 
 	return r, func() {
 		cancel()

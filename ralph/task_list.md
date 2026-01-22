@@ -198,7 +198,7 @@
 - [x] Implement `Get()` method with JSON unmarshaling
 - [x] Implement `Set()` method with JSON marshaling and TTL
 - [x] Configure Redis client in `backend/cmd/server/main.go`
-- [ ] Add caching to `/api/v1/analytics/summary` (5 min TTL)
+- [x] Add caching to `/api/v1/analytics/summary` (5 min TTL) - ALREADY IMPLEMENTED in analytics.go lines 49-92
 - [ ] Add caching to `/api/v1/analytics/cluster-distribution` (10 min TTL)
 - [ ] Add caching to `/api/v1/users/me/trends` (5 min TTL)
 - [ ] Implement cache invalidation on assessment creation/update
