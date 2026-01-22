@@ -131,3 +131,34 @@ The load test passed successfully. Here's the verification:
 
 The remaining subtask from REQ-1.4 is now complete. The audit logging system correctly handles 1000 concurrent events without data loss.
 ---
+Fri, Jan 23, 2026  2:09:59 AM: Attempt 1 failed
+
+### Verification of Previously Fixed Files
+
+**Insights.jsx** (lines 340, 396, 482, 524):
+- ✅ Line 340: `key={m.Model}` - stable key
+- ✅ Line 396: `key={entry.factor}` - stable key
+- ✅ Line 482: `key={entry.name}` - stable key
+- ✅ Line 524: `key={c.cluster}` - stable key
+
+**Education.jsx** (lines 315, 326, 337, 366, 417):
+- ✅ Line 315: `key={key}-${factor.substring(0,20)}` - derived from stable key
+- ✅ Line 326: `key={key}-${rec.substring(0,20)}` - derived from stable key
+- ✅ Line 337: `key={key}-${imp.substring(0,20)}` - derived from stable key
+- ✅ Line 366: `key={bio.name}` - stable key
+- ✅ Line 417: `key={faq.question}` - stable key
+
+**Note**: Line 285 in Education.jsx uses `key={key}` where `key` comes from `Object.entries([key, cluster])`. This is the OBJECT KEY name (cluster identifier), NOT a loop index.
+
+### Recommendations
+
+**Option 1** - Mark task complete:
+- The active codebase (what's actually used) has no index-based keys
+- Backup components are legacy code not imported in App.jsx
+- This satisfies the requirement
+
+**Option 2** - Clean up backup directory:
+- Delete the `/backup` directory entirely (contains 3 legacy components)
+- Or fix the index-based keys in backup components for completeness
+
+**Which approach should I take?**
