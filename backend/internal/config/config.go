@@ -21,14 +21,12 @@ type Config struct {
 }
 
 func Load() Config {
-	// Require JWT_SECRET in production
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		env := getEnv("ENV", "dev")
-		if env == "production" || env == "prod" {
-			log.Fatal("JWT_SECRET is required in production")
+		if env != "local" {
+			log.Fatalf("JWT_SECRET environment variable is required in %s. Cannot start without it.", env)
 		}
-		// Only allow default in dev
 		jwtSecret = "dev-secret-change-in-production"
 		log.Println("WARNING: Using default JWT secret. Set JWT_SECRET environment variable!")
 	}
