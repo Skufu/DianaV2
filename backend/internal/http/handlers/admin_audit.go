@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -53,7 +54,8 @@ type AuditQueryParams struct {
 func (h *AdminAuditHandler) listAuditEvents(c *gin.Context) {
 	var queryParams AuditQueryParams
 	if err := c.ShouldBindQuery(&queryParams); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid query parameters"})
+		log.Printf("[ERROR] Invalid audit query parameters: %v", err)
+		ErrBadRequest(c, "invalid query parameters")
 		return
 	}
 
@@ -102,7 +104,8 @@ func (h *AdminAuditHandler) listAuditEvents(c *gin.Context) {
 
 	events, total, err := h.store.AuditEvents().List(c.Request.Context(), params)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch audit events"})
+		log.Printf("[ERROR] Failed to fetch audit events: %v", err)
+		ErrInternal(c, "failed to fetch audit events")
 		return
 	}
 
