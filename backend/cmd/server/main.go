@@ -91,6 +91,23 @@ func main() {
 		} else {
 			redisCache = cache
 			log.Printf("connected to Redis at %s (DB: %d)", cfg.RedisAddr, cfg.RedisDB)
+
+			go func() {
+				ticker := time.NewTicker(5 * time.Minute)
+				defer ticker.Stop()
+
+				for range ticker.C {
+					metrics := redisCache.GetMetrics()
+					total := metrics.Hits + metrics.Misses
+					var hitRate float64
+					if total > 0 {
+						hitRate = float64(metrics.Hits) / float64(total) * 100
+					}
+
+					log.Printf("[CACHE METRICS] Hits: %d, Misses: %d, Total: %d, Hit Rate: %.2f%%",
+						metrics.Hits, metrics.Misses, total, hitRate)
+				}
+			}()
 		}
 	} else {
 		log.Printf("REDIS_ADDR not set; running without cache layer")
