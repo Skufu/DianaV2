@@ -81,7 +81,7 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 	defer modelSrv.Close()
 
 	repo := &fakeAssessmentRepo{}
-	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
+	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), nil, "v1", "hash123")
 
 	r := gin.New()
 	r.Use(mockAuthMiddleware())
@@ -111,7 +111,7 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 	defer modelSrv.Close()
 
 	repo := &fakeAssessmentRepo{}
-	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), "v1", "hash123")
+	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), nil, "v1", "hash123")
 
 	r := gin.New()
 	r.Use(mockAuthMiddleware())
