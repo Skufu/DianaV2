@@ -1,175 +1,183 @@
 #!/bin/bash
 set -e
-set -o pipefail  # CRITICAL: Catches errors inside pipes (the "tee trap" fix)
+set -o pipefail
 
-if [ -z "$1" ]; then
-    echo "Usage: bash run-ralph-opencode.sh <iterations>"
-    exit 1
-fi
+# ═══════════════════════════════════════════════════════════════
+# RALPH V3 - Overnight-Safe AI Coding Loop
+# ═══════════════════════════════════════════════════════════════
+
+ITERATIONS="${1:-10}"
+UNATTENDED=false
+for arg in "$@"; do
+    [[ "$arg" == "--unattended" || "$arg" == "-u" ]] && UNATTENDED=true
+done
 
 # Configuration
+CONTEXT_PIN="context_pin.md"
 PRD_FILE="PRD-Technical-Debt-Remediation.md"
 TASK_FILE="task_list.md"
 ERROR_LOG="error_log.txt"
-SYSTEM_RULES="system_rules.md"  # Persistent learning across iterations
+SYSTEM_RULES="system_rules.md"
+LOCK_FILE=".ralph.lock"
 MAX_RETRIES=2
-MAX_RULES=10  # Cap rules to prevent context bloat
+MAX_RULES=10
+PAUSE_EVERY=10
 TEMP_DIR="${TMPDIR:-./tmp}"
 
-# Create temp directory (portable for Windows/Linux/Mac)
 mkdir -p "$TEMP_DIR"
 
-# Initialize system rules file if it doesn't exist
-if [ ! -f "$SYSTEM_RULES" ]; then
+# ─────────────────────────────────────────────────────────────────
+# LOCK FILE
+# ─────────────────────────────────────────────────────────────────
+acquire_lock() {
+    if [ -f "$LOCK_FILE" ]; then
+        local pid=$(cat "$LOCK_FILE" 2>/dev/null)
+        if kill -0 "$pid" 2>/dev/null; then
+            echo "❌ Another Ralph running (PID: $pid)"
+            exit 1
+        fi
+        rm -f "$LOCK_FILE"
+    fi
+    echo $$ > "$LOCK_FILE"
+    trap 'rm -f "$LOCK_FILE"' EXIT
+}
+
+# ─────────────────────────────────────────────────────────────────
+# PREFLIGHT
+# ─────────────────────────────────────────────────────────────────
+preflight() {
+    local err=0
+    [ ! -f "$CONTEXT_PIN" ] && echo "❌ Missing $CONTEXT_PIN" && ((err++))
+    [ ! -f "$TASK_FILE" ] && echo "❌ Missing $TASK_FILE" && ((err++))
+    [ ! -f "$PRD_FILE" ] && echo "❌ Missing $PRD_FILE" && ((err++))
+    [ $err -gt 0 ] && exit 1
+    echo "✅ Preflight passed"
+}
+
+# ─────────────────────────────────────────────────────────────────
+# SYSTEM RULES
+# ─────────────────────────────────────────────────────────────────
+init_rules() {
+    [ -f "$SYSTEM_RULES" ] && return
     cat > "$SYSTEM_RULES" << 'EOF'
-# System Rules (Persistent Learning)
-# These rules are learned from past failures and apply to ALL tasks.
-# MAX 10 RULES - oldest rules are auto-removed when limit is reached.
-
+# System Rules (Learned Patterns)
 ## Active Rules
-<!-- Rules will be added here by Ralph 2 when failures occur -->
 EOF
-    echo "📝 Created $SYSTEM_RULES for persistent learning"
-fi
-
-# Function to count current rules
-count_rules() {
-    grep -c "^[0-9]\+\." "$SYSTEM_RULES" 2>/dev/null || echo "0"
 }
 
-# Function to prune old rules if over limit
+count_rules() { grep -c "^[0-9]\+\." "$SYSTEM_RULES" 2>/dev/null || echo "0"; }
+
 prune_rules() {
-    local rule_count=$(count_rules)
-    if [ "$rule_count" -gt "$MAX_RULES" ]; then
-        echo "🧹 Pruning old rules (keeping newest $MAX_RULES)..."
-        # Keep header and last MAX_RULES numbered rules
-        head -n 6 "$SYSTEM_RULES" > "$TEMP_DIR/rules_temp.md"
-        grep "^[0-9]\+\." "$SYSTEM_RULES" | tail -n "$MAX_RULES" >> "$TEMP_DIR/rules_temp.md"
-        mv "$TEMP_DIR/rules_temp.md" "$SYSTEM_RULES"
+    local c=$(count_rules)
+    if [ "$c" -gt "$MAX_RULES" ]; then
+        head -n 3 "$SYSTEM_RULES" > "$TEMP_DIR/r.md"
+        grep "^[0-9]\+\." "$SYSTEM_RULES" | tail -n "$MAX_RULES" >> "$TEMP_DIR/r.md"
+        mv "$TEMP_DIR/r.md" "$SYSTEM_RULES"
     fi
 }
 
-echo "🚀 Starting Two-Ralph System for $1 iterations"
-echo "👷 Ralph 1: Worker Agent"
-echo "👔 Ralph 2: Manager Agent"
-echo "📚 System Rules: $SYSTEM_RULES ($(count_rules) active rules)"
-echo ""
+# ─────────────────────────────────────────────────────────────────
+# TASK MANAGEMENT (line-number based)
+# ─────────────────────────────────────────────────────────────────
+get_task_line() { grep -nEi "^\- ?\[ \]" "$TASK_FILE" 2>/dev/null | head -1 | cut -d: -f1; }
+get_task_text() { sed -n "${1}p" "$TASK_FILE" 2>/dev/null; }
+mark_done() { [ -n "$1" ] && sed -i "${1}s/\[ \]/[x]/" "$TASK_FILE" 2>/dev/null; }
 
-for ((i=1; i<=$1; i++)); do
+# ─────────────────────────────────────────────────────────────────
+# ROLE SWITCHING
+# ─────────────────────────────────────────────────────────────────
+get_role() {
+    case "$1" in
+        *[Tt]est*) echo "You are a QA Engineer." ;;
+        *[Ss]ecurity*|*[Aa]uth*) echo "You are a Security Engineer." ;;
+        *[Ff]rontend*|*[Rr]eact*) echo "You are a Frontend Engineer." ;;
+        *) echo "You are a Software Engineer." ;;
+    esac
+}
+
+# ─────────────────────────────────────────────────────────────────
+# COMPREHENSION CHECK
+# ─────────────────────────────────────────────────────────────────
+comprehension_check() {
+    [ "$UNATTENDED" = true ] && return
+    opencode run "Read @$CONTEXT_PIN. Summarize: project purpose and tech stack in 2 sentences." 2>&1 | head -15
+    read -p "AI understands correctly? (y/n): " c
+    [[ "$c" != "y" ]] && exit 1
+}
+
+# ─────────────────────────────────────────────────────────────────
+# MAIN LOOP
+# ─────────────────────────────────────────────────────────────────
+echo "═══════════════════════════════════════════════════════════════"
+echo "  RALPH V3 | Iterations: $ITERATIONS | Unattended: $UNATTENDED"
+echo "═══════════════════════════════════════════════════════════════"
+
+acquire_lock
+preflight
+init_rules
+comprehension_check
+
+for ((i=1; i<=ITERATIONS; i++)); do
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🔄 Iteration $i of $1"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "🔄 Iteration $i/$ITERATIONS"
     
-    # Check for blocked tasks
-    if grep -q "\[BLOCKED\]" "$TASK_FILE" 2>/dev/null; then
-        blocked_count=$(grep -c "\[BLOCKED\]" "$TASK_FILE" 2>/dev/null || echo "0")
-        echo "⚠️  Warning: $blocked_count task(s) marked as [BLOCKED]. Skipping those."
+    # Pause point
+    if (( i % PAUSE_EVERY == 0 )) && [ "$UNATTENDED" = false ]; then
+        read -p "⏸️  Continue? (y/n): " p
+        [[ "$p" != "y" ]] && exit 0
     fi
     
-    # Count completed tasks BEFORE this iteration
-    before_count=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
+    task_line=$(get_task_line)
+    [ -z "$task_line" ] && echo "🎉 All done!" && break
     
-    retry_count=0
-    task_success=false
+    task_text=$(get_task_text "$task_line")
+    role=$(get_role "$task_text")
+    echo "📋 Line $task_line: ${task_text:0:70}..."
     
-    while [ $retry_count -lt $MAX_RETRIES ] && [ "$task_success" = false ]; do
-        echo "👷 Ralph 1 (Worker) attempting task... (attempt $((retry_count + 1))/$MAX_RETRIES)"
+    before=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
+    
+    for ((r=1; r<=MAX_RETRIES; r++)); do
+        echo "👷 Attempt $r/$MAX_RETRIES"
         
-        ralph1_output="$TEMP_DIR/ralph1_output.txt"
-        ralph1_exit_code=0
+        opencode run "$role
+Read: @$CONTEXT_PIN, @$SYSTEM_RULES, @$PRD_FILE, @$TASK_FILE
+Complete this task: '$task_text'
+Run tests. Mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_DIR/out.txt" || true
         
-        # Ralph 1: Worker attempts the task (with system rules for compound learning)
-        opencode run "Read @$PRD_FILE, @$TASK_FILE, and @$SYSTEM_RULES. Complete the next unchecked task (marked with '- [ ]'). Run tests and commit if successful. Update the checkbox to [x] when done. If you cannot complete the task, explain why but do NOT mark it complete." 2>&1 | tee "$ralph1_output" || ralph1_exit_code=$?
+        after=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
         
-        # Check for SUCCESS using observable state change (not LLM self-report)
-        after_count=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
-        
-        if [ "$after_count" -gt "$before_count" ]; then
-            echo "✅ Task marked complete in $TASK_FILE ($before_count → $after_count)"
-            task_success=true
-            break
-        elif [ $ralph1_exit_code -ne 0 ]; then
-            echo "⚠️  OpenCode exited with code $ralph1_exit_code"
-            task_success=false
-        else
-            echo "⚠️  No new task was marked complete"
-            task_success=false
+        if [ "$after" -gt "$before" ]; then
+            echo "✅ Task completed"
+            git add -A && git commit -m "Ralph: $(date +%H:%M)" --no-verify 2>/dev/null || true
+            break 2
         fi
         
-        # Ralph 1 failed - escalate to Ralph 2
-        echo "⚠️  Escalating to Ralph 2 (Manager)..."
-        echo "───────────────────────────────────────"
-        echo "$(date): Iteration $i, Attempt $((retry_count + 1)) failed" >> "$ERROR_LOG"
-        echo "Exit code: $ralph1_exit_code" >> "$ERROR_LOG"
-        tail -50 "$ralph1_output" >> "$ERROR_LOG"  # Only last 50 lines to prevent bloat
-        echo "───────────────────────────────────────" >> "$ERROR_LOG"
+        if grep -qi "BLOCKED" "$TEMP_DIR/out.txt"; then
+            sed -i "${task_line}s/\[ \]/[BLOCKED]/" "$TASK_FILE" 2>/dev/null || true
+            break
+        fi
         
-        echo "👔 Ralph 2 (Manager) analyzing the problem..."
+        # Escalate to Ralph 2
+        echo "👔 Ralph 2 analyzing..."
+        echo "$(date): Attempt $r failed" >> "$ERROR_LOG"
+        tail -30 "$TEMP_DIR/out.txt" >> "$ERROR_LOG"
         
-        ralph2_output="$TEMP_DIR/ralph2_output.txt"
+        opencode run "You are Ralph 2. Ralph 1 failed on: '$task_text'
+Read @$ERROR_LOG, @$TASK_FILE. Either break down the task or add a rule to @$SYSTEM_RULES. Do NOT code." 2>&1 || true
         
-        # Ralph 2: Manager debugs AND updates system rules for compound learning
-        opencode run "You are Ralph 2, the Manager Agent. Ralph 1 failed. 
-1. Read @$ERROR_LOG (last failure), @$PRD_FILE, and @$TASK_FILE.
-2. Analyze what went wrong.
-3. Take ONE action: break down task in @$TASK_FILE, fix config, or mark as [BLOCKED].
-4. CRITICAL: If this failure reveals a pattern, add a numbered rule to @$SYSTEM_RULES (format: 'N. [DATE] Rule text'). 
-5. Do NOT write code yourself - only prepare for Ralph 1 retry." 2>&1 | tee "$ralph2_output" || true
-        
-        # Prune rules if over limit
         prune_rules
-        
-        echo ""
-        echo "📝 Ralph 2 provided guidance. Ralph 1 will retry..."
-        echo "📚 System Rules: $(count_rules) active rules"
-        retry_count=$((retry_count + 1))
-        
-        # Update before_count for next attempt
-        before_count=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
-        
-        # Brief pause before retry
-        sleep 3
+        sleep 2
     done
     
-    # If still failed after retries
-    if [ "$task_success" = false ]; then
-        echo "❌ Task failed after $MAX_RETRIES attempts."
-        echo "$(date): Iteration $i - Task failed permanently after $MAX_RETRIES attempts" >> "$ERROR_LOG"
-        echo ""
-        echo "💡 Options:"
-        echo "   1. Check $ERROR_LOG for details"
-        echo "   2. Manually fix the issue and re-run"
-        echo "   3. Mark the task as [BLOCKED] in $TASK_FILE"
-        echo ""
-        
-        # Continue to next task
-        echo "⏭️  Moving to next task..."
-    fi
+    # Progress
+    rem=$(grep -cEi "\- ?\[ \]" "$TASK_FILE" 2>/dev/null || echo "0")
+    done=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
+    blk=$(grep -ci "BLOCKED" "$TASK_FILE" 2>/dev/null || echo "0")
+    echo "📊 $done done | $rem remaining | $blk blocked"
     
-    # Progress report
-    remaining=$(grep -cEi "\- ?\[ \]" "$TASK_FILE" 2>/dev/null || echo "0")
-    completed=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
-    blocked=$(grep -c "\[BLOCKED\]" "$TASK_FILE" 2>/dev/null || echo "0")
-    
-    echo ""
-    echo "📊 Progress: $completed completed, $remaining remaining, $blocked blocked"
-    
-    if [ "$remaining" -eq 0 ]; then
-        echo ""
-        echo "🎉 All tasks complete after $i iterations!"
-        exit 0
-    fi
-    
-    echo "⏳ Waiting 5 seconds before next iteration..."
-    sleep 5
+    [ "$rem" -eq 0 ] && echo "🎉 All complete!" && break
+    sleep 3
 done
 
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🏁 Completed $1 iterations"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📋 Remaining tasks: $(grep -cEi "\- ?\[ \]" "$TASK_FILE" 2>/dev/null || echo "0")"
-echo "✅ Completed tasks: $(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")"
-echo "🚫 Blocked tasks: $(grep -c "\[BLOCKED\]" "$TASK_FILE" 2>/dev/null || echo "0")"
-echo "📚 System rules learned: $(count_rules)"
-echo "📊 Check $ERROR_LOG for escalation history."
+echo "🏁 Run complete. Check $ERROR_LOG for details."
