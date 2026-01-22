@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -64,7 +65,8 @@ type UpdateUserRequest struct {
 func (h *AdminUsersHandler) listUsers(c *gin.Context) {
 	var params models.UserListParams
 	if err := c.ShouldBindQuery(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid query parameters"})
+		log.Printf("[ERROR] Invalid query parameters: %v", err)
+		ErrBadRequest(c, "Invalid query parameters")
 		return
 	}
 
@@ -78,7 +80,8 @@ func (h *AdminUsersHandler) listUsers(c *gin.Context) {
 
 	users, total, err := h.store.Users().List(c.Request.Context(), params)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch users"})
+		log.Printf("[ERROR] Failed to fetch users: %v", err)
+		ErrInternal(c, "Failed to fetch users")
 		return
 	}
 
@@ -109,19 +112,21 @@ func (h *AdminUsersHandler) listUsers(c *gin.Context) {
 func (h *AdminUsersHandler) createUser(c *gin.Context) {
 	var req CreateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request: " + err.Error()})
+		log.Printf("[ERROR] Invalid create user request: %v", err)
+		ErrBadRequest(c, "Invalid request payload")
 		return
 	}
 
 	claims, err := getUserClaims(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process password"})
+		log.Printf("[ERROR] Failed to process password: %v", err)
+		ErrInternal(c, "Failed to process password")
 		return
 	}
 
@@ -140,7 +145,8 @@ func (h *AdminUsersHandler) createUser(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"error": "email already exists"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
+		log.Printf("[ERROR] Failed to create user: %v", err)
+		ErrInternal(c, "Failed to create user")
 		return
 	}
 
@@ -176,13 +182,13 @@ func (h *AdminUsersHandler) getUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		ErrBadRequest(c, "Invalid user ID")
 		return
 	}
 
 	user, err := h.store.Users().FindByID(c.Request.Context(), int32(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		ErrNotFound(c, "User")
 		return
 	}
 
@@ -207,13 +213,14 @@ func (h *AdminUsersHandler) updateUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		ErrBadRequest(c, "Invalid user ID")
 		return
 	}
 
 	var req UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request: " + err.Error()})
+		log.Printf("[ERROR] Invalid update user request: %v", err)
+		ErrBadRequest(c, "Invalid request payload")
 		return
 	}
 
@@ -225,13 +232,14 @@ func (h *AdminUsersHandler) updateUser(c *gin.Context) {
 
 	updatedUser, err := h.store.Users().Update(c.Request.Context(), user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
+		log.Printf("[ERROR] Failed to update user: %v", err)
+		ErrInternal(c, "Failed to update user")
 		return
 	}
 
 	claims, err := getUserClaims(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 
@@ -267,22 +275,23 @@ func (h *AdminUsersHandler) deactivateUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		ErrBadRequest(c, "Invalid user ID")
 		return
 	}
 
 	claims, err := getUserClaims(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 	if claims.UserID == id {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot deactivate your own account"})
+		ErrBadRequest(c, "Cannot deactivate your own account")
 		return
 	}
 
 	if err := h.store.Users().Deactivate(c.Request.Context(), int32(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to deactivate user"})
+		log.Printf("[ERROR] Failed to deactivate user: %v", err)
+		ErrInternal(c, "Failed to deactivate user")
 		return
 	}
 
@@ -315,18 +324,19 @@ func (h *AdminUsersHandler) activateUser(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user ID"})
+		ErrBadRequest(c, "Invalid user ID")
 		return
 	}
 
 	if err := h.store.Users().Activate(c.Request.Context(), int32(id)); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to activate user"})
+		log.Printf("[ERROR] Failed to activate user: %v", err)
+		ErrInternal(c, "Failed to activate user")
 		return
 	}
 
 	claims, err := getUserClaims(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 
