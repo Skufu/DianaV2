@@ -149,7 +149,7 @@ Run tests. Mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_DIR/out.t
         if [ "$after" -gt "$before" ]; then
             echo "✅ Task completed"
             git add -A && git commit -m "Ralph: $(date +%H:%M)" --no-verify 2>/dev/null || true
-            break 2
+            break  # Only break retry loop, continue to next iteration
         fi
         
         if grep -qi "BLOCKED" "$TEMP_DIR/out.txt"; then
