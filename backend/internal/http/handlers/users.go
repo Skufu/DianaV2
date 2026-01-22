@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -33,18 +34,19 @@ func (h *UsersHandler) Register(rg *gin.RouterGroup) {
 func (h *UsersHandler) GetUserProfile(c *gin.Context) {
 	claims, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 	userClaims := claims.(middleware.UserClaims)
 
 	user, err := h.store.Users().GetUserByID(c.Request.Context(), int32(userClaims.UserID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user profile"})
+		log.Printf("[ERROR] Failed to fetch user profile: %v", err)
+		ErrInternal(c, "Failed to fetch user profile")
 		return
 	}
 	if user == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		ErrNotFound(c, "User")
 		return
 	}
 
@@ -89,7 +91,8 @@ func (h *UsersHandler) UpdateUserProfile(c *gin.Context) {
 
 	var req models.User
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] User profile validation failed: %v", err)
+		ErrBadRequest(c, "Invalid request payload")
 		return
 	}
 
@@ -98,7 +101,8 @@ func (h *UsersHandler) UpdateUserProfile(c *gin.Context) {
 
 	updatedUser, err := h.store.Users().UpdateUser(c.Request.Context(), req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update profile"})
+		log.Printf("[ERROR] Failed to update profile: %v", err)
+		ErrInternal(c, "Failed to update profile")
 		return
 	}
 
@@ -109,19 +113,20 @@ func (h *UsersHandler) UpdateUserProfile(c *gin.Context) {
 func (h *UsersHandler) CompleteOnboarding(c *gin.Context) {
 	claims, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 	userClaims := claims.(middleware.UserClaims)
 
 	var req models.OnboardingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] Onboarding request validation failed: %v", err)
+		ErrBadRequest(c, "Invalid request payload")
 		return
 	}
 
 	if !req.ConsentPersonalData {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "consent to personal data usage is required"})
+		ErrBadRequest(c, "Consent to personal data usage is required")
 		return
 	}
 
@@ -135,7 +140,8 @@ func (h *UsersHandler) CompleteOnboarding(c *gin.Context) {
 	if req.DateOfBirth != "" {
 		parsed, err := time.Parse("2006-01-02", req.DateOfBirth)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD"})
+			log.Printf("[ERROR] Invalid date format: %v", err)
+			ErrBadRequest(c, "Invalid date format, use YYYY-MM-DD")
 			return
 		}
 		dob = &parsed
@@ -168,18 +174,21 @@ func (h *UsersHandler) CompleteOnboarding(c *gin.Context) {
 
 	// Transaction-like updates (best effort or use actual transaction if store supports it)
 	if _, err := h.store.Users().UpdateUser(c.Request.Context(), userUpdate); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user details"})
+		log.Printf("[ERROR] Failed to update user details: %v", err)
+		ErrInternal(c, "Failed to update user details")
 		return
 	}
 
 	if err := h.store.Users().UpdateUserConsent(c.Request.Context(), userClaims.UserID, consent); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update consent"})
+		log.Printf("[ERROR] Failed to update consent: %v", err)
+		ErrInternal(c, "Failed to update consent")
 		return
 	}
 
 	// 3. Mark Onboarding Complete
 	if err := h.store.Users().UpdateUserOnboarding(c.Request.Context(), userClaims.UserID, true); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to complete onboarding"})
+		log.Printf("[ERROR] Failed to complete onboarding: %v", err)
+		ErrInternal(c, "Failed to complete onboarding")
 		return
 	}
 
@@ -190,14 +199,15 @@ func (h *UsersHandler) CompleteOnboarding(c *gin.Context) {
 func (h *UsersHandler) GetConsentSettings(c *gin.Context) {
 	claims, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 	userClaims := claims.(middleware.UserClaims)
 
 	user, err := h.store.Users().GetUserByID(c.Request.Context(), int32(userClaims.UserID))
 	if err != nil || user == nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user"})
+		log.Printf("[ERROR] Failed to fetch user: %v", err)
+		ErrInternal(c, "Failed to fetch user")
 		return
 	}
 
@@ -215,19 +225,21 @@ func (h *UsersHandler) GetConsentSettings(c *gin.Context) {
 func (h *UsersHandler) UpdateConsentSettings(c *gin.Context) {
 	claims, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 	userClaims := claims.(middleware.UserClaims)
 
 	var req models.ConsentSettings
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Printf("[ERROR] Consent settings validation failed: %v", err)
+		ErrBadRequest(c, "Invalid request payload")
 		return
 	}
 
 	if err := h.store.Users().UpdateUserConsent(c.Request.Context(), userClaims.UserID, req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update consent"})
+		log.Printf("[ERROR] Failed to update consent: %v", err)
+		ErrInternal(c, "Failed to update consent")
 		return
 	}
 
@@ -238,7 +250,7 @@ func (h *UsersHandler) UpdateConsentSettings(c *gin.Context) {
 func (h *UsersHandler) GetTrends(c *gin.Context) {
 	claims, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 	userClaims := claims.(middleware.UserClaims)
@@ -251,7 +263,8 @@ func (h *UsersHandler) GetTrends(c *gin.Context) {
 
 	trends, err := h.store.Users().GetUserTrends(c.Request.Context(), userClaims.UserID, months)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch trends"})
+		log.Printf("[ERROR] Failed to fetch trends: %v", err)
+		ErrInternal(c, "Failed to fetch trends")
 		return
 	}
 
@@ -262,13 +275,14 @@ func (h *UsersHandler) GetTrends(c *gin.Context) {
 func (h *UsersHandler) DeleteAccount(c *gin.Context) {
 	claims, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 	userClaims := claims.(middleware.UserClaims)
 
 	if err := h.store.Users().SoftDeleteUser(c.Request.Context(), userClaims.UserID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete account"})
+		log.Printf("[ERROR] Failed to delete account: %v", err)
+		ErrInternal(c, "Failed to delete account")
 		return
 	}
 
