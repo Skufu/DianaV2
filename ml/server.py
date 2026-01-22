@@ -189,14 +189,10 @@ def require_api_key(f):
     """Decorator to require API key authentication for endpoints."""
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
-        env = os.environ.get('ENV', 'development')
-        
-        if env == 'production' and not API_KEY:
-            logger.error("ML_API_KEY not configured in production")
-            return jsonify({"error": "Server misconfigured"}), 500
-        
-        if not API_KEY and env != 'production':
-            return f(*args, **kwargs)
+        # Always require API key validation (security requirement)
+        if not API_KEY:
+            logger.error("ML_API_KEY not configured")
+            return jsonify({"error": "Server misconfigured: ML_API_KEY required"}), 500
 
         provided_key = request.headers.get('X-API-Key', '')
         if not provided_key or not hmac.compare_digest(provided_key, API_KEY):
