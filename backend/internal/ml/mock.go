@@ -1,9 +1,13 @@
 package ml
 
-import "github.com/skufu/DianaV2/backend/internal/models"
+import (
+	"context"
+
+	"github.com/skufu/DianaV2/backend/internal/models"
+)
 
 type Predictor interface {
-	Predict(input models.Assessment) (cluster string, risk int)
+	Predict(ctx context.Context, input models.Assessment) (cluster string, risk int)
 }
 
 type MockPredictor struct{}
@@ -12,7 +16,7 @@ func NewMockPredictor() *MockPredictor {
 	return &MockPredictor{}
 }
 
-func (m *MockPredictor) Predict(input models.Assessment) (string, int) {
+func (m *MockPredictor) Predict(ctx context.Context, input models.Assessment) (string, int) {
 	// Cluster assignments based on paper: SIDD, SIRD, MOD, MARD
 	// Simple deterministic rules to keep behavior stable during placeholder phase.
 	switch {

@@ -26,7 +26,8 @@ func RequestID() gin.HandlerFunc {
 		c.Header("X-Request-ID", requestID)
 
 		// Add to request context for downstream use
-		ctx := context.WithValue(c.Request.Context(), "request_id", requestID)
+		type requestIDKey string
+		ctx := context.WithValue(c.Request.Context(), requestIDKey("request_id"), requestID)
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
@@ -101,10 +102,14 @@ func Logger() gin.HandlerFunc {
 
 		// Add user context if available (from JWT)
 		if userEmail, exists := c.Get("user_email"); exists {
-			event.Str("user_email", userEmail.(string))
+			if emailStr, ok := userEmail.(string); ok {
+				event.Str("user_email", emailStr)
+			}
 		}
 		if userRole, exists := c.Get("user_role"); exists {
-			event.Str("user_role", userRole.(string))
+			if roleStr, ok := userRole.(string); ok {
+				event.Str("user_role", roleStr)
+			}
 		}
 
 		// Log with appropriate message based on status
@@ -166,7 +171,9 @@ func InitLogger(env string) {
 
 func generateRequestID() string {
 	bytes := make([]byte, 8)
-	rand.Read(bytes)
+	if _, err := rand.Read(bytes); err != nil {
+		return ""
+	}
 	return hex.EncodeToString(bytes)
 }
 

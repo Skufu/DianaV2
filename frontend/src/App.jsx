@@ -77,7 +77,7 @@ const App = () => {
     try {
       const payload = JSON.parse(atob(res.access_token.split('.')[1]));
       setUserRole(payload.role || 'user');
-      setIsAdmin(payload.is_admin || false);
+      setIsAdmin(payload.role === 'admin');
       setUserId(payload.user_id || payload.sub);
     } catch {
       setUserRole('user');
@@ -121,7 +121,7 @@ const App = () => {
       try {
         const payload = JSON.parse(atob(savedToken.split('.')[1]));
         setUserRole(payload.role || 'user');
-        setIsAdmin(payload.is_admin || false);
+        setIsAdmin(payload.role === 'admin');
         setUserId(payload.user_id || payload.sub);
       } catch {
         setUserRole('user');
@@ -160,9 +160,9 @@ const App = () => {
 
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard_user token={token} userId={userId} />;
+        return <Dashboard_user token={token} userId={userId} setActiveTab={setActiveTab} />;
       case 'profile':
-        return <UserProfile token={token} userId={userId} />;
+        return <UserProfile token={token} userId={userId} setActiveTab={setActiveTab} />;
       case 'trends':
         return <PersonalTrends token={token} userId={userId} />;
       case 'insights':
@@ -189,7 +189,7 @@ const App = () => {
     try {
       const payload = JSON.parse(atob(res.access_token.split('.')[1]));
       setUserRole(payload.role || 'user');
-      setIsAdmin(payload.is_admin || false);
+      setIsAdmin(payload.role === 'admin');
       setUserId(payload.user_id || payload.sub);
     } catch {
       setUserRole('user');

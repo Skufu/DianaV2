@@ -50,12 +50,8 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 	}
 
 	var buf bytes.Buffer
-	// Check signature. Standard is Write(w io.Writer) error.
-	// Error said pdf.Write undefined? No, error in previous step didn't say Write undefined.
-	// But previous step code used pdf.Write(&buf).
-	// Let's rely on Write(&buf) usage from before.
 
-	if err = pdf.Write(&buf); err != nil {
+	if err := pdf.Write(&buf); err != nil {
 		return nil, err
 	}
 

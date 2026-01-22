@@ -36,7 +36,7 @@ func main() {
 	defer pool.Close()
 
 	users := []SeedUser{
-		{Email: "admin@diana.app", Password: "adminpassword123", IsAdmin: true},
+		{Email: "admin@diana.app", Password: "admin123", IsAdmin: true},
 		{Email: "demo@diana.app", Password: "demopassword123", IsAdmin: false},
 	}
 

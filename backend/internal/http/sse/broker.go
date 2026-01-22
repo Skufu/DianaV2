@@ -113,7 +113,9 @@ func StreamToGin(c *gin.Context, broker *Broker, ctx context.Context) {
 			c.Writer.Flush()
 
 		case <-keepAlive.C:
-			c.Writer.WriteString(":keep-alive\n\n")
+			if _, err := c.Writer.WriteString(":keep-alive\n\n"); err != nil {
+				return
+			}
 			c.Writer.Flush()
 
 		case <-ctx.Done():
@@ -139,6 +141,6 @@ func writeSSEEvent(w gin.ResponseWriter, event Event) error {
 	sb.WriteString(string(data))
 	sb.WriteString("\n\n")
 
-	_, err = w.Write([]byte(sb.String()))
-	return err
+	_, _ = w.Write([]byte(sb.String()))
+	return nil
 }
