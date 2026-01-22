@@ -218,7 +218,8 @@ func TestAdminModelsHandler_ListModelRuns_StoreError(t *testing.T) {
 
 	var response map[string]interface{}
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Contains(t, "error", response)
+	assert.Equal(t, "INTERNAL_ERROR", response["code"])
+	assert.Equal(t, "Failed to fetch model runs", response["message"])
 }
 
 func TestAdminModelsHandler_ListModelRuns_AuthRequired(t *testing.T) {
@@ -264,7 +265,8 @@ func TestAdminModelsHandler_GetActiveModel_NotFound(t *testing.T) {
 
 	var response map[string]interface{}
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Contains(t, "error", response)
+	assert.Equal(t, "NOT_FOUND", response["code"])
+	assert.Equal(t, "model runs not found", response["message"])
 }
 
 func TestAdminModelsHandler_GetActiveModel_StoreError(t *testing.T) {
@@ -281,7 +283,8 @@ func TestAdminModelsHandler_GetActiveModel_StoreError(t *testing.T) {
 
 	var response map[string]interface{}
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Contains(t, "error", response)
+	assert.Equal(t, "INTERNAL_ERROR", response["code"])
+	assert.Equal(t, "Failed to fetch active model", response["message"])
 }
 
 func TestAdminModelsHandler_GetActiveModel_AuthRequired(t *testing.T) {

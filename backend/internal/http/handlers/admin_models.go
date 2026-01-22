@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -60,7 +61,8 @@ func (h *AdminModelsHandler) listModelRuns(c *gin.Context) {
 
 	runs, total, err := h.store.ModelRuns().List(c.Request.Context(), pageSize, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch model runs"})
+		log.Printf("[ERROR] Failed to fetch model runs: %v", err)
+		ErrInternal(c, "Failed to fetch model runs")
 		return
 	}
 
@@ -88,9 +90,22 @@ func (h *AdminModelsHandler) listModelRuns(c *gin.Context) {
 func (h *AdminModelsHandler) getActiveModel(c *gin.Context) {
 	run, err := h.store.ModelRuns().GetActive(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no model runs found"})
+		if isNotFoundError(err) {
+			ErrNotFound(c, "model runs")
+			return
+		}
+		log.Printf("[ERROR] Failed to fetch active model: %v", err)
+		ErrInternal(c, "Failed to fetch active model")
 		return
 	}
 
 	c.JSON(http.StatusOK, run)
+}
+
+func isNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return containsString(err.Error(), "no active model") ||
+		containsString(err.Error(), "not found")
 }
