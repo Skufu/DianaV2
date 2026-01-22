@@ -1,19 +1,24 @@
 package handlers
 
 import (
+	"fmt"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/skufu/DianaV2/backend/internal/cache"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
 type InsightsHandler struct {
 	store store.Store
+	cache *cache.Cache
 }
 
-func NewInsightsHandler(store store.Store) *InsightsHandler {
-	return &InsightsHandler{store: store}
+func NewInsightsHandler(store store.Store, cache *cache.Cache) *InsightsHandler {
+	return &InsightsHandler{store: store, cache: cache}
 }
 
 func (h *InsightsHandler) Register(rg *gin.RouterGroup) {
@@ -28,12 +33,31 @@ func (h *InsightsHandler) cluster(c *gin.Context) {
 		return
 	}
 	userClaims := claims.(middleware.UserClaims)
+	userID := userClaims.UserID
 
-	data, err := h.store.Assessments().ClusterCountsByUser(c.Request.Context(), int32(userClaims.UserID))
+	cacheKey := fmt.Sprintf("cluster-distribution:%d", userID)
+
+	if h.cache != nil {
+		var cachedData interface{}
+		if err := h.cache.Get(c.Request.Context(), cacheKey, &cachedData); err == nil {
+			c.JSON(http.StatusOK, cachedData)
+			return
+		}
+	}
+
+	data, err := h.store.Assessments().ClusterCountsByUser(c.Request.Context(), int32(userID))
 	if err != nil {
+		log.Printf("[ERROR] Failed to load cluster distribution for user %d: %v", userID, err)
 		ErrInternal(c, "Failed to load cluster distribution")
 		return
 	}
+
+	if h.cache != nil {
+		if err := h.cache.Set(c.Request.Context(), cacheKey, data, 10*time.Minute); err != nil {
+			log.Printf("[WARN] Failed to cache cluster distribution for user %d: %v", userID, err)
+		}
+	}
+
 	c.JSON(http.StatusOK, data)
 }
 
