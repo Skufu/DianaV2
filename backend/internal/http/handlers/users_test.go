@@ -188,7 +188,7 @@ func TestUsersHandler_GetUserProfile_AuthRequired(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Contains(t, w.Body.String(), "authentication required")
+	assert.Contains(t, w.Body.String(), "Authentication required")
 }
 
 func TestUsersHandler_UpdateUserProfile_Success(t *testing.T) {
@@ -284,7 +284,7 @@ func TestUsersHandler_CompleteOnboarding_MissingConsent(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
-	assert.Contains(t, w.Body.String(), "consent to personal data usage is required")
+	assert.Contains(t, w.Body.String(), "Consent to personal data usage is required")
 }
 
 func TestUsersHandler_GetConsentSettings_Success(t *testing.T) {
@@ -323,7 +323,7 @@ func TestUsersHandler_GetConsentSettings_AuthRequired(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Contains(t, w.Body.String(), "authentication required")
+	assert.Contains(t, w.Body.String(), "Authentication required")
 }
 
 func TestUsersHandler_UpdateConsentSettings_Success(t *testing.T) {
@@ -394,5 +394,5 @@ func TestUsersHandler_DeleteAccount_AuthRequired(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Contains(t, w.Body.String(), "authentication required")
+	assert.Contains(t, w.Body.String(), "Authentication required")
 }
