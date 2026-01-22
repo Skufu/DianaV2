@@ -9,13 +9,15 @@
 ## Backend (Render)
 - Build: `go build -o server ./cmd/server`
 - Start: `./server`
-- Env vars:
-  - `PORT` (Render provides)
-  - `DB_DSN` = Neon connection string (add `?sslmode=require` if needed)
-  - `JWT_SECRET` = strong secret
-  - `CORS_ORIGINS` = `https://<vercel-domain>,http://localhost:4000`
-  - `MODEL_VERSION` = `v0-placeholder`
-  - `EXPORT_MAX_ROWS` = `5000`
+ - Env vars:
+   - `PORT` (Render provides)
+   - `DB_DSN` = Neon connection string (add `?sslmode=require` if needed)
+   - `JWT_SECRET` = **REQUIRED for production/staging**. Minimum 32 characters, random string. Application will NOT start without this in non-local environments.
+     - Generate one: `openssl rand -base64 32` or use a secret manager
+     - Example format: `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0`
+   - `CORS_ORIGINS` = `https://<vercel-domain>,http://localhost:4000`
+   - `MODEL_VERSION` = `v0-placeholder`
+   - `EXPORT_MAX_ROWS` = `5000`
 - Health path: `/api/v1/healthz`
 - Apply migrations once: `make db_up`
 - Seed demo account: `make seed` (demo@diana.app / demopassword123)
@@ -35,8 +37,10 @@
 ## Local dev (optional)
 - Docker Compose service:
   - Postgres: `postgres://diana:pass@db:5432/diana_dev?sslmode=disable`
-  - API: use `.env` with DB_DSN pointing to the compose db
+  - API: use `.env` with DB_DSN pointing to compose db
+  - JWT_SECRET: Optional for local development (fallback to dev-secret if not set). For local dev, set `ENV=local` in `.env`.
 - Run: `docker compose up -d`, then `make db_up` (pointed to compose DB), `make seed`, `make dev`.
+- Note: JWT_SECRET is REQUIRED for all non-local environments (production, staging). Application will fail to start with a fatal error if missing.
 
 ## CI note
 - GitHub Actions already runs `go test ./...`.
