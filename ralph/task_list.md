@@ -38,7 +38,7 @@
   2. **Safe**: `c.JSON(http.Status, gin.H{"error": "message"})` - already generic
 
 **Tasks** (FILE-BY-FILE, sequential):
-- [ ] **auth.go**: Find vulnerable instances, replace with utils helpers, add logging
+- [x] **auth.go**: Find vulnerable instances, replace with utils helpers, add logging
 - [ ] **assessments.go**: Find vulnerable instances, replace with utils helpers, add logging
 - [ ] **users.go**: Find vulnerable instances, replace with utils helpers, add logging
 - [ ] **admin_users.go**: Find vulnerable instances, replace with utils helpers, add logging
