@@ -153,7 +153,7 @@
 
 **Tasks**:
 - [x] Add `VITE_ML_API_KEY` to `.env.local` template (already exists in frontend/.env.example)
-- [ ] Modify `frontend/src/api.js` `mlFetch` function to include X-API-Key header
+- [x] Modify `frontend/src/api.js` `mlFetch` function to include X-API-Key header (ALREADY IMPLEMENTED in lines 33-49)
 - [ ] Configure ML server to validate API key (or proxy through backend)
 - [ ] Write integration test: Mock ML server returns 401 without API key
 - [ ] Write E2E test: Verify ML insights load with authentication
@@ -518,7 +518,7 @@
 
 ### Phase 2: High Priority Fixes (Weeks 2-4)
 - [x] REQ-2.1: Configure Database Connection Pool (1 subtask blocked due to test infrastructure)
-- [x] REQ-2.2: Add ML API Key to Frontend
+- [x] REQ-2.2: Add ML API Key to Frontend (mlFetch already has X-API-Key header in lines 33-49)
 - [ ] REQ-2.3: Replace Index-Based Keys with Stable IDs
 - [ ] REQ-2.4: Implement Redis Caching Layer
 - [ ] REQ-2.5: Fix N+1 Query Pattern in Clinics
