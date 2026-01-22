@@ -31,7 +31,7 @@ func NewHTTPPredictor(url, version string, timeout time.Duration) *HTTPPredictor
 	}
 }
 
-func (p *HTTPPredictor) Predict(input models.Assessment) (string, int) {
+func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (string, int) {
 	if p.url == "" {
 		log.Printf("[ML] URL not configured, returning unknown")
 		return "unknown", 0
@@ -44,7 +44,7 @@ func (p *HTTPPredictor) Predict(input models.Assessment) (string, int) {
 	}
 
 	mlURL := p.url + "?model_type=ada"
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, mlURL, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, mlURL, bytes.NewReader(body))
 	if err != nil {
 		log.Printf("[ML] Failed to create request: %v", err)
 		return "error", 0

@@ -5,8 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	// "time" removed
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/models"
@@ -63,6 +62,9 @@ func TestAuditLogger_LogAction_Success(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)
 	}
+
+	// Wait for async goroutine to complete
+	time.Sleep(10 * time.Millisecond)
 
 	if len(store.events) != 1 {
 		t.Errorf("expected 1 audit event, got %d", len(store.events))

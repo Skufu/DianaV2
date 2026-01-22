@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { User, Calendar, Shield, Mail, Save, AlertTriangle } from 'lucide-react';
+import { User, Calendar, Shield, Mail, Save, AlertTriangle, ArrowLeft, Plus } from 'lucide-react';
 import { getUserProfileApi, updateUserProfileApi, deleteAccountApi } from '../../api';
+import AssessmentForm from './AssessmentForm';
 
-const UserProfile = ({ token }) => {
+const UserProfile = ({ token, setActiveTab }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAssessmentForm, setShowAssessmentForm] = useState(false);
   const [formData, setFormData] = useState({});
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -77,9 +80,37 @@ const UserProfile = ({ token }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
-        <h1 className="text-2xl font-bold text-white mb-2">My Profile</h1>
-        <p className="text-slate-400">Manage your personal information and preferences</p>
+        <div className="flex items-center gap-4 mb-2">
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-white">My Profile</h1>
+            <p className="text-slate-400">Manage your personal information and preferences</p>
+          </div>
+          <button
+            onClick={() => setShowAssessmentForm(!showAssessmentForm)}
+            className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-medium transition-colors"
+          >
+            <Plus size={18} />
+            Log Assessment
+          </button>
+        </div>
       </div>
+
+      {showAssessmentForm && (
+        <AssessmentForm
+          token={token}
+          onSubmit={() => {
+            setShowAssessmentForm(false);
+            setRefreshKey(prev => prev + 1);
+          }}
+          onCancel={() => setShowAssessmentForm(false)}
+        />
+      )}
 
       {error && (
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-rose-400">

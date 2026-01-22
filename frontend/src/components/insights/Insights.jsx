@@ -81,6 +81,7 @@ const Insights = ({ token, patients = [] }) => {
   const [allAssessments, setAllAssessments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   // ML Model state
   const [mlMetrics, setMlMetrics] = useState(null);
@@ -94,7 +95,7 @@ const Insights = ({ token, patients = [] }) => {
 
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || hasLoadedOnce) return;
     const load = async () => {
       setLoading(true);
       setError(null);
@@ -105,6 +106,7 @@ const Insights = ({ token, patients = [] }) => {
         ]);
         setClusters(c || []);
         setTrends(t || []);
+        setHasLoadedOnce(true);
 
         if (patients && patients.length > 0) {
           const assessmentPromises = patients.map(p =>
@@ -121,7 +123,7 @@ const Insights = ({ token, patients = [] }) => {
       }
     };
     load();
-  }, [token, patients]);
+  }, [token, patients, hasLoadedOnce]);
 
   // Load ML model data
   useEffect(() => {

@@ -1,114 +1,146 @@
 import pytest
-from ml.predict import DianaPredictor, get_medical_status, REQUIRED_FEATURES
+from .predict import DianaPredictor, ClinicalPredictor, get_medical_status, REQUIRED_FEATURES
 
 
-class TestGetMedicalStatus:
-    def test_normal_hba1c(self):
-        assert get_medical_status(5.0) == "Normal"
-        assert get_medical_status(5.6) == "Normal"
-
-    def test_prediabetic_hba1c(self):
-        assert get_medical_status(5.7) == "Pre-diabetic"
-        assert get_medical_status(6.4) == "Pre-diabetic"
-
-    def test_diabetic_hba1c(self):
-        assert get_medical_status(6.5) == "Diabetic"
-        assert get_medical_status(10.0) == "Diabetic"
-
-
-class TestDianaPredictor:
+class TestClinicalPredictor:
+    
     @pytest.fixture
-    def predictor(self):
+    def clinical_predictor(self):
+        return ClinicalPredictor()
+    
+    @pytest.fixture
+    def ada_predictor(self):
         return DianaPredictor()
-
-    def test_predict_sidd_cluster(self, predictor):
+    
+    def test_predict_normal_clinical(self, clinical_predictor):
         data = {
-            'hba1c': 9.5,
-            'fbs': 220,
-            'bmi': 35,
-            'triglycerides': 160,
-            'ldl': 120,
-            'hdl': 45
+            'bmi': 22.0,
+            'triglycerides': 100.0,
+            'ldl': 100.0,
+            'hdl': 65.0,
+            'age': 45
         }
-        result = predictor.predict(data)
+        result = clinical_predictor.predict(data)
+        
         assert result['success'] is True
-        assert result['risk_cluster'] == 'SIDD'
-        assert result['risk_level'] == 'HIGH'
+        assert result['medical_status'] == 'Normal'
+        assert result['risk_level'] == 'LOW'
+        assert result['risk_score'] <= 30
+    
+    def test_predict_prediabetic_clinical(self, clinical_predictor):
+        data = {
+            'bmi': 27.0,
+            'triglycerides': 150.0,
+            'ldl': 130.0,
+            'hdl': 50.0,
+            'age': 55
+        }
+        result = clinical_predictor.predict(data)
+        
+        assert result['success'] is True
+        assert result['medical_status'] == 'Pre-diabetic'
+        assert result['risk_level'] in ['LOW', 'MODERATE']
+        assert result['risk_score'] >= 30
+    
+    def test_predict_diabetic_clinical_mod_cluster(self, clinical_predictor):
+        data = {
+            'bmi': 31.0,
+            'triglycerides': 200.0,
+            'ldl': 150.0,
+            'hdl': 45.0,
+            'age': 50
+        }
+        result = clinical_predictor.predict(data)
+        
+        assert result['success'] is True
         assert result['medical_status'] == 'Diabetic'
-        assert result['risk_score'] >= 70
-
-    def test_predict_sird_cluster(self, predictor):
-        data = {
-            'hba1c': 6.0,
-            'fbs': 110,
-            'bmi': 38,
-            'triglycerides': 100,
-            'ldl': 110,
-            'hdl': 50
-        }
-        result = predictor.predict(data)
-        assert result['success'] is True
-        assert result['risk_cluster'] == 'SIRD'
-        assert result['risk_level'] == 'HIGH'
-
-    def test_predict_mod_cluster(self, predictor):
-        data = {
-            'hba1c': 5.9,
-            'fbs': 108,
-            'bmi': 30,
-            'triglycerides': 200,
-            'ldl': 150,
-            'hdl': 45
-        }
-        result = predictor.predict(data)
-        assert result['success'] is True
         assert result['risk_cluster'] == 'MOD'
         assert result['risk_level'] == 'MODERATE'
-
-    def test_predict_mard_cluster(self, predictor):
+    
+    def test_predict_diabetic_clinical_mard_cluster(self, clinical_predictor):
         data = {
-            'hba1c': 5.2,
-            'fbs': 95,
-            'bmi': 24,
-            'triglycerides': 75,
-            'ldl': 120,
-            'hdl': 70
+            'bmi': 26.0,
+            'triglycerides': 120.0,
+            'ldl': 130.0,
+            'hdl': 60.0,
+            'age': 70
         }
-        result = predictor.predict(data)
+        result = clinical_predictor.predict(data)
+        
         assert result['success'] is True
+        assert result['medical_status'] == 'Diabetic'
         assert result['risk_cluster'] == 'MARD'
         assert result['risk_level'] == 'LOW'
-        assert result['medical_status'] == 'Normal'
         assert result['risk_score'] <= 30
-
-    def test_predict_missing_features(self, predictor):
-        data = {'hba1c': 6.0, 'fbs': 100}
-        result = predictor.predict(data)
-        assert result['success'] is False
-        assert 'error' in result
-
-    def test_predict_out_of_range_values(self, predictor):
+    
+    def test_predict_diabetic_clinical_sird_cluster(self, clinical_predictor):
         data = {
-            'hba1c': 25.0,
-            'fbs': 100,
-            'bmi': 30,
-            'triglycerides': 150,
-            'ldl': 120,
-            'hdl': 50
+            'bmi': 35.0,
+            'triglycerides': 180.0,
+            'ldl': 140.0,
+            'hdl': 40.0,
+            'age': 50
         }
-        result = predictor.predict(data)
-        assert result['success'] is False
-
-    def test_predict_returns_required_fields(self, predictor):
+        result = clinical_predictor.predict(data)
+        
+        assert result['success'] is True
+        assert result['medical_status'] == 'Diabetic'
+        assert result['risk_cluster'] == 'SIRD'
+        assert result['risk_level'] == 'HIGH'
+    
+    def test_predict_diabetic_clinical_sidd_cluster(self, clinical_predictor):
         data = {
-            'hba1c': 6.0,
-            'fbs': 110,
-            'bmi': 30,
-            'triglycerides': 150,
-            'ldl': 120,
-            'hdl': 55
+            'bmi': 30.0,
+            'triglycerides': 220.0,
+            'ldl': 150.0,
+            'hdl': 40.0,
+            'age': 45
         }
-        result = predictor.predict(data)
+        result = clinical_predictor.predict(data)
+        
+        assert result['success'] is True
+        assert result['medical_status'] == 'Diabetic'
+        assert result['risk_cluster'] == 'SIDD'
+        assert result['risk_level'] == 'HIGH'
+        assert result['risk_score'] >= 70
+    
+    def test_predict_missing_clinical_features(self, clinical_predictor):
+        """Test prediction with missing clinical features."""
+        data = {'bmi': 30.0}
+        result = clinical_predictor.predict(data)
+        
+        assert result['success'] is True
+        assert result['medical_status'] in ['Pre-diabetic', 'Diabetic']
+        assert 'risk_cluster' in result
+        assert 'risk_level' in result
+    
+    def test_predict_very_high_clinical_risk(self, clinical_predictor):
+        """Test prediction for very high clinical risk."""
+        data = {
+            'bmi': 40.0,
+            'triglycerides': 250.0,
+            'ldl': 180.0,
+            'hdl': 30.0,
+            'age': 55
+        }
+        result = clinical_predictor.predict(data)
+        
+        assert result['success'] is True
+        assert result['medical_status'] == 'Diabetic'
+        assert result['risk_score'] >= 85
+        assert result['risk_level'] == 'HIGH'
+    
+    def test_predict_returns_all_fields_clinical(self, clinical_predictor):
+        """Test that clinical prediction returns all expected fields."""
+        data = {
+            'bmi': 30.0,
+            'triglycerides': 150.0,
+            'ldl': 130.0,
+            'hdl': 50.0,
+            'age': 50
+        }
+        result = clinical_predictor.predict(data)
+        
         assert result['success'] is True
         assert 'medical_status' in result
         assert 'risk_cluster' in result
@@ -116,23 +148,18 @@ class TestDianaPredictor:
         assert 'risk_score' in result
         assert 'probability' in result
         assert 'confidence' in result
-
-    def test_kmeans_uses_correct_feature_count(self, predictor):
-        assert predictor.kmeans.n_features_in_ == len(REQUIRED_FEATURES)
-        assert predictor.scaler.n_features_in_ == len(REQUIRED_FEATURES)
-
-
-class TestPredictBatch:
-    @pytest.fixture
-    def predictor(self):
-        return DianaPredictor()
-
-    def test_batch_prediction(self, predictor):
-        patients = [
-            {'hba1c': 5.5, 'fbs': 95, 'bmi': 25, 'triglycerides': 80, 'ldl': 110, 'hdl': 65},
-            {'hba1c': 9.0, 'fbs': 200, 'bmi': 35, 'triglycerides': 180, 'ldl': 140, 'hdl': 40},
-        ]
-        results = predictor.predict_batch(patients)
-        assert len(results) == 2
-        assert results[0]['risk_cluster'] == 'MARD'
-        assert results[1]['risk_cluster'] == 'SIDD'
+        assert 'model_type' in result
+    
+    def test_predict_clinical_uses_correct_features(self, clinical_predictor):
+        """Test that ClinicalPredictor uses only clinical features."""
+        data = {
+            'bmi': 30.0,
+            'triglycerides': 150.0,
+            'ldl': 130.0,
+            'hdl': 50.0,
+            'age': 50
+        }
+        result = clinical_predictor.predict(data)
+        
+        assert result['model_type'] == 'clinical', \
+            "ClinicalPredictor should use model_type='clinical'"

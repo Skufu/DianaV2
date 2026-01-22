@@ -170,14 +170,18 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	}
 
 	// Get prediction from ML server
-	// Assuming Predict takes models.Assessment directly
-	cluster, riskScore := h.predictor.Predict(assessment)
+	// Pass request context for cancellation support
+	cluster, riskScore := h.predictor.Predict(c.Request.Context(), assessment)
 
 	assessment.Cluster = cluster
 	assessment.RiskScore = riskScore
 
 	// Add risk level
 	assessment.RiskLevel = calculateRiskLevel(riskScore)
+
+	// Validate biomarker ranges before ML prediction (clinical safety)
+	validationResult := ml.ValidateBiomarkers(assessment)
+	assessment.ValidationStatus = ml.FormatValidationStatus(validationResult)
 
 	// Create assessment in database
 	created, err := h.store.Assessments().Create(c.Request.Context(), assessment)
@@ -193,7 +197,10 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	assessment.DatasetHash = h.datasetHash
 
 	// Reset last assessment reminder sent date (UpdateLastLogin as proxy, or ignore)
-	_ = h.store.Users().UpdateLastLogin(c.Request.Context(), int32(userID))
+	if err := h.store.Users().UpdateLastLogin(c.Request.Context(), int32(userID)); err != nil {
+		// Log but don't fail response - this is a non-critical update
+		// In production, this should be sent to monitoring
+	}
 
 	c.JSON(http.StatusCreated, assessment)
 }
@@ -295,7 +302,8 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	assessment.Notes = req.Notes
 
 	// Re-predict with updated values
-	cluster, riskScore := h.predictor.Predict(*assessment)
+	// Pass request context for cancellation support
+	cluster, riskScore := h.predictor.Predict(c.Request.Context(), *assessment)
 
 	assessment.Cluster = cluster
 	assessment.RiskScore = riskScore

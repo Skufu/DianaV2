@@ -1,7 +1,7 @@
 # DIANA V2 - Documentation Hub
 
-> **Purpose**: Centralized documentation index for thesis defense and development  
-> **Last Updated**: January 12, 2026
+> **Purpose**: Centralized documentation index for thesis defense and development
+> **Last Updated**: January 23, 2026
 
 ---
 
@@ -9,14 +9,13 @@
 
 | Topic | Document |
 |-------|----------|
-| System Architecture | [ARCHITECTURE.md](./ARCHITECTURE.md) |
-| Backend API | [BACKEND.md](./BACKEND.md) |
-| Frontend Components | [FRONTEND.md](./FRONTEND.md) |
-| ML System | [ML_SYSTEM.md](./ML_SYSTEM.md) |
-| Database Schema | [DATABASE.md](./DATABASE.md) |
-| ML API Contract | [ml-api-contract.md](./ml-api-contract.md) |
-| Paper Requirements | [paper-requirements.md](./paper-requirements.md) |
-| **📖 Paper RAG (AI)** | [paper_rag/README.md](./paper_rag/README.md) |
+| System Architecture | [01-architecture/overview.md](./01-architecture/overview.md) |
+| Backend API | [02-guides/backend.md](./02-guides/backend.md) |
+| Frontend Components | [02-guides/frontend.md](./02-guides/frontend.md) |
+| ML System | [02-guides/ml-system.md](./02-guides/ml-system.md) |
+| Database Schema | [02-guides/database.md](./02-guides/database.md) |
+| ML API Contract | [03-ml/api-contract.md](./03-ml/api-contract.md) |
+| Paper Requirements | [07-research/paper-requirements.md](./07-research/paper-requirements.md) |
 
 ---
 
@@ -39,33 +38,78 @@
 
 ## Documentation Map
 
-### Architecture & Design
+### 📁 01-architecture/
 | Document | Description | Key Topics |
 |----------|-------------|------------|
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System overview | Components, request flow, auth flow |
-| [architecture/ARCHITECTURE.md](./architecture/ARCHITECTURE.md) | Detailed architecture | Data models, API design |
-| [architecture/PROJECT_STRUCTURE.md](./architecture/PROJECT_STRUCTURE.md) | Directory layout | Folder organization |
-| [architecture/layout.md](./architecture/layout.md) | This high-level layout and boundary overview |
+| [overview.md](./01-architecture/overview.md) | System overview | Components, request flow, auth flow |
+| [detailed-architecture.md](./01-architecture/detailed-architecture.md) | Detailed architecture | Data models, API design |
+| [project-structure.md](./01-architecture/project-structure.md) | Directory layout | Folder organization |
+| [layout.md](./01-architecture/layout.md) | High-level layout | Boundary overview |
 
-### Component Guides
+### 📁 02-guides/
 | Document | Description | Key Topics |
 |----------|-------------|------------|
-| [BACKEND.md](./BACKEND.md) | Go/Gin API | Handlers, routes, SQLC, middleware |
-| [FRONTEND.md](./FRONTEND.md) | React client | Components, state, API integration |
-| [DATABASE.md](./DATABASE.md) | PostgreSQL | Tables, migrations, queries |
+| [backend.md](./02-guides/backend.md) | Go/Gin API | Handlers, routes, SQLC, middleware |
+| [frontend.md](./02-guides/frontend.md) | React client | Components, state, API integration |
+| [database.md](./02-guides/database.md) | PostgreSQL | Tables, migrations, queries |
+| [ml-system.md](./02-guides/ml-system.md) | ML overview | Models, training, clusters |
+| [admin.md](./02-guides/admin.md) | Admin Dashboard | User management, audit, models |
+| [security.md](./02-guides/security.md) | Security guidelines | Auth, RBAC, best practices |
 
-### ML System
+### 📁 03-ml/
 | Document | Description | Key Topics |
 |----------|-------------|------------|
-| [ML_SYSTEM.md](./ML_SYSTEM.md) | ML overview | Models, training, clusters |
-| [ml-api-contract.md](./ml-api-contract.md) | ML API spec | Endpoints, request/response formats |
-| [ml-integration.md](./ml-integration.md) | Backend-ML integration | HTTPPredictor, mock mode |
-| [ml-methodology.md](./ml-methodology.md) | Research methodology | ADA criteria, Ahlqvist clusters |
+| [integration.md](./03-ml/integration.md) | Backend-ML integration | HTTPPredictor, mock mode |
+| [api-contract.md](./03-ml/api-contract.md) | ML API spec | Endpoints, request/response formats |
+| [methodology.md](./03-ml/methodology.md) | Research methodology | ADA criteria, Ahlqvist clusters |
+| [rationale.md](./03-ml/rationale.md) | ML justification | Defense-ready methodology |
 
-### Operations
+### 📁 04-development/
 | Document | Description | Key Topics |
 |----------|-------------|------------|
-| [ops/deployment.md](./ops/deployment.md) | Deployment guide | Render, Neon, Vercel |
+| [local-setup.md](./04-development/local-setup.md) | Local development setup | Environment, dependencies |
+| [troubleshooting.md](./04-development/troubleshooting.md) | Common issues | Debugging, fixes |
+| [api-drift-prevention.md](./04-development/api-drift-prevention.md) | API consistency | SQLC, schema evolution |
+| [claude-instructions.md](./04-development/claude-instructions.md) | AI agent guidelines | Development assistance |
+
+### 📁 05-planning/
+| Document | Description | Key Topics |
+|----------|-------------|------------|
+| [backend-plan.md](./05-planning/backend-plan.md) | Backend implementation plan | Gin, routes, SQLC |
+| [backend-plan-root.md](./05-planning/backend-plan-root.md) | Backend root plan | High-level design |
+| [frontend-plan.md](./05-planning/frontend-plan.md) | Frontend implementation plan | React components, state |
+| [frontend-plan-root.md](./05-planning/frontend-plan-root.md) | Frontend root plan | High-level design |
+| [admin-dashboard-plan.md](./05-planning/admin-dashboard-plan.md) | Admin dashboard plan | User management, audit |
+| [concerns.md](./05-planning/concerns.md) | Development concerns | Risks, decisions |
+| [backend-refactoring-prd.md](./05-planning/backend-refactoring-prd.md) | Refactoring PRD | Transactions, audit, errors |
+
+### 📁 06-operations/
+| Document | Description | Key Topics |
+|----------|-------------|------------|
+| [deployment.md](./06-operations/deployment.md) | Deployment guide | Render, Neon, Vercel |
+| [deployment-internal.md](./06-operations/deployment-internal.md) | Internal deployment | Private infrastructure |
+| [logging-improvements.md](./06-operations/logging-improvements.md) | Logging strategy | Observability, monitoring |
+
+### 📁 07-research/
+| Document | Description | Key Topics |
+|----------|-------------|------------|
+| [paper-requirements.md](./07-research/paper-requirements.md) | Thesis requirements | Manuscript, figures |
+| [manuscript-updates.md](./07-research/manuscript-updates.md) | Manuscript revisions | Model results, discussion |
+| [codebase-alignment.md](./07-research/codebase-alignment.md) | Code vs paper alignment | Feature mapping |
+| [biomarkers.md](./07-research/biomarkers.md) | Biomarker details | Clinical ranges, validation |
+| [diabetes-subgroups.md](./07-research/diabetes-subgroups.md) | Subtype clustering | Ahlqvist categories |
+| [feature-selection.md](./07-research/feature-selection.md) | Feature engineering | Mutual information, IG |
+| [metrics.md](./07-research/metrics.md) | Model metrics | AUC, precision, recall |
+| [ml-algorithms.md](./07-research/ml-algorithms.md) | ML algorithms comparison | XGBoost, CatBoost, etc. |
+| [data-pipeline.md](./07-research/data-pipeline.md) | Data processing | NHANES, imputation |
+| [ui-requirements.md](./07-research/ui-requirements.md) | UI specifications | Paper figures alignment |
+| [README.md](./07-research/README.md) | Research RAG index | Paper documentation hub |
+
+### 📁 00-legacy/
+| Document | Description | Status |
+|----------|-------------|--------|
+| [codebase-map.md](./00-legacy/codebase-map.md) | Legacy codebase map | Archived |
+| [known-issues.md](./00-legacy/known-issues.md) | Legacy issues list | Archived |
 
 ---
 
@@ -128,14 +172,17 @@
 
 | Question | Answer Location |
 |----------|-----------------|
-| How does authentication work? | [BACKEND.md](./BACKEND.md) → Authentication Flow |
-| How are predictions made? | [ML_SYSTEM.md](./ML_SYSTEM.md) → Model Architecture |
-| What are the cluster types? | [ML_SYSTEM.md](./ML_SYSTEM.md) → Cluster Definitions |
-| How to add a new API endpoint? | [BACKEND.md](./BACKEND.md) → Handlers section |
-| How to add a new component? | [FRONTEND.md](./FRONTEND.md) → Components |
+| How does authentication work? | [02-guides/backend.md](./02-guides/backend.md) → Authentication Flow |
+| How are predictions made? | [02-guides/ml-system.md](./02-guides/ml-system.md) → Model Architecture |
+| What are the cluster types? | [02-guides/ml-system.md](./02-guides/ml-system.md) → Cluster Definitions |
+| How to add a new API endpoint? | [02-guides/backend.md](./02-guides/backend.md) → Handlers section |
+| How to add a new component? | [02-guides/frontend.md](./02-guides/frontend.md) → Components |
+| How to prevent API drift? | [04-development/api-drift-prevention.md](./04-development/api-drift-prevention.md) |
+| How to set up local development? | [04-development/local-setup.md](./04-development/local-setup.md) |
+| How to deploy? | [06-operations/deployment.md](./06-operations/deployment.md) |
 
 ---
 
 ## Search Keywords
 
-`architecture` `backend` `frontend` `ML` `machine learning` `database` `PostgreSQL` `API` `endpoints` `authentication` `JWT` `patients` `assessments` `diabetes` `prediction` `clustering` `biomarkers` `NHANES` `ADA` `Ahlqvist` `SIRD` `SIDD` `MOD` `MARD` `deployment` `thesis` `defense`
+`architecture` `backend` `frontend` `ML` `machine learning` `database` `PostgreSQL` `API` `endpoints` `authentication` `JWT` `patients` `assessments` `diabetes` `prediction` `clustering` `biomarkers` `NHANES` `ADA` `Ahlqvist` `SIRD` `SIDD` `MOD` `MARD` `deployment` `thesis` `defense` `documentation` `development` `operations` `planning` `research`

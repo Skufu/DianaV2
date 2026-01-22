@@ -1,6 +1,7 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2025-01-23
+**Updated:** 2025-01-22
 **Commit:** Current
 **Branch:** main
 
@@ -32,6 +33,24 @@ Multi-tier medical AI platform: diabetes risk prediction for menopausal women. G
 ├── scripts/              # Data pipeline, ML training, dev orchestration
 └── docs/                 # API drift prevention, thesis docs
 ```
+
+## AGENTS.md FILES
+
+Comprehensive knowledge base documentation for all major directories:
+
+| Directory | AGENTS.md | Scope |
+|-----------|-----------|-------|
+| `backend/internal/http/handlers/` | ✅ Complete | HTTP handlers, error patterns, ML integration |
+| `backend/internal/store/` | ✅ Complete | Repository pattern, SQLC, pgtype handling |
+| `backend/internal/http/router/` | ✅ Complete | Route registration, middleware chain |
+| `backend/internal/services/` | ✅ Complete | Business logic, PDF export, notifications, validation |
+| `backend/internal/config/` | ✅ Complete | Environment variables, defaults, validation |
+| `backend/internal/ml/` | ✅ Complete | ML predictor interface, validation, clinical ranges |
+| `backend/internal/http/middleware/` | ✅ Complete | Auth, RBAC, rate limiting, audit, security |
+| `backend/internal/http/` | ✅ Complete | Router configuration, route hierarchy |
+| `backend/migrations/` | ✅ Complete | Goose migrations, schema evolution |
+| `frontend/src/` | ✅ Complete | App architecture, routing, auth state, performance |
+| `frontend/src/components/` | ✅ Complete | All UI components, patterns, conventions |
 
 ## WHERE TO LOOK
 
@@ -207,7 +226,7 @@ make sqlc
   return c.JSON(http.StatusBadRequest, APIError{
       Code:    "validation_error",
       Message: "Invalid biomarker value",
-      Details: "HbA1c must be between 4.0-15.0",
+      Details: "HbA1c must be between4.0-15.0",
   })
   ```
 - **Never manual JSON**: Avoid `c.JSON(http.Status..., gin.H{"error": ...})`

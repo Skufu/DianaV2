@@ -192,7 +192,7 @@ VITE_ML_BASE=http://localhost:5000
 
 | Role | Email | Password |
 |------|-------|----------|
-| Demo (User) | demo@diana.app | demo123 |
+| Demo (User) | demo@diana.app | demopassword123 |
 | Admin | admin@diana.app | admin123 |
 
 ---
