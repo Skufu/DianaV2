@@ -197,7 +197,7 @@
 - [x] Create `backend/internal/cache/redis_cache.go` with Cache struct
 - [x] Implement `Get()` method with JSON unmarshaling
 - [x] Implement `Set()` method with JSON marshaling and TTL
-- [ ] Configure Redis client in `backend/cmd/server/main.go`
+- [x] Configure Redis client in `backend/cmd/server/main.go`
 - [ ] Add caching to `/api/v1/analytics/summary` (5 min TTL)
 - [ ] Add caching to `/api/v1/analytics/cluster-distribution` (10 min TTL)
 - [ ] Add caching to `/api/v1/users/me/trends` (5 min TTL)

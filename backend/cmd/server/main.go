@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/skufu/DianaV2/backend/internal/cache"
 	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/http/router"
 	"github.com/skufu/DianaV2/backend/internal/store"
@@ -80,6 +81,22 @@ func main() {
 		st = store.NewPostgresStore(nil)
 	}
 
+	var redisCache *cache.Cache
+	if cfg.RedisAddr != "" {
+		cache, err := cache.NewCache(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
+		if err != nil {
+			log.Printf("WARNING: Failed to connect to Redis at %s: %v", cfg.RedisAddr, err)
+			log.Printf("Continuing without cache layer...")
+			redisCache = nil
+		} else {
+			redisCache = cache
+			log.Printf("connected to Redis at %s (DB: %d)", cfg.RedisAddr, cfg.RedisDB)
+		}
+	} else {
+		log.Printf("REDIS_ADDR not set; running without cache layer")
+		redisCache = nil
+	}
+
 	r := router.New(cfg, st)
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
@@ -120,6 +137,11 @@ func main() {
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("server shutdown error: %v", err)
+	}
+	if redisCache != nil {
+		if err := redisCache.Close(); err != nil {
+			log.Printf("redis shutdown error: %v", err)
+		}
 	}
 	st.Close()
 	log.Printf("shutdown complete")
