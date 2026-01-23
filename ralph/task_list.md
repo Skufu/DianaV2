@@ -126,7 +126,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Action**: Add real assessment creation tests with mock ML
 **Files Affected**: `frontend/e2e/assessment-creation.spec.js`
 **Tests to Add**:
-- [ ] Create assessment with valid biomarkers → risk score returned
+- [x] Create assessment with valid biomarkers → risk score returned
 - [ ] Create assessment with HbA1c > 15 → validation error
 - [ ] Create assessment with negative BMI → validation error
 - [ ] Create assessment with missing required fields → error
