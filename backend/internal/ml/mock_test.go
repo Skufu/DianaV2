@@ -58,7 +58,10 @@ func TestMockPredictor_Predict(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cluster, risk := p.Predict(context.Background(), tt.input)
+			cluster, risk, err := p.Predict(context.Background(), tt.input)
+			if err != nil {
+				t.Errorf("Predict() returned unexpected error: %v", err)
+			}
 			if cluster != tt.wantCluster {
 				t.Errorf("cluster = %q, want %q", cluster, tt.wantCluster)
 			}
