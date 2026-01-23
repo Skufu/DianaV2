@@ -256,11 +256,11 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 - [x] Search/filter users (if UI exists) - Implemented and tested successfully
 - [x] View user details
 - [x] Create new user → appears in list
-- [ ] Create user with duplicate email → error
+- [x] Create user with duplicate email → error
 - [ ] Deactivate user → marked inactive
 - [ ] Reactivate user → marked active again
 **Success Criteria**: Admin user mgmt errors surface
-**Status**: Created `admin-users.spec.js` with 10 tests covering:
+**Status**: Created `admin-users.spec.js` with 11 tests covering:
 - List users with pagination (first page)
 - Navigate to next page
 - Navigate to previous page
