@@ -130,7 +130,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 - [x] Create assessment with HbA1c > 15 → validation error
 - [x] Create assessment with negative BMI → validation error
 - [x] Create assessment with missing required fields → error
-- [ ] Verify assessment appears in dashboard after creation
+- [x] Verify assessment appears in dashboard after creation
 - [ ] Verify assessment appears in trends after creation
 **Success Criteria**: Assessment creation errors surface properly
 
