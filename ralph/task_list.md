@@ -647,8 +647,8 @@
 - [x] Lighthouse "Offscreen Images" score: Improved
 
 ### Code Quality
-- [ ] Integration Test Coverage: 0% → >70% [CURRENT: 44.4% overall - unit tests passing, integration tests require TEST_DB_DSN]
-- [ ] Code duplication: Reduced through refactoring
+- [BLOCKED] Integration Test Coverage: 0% → >70% [CURRENT: 44.4% overall - unit tests passing, integration tests require TEST_DB_DSN]
+- [x] Code duplication: Reduced through refactoring
 - [x] Interface{} usage: 108 → 0
 - [x] Integration test framework: Implemented with test skeletons for critical flows
 
