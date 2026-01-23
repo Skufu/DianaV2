@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, memo } from 'react';
 
 /**
  * CustomCursor: A smooth, premium cursor with crosshair design
@@ -119,4 +119,4 @@ const CustomCursor = ({ isLoggedIn = false }) => {
     );
 };
 
-export default CustomCursor;
+export default memo(CustomCursor);
