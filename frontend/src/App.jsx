@@ -42,6 +42,7 @@ const LoadingSkeleton = memo(function LoadingSkeleton() {
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [token, setToken] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -81,6 +82,7 @@ const App = () => {
     // Store JWT tokens in localStorage for authenticated API requests
     if (res.access_token) {
       localStorage.setItem('diana_token', res.access_token);
+      setToken(res.access_token);
     }
     if (res.refresh_token) {
       localStorage.setItem('diana_refresh_token', res.refresh_token);
@@ -111,6 +113,7 @@ const App = () => {
     localStorage.removeItem('diana_refresh_token');
 
     setIsAuthenticated(false);
+    setToken(null);
     setUserRole(null);
     setIsAdmin(false);
     setUserId(null);
@@ -123,6 +126,10 @@ const App = () => {
       setIsAdmin(profile.role === 'admin');
       setUserId(profile.id);
       setIsAuthenticated(true);
+      const storedToken = localStorage.getItem('diana_token');
+      if (storedToken) {
+        setToken(storedToken);
+      }
       if (profile?.onboarding_completed === true) {
         setShowOnboarding(false);
       } else {
@@ -132,6 +139,7 @@ const App = () => {
       const status = profileError.response?.status;
       if (status === 401 || status === 403) {
         setIsAuthenticated(false);
+        setToken(null);
       }
     }
   }, [profile, profileLoading, profileError]);
@@ -168,8 +176,8 @@ const App = () => {
 
   // Render content for admin users
   const renderAdminContent = useCallback(() => {
-    return <AdminDashboard userRole={userRole} activeView={adminView} setActiveView={setAdminView} />;
-  }, [userRole, adminView]);
+    return <AdminDashboard userRole={userRole} activeView={adminView} setActiveView={setAdminView} token={token} />;
+  }, [userRole, adminView, token]);
 
   const handleSignupSuccess = useCallback((res) => {
     if (!res?.user) throw new Error('signup failed');

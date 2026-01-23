@@ -32,7 +32,8 @@ type streamParams struct {
 	Token string `form:"token" binding:"required"`
 }
 
-func (h *AuthEventHandler) streamAuthEvents(c *gin.Context) {
+// StreamAuthEvents is the exported handler for the SSE endpoint
+func (h *AuthEventHandler) StreamAuthEvents(c *gin.Context) {
 	var params streamParams
 	if err := c.ShouldBindQuery(&params); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid parameters"})
@@ -62,4 +63,9 @@ func (h *AuthEventHandler) streamAuthEvents(c *gin.Context) {
 	}
 
 	sse.StreamToGin(c, h.broker, c.Request.Context())
+}
+
+// streamAuthEvents is the internal implementation (unexported)
+func (h *AuthEventHandler) streamAuthEvents(c *gin.Context) {
+	h.StreamAuthEvents(c)
 }

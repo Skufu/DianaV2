@@ -40,7 +40,7 @@ const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'
 
 // activeView and setActiveView are now passed from App.jsx
 // Navigation is handled by AdminSidebar
-const AdminDashboard = ({ userRole, activeView = 'overview' }) => {
+const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
   const animateCharts = useMemo(() => shouldAnimateCharts(), []);
 
   const { data: dashboardData, isLoading, error } = useAdminDashboard();
@@ -79,7 +79,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview' }) => {
       case 'auth-events':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <AuthEventLogViewer />
+            <AuthEventLogViewer token={token} />
           </Suspense>
         );
       default:

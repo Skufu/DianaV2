@@ -4,16 +4,16 @@ package models
 import "time"
 
 type AuthEvent struct {
-	ID         string                 `json:"id"`
-	EventType  string                 `json:"event_type"`
-	Email      string                 `json:"email,omitempty"`
-	IPAddress  string                 `json:"ip_address,omitempty"`
-	UserAgent  string                 `json:"user_agent,omitempty"`
-	Success    bool                   `json:"success"`
+	ID         string         `json:"id"`
+	EventType  string         `json:"event_type"`
+	Email      string         `json:"email,omitempty"`
+	IPAddress  string         `json:"ip_address,omitempty"`
+	UserAgent  string         `json:"user_agent,omitempty"`
+	Success    bool           `json:"success"`
 	DeviceInfo map[string]any `json:"device_info,omitempty"`
 	Location   map[string]any `json:"location,omitempty"`
 	Metadata   map[string]any `json:"metadata,omitempty"`
-	CreatedAt  time.Time              `json:"created_at"`
+	CreatedAt  time.Time      `json:"created_at"`
 }
 
 type User struct {
@@ -333,13 +333,13 @@ type ClinicComparison struct {
 
 // AuditEvent represents a logged admin action for audit trail
 type AuditEvent struct {
-	ID         int64                  `json:"id"`
-	Actor      string                 `json:"actor"`
-	Action     string                 `json:"action"`
-	TargetType string                 `json:"target_type"`
-	TargetID   int                    `json:"target_id"`
+	ID         int64          `json:"id"`
+	Actor      string         `json:"actor"`
+	Action     string         `json:"action"`
+	TargetType string         `json:"target_type"`
+	TargetID   int            `json:"target_id"`
 	Details    map[string]any `json:"details,omitempty"`
-	CreatedAt  time.Time              `json:"created_at"`
+	CreatedAt  time.Time      `json:"created_at"`
 }
 
 // ModelRun represents a training run of the ML model
@@ -374,8 +374,8 @@ type AuditListParams struct {
 // PaginatedResponse is a generic wrapper for paginated API responses
 type PaginatedResponse struct {
 	Data       any `json:"data"`
-	Total      int         `json:"total"`
-	Page       int         `json:"page"`
-	PageSize   int         `json:"page_size"`
-	TotalPages int         `json:"total_pages"`
+	Total      int `json:"total"`
+	Page       int `json:"page"`
+	PageSize   int `json:"page_size"`
+	TotalPages int `json:"total_pages"`
 }
