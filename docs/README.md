@@ -130,7 +130,6 @@
 |---------|------|
 | Main app | `frontend/src/App.jsx` |
 | API wrapper | `frontend/src/api.js` |
-| Dashboard | `frontend/src/components/dashboard/Dashboard.jsx` |
 | User Dashboard | `frontend/src/components/user/Dashboard_user.jsx` | User overview, assessments |
 | Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` | Admin system stats |
 | Profile | `frontend/src/components/user/UserProfile.jsx` | Profile management |
