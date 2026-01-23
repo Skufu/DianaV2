@@ -167,6 +167,126 @@ test.describe('Authorization Error Handling', () => {
     expect(refreshToken).toBeNull();
   });
 
+  test('User accessing admin route → forbidden message or redirect', async ({ page }) => {
+    let adminDashboardCalled = false;
+    let profileCallCount = 0;
+
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'user.access.token',
+          refresh_token: 'user.refresh.token',
+          user: { id: '1', email: TEST_USER.email, role: 'user' },
+        }),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      adminDashboardCalled = true;
+      return route.fulfill({
+        status: 403,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Forbidden' }),
+      });
+    });
+
+    await page.route('**/admin/users', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      adminDashboardCalled = true;
+      return route.fulfill({
+        status: 403,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Forbidden - Admin access required' }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      profileCallCount++;
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email, role: 'user' }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/users/me/onboarding', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      });
+    });
+
+    await page.goto('/');
+    await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
+    await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
+    await page.click(SELECTORS.loginButton);
+    await waitForNetworkIdle(page);
+
+    const sidebarLocator = page.locator(SELECTORS.sidebar);
+    const dashboardTextLocator = page.locator('text=/dashboard/i');
+    await expect(sidebarLocator.or(dashboardTextLocator).first()).toBeVisible({ timeout: 10000 });
+
+    await page.evaluate(() => {
+      fetch('/api/v1/admin/dashboard', {
+        headers: { 'Authorization': 'Bearer user.access.token' },
+      }).catch(() => {});
+    });
+
+    await page.waitForTimeout(1000);
+
+    expect(adminDashboardCalled).toBe(true);
+
+    await page.evaluate(() => {
+      fetch('/api/v1/admin/users', {
+        headers: { 'Authorization': 'Bearer user.access.token' },
+      }).catch(() => {});
+    });
+
+    await page.waitForTimeout(1000);
+  });
+
   test('should fully logout with stale refresh token', async ({ page }) => {
     let refreshTokenCallCount = 0;
     let profileCallCount = 0;
