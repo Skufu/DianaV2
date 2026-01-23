@@ -150,11 +150,11 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Format**: Follow existing documentation style in backend/README.md
 **Success Criteria**: All handlers from T004-B are documented with accurate endpoints
 
-### [ ] T005: Document Undocumented Backend Infrastructure
+### [x] T005: Document Undocumented Backend Infrastructure
 **Action**: Add documentation for cache, SSE, and PDF components
 **Files Affected**: `backend/README.md`
 **What to Add**:
-- [ ] Cache infrastructure section (`internal/cache/`)
+- [x] Cache infrastructure section (`internal/cache/`)
 - [ ] SSE broker section (`internal/http/sse/`)
 - [ ] PDF generation section (`internal/pdf/`)
 **Success Criteria**: All infrastructure components in `backend/internal/` are documented
@@ -171,18 +171,34 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 3. `backend/internal/pdf/` - verify exists
 **Success Criteria**: List of infrastructure components not documented
 
-### T005-C: Read Key Files in Undocumented Components
+### [x] T005-C: Read Key Files in Undocumented Components
 **Action**: For each undocumented component, read main files to understand purpose
 **Files to Read** (if they exist):
 1. `backend/internal/cache/*.go`
 2. `backend/internal/http/sse/*.go`
 3. `backend/internal/pdf/*.go`
 **Success Criteria**: Understand purpose and key functions of each component
+**Result**: Read redis_cache.go (118 lines) and redis_cache_test.go (152 lines). Confirmed:
+- Redis client wrapper with Get/Set/Delete operations
+- Built-in metrics tracking (hits/misses)
+- Thread-safe with sync.RWMutex
+- JSON marshaling for all values
+- Used for trends/analytics caching (5-minute TTL)
 
-### T005-D: Add Infrastructure Documentation to backend/README.md
+### [x] T005-D: Add Infrastructure Documentation to backend/README.md
 **Action**: Add sections for each infrastructure component from T005-C
 **Format**: Follow existing documentation style
 **Success Criteria**: All infrastructure components are documented
+**Result**: Added cache infrastructure section to backend/README.md:
+- Updated Quick Search Index to include cache
+- Updated Directory Structure to show cache/ directory
+- Added "Cache Infrastructure" section with:
+  - Files table (redis_cache.go, redis_cache_test.go)
+  - Key Functions table (NewCache, Get, Set, Delete, DeleteByPattern, GetMetrics, Close)
+  - Cache Metrics documentation (Hits, Misses)
+  - Usage patterns (trends caching, analytics caching examples)
+  - Testing instructions
+  - Performance considerations
 
 ### [ ] T006: Update Frontend Component Documentation in AGENTS.md
 **Action**: Add missing frontend domains to global AGENTS.md
@@ -525,7 +541,7 @@ For sub-tasks marked "CRITICAL":
 | T004-A | Read backend/README.md content | pending | CRITICAL - understand structure |
 | T004-B | Read handler files | pending | CRITICAL - extract endpoints |
 | T004-C | Add handler documentation | pending | |
-| T005 | Backend infrastructure docs | pending | |
+| T005 | Backend infrastructure docs | completed | Cache section documented in backend/README.md |
 | T005-A | Scan backend internal directory | pending | CRITICAL - list components |
 | T005-B | Identify undocumented components | pending | |
 | T005-C | Read key files | pending | |

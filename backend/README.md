@@ -18,6 +18,7 @@
 | ML Integration | `internal/ml/http_predictor.go` |
 | Database Queries | `internal/store/sqlc/*.sql.go` |
 | Config | `internal/config/config.go` |
+| Cache | `internal/cache/redis_cache.go` |
 
 ---
 
@@ -57,7 +58,19 @@ backend/
 │   ├── models/                   # Domain models
 │   │   └── types.go              # User, Patient, Assessment structs
 │   │
-│   └── store/                    # Database layer
+│   ├── store/                    # Database layer
+│   │   ├── store.go              # Store interface
+│   │   └── sqlc/                 # Generated SQLC code
+│   │       ├── models.go         # Generated Go structs
+│   │       ├── db.go             # Database connection
+│   │       ├── users.sql.go      # User queries
+│   │       ├── patients.sql.go   # Patient queries
+│   │       ├── assessments.sql.go # Assessment queries
+│   │       └── *.sql.go          # Other generated queries
+│   │
+│   └── cache/                    # Redis caching layer
+│       ├── redis_cache.go         # Redis client wrapper with metrics
+│       └── redis_cache_test.go    # Cache metrics tests
 │       ├── store.go              # Store interface
 │       └── sqlc/                 # Generated SQLC code
 │           ├── models.go         # Generated Go structs
@@ -157,6 +170,82 @@ backend/
 
 ### ML Predictor (`internal/ml/http_predictor.go`)
 - `Predict(input PredictionInput) (*PredictionResult, error)` - Call ML server
+
+---
+
+## Cache Infrastructure (`internal/cache/`)
+
+Redis-based caching layer for frequently accessed data with built-in metrics tracking.
+
+### Files
+| File | Purpose |
+|------|---------|
+| `redis_cache.go` | Redis client wrapper with Get/Set/Delete operations |
+| `redis_cache_test.go` | Cache metrics tracking tests |
+
+### Key Functions (`internal/cache/redis_cache.go`)
+- `NewCache(addr, password string, db int) (*Cache, error)` - Creates new Redis instance, validates connection
+- `Get(ctx, key, dest) error` - Retrieves and unmarshals value; returns nil on miss
+- `Set(ctx, key, value, ttl) error` - Stores marshaled value with TTL
+- `Delete(ctx, key) error` - Removes specific key from cache
+- `DeleteByPattern(ctx, pattern) error` - Removes all keys matching pattern (expensive)
+- `GetMetrics() CacheMetrics` - Returns copy of hit/miss statistics
+- `Close() error` - Closes Redis connection
+
+### Cache Metrics
+The `CacheMetrics` struct tracks:
+- `Hits` - Number of successful cache retrievals
+- `Misses` - Number of cache misses (key not found)
+
+### Usage Patterns
+
+**Trends caching** (5-minute TTL):
+```go
+// In users.go handler
+cacheKey := fmt.Sprintf("trends:%d", userID)
+var trends TrendsData
+
+if err := cache.Get(ctx, cacheKey, &trends); err == nil {
+    return c.JSON(http.StatusOK, trends)  // Cache hit
+}
+
+// Cache miss - fetch from DB
+trends, err := h.store.GetUserTrends(ctx, userID)
+if err != nil { /* handle error */ }
+
+cache.Set(ctx, cacheKey, trends, 5*time.Minute)
+return c.JSON(http.StatusOK, trends)
+```
+
+**Analytics caching** (5-minute TTL):
+```go
+// In analytics.go handler
+cacheKey := "analytics:summary"
+var summary AnalyticsSummary
+
+if err := cache.Get(ctx, cacheKey, &summary); err == nil {
+    return c.JSON(http.StatusOK, summary)
+}
+
+// Fetch from DB and cache
+summary, err := h.store.GetAnalyticsSummary(ctx)
+cache.Set(ctx, cacheKey, summary, 5*time.Minute)
+```
+
+### Testing
+```bash
+# Run cache tests (requires Redis on localhost:6379)
+go test ./internal/cache -v
+
+# Tests skip if Redis unavailable (t.Skip)
+```
+
+### Performance Considerations
+- **Metrics**: Thread-safe (sync.RWMutex) for concurrent access
+- **Serialization**: JSON marshaling/unmarshaling on all operations
+- **Pattern deletion**: Use sparingly - scans entire keyspace
+- **TTL**: Always set appropriate TTL to prevent stale data
+- **Miss handling**: `Get()` returns nil error on miss, not redis.Nil
 
 ---
 
