@@ -1318,4 +1318,144 @@ const generateMockUsers = (count = 10, page = 1) => {
 
     await expect(page.locator('text=Showing 1 to 10 of 26')).toBeVisible({ timeout: 3000 });
   });
+
+  test('should create user with duplicate email → error', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'admin.access.token',
+          refresh_token: 'admin.refresh.token',
+          user: {
+            id: 'admin-1',
+            email: ADMIN_USER.email,
+            role: 'admin',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: ADMIN_USER.email,
+          role: 'admin',
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total_users: 25 },
+          cluster_distribution: [],
+          trends: [],
+        }),
+      });
+    });
+
+    await page.route('**/admin/users*', async route => {
+      const request = route.request();
+
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      if (request.method() === 'POST') {
+        const body = await request.postDataJSON();
+        return route.fulfill({
+          status: 409,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'User with this email already exists',
+            code: 'email_already_exists',
+          }),
+        });
+      }
+
+      const url = new URL(request.url());
+      const pageParam = parseInt(url.searchParams.get('page') || '1');
+      const pageSize = parseInt(url.searchParams.get('page_size') || '10');
+
+      const users = generateMockUsers(pageSize, pageParam);
+      const total = 25;
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: users,
+          total: total,
+          page: pageParam,
+          page_size: pageSize,
+          total_pages: Math.ceil(total / pageSize),
+        }),
+      });
+    });
+
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    const userManagementButton = page.locator('text=User Management').first();
+    await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+    await userManagementButton.click();
+    await page.waitForTimeout(1000);
+
+    const addUserButton = page.locator('button:has-text("Add User")');
+    await expect(addUserButton).toBeVisible({ timeout: 3000 });
+    await addUserButton.click();
+    await page.waitForTimeout(500);
+
+    await expect(page.locator('h3:has-text("Create User")')).toBeVisible({ timeout: 3000 });
+
+    await page.fill('#create-user-email', 'admin@diana.app');
+    await page.fill('#create-user-password', 'Password123');
+    await page.selectOption('#create-user-role', 'user');
+
+    await page.click('button:has-text("Create User")');
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('text=User with this email already exists')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('h3:has-text("Create User")')).toBeVisible({ timeout: 2000 });
+    await expect(page.locator('text=Showing 1 to 10 of 25')).toBeVisible({ timeout: 3000 });
+  });
 });
