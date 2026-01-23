@@ -396,14 +396,15 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Success Criteria**: All actual scripts are documented; no stale entries
 **Result**: DOCUMENTATION UPDATE REQUIRED - 5 documented scripts don't exist in scripts/dev/
 
-### [ ] T012: Verify ML Documentation Accuracy
+### [x] T012: Verify ML Documentation Accuracy
 **Action**: Check ml/README.md against actual ml/ directory
 **Files Affected**: `ml/README.md`
 **What to Verify**:
-- [ ] All documented files (server.py, predict.py, train.py, clustering.py) exist
-- [ ] Dual predictor pattern (DianaPredictor, ClinicalPredictor) is correctly documented
-- [ ] Model artifacts paths are accurate
+- [x] All documented files (server.py, predict.py, train.py, clustering.py) exist
+- [x] Dual predictor pattern (DianaPredictor, ClinicalPredictor) is correctly documented
+- [x] Model artifacts paths are accurate
 **Success Criteria**: ML documentation is 100% accurate
+**Result**: All documented ML files verified to exist. ml/README.md is 100% accurate. No updates needed.
 
 ### T012-A: Scan ML Directory Structure
 **Action**: Use glob to list all files in `ml/` directory
