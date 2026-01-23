@@ -189,7 +189,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 - [x] Verify Recharts SVG elements render
 - [x] Check for console errors during chart render
 - [x] Test cluster distribution pie/bar chart
-- [ ] Test biomarker trends line chart
+- [x] Test biomarker trends line chart
 - [ ] Feature importance chart renders
 - [ ] Empty data gracefully handled
 **Success Criteria**: Chart rendering errors caught
