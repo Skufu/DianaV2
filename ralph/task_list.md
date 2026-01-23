@@ -220,9 +220,9 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 - [x] Navigate to export tab
 - [x] Export options visible
 - [x] Generate PDF report → download triggered
-- [ ] Export with no data → appropriate message
+- [x] Export with no data → appropriate message
 **Success Criteria**: Export flow tested
-**Status**: Tests 1-4 pass. PDF download test implemented with mocked endpoint. Test 5 (no data export) remains.
+**Status**: All 6 tests pass.
 
 ---
 
