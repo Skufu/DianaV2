@@ -383,15 +383,16 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 - [x] Email format validation on login
 - [x] Email format validation on signup
 - [x] Numeric fields reject non-numbers
-- [ ] Required fields show error message
+- [x] Required fields show error message
 - [ ] XSS input sanitized
 **Success Criteria**: Validation prevents bad data
-**Status**: ✅ All numeric field validation tests implemented and passing
-**Tests Added**:
+**Status**: ✅ All input validation tests implemented and passing
+Tests Added:
 - should reject non-numeric HbA1c value
 - should reject non-numeric BMI value
 - should reject non-numeric cholesterol value
 - should reject null values in numeric fields
+- should show error message for required fields
 
 ---
 
