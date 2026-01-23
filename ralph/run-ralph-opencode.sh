@@ -211,8 +211,9 @@ Run tests. Mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_DIR/out.t
             [[ "$task_text" =~ [Dd]oc|README ]] && commit_type="docs"
             [[ "$task_text" =~ [Ss]ecurity|[Aa]uth|[Jj]wt ]] && commit_type="fix"
             
-            # Clean up any problematic files before git add
-            rm -f ralph/nul ralph/tmp/* 2>/dev/null || true
+            # Clean up any problematic 'nul' files (Windows reserved name issue)
+            find . -name "nul" -type f -delete 2>/dev/null || true
+            rm -rf ralph/tmp/* 2>/dev/null || true
             
             # Git commit with explicit error handling
             if git add -A 2>&1; then

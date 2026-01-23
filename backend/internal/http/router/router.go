@@ -11,6 +11,7 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/http/handlers"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
+	"github.com/skufu/DianaV2/backend/internal/http/sse"
 	"github.com/skufu/DianaV2/backend/internal/ml"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
@@ -132,6 +133,14 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// Admin routes (requires admin role)
 	// -------------------------------------------------------------------------
 	auditLogger := middleware.NewAuditLogger(st)
+
+	// SSE broker for auth events (must be created before admin routes)
+	broker := sse.NewBroker(100)
+
+	// Auth events SSE endpoint (must be registered BEFORE protected admin routes - uses token query param, not Bearer)
+	authEventHandler := handlers.NewAuthEventHandler(cfg, st, broker)
+	api.GET("/admin/events/stream", authEventHandler.StreamAuthEvents)
+
 	admin := protected.Group("/admin")
 	admin.Use(middleware.RoleRequired("admin"))
 	{

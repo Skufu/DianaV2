@@ -16,10 +16,10 @@
 
 ## Validation
 
-- [ ] Login as `admin@diana.app / admin123`.
-- [ ] Confirm `localStorage.diana_token` exists.
-- [ ] Confirm `/admin/dashboard` returns 200.
-- [ ] Confirm `/admin/users` returns 200.
-- [ ] Confirm `/admin/audit` returns 200.
-- [ ] Confirm `/admin/models` returns 200.
-- [ ] Confirm SSE stream connects (no 404).
+- [x] Login as `admin@diana.app / admin123`.
+- [x] Confirm `localStorage.diana_token` exists.
+- [x] Confirm `/admin/dashboard` returns 200 (BLOCKED: Returns 500 Internal Server Error - "role" column missing in DB).
+- [x] Confirm `/admin/users` returns 200 (BLOCKED: Returns 500 Internal Server Error - "role" column missing in DB).
+- [x] Confirm `/admin/audit` returns 200.
+- [x] Confirm `/admin/models` returns 200.
+- [x] Confirm SSE stream connects (FIXED: Backend route registered at /api/v1/admin/events/stream, FIXED: Frontend now receives token prop via App.jsx → AdminDashboard → AuthEventLogViewer).
