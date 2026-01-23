@@ -204,11 +204,11 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Tests to Add**:
 - [x] Navigate to profile tab
 - [x] View profile shows user data
-- [x] Edit first name → save → verify persisted
-- [x] Edit with invalid data → validation error
-- [ ] Consent settings toggle works
-- [ ] Account deletion shows confirmation dialog
-- [ ] Account deletion requires confirmation
+  - [x] Edit first name → save → verify persisted
+  - [x] Edit with invalid data → validation error
+  - [x] Consent settings toggle works
+  - [ ] Account deletion shows confirmation dialog
+  - [ ] Account deletion requires confirmation
 **Success Criteria**: Profile management fully tested
 
 ---
