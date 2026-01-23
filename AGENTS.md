@@ -51,6 +51,8 @@ Comprehensive knowledge base documentation for all major directories:
 | `backend/migrations/` | ✅ Complete | Goose migrations, schema evolution |
 | `frontend/src/` | ✅ Complete | App architecture, routing, auth state, performance |
 | `frontend/src/components/` | ✅ Complete | All UI components, patterns, conventions |
+| `frontend/src/components/education/` | ✅ Complete | Education components for diabetes prevention education |
+| `frontend/src/components/export/` | ✅ Complete | Export components for PDF download functionality |
 
 ## WHERE TO LOOK
 
