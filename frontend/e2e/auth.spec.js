@@ -469,5 +469,59 @@ test.describe('Authentication Flow', () => {
       }
     }
   });
+
+  test('should show error for registration with duplicate email', async ({ page }) => {
+    await page.route('**/auth/register', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      const body = request.postDataJSON();
+
+      if (body && body.email && (body.email === TEST_USER.email || body.email === 'demo@diana.app')) {
+        return route.fulfill({
+          status: 409,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'user already exists',
+            details: 'email already registered'
+          }),
+        });
+      }
+
+      return route.fulfill({
+        status: 201,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: 'registration successful',
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: { id: '1', email: body?.email, role: 'user' },
+        }),
+      });
+    });
+
+    const signUpButton = page.locator('text=Sign Up, text=Don\'t have an account');
+    if (await signUpButton.isVisible()) {
+      await signUpButton.click();
+      await page.waitForTimeout(2000);
+
+      const createAccountButton = page.locator('button:has-text("Create Account")');
+      if (await createAccountButton.isVisible({ timeout: 5000 })) {
+        await page.fill('input[type="email"]', TEST_USER.email);
+        await page.fill('input[placeholder="Jane"]', 'John');
+        await page.fill('input[placeholder="Doe"]', 'Doe');
+        await page.fill('input[placeholder*="Password"], input[name="password"]', 'Password123!');
+        await page.fill('input[placeholder*="Confirm"], input[name="confirmPassword"]', 'Password123!');
+
+        await createAccountButton.click();
+
+        const errorMessage = page.locator('text=/user already exists|email already registered|conflict|already in use/i');
+        await expect(errorMessage).toBeVisible({ timeout: 5000 });
+      }
+    }
+  });
 });
 
