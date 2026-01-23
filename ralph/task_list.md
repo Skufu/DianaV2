@@ -187,7 +187,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Files Affected**: `frontend/e2e/insights.spec.js`
 **Tests to Add**:
 - [x] Verify Recharts SVG elements render
-- [ ] Check for console errors during chart render
+- [x] Check for console errors during chart render
 - [ ] Test cluster distribution pie/bar chart
 - [ ] Test biomarker trends line chart
 - [ ] Feature importance chart renders
