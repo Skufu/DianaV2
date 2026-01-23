@@ -226,14 +226,14 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 
 ---
 
-### [ ] T012: Create Admin Login Tests
+### [x] T012: Create Admin Login Tests
 **Action**: Test admin-specific login behavior
 **Files Affected**: `frontend/e2e/admin.spec.js` (NEW FILE)
 **Tests to Add**:
-- [ ] Login as admin → purple theme visible
-- [ ] AdminSidebar visible (not regular Sidebar)
-- [ ] Admin dashboard section loads
-- [ ] Can navigate between admin views
+- [x] Login as admin → purple theme visible
+- [x] AdminSidebar visible (not regular Sidebar)
+- [x] Admin dashboard section loads
+- [x] Can navigate between admin views
 **Success Criteria**: Admin UI renders correctly
 
 ---
