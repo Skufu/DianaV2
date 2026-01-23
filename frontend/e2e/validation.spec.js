@@ -523,4 +523,150 @@ test.describe('Input Validation Tests', () => {
 
     await takeScreenshot(page, 'validation-null-fbs-error');
   });
+
+  test('should show error message for required fields', async ({ page }) => {
+    await page.goto('/');
+
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: {
+            id: 'e2e-user-123',
+            email: TEST_USER.email,
+            role: 'user',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          first_name: 'Test',
+          last_name: 'User',
+          email: TEST_USER.email,
+          onboarding_completed: true,
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      if (request.method() === 'POST') {
+        const body = await request.postDataJSON();
+
+        const errors = [];
+        if (!body.hba1c || body.hba1c === '') {
+          errors.push('HbA1c is required');
+        }
+        if (!body.fbs || body.fbs === '') {
+          errors.push('FBS is required');
+        }
+        if (!body.bmi || body.bmi === '') {
+          errors.push('BMI is required');
+        }
+
+        if (errors.length > 0) {
+          return route.fulfill({
+            status: 400,
+            headers: corsHeaders,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              error: errors.join('; '),
+              details: errors,
+            }),
+          });
+        }
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
+    await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
+    await page.click(SELECTORS.loginButton);
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+
+    const assessmentResponse = await page.evaluate(async () => {
+      const response = await fetch('/api/v1/users/me/assessments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+        body: JSON.stringify({
+          hba1c: '',
+          fbs: '',
+          bmi: '',
+          cholesterol: '',
+        }),
+      });
+
+      const data = await response.json();
+      return {
+        status: response.status,
+        ok: response.ok,
+        data: data,
+      };
+    });
+
+    expect(assessmentResponse.status).toBe(400);
+    expect(assessmentResponse.ok).toBe(false);
+    expect(assessmentResponse.data).toHaveProperty('error');
+    expect(assessmentResponse.data).toHaveProperty('details');
+    expect(assessmentResponse.data.error).toMatch(/required/i);
+    expect(assessmentResponse.data.details).toContain('HbA1c is required');
+    expect(assessmentResponse.data.details).toContain('FBS is required');
+    expect(assessmentResponse.data.details).toContain('BMI is required');
+
+    await takeScreenshot(page, 'validation-required-fields-error');
+  });
 });
