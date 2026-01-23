@@ -48,6 +48,16 @@ Create comprehensive E2E tests that simulate real user behavior. **WHEN TESTS FA
 
 ## Tasks
 
+### [ ] Create new user → appears in list
+**Action**: Add test for creating a new user and verifying it appears in user list
+**Files Affected**: `frontend/e2e/admin-users.spec.js`
+**Test Added**:
+- [x] "should create new user → appears in list" - Creates user via modal, verifies success message, checks user appears in first row of table, confirms total count increased
+**Success Criteria**: Test passes and user creation works correctly
+**Status**: Test created and verified passing
+
+---
+
 ### [x] T001: Setup Test Infrastructure
 **Action**: Configure test environment with JSON reporter and single-test mode
 **Files Affected**: `frontend/playwright.config.js`, `frontend/e2e/fixtures/test-data.js`
@@ -245,12 +255,12 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 - [x] List users with pagination
 - [x] Search/filter users (if UI exists) - Implemented and tested successfully
 - [x] View user details
-- [ ] Create new user → appears in list
+- [x] Create new user → appears in list
 - [ ] Create user with duplicate email → error
 - [ ] Deactivate user → marked inactive
 - [ ] Reactivate user → marked active again
 **Success Criteria**: Admin user mgmt errors surface
-**Status**: Created `admin-users.spec.js` with 9 tests covering:
+**Status**: Created `admin-users.spec.js` with 10 tests covering:
 - List users with pagination (first page)
 - Navigate to next page
 - Navigate to previous page
@@ -260,7 +270,8 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 - Search users by email (SKIPPED)
 - Display empty state when no users found
 - [x] View user details
-7/9 tests pass. 2 filter tests skipped due to route mocking complexity.
+- [x] Create new user → appears in list
+8/10 tests pass. 2 filter tests skipped due to route mocking complexity.
 
 ---
 
@@ -396,7 +407,7 @@ Before marking any task complete:
 | T010 | Profile management tests | pending | NEW FILE |
 | T011 | Export page tests | pending | NEW FILE |
 | T012 | Admin login tests | pending | NEW FILE |
-| T013 | Admin user mgmt tests | completed | 7/9 tests pass (2 skipped for route mocking complexity) |
+| T013 | Admin user mgmt tests | completed | 8/10 tests pass (2 skipped for route mocking complexity) |
 | T014 | Admin audit log tests | pending | NEW FILE |
 | T015 | Admin model tests | pending | NEW FILE |
 | T016 | Network failure tests | pending | NEW FILE |
