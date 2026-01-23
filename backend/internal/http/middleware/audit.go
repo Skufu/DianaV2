@@ -81,8 +81,8 @@ func (a *AuditLogger) LogAction(action, targetType string) gin.HandlerFunc {
 }
 
 // buildAuditDetails extracts relevant information from the request for audit logging.
-func buildAuditDetails(c *gin.Context) map[string]interface{} {
-	details := map[string]interface{}{
+func buildAuditDetails(c *gin.Context) map[string]any {
+	details := map[string]any{
 		"method":     c.Request.Method,
 		"path":       c.Request.URL.Path,
 		"status":     c.Writer.Status(),
@@ -104,15 +104,15 @@ func buildAuditDetails(c *gin.Context) map[string]interface{} {
 	return details
 }
 
-func redactSensitiveFields(data map[string]interface{}, fields []string) {
+func redactSensitiveFields(data map[string]any, fields []string) {
 	for k, v := range data {
 		if containsField(fields, k) {
 			data[k] = "[REDACTED]"
-		} else if nested, ok := v.(map[string]interface{}); ok {
+		} else if nested, ok := v.(map[string]any); ok {
 			redactSensitiveFields(nested, fields)
-		} else if arr, ok := v.([]interface{}); ok {
+		} else if arr, ok := v.([]any); ok {
 			for _, item := range arr {
-				if nestedMap, ok := item.(map[string]interface{}); ok {
+				if nestedMap, ok := item.(map[string]any); ok {
 					redactSensitiveFields(nestedMap, fields)
 				}
 			}
@@ -148,7 +148,7 @@ func CaptureRequestBody() gin.HandlerFunc {
 		}
 
 		// Try to parse as JSON and sanitize
-		var bodyMap map[string]interface{}
+		var bodyMap map[string]any
 		if err := json.Unmarshal(bodyBytes, &bodyMap); err == nil {
 			sensitiveFields := []string{
 				"password", "password_hash", "token", "refresh_token",

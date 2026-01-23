@@ -83,4 +83,62 @@ describe('Button', () => {
     const button = container.querySelector('button');
     expect(button).toHaveStyle({ fontFamily: '"DM Sans", sans-serif' });
   });
+
+  it('updates correctly when variant prop changes', () => {
+    const { rerender, container } = render(<Button variant="primary">Text</Button>);
+    let button = container.querySelector('button');
+    expect(button).toHaveClass('bg-[#4318FF]');
+
+    rerender(<Button variant="danger">Text</Button>);
+    button = container.querySelector('button');
+    expect(button).toHaveClass('bg-[#EE5D50]');
+    expect(button).not.toHaveClass('bg-[#4318FF]');
+  });
+
+  it('updates correctly when disabled prop changes', async () => {
+    const handleClick = vi.fn();
+    const user = userEvent.setup();
+
+    const { rerender } = render(<Button onClick={handleClick} disabled>Text</Button>);
+    let button = screen.getByRole('button');
+    expect(button).toBeDisabled();
+    await user.click(button);
+    expect(handleClick).not.toHaveBeenCalled();
+
+    rerender(<Button onClick={handleClick} disabled={false}>Text</Button>);
+    button = screen.getByRole('button');
+    expect(button).not.toBeDisabled();
+    await user.click(button);
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('updates correctly when children prop changes', () => {
+    const { rerender } = render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+
+    rerender(<Button>New text</Button>);
+    expect(screen.getByText('New text')).toBeInTheDocument();
+    expect(screen.queryByText('Click me')).not.toBeInTheDocument();
+  });
+
+  it('updates correctly when fullWidth prop changes', () => {
+    const { rerender, container } = render(<Button fullWidth>Text</Button>);
+    let button = container.querySelector('button');
+    expect(button).toHaveClass('w-full');
+
+    rerender(<Button fullWidth={false}>Text</Button>);
+    button = container.querySelector('button');
+    expect(button).not.toHaveClass('w-full');
+  });
+
+  it('updates correctly when className prop changes', () => {
+    const { rerender, container } = render(<Button className="custom-class">Text</Button>);
+    let button = container.querySelector('button');
+    expect(button).toHaveClass('custom-class');
+
+    rerender(<Button className="another-class">Text</Button>);
+    button = container.querySelector('button');
+    expect(button).toHaveClass('another-class');
+    expect(button).not.toHaveClass('custom-class');
+  });
 });

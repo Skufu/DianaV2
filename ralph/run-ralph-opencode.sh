@@ -3,8 +3,15 @@ set -e
 set -o pipefail
 
 # ═══════════════════════════════════════════════════════════════
-# RALPH V3 - Overnight-Safe AI Coding Loop
+# RALPH V3.1 - Overnight-Safe AI Coding Loop
+# Fixed: Working directory, Summary output
 # ═══════════════════════════════════════════════════════════════
+
+# CRITICAL: Change to project root (parent of ralph/ directory)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT"
+echo "📂 Working directory: $(pwd)"
 
 ITERATIONS="${1:-10}"
 UNATTENDED=false
@@ -12,19 +19,65 @@ for arg in "$@"; do
     [[ "$arg" == "--unattended" || "$arg" == "-u" ]] && UNATTENDED=true
 done
 
-# Configuration
-CONTEXT_PIN="context_pin.md"
-PRD_FILE="PRD-Technical-Debt-Remediation.md"
-TASK_FILE="task_list.md"
-ERROR_LOG="error_log.txt"
-SYSTEM_RULES="system_rules.md"
-LOCK_FILE=".ralph.lock"
+# Configuration (paths relative to project root)
+RALPH_DIR="ralph"
+CONTEXT_PIN="$RALPH_DIR/context_pin.md"
+PRD_FILE="$RALPH_DIR/PRD-Technical-Debt-Remediation.md"
+TASK_FILE="$RALPH_DIR/task_list.md"
+ERROR_LOG="$RALPH_DIR/error_log.txt"
+SYSTEM_RULES="$RALPH_DIR/system_rules.md"
+LOCK_FILE="$RALPH_DIR/.ralph.lock"
+SUMMARY_FILE="$RALPH_DIR/ralph_summary.txt"
 MAX_RETRIES=2
 MAX_RULES=10
 PAUSE_EVERY=10
-TEMP_DIR="${TMPDIR:-./tmp}"
+TEMP_DIR="${TMPDIR:-$RALPH_DIR/tmp}"
 
 mkdir -p "$TEMP_DIR"
+
+START_TIME=$(date +%s)
+ITERATIONS_COMPLETED=0
+
+# ─────────────────────────────────────────────────────────────────
+# SUMMARY (called on exit - forced or natural)
+# ─────────────────────────────────────────────────────────────────
+write_summary() {
+    local end_time=$(date +%s)
+    local duration=$((end_time - START_TIME))
+    local hours=$((duration / 3600))
+    local minutes=$(((duration % 3600) / 60))
+    
+    local rem=$(grep -cEi "\- ?\[ \]" "$TASK_FILE" 2>/dev/null || echo "0")
+    local completed=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
+    local blk=$(grep -ci "BLOCKED" "$TASK_FILE" 2>/dev/null || echo "0")
+    
+    cat > "$SUMMARY_FILE" << EOF
+═══════════════════════════════════════════════════════════════
+  RALPH SUMMARY - $(date)
+═══════════════════════════════════════════════════════════════
+
+Duration: ${hours}h ${minutes}m
+Iterations: $ITERATIONS_COMPLETED / $ITERATIONS
+
+📊 Task Status:
+   ✅ Completed: $completed
+   ⏳ Remaining: $rem
+   🚫 Blocked:   $blk
+
+📝 Recent Commits:
+$(git log --oneline -10 2>/dev/null || echo "No commits")
+
+📋 Remaining Tasks (first 10):
+$(grep -E "^\- ?\[ \]" "$TASK_FILE" 2>/dev/null | head -10 || echo "None")
+
+Check $ERROR_LOG for failure details.
+EOF
+    echo ""
+    echo "📄 Summary written to $SUMMARY_FILE"
+}
+
+# Trap to write summary on ANY exit (Ctrl+C, error, natural end)
+trap write_summary EXIT
 
 # ─────────────────────────────────────────────────────────────────
 # LOCK FILE
@@ -39,7 +92,7 @@ acquire_lock() {
         rm -f "$LOCK_FILE"
     fi
     echo $$ > "$LOCK_FILE"
-    trap 'rm -f "$LOCK_FILE"' EXIT
+    # Lock cleanup happens via EXIT trap
 }
 
 # ─────────────────────────────────────────────────────────────────
@@ -77,11 +130,10 @@ prune_rules() {
 }
 
 # ─────────────────────────────────────────────────────────────────
-# TASK MANAGEMENT (line-number based)
+# TASK MANAGEMENT
 # ─────────────────────────────────────────────────────────────────
 get_task_line() { grep -nEi "^\- ?\[ \]" "$TASK_FILE" 2>/dev/null | head -1 | cut -d: -f1; }
 get_task_text() { sed -n "${1}p" "$TASK_FILE" 2>/dev/null; }
-mark_done() { [ -n "$1" ] && sed -i "${1}s/\[ \]/[x]/" "$TASK_FILE" 2>/dev/null; }
 
 # ─────────────────────────────────────────────────────────────────
 # ROLE SWITCHING
@@ -109,7 +161,7 @@ comprehension_check() {
 # MAIN LOOP
 # ─────────────────────────────────────────────────────────────────
 echo "═══════════════════════════════════════════════════════════════"
-echo "  RALPH V3 | Iterations: $ITERATIONS | Unattended: $UNATTENDED"
+echo "  RALPH V3.1 | Iterations: $ITERATIONS | Unattended: $UNATTENDED"
 echo "═══════════════════════════════════════════════════════════════"
 
 acquire_lock
@@ -118,6 +170,8 @@ init_rules
 comprehension_check
 
 for ((i=1; i<=ITERATIONS; i++)); do
+    ITERATIONS_COMPLETED=$i
+    
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🔄 Iteration $i/$ITERATIONS"
     
@@ -148,8 +202,17 @@ Run tests. Mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_DIR/out.t
         
         if [ "$after" -gt "$before" ]; then
             echo "✅ Task completed"
-            git add -A && git commit -m "Ralph: $(date +%H:%M)" --no-verify 2>/dev/null || true
-            break  # Only break retry loop, continue to next iteration
+            # Conventional commit format - detect type from task text
+            commit_type="chore"
+            [[ "$task_text" =~ [Tt]est ]] && commit_type="test"
+            [[ "$task_text" =~ [Ff]ix|[Bb]ug|[Ee]rror ]] && commit_type="fix"
+            [[ "$task_text" =~ [Aa]dd|[Ii]mplement|[Cc]reate ]] && commit_type="feat"
+            [[ "$task_text" =~ [Rr]efactor|[Ss]plit|[Mm]ove ]] && commit_type="refactor"
+            [[ "$task_text" =~ [Dd]oc|README ]] && commit_type="docs"
+            [[ "$task_text" =~ [Ss]ecurity|[Aa]uth|[Jj]wt ]] && commit_type="fix"
+            
+            git add -A && git commit -m "$commit_type: ${task_text:5:70}" --no-verify 2>/dev/null || true
+            break
         fi
         
         if grep -qi "BLOCKED" "$TEMP_DIR/out.txt"; then
@@ -180,4 +243,5 @@ Read @$ERROR_LOG, @$TASK_FILE. Either break down the task or add a rule to @$SYS
 done
 
 echo ""
-echo "🏁 Run complete. Check $ERROR_LOG for details."
+echo "🏁 Run complete."
+# Summary written automatically by EXIT trap

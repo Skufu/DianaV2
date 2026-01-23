@@ -1,20 +1,18 @@
 // DIANA V2 - User-Focused API Layer
 // Simplified version for menopausal user platform
 
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api/v1';
 export { API_BASE };
 const ML_BASE = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
 // Simple fetch wrapper - no caching, no complex token refresh
+// Cookies (diana_token) are sent automatically by browser (HttpOnly, Secure)
 const apiFetch = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('diana_token');
   const headers = {
     'Content-Type': 'application/json',
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method: options.method || 'GET',
@@ -53,6 +51,270 @@ export const fetchMLMetricsApi = () => mlFetch('/insights/metrics');
 export const fetchMLInformationGainApi = () => mlFetch('/insights/information-gain');
 export const fetchMLClustersApi = () => mlFetch('/insights/clusters');
 export const getMLVisualizationUrl = name => `${ML_BASE}/insights/visualizations/${name}`;
+
+// ============================================================================
+// REACT QUERY HOOKS
+// ============================================================================
+
+// ============================================================================
+// AUTHENTICATION HOOKS
+// ============================================================================
+
+export const useLogin = () => {
+  return useMutation({
+    mutationFn: ({ email, password }) => loginApi(email, password),
+  });
+};
+
+export const useLogout = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => logoutApi(),
+    onSuccess: () => {
+      queryClient.clear();
+    },
+  });
+};
+
+// ============================================================================
+// USER PROFILE HOOKS
+// ============================================================================
+
+export const useUserProfile = () => {
+  return useQuery({
+    queryKey: ['user', 'profile'],
+    queryFn: getUserProfileApi,
+    retry: 1,
+  });
+};
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => updateUserProfileApi(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+    },
+  });
+};
+
+export const useDeleteAccount = () => {
+  return useMutation({
+    mutationFn: () => deleteAccountApi(),
+  });
+};
+
+export const useCompleteOnboarding = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => completeOnboardingApi(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+    },
+  });
+};
+
+export const useConsentSettings = () => {
+  return useQuery({
+    queryKey: ['user', 'consent'],
+    queryFn: getConsentSettingsApi,
+  });
+};
+
+export const useUpdateConsentSettings = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => updateConsentSettingsApi(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'consent'] });
+    },
+  });
+};
+
+// ============================================================================
+// ASSESSMENT HOOKS
+// ============================================================================
+
+export const useAssessments = () => {
+  return useQuery({
+    queryKey: ['assessments'],
+    queryFn: getAssessmentsApi,
+  });
+};
+
+export const useCreateAssessment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => createAssessmentApi(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+    },
+  });
+};
+
+export const useUpdateAssessment = (assessmentId) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => updateAssessmentApi(assessmentId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+    },
+  });
+};
+
+export const useDeleteAssessment = (assessmentId) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteAssessmentApi(assessmentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+    },
+  });
+};
+
+export const useAssessment = (assessmentId) => {
+  return useQuery({
+    queryKey: ['assessment', assessmentId],
+    queryFn: () => getAssessmentApi(assessmentId),
+    enabled: !!assessmentId,
+  });
+};
+
+// ============================================================================
+// TRENDS HOOKS
+// ============================================================================
+
+export const useTrends = (months = 12) => {
+  return useQuery({
+    queryKey: ['trends', months],
+    queryFn: () => getTrendsApi(months),
+  });
+};
+
+// ============================================================================
+// EXPORT HOOKS
+// ============================================================================
+
+export const useExportPDF = () => {
+  return useMutation({
+    mutationFn: () => exportPDFApi(),
+  });
+};
+
+// ============================================================================
+// ADMIN HOOKS
+// ============================================================================
+
+export const useAdminDashboard = () => {
+  return useQuery({
+    queryKey: ['admin', 'dashboard'],
+    queryFn: fetchAdminDashboardApi,
+  });
+};
+
+export const useAdminUsers = (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  return useQuery({
+    queryKey: ['admin', 'users', query],
+    queryFn: () => adminListUsersApi(params),
+  });
+};
+
+export const useCreateAdminUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userData) => createAdminUserApi(userData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+  });
+};
+
+export const useUpdateAdminUser = (userId) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userData) => updateAdminUserApi(userId, userData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+  });
+};
+
+export const useDeactivateAdminUser = (userId) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => deactivateAdminUserApi(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+  });
+};
+
+export const useActivateAdminUser = (userId) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => activateAdminUserApi(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+  });
+};
+
+export const useAuditLogs = (params = {}) => {
+  return useQuery({
+    queryKey: ['admin', 'audit', params],
+    queryFn: () => fetchAuditLogsApi(params),
+  });
+};
+
+export const useModelRuns = (params = {}) => {
+  return useQuery({
+    queryKey: ['admin', 'models', params],
+    queryFn: () => fetchModelRunsApi(params),
+  });
+};
+
+export const useActiveModel = () => {
+  return useQuery({
+    queryKey: ['admin', 'models', 'active'],
+    queryFn: fetchActiveModelApi,
+  });
+};
+
+export const useClinicComparison = () => {
+  return useQuery({
+    queryKey: ['admin', 'clinics', 'comparison'],
+    queryFn: fetchClinicComparisonApi,
+  });
+};
+
+export const useAdminStats = () => {
+  return useQuery({
+    queryKey: ['admin', 'stats'],
+    queryFn: adminGetStatsApi,
+  });
+};
+
+export const useAdminExportResearchData = () => {
+  return useMutation({
+    mutationFn: () => adminExportResearchDataApi(),
+  });
+};
+
+export const useClusterDistribution = () => {
+  return useQuery({
+    queryKey: ['insights', 'cluster-distribution'],
+    queryFn: fetchClusterDistributionApi,
+  });
+};
+
+export const useTrendInsights = () => {
+  return useQuery({
+    queryKey: ['insights', 'biomarker-trends'],
+    queryFn: fetchTrendInsightsApi,
+  });
+};
 
 // ============================================================================
 // USER PROFILE ENDPOINTS
@@ -244,7 +506,7 @@ export const loginApi = async (email, password) => {
 export const logoutApi = async refreshToken => {
   return apiFetch('/auth/logout', {
     method: 'POST',
-    body: { refresh_token: refreshToken },
+    body: refreshToken ? { refresh_token: refreshToken } : {},
   });
 };
 

@@ -156,7 +156,7 @@ func (h *AdminUsersHandler) createUser(c *gin.Context) {
 		Action:     "user.create",
 		TargetType: "user",
 		TargetID:   int(createdUser.ID),
-		Details: sanitizeAuditDetails(map[string]interface{}{
+		Details: sanitizeAuditDetails(map[string]any{
 			"email": req.Email,
 			"role":  req.Role,
 		}),
@@ -249,7 +249,7 @@ func (h *AdminUsersHandler) updateUser(c *gin.Context) {
 		Action:     "user.update",
 		TargetType: "user",
 		TargetID:   int(id),
-		Details: sanitizeAuditDetails(map[string]interface{}{
+		Details: sanitizeAuditDetails(map[string]any{
 			"email": req.Email,
 			"role":  req.Role,
 		}),

@@ -109,7 +109,7 @@ func TestParsePagination(t *testing.T) {
 func TestNewPaginatedResponse(t *testing.T) {
 	tests := []struct {
 		name       string
-		data       interface{}
+		data       any
 		params     PaginationParams
 		totalItems int
 		wantPages  int
@@ -359,8 +359,8 @@ func TestSanitizeForAudit(t *testing.T) {
 func TestSanitizeAuditDetails(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    map[string]interface{}
-		expected map[string]interface{}
+		input    map[string]any
+		expected map[string]any
 	}{
 		{
 			name:     "nil input",
@@ -369,37 +369,37 @@ func TestSanitizeAuditDetails(t *testing.T) {
 		},
 		{
 			name:     "empty input",
-			input:    map[string]interface{}{},
-			expected: map[string]interface{}{},
+			input:    map[string]any{},
+			expected: map[string]any{},
 		},
 		{
 			name: "string values sanitized",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"key1":     "value\x00with\x1fcontrol",
 				"key\x1f2": "normal",
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				"key1": "valuewithcontrol",
 				"key2": "normal",
 			},
 		},
 		{
 			name: "numeric values preserved",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"count": 123,
 				"price": 45.67,
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				"count": 123,
 				"price": 45.67,
 			},
 		},
 		{
 			name: "long strings truncated",
-			input: map[string]interface{}{
+			input: map[string]any{
 				"key": strings.Repeat("a", 600),
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				"key": strings.Repeat("a", 500),
 			},
 		},

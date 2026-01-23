@@ -1,30 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Activity, TrendingUp, AlertCircle, Plus, Download } from 'lucide-react';
 import RiskIndicator from '../common/RiskIndicator';
-import { getAssessmentsApi } from '../../api';
+import { useAssessments } from '../../api';
 
-const Dashboard_user = ({ token, userId, setActiveTab }) => {
-  const [loading, setLoading] = useState(true);
-  const [assessments, setAssessments] = useState([]);
-  const [latestAssessment, setLatestAssessment] = useState(null);
-  const [error, setError] = useState(null);
+const Dashboard_user = ({ userId, setActiveTab }) => {
+  const { data: assessments = [], isLoading, error } = useAssessments();
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const data = await getAssessmentsApi(token);
-        setAssessments(data || []);
-        setLatestAssessment(data && data.length > 0 ? data[0] : null);
-      } catch (err) {
-        setError('Failed to load assessments');
-        console.error('Dashboard error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, [token]);
+  const latestAssessment = useMemo(() => {
+    return assessments && assessments.length > 0 ? assessments[0] : null;
+  }, [assessments]);
 
   return (
     <div className="space-y-6">
@@ -37,17 +21,17 @@ const Dashboard_user = ({ token, userId, setActiveTab }) => {
         </p>
       </div>
 
-      {loading && (
+      {isLoading && (
         <div className="text-center py-12 text-slate-400">Loading your health data...</div>
       )}
 
       {error && (
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-rose-400">
-          {error}
+          Failed to load assessments
         </div>
       )}
 
-      {!loading && !error && (
+      {!isLoading && !error && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">

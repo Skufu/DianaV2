@@ -63,7 +63,7 @@ func TestBroker_PublishAuthEvent(t *testing.T) {
 	broker.Subscribe(client)
 	defer broker.Unsubscribe(client)
 
-	broker.PublishAuthEvent("login", "user@example.com", "127.0.0.1", "test-agent", true, map[string]interface{}{"k": "v"})
+	broker.PublishAuthEvent("login", "user@example.com", "127.0.0.1", "test-agent", true, map[string]any{"k": "v"})
 
 	select {
 	case event := <-client:

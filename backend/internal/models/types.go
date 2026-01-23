@@ -10,9 +10,9 @@ type AuthEvent struct {
 	IPAddress  string                 `json:"ip_address,omitempty"`
 	UserAgent  string                 `json:"user_agent,omitempty"`
 	Success    bool                   `json:"success"`
-	DeviceInfo map[string]interface{} `json:"device_info,omitempty"`
-	Location   map[string]interface{} `json:"location,omitempty"`
-	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	DeviceInfo map[string]any `json:"device_info,omitempty"`
+	Location   map[string]any `json:"location,omitempty"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
 	CreatedAt  time.Time              `json:"created_at"`
 }
 
@@ -22,22 +22,22 @@ type User struct {
 	PasswordHash string `json:"-"`
 
 	// Personal Information
-	FirstName   string     `json:"first_name,omitempty"`
-	LastName    string     `json:"last_name,omitempty"`
+	FirstName   string     `json:"first_name,omitempty" binding:"omitempty,max=100"`
+	LastName    string     `json:"last_name,omitempty" binding:"omitempty,max=100"`
 	DateOfBirth *time.Time `json:"date_of_birth,omitempty"`
-	Phone       string     `json:"phone,omitempty"`
-	Address     string     `json:"address,omitempty"`
+	Phone       string     `json:"phone,omitempty" binding:"omitempty,max=20"`
+	Address     string     `json:"address,omitempty" binding:"omitempty,max=255"`
 
 	// Menopausal Health
-	MenopauseStatus string `json:"menopause_status,omitempty"`
-	MenopauseType   string `json:"menopause_type,omitempty"`
-	YearsMenopause  int    `json:"years_menopause,omitempty"`
+	MenopauseStatus string `json:"menopause_status,omitempty" binding:"omitempty,oneof=pre peri post surgical"`
+	MenopauseType   string `json:"menopause_type,omitempty" binding:"omitempty,oneof=natural surgical"`
+	YearsMenopause  int    `json:"years_menopause,omitempty" binding:"omitempty,min=0,max=50"`
 
 	// Medical History
-	Hypertension          string `json:"hypertension,omitempty"`
-	HeartDisease          string `json:"heart_disease,omitempty"`
+	Hypertension          string `json:"hypertension,omitempty" binding:"omitempty,oneof=no controlled uncontrolled"`
+	HeartDisease          string `json:"heart_disease,omitempty" binding:"omitempty,oneof=no yes"`
 	FamilyHistoryDiabetes bool   `json:"family_history_diabetes,omitempty"`
-	SmokingStatus         string `json:"smoking_status,omitempty"`
+	SmokingStatus         string `json:"smoking_status,omitempty" binding:"omitempty,oneof=never former current"`
 
 	// Consent
 	ConsentPersonalData          bool      `json:"consent_personal_data"`
@@ -47,8 +47,8 @@ type User struct {
 	ConsentUpdatedAt             time.Time `json:"consent_updated_at,omitempty"`
 
 	// Settings
-	AssessmentFrequencyMonths  int        `json:"assessment_frequency_months,omitempty"`
-	ReminderEmail              bool       `json:"reminder_email"`
+	AssessmentFrequencyMonths  int        `json:"assessment_frequency_months,omitempty" binding:"omitempty,min=1,max=12"`
+	ReminderEmail              bool       `json:"reminder_email" binding:"omitempty"`
 	LastAssessmentReminderSent *time.Time `json:"last_assessment_reminder_sent,omitempty"`
 	OnboardingCompleted        bool       `json:"onboarding_completed"`
 
@@ -152,10 +152,10 @@ type UserProfile struct {
 
 // ConsentSettings represents user consent preferences
 type ConsentSettings struct {
-	ConsentPersonalData          bool `json:"consent_personal_data"`
-	ConsentResearchParticipation bool `json:"consent_research_participation"`
-	ConsentEmailUpdates          bool `json:"consent_email_updates"`
-	ConsentAnalytics             bool `json:"consent_analytics"`
+	ConsentPersonalData          bool `json:"consent_personal_data" binding:"omitempty"`
+	ConsentResearchParticipation bool `json:"consent_research_participation" binding:"omitempty"`
+	ConsentEmailUpdates          bool `json:"consent_email_updates" binding:"omitempty"`
+	ConsentAnalytics             bool `json:"consent_analytics" binding:"omitempty"`
 }
 
 // TrendData represents biomarker trends over time
@@ -338,7 +338,7 @@ type AuditEvent struct {
 	Action     string                 `json:"action"`
 	TargetType string                 `json:"target_type"`
 	TargetID   int                    `json:"target_id"`
-	Details    map[string]interface{} `json:"details,omitempty"`
+	Details    map[string]any `json:"details,omitempty"`
 	CreatedAt  time.Time              `json:"created_at"`
 }
 
@@ -373,7 +373,7 @@ type AuditListParams struct {
 
 // PaginatedResponse is a generic wrapper for paginated API responses
 type PaginatedResponse struct {
-	Data       interface{} `json:"data"`
+	Data       any `json:"data"`
 	Total      int         `json:"total"`
 	Page       int         `json:"page"`
 	PageSize   int         `json:"page_size"`

@@ -1,6 +1,6 @@
 // AdminDashboard: System administration with tabbed subviews
-import React, { useEffect, useState, useMemo, lazy, Suspense } from 'react';
-import { fetchAdminDashboardApi, fetchClinicComparisonApi } from '../../api';
+import React, { useMemo, lazy, Suspense } from 'react';
+import { useAdminDashboard, useClinicComparison } from '../../api';
 import {
   BarChart,
   Bar,
@@ -38,13 +38,12 @@ const AuthEventLogViewer = lazy(() => import('./AuthEventLogViewer'));
 
 const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'];
 
-const AdminDashboard = ({ token, userRole }) => {
+const AdminDashboard = ({ userRole }) => {
   const [activeView, setActiveView] = useState('overview');
-  const [data, setData] = useState(null);
-  const [clinics, setClinics] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const animateCharts = useMemo(() => shouldAnimateCharts(), []);
+
+  const { data: dashboardData, isLoading, error } = useAdminDashboard();
+  const { data: clinics = [] } = useClinicComparison();
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -53,29 +52,6 @@ const AdminDashboard = ({ token, userRole }) => {
     { id: 'auth-events', label: 'Auth Events', icon: Wifi },
     { id: 'models', label: 'Model Tracking', icon: Cpu },
   ];
-
-  useEffect(() => {
-    if (!token || userRole !== 'admin' || activeView !== 'overview') return;
-
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [dashboard, comparison] = await Promise.all([
-          fetchAdminDashboardApi(token),
-          fetchClinicComparisonApi(token).catch(() => []),
-        ]);
-        setData(dashboard);
-        setClinics(comparison || []);
-      } catch (err) {
-        setError('Failed to load admin dashboard');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [token, userRole, activeView]);
 
   if (userRole !== 'admin') {
     return (
@@ -92,25 +68,25 @@ const AdminDashboard = ({ token, userRole }) => {
       case 'users':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <UserManagement token={token} />
+            <UserManagement />
           </Suspense>
         );
       case 'audit':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <AuditLogViewer token={token} />
+            <AuditLogViewer />
           </Suspense>
         );
       case 'models':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <ModelTraceability token={token} />
+            <ModelTraceability />
           </Suspense>
         );
       case 'auth-events':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <AuthEventLogViewer token={token} />
+            <AuthEventLogViewer />
           </Suspense>
         );
       default:
@@ -119,7 +95,7 @@ const AdminDashboard = ({ token, userRole }) => {
   };
 
   const renderOverview = () => {
-    if (loading) {
+    if (isLoading) {
       return <LoadingSpinner />;
     }
 
@@ -127,9 +103,9 @@ const AdminDashboard = ({ token, userRole }) => {
       return <div className="glass-card p-6 border border-rose-500/30 text-rose-400">{error}</div>;
     }
 
-    const stats = data?.stats || {};
-    const clusterDist = data?.cluster_distribution || [];
-    const trends = data?.trends || [];
+    const stats = dashboardData?.stats || {};
+    const clusterDist = dashboardData?.cluster_distribution || [];
+    const trends = dashboardData?.trends || [];
 
     return (
       <div className="space-y-6">

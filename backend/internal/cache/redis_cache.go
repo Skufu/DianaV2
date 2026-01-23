@@ -44,7 +44,7 @@ func NewCache(addr, password string, db int) (*Cache, error) {
 
 // Get retrieves a value from cache and unmarshals it into dest
 // Returns nil if key doesn't exist (redis.Nil)
-func (c *Cache) Get(ctx context.Context, key string, dest interface{}) error {
+func (c *Cache) Get(ctx context.Context, key string, dest any) error {
 	val, err := c.client.Get(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
@@ -68,7 +68,7 @@ func (c *Cache) Get(ctx context.Context, key string, dest interface{}) error {
 }
 
 // Set stores a value in cache with the specified TTL
-func (c *Cache) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+func (c *Cache) Set(ctx context.Context, key string, value any, ttl time.Duration) error {
 	data, err := json.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("failed to marshal value for key %s: %w", key, err)

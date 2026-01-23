@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/cache"
+	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/ml"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
@@ -20,15 +21,17 @@ type AssessmentsHandler struct {
 	cache       *cache.Cache
 	modelVer    string
 	datasetHash string
+	thresholds  config.ClinicalThresholds
 }
 
-func NewAssessmentsHandler(store store.Store, predictor ml.Predictor, cache *cache.Cache, modelVer, datasetHash string) *AssessmentsHandler {
+func NewAssessmentsHandler(store store.Store, predictor ml.Predictor, cache *cache.Cache, modelVer, datasetHash string, thresholds config.ClinicalThresholds) *AssessmentsHandler {
 	return &AssessmentsHandler{
 		store:       store,
 		predictor:   predictor,
 		cache:       cache,
 		modelVer:    modelVer,
 		datasetHash: datasetHash,
+		thresholds:  thresholds,
 	}
 }
 
@@ -213,7 +216,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	assessment.RiskLevel = calculateRiskLevel(riskScore)
 
 	// Validate biomarker ranges before ML prediction (clinical safety)
-	validationResult := ml.ValidateBiomarkers(assessment)
+	validationResult := ml.ValidateBiomarkers(assessment, h.thresholds)
 	assessment.ValidationStatus = ml.FormatValidationStatus(validationResult)
 
 	// Create assessment in database

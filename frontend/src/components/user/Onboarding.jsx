@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { User, Heart, Shield, FileText, Check } from 'lucide-react';
-import { completeOnboardingApi } from '../../api';
+import { useCompleteOnboarding } from '../../api';
 
 const Onboarding = ({ onComplete }) => {
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const completeOnboardingMutation = useCompleteOnboarding();
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -37,7 +37,6 @@ const Onboarding = ({ onComplete }) => {
       setError('You must agree to Data Usage Agreement to continue');
       return;
     }
-    setLoading(true);
     setError(null);
     try {
       const payload = {
@@ -54,17 +53,15 @@ const Onboarding = ({ onComplete }) => {
         consent_research_participation: formData.consent_research_participation,
         consent_email_updates: formData.consent_email_updates,
         consent_analytics: formData.consent_analytics,
-        assessment_frequency_months: parseInt(formData.assessment_frequency_months, 10) || 3,
+        assessment_frequency_months: parseInt(formData.assessment_frequency_months, 10) ||3,
         reminder_email: true,
       };
-      await completeOnboardingApi(payload);
-      onComplete();
-    } catch (err) {
-      setError(err.message || 'Failed to complete onboarding');
-    } finally {
-      setLoading(false);
-    }
-  };
+       await completeOnboardingMutation.mutateAsync(payload);
+       onComplete();
+     } catch (err) {
+       setError(err.message || 'Failed to complete onboarding');
+     }
+   };
 
   const validateStep = (stepNum) => {
     switch (stepNum) {
@@ -403,10 +400,10 @@ const Onboarding = ({ onComplete }) => {
           {step === 5 && (
             <button
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={completeOnboardingMutation.isPending}
               className="ml-auto px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Submitting...' : 'Complete Setup'}
+              {completeOnboardingMutation.isPending ? 'Submitting...' : 'Complete Setup'}
             </button>
           )}
 

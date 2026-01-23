@@ -35,6 +35,7 @@ const AuthEventLogViewer = ({ token }) => {
   const eventSourceRef = useRef(null);
   const eventsEndRef = useRef(null);
   const eventBufferRef = useRef([]);
+  const timeoutRef = useRef([]);
 
   // Auto-scroll to bottom when new events arrive
   useEffect(() => {
@@ -68,11 +69,12 @@ const AuthEventLogViewer = ({ token }) => {
       setConnected(false);
 
       // Attempt reconnection after 5 seconds
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         if (!connected) {
           connectEventSource();
         }
       }, 5000);
+      timeoutRef.current.push(timeoutId);
     };
 
     eventSourceRef.current.addEventListener('auth_event', e => {
@@ -81,12 +83,13 @@ const AuthEventLogViewer = ({ token }) => {
         eventBufferRef.current.push(newEvent);
 
         // Process buffer every 100ms to batch updates
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           if (eventBufferRef.current.length > 0) {
             setEvents(prev => [...eventBufferRef.current, ...prev].slice(0, 200)); // Keep last 200 events
             eventBufferRef.current = [];
           }
         }, 100);
+        timeoutRef.current.push(timeoutId);
       } catch (err) {
         console.error('Failed to parse event:', err);
       }
@@ -106,6 +109,8 @@ const AuthEventLogViewer = ({ token }) => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
+      timeoutRef.current.forEach(clearTimeout);
+      timeoutRef.current = [];
     };
   }, [token, connected]);
 

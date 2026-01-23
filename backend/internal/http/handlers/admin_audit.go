@@ -27,12 +27,12 @@ func (h *AdminAuditHandler) Register(rg *gin.RouterGroup) {
 
 // AuditQueryParams defines the query parameters for listing audit events
 type AuditQueryParams struct {
-	Page      int    `form:"page"`
-	PageSize  int    `form:"page_size"`
-	Actor     string `form:"actor"`
-	Action    string `form:"action"`
-	StartDate string `form:"start_date"` // ISO 8601 format
-	EndDate   string `form:"end_date"`   // ISO 8601 format
+	Page      int    `form:"page" binding:"omitempty,min=1"`
+	PageSize  int    `form:"page_size" binding:"omitempty,min=1,max=100"`
+	Actor     string `form:"actor" binding:"omitempty,max=255"`
+	Action    string `form:"action" binding:"omitempty,max=100"`
+	StartDate string `form:"start_date" binding:"omitempty"` // ISO 8601 format
+	EndDate   string `form:"end_date" binding:"omitempty"`   // ISO 8601 format
 }
 
 // listAuditEvents returns paginated, filterable audit events

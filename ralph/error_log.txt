@@ -193,3 +193,34 @@ ok  	github.com/skufu/DianaV2/backend/internal/http/handlers	1.063s [no tests to
 [94m[1m| [0m[90m lsp_diagnostics  [0m{"filePath":"C:\\Users\\ADRIAN\\github\\skufu\\dianav2\\backend\\internal\\http\\router\\router.go"}
 [93m[1m| [0m[90m Todo     [0m0 todos
 DONE
+Fri, Jan 23, 2026  6:35:40 AM: Attempt 1 failed
+--- PASS: TestPgPatientRepo_Update_ErrorHandling (0.00s)
+--- PASS: TestPgPatientRepo_Delete_ErrorHandling (0.00s)
+--- PASS: TestPgAssessmentRepo_NotConfigured (0.00s)
+--- PASS: TestPgAssessmentRepo_List_ErrorHandling (0.00s)
+--- PASS: TestPgAssessmentRepo_Create_ErrorHandling (0.00s)
+--- PASS: TestPgAssessmentRepo_Update_ErrorHandling (0.00s)
+--- PASS: TestPgAssessmentRepo_Delete_ErrorHandling (0.00s)
+--- PASS: TestPgAssessmentRepo_ClusterCounts_ErrorHandling (0.00s)
+--- PASS: TestPgAssessmentRepo_TrendAverages_ErrorHandling (0.00s)
+--- PASS: TestPgRefreshTokenRepo_NotConfigured (0.00s)
+--- PASS: TestPgRefreshTokenRepo_FindRefreshToken_ErrorHandling (0.00s)
+--- PASS: TestPgRefreshTokenRepo_RevokeRefreshToken_ErrorHandling (0.00s)
+--- PASS: TestPgRefreshTokenRepo_RevokeAllUserTokens_ErrorHandling (0.00s)
+--- PASS: TestPgRefreshTokenRepo_DeleteExpiredTokens_ErrorHandling (0.00s)
+PASS
+ok  	github.com/skufu/DianaV2/backend/internal/store	(cached)
+
+[91m[1m| [0m[90m Bash     [0mCount lines in refresh_token_repo.go
+
+86 ../backend/internal/store/refresh_token_repo.go
+
+DONE
+
+**Summary:**
+- Created `backend/internal/store/refresh_token_repo.go` (86 lines) with pgRefreshTokenRepo implementation
+- Extracted all RefreshTokenRepository methods from `postgres.go` (lines 59-123)
+- Removed unused imports (`context`, `errors`) from `postgres.go`
+- Build: `go build ./internal/store/...` ✓
+- Tests: `go test ./internal/store/...` - all 23 tests PASS ✓
+- Implementation follows pattern from `user_repo.go` with matching comment style

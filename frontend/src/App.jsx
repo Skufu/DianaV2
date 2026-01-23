@@ -1,8 +1,6 @@
 import { useEffect, useState, Suspense, lazy, useMemo } from 'react';
-import {
-  loginApi,
-  getUserProfileApi,
-} from './api';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useUserProfile, useLogin, useLogout } from './api';
 import Sidebar from './components/layout/Sidebar';
 import Login from './components/auth/Login';
 import BiologicalNetwork from './components/layout/BiologicalNetwork';
@@ -26,6 +24,17 @@ const Export = lazy(() => import('./components/export/Export'));
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
 const Signup = lazy(() => import('./components/auth/Signup'));
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 // Loading skeleton for lazy components
 const LoadingSkeleton = () => (
   <div className="space-y-4 animate-pulse">
@@ -41,8 +50,6 @@ const LoadingSkeleton = () => (
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [token, setToken] = useState(null);
-  const [refreshToken, setRefreshToken] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -54,6 +61,11 @@ const App = () => {
   const performanceTier = useMemo(() => getPerformanceTier(), []);
   const animationNodeCount = useMemo(() => getAnimationNodeCount(), []);
   const disableHeavyEffects = useMemo(() => shouldDisableHeavyEffects(), []);
+
+  // React Query hooks
+  const { data: profile, isLoading: profileLoading, error: profileError } = useUserProfile();
+  const loginMutation = useLogin();
+  const logoutMutation = useLogout();
 
   // Apply low-perf CSS class to body for global effect reduction
   useEffect(() => {
@@ -69,85 +81,40 @@ const App = () => {
   }, [disableHeavyEffects, performanceTier]);
 
   const handleLogin = async (email, password) => {
-    const res = await loginApi(email, password);
-    if (!res?.access_token) throw new Error('login failed');
-    setToken(res.access_token);
-    setRefreshToken(res.refresh_token);
-    // Decode JWT to extract user role and ID
-    try {
-      const payload = JSON.parse(atob(res.access_token.split('.')[1]));
-      setUserRole(payload.role || 'user');
-      setIsAdmin(payload.role === 'admin');
-      setUserId(payload.user_id || payload.sub);
-    } catch {
-      setUserRole('user');
-      setIsAdmin(false);
-    }
+    const res = await loginMutation.mutateAsync({ email, password });
+    if (!res?.user) throw new Error('login failed');
+    setUserRole(res.user.role || 'user');
+    setIsAdmin(res.user.role === 'admin');
+    setUserId(res.user.id);
     setIsAuthenticated(true);
-    localStorage.setItem('diana_token', res.access_token);
-    localStorage.setItem('diana_refresh_token', res.refresh_token);
   };
 
   const handleLogout = async () => {
-    try {
-      // Call logout API to revoke refresh token
-      if (refreshToken) {
-        const { logoutApi } = await import('./api');
-        await logoutApi(refreshToken).catch(() => {
-          // Ignore errors - logout locally anyway
-        });
-      }
-    } finally {
-      // Always clear local state
-      setIsAuthenticated(false);
-      setToken(null);
-      setRefreshToken(null);
-      setUserRole(null);
-      setIsAdmin(false);
-      setUserId(null);
-      localStorage.removeItem('diana_token');
-
-      localStorage.removeItem('diana_refresh_token');
-    }
+    await logoutMutation.mutateAsync();
+    setIsAuthenticated(false);
+    setUserRole(null);
+    setIsAdmin(false);
+    setUserId(null);
   };
 
+  // Sync auth state with profile data from React Query
   useEffect(() => {
-    const savedToken = localStorage.getItem('diana_token');
-    const savedRefreshToken = localStorage.getItem('diana_refresh_token');
-    if (savedToken) {
-      setToken(savedToken);
-      setRefreshToken(savedRefreshToken);
-      // Decode JWT to extract user role and ID
-      try {
-        const payload = JSON.parse(atob(savedToken.split('.')[1]));
-        setUserRole(payload.role || 'user');
-        setIsAdmin(payload.role === 'admin');
-        setUserId(payload.user_id || payload.sub);
-      } catch {
-        setUserRole('user');
-        setIsAdmin(false);
-      }
+    if (profile && !profileLoading && !profileError) {
+      setUserRole(profile.role || 'user');
+      setIsAdmin(profile.role === 'admin');
+      setUserId(profile.id);
       setIsAuthenticated(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!token || !userId) return;
-    const load = async () => {
-      try {
-        const profile = await getUserProfileApi(token);
-        if (profile?.onboarding_completed === true) {
-          setShowOnboarding(false);
-        } else {
-          setShowOnboarding(!profile || !profile.first_name || !profile.last_name);
-        }
-      } catch (err) {
-        console.error('Failed to load user profile:', err);
-        setShowOnboarding(true);
+      if (profile?.onboarding_completed === true) {
+        setShowOnboarding(false);
+      } else {
+        setShowOnboarding(!profile.first_name || !profile.last_name);
       }
-    };
-    load();
-  }, [token, userId]);
+    } else if (profileError) {
+      setIsAuthenticated(false);
+    }
+  }, [profile, profileLoading, profileError]);
+
+
 
   const handleStartAssessment = () => {
     setActiveTab('profile');
@@ -160,50 +127,40 @@ const App = () => {
 
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard_user token={token} userId={userId} setActiveTab={setActiveTab} />;
+        return <Dashboard_user userId={userId} setActiveTab={setActiveTab} />;
       case 'profile':
-        return <UserProfile token={token} userId={userId} setActiveTab={setActiveTab} />;
+        return <UserProfile userId={userId} setActiveTab={setActiveTab} />;
       case 'trends':
-        return <PersonalTrends token={token} userId={userId} />;
+        return <PersonalTrends userId={userId} />;
       case 'insights':
-        return <Insights token={token} />;
+        return <Insights />;
       case 'education':
         return <Education />;
       case 'export':
-        return <Export token={token} />;
+        return <Export />;
       case 'admin':
         return isAdmin ? (
-          <AdminDashboard token={token} userRole={userRole} />
+          <AdminDashboard userRole={userRole} />
         ) : (
-          <Dashboard_user token={token} userId={userId} />
+          <Dashboard_user userId={userId} />
         );
       default:
-        return <Dashboard_user token={token} userId={userId} />;
+        return <Dashboard_user userId={userId} />;
     }
   };
 
   const handleSignupSuccess = (res) => {
-    if (!res?.access_token) throw new Error('signup failed');
-    setToken(res.access_token);
-    setRefreshToken(res.refresh_token);
-    try {
-      const payload = JSON.parse(atob(res.access_token.split('.')[1]));
-      setUserRole(payload.role || 'user');
-      setIsAdmin(payload.role === 'admin');
-      setUserId(payload.user_id || payload.sub);
-    } catch {
-      setUserRole('user');
-      setIsAdmin(false);
-    }
+    if (!res?.user) throw new Error('signup failed');
+    setUserRole(res.user.role || 'user');
+    setIsAdmin(res.user.role === 'admin');
+    setUserId(res.user.id);
     setIsAuthenticated(true);
-    localStorage.setItem('diana_token', res.access_token);
-    localStorage.setItem('diana_refresh_token', res.refresh_token);
   };
 
   const isAssessmentOpen = activeTab === 'profile';
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <CustomCursor isLoggedIn={isAuthenticated} />
       {!isAuthenticated ? (
         showSignup ? (
@@ -248,7 +205,7 @@ const App = () => {
           </main>
         </div>
       )}
-    </>
+    </QueryClientProvider>
   );
 };
 

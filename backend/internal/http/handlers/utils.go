@@ -154,11 +154,11 @@ func sanitizeForAudit(s string) string {
 	return sanitized
 }
 
-func sanitizeAuditDetails(details map[string]interface{}) map[string]interface{} {
+func sanitizeAuditDetails(details map[string]any) map[string]any {
 	if details == nil {
 		return nil
 	}
-	sanitized := make(map[string]interface{}, len(details))
+	sanitized := make(map[string]any, len(details))
 	for k, v := range details {
 		key := sanitizeForAudit(k)
 		switch val := v.(type) {

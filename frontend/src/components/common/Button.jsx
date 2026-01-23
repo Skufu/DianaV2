@@ -1,7 +1,7 @@
 // Button: shared styled button with variant/size helpers.
 import React from 'react';
 
-const Button = ({
+const Button = React.memo(({
   children,
   variant = 'primary',
   className = '',
@@ -29,6 +29,8 @@ const Button = ({
       <span className="relative z-10">{children}</span>
     </button>
   );
-};
+});
+
+Button.displayName = 'Button';
 
 export default Button;

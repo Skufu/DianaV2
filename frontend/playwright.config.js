@@ -58,8 +58,7 @@ export default defineConfig({
         // },
     ],
 
-    // Run local dev server before starting tests
-    webServer: {
+    webServer: process.env.SKIP_DEV_SERVER ? undefined : {
         command: 'npm run dev',
         url: 'http://localhost:4000',
         reuseExistingServer: !process.env.CI,

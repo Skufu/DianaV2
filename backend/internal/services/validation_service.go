@@ -55,7 +55,7 @@ func NewValidationService() *ValidationService {
 }
 
 // ValidateBiomarkerRanges checks if values are within acceptable ranges
-func (s *ValidationService) ValidateBiomarkerRanges(values map[string]interface{}) ValidationResult {
+func (s *ValidationService) ValidateBiomarkerRanges(values map[string]any) ValidationResult {
 	warnings := []string{}
 
 	// Check FBS

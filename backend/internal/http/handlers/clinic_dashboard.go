@@ -51,7 +51,7 @@ func (h *ClinicDashboardHandler) listClinics(c *gin.Context) {
 // @Tags Clinics
 // @Produce json
 // @Param id path int true "Clinic ID"
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} map[string]any
 // @Failure 403 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const BiomarkerInput = ({ label, value, onChange, unit, referenceRanges, min, max, step, required = false }) => {
+const BiomarkerInput = React.memo(({ label, value, onChange, unit, referenceRanges, min, max, step, required = false }) => {
   const [error, setError] = useState('');
 
   const getRangeText = (val, type) => {
@@ -98,6 +98,8 @@ const BiomarkerInput = ({ label, value, onChange, unit, referenceRanges, min, ma
       )}
     </div>
   );
-};
+});
+
+BiomarkerInput.displayName = 'BiomarkerInput';
 
 export default BiomarkerInput;
