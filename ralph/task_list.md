@@ -37,10 +37,11 @@
   - Issue: Any profile fetch error flips `isAuthenticated` to false
   - Fix: Only reset on 401/403, not on network errors or 5xx
 
-- [ ] **5. Improve ML predictor error propagation**
-  - Location: `backend/internal/ml/http_predictor.go:34-79`
-  - Issue: Returns `cluster="error"` with `risk_score=0` without surfacing error to callers
-  - Fix: Return actual error to caller, let handler decide fallback behavior
+ - [x] **5. Improve ML predictor error propagation** ✅ COMPLETED
+   - Location: `backend/internal/ml/http_predictor.go:34-79`
+   - Issue: Returns `cluster="error"` with `risk_score=0` without surfacing error to callers
+   - Fix: Return actual error to caller, let handler decide fallback behavior
+   - Done: Updated Predictor interface, MockPredictor, HTTPPredictor, all tests, and handler error handling
 
 ---
 

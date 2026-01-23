@@ -207,7 +207,13 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 
 	// Get prediction from ML server
 	// Pass request context for cancellation support
-	cluster, riskScore := h.predictor.Predict(c.Request.Context(), assessment)
+	cluster, riskScore, err := h.predictor.Predict(c.Request.Context(), assessment)
+	if err != nil {
+		log.Printf("Failed to get ML prediction: %v", err)
+		// Return error to client instead of silently storing "error" cluster
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get prediction from ML service"})
+		return
+	}
 
 	assessment.Cluster = cluster
 	assessment.RiskScore = riskScore
@@ -342,7 +348,12 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 
 	// Re-predict with updated values
 	// Pass request context for cancellation support
-	cluster, riskScore := h.predictor.Predict(c.Request.Context(), *assessment)
+	cluster, riskScore, err := h.predictor.Predict(c.Request.Context(), *assessment)
+	if err != nil {
+		log.Printf("Failed to get ML prediction on update: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get prediction from ML service"})
+		return
+	}
 
 	assessment.Cluster = cluster
 	assessment.RiskScore = riskScore

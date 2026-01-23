@@ -125,11 +125,13 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	if w.Code != http.StatusCreated {
-		t.Fatalf("expected status 201, got %d", w.Code)
+	// After fix: handler should return error when ML prediction fails, not store "error" cluster
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected status 500 on ML error, got %d", w.Code)
 	}
-	if repo.last.Cluster != "error" || repo.last.RiskScore != 0 {
-		t.Fatalf("expected error cluster when model fails, got cluster=%s risk=%d", repo.last.Cluster, repo.last.RiskScore)
+	// No assessment should be created when ML prediction fails (check ID is zero)
+	if repo.last.ID != 0 {
+		t.Fatalf("expected no assessment to be created on ML error, got cluster=%s risk=%d", repo.last.Cluster, repo.last.RiskScore)
 	}
 }
 
