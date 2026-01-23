@@ -953,4 +953,258 @@ test.describe('Real Backend Assessment Tests', () => {
 
     await takeScreenshot(page, 'assessment-visible-in-dashboard');
   });
+
+  test('should verify assessment appears in trends after creation', async ({ page }) => {
+    await page.goto('/');
+
+    let trendsCallCount = 0;
+    let createdAssessment = null;
+
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: {
+            id: 'e2e-user-123',
+            email: TEST_USER.email,
+            role: 'user',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          first_name: 'Test',
+          last_name: 'User',
+          email: TEST_USER.email,
+          onboarding_completed: true,
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      if (request.method() === 'POST') {
+        const body = await request.postDataJSON();
+        createdAssessment = {
+          id: 1,
+          hba1c: body.hba1c,
+          fbs: body.fbs,
+          bmi: body.bmi,
+          cholesterol: body.cholesterol,
+          systolic_bp: body.systolic_bp,
+          diastolic_bp: body.diastolic_bp,
+          risk_score: 38,
+          risk_level: 'moderate',
+          cluster: 'MARD',
+          created_at: new Date().toISOString(),
+        };
+        return route.fulfill({
+          status: 201,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify(createdAssessment),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([createdAssessment]),
+      });
+    });
+
+    await page.route('**/users/me/trends*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      trendsCallCount++;
+
+      const testDate = new Date().toISOString().split('T')[0];
+
+      if (trendsCallCount === 1) {
+        return route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            dates: [],
+            hba1c_values: [],
+            bmi_values: [],
+            fbs_values: [],
+            triglycerides_values: [],
+            ldl_values: [],
+            hdl_values: [],
+            systolic_values: [],
+            diastolic_values: [],
+            risk_scores: [],
+          }),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          dates: [testDate],
+          hba1c_values: [createdAssessment?.hba1c || 6.5],
+          bmi_values: [createdAssessment?.bmi || 26.0],
+          fbs_values: [createdAssessment?.fbs || 108],
+          triglycerides_values: [160],
+          ldl_values: [135],
+          hdl_values: [48],
+          systolic_values: [createdAssessment?.systolic_bp || 122],
+          diastolic_values: [createdAssessment?.diastolic_bp || 81],
+          risk_scores: ['moderate'],
+        }),
+      });
+    });
+
+    await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
+    await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
+    await page.click(SELECTORS.loginButton);
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+
+    const initialTrendsResponse = await page.evaluate(async () => {
+      const response = await fetch('/api/v1/users/me/trends?months=12', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Trends fetch failed: ${response.status}`);
+      }
+
+      return await response.json();
+    });
+
+    expect(initialTrendsResponse.dates).toHaveLength(0);
+    expect(initialTrendsResponse.hba1c_values).toHaveLength(0);
+
+    const assessmentResponse = await page.evaluate(async () => {
+      const response = await fetch('/api/v1/users/me/assessments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+        body: JSON.stringify({
+          hba1c: 6.5,
+          fbs: 108,
+          bmi: 26.0,
+          cholesterol: 215,
+          systolic_bp: 122,
+          diastolic_bp: 81,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Assessment creation failed: ${response.status}`);
+      }
+
+      return await response.json();
+    });
+
+    expect(assessmentResponse).toMatchObject({
+      hba1c: 6.5,
+      fbs: 108,
+      bmi: 26.0,
+      cholesterol: 215,
+      systolic_bp: 122,
+      diastolic_bp: 81,
+      risk_score: 38,
+      risk_level: 'moderate',
+      cluster: 'MARD',
+    });
+
+    createdAssessment = assessmentResponse;
+
+    await page.waitForTimeout(1000);
+
+    const updatedTrendsResponse = await page.evaluate(async () => {
+      const response = await fetch('/api/v1/users/me/trends?months=12', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Updated trends fetch failed: ${response.status}`);
+      }
+
+      return await response.json();
+    });
+
+    expect(updatedTrendsResponse.dates).toHaveLength(1);
+    expect(updatedTrendsResponse.hba1c_values).toHaveLength(1);
+    expect(updatedTrendsResponse.hba1c_values[0]).toBe(6.5);
+    expect(updatedTrendsResponse.fbs_values[0]).toBe(108);
+    expect(updatedTrendsResponse.bmi_values[0]).toBe(26.0);
+    expect(updatedTrendsResponse.risk_scores[0]).toBe('moderate');
+
+    await takeScreenshot(page, 'assessment-visible-in-trends');
+  });
 });
