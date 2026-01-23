@@ -20,6 +20,7 @@
 | Config | `internal/config/config.go` |
 | Cache | `internal/cache/redis_cache.go` |
 | SSE Broker | `internal/http/sse/broker.go` |
+| PDF Generation | `internal/pdf/generator.go` |
 
 ---
 
@@ -76,6 +77,10 @@ backend/
 │   └── http/sse/                 # SSE (Server-Sent Events) broker
 │       ├── broker.go              # SSE event broadcasting
 │       └── broker_test.go         # Broker integration tests
+│
+│   └── pdf/                      # PDF report generation
+│       ├── generator.go          # PDF generator for assessments
+│       └── generator_test.go     # PDF generator tests
 │
 ├── migrations/                   # Goose SQL migrations
 │   ├── 0001_init.sql             # Users, patients, assessments, audit tables
@@ -336,6 +341,126 @@ go test ./internal/http/sse -v
 - **Memory**: Bounded by channel capacity + buffer size (no unbounded growth)
 - **JSON**: All event data marshaled before broadcast
 - **Connection**: HTTP keep-alive and X-Accel-Buffering headers set for proper proxy support
+
+---
+
+## PDF Generation (`internal/pdf/`)
+
+PDF report generation for patient assessments using `fpdf` library. Generates comprehensive diabetes risk reports with biomarker tables, risk clusters, SHAP explanations, and personalized recommendations.
+
+### Files
+| File | Purpose |
+|------|---------|
+| `generator.go` | PDF report generator with styling, tables, SHAP charts |
+| `generator_test.go` | Generator tests (placeholder) |
+
+### Key Functions (`internal/pdf/generator.go`)
+- `NewReportGenerator(logoPath string) *ReportGenerator` - Creates new generator with optional logo
+- `GenerateAssessmentReport(patient, assessment, shapData) ([]byte, error)` - Main generator that produces PDF bytes
+
+### Report Sections
+The generator creates the following sections in order:
+1. **Header** - "DIANA Assessment Report" with indigo styling
+2. **Patient Information** - Name, age, menopause status, report date
+3. **Biomarker Values** - Color-coded table with normal ranges and status
+4. **Risk Assessment** - Risk cluster box (color-coded), risk score
+5. **AI Explanation (SHAP)** - Feature contributions with +/- color coding
+6. **Recommendations** - Context-aware bullet points based on biomarkers
+7. **Footer** - Medical disclaimer and generation timestamp
+
+### Status Helper Functions
+| Function | Input | Status Values |
+|----------|-------|---------------|
+| `getHbA1cStatus()` | HbA1c % | Normal, Pre-diabetic, Diabetic |
+| `getFBSStatus()` | Fasting Blood Sugar | Normal, Pre-diabetic, Diabetic |
+| `getBMIStatus()` | BMI kg/m² | Underweight, Normal, Overweight, Obese |
+| `getCholStatus()` | Cholesterol mg/dL | Normal, Borderline, High |
+| `getLDLStatus()` | LDL mg/dL | Normal, Borderline, High |
+| `getHDLStatus()` | HDL mg/dL | Normal, Borderline, Low |
+| `getTGStatus()` | Triglycerides mg/dL | Normal, Borderline, High |
+| `getBPStatus()` | Systolic/Diastolic | Normal, Elevated, High |
+
+### Color Coding Scheme
+**Risk Clusters**:
+- Green: Low Risk
+- Yellow/Orange: Moderate Risk, MARD, MOD
+- Red: High Risk, SIRD, SIDD
+- Gray: Unknown/Default
+
+**Biomarker Status**:
+- Green: Normal
+- Orange: Borderline, Elevated
+- Red-Orange: High, Low, Obese, Pre-diabetic
+- Dark Red: Diabetic
+
+**SHAP Contributions**:
+- Red: Positive (increases risk)
+- Green: Negative (decreases risk)
+
+### Recommendation Logic
+`getRecommendations()` generates context-aware suggestions:
+
+**HbA1c-based**:
+- ≥6.5: Schedule healthcare provider visit, medication review
+- ≥5.7: Lifestyle modifications, monitor every 3-6 months
+
+**BMI-based**:
+- ≥30: Consult nutritionist, 5-10% weight loss goal
+- ≥25: Increase physical activity, heart-healthy diet
+
+**Lipid-based** (LDL ≥160 or Triglycerides ≥200):
+- Discuss lipid management, reduce saturated fats
+
+**Blood Pressure** (≥140/90):
+- Regular monitoring, reduce sodium, manage stress
+
+**General** (always included):
+- 150+ minutes physical activity/week
+- Annual comprehensive check-ups
+
+### Usage Pattern
+```go
+import "github.com/skufu/DianaV2/backend/internal/pdf"
+
+// Create generator
+gen := pdf.NewReportGenerator("")  // Empty logoPath = no logo
+
+// Generate report from models
+pdfBytes, err := gen.GenerateAssessmentReport(
+    models.Patient{Name: "Jane Doe", Age: 55, ...},
+    models.Assessment{HbA1c: 6.2, Cluster: "MARD", ...},
+    shapData,  // Optional: map[string]any with "shap_values" key
+)
+if err != nil {
+    // handle error
+}
+
+// Serve as PDF
+c.Header("Content-Type", "application/pdf")
+c.Data(http.StatusOK, "application/pdf", pdfBytes)
+```
+
+### PDF Layout Settings
+- **Page**: A4, Portrait (210mm × 297mm)
+- **Margins**: 15mm all sides
+- **Font**: Arial (header 20pt, sections 14pt, body 10pt)
+- **Colors**: Indigo (#4B0082) for headers/accents
+- **Tables**: Alternating row backgrounds (#F5F5FA)
+
+### Testing
+```bash
+# Run PDF generator tests
+go test ./internal/pdf -v
+
+# Tests cover placeholder validation
+# Note: Actual PDF rendering not tested (requires file I/O)
+```
+
+### Performance Considerations
+- **In-memory generation**: Uses `bytes.Buffer` before final output
+- **No external dependencies**: Pure Go via `fpdf` library
+- **SHAP optional**: Gracefully skips explanation section if `shapData` nil
+- **Disclaimer**: Medical footer required for liability protection
 
 ---
 
