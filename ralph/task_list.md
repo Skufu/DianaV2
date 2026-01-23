@@ -109,15 +109,15 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 
 ---
 
-### [ ] T004: Create Onboarding Flow Tests
+### [x] T004: Create Onboarding Flow Tests
 **Action**: Add tests for new user onboarding experience
 **Files Affected**: `frontend/e2e/onboarding.spec.js` (NEW FILE)
 **Tests to Add**:
-- [ ] New user sees onboarding after first login
-- [ ] Submit onboarding with empty required fields → validation errors
-- [ ] Complete all onboarding steps → redirect to dashboard
-- [ ] Verify onboarding_completed flag set in profile
-- [ ] Returning user with completed onboarding → skip to dashboard
+- [x] New user sees onboarding after first login
+- [x] Submit onboarding with empty required fields → validation errors
+- [x] Complete all onboarding steps → redirect to dashboard
+- [x] Verify onboarding_completed flag set in profile
+- [x] Returning user with completed onboarding → skip to dashboard
 **Success Criteria**: Onboarding flow catches validation issues
 
 ---
