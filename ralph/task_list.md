@@ -90,15 +90,15 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Success Criteria**: All paths in updated README are verified to exist
 **Result**: README.md already contains correct, verified component paths (lines 48-54). No changes needed.
 
-### [ ] T003: Verify Root README.md API Endpoints
+### [x] T003: Verify Root README.md API Endpoints
 **Action**: Verify all API endpoint documentation matches router.go
 **Files Affected**: `README.md` lines 111-137
 **What to Check**:
-- [ ] Remove all `/api/v1/patients/*` endpoint references
-- [ ] Add `/api/v1/users/me/*` endpoints (profile, onboarding, consent, trends, assessments)
-- [ ] Add `/api/v1/insights/*` endpoints (cluster-distribution, cluster)
-- [ ] Add `/api/v1/clinics/dashboard` endpoint
-- [ ] Add `/api/v1/admin/events/stream` SSE endpoint
+- [x] Remove all `/api/v1/patients/*` endpoint references
+- [x] Add `/api/v1/users/me/*` endpoints (profile, onboarding, consent, trends, assessments)
+- [x] Add `/api/v1/insights/*` endpoints (cluster-distribution, cluster)
+- [x] Add `/api/v1/clinics/dashboard` endpoint
+- [x] Add `/api/v1/admin/events/stream` SSE endpoint
 **Success Criteria**: API endpoints in README match routes registered in `backend/internal/http/router/router.go`
 
 ### T003-A: Read Router.go to Extract All Routes
