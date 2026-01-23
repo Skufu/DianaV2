@@ -225,7 +225,45 @@ export const useAssessment = (assessmentId) => {
 export const useTrends = (months = 12) => {
   return useQuery({
     queryKey: ['trends', months],
-    queryFn: () => getTrendsApi(months),
+    queryFn: async () => {
+      const data = await getTrendsApi(months);
+
+      // Transform backend TrendData format to frontend-expected format
+      // Backend returns parallel arrays, frontend expects array of objects
+      const biomarkerHistory = data.dates.map((date, index) => ({
+        date,
+        hba1c: data.hba1c_values?.[index] || null,
+        bmi: data.bmi_values?.[index] || null,
+        fbs: data.fbs_values?.[index] || null,
+        triglycerides: data.triglycerides_values?.[index] || null,
+        ldl: data.ldl_values?.[index] || null,
+        hdl: data.hdl_values?.[index] || null,
+        systolic: data.systolic_values?.[index] || null,
+        diastolic: data.diastolic_values?.[index] || null,
+      }));
+
+      const clusterHistory = data.dates.map((date, index) => {
+        const riskLevel = data.risk_scores?.[index] || 'low';
+        const riskScoreMap = { low: 20, medium: 50, high: 80 };
+        return {
+          date,
+          cluster: 'SIDD', // Backend doesn't provide cluster in trends, using default
+          riskScore: riskScoreMap[riskLevel] || 0,
+        };
+      });
+
+      const riskLevels = {
+        low: data.risk_scores?.filter(r => r === 'low').length || 0,
+        medium: data.risk_scores?.filter(r => r === 'medium').length || 0,
+        high: data.risk_scores?.filter(r => r === 'high').length || 0,
+      };
+
+      return {
+        biomarkerHistory,
+        clusterHistory,
+        riskLevels,
+      };
+    },
   });
 };
 
