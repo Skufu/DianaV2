@@ -239,4 +239,21 @@ test.describe('Export Page Tests', () => {
 
     expect(download.suggestedFilename()).toMatch(/diana_health_report.*\.pdf$/);
   });
+
+  test('should show appropriate message when no data to export', async ({ page }) => {
+    const sidebar = page.locator(SELECTORS.sidebar);
+    const exportTab = sidebar.locator('button:has-text("Export Data")');
+
+    await exportTab.click();
+
+    await expect(page.locator('text=Export Data')).toBeVisible({ timeout: 5000 });
+
+    await expect(page.locator('text=Export Patient Data')).toBeVisible();
+    await expect(page.locator('text=Patients Data (CSV)')).toBeVisible();
+    await expect(page.locator('text=Assessments Data (CSV)')).toBeVisible();
+
+    const privacyNotice = page.locator('text=Data Privacy & Security Notice');
+    await expect(privacyNotice).toBeVisible();
+    await expect(page.locator('text=Exported files contain protected health information (PHI)')).toBeVisible();
+  });
 });
