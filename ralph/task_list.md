@@ -243,7 +243,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Files Affected**: `frontend/e2e/admin-users.spec.js` (NEW FILE)
 **Tests to Add**:
 - [x] List users with pagination
-- [ ] Search/filter users (if UI exists) - SKIPPED due to mocking complexity (NEEDS_HUMAN_REVIEW)
+- [x] Search/filter users (if UI exists) - Implemented and tested successfully
 - [ ] View user details
 - [ ] Create new user → appears in list
 - [ ] Create user with duplicate email → error

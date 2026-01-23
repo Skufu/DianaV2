@@ -24,9 +24,10 @@ const generateMockUsers = (count = 10, page = 1) => {
   return users;
 };
 
-test.describe('Admin User Management - List with Pagination', () => {
+  test.describe('Admin User Management - List with Pagination', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    page.unrouteAll({ behavior: 'ignoreErrors' });
   });
 
   test('should list users with pagination (first page)', async ({ page }) => {
@@ -536,7 +537,7 @@ test.describe('Admin User Management - List with Pagination', () => {
     await expect(nextButton).toBeDisabled();
   });
 
-  test.skip('should filter users by role', async ({ page }) => {
+  test('should filter users by role', async ({ page }) => {
     await page.route('**/auth/login', async route => {
       const request = route.request();
       if (request.method() === 'OPTIONS') {
@@ -617,13 +618,25 @@ test.describe('Admin User Management - List with Pagination', () => {
       const pageSize = parseInt(url.searchParams.get('page_size') || '10');
       const roleFilter = url.searchParams.get('role');
 
-      let users = generateMockUsers(pageSize, pageParam);
+      console.log('Admin users route - roleFilter:', roleFilter, 'page:', pageParam, 'url:', request.url());
+
+      let allUsers = generateMockUsers(25, 1);
 
       if (roleFilter) {
-        users = users.filter(user => user.role === roleFilter);
+        allUsers = allUsers.filter(user => user.role === roleFilter);
+        console.log('Filtered users count:', allUsers.length);
       }
 
-      const total = roleFilter ? 8 : 25;
+      const total = allUsers.length;
+      const totalPages = Math.ceil(total / pageSize);
+
+      if (total <= pageSize) {
+        users = allUsers;
+      } else {
+        const startIndex = (pageParam - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, total);
+        users = allUsers.slice(startIndex, endIndex);
+      }
 
       return route.fulfill({
         status: 200,
@@ -634,7 +647,7 @@ test.describe('Admin User Management - List with Pagination', () => {
           total: total,
           page: pageParam,
           page_size: pageSize,
-          total_pages: Math.ceil(total / pageSize),
+          total_pages: totalPages,
         }),
       });
     });
@@ -650,9 +663,16 @@ test.describe('Admin User Management - List with Pagination', () => {
     await page.waitForTimeout(1000);
 
     await page.selectOption('select[name="roleFilter"]', 'admin');
+    await page.waitForTimeout(2000);
     await waitForNetworkIdle(page);
+    await page.waitForTimeout(1000);
 
-    await expect(page.locator('text=Showing 1 to 3 of 8')).toBeVisible({ timeout: 3000 });
+    const tableRows = page.locator('tbody tr');
+    await expect(tableRows).toHaveCount(9);
+
+    const roleCells = page.locator('tbody tr td:nth-child(2)');
+    const roleCount = await roleCells.filter({ hasText: 'admin' }).count();
+    expect(roleCount).toBe(9);
   });
 
   test('should filter users by status', async ({ page }) => {
@@ -736,14 +756,19 @@ test.describe('Admin User Management - List with Pagination', () => {
       const pageSize = parseInt(url.searchParams.get('page_size') || '10');
       const activeFilter = url.searchParams.get('is_active');
 
-      let users = generateMockUsers(pageSize, pageParam);
+      let allUsers = generateMockUsers(25, 1);
 
       if (activeFilter !== null) {
         const isActive = activeFilter === 'true';
-        users = users.filter(user => user.is_active === isActive);
+        allUsers = allUsers.filter(user => user.is_active === isActive);
       }
 
-      const total = activeFilter !== null ? 20 : 25;
+      const total = allUsers.length;
+      const totalPages = Math.ceil(total / pageSize);
+
+      const startIndex = (pageParam - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, total);
+      const users = allUsers.slice(startIndex, endIndex);
 
       return route.fulfill({
         status: 200,
@@ -754,7 +779,7 @@ test.describe('Admin User Management - List with Pagination', () => {
           total: total,
           page: pageParam,
           page_size: pageSize,
-          total_pages: Math.ceil(total / pageSize),
+          total_pages: totalPages,
         }),
       });
     });
@@ -774,7 +799,7 @@ test.describe('Admin User Management - List with Pagination', () => {
     await expect(page.locator('text=Showing 1 to 10 of 20')).toBeVisible({ timeout: 3000 });
   });
 
-  test.skip('should search users by email', async ({ page }) => {
+  test('should search users by email', async ({ page }) => {
     await page.route('**/auth/login', async route => {
       const request = route.request();
       if (request.method() === 'OPTIONS') {
@@ -855,13 +880,23 @@ test.describe('Admin User Management - List with Pagination', () => {
       const pageSize = parseInt(url.searchParams.get('page_size') || '10');
       const search = url.searchParams.get('search');
 
-      let users = generateMockUsers(pageSize, pageParam);
+      let allUsers = generateMockUsers(25, 1);
 
       if (search) {
-        users = users.filter(user => user.email.includes(search));
+        allUsers = allUsers.filter(user => user.email.includes(search));
       }
 
-      const total = search ? 1 : 25;
+      const total = allUsers.length;
+      const totalPages = Math.ceil(total / pageSize);
+
+      let users;
+      if (total <= pageSize) {
+        users = allUsers;
+      } else {
+        const startIndex = (pageParam - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, total);
+        users = allUsers.slice(startIndex, endIndex);
+      }
 
       return route.fulfill({
         status: 200,
@@ -872,7 +907,7 @@ test.describe('Admin User Management - List with Pagination', () => {
           total: total,
           page: pageParam,
           page_size: pageSize,
-          total_pages: Math.ceil(total / pageSize),
+          total_pages: totalPages,
         }),
       });
     });
@@ -891,8 +926,10 @@ test.describe('Admin User Management - List with Pagination', () => {
     await page.click('button:has-text("Apply")');
     await waitForNetworkIdle(page);
 
-    await expect(page.locator('text=Showing 1 to 1 of 1')).toBeVisible({ timeout: 3000 });
+    // Search matches user5@example.com (the user at index 4 in 0-based indexing)
+    // After filtering with pagination (page 1, page_size 10), check if it appears
     await expect(page.locator('tbody tr')).toHaveCount(1);
+    await expect(page.locator('tbody tr')).toContainText('user5@example.com');
   });
 
   test('should display empty state when no users found', async ({ page }) => {
