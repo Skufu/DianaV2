@@ -55,10 +55,11 @@
    - Done: Added transformation in `useTrends` to map backend's parallel arrays to frontend's array-of-objects structure
    - Note: Frontend build passes successfully
 
-- [ ] **7. Make audit logging reliable**
-  - Location: `backend/internal/http/middleware/audit.go`
-  - Issue: Goroutine not tracked; uses `context.WithoutCancel` (Go 1.23+)
-  - Fix: Check Go version in go.mod first. If <1.23, use `context.Background()` instead
+ - [x] **7. Make audit logging reliable** ✅ COMPLETED
+   - Location: `backend/internal/http/middleware/audit.go`
+   - Issue: Goroutine not tracked; uses `context.WithoutCancel` (Go 1.23+)
+   - Fix: Added sync.WaitGroup to AuditLogger, Shutdown() method, integrated into main.go graceful shutdown
+   - Done: Go 1.24+ is used, so context.WithoutCancel is valid; audit goroutines now tracked with WaitGroup
 
 - [ ] **8. Standardize pagination via helper across handlers**
   - Location: `backend/internal/http/handlers/admin_models.go`

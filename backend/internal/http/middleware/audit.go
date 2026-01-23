@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"strconv"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/models"
@@ -15,11 +16,18 @@ import (
 // It captures the actor (from JWT claims), action type, target entity, and request details.
 type AuditLogger struct {
 	store store.Store
+	wg    sync.WaitGroup
 }
 
 // NewAuditLogger creates a new AuditLogger with the given store.
 func NewAuditLogger(st store.Store) *AuditLogger {
 	return &AuditLogger{store: st}
+}
+
+// Shutdown waits for all pending audit log goroutines to complete.
+// This should be called during graceful shutdown to ensure no audit events are lost.
+func (a *AuditLogger) Shutdown() {
+	a.wg.Wait()
 }
 
 // LogAction creates a middleware that logs the specified action after successful completion.
@@ -64,7 +72,9 @@ func (a *AuditLogger) LogAction(action, targetType string) gin.HandlerFunc {
 		details := buildAuditDetails(c)
 
 		// Create audit event (fire and forget - don't block the response)
+		a.wg.Add(1)
 		go func() {
+			defer a.wg.Done()
 			ctx := context.WithoutCancel(c.Request.Context())
 			event := models.AuditEvent{
 				Actor:      claims.Email,
