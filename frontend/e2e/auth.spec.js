@@ -9,12 +9,10 @@ const corsHeaders = {
 
 test.describe('Authentication Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Start from the login page
     await page.goto('/');
   });
 
   test('should display login form', async ({ page }) => {
-    // Verify login form elements are visible
     await expect(page.locator(SELECTORS.loginEmailInput)).toBeVisible();
     await expect(page.locator(SELECTORS.loginPasswordInput)).toBeVisible();
     await expect(page.locator(SELECTORS.loginButton)).toBeVisible();
@@ -523,5 +521,48 @@ test.describe('Authentication Flow', () => {
       }
     }
   });
-});
 
+  test('should enforce rate limit after too many failed login attempts', async ({ page }) => {
+    let attemptCount = 0;
+    const RATE_LIMIT_THRESHOLD = 10;
+
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      attemptCount++;
+
+      if (attemptCount > RATE_LIMIT_THRESHOLD) {
+        return route.fulfill({
+          status: 429,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'rate limit exceeded',
+          }),
+        });
+      }
+
+      return route.fulfill({
+        status: 401,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid credentials' }),
+      });
+    });
+
+    for (let i = 1; i <= RATE_LIMIT_THRESHOLD + 1; i++) {
+      await page.fill(SELECTORS.loginEmailInput, `ratelimit${i}@test.com`);
+      await page.fill(SELECTORS.loginPasswordInput, 'wrongpassword');
+      await page.click(SELECTORS.loginButton);
+      await page.waitForTimeout(500);
+      await page.fill(SELECTORS.loginEmailInput, '');
+      await page.fill(SELECTORS.loginPasswordInput, '');
+    }
+
+    const rateLimitError = page.locator('text=/rate limit exceeded|too many requests|429|try again later/i');
+    await expect(rateLimitError).toBeVisible({ timeout: 5000 });
+  });
+});

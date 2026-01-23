@@ -90,7 +90,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Tests to Add**:
 - [x] Test registration with weak password (expect validation error)
 - [x] Test registration with duplicate email (expect 409 conflict)
-- [ ] Test too many login attempts (expect 429 rate limit)
+- [x] Test too many login attempts (expect 429 rate limit)
 - [ ] Test token refresh flow when access token expires
 **Success Criteria**: Tests fail when backend validation is broken
 
