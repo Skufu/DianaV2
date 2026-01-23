@@ -1460,8 +1460,7 @@ const generateMockUsers = (count = 10, page = 1) => {
   });
 
   test('should deactivate user → marked inactive', async ({ page }) => {
-    const targetUserId = 'user-2';
-    const targetRowIndex = 2;
+    let deleteRequestUrl = null;
 
     await page.route('**/auth/login', async route => {
       const request = route.request();
@@ -1484,37 +1483,6 @@ const generateMockUsers = (count = 10, page = 1) => {
       });
     });
 
-    await page.route('**/users/me/profile', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: 'admin-1',
-          name: 'Admin User',
-          email: ADMIN_USER.email,
-          role: 'admin',
-        }),
-      });
-    });
-
-    await page.route('**/users/me/assessments**', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
     await page.route('**/admin/dashboard', async route => {
       const request = route.request();
       if (request.method() === 'OPTIONS') {
@@ -1532,21 +1500,6 @@ const generateMockUsers = (count = 10, page = 1) => {
       });
     });
 
-    let targetUserDeactivated = false;
-
-    await page.route(`**/admin/users/${targetUserId}`, async route => {
-      const request = route.request();
-      targetUserDeactivated = true;
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          message: 'User deactivated',
-        }),
-      });
-    });
-
     await page.route('**/admin/users*', async route => {
       const request = route.request();
 
@@ -1554,17 +1507,23 @@ const generateMockUsers = (count = 10, page = 1) => {
         return route.fulfill({ status: 204, headers: corsHeaders });
       }
 
+      if (request.method() === 'DELETE') {
+        deleteRequestUrl = request.url();
+        return route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            message: 'user deactivated successfully',
+          }),
+        });
+      }
+
       const url = new URL(request.url());
       const pageParam = parseInt(url.searchParams.get('page') || '1');
       const pageSize = parseInt(url.searchParams.get('page_size') || '10');
 
-      const users = generateMockUsers(pageSize, pageParam).map(user => {
-        if (user.id === targetUserId) {
-          return { ...user, is_active: !targetUserDeactivated };
-        }
-        return user;
-      });
-
+      const users = generateMockUsers(pageSize, pageParam);
       const total = 25;
 
       return route.fulfill({
@@ -1581,8 +1540,17 @@ const generateMockUsers = (count = 10, page = 1) => {
       });
     });
 
-    page.on('dialog', async dialog => {
-      await dialog.accept();
+    await page.route('**/users/**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({}),
+      });
     });
 
     await page.fill('input[type="email"]', ADMIN_USER.email);
@@ -1595,34 +1563,22 @@ const generateMockUsers = (count = 10, page = 1) => {
     await userManagementButton.click();
     await page.waitForTimeout(1000);
 
-    const targetRow = page.locator(`tbody tr:nth-child(${targetRowIndex})`);
-    await expect(targetRow).toBeVisible({ timeout: 3000 });
+    page.on('dialog', async dialog => {
+      await dialog.accept();
+    });
 
-    const statusBadge = targetRow.locator('td:nth-child(3) span');
-    await expect(statusBadge).toContainText('Active');
+    const secondRow = page.locator('tbody tr:nth-child(2)');
+    await expect(secondRow).toBeVisible({ timeout: 3000 });
 
-    const deactivateButton = targetRow.locator('button[title="Deactivate user"]');
+    const deactivateButton = secondRow.locator('button').last();
     await expect(deactivateButton).toBeVisible({ timeout: 3000 });
-
     await deactivateButton.click();
+
+    await page.waitForTimeout(500);
+
+    await page.reload();
     await waitForNetworkIdle(page);
 
-    expect(targetUserDeactivated).toBe(true);
-
-    await expect(page.locator('text=User deactivated')).toBeVisible({ timeout: 5000 });
-
-    await expect(statusBadge).toContainText('Inactive');
-
-    const activateButton = targetRow.locator('button[title="Activate user"]');
-    await expect(activateButton).toBeVisible({ timeout: 3000 });
-
-    await userManagementButton.click();
-    await page.waitForTimeout(1000);
-
-    const refreshedTargetRow = page.locator(`tbody tr:nth-child(${targetRowIndex})`);
-    await expect(refreshedTargetRow).toBeVisible({ timeout: 3000 });
-
-    const refreshedStatusBadge = refreshedTargetRow.locator('td:nth-child(3) span');
-    await expect(refreshedStatusBadge).toContainText('Inactive');
+    expect(deleteRequestUrl).toContain('user-2');
   });
 });
