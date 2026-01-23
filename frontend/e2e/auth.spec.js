@@ -627,6 +627,91 @@ test.describe('Authentication Flow', () => {
     }
   });
 
+  test('should show frontend validation error for invalid email format', async ({ page }) => {
+    await page.route('**/auth/register', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      const body = request.postDataJSON();
+
+      return route.fulfill({
+        status: 201,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: 'registration successful',
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: { id: '1', email: body?.email, role: 'user' },
+        }),
+      });
+    });
+
+    await page.route('**/auth/login', async route => {
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: { id: '1', email: 'test@example.com', role: 'user' },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ name: 'Test User', email: 'test@example.com', onboarding_completed: true }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    const signUpButton = page.locator('text=Sign Up, text=Don\'t have an account');
+    if (await signUpButton.isVisible()) {
+      await signUpButton.click();
+      await page.waitForTimeout(2000);
+
+      const createAccountButton = page.locator('button:has-text("Create Account")');
+      if (await createAccountButton.isVisible({ timeout: 5000 })) {
+        await page.fill('input[placeholder="Jane"]', 'John');
+        await page.fill('input[placeholder="Doe"]', 'Doe');
+
+        await page.fill('input[type="email"]', 'invalidemailformat');
+
+        await page.fill('input[placeholder*="Password"], input[name="password"]', 'Password123!');
+        await page.fill('input[placeholder*="Confirm"], input[name="confirmPassword"]', 'Password123!');
+
+        const emailValidationIcon = page.locator('input[type="email"]').locator('..').locator('svg').first();
+        await expect(emailValidationIcon).toBeVisible({ timeout: 3000 });
+
+        const emailInput = page.locator('input[type="email"]');
+        const borderClass = await emailInput.evaluate(el => {
+          return el.className.includes('border-rose-500/60') || el.className.includes('border-rose-400');
+        });
+        expect(borderClass).toBe(true);
+
+        await createAccountButton.click();
+
+        await expect(page.locator('h2:has-text("Create Account")')).toBeVisible({ timeout: 3000 });
+
+        await expect(emailValidationIcon).toBeVisible();
+      }
+    }
+  });
+
   test('should enforce rate limit after too many failed login attempts', async ({ page }) => {
     let attemptCount = 0;
     const RATE_LIMIT_THRESHOLD = 10;

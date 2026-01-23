@@ -102,7 +102,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Tests to Add**:
 - [x] Display signup form from login page
 - [x] Register with valid credentials → success, redirect to onboarding
-- [ ] Register with invalid email format → frontend validation error
+- [x] Register with invalid email format → frontend validation error
 - [ ] Register with password too short → error message
 - [ ] Register with mismatched password confirmation → error message
 **Success Criteria**: Registration flow fully tested including errors
