@@ -96,7 +96,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 
 ---
 
-### [ ] T003: Create User Registration Tests
+### [x] T003: Create User Registration Tests
 **Action**: Add comprehensive registration flow tests
 **Files Affected**: `frontend/e2e/auth.spec.js` (new section)
 **Tests to Add**:
@@ -104,7 +104,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 - [x] Register with valid credentials → success, redirect to onboarding
 - [x] Register with invalid email format → frontend validation error
 - [x] Register with password too short → error message
-- [ ] Register with mismatched password confirmation → error message
+- [x] Register with mismatched password confirmation → error message
 **Success Criteria**: Registration flow fully tested including errors
 
 ---
@@ -367,7 +367,7 @@ Before marking any task complete:
 |---------|-------------|--------|-------|
 | T001 | Test infrastructure setup | completed | JSON reporter path corrected to test-results/results.json |
 | T002 | Auth error tests | completed | Added duplicate email registration test expecting 409 conflict |
-| T003 | Registration tests | pending | |
+| T003 | Registration tests | completed | Added mismatched password confirmation test |
 | T004 | Onboarding tests | pending | NEW FILE |
 | T005 | Assessment creation tests | pending | |
 | T006 | Assessment CRUD tests | pending | NEW FILE |
