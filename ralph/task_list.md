@@ -203,7 +203,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Files Affected**: `frontend/e2e/profile.spec.js` (NEW FILE)
 **Tests to Add**:
 - [x] Navigate to profile tab
-- [ ] View profile shows user data
+- [x] View profile shows user data
 - [ ] Edit first name → save → verify persisted
 - [ ] Edit with invalid data → validation error
 - [ ] Consent settings toggle works

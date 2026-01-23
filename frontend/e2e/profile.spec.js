@@ -124,4 +124,24 @@ test.describe('Profile Management', () => {
     await expect(page.locator(SELECTORS.sidebar)).toHaveCount(0);
     await expect(page.locator('text=My Profile')).toBeVisible();
   });
+
+  test('should display user data in profile form', async ({ page }) => {
+    const sidebar = page.locator(SELECTORS.sidebar);
+    await sidebar.locator('button:has-text("My Profile")').click();
+
+    await expect(page.locator('text=My Profile')).toBeVisible();
+    await expect(page.locator('h2:has-text("Personal Information")')).toBeVisible();
+
+    const firstNameInput = page.locator('input[name="first_name"]');
+    const lastNameInput = page.locator('input[name="last_name"]');
+    const emailInput = page.locator('input[name="email"]');
+
+    await expect(firstNameInput).toBeVisible();
+    await expect(lastNameInput).toBeVisible();
+    await expect(emailInput).toBeVisible();
+
+    await expect(firstNameInput).toHaveValue(TEST_PROFILE.first_name);
+    await expect(lastNameInput).toHaveValue(TEST_PROFILE.last_name);
+    await expect(emailInput).toHaveValue(TEST_PROFILE.email);
+  });
 });
