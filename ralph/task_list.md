@@ -329,13 +329,14 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Action**: Add note about ghost SQLC files to backend/store/AGENTS.md or create note
 **Success Criteria**: Ghost files clearly documented with recommendation (keep/remove)
 
-### [ ] T010: Update Migration Documentation Version
+### [x] T010: Update Migration Documentation Version
 **Action**: Correct schema version in migration docs
 **Files Affected**: `backend/migrations/AGENTS.md`
 **What to Update**:
-- [ ] Change "Schema Version: 0011" to "Schema Version: 0012"
-- [ ] Verify migration 0012 (auth_events) is listed
+- [x] Change "Schema Version: 0011" to "Schema Version: 0012"
+- [x] Verify migration 0012 (auth_events) is listed
 **Success Criteria**: Migration documentation reflects latest schema version
+**Result**: Updated line 4 to "Schema Version: 0012" and added migration 0012 to table in line 20
 
 ### T010-A: List All Migration Files
 **Action**: Use glob to list all migration files in `backend/migrations/`
