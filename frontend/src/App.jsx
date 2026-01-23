@@ -168,7 +168,7 @@ const App = () => {
       case 'education':
         return <Education />;
       case 'export':
-        return <Export />;
+        return <Export token={token} />;
       default:
         return <Dashboard_user userId={userId} />;
     }

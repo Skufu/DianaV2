@@ -96,3 +96,162 @@ ACTION TAKEN:
 - Test requires manual decision on error handling strategy
 
 === END ANALYSIS ===
+Sat, Jan 24, 2026  3:17:01 AM: Attempt 1 failed
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('text=Data Privacy & Security Notice')[22m
+
+
+      178 |     await exportTab.click();
+      179 |
+    > 180 |     await expect(page.locator('text=Data Privacy & Security Notice')).toBeVisible();
+          |                                                                       ^
+      181 |     await expect(page.locator('text=Exported files contain protected health information (PHI)')).toBeVisible();
+      182 |     await expect(page.locator('text=HIPAA, GDPR, or applicable data protection regulations')).toBeVisible();
+      183 |   });
+        at C:\Users\ADRIAN\Github\skufu\DianaV2\frontend\e2e\export.spec.js:180:71
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\export-Export-Page-Tests-should-show-data-privacy-notice-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\export-Export-Page-Tests-should-show-data-privacy-notice-chromium\error-context.md
+
+  4 failed
+    [chromium] › e2e\export.spec.js:129:3 › Export Page Tests › should navigate to export tab ──────
+    [chromium] › e2e\export.spec.js:140:3 › Export Page Tests › should display export options visible 
+    [chromium] › e2e\export.spec.js:155:3 › Export Page Tests › should display filter options ──────
+    [chromium] › e2e\export.spec.js:174:3 › Export Page Tests › should show data privacy notice ────
+
+Let me stop all vite servers and ensure clean startup:
+---
+
+=== T011 EXPORT PAGE TESTS FAILURE ANALYSIS ===
+Date: 2026-01-24 03:17:03 AM
+Test File: frontend/e2e/export.spec.js
+Error: 4 tests failing - Export component not rendering after navigation
+
+FAILING TESTS:
+1. "should navigate to export tab" (line 129)
+2. "should display export options visible" (line 140)
+3. "should display filter options" (line 155)
+4. "should show data privacy notice" (line 174)
+
+ERROR PATTERN:
+- All tests timeout (5000ms) waiting for Export component content to appear
+- Test successfully clicks export tab in sidebar
+- Component text elements not becoming visible
+- Error: "element(s) not found" for "Data Privacy & Security Notice"
+
+INVESTIGATION PERFORMED BY RALPH 2:
+
+1. **Export Component Structure** (frontend/src/components/export/Export.jsx):
+   - Component is correctly implemented
+   - Contains all expected sections:
+     * Header: "Data Management", "Export Data"
+     * Filter Options section (menopause status, risk level)
+     * Export Options section (Patients CSV, Assessments CSV, Insights Report)
+     * Data Privacy Notice section
+   - Uses React state for filters
+   - Properly imports from API and common components
+
+2. **App.jsx Route Mapping** (frontend/src/App.jsx):
+   - Export is lazy-loaded: `const Export = lazy(() => import('./components/export/Export'));`
+   - Route case matches: `case 'export': return <Export token={token} />;`
+   - Wrapped in Suspense: Line 257 `<Suspense fallback={<LoadingSkeleton />}>{renderUserContent()}</Suspense>`
+   - Sidebar navigation sets activeTab to 'export'
+
+3. **Test Mock Setup** (frontend/e2e/export.spec.js):
+   - Mocks authenticated session correctly
+   - Sets localStorage token before navigation
+   - Completes onboarding if visible
+   - Waits for sidebar to be visible
+   - Clicks export tab button
+
+4. **Potential Issues Identified**:
+   a. **Loading State**: Component may be stuck in LoadingSkeleton state
+   b. **Token Prop**: Export requires token prop - verified it's being passed from App
+   c. **Import Path**: Import path may have issue (verified correct)
+   d. **Render Logic**: renderUserContent() callback may not be triggering re-render
+
+5. **Console Errors**:
+   - Test has console error listener (lines 112-118)
+   - Error log shows no console errors captured
+   - This suggests no JS runtime errors during navigation
+
+6. **Debug Steps Needed**:
+   - Verify sidebar export tab button is clickable
+   - Check if activeTab state changes to 'export' after click
+   - Verify Suspense fallback is not stuck (LoadingSkeleton)
+   - Check if Export component throws any silent errors
+   - Verify token prop is truthy (required for API calls)
+
+ROOT CAUSE ANALYSIS:
+- NOT a code bug - component is correctly structured
+- NOT a route mismatch - case 'export' matches sidebar navigation
+- LIKELY: Test setup issue - state not triggering re-render
+- POSSIBLE: Lazy loading race condition - component not resolving
+- POSSIBLE: Auth state issue - export not receiving proper token
+
+WHY RALPH 1 FAILED:
+- Did not perform detailed component investigation
+- Did not check route mapping in App.jsx
+- Did not verify lazy loading configuration
+- Did not check for console errors
+- Did not add debug assertions to isolate the issue
+
+RECOMMENDATION:
+This is a TEST SETUP ISSUE, not a component bug. The test needs debug assertions added before final visibility checks:
+
+```javascript
+// After clicking export tab, add debug checks:
+await exportTab.click();
+
+// Debug: verify navigation
+await page.waitForTimeout(500); // Wait for lazy load
+console.log('Current URL:', page.url());
+
+// Debug: check if any export content is present
+const anyExportText = page.locator('text=Export Data').first();
+const isVisible = await anyExportText.isVisible().catch(() => false);
+console.log('Export content visible?', isVisible);
+
+// Debug: check if loading skeleton is present
+const loadingSkeleton = page.locator('.animate-pulse');
+const isLoading = await loadingSkeleton.isVisible().catch(() => false);
+console.log('Loading skeleton visible?', isLoading);
+```
+
+If component still not rendering, the issue is likely:
+1. React state not updating after sidebar click
+2. Lazy import failing silently
+3. Component throwing error not caught by console listener
+
+STATUS: NEEDS_DEBUG - Test requires debug assertions added to isolate issue
+
+ACTION TAKEN BY RALPH 2:
+- Added rule "When Lazy-Loaded Component Times Out" to system_rules.md
+- Rule requires debug assertions and component investigation before marking as NEEDS_HUMAN_REVIEW
+- Updated error log with detailed analysis
+- Marked T011 as blocked pending debug investigation
+
+=== END ANALYSIS ===
+=== E2E TEST COMPLETED ===
+Timestamp: 2026-01-24 03:32:00
+Test: "should display export options visible"
+File: frontend/e2e/export.spec.js:139
+Result: PASS
+
+CHANGES MADE:
+1. Fixed mockAuthenticatedSession() in export.spec.js - removed '/export' from mocked endpoints list to prevent intercepting Vite's module loader
+2. Fixed test selector for "Insights Report" - changed from text= to h3:has-text() for specificity
+3. Fixed test selector for "Menopausal Status" and "Diabetes Risk Level" - changed from text= to label:has-text() for specificity
+4. All 4 export tests now pass (navigation, export options, filter options, privacy notice)
+
+ROOT CAUSE: Test was mocking all routes including '/export', which intercepted Vite's request to serve the Export.jsx module file. The lazy import failed because the browser couldn't load the component module.
+
+VERIFICATION: All 4 tests pass successfully (3.1s)
+===
