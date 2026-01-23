@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/skufu/DianaV2/backend/internal/config"
+	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -29,8 +30,14 @@ type loginRequest struct {
 	Password string `json:"password" binding:"required,min=8,max=128"`
 }
 
+type registerRequest struct {
+	Email    string `json:"email" binding:"required,email,max=255"`
+	Password string `json:"password" binding:"required,min=8,max=128"`
+}
+
 func (h *AuthHandler) Register(rg *gin.RouterGroup) {
 	rg.POST("/login", h.login)
+	rg.POST("/register", h.register)
 	rg.POST("/refresh", h.refresh)
 	rg.POST("/logout", h.logout)
 }
@@ -102,6 +109,90 @@ func (h *AuthHandler) login(c *gin.Context) {
 			"id":    user.ID,
 			"email": user.Email,
 			"role":  user.Role,
+		},
+	})
+}
+
+func (h *AuthHandler) register(c *gin.Context) {
+	var req registerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ErrBadRequest(c, "invalid payload")
+		return
+	}
+	if req.Email == "" || req.Password == "" {
+		ErrBadRequest(c, "email and password are required")
+		return
+	}
+
+	existingUser, err := h.store.Users().FindByEmail(c.Request.Context(), req.Email)
+	if err == nil && existingUser != nil {
+		log.Printf("[WARN] Registration attempt with existing email: %s", req.Email)
+		ErrBadRequest(c, "email already registered")
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("[ERROR] Failed to hash password: %v", err)
+		ErrInternal(c, "Failed to process registration")
+		return
+	}
+
+	user := models.User{
+		Email:        req.Email,
+		PasswordHash: string(hashedPassword),
+		Role:         "user", // Default role for new registrations
+		IsActive:     true,
+	}
+	createdUser, err := h.store.Users().Create(c.Request.Context(), user)
+	if err != nil {
+		log.Printf("[ERROR] Failed to create user: %v", err)
+		ErrInternal(c, "Failed to create account")
+		return
+	}
+
+	now := time.Now()
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":     createdUser.Email,
+		"user_id": createdUser.ID,
+		"role":    createdUser.Role,
+		"exp":     now.Add(15 * time.Minute).Unix(),
+		"iat":     now.Unix(),
+		"scope":   "diana",
+	})
+	signedAccessToken, err := accessToken.SignedString([]byte(h.cfg.JWTSecret))
+	if err != nil {
+		log.Printf("[ERROR] Failed to sign access token: %v", err)
+		ErrInternal(c, "Failed to generate token")
+		return
+	}
+
+	refreshTokenBytes := make([]byte, 32)
+	if _, err := rand.Read(refreshTokenBytes); err != nil {
+		log.Printf("[ERROR] Failed to generate refresh token: %v", err)
+		ErrInternal(c, "Failed to generate token")
+		return
+	}
+	refreshToken := base64.URLEncoding.EncodeToString(refreshTokenBytes)
+	refreshTokenHash := hashToken(refreshToken)
+
+	_, err = h.store.RefreshTokens().CreateRefreshToken(c.Request.Context(), refreshTokenHash, int32(createdUser.ID), time.Now().Add(7*24*time.Hour))
+	if err != nil {
+		log.Printf("[ERROR] Failed to create refresh token: %v", err)
+		ErrInternal(c, "Failed to create refresh token")
+		return
+	}
+
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", true, true)
+	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", true, true)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "registration successful",
+		"user": gin.H{
+			"id":    createdUser.ID,
+			"email": createdUser.Email,
+			"role":  createdUser.Role,
 		},
 	})
 }

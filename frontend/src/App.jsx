@@ -1,6 +1,6 @@
 import { useEffect, useState, Suspense, lazy, useMemo, useCallback, memo } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useUserProfile, useLogin, useLogout } from './api';
+import { useQueryClient } from '@tanstack/react-query';
 import Sidebar from './components/layout/Sidebar';
 import Login from './components/auth/Login';
 import BiologicalNetwork from './components/layout/BiologicalNetwork';
@@ -23,17 +23,6 @@ const Education = lazy(() => import('./components/education/Education'));
 const Export = lazy(() => import('./components/export/Export'));
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
 const Signup = lazy(() => import('./components/auth/Signup'));
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
 
 // Loading skeleton for lazy components
 const LoadingSkeleton = memo(function LoadingSkeleton() {
@@ -65,6 +54,7 @@ const App = () => {
   const disableHeavyEffects = useMemo(() => shouldDisableHeavyEffects(), []);
 
   // React Query hooks
+  const queryClient = useQueryClient();
   const { data: profile, isLoading: profileLoading, error: profileError } = useUserProfile();
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
@@ -85,14 +75,31 @@ const App = () => {
   const handleLogin = useCallback(async (email, password) => {
     const res = await loginMutation.mutateAsync({ email, password });
     if (!res?.user) throw new Error('login failed');
+
+    // Store JWT tokens in localStorage for authenticated API requests
+    if (res.access_token) {
+      localStorage.setItem('diana_token', res.access_token);
+    }
+    if (res.refresh_token) {
+      localStorage.setItem('diana_refresh_token', res.refresh_token);
+    }
+
     setUserRole(res.user.role || 'user');
     setIsAdmin(res.user.role === 'admin');
     setUserId(res.user.id);
     setIsAuthenticated(true);
-  }, [loginMutation]);
+
+    // Invalidate all queries so they refetch with the new token
+    queryClient.invalidateQueries();
+  }, [loginMutation, queryClient]);
 
   const handleLogout = useCallback(async () => {
     await logoutMutation.mutateAsync();
+
+    // Clear JWT tokens from localStorage
+    localStorage.removeItem('diana_token');
+    localStorage.removeItem('diana_refresh_token');
+
     setIsAuthenticated(false);
     setUserRole(null);
     setIsAdmin(false);
@@ -162,7 +169,7 @@ const App = () => {
   const isAssessmentOpen = useMemo(() => activeTab === 'profile', [activeTab]);
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <>
       <CustomCursor isLoggedIn={isAuthenticated} />
       {!isAuthenticated ? (
         showSignup ? (
@@ -207,7 +214,7 @@ const App = () => {
           </main>
         </div>
       )}
-    </QueryClientProvider>
+    </>
   );
 };
 
