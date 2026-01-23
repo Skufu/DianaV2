@@ -23,6 +23,34 @@ test.describe('Authentication Flow', () => {
     await expect(page.locator('text=Diabetes Identification & Analysis')).toBeVisible();
   });
 
+  test('should display signup form from login page', async ({ page }) => {
+    const signUpButton = page.locator('text=/Sign Up/i');
+    await expect(signUpButton).toBeVisible();
+
+    await signUpButton.click();
+
+    const loginHeading = page.locator('text=Welcome Back');
+    await expect(loginHeading).not.toBeVisible({ timeout: 5000 });
+
+    const createAccountHeading = page.locator('h2:has-text("Create Account")');
+    await expect(createAccountHeading).toBeVisible({ timeout: 10000 });
+
+    const firstNameInput = page.locator('input[placeholder="Jane"]');
+    await expect(firstNameInput).toBeVisible();
+
+    const lastNameInput = page.locator('input[placeholder="Doe"]');
+    await expect(lastNameInput).toBeVisible();
+
+    const emailInput = page.locator('input[type="email"]');
+    await expect(emailInput).toBeVisible();
+
+    const passwordInput = page.locator('input[type="password"]').first();
+    await expect(passwordInput).toBeVisible();
+
+    const confirmPasswordInput = page.locator('input[type="password"]').nth(1);
+    await expect(confirmPasswordInput).toBeVisible();
+  });
+
   test('should show error for invalid credentials', async ({ page }) => {
     await page.route('**/auth/login', async route => {
       const request = route.request();

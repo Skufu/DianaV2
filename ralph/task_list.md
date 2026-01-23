@@ -100,7 +100,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Action**: Add comprehensive registration flow tests
 **Files Affected**: `frontend/e2e/auth.spec.js` (new section)
 **Tests to Add**:
-- [ ] Display signup form from login page
+- [x] Display signup form from login page
 - [ ] Register with valid credentials → success, redirect to onboarding
 - [ ] Register with invalid email format → frontend validation error
 - [ ] Register with password too short → error message
