@@ -255,3 +255,34 @@ ROOT CAUSE: Test was mocking all routes including '/export', which intercepted V
 
 VERIFICATION: All 4 tests pass successfully (3.1s)
 ===
+Sat, Jan 24, 2026  4:35:49 AM: Attempt 1 failed
+      641 |       return route.fulfill({
+        at C:\Users\ADRIAN\Github\skufu\DianaV2\frontend\e2e\admin-users.spec.js:638:14
+
+    Error: page.waitForTimeout: Test ended.
+
+      661 |     await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+      662 |     await userManagementButton.click();
+    > 663 |     await page.waitForTimeout(1000);
+          |                ^
+      664 |
+      665 |     await page.selectOption('select[name="roleFilter"]', 'admin');
+      666 |     await page.waitForTimeout(2000);
+        at C:\Users\ADRIAN\Github\skufu\DianaV2\frontend\e2e\admin-users.spec.js:663:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\admin-users-Admin-User-Man-889ee-should-filter-users-by-role-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\admin-users-Admin-User-Man-889ee-should-filter-users-by-role-chromium\error-context.md
+
+
+[1A[2K[7/11] [chromium] › e2e\admin-users.spec.js:802:3 › Admin User Management - List with Pagination › should search users by email
+[1A[2K[8/11] [chromium] › e2e\admin-users.spec.js:935:3 › Admin User Management - List with Pagination › should display empty state when no users found
+[1A[2K[9/11] [chromium] › e2e\admin-users.spec.js:1038:3 › Admin User Management - List with Pagination › should view user details
+[1A[2K[10/11] [chromium] › e2e\admin-users.spec.js:1162:3 › Admin User Management - List with Pagination › should create new user → appears in list
+[1A[2K[11/11] [chromium] › e2e\admin-users.spec.js:1322:3 › Admin User Management - List with Pagination › should create user with duplicate email → error
+[1A[2K  1 failed
+    [chromium] › e2e\admin-users.spec.js:540:3 › Admin User Management - List with Pagination › should filter users by role 
+  10 passed (10.6s)
+
