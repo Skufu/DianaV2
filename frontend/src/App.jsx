@@ -119,7 +119,10 @@ const App = () => {
         setShowOnboarding(!profile.first_name || !profile.last_name);
       }
     } else if (profileError) {
-      setIsAuthenticated(false);
+      const status = profileError.response?.status;
+      if (status === 401 || status === 403) {
+        setIsAuthenticated(false);
+      }
     }
   }, [profile, profileLoading, profileError]);
 
