@@ -36,14 +36,16 @@ frontend/
 │       ├── education/
 │       │   └── Education.jsx     # Educational content
 │       ├── export/
-│       │   └── Export.jsx        # CSV download
+│       │   └── Export.jsx        # PDF export
 │       ├── layout/
 │       │   ├── Sidebar.jsx       # Navigation sidebar
 │       │   ├── BiologicalNetwork.jsx
 │       │   └── MouseGlow.jsx
-│       └── patients/
-│           ├── PatientHistory.jsx  # Patient list & assessment history
-│           └── RiskTrendChart.jsx
+│       └── user/
+│           ├── Dashboard_user.jsx  # User overview & assessments
+│           ├── UserProfile.jsx    # Profile management
+│           ├── Onboarding.jsx     # Multi-step onboarding
+│           └── PersonalTrends.jsx # Assessment trend charts
 │
 ├── e2e/                          # Playwright E2E tests
 │   ├── auth.spec.js
@@ -82,8 +84,8 @@ const apiFetch = async (path, options = {}, isRetry = false) => {
 
 // Exported API functions
 export const loginApi = (email, password) => apiFetch('/api/v1/auth/login', {...});
-export const fetchPatientsApi = (token) => apiFetch('/api/v1/patients', {...});
-export const createAssessmentApi = (token, patientId, data) => apiFetch(...);
+export const fetchUserAssessmentsApi = (token) => apiFetch('/api/v1/users/me/assessments', {...});
+export const createAssessmentApi = (token, data) => apiFetch('/api/v1/users/me/assessments', {...});
 ```
 
 ### 2. `App.jsx` — Main Component
@@ -91,14 +93,11 @@ export const createAssessmentApi = (token, patientId, data) => apiFetch(...);
 ```jsx
 function App() {
   const [token, setToken] = useState(localStorage.getItem('diana_token'));
-  const [patients, setPatients] = useState([]);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [userRole, setUserRole] = useState(null);
 
   // Lazy-loaded route components for code splitting
-  const Dashboard = lazy(() => import('./components/dashboard/Dashboard'));
-  const PatientHistory = lazy(() => import('./components/patients/PatientHistory'));
-  const Analytics = lazy(() => import('./components/analytics/Analytics'));
+  const Dashboard_user = lazy(() => import('./components/user/Dashboard_user'));
   const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
   // ...
 }
@@ -112,13 +111,14 @@ function App() {
 |-----------|----------|---------|
 | `App` | `src/App.jsx` | Root component, auth state, routing |
 | `Login` | `components/auth/Login.jsx` | Authentication forms |
-| `Dashboard` | `components/dashboard/Dashboard.jsx` | Summary stats, overview charts |
-| `PatientHistory` | `components/patients/PatientHistory.jsx` | Patient list & assessment history |
-| `RiskTrendChart` | `components/patients/RiskTrendChart.jsx` | Risk trend visualization |
+| `Dashboard_user` | `components/user/Dashboard_user.jsx` | User overview, assessments |
+| `UserProfile` | `components/user/UserProfile.jsx` | Profile management |
+| `Onboarding` | `components/user/Onboarding.jsx` | Multi-step onboarding |
+| `PersonalTrends` | `components/user/PersonalTrends.jsx` | Assessment trend charts |
 | `Insights` | `components/insights/Insights.jsx` | ML visualizations, model metrics |
 | `CohortAnalysis` | `components/insights/CohortAnalysis.jsx` | Cohort comparison analysis |
-| `Export` | `components/export/Export.jsx` | CSV export functionality |
-| `Education` | `components/education/Education.jsx` | Educational content for clinicians |
+| `Export` | `components/export/Export.jsx` | PDF export functionality |
+| `Education` | `components/education/Education.jsx` | Educational content |
 | `AdminDashboard` | `components/admin/AdminDashboard.jsx` | Admin panel (users, audit, models) |
 | `UserManagement` | `components/admin/UserManagement.jsx` | User CRUD operations |
 | `AuditLogViewer` | `components/admin/AuditLogViewer.jsx` | Audit log viewing |

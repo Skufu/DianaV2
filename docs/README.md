@@ -120,7 +120,7 @@
 |---------|------|
 | Route definitions | `backend/internal/http/router/router.go` |
 | Auth handler | `backend/internal/http/handlers/auth.go` |
-| Patient handler | `backend/internal/http/handlers/patients.go` |
+| Users handler | `backend/internal/http/handlers/users.go` |
 | Assessment handler | `backend/internal/http/handlers/assessments.go` |
 | ML predictor client | `backend/internal/ml/http_predictor.go` |
 | Database queries | `backend/internal/store/sqlc/*.sql.go` |
@@ -131,7 +131,12 @@
 | Main app | `frontend/src/App.jsx` |
 | API wrapper | `frontend/src/api.js` |
 | Dashboard | `frontend/src/components/dashboard/Dashboard.jsx` |
-| Patients | `frontend/src/components/patients/PatientHistory.jsx` |
+| User Dashboard | `frontend/src/components/user/Dashboard_user.jsx` | User overview, assessments |
+| Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` | Admin system stats |
+| Profile | `frontend/src/components/user/UserProfile.jsx` | Profile management |
+| Onboarding | `frontend/src/components/user/Onboarding.jsx` | Multi-step onboarding |
+| Insights | `frontend/src/components/insights/Insights.jsx` | ML visualizations, analytics |
+| Export | `frontend/src/components/export/Export.jsx` | PDF export functionality |
 | Analytics | `frontend/src/components/insights/Insights.jsx` | ML visualizations, model metrics |
 | Cohort Analysis | `frontend/src/components/insights/CohortAnalysis.jsx` | Cohort comparison analysis |
 | Login | `frontend/src/components/auth/Login.jsx` |
@@ -158,8 +163,8 @@
 ## Data Flow: Patient Assessment
 
 ```
-1. User enters biomarkers in Frontend (PatientHistory.jsx)
-2. Frontend POST → Backend /api/v1/patients/:id/assessments
+1. User enters biomarkers in Frontend
+2. Frontend POST → Backend /api/v1/users/me/assessments
 3. Backend (assessments.go) → ML Server POST /predict?model_type=clinical
 4. ML Server (predict.py) → Returns prediction + cluster
 5. Backend → Saves to database (sqlc) → Returns to Frontend
