@@ -191,4 +191,24 @@ test.describe('Profile Management', () => {
 
     await expect(errorMessage.or(page.locator('text=Profile updated successfully'))).toBeVisible({ timeout: 3000 });
   });
+
+  test('should toggle consent settings and save', async ({ page }) => {
+    const sidebar = page.locator(SELECTORS.sidebar);
+    await sidebar.locator('button:has-text("My Profile")').click();
+
+    const consentCheckbox = page.locator('input[name="reminder_email"]');
+    const initialState = await consentCheckbox.isChecked();
+
+    await consentCheckbox.click();
+    const toggledState = await consentCheckbox.isChecked();
+    expect(toggledState).not.toBe(initialState);
+
+    page.on('dialog', dialog => dialog.accept());
+    const saveButton = page.locator('button:has-text("Save Changes")');
+    await saveButton.click();
+    await page.waitForTimeout(100);
+
+    const finalState = await consentCheckbox.isChecked();
+    expect(finalState).toBe(toggledState);
+  });
 });
