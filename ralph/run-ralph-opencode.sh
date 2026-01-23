@@ -211,7 +211,15 @@ Run tests. Mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_DIR/out.t
             [[ "$task_text" =~ [Dd]oc|README ]] && commit_type="docs"
             [[ "$task_text" =~ [Ss]ecurity|[Aa]uth|[Jj]wt ]] && commit_type="fix"
             
-            git add -A && git commit -m "$commit_type: ${task_text:5:70}" --no-verify 2>/dev/null || true
+            # Clean up any problematic files before git add
+            rm -f ralph/nul ralph/tmp/* 2>/dev/null || true
+            
+            # Git commit with explicit error handling
+            if git add -A 2>&1; then
+                git commit -m "$commit_type: ${task_text:5:70}" --no-verify 2>/dev/null && echo "📝 Committed" || echo "📝 No changes to commit"
+            else
+                echo "⚠️ Git add failed - will retry next iteration"
+            fi
             break
         fi
         
