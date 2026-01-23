@@ -783,4 +783,174 @@ test.describe('Real Backend Assessment Tests', () => {
 
     await takeScreenshot(page, 'assessment-missing-fields-validation-error');
   });
+
+  test('should verify assessment appears in dashboard after creation', async ({ page }) => {
+    await page.goto('/');
+
+    let dashboardCallCount = 0;
+    let latestAssessmentsResponse = [];
+
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: {
+            id: 'e2e-user-123',
+            email: TEST_USER.email,
+            role: 'user',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          first_name: 'Test',
+          last_name: 'User',
+          email: TEST_USER.email,
+          onboarding_completed: true,
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      dashboardCallCount++;
+
+      if (request.method() === 'POST') {
+        const body = await request.postDataJSON();
+        const newAssessment = {
+          id: dashboardCallCount,
+          hba1c: body.hba1c,
+          fbs: body.fbs,
+          bmi: body.bmi,
+          cholesterol: body.cholesterol,
+          systolic_bp: body.systolic_bp,
+          diastolic_bp: body.diastolic_bp,
+          risk_score: 42,
+          risk_level: 'moderate',
+          cluster: 'MARD',
+          created_at: new Date().toISOString(),
+        };
+        latestAssessmentsResponse = [newAssessment, ...latestAssessmentsResponse];
+        return route.fulfill({
+          status: 201,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify(newAssessment),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify(latestAssessmentsResponse),
+      });
+    });
+
+    await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
+    await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
+    await page.click(SELECTORS.loginButton);
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+
+    const initialCallCount = dashboardCallCount;
+    const initialAssessments = latestAssessmentsResponse;
+
+    const assessmentResponse = await page.evaluate(async () => {
+      const response = await fetch('/api/v1/users/me/assessments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+        body: JSON.stringify({
+          hba1c: 6.2,
+          fbs: 110,
+          bmi: 27.5,
+          cholesterol: 215,
+          systolic_bp: 125,
+          diastolic_bp: 82,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Assessment creation failed: ${response.status}`);
+      }
+
+      return await response.json();
+    });
+
+    expect(assessmentResponse).toMatchObject({
+      hba1c: 6.2,
+      fbs: 110,
+      risk_score: 42,
+      risk_level: 'moderate',
+      cluster: 'MARD',
+    });
+
+    await page.evaluate(() => window.location.reload());
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('h1:has-text("Welcome Back!")')).toBeVisible({ timeout: 10000 });
+
+    const assessmentCountElement = page.locator('text=/Total logged/i');
+    await expect(assessmentCountElement).toBeVisible();
+
+    const dashboardContent = await page.evaluate(() => document.body.innerText);
+    expect(dashboardContent).toMatch(/1/);
+
+    await expect(page.locator('h2:has-text("Latest Assessment")')).toBeVisible({ timeout: 5000 });
+
+    await expect(page.locator('text=6.2')).toBeVisible();
+
+    await expect(page.locator('text=110')).toBeVisible();
+
+    await expect(page.locator('text=/Moderate Risk/i')).toBeVisible();
+
+    await takeScreenshot(page, 'assessment-visible-in-dashboard');
+  });
 });
