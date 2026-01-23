@@ -1,5 +1,5 @@
 // Sidebar: User-centric navigation with teal accents
-import React from 'react';
+import React, { memo } from 'react';
 import { LayoutDashboard, User, Activity, Download, Plus, LogOut, BookOpen, Shield, TrendingUp } from 'lucide-react';
 
 const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin }) => {
@@ -82,6 +82,6 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
   );
 };
 
-export default Sidebar;
+export default memo(Sidebar);
 
 

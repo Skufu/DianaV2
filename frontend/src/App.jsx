@@ -1,4 +1,4 @@
-import { useEffect, useState, Suspense, lazy, useMemo } from 'react';
+import { useEffect, useState, Suspense, lazy, useMemo, useCallback, memo } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useUserProfile, useLogin, useLogout } from './api';
 import Sidebar from './components/layout/Sidebar';
@@ -36,7 +36,7 @@ const queryClient = new QueryClient({
 });
 
 // Loading skeleton for lazy components
-const LoadingSkeleton = () => (
+const LoadingSkeleton = memo(() => (
   <div className="space-y-4 animate-pulse">
     <div className="h-8 w-48 bg-slate-700/50 rounded" />
     <div className="h-4 w-full max-w-md bg-slate-700/30 rounded" />
@@ -47,6 +47,8 @@ const LoadingSkeleton = () => (
     </div>
   </div>
 );
+
+LoadingSkeleton.displayName = 'LoadingSkeleton';
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -80,22 +82,22 @@ const App = () => {
     };
   }, [disableHeavyEffects, performanceTier]);
 
-  const handleLogin = async (email, password) => {
+  const handleLogin = useCallback(async (email, password) => {
     const res = await loginMutation.mutateAsync({ email, password });
     if (!res?.user) throw new Error('login failed');
     setUserRole(res.user.role || 'user');
     setIsAdmin(res.user.role === 'admin');
     setUserId(res.user.id);
     setIsAuthenticated(true);
-  };
+  }, [loginMutation]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await logoutMutation.mutateAsync();
     setIsAuthenticated(false);
     setUserRole(null);
     setIsAdmin(false);
     setUserId(null);
-  };
+  }, [logoutMutation]);
 
   // Sync auth state with profile data from React Query
   useEffect(() => {
@@ -116,11 +118,11 @@ const App = () => {
 
 
 
-  const handleStartAssessment = () => {
+  const handleStartAssessment = useCallback(() => {
     setActiveTab('profile');
-  };
+  }, []);
 
-  const renderContent = () => {
+  const renderContent = useCallback(() => {
     if (showOnboarding) {
       return <Onboarding onComplete={() => setShowOnboarding(false)} />;
     }
@@ -147,17 +149,17 @@ const App = () => {
       default:
         return <Dashboard_user userId={userId} />;
     }
-  };
+  }, [userId, isAdmin, userRole, activeTab, showOnboarding]);
 
-  const handleSignupSuccess = (res) => {
+  const handleSignupSuccess = useCallback((res) => {
     if (!res?.user) throw new Error('signup failed');
     setUserRole(res.user.role || 'user');
     setIsAdmin(res.user.role === 'admin');
     setUserId(res.user.id);
     setIsAuthenticated(true);
-  };
+  }, []);
 
-  const isAssessmentOpen = activeTab === 'profile';
+  const isAssessmentOpen = useMemo(() => activeTab === 'profile', [activeTab]);
 
   return (
     <QueryClientProvider client={queryClient}>
