@@ -1034,4 +1034,128 @@ const generateMockUsers = (count = 10, page = 1) => {
 
     await expect(page.locator('text=No users found')).toBeVisible({ timeout: 3000 });
   });
+
+  test('should view user details', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'admin.access.token',
+          refresh_token: 'admin.refresh.token',
+          user: {
+            id: 'admin-1',
+            email: ADMIN_USER.email,
+            role: 'admin',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: ADMIN_USER.email,
+          role: 'admin',
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total_users: 25 },
+          cluster_distribution: [],
+          trends: [],
+        }),
+      });
+    });
+
+    await page.route('**/admin/users*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const url = new URL(request.url());
+      const pageParam = parseInt(url.searchParams.get('page') || '1');
+      const pageSize = parseInt(url.searchParams.get('page_size') || '10');
+
+      const users = generateMockUsers(pageSize, pageParam);
+      const total = 25;
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: users,
+          total: total,
+          page: pageParam,
+          page_size: pageSize,
+          total_pages: Math.ceil(total / pageSize),
+        }),
+      });
+    });
+
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    const userManagementButton = page.locator('text=User Management').first();
+    await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+    await userManagementButton.click();
+    await page.waitForTimeout(1000);
+
+    const firstRowEditButton = page.locator('tbody tr:nth-child(1) button[title="Edit user"]');
+    await expect(firstRowEditButton).toBeVisible({ timeout: 3000 });
+    await firstRowEditButton.click();
+    await page.waitForTimeout(500);
+
+    await expect(page.locator('h3:has-text("Edit User")')).toBeVisible({ timeout: 3000 });
+
+    const emailInput = page.locator('input#edit-user-email');
+    await expect(emailInput).toHaveValue('user1@example.com');
+
+    const roleSelect = page.locator('select#edit-user-role');
+    await expect(roleSelect).toHaveValue('admin');
+
+    await page.click('button:has-text("Cancel")');
+    await expect(page.locator('h3:has-text("Edit User")')).not.toBeVisible({ timeout: 2000 });
+  });
 });
