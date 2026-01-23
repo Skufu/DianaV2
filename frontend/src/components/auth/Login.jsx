@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import BiologicalNetwork from '../layout/BiologicalNetwork';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 
 const Login = ({ onLogin, onShowSignup }) => {
   const [mounted, setMounted] = useState(false);
@@ -7,12 +8,31 @@ const Login = ({ onLogin, onShowSignup }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [emailValid, setEmailValid] = useState(null);
 
   useEffect(() => setMounted(true), []);
+
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    setEmailValid(value.length > 0 ? validateEmail(value) : null);
+  };
 
   const handleSubmit = async e => {
     e.preventDefault();
     setError(null);
+
+    // Validate email format before submission
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
     setLoading(true);
     try {
       await onLogin(email, password);
@@ -58,14 +78,26 @@ const Login = ({ onLogin, onShowSignup }) => {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <label className="text-slate-300 text-sm font-medium ml-1">Email</label>
+              <div className="flex items-center justify-between ml-1">
+                <label className="text-slate-300 text-sm font-medium">Email</label>
+                {emailValid === true && (
+                  <CheckCircle size={16} className="text-emerald-400" />
+                )}
+                {emailValid === false && (
+                  <AlertCircle size={16} className="text-rose-400" />
+                )}
+              </div>
               <input
                 type="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full bg-slate-800/50 border border-slate-700/50 text-white p-4 rounded-xl 
-                         focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 
-                         transition-all placeholder-slate-500"
+                onChange={handleEmailChange}
+                required
+                className={`w-full bg-slate-800/50 text-white p-4 rounded-xl
+                         focus:outline-none focus:ring-2
+                         transition-all duration-300 placeholder-slate-500
+                         ${emailValid === false ? 'border-rose-500/60 border focus:border-rose-400 focus:ring-rose-400/30' :
+                            emailValid === true ? 'border-emerald-500/60 border focus:border-emerald-400 focus:ring-emerald-400/30' :
+                              'border-slate-700/50 focus:border-teal-500/50 focus:ring-teal-500/20'}`}
                 placeholder="doctor@clinic.com"
               />
             </div>
