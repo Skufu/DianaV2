@@ -129,17 +129,31 @@ backend/
 - `RefreshToken(c *gin.Context)` - Issue new access token
 
 ### Users (`internal/http/handlers/users.go`)
-- `CompleteOnboarding(c *gin.Context)` - Handle onboarding data submission, validate consent, update user profile
-- `GetUserProfile(c *gin.Context)` - Get current user profile data
+- `GetUserProfile(c *gin.Context)` - Get current user profile data including latest assessment summary
 - `UpdateUserProfile(c *gin.Context)` - Update user profile fields
+- `CompleteOnboarding(c *gin.Context)` - Handle onboarding data submission, validate consent, update user profile
 - `GetConsentSettings(c *gin.Context)` - Retrieve user consent preferences
 - `UpdateConsentSettings(c *gin.Context)` - Update user consent settings
-- `GetTrends(c *gin.Context)` - Get assessment trends over time
+- `GetTrends(c *gin.Context)` - Get assessment trends over time (cached 5 minutes)
 - `DeleteAccount(c *gin.Context)` - Soft delete user account
 
 ### Assessments (`internal/http/handlers/assessments.go`)
 - `Create(c *gin.Context)` - Create assessment, call ML predictor
 - `List(c *gin.Context)` - Get assessment history for patient
+
+### Analytics (`internal/http/handlers/analytics.go`)
+- `getSummary(c *gin.Context)` - Returns summary analytics for authenticated user (cached for 5 minutes)
+
+### Insights (`internal/http/handlers/insights.go`)
+- `cluster(c *gin.Context)` - Get cluster distribution data for user (cached 10 minutes)
+- `trends(c *gin.Context)` - Get biomarker trend averages by user
+
+### Auth Events (`internal/http/handlers/auth_events.go`)
+- `StreamAuthEvents(c *gin.Context)` - SSE stream for real-time auth monitoring (admin only)
+
+### Clinic Dashboard (`internal/http/handlers/clinic_dashboard.go`)
+- `listClinics(c *gin.Context)` - List all clinics user belongs to
+- `getClinicDashboard(c *gin.Context)` - Get aggregate statistics for a clinic (clinic_admin or admin)
 
 ### ML Predictor (`internal/ml/http_predictor.go`)
 - `Predict(input PredictionInput) (*PredictionResult, error)` - Call ML server

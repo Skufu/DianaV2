@@ -121,15 +121,15 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 4. ML Server endpoints (keep if still accurate)
 **Success Criteria**: All endpoints in README match router.go
 
-### [ ] T004: Update Backend README.md Handler Documentation
+### [x] T004: Update Backend README.md Handler Documentation
 **Action**: Add missing handler sections to backend/README.md
 **Files Affected**: `backend/README.md`
 **What to Add**:
-- [ ] Users handler section (GetUserProfile, UpdateUserProfile, CompleteOnboarding, etc.)
-- [ ] Analytics handler section (GetSummary)
-- [ ] Insights handler section (ClusterDistribution, Cluster)
-- [ ] Auth Events handler section (StreamAuthEvents)
-- [ ] Clinic Dashboard handler section (GetDashboard)
+- [x] Users handler section (GetUserProfile, UpdateUserProfile, CompleteOnboarding, etc.)
+- [x] Analytics handler section (GetSummary)
+- [x] Insights handler section (ClusterDistribution, Cluster)
+- [x] Auth Events handler section (StreamAuthEvents)
+- [x] Clinic Dashboard handler section (GetDashboard)
 **Success Criteria**: All active handlers in `backend/internal/http/handlers/` are documented
 
 ### T004-A: Read backend/README.md Current Content
