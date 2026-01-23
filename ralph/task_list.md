@@ -421,7 +421,7 @@ export async function setupConsoleErrorCapture(page) {
 **Files Affected**: `frontend/e2e/integration/` (NEW DIRECTORY)
 **Tests to Create**:
 - [x] `integration/auth-real.spec.js` - Real login with demo credentials
-- [ ] `integration/assessment-real.spec.js` - Real assessment creation
+  - [x] `integration/assessment-real.spec.js` - Real assessment creation
 - [ ] `integration/admin-real.spec.js` - Real admin operations
 **Configuration**: Separate playwright config for integration tests
 **Success Criteria**: Integration tests catch real backend bugs
