@@ -13,7 +13,7 @@
 | API Routes | `internal/http/router/router.go` |
 | Authentication | `internal/http/handlers/auth.go` |
 | JWT Middleware | `internal/http/middleware/auth.go` |
-| Patient CRUD | `internal/http/handlers/patients.go` |
+| Users | `internal/http/handlers/users.go` |
 | Assessments | `internal/http/handlers/assessments.go` |
 | ML Integration | `internal/ml/http_predictor.go` |
 | Database Queries | `internal/store/sqlc/*.sql.go` |
@@ -39,7 +39,7 @@ backend/
 │   │   │   └── router.go         # All route definitions
 │   │   ├── handlers/             # Request handlers
 │   │   │   ├── auth.go           # Login, register, refresh token
-│   │   │   ├── patients.go       # Patient CRUD operations
+│   │   │   ├── users.go          # User profile, onboarding, consent, trends
 │   │   │   ├── assessments.go    # Create/list assessments
 │   │   │   ├── analytics.go      # Dashboard analytics
 │   │   │   ├── export.go         # CSV export functionality
@@ -109,13 +109,11 @@ backend/
 | GET | `/api/v1/users/me/trends` | `users.go` | Get assessment trends |
 | GET | `/api/v1/users/me/account` | `users.go` | Get user account |
 | DELETE | `/api/v1/users/me/account` | `users.go` | Delete user account |
-| GET | `/api/v1/patients` | `patients.go` | List all patients |
-| POST | `/api/v1/patients` | `patients.go` | Create patient |
-| GET | `/api/v1/patients/:id` | `patients.go` | Get patient by ID |
-| PUT | `/api/v1/patients/:id` | `patients.go` | Update patient |
-| DELETE | `/api/v1/patients/:id` | `patients.go` | Delete patient |
-| GET | `/api/v1/patients/:id/assessments` | `assessments.go` | List assessments |
-| POST | `/api/v1/patients/:id/assessments` | `assessments.go` | Create assessment (calls ML) |
+| GET | `/api/v1/users/me/assessments` | `users.go` | Get user assessments |
+| POST | `/api/v1/users/me/assessments` | `assessments.go` | Create assessment (calls ML) |
+| GET | `/api/v1/users/me/assessments/:id` | `assessments.go` | Get single assessment |
+| PUT | `/api/v1/users/me/assessments/:id` | `assessments.go` | Update assessment |
+| DELETE | `/api/v1/users/me/assessments/:id` | `assessments.go` | Delete assessment |
 | GET | `/api/v1/analytics/summary` | `analytics.go` | Dashboard statistics |
 | GET | `/api/v1/analytics/cluster-distribution` | `analytics.go` | Risk cluster data |
 | GET | `/api/v1/export/patients.csv` | `export.go` | Export patients CSV |
@@ -139,13 +137,6 @@ backend/
 - `GetTrends(c *gin.Context)` - Get assessment trends over time
 - `DeleteAccount(c *gin.Context)` - Soft delete user account
 
-### Patients (`internal/http/handlers/patients.go`)
-- `List(c *gin.Context)` - Get all patients for user
-- `Create(c *gin.Context)` - Add new patient record
-- `Get(c *gin.Context)` - Fetch single patient by ID
-- `Update(c *gin.Context)` - Modify patient record
-- `Delete(c *gin.Context)` - Remove patient
-
 ### Assessments (`internal/http/handlers/assessments.go`)
 - `Create(c *gin.Context)` - Create assessment, call ML predictor
 - `List(c *gin.Context)` - Get assessment history for patient
@@ -167,13 +158,8 @@ Location: `internal/store/sqlc/*.sql.go` (generated from SQL in sqlc.yaml)
 | `UpdateUserConsent` | `:exec` | Update consent settings |
 | `UpdateUserOnboarding` | `:exec` | Mark onboarding completed |
 | `GetUserByID` | `:one` | Get user by ID with profile |
-| `ListPatients` | `:many` | Get all patients for user |
-| `GetPatient` | `:one` | Get patient by ID |
-| `CreatePatient` | `:one` | Insert new patient |
-| `UpdatePatient` | `:exec` | Modify patient |
-| `DeletePatient` | `:exec` | Remove patient |
 | `CreateAssessment` | `:one` | Insert assessment with ML results |
-| `ListAssessmentsByPatient` | `:many` | Get assessments for patient |
+| `ListAssessmentsByUser` | `:many` | Get assessments for user |
 
 ---
 

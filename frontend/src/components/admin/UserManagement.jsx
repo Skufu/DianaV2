@@ -44,7 +44,7 @@ const UserManagement = ({ token }) => {
   const [selectedUser, setSelectedUser] = useState(null);
 
   // Form state
-  const [formData, setFormData] = useState({ email: '', password: '', role: 'clinician' });
+  const [formData, setFormData] = useState({ email: '', password: '', role: 'user' });
   const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -57,7 +57,7 @@ const UserManagement = ({ token }) => {
       if (roleFilter) params.role = roleFilter;
       if (activeFilter !== '') params.is_active = activeFilter === 'active';
 
-      const response = await fetchAdminUsersApi(token, params);
+      const response = await fetchAdminUsersApi(params);
       setUsers(response.data || []);
       setTotal(response.total || 0);
       setTotalPages(response.total_pages || 1);
@@ -88,7 +88,7 @@ const UserManagement = ({ token }) => {
       await createAdminUserApi(token, formData);
       setSuccess('User created successfully');
       setShowCreateModal(false);
-      setFormData({ email: '', password: '', role: 'clinician' });
+      setFormData({ email: '', password: '', role: 'user' });
       loadUsers();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -164,7 +164,7 @@ const UserManagement = ({ token }) => {
         </div>
         <button
           onClick={() => {
-            setFormData({ email: '', password: '', role: 'clinician' });
+            setFormData({ email: '', password: '', role: 'user' });
             setFormError(null);
             setShowCreateModal(true);
           }}
@@ -227,7 +227,7 @@ const UserManagement = ({ token }) => {
               className="px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"
             >
               <option value="">All Roles</option>
-              <option value="clinician">Clinician</option>
+              <option value="user">User</option>
               <option value="admin">Admin</option>
             </select>
           </div>
@@ -294,22 +294,20 @@ const UserManagement = ({ token }) => {
                       <td className="px-4 py-3 text-white">{user.email}</td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user.role === 'admin'
-                              ? 'bg-violet-500/20 text-violet-400'
-                              : 'bg-teal-500/20 text-teal-400'
-                          }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${user.role === 'admin'
+                            ? 'bg-violet-500/20 text-violet-400'
+                            : 'bg-teal-500/20 text-teal-400'
+                            }`}
                         >
                           {user.role}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            user.is_active !== false
-                              ? 'bg-emerald-500/20 text-emerald-400'
-                              : 'bg-slate-500/20 text-slate-400'
-                          }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${user.is_active !== false
+                            ? 'bg-emerald-500/20 text-emerald-400'
+                            : 'bg-slate-500/20 text-slate-400'
+                            }`}
                         >
                           {user.is_active !== false ? 'Active' : 'Inactive'}
                         </span>
@@ -449,7 +447,7 @@ const UserManagement = ({ token }) => {
                   onChange={e => setFormData({ ...formData, role: e.target.value })}
                   className="w-full px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"
                 >
-                  <option value="clinician">Clinician</option>
+                  <option value="user">User</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
@@ -519,7 +517,7 @@ const UserManagement = ({ token }) => {
                   onChange={e => setFormData({ ...formData, role: e.target.value })}
                   className="w-full px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"
                 >
-                  <option value="clinician">Clinician</option>
+                  <option value="user">User</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
