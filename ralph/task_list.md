@@ -155,7 +155,7 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Files Affected**: `backend/README.md`
 **What to Add**:
 - [x] Cache infrastructure section (`internal/cache/`)
-- [ ] SSE broker section (`internal/http/sse/`)
+- [x] SSE broker section (`internal/http/sse/`)
 - [ ] PDF generation section (`internal/pdf/`)
 **Success Criteria**: All infrastructure components in `backend/internal/` are documented
 
