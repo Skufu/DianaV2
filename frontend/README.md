@@ -63,6 +63,19 @@ frontend/
 
 ---
 
+## Legacy Artifacts
+
+The following directories contain legacy components from the previous B2B (clinician-managed) architecture:
+
+| Directory | Status | Description |
+|-----------|--------|-------------|
+| `components/backup/` | **Deprecated** | Legacy B2B clinician-facing components superseded by user-facing components in B2C architecture |
+| `components/dashboard/` | **Redundant** | Contains duplicate `Dashboard_user.jsx` - use `components/user/Dashboard_user.jsx` instead |
+
+**Note**: These directories are candidates for removal. Do not import or reference these components in new code. All active development should use components in `user/`, `admin/`, `auth/`, `insights/`, `export/`, `education/`, `common/`, and `layout/` directories.
+
+---
+
 ## Component Reference
 
 | Component | Location | Purpose |
