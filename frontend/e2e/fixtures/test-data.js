@@ -104,7 +104,7 @@ export const SELECTORS = {
     brandLogo: 'img[alt="DIANA Logo"]',
 
     // Navigation
-    sidebar: '[class*="sidebar"], nav',
+    sidebar: 'nav, button:has-text("Dashboard"), button:has-text("My Profile"), button:has-text("Health Trends"), button:has-text("Insights"), button:has-text("Export Data")',
     dashboardTab: '[data-testid="dashboard-tab"], button:has-text("Dashboard")',
     profileTab: '[data-testid="profile-tab"], button:has-text("My Profile")',
     trendsTab: '[data-testid="trends-tab"], button:has-text("Health Trends")',
