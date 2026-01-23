@@ -219,11 +219,11 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
   - Testing instructions
   - Performance considerations
 
-### [ ] T006: Update Frontend Component Documentation in AGENTS.md
+### [x] T006: Update Frontend Component Documentation in AGENTS.md
 **Action**: Add missing frontend domains to global AGENTS.md
 **Files Affected**: `AGENTS.md` (root)
 **What to Add**:
-- [ ] Education components section
+- [x] Education components section
 - [ ] Export components section
 **Success Criteria**: All component directories in `frontend/src/components/` are listed
 
