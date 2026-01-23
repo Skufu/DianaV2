@@ -193,11 +193,13 @@ const App = () => {
     <>
       <CustomCursor isLoggedIn={isAuthenticated} />
       {!isAuthenticated ? (
-        showSignup ? (
-          <Signup onSignup={handleSignupSuccess} onShowLogin={() => setShowSignup(false)} />
-        ) : (
-          <Login onLogin={handleLogin} onShowSignup={() => setShowSignup(true)} />
-        )
+        <Suspense fallback={<LoadingSkeleton />}>
+          {showSignup ? (
+            <Signup onSignup={handleSignupSuccess} onShowLogin={() => setShowSignup(false)} />
+          ) : (
+            <Login onLogin={handleLogin} onShowSignup={() => setShowSignup(true)} />
+          )}
+        </Suspense>
       ) : isAdmin ? (
         // Admin gets purple-themed layout with AdminSidebar
         <div
