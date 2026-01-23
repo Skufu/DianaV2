@@ -136,12 +136,12 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 
 ---
 
-### [ ] T006: Create Assessment CRUD Tests
+### [x] T006: Create Assessment CRUD Tests
 **Action**: Test full assessment lifecycle (Create, Read, Update, Delete)
 **Files Affected**: `frontend/e2e/assessment-crud.spec.js` (NEW FILE)
 **Tests to Add**:
 - [x] List user assessments → paginated results
-- [ ] Get single assessment by ID → full details
+- [x] Get single assessment by ID → full details
 - [ ] Update assessment → changes persist
 - [ ] Delete assessment → removed from list
 - [ ] Access deleted assessment → 404 error
