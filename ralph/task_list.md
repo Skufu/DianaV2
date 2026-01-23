@@ -316,14 +316,24 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 
 ---
 
-### [ ] T015: Create Admin Model Traceability Tests
+### [x] T015: Create Admin Model Traceability Tests
 **Action**: Test model run history viewing
 **Files Affected**: `frontend/e2e/admin-models.spec.js` (NEW FILE)
-**Tests to Add**:
-- [ ] View model runs page
-- [ ] Current active model indicated
-- [ ] Run history listed
-**Success Criteria**: Model traceability display verified
+**Tests Created**:
+- [x] should view model runs page
+- [x] should display current active model
+- [x] should list model run history
+- [x] should handle pagination
+- [x] should show empty state when no model runs
+**Test Status**: 5/5 tests created and pass
+**Notes**: All 5 tests pass successfully. Tests verify admin can:
+- Navigate to Model Tracking page
+- View current active model information
+- See model run history in table
+- Navigate pagination between pages
+- View empty state when no model runs exist
+**Test Location**: `frontend/e2e/admin-models.spec.js`
+**Status**: ✅ All tests passing
 
 ---
 
@@ -438,7 +448,7 @@ Before marking any task complete:
 | T012 | Admin login tests | pending | NEW FILE |
 | T013 | Admin user mgmt tests | completed | 8/10 tests pass (2 skipped for route mocking complexity) |
 | T014 | Admin audit log tests | pending | NEW FILE |
-| T015 | Admin model tests | pending | NEW FILE |
+| T015 | Admin model tests | completed | Created admin-models.spec.js with 5 tests covering model runs page viewing, active model display, history listing, pagination, and empty state |
 | T016 | Network failure tests | pending | NEW FILE |
 | T017 | Auth error tests | pending | NEW FILE |
 | T018 | Input validation tests | pending | NEW FILE |
