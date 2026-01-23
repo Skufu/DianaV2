@@ -54,7 +54,11 @@ const Signup = ({ onSignup, onShowLogin }) => {
     e.preventDefault();
     setError(null);
 
-    // Validate password match
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
