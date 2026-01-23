@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER, SELECTORS, waitForNetworkIdle } from './fixtures/test-data';
+import { TEST_USER, NEW_USER, SELECTORS, waitForNetworkIdle } from './fixtures/test-data';
 
 const corsHeaders = {
   'access-control-allow-origin': '*',
@@ -49,6 +49,83 @@ test.describe('Authentication Flow', () => {
 
     const confirmPasswordInput = page.locator('input[type="password"]').nth(1);
     await expect(confirmPasswordInput).toBeVisible();
+  });
+
+  test('should register with valid credentials and redirect to onboarding', async ({ page }) => {
+    await page.route('**/auth/register', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      const body = request.postDataJSON();
+
+      return route.fulfill({
+        status: 201,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: 'registration successful',
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: { id: '1', email: body?.email, role: 'user' },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: `${NEW_USER.firstName} ${NEW_USER.lastName}`,
+          email: NEW_USER.email,
+          onboarding_completed: false,
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    const signUpButton = page.locator('text=/Sign Up/i');
+    if (await signUpButton.isVisible()) {
+      await signUpButton.click();
+      await page.waitForTimeout(2000);
+
+      const createAccountHeading = page.locator('h2:has-text("Create Account")');
+      if (await createAccountHeading.isVisible({ timeout: 5000 })) {
+        await page.fill('input[placeholder="Jane"]', NEW_USER.firstName);
+        await page.fill('input[placeholder="Doe"]', NEW_USER.lastName);
+        await page.fill('input[type="email"]', NEW_USER.email);
+
+        const passwordInput = page.locator('input[type="password"]').first();
+        await passwordInput.fill(NEW_USER.password);
+
+        const confirmPasswordInput = page.locator('input[type="password"]').nth(1);
+        await confirmPasswordInput.fill(NEW_USER.confirmPassword);
+
+        const createAccountButton = page.locator('button:has-text("Create Account")');
+        await createAccountButton.click();
+        await waitForNetworkIdle(page);
+
+        await expect(page.locator('text=/onboarding|welcome|setup/i').or(page.locator('[data-testid="onboarding"]')).or(page.locator('h2, h1').filter({ hasText: /welcome|setup|profile/i })).first()).toBeVisible({ timeout: 10000 });
+      }
+    }
   });
 
   test('should show error for invalid credentials', async ({ page }) => {

@@ -14,6 +14,14 @@ export const ADMIN_USER = {
     name: 'E2E Admin User',
 };
 
+export const NEW_USER = {
+    firstName: 'Jane',
+    lastName: 'Smith',
+    email: 'e2e-test-new@diana.app',
+    password: 'TestPass123!',
+    confirmPassword: 'TestPass123!',
+};
+
 export const MOCK_ASSESSMENT = {
     hba1c: 5.8,
     fbs: 100,
