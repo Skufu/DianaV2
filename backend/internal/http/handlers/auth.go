@@ -104,7 +104,9 @@ func (h *AuthHandler) login(c *gin.Context) {
 	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "login successful",
+		"message":       "login successful",
+		"access_token":  signedAccessToken,
+		"refresh_token": refreshToken,
 		"user": gin.H{
 			"id":    user.ID,
 			"email": user.Email,
@@ -188,7 +190,9 @@ func (h *AuthHandler) register(c *gin.Context) {
 	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", true, true)
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "registration successful",
+		"message":       "registration successful",
+		"access_token":  signedAccessToken,
+		"refresh_token": refreshToken,
 		"user": gin.H{
 			"id":    createdUser.ID,
 			"email": createdUser.Email,
@@ -289,7 +293,9 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 	c.SetCookie("diana_refresh_token", newRefreshToken, 7*24*60*60, "/", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "token refreshed successfully",
+		"message":       "token refreshed successfully",
+		"access_token":  signedAccessToken,
+		"refresh_token": newRefreshToken,
 		"user": gin.H{
 			"id":    user.ID,
 			"email": user.Email,
