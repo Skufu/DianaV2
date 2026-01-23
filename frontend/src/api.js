@@ -7,12 +7,18 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api/v1'
 export { API_BASE };
 const ML_BASE = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
-// Simple fetch wrapper - no caching, no complex token refresh
-// Cookies (diana_token) are sent automatically by browser (HttpOnly, Secure)
+// Simple fetch wrapper with JWT token support
 const apiFetch = async (endpoint, options = {}) => {
+  const token = localStorage.getItem('diana_token');
+  
   const headers = {
     'Content-Type': 'application/json',
   };
+  
+  // Add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method: options.method || 'GET',
@@ -26,6 +32,30 @@ const apiFetch = async (endpoint, options = {}) => {
   }
 
   return response.json();
+};
+
+const blobFetch = async (endpoint, options = {}) => {
+  const token = localStorage.getItem('diana_token');
+
+  const headers = {};
+
+  // Add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    method: options.method || 'GET',
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Request failed' }));
+    throw new Error(error.error || 'Request failed');
+  }
+
+  return response;
 };
 
 const mlFetch = async path => {
@@ -85,6 +115,7 @@ export const useUserProfile = () => {
     queryKey: ['user', 'profile'],
     queryFn: getUserProfileApi,
     retry: 1,
+    enabled: !!localStorage.getItem('diana_token'),
   });
 };
 
@@ -139,6 +170,7 @@ export const useAssessments = () => {
   return useQuery({
     queryKey: ['assessments'],
     queryFn: getAssessmentsApi,
+    enabled: !!localStorage.getItem('diana_token'),
   });
 };
 
@@ -408,18 +440,11 @@ export const deleteAssessmentApi = async (assessmentId) => {
 // EXPORT ENDPOINTS
 // ============================================================================
 
-// Export user's health data as PDF for doctor
 export const exportPDFApi = async () => {
-  const response = await apiFetch('/users/me/export/pdf');
-  
-  if (!response.ok) {
-    throw new Error('Failed to generate PDF');
-  }
-  
-  // Get blob from response
+  const response = await blobFetch('/users/me/export/pdf');
+
   const blob = await response.blob();
-  
-  // Create download link
+
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -494,6 +519,18 @@ export const adminGetStatsApi = async () => {
 // Export research data (anonymized, consented users only)
 export const adminExportResearchDataApi = async () => {
   return apiFetch('/admin/export/research');
+};
+
+export const signupApi = async (email, password, firstName, lastName) => {
+  return apiFetch('/auth/register', {
+    method: 'POST',
+    body: {
+      email,
+      password,
+      first_name: firstName,
+      last_name: lastName,
+    },
+  });
 };
 
 export const loginApi = async (email, password) => {
