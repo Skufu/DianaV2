@@ -381,12 +381,12 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Files Affected**: `frontend/e2e/validation.spec.js` (NEW FILE), `frontend/src/components/auth/Login.jsx`
 **Tests to Add**:
 - [x] Email format validation on login
-- [ ] Email format validation on signup
+- [x] Email format validation on signup
 - [ ] Numeric fields reject non-numbers
 - [ ] Required fields show error message
 - [ ] XSS input sanitized
 **Success Criteria**: Validation prevents bad data
-**Status**: ✅ Email validation on login implemented and tested
+**Status**: ✅ Email validation on signup and login implemented and tested
 
 ---
 
