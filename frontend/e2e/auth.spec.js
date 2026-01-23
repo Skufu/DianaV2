@@ -1025,4 +1025,27 @@ test.describe('Authentication Flow', () => {
       }
     }
   });
+
+  test('should show frontend validation error for invalid email format on login', async ({ page }) => {
+    const emailInput = page.locator(SELECTORS.loginEmailInput);
+
+    await emailInput.fill('invalidemailformat');
+
+    const emailValidationIcon = page.locator(SELECTORS.loginEmailInput).locator('..').locator('svg').first();
+    await expect(emailValidationIcon).toBeVisible({ timeout: 3000 });
+
+    const borderClass = await emailInput.evaluate(el => {
+      return el.className.includes('border-rose-500/60') || el.className.includes('border-rose-400');
+    });
+    expect(borderClass).toBe(true);
+
+    await page.fill(SELECTORS.loginPasswordInput, 'TestPassword123!');
+    await page.click(SELECTORS.loginButton);
+
+    await page.waitForTimeout(1000);
+
+    await expect(page.locator('text=Welcome Back')).toBeVisible({ timeout: 3000 });
+
+    await expect(emailValidationIcon).toBeVisible();
+  });
 });
