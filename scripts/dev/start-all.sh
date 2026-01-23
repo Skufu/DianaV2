@@ -91,15 +91,14 @@ if [ -f ".env" ]; then
     fi
 fi
 
-# Modern macOS (Darwin) often uses port 5000 for AirPlay Receiver
-# Default to 5001 if port 5000 is likely to be an issue
-if [[ "$OSTYPE" == "darwin"* ]] && [ -z "${ML_PORT:-}" ]; then
-    echo -e "${YELLOW}macOS detected: Defaulting ML_PORT to 5001 to avoid AirPlay conflict${NC}"
+# Port 5001 is the project standard for ML server
+# Port 5000 conflicts with macOS AirPlay Receiver
+if [ -z "${ML_PORT:-}" ]; then
     export ML_PORT=5001
     export MODEL_URL="http://localhost:5001/predict"
 fi
 
-ML_PORT=${ML_PORT:-5000}
+ML_PORT=${ML_PORT:-5001}
 
 # Start ML Server
 echo -e "\n${YELLOW}[1/3] Starting ML Server...${NC}"
@@ -116,7 +115,7 @@ if ! kill -0 $ML_PID 2>/dev/null; then
     echo -e "${YELLOW}On macOS, you may need to disable 'AirPlay Receiver' in System Settings > General > AirDrop & Handoff${NC}"
     exit 1
 fi
-echo -e "${GREEN}   ML Server running on port ${ML_PORT:-5000}${NC}"
+echo -e "${GREEN}   ML Server running on port ${ML_PORT:-5001}${NC}"
 
 # Start Go Backend (port 8080)
 echo -e "\n${YELLOW}[2/3] Starting Go Backend...${NC}"

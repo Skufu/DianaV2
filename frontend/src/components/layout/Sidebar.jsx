@@ -3,15 +3,22 @@ import React, { memo } from 'react';
 import { LayoutDashboard, User, Activity, Download, Plus, LogOut, BookOpen, Shield, TrendingUp } from 'lucide-react';
 
 const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin }) => {
-  const navItems = [
+  // Admin users get a completely different navigation
+  const adminNavItems = [
+    { id: 'admin', icon: Shield, label: 'Overview' },
+  ];
+
+  // Regular user navigation
+  const userNavItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'profile', icon: User, label: 'My Profile' },
     { id: 'trends', icon: TrendingUp, label: 'Health Trends' },
     { id: 'insights', icon: Activity, label: 'Insights' },
     { id: 'education', icon: BookOpen, label: 'Education' },
     { id: 'export', icon: Download, label: 'Export Data' },
-    ...(isAdmin ? [{ id: 'admin', icon: Shield, label: 'Admin Panel' }] : []),
   ];
+
+  const navItems = isAdmin ? adminNavItems : userNavItems;
 
   return (
     <div
@@ -26,20 +33,22 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
         <span className="text-2xl text-white font-bold hidden lg:block tracking-wide">DIANA</span>
       </div>
 
-      {/* New Assessment Button */}
-      <div className="p-4 lg:p-6">
-        <button
-          onClick={onStartAssessment}
-          className="w-full flex items-center justify-center lg:justify-start gap-3 py-4 px-4 rounded-xl font-semibold text-white
-                     bg-gradient-to-r from-teal-500 to-cyan-500 
-                     hover:from-teal-400 hover:to-cyan-400 
-                     hover:shadow-lg hover:shadow-teal-500/25
-                     transition-all duration-300 active:scale-[0.98]"
-        >
-          <Plus size={20} />
-          <span className="hidden lg:inline">Log Assessment</span>
-        </button>
-      </div>
+      {/* New Assessment Button - only for regular users */}
+      {!isAdmin && (
+        <div className="p-4 lg:p-6">
+          <button
+            onClick={onStartAssessment}
+            className="w-full flex items-center justify-center lg:justify-start gap-3 py-4 px-4 rounded-xl font-semibold text-white
+                       bg-gradient-to-r from-teal-500 to-cyan-500 
+                       hover:from-teal-400 hover:to-cyan-400 
+                       hover:shadow-lg hover:shadow-teal-500/25
+                       transition-all duration-300 active:scale-[0.98]"
+          >
+            <Plus size={20} />
+            <span className="hidden lg:inline">Log Assessment</span>
+          </button>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 px-3 lg:px-4 space-y-1">

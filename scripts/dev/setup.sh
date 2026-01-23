@@ -102,6 +102,8 @@ else
     sed -i '' "s/localhost:5000/localhost:5001/" "${ROOT_DIR}/.env"
   else
     sed -i "s/JWT_SECRET=change-me/JWT_SECRET=${JWT_SECRET}/" "${ROOT_DIR}/.env"
+    sed -i "s/ML_PORT=5000/ML_PORT=5001/" "${ROOT_DIR}/.env"
+    sed -i "s/localhost:5000/localhost:5001/" "${ROOT_DIR}/.env"
   fi
   
   print_success "Generated random JWT_SECRET"
@@ -175,7 +177,7 @@ fi
 echo ""
 
 # ─────────────────────────────────────────────────────────────
-# 6. Run database migrations (if DB_DSN is configured)
+# 6. Run database migrations and seed data (if DB_DSN is configured)
 # ─────────────────────────────────────────────────────────────
 print_step "Checking database configuration..."
 
@@ -186,14 +188,25 @@ set -a
 source "${ROOT_DIR}/.env"
 set +a
 
-if [[ -n "${DB_DSN:-}" && "${DB_DSN}" != *"localhost"* ]]; then
+if [[ -n "${DB_DSN:-}" ]]; then
   print_step "Running database migrations..."
   goose -dir ./backend/migrations postgres "${DB_DSN}" up
   print_success "Migrations complete"
+  
+  print_step "Seeding demo data..."
+  # The migration 0006_add_mock_data.sql handles seeding idempotently
+  # Re-running migrations is safe and ensures seed data is present
+  print_success "Demo data seeded"
+  echo ""
+  echo "   Demo credentials:"
+  echo "   ┌──────────────────────────────────────────────┐"
+  echo "   │  User:  demo@diana.app  / demo123           │"
+  echo "   │  Admin: admin@diana.app / admin123          │"
+  echo "   └──────────────────────────────────────────────┘"
 else
-  print_warning "DB_DSN not configured or using localhost. Skipping migrations."
+  print_warning "DB_DSN not configured. Skipping migrations and seeding."
   echo "   To run migrations manually:"
-  echo "     goose -dir ./migrations postgres \"\$DB_DSN\" up"
+  echo "     goose -dir ./backend/migrations postgres \"\$DB_DSN\" up"
 fi
 echo ""
 
@@ -209,13 +222,13 @@ echo "  1. Configure your database:"
 echo "     Update DB_DSN in .env with your Postgres/Neon connection string"
 echo ""
 echo "  2. Run migrations (if not auto-run above):"
-echo "     make db_up   or   goose -dir ./migrations postgres \"\$DB_DSN\" up"
+echo "     make db_up   or   goose -dir ./backend/migrations postgres \"\$DB_DSN\" up"
 echo ""
 echo "  3. Start the development server:"
-echo -e "     ${BLUE}make dev${NC}   or   ${BLUE}./run-dev.sh${NC}"
+echo -e "     ${BLUE}bash scripts/dev/start-all.sh${NC}"
 echo ""
 echo "  4. Open in your browser:"
-echo "     Frontend: http://localhost:3000 or http://localhost:5173"
+echo "     Frontend: http://localhost:4000"
 echo "     Backend:  http://localhost:8080/api/v1/healthz"
 echo ""
 echo "Useful commands:"
