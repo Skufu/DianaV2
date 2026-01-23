@@ -244,4 +244,53 @@ test.describe('Insights Dashboard', () => {
     const hasChartPaths = await page.locator('svg path').count() > 0;
     expect(hasChartPaths).toBeTruthy();
   });
+
+  test('should display cluster distribution pie/bar chart', async ({ page }) => {
+    const consoleErrors = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto('/');
+    await waitForNetworkIdle(page);
+
+    await page.waitForTimeout(1000);
+
+    const insightsTab = page.locator('button').filter({ hasText: 'Insights' }).first();
+    await insightsTab.click({ timeout: 5000 });
+    await waitForNetworkIdle(page);
+
+    await page.waitForTimeout(2000);
+
+    const chartContainer = page.locator('.recharts-wrapper');
+    await expect(chartContainer.first()).toBeVisible({ timeout: 5000 });
+
+    const svgElements = page.locator('svg');
+    expect(await svgElements.count()).toBeGreaterThan(0);
+
+    const pieSlices = page.locator('.recharts-pie, path[fill*="SIDD"], path[fill*="SIRD"]');
+    const barRects = page.locator('.recharts-bar-rectangle');
+
+    const hasPieChart = await pieSlices.count() > 0;
+    const hasBarChart = await barRects.count() > 0;
+
+    expect(hasPieChart || hasBarChart).toBeTruthy();
+
+    const chartPaths = page.locator('svg path');
+    expect(await chartPaths.count()).toBeGreaterThan(0);
+
+    const legendItems = page.locator('.recharts-legend-item');
+    const axisLabels = page.locator('.recharts-cartesian-axis-tick, .recharts-pie-label');
+
+    const hasLegendOrLabels = await (await legendItems.count()) > 0 || (await axisLabels.count()) > 0;
+    expect(hasLegendOrLabels).toBeTruthy();
+
+    expect(consoleErrors.length).toBe(0);
+
+    const clusterLabels = page.locator('text=/SIRD|SIDD|SIRD|MOD|MARD/i');
+    const hasClusterLabels = await clusterLabels.count() > 0;
+    expect(hasClusterLabels).toBeTruthy();
+  });
 });

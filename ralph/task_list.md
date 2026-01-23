@@ -188,7 +188,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Tests to Add**:
 - [x] Verify Recharts SVG elements render
 - [x] Check for console errors during chart render
-- [ ] Test cluster distribution pie/bar chart
+- [x] Test cluster distribution pie/bar chart
 - [ ] Test biomarker trends line chart
 - [ ] Feature importance chart renders
 - [ ] Empty data gracefully handled
