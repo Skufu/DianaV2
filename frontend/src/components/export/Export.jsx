@@ -1,12 +1,13 @@
 // Export: provides CSV download links for patients and assessments with filtering options
 import React, { useState } from 'react';
-import { API_BASE } from '../../api';
+import { API_BASE, exportPDFApi } from '../../api';
 import Button from '../common/Button';
 import { Download, FileText, Filter } from 'lucide-react';
 
 const Export = ({ token }) => {
   const [menopauseFilter, setMenopauseFilter] = useState('all');
   const [riskFilter, setRiskFilter] = useState('all');
+  const [pdfGenerating, setPdfGenerating] = useState(false);
 
   const buildQueryString = () => {
     const params = new URLSearchParams();
@@ -228,11 +229,22 @@ const Export = ({ token }) => {
             </div>
             <Button
               variant="outline"
-              onClick={() => alert('Insights report generation coming soon!')}
+              onClick={async () => {
+                try {
+                  setPdfGenerating(true);
+                  await exportPDFApi();
+                } catch (error) {
+                  console.error('PDF generation failed:', error);
+                  alert('Failed to generate PDF report. Please try again.');
+                } finally {
+                  setPdfGenerating(false);
+                }
+              }}
+              disabled={pdfGenerating}
               className="ml-4 glass-card text-teal-400 border-2 border-teal-500 hover:bg-slate-700/30 flex items-center gap-2"
             >
               <FileText size={16} />
-              Generate
+              {pdfGenerating ? 'Generating...' : 'Generate'}
             </Button>
           </div>
         </div>
