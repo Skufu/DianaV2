@@ -202,7 +202,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Action**: Test profile view and edit functionality
 **Files Affected**: `frontend/e2e/profile.spec.js` (NEW FILE)
 **Tests to Add**:
-- [ ] Navigate to profile tab
+- [x] Navigate to profile tab
 - [ ] View profile shows user data
 - [ ] Edit first name → save → verify persisted
 - [ ] Edit with invalid data → validation error

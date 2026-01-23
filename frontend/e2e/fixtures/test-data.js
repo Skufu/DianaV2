@@ -36,7 +36,10 @@ export const MOCK_ASSESSMENT = {
 
 export const TEST_PROFILE = {
     name: 'E2E Test User',
+    first_name: 'E2E Test',
+    last_name: 'User',
     email: 'clinician@example.com',
+    onboarding_completed: true,
 };
 
 export const TEST_TRENDS = {
