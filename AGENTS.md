@@ -111,11 +111,16 @@ Comprehensive knowledge base documentation for all major directories:
 - **SHAP**: Use `ml.explainability` for SHAP values, waterfall plots.
 
 ### React Frontend
-- **Components**: Organized by domain (admin, auth, user, insights, common, layout).
+- **Components**: Organized by domain (admin, auth, user, insights, common, layout, education, export).
 - **Lazy Loading**: `React.lazy()` + `Suspense` in App.jsx for feature-based routes.
 - **State**: Local via `useState` in components. Auth/user data in `App.jsx` (localStorage).
 - **API Calls**: NEVER raw fetch. Use `apiFetch()` (auth) or `mlFetch()` (ML).
 - **Performance**: `deviceCapabilities` detects tier (High/Med/Low). Apply CSS classes globally in App.jsx.
+
+### Frontend Component Domains
+| Domain | Location | Components | Purpose |
+|--------|----------|------------|---------|
+| Export | `components/export/` | Export | CSV data export with filtering (menopause status, risk level), patient demographics, assessment records, PDF insights reports |
 
 ### Database
 - **Migrations**: Use Goose (`go run ./cmd/migrate`). Format: `-- +goose Up` / `-- +goose Down`.
