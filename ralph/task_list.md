@@ -422,10 +422,10 @@ export async function setupConsoleErrorCapture(page) {
 **Tests to Create**:
 - [x] `integration/auth-real.spec.js` - Real login with demo credentials
   - [x] `integration/assessment-real.spec.js` - Real assessment creation
-- [ ] `integration/admin-real.spec.js` - Real admin operations
+  - [x] `integration/admin-real.spec.js` - Real admin operations
 **Configuration**: Separate playwright config for integration tests
 **Success Criteria**: Integration tests catch real backend bugs
-**Status**: Created `integration/auth-real.spec.js` with 6 tests covering demo user login, admin login, invalid credentials, logout, session persistence, and token expiry. Tests require backend running (by design - integration tests hit real API).
+**Status**: Created `integration/admin-real.spec.js` with 10 tests covering admin login, user list with pagination, create user, duplicate email validation, update user, deactivate user, audit logs, model runs, non-admin access, and unauthorized access. Tests require backend running (by design - integration tests hit real API).
 
 ---
 
