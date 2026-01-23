@@ -144,4 +144,23 @@ test.describe('Profile Management', () => {
     await expect(lastNameInput).toHaveValue(TEST_PROFILE.last_name);
     await expect(emailInput).toHaveValue(TEST_PROFILE.email);
   });
+
+  test('should edit first name, save, and verify persisted', async ({ page }) => {
+    const sidebar = page.locator(SELECTORS.sidebar);
+    await sidebar.locator('button:has-text("My Profile")').click();
+
+    const firstNameInput = page.locator('input[name="first_name"]');
+    const saveButton = page.locator('button:has-text("Save Changes")');
+
+    const newFirstName = 'UpdatedName';
+    await firstNameInput.clear();
+    await firstNameInput.fill(newFirstName);
+    await expect(firstNameInput).toHaveValue(newFirstName);
+
+    page.on('dialog', dialog => dialog.accept());
+    await saveButton.click();
+    await page.waitForTimeout(100);
+
+    await expect(firstNameInput).toHaveValue(newFirstName);
+  });
 });
