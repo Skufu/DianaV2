@@ -17,7 +17,7 @@ const Login = ({ onLogin, onShowSignup }) => {
     try {
       await onLogin(email, password);
     } catch (err) {
-      setError('Invalid credentials or server unavailable.');
+      setError(err.message || 'Invalid credentials or server unavailable.');
     } finally {
       setLoading(false);
     }
