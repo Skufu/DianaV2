@@ -45,6 +45,24 @@ export const TEST_TRENDS = {
     riskLevels: null,
 };
 
+export const MOCK_TRENDS_DATA = {
+    biomarkerHistory: [
+        { date: '2024-01-15', hba1c: 5.8, fbs: 100 },
+        { date: '2024-02-15', hba1c: 5.6, fbs: 95 },
+        { date: '2024-03-15', hba1c: 5.9, fbs: 105 },
+    ],
+    clusterHistory: [
+        { date: '2024-01-15', cluster: 'MOD', riskScore: 25 },
+        { date: '2024-02-15', cluster: 'MOD', riskScore: 22 },
+        { date: '2024-03-15', cluster: 'MARD', riskScore: 28 },
+    ],
+    riskLevels: {
+        low: 2,
+        medium: 1,
+        high: 0,
+    },
+};
+
 export const createMockJwt = (payload = {}) => {
     const basePayload = {
         role: 'user',
