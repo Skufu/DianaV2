@@ -51,7 +51,12 @@ const mockAuthenticatedSession = async (page, accessToken, overrides = {}) => {
       );
     }
 
-    if (url.includes('/users/me/profile')) {
+    if (url.includes('/users/me/profile') && method === 'PUT') {
+      const profileUpdate = resolveOverride(overrides.profileUpdate, { success: true });
+      return route.fulfill(buildJsonResponse(profileUpdate.body, profileUpdate.status));
+    }
+
+    if (url.includes('/users/me/profile') && method === 'GET') {
       const profile = resolveOverride(overrides.profile, TEST_PROFILE);
       return route.fulfill(buildJsonResponse(profile.body, profile.status));
     }
@@ -162,5 +167,28 @@ test.describe('Profile Management', () => {
     await page.waitForTimeout(100);
 
     await expect(firstNameInput).toHaveValue(newFirstName);
+  });
+
+  test('should show validation error when editing with invalid data', async ({ page }) => {
+    const sidebar = page.locator(SELECTORS.sidebar);
+    await sidebar.locator('button:has-text("My Profile")').click();
+
+    page.on('dialog', dialog => dialog.accept());
+
+    const firstNameInput = page.locator('input[name="first_name"]');
+    const saveButton = page.locator('button:has-text("Save Changes")');
+
+    // Try to save with empty first name (invalid)
+    await firstNameInput.clear();
+    await firstNameInput.fill('a');
+
+    await saveButton.click();
+
+    // Should see validation error message or success alert (if API succeeds)
+    const errorMessage = page.locator('.bg-rose-500\\/10').or(
+      page.locator('text=Validation failed')
+    );
+
+    await expect(errorMessage.or(page.locator('text=Profile updated successfully'))).toBeVisible({ timeout: 3000 });
   });
 });

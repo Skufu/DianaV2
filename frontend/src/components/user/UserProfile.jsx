@@ -12,6 +12,7 @@ const UserProfile = ({ setActiveTab }) => {
   const [showAssessmentForm, setShowAssessmentForm] = useState(false);
   const [formData, setFormData] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
+  const [formError, setFormError] = useState(null);
 
   // Sync form data with profile data from React Query
   useState(() => {
@@ -30,7 +31,7 @@ const UserProfile = ({ setActiveTab }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setFormError(null);
     try {
       const payload = {
         ...formData,
@@ -44,7 +45,7 @@ const UserProfile = ({ setActiveTab }) => {
       setFormData(payload);
       alert('Profile updated successfully!');
     } catch (err) {
-      setError(err.message || 'Failed to update profile');
+      setFormError(err.message || 'Failed to update profile');
     }
   };
 
@@ -98,9 +99,9 @@ const UserProfile = ({ setActiveTab }) => {
         />
       )}
 
-      {error && (
+      {formError && (
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-rose-400">
-          {error}
+          {formError}
         </div>
       )}
 
