@@ -293,4 +293,50 @@ test.describe('Insights Dashboard', () => {
     const hasClusterLabels = await clusterLabels.count() > 0;
     expect(hasClusterLabels).toBeTruthy();
   });
+
+  test('should display biomarker trends line chart', async ({ page }) => {
+    const consoleErrors = [];
+    page.on('console', msg => {
+      const text = msg.text();
+      if (msg.type() === 'error' && !text.includes('ERR_CONNECTION_REFUSED')) {
+        consoleErrors.push(text);
+      }
+    });
+
+    await page.goto('/');
+    await waitForNetworkIdle(page);
+
+    await page.waitForTimeout(1000);
+
+    const insightsTab = page.locator('button').filter({ hasText: 'Insights' }).first();
+    await insightsTab.click({ timeout: 5000 });
+    await waitForNetworkIdle(page);
+
+    await page.waitForTimeout(3000);
+
+    const biomarkerTrendsSection = page.locator('text=/Biomarker Trends Over Time/i');
+    await expect(biomarkerTrendsSection.first()).toBeVisible({ timeout: 5000 });
+
+    const emptyStateMessage = page.locator('text=/No trend data available/i');
+    const hasEmptyState = await emptyStateMessage
+      .first()
+      .isVisible({ timeout: 2000 })
+      .catch(() => false);
+
+    if (!hasEmptyState) {
+      const svgElements = page.locator('svg');
+      const svgCount = await svgElements.count();
+      expect(svgCount).toBeGreaterThan(0);
+
+      const chartPaths = page.locator('svg path');
+      const pathCount = await chartPaths.count();
+      expect(pathCount).toBeGreaterThan(0);
+
+      const biomarkerLabels = page.locator('text=/HbA1c|FBS/i');
+      const hasBiomarkerLabels = await biomarkerLabels.count() > 0;
+      expect(hasBiomarkerLabels).toBeTruthy();
+    }
+
+    expect(consoleErrors.length).toBe(0);
+  });
 });
