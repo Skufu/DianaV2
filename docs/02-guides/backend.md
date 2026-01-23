@@ -107,11 +107,21 @@ SQLC generates type-safe Go code automatically.
 | POST | /auth/register | authHandler | Create account |
 | POST | /auth/login | authHandler | Get JWT token |
 | POST | /auth/refresh | authHandler | Refresh token |
-| GET | /patients | patientsHandler | List patients |
-| POST | /patients | patientsHandler | Create patient |
-| GET | /patients/:id | patientsHandler | Get patient |
-| POST | /patients/:id/assessments | assessmentsHandler | Create assessment (calls ML) |
-| GET | /insights/summary | insightsHandler | Dashboard stats |
+| GET | /users/me/profile | usersHandler | Get current user profile |
+| PUT | /users/me/profile | usersHandler | Update user profile |
+| POST | /users/me/onboarding | usersHandler | Complete onboarding flow |
+| GET | /users/me/consent | usersHandler | Get consent settings |
+| PUT | /users/me/consent | usersHandler | Update consent settings |
+| GET | /users/me/trends | usersHandler | Get assessment trends |
+| DELETE | /users/me/account | usersHandler | Delete user account |
+| GET | /users/me/assessments | assessmentsHandler | List user assessments |
+| POST | /users/me/assessments | assessmentsHandler | Create assessment (calls ML) |
+| GET | /users/me/assessments/:id | assessmentsHandler | Get single assessment |
+| PUT | /users/me/assessments/:id | assessmentsHandler | Update assessment |
+| DELETE | /users/me/assessments/:id | assessmentsHandler | Delete assessment |
+| GET | /insights/cluster-distribution | insightsHandler | Risk cluster data |
+| GET | /insights/cluster | insightsHandler | Cluster details |
+| GET | /analytics/summary | analyticsHandler | Dashboard stats |
 | GET | /export/csv | exportHandler | Export data |
 
 ### Admin Endpoints (Admin Role Required)
