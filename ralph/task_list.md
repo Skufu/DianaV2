@@ -324,14 +324,25 @@
 
 **Description**: Wrap frequently rendered components in React.memo to prevent unnecessary re-renders.
 
-**Tasks**:
+**Automated Code Tasks**:
 - [x] Wrap `RiskIndicator` in React.memo in `frontend/src/components/common/RiskIndicator.jsx`
 - [x] Wrap `BiomarkerInput` in React.memo in `frontend/src/components/common/BiomarkerInput.jsx`
 - [x] Wrap `Button` in React.memo in `frontend/src/components/common/Button.jsx`
+- [x] Wrap `CustomCursor` in React.memo in `frontend/src/components/common/CustomCursor.jsx`
 - [x] Add displayName to all memoized components (verified: RiskIndicator, BiomarkerInput, Button, BiologicalNetwork)
-- [BLOCKED] Use React DevTools profiler to measure 30-50% reduction in re-renders
-- [x] Manual testing: Verify components update correctly when props change
-- [x] Test all components for functionality regression
+- [x] Wrap App component callback functions in useCallback (handleLogin, handleLogout, handleStartAssessment, handleSignupSuccess, renderContent)
+- [x] Wrap App component computed values in useMemo (performanceTier, animationNodeCount, disableHeavyEffects, isAssessmentOpen)
+- [x] Wrap LoadingSkeleton in memo
+
+**Manual Verification Tasks (BLOCKED - requires browser testing)**:
+- [ ] Open React DevTools Profiler in browser
+- [ ] Record user session: login → navigate dashboard → view profile → view trends → logout
+- [ ] Measure total re-renders during session
+- [ ] Verify re-render count < 20 per session
+- [ ] Verify components update correctly when props change
+- [ ] Test all components for functionality regression
+
+**Note**: Code-level optimizations are complete. React DevTools Profiler measurement requires manual browser testing.
 
 **Files**:
 - `frontend/src/components/common/RiskIndicator.jsx`
