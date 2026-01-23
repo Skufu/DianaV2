@@ -16,7 +16,8 @@ import (
 )
 
 // New creates and configures the Gin router with all routes and middleware.
-func New(cfg config.Config, st store.Store, cache *cache.Cache) *gin.Engine {
+// Returns gin.Engine and AuditLogger for graceful shutdown.
+func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *middleware.AuditLogger) {
 	// Set Gin mode based on environment
 	if cfg.Env == "production" || cfg.Env == "prod" {
 		gin.SetMode(gin.ReleaseMode)
@@ -130,6 +131,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) *gin.Engine {
 	// -------------------------------------------------------------------------
 	// Admin routes (requires admin role)
 	// -------------------------------------------------------------------------
+	auditLogger := middleware.NewAuditLogger(st)
 	admin := protected.Group("/admin")
 	admin.Use(middleware.RoleRequired("admin"))
 	{
@@ -157,7 +159,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) *gin.Engine {
 		printRoutes(r)
 	}
 
-	return r
+	return r, auditLogger
 }
 
 // printRoutes logs all registered routes (for debugging)
