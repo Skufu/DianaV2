@@ -240,13 +240,14 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Focus**: Education and Export components (per original task)
 **Success Criteria**: All component domains from T006-A are documented
 
-### [ ] T007: Document Frontend Legacy Artifacts
+### [x] T007: Document Frontend Legacy Artifacts
 **Action**: Add note about legacy frontend directories
 **Files Affected**: `frontend/README.md` or `AGENTS.md`
 **What to Add**:
-- [ ] Note about `components/backup/` containing legacy B2B components
-- [ ] Note about `components/dashboard/` being redundant (duplicate of user/Dashboard_user.jsx)
+- [x] Note about `components/backup/` containing legacy B2B components
+- [x] Note about `components/dashboard/` being redundant (duplicate of user/Dashboard_user.jsx)
 **Success Criteria**: Legacy directories are clearly marked as deprecated/candidates for removal
+**Result**: Added Legacy Artifacts section to frontend/README.md documenting backup/ and dashboard/ directories as deprecated
 
 ### T007-A: Scan for Legacy Frontend Directories
 **Action**: Use glob to identify directories that appear to be legacy/backup
