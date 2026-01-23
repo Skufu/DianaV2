@@ -152,14 +152,15 @@ The backend follows a layered architecture with clear separation of concerns:
 ### Frontend Architecture
 
 **Structure** (`frontend/src/`):
-- `App.jsx`: Root component, handles auth state, patient data fetching, routing
+- `App.jsx`: Root component, handles auth state, user data fetching, routing
 - `api.js`: All API calls, uses `VITE_API_BASE` and Bearer token headers
-- `components/`: UI components (Login, Dashboard, PatientHistory, Analytics, Export, Sidebar)
+- `components/`: UI components organized by domain (user/, admin/, auth/, insights/, common/, layout/)
 
 **Key Patterns**:
 - JWT tokens managed in `App.jsx` state and localStorage
 - API calls include `Authorization: Bearer ${token}` header
-- `PatientHistory.jsx` is the most complex component - handles patient list, assessment forms, and edit/delete modals
+- `Dashboard_user.jsx` handles user assessments and overview
+- `UserProfile.jsx` manages user profile and preferences
 - All mutations (create/update/delete) refresh data from server after success
 
 ### Security Implementation

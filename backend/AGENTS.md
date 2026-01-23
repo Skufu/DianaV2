@@ -97,10 +97,10 @@ Go/Gin REST API for DIANA diabetes risk assessment. PostgreSQL with SQLC, JWT au
 - Uses `gopdf` library
 - Notified via queue (not implemented)
 
-**Refactoring in Progress:**
-- Shifting from "Patient-centric" to "User-centric" model
-- `patients.go` handler deleted, `users.go` untracked/new
-- Assessments have both `UserID` and legacy `PatientID`
+**Refactoring Complete:**
+- Shifted from "Patient-centric" to "User-centric" model (B2B→B2C)
+- `users.go` handler replaces deleted `patients.go`
+- Assessments use `UserID` (legacy `PatientID` dropped)
 
 **Admin Features:**
 - Role-based access control (`admin` role for `/api/v1/admin/*`)

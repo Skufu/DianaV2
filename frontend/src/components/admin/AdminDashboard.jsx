@@ -44,7 +44,8 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
   const animateCharts = useMemo(() => shouldAnimateCharts(), []);
 
   const { data: dashboardData, isLoading, error } = useAdminDashboard();
-  const { data: clinics = [] } = useClinicComparison();
+  const { data: clinicsData } = useClinicComparison();
+  const clinics = clinicsData ?? [];
 
   if (userRole !== 'admin') {
     return (
@@ -61,7 +62,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
       case 'users':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <UserManagement />
+            <UserManagement token={token} />
           </Suspense>
         );
       case 'audit':
@@ -97,8 +98,8 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
     }
 
     const stats = dashboardData?.stats || {};
-    const clusterDist = dashboardData?.cluster_distribution || [];
-    const trends = dashboardData?.trends || [];
+    const clusterDist = dashboardData?.cluster_distribution || null;
+    const trends = dashboardData?.trends || null;
 
     return (
       <div className="space-y-6">
@@ -159,7 +160,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
           <div className="glass-card p-8">
             <h3 className="text-2xl font-bold text-white mb-6">T2DM Cluster Distribution</h3>
             <ResponsiveContainer width="100%" height={300}>
-              {clusterDist.length > 0 ? (
+              {clusterDist && clusterDist.length > 0 ? (
                 <PieChart>
                   <Pie
                     data={clusterDist}
@@ -196,7 +197,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
           <div className="glass-card p-8">
             <h3 className="text-2xl font-bold text-white mb-6">Biomarker Trends</h3>
             <ResponsiveContainer width="100%" height={300}>
-              {trends.length > 0 ? (
+              {trends && trends.length > 0 ? (
                 <LineChart data={trends}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                   <XAxis dataKey="label" stroke="#94A3B8" style={{ fontSize: '12px' }} />

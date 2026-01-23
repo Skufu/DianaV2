@@ -12,11 +12,13 @@
 |-------|---------------|
 | App Entry | `src/App.jsx` |
 | API Layer | `src/api.js` |
-| Dashboard | `src/components/dashboard/Dashboard.jsx` |
-| Patient List | `src/components/patients/PatientList.jsx` |
-| Analytics | `src/components/analytics/Analytics.jsx` |
-| Auth (Login) | `src/components/auth/Login.jsx` |
+| User Dashboard | `src/components/user/Dashboard_user.jsx` |
+| Admin Dashboard | `src/components/admin/AdminDashboard.jsx` |
+| Profile | `src/components/user/UserProfile.jsx` |
+| Onboarding | `src/components/user/Onboarding.jsx` |
+| Insights | `src/components/insights/Insights.jsx` |
 | Export | `src/components/export/Export.jsx` |
+| Auth (Login) | `src/components/auth/Login.jsx` |
 | Styles | `src/index.css` |
 
 ---
@@ -31,20 +33,26 @@ frontend/
 │   ├── main.jsx                  # React entry point
 │   ├── index.css                 # Global Tailwind styles
 │   └── components/
+│       ├── user/
+│       │   ├── Dashboard_user.jsx  # User overview, assessments
+│       │   ├── UserProfile.jsx    # Profile management
+│       │   ├── Onboarding.jsx    # Multi-step user setup
+│       │   └── PersonalTrends.jsx # Assessment trend charts
+│       ├── admin/
+│       │   ├── AdminDashboard.jsx  # Admin system stats
+│       │   ├── UserManagement.jsx  # User CRUD operations
+│       │   ├── AuditLogViewer.jsx  # Audit log viewing
+│       │   └── ModelTraceability.jsx # ML model tracking
 │       ├── insights/
 │       │   └── Insights.jsx     # ML metrics, visualizations
 │       ├── auth/
 │       │   └── Login.jsx         # Login/register forms
 │       ├── common/
 │       │   └── *.jsx             # Reusable UI components
-│       ├── dashboard/
-│       │   └── Dashboard.jsx     # Overview stats, charts
-│       ├── export/
-│       │   └── Export.jsx        # CSV download functionality
 │       ├── layout/
 │       │   └── *.jsx             # Navigation, sidebar
-│       └── patients/
-│           └── PatientList.jsx   # Patient CRUD, assessment history
+│       └── export/
+│           └── Export.jsx        # PDF export functionality
 │
 ├── index.html                    # HTML entry
 ├── vite.config.js                # Vite build config

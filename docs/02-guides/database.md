@@ -202,7 +202,7 @@ Queries are defined in separate `.sql` files in `backend/internal/store/sqlc/`:
 | File | Purpose |
 |------|---------|
 | `users.sql.go` | User CRUD operations |
-| `patients.sql.go` | Patient CRUD operations |
+| `patients.sql.go` | **LEGACY** - Dropped in migration 0011 (B2B→B2C refactor) |
 | `assessments.sql.go` | Assessment operations |
 | `clinics.sql.go` | Clinic operations |
 | `audit_events.sql.go` | Audit log queries |

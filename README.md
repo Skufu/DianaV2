@@ -27,11 +27,16 @@ A full-stack health application that helps clinicians assess diabetes risk using
 |------|---------------|---------|
 | API Routes | `backend/internal/http/router/router.go` | Route definitions |
 | Auth Handler | `backend/internal/http/handlers/auth.go` | Login, register, JWT |
-| Patient Handler | `backend/internal/http/handlers/patients.go` | Patient CRUD |
+| Users Handler | `backend/internal/http/handlers/users.go` | User profile, onboarding, consent, trends |
 | Assessment Handler | `backend/internal/http/handlers/assessments.go` | Create assessments, call ML |
+| Auth Events Handler | `backend/internal/http/handlers/auth_events.go` | SSE auth event streaming |
+| Analytics Handler | `backend/internal/http/handlers/analytics.go` | Dashboard statistics |
+| Insights Handler | `backend/internal/http/handlers/insights.go` | ML metrics, cluster distribution |
+| Clinic Dashboard | `backend/internal/http/handlers/clinic_dashboard.go` | Clinic member dashboard |
+| Cohort Handler | `backend/internal/http/handlers/cohort.go` | Cohort analysis endpoints |
 | Admin Handlers | `backend/internal/http/handlers/admin_*.go` | User mgmt, audit, models |
 | RBAC Middleware | `backend/internal/http/middleware/rbac.go` | Role-based access control |
-| ML Predictor | `backend/internal/ml/predictor.go` | HTTP client for ML server |
+| ML Predictor | `backend/internal/ml/http_predictor.go` | HTTP client for ML server |
 | DB Queries | `backend/internal/store/sqlc/*.sql.go` | SQLC generated query code |
 | Config | `backend/internal/config/config.go` | Environment loading |
 
@@ -40,9 +45,12 @@ A full-stack health application that helps clinicians assess diabetes risk using
 |------|---------------|---------|
 | Main App | `frontend/src/App.jsx` | Routing, auth state |
 | API Layer | `frontend/src/api.js` | Fetch wrapper, token refresh |
-| Dashboard | `frontend/src/components/dashboard/Dashboard.jsx` | Overview stats |
-| Patients | `frontend/src/components/patients/PatientHistory.jsx` | Patient CRUD UI |
-| Analytics | `frontend/src/components/analytics/Analytics.jsx` | ML visualizations |
+| User Dashboard | `frontend/src/components/user/Dashboard_user.jsx` | User overview, assessments |
+| Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` | Admin system stats |
+| Profile | `frontend/src/components/user/UserProfile.jsx` | Profile management |
+| Onboarding | `frontend/src/components/user/Onboarding.jsx` | Multi-step onboarding |
+| Insights | `frontend/src/components/insights/Insights.jsx` | ML visualizations, analytics |
+| Export | `frontend/src/components/export/Export.jsx` | PDF export functionality |
 | Login | `frontend/src/components/auth/Login.jsx` | Authentication forms |
 
 ### ML (Python)
@@ -120,11 +128,19 @@ make run-dev
 ### Protected (JWT Required)
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/v1/patients` | List patients |
-| POST | `/api/v1/patients` | Create patient |
-| POST | `/api/v1/patients/:id/assessments` | Create assessment (calls ML) |
+| GET | `/api/v1/users/me/profile` | Get current user profile |
+| PUT | `/api/v1/users/me/profile` | Update user profile |
+| POST | `/api/v1/users/me/onboarding` | Complete onboarding flow |
+| GET | `/api/v1/users/me/consent` | Get consent settings |
+| PUT | `/api/v1/users/me/consent` | Update consent settings |
+| GET | `/api/v1/users/me/trends` | Get assessment trends |
+| DELETE | `/api/v1/users/me/account` | Delete user account |
+| GET | `/api/v1/users/me/assessments` | List user assessments |
+| POST | `/api/v1/users/me/assessments` | Create assessment (calls ML) |
+| GET | `/api/v1/users/me/assessments/:id` | Get single assessment |
+| PUT | `/api/v1/users/me/assessments/:id` | Update assessment |
+| DELETE | `/api/v1/users/me/assessments/:id` | Delete assessment |
 | GET | `/api/v1/analytics/summary` | Dashboard stats |
-| GET | `/api/v1/export/patients.csv` | Export CSV |
 
 ### Admin (JWT + Admin Role Required)
 | Method | Path | Description |

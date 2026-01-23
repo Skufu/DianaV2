@@ -18,7 +18,7 @@ DIANA V2/
 │   │   ├── http/              # HTTP handlers and middleware
 │   │   │   ├── handlers/      # Request handlers
 │   │   │   │   ├── auth.go
-│   │   │   │   ├── patients.go
+│   │   │   │   ├── users.go
 │   │   │   │   ├── assessments.go
 │   │   │   │   ├── insights.go
 │   │   │   │   ├── cohort.go

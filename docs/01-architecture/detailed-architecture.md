@@ -40,10 +40,10 @@ Backend components (Go)
 
 Frontend components (React)
 ---------------------------
-- App shell: `src/App.jsx` manages auth state, active tab, patient cache, and assessment cache.
+- App shell: `src/App.jsx` manages auth state, active tab, and user data cache.
 - API client: `src/api.js` wraps `fetch` with `API_BASE = VITE_API_BASE`, handles JSON/text.
-- Screens: `Login`, `Dashboard`, `PatientHistory` (list + form), `Analytics`, `Export`, `Sidebar`.
-- Flow: login -> store token -> fetch patients -> create patient -> submit assessment -> render history; optional analytics/export requests.
+- Screens: `Login`, `Dashboard_user`, `UserProfile`, `Onboarding`, `Insights`, `Analytics`, `Export`, `Sidebar`.
+- Flow: login -> store token -> fetch user profile -> complete onboarding -> submit assessment -> render history; optional analytics/export requests.
 
 Data model (persistent)
 -----------------------
