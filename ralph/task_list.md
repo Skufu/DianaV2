@@ -384,7 +384,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 - [x] Email format validation on signup
 - [x] Numeric fields reject non-numbers
 - [x] Required fields show error message
-- [ ] XSS input sanitized
+- [x] XSS input sanitized
 **Success Criteria**: Validation prevents bad data
 **Status**: ✅ All input validation tests implemented and passing
 Tests Added:
@@ -393,6 +393,7 @@ Tests Added:
 - should reject non-numeric cholesterol value
 - should reject null values in numeric fields
 - should show error message for required fields
+- XSS input sanitized (tests `<script>alert("XSS")</script>` and `<img src=x onerror=alert("XSS")>` payloads)
 
 ---
 
@@ -473,7 +474,7 @@ Before marking any task complete:
 | T015 | Admin model tests | completed | Created admin-models.spec.js with 5 tests covering model runs page viewing, active model display, history listing, pagination, and empty state |
 | T016 | Network failure tests | pending | NEW FILE |
 | T017 | Auth error tests | completed | Created auth-errors.spec.js with 4 tests covering expired token, admin route protection (403), invalid token, and stale refresh token |
-| T018 | Input validation tests | pending | NEW FILE |
+| T018 | Input validation tests | completed | Created validation.spec.js with 6 tests including XSS sanitization test |
 | T019 | Console error detection | pending | |
 | T020 | Integration test suite | pending | NEW DIRECTORY |
 

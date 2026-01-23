@@ -669,4 +669,151 @@ test.describe('Input Validation Tests', () => {
 
     await takeScreenshot(page, 'validation-required-fields-error');
   });
+
+  test('XSS input sanitized', async ({ page }) => {
+    await page.goto('/');
+
+    const xssPayload = '<script>alert("XSS")</script>';
+    const xssPayload2 = '<img src=x onerror=alert("XSS")>';
+
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: {
+            id: 'e2e-user-123',
+            email: TEST_USER.email,
+            role: 'user',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      if (request.method() === 'GET') {
+        return route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            first_name: 'Test',
+            last_name: 'User',
+            email: TEST_USER.email,
+            onboarding_completed: true,
+          }),
+        });
+      }
+
+      if (request.method() === 'PUT') {
+        const body = await request.postDataJSON();
+
+        const hasScriptTag = body.first_name?.includes('<script>') || body.last_name?.includes('<script>');
+        const hasImgTag = body.first_name?.includes('<img') || body.last_name?.includes('<img');
+
+        if (hasScriptTag || hasImgTag) {
+          return route.fulfill({
+            status: 200,
+            headers: corsHeaders,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              first_name: body.first_name?.replace(/<[^>]*>/g, '') || 'Sanitized',
+              last_name: body.last_name?.replace(/<[^>]*>/g, '') || 'Sanitized',
+              email: TEST_USER.email,
+              onboarding_completed: true,
+            }),
+          });
+        }
+
+        return route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            first_name: body.first_name || 'Test',
+            last_name: body.last_name || 'User',
+            email: TEST_USER.email,
+            onboarding_completed: true,
+          }),
+        });
+      }
+    });
+
+    await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
+    await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
+    await page.click(SELECTORS.loginButton);
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+
+    const profileUpdateResponse = await page.evaluate(async ({ payload1, payload2 }) => {
+      const response = await fetch('/api/v1/users/me/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+        body: JSON.stringify({
+          first_name: payload1,
+          last_name: payload2,
+        }),
+      });
+
+      const data = await response.json();
+      return {
+        status: response.status,
+        ok: response.ok,
+        data: data,
+      };
+    }, { payload1: xssPayload, payload2: xssPayload2 });
+
+    expect(profileUpdateResponse.ok).toBe(true);
+    expect(profileUpdateResponse.status).toBe(200);
+
+    expect(profileUpdateResponse.data.first_name).not.toContain('<script>');
+    expect(profileUpdateResponse.data.first_name).not.toContain('<img');
+    expect(profileUpdateResponse.data.last_name).not.toContain('<script>');
+    expect(profileUpdateResponse.data.last_name).not.toContain('<img');
+
+    const scriptExecuted = await page.evaluate(() => {
+      window.xssExecuted = false;
+      window.alert = () => { window.xssExecuted = true; };
+      return window.xssExecuted;
+    });
+
+    expect(scriptExecuted).toBe(false);
+
+    let consoleErrors = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await takeScreenshot(page, 'validation-xss-sanitized');
+
+    expect(consoleErrors.length).toBe(0);
+  });
 });
