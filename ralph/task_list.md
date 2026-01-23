@@ -198,13 +198,13 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 
 ---
 
-### [ ] T010: Create Profile Management Tests
+### [x] T010: Create Profile Management Tests
 **Action**: Test profile view and edit functionality
 **Files Affected**: `frontend/e2e/profile.spec.js` (NEW FILE)
 **Tests to Add**:
 - [x] Navigate to profile tab
 - [x] View profile shows user data
-- [ ] Edit first name → save → verify persisted
+- [x] Edit first name → save → verify persisted
 - [ ] Edit with invalid data → validation error
 - [ ] Consent settings toggle works
 - [ ] Account deletion shows confirmation dialog
