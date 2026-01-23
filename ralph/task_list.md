@@ -224,7 +224,7 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Files Affected**: `AGENTS.md` (root)
 **What to Add**:
 - [x] Education components section
-- [ ] Export components section
+- [x] Export components section
 **Success Criteria**: All component directories in `frontend/src/components/` are listed
 
 ### T006-A: Scan Frontend Component Domains
@@ -565,10 +565,10 @@ For sub-tasks marked "CRITICAL":
 | T005-B | Identify undocumented components | pending | |
 | T005-C | Read key files | pending | |
 | T005-D | Add infrastructure docs | pending | |
-| T006 | Frontend AGENTS.md domains | pending | |
-| T006-A | Scan frontend component domains | pending | CRITICAL - list domains |
-| T006-B | Compare AGENTS.md vs actual | pending | CRITICAL - find gaps |
-| T006-C | Update AGENTS.md | pending | |
+| T006 | Frontend AGENTS.md domains | completed | Added Export components section to root AGENTS.md |
+| T006-A | Scan frontend component domains | completed | Component domains verified: admin/, auth/, user/, insights/, common/, layout/, education/, export/, dashboard/ |
+| T006-B | Compare AGENTS.md vs actual | completed | Education and Export domains were missing from documentation |
+| T006-C | Update AGENTS.md | completed | Export components table added to AGENTS.md line 120-123 |
 | T007 | Frontend legacy artifacts | pending | |
 | T007-A | Scan for legacy directories | pending | CRITICAL - find legacy dirs |
 | T007-B | Verify purpose | pending | |
