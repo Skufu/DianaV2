@@ -297,6 +297,9 @@ const Education = () => {
                                             alt={`${key} logo`}
                                             className="w-12 h-12 rounded-2xl object-cover"
                                             loading="lazy"
+                                            decoding="async"
+                                            width="48"
+                                            height="48"
                                         />
                                         <div>
                                             <h4 className="font-bold text-white">{key}</h4>

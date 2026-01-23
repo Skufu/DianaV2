@@ -36,19 +36,19 @@ const queryClient = new QueryClient({
 });
 
 // Loading skeleton for lazy components
-const LoadingSkeleton = memo(() => (
-  <div className="space-y-4 animate-pulse">
-    <div className="h-8 w-48 bg-slate-700/50 rounded" />
-    <div className="h-4 w-full max-w-md bg-slate-700/30 rounded" />
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-      {['skeleton-1', 'skeleton-2', 'skeleton-3'].map(id => (
-        <div key={id} className="h-40 bg-slate-700/20 rounded-2xl" />
-      ))}
+const LoadingSkeleton = memo(function LoadingSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="h-8 w-48 bg-slate-700/50 rounded" />
+      <div className="h-4 w-full max-w-md bg-slate-700/30 rounded" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        {['skeleton-1', 'skeleton-2', 'skeleton-3'].map(id => (
+          <div key={id} className="h-40 bg-slate-700/20 rounded-2xl" />
+        ))}
+      </div>
     </div>
-  </div>
-);
-
-LoadingSkeleton.displayName = 'LoadingSkeleton';
+  );
+});
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
