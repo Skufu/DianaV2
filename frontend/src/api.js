@@ -260,6 +260,7 @@ export const useAssessments = () => {
     queryKey: ['assessments'],
     queryFn: getAssessmentsApi,
     enabled: !!localStorage.getItem('diana_token'),
+    retry: 1,
   });
 };
 
