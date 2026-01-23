@@ -1,13 +1,13 @@
 // AdminSidebar: Dedicated navigation for Admin module with Indigo accents
 import React from 'react';
-import { LayoutDashboard, Users, Activity, FileText, Shield, LogOut, Cpu, Building2 } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Shield, LogOut, Cpu, Wifi } from 'lucide-react';
 
 const AdminSidebar = ({ activeView, setActiveView, onLogout }) => {
   const navItems = [
     { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
     { id: 'users', icon: Users, label: 'User Management' },
-    { id: 'clinics', icon: Building2, label: 'Clinics' },
     { id: 'audit', icon: FileText, label: 'Audit Logs' },
+    { id: 'auth-events', icon: Wifi, label: 'Auth Events' },
     { id: 'models', icon: Cpu, label: 'Model Tracking' },
   ];
 

@@ -7,10 +7,11 @@
 
 ## P0 / Critical
 
-- [BLOCKED] **1. Fix PDF export flow** - Use binary-friendly fetch (avoid JSON parsing)
-  - Location: `frontend/src/api.js:420-428`
+- [x] **1. Fix PDF export flow** ✅ COMPLETED
+  - Location: `frontend/src/api.js:42-64` (blobFetch) + `api.js:486-496` (exportPDFApi)
   - Issue: `apiFetch` returns parsed JSON; code then checks `response.ok` and calls `response.blob()` on JSON object
-  - Fix: Create a separate `blobFetch` or add `responseType` param to bypass JSON parsing
+  - Fix: Created `blobFetch` function that returns the raw Response object for binary handling
+  - Done: `blobFetch` bypasses JSON parsing and `exportPDFApi` correctly uses it to get blob
 
 - [x] **2a. Add signupApi export to frontend** ✅ COMPLETED
   - Location: `frontend/src/api.js:524`
@@ -27,10 +28,11 @@
 
 ## P1 / High
 
-- [BLOCKED] **3. Update `apiFetch` to handle empty responses (204) safely**
-  - Location: `frontend/src/api.js:34`
+- [x] **3. Update `apiFetch` to handle empty responses (204) safely** ✅ COMPLETED
+  - Location: `frontend/src/api.js:34-37`
   - Issue: Always calls `response.json()`, throws on empty body
   - Fix: Check `response.status === 204 || response.headers.get('content-length') === '0'` before parsing
+  - Done: Added check at lines 34-37 to return `null` for 204 or empty responses before calling `.json()`
 
 - [x] **4. Relax auth state reset logic on transient profile fetch failures**
   - Location: `frontend/src/App.jsx`

@@ -1,87 +1,116 @@
-# Bug Check PRD: Frontend + Backend Risk Review
+# 📄 PRD — Admin Auth 401 Fix + SSE Path Mismatch
 
-**Status**: Ready ✅  
-**Last Verified**: 2026-01-23
+## 1) Problem Statement
 
-## Goal
-Identify and document potential bugs, reliability gaps, and security risks in the frontend and backend. Provide a prioritized remediation plan without implementing fixes.
+Admin API calls (`/api/v1/admin/*`) consistently return **401 Unauthorized** even after a successful login. The frontend logs show `Error: missing bearer token` and there is no `diana_token` in localStorage.
 
-## Scope
-- **Frontend**: `frontend/src` (React 18, TanStack Query, API wrapper)
-- **Backend**: `backend/internal` (Gin handlers, middleware, store, ML predictor, services)
+Additionally, the frontend attempts to open an SSE stream at:
+```
+/api/v1/admin/auth/events/stream
+```
+but the backend exposes:
+```
+/api/v1/admin/events/stream
+```
+resulting in **404 Not Found**.
 
-## Out of Scope
-- Implementing fixes
-- Refactors unrelated to the identified risks
-- UI/UX redesigns
+---
 
-## Findings (Prioritized)
+## 2) Root Cause
 
-### P0 / Critical
-1. **PDF export breaks at runtime**
-   - **Location**: `frontend/src/api.js` (exportPDFApi)
-   - **Issue**: `apiFetch` returns parsed JSON; code then checks `response.ok` and calls `response.blob()` on a JSON object → runtime error.
-   - **Impact**: PDF export feature fails for all users.
-2. **Signup flow is non-functional**
-   - **Location**: `frontend/src/components/auth/Signup.jsx` + `frontend/src/api.js`
-   - **Issue**: Signup imports `signupApi`, but no export exists; backend registration route is missing per docs.
-   - **Impact**: New user registration fails.
+### 2.1 Token Not Returned in JSON
+Backend `/auth/login` sets JWT **only in HttpOnly cookies**, but does **not** return `access_token` or `refresh_token` in the JSON response.
 
-### P1 / High
-3. **JSON parsing on 204/empty responses**
-   - **Location**: `frontend/src/api.js` (`apiFetch`)
-   - **Issue**: Always `response.json()`. For 204 or empty body responses, throws `Unexpected end of JSON input`.
-   - **Impact**: Logout/delete flows can fail unexpectedly.
-4. **Auth state can be cleared on transient errors**
-   - **Location**: `frontend/src/App.jsx`
-   - **Issue**: Any profile fetch error flips `isAuthenticated` to `false`.
-   - **Impact**: Temporary outages cause forced logout.
-5. **ML predictor returns ambiguous values on failure**
-   - **Location**: `backend/internal/ml/http_predictor.go`
-   - **Issue**: Returns `cluster="error"` with `risk_score=0` without surfacing error to callers.
-   - **Impact**: Downstream may store invalid predictions without differentiation.
+Frontend expects JSON tokens and writes them to `localStorage`, so it never stores any token.
 
-### P2 / Medium
-6. **Inconsistent trend schema between backend and frontend**
-   - **Location**: Backend `backend/internal/store/user_repo.go` vs. frontend `frontend/src/components/user/PersonalTrends.jsx`
-   - **Issue**: Backend returns `TrendData` (arrays by metric) while frontend expects `biomarkerHistory` and `riskScore` per entry.
-   - **Impact**: Trend charts may render empty or show incorrect data.
-7. **Audit logging is fire-and-forget without shutdown safety**
-   - **Location**: `backend/internal/http/middleware/audit.go`
-   - **Issue**: Goroutine not tracked; potential loss on shutdown. Uses `context.WithoutCancel`, which requires Go 1.23+.
-   - **Impact**: Missing audit events, potential build incompatibility.
-8. **Pagination helper not consistently used**
-   - **Location**: `backend/internal/http/handlers/admin_models.go`
-   - **Issue**: Manual page/page_size parsing vs standard helper.
-   - **Impact**: Inconsistent behavior and duplicated logic.
+### 2.2 SSE Path Mismatch
+Frontend points to `/admin/auth/events/stream` while backend route is `/admin/events/stream`.
 
-### P3 / Low
-9. **Notification service is stubbed**
-   - **Location**: `backend/internal/services/notification_service.go`
-   - **Issue**: Logs only; no persistence or delivery.
-   - **Impact**: Scheduled notifications never delivered.
-10. **Research export is TODO**
-   - **Location**: `backend/internal/http/handlers/export.go`
-   - **Issue**: Placeholder response instead of anonymized CSV.
-   - **Impact**: Admin export feature incomplete.
+---
 
-## Risks & Constraints
-- **Security**: JWT stored in `localStorage` (XSS exposure). Consider server-managed HttpOnly cookies.
-- **Reliability**: No retry/circuit-breaker for ML calls; silent fallback to "error" cluster.
-- **Consistency**: Frontend/backend schema mismatch in trends data.
+## 3) Goals
 
-## Success Criteria
-- PDF export works end-to-end.
-- Signup path exists and is functional.
-- `apiFetch` handles JSON and non-JSON responses safely.
-- Trend charts render consistent data from backend.
-- Audit logs are reliable and safe across shutdowns.
+- Ensure frontend receives JWT token after login.
+- Ensure admin API calls include Bearer token.
+- Fix SSE route mismatch.
+- Stop 401 errors on admin endpoints.
+- Stop 404 for auth event stream.
 
-## Non-Functional Requirements
-- No breaking changes to public endpoints without migration plan.
-- Errors are observable (clear logging + client-safe error messages).
-- Backward compatible with Go 1.21+ unless upgrade is intentional.
+---
 
-## Assumptions
-- Backend and frontend code reflect current deployment.
-- No immediate schema changes for trends unless planned.
+## 4) Non-Goals
+
+- No migration to cookie-based auth in this scope.
+- No token refresh or security hardening changes.
+- No changes to RBAC or role logic.
+
+---
+
+## 5) Requirements (Functional)
+
+### Authentication
+- Login response must include:
+  - `access_token`
+  - `refresh_token`
+  - `user` object (already present)
+- Frontend must store token in `localStorage` as `diana_token`.
+
+### Admin API
+- All admin requests must attach `Authorization: Bearer <token>` via `apiFetch`.
+
+### SSE
+- Frontend must connect to correct SSE endpoint:
+  - `/api/v1/admin/events/stream`
+
+---
+
+## 6) Acceptance Criteria
+
+✅ Login response JSON includes both tokens
+✅ LocalStorage contains `diana_token` after login
+✅ Admin endpoints return 200 for admin user
+✅ SSE stream connects without 404
+✅ No `missing bearer token` errors in console
+
+---
+
+## 7) Risks / Notes
+
+- Tokens stored in localStorage (XSS risk) — acceptable for current scope.
+- Cookies still set by backend (redundant) — not harmful.
+
+---
+
+## 8) Implementation Notes (High-Level)
+
+- Backend: Add `access_token` and `refresh_token` fields to login/register/refresh JSON response.
+- Frontend: Update SSE endpoint path in `AuthEventLogViewer.jsx` (or equivalent).
+- No refactor of auth middleware.
+
+---
+
+# ✅ Checklist (Detailed)
+
+### Backend
+
+- [ ] Add `access_token` to `/auth/login` JSON response.
+- [ ] Add `refresh_token` to `/auth/login` JSON response.
+- [ ] Add tokens to `/auth/register` response (if used).
+- [ ] Add tokens to `/auth/refresh` response (if used).
+- [ ] Ensure response format is consistent across auth endpoints.
+
+### Frontend
+
+- [ ] Verify `loginApi` correctly stores `access_token` in localStorage.
+- [ ] Verify `apiFetch` adds `Authorization` header after login.
+- [ ] Update SSE URL to `/admin/events/stream`.
+
+### Validation
+
+- [ ] Login as `admin@diana.app / admin123`.
+- [ ] Confirm `localStorage.diana_token` exists.
+- [ ] Confirm `/admin/dashboard` returns 200.
+- [ ] Confirm `/admin/users` returns 200.
+- [ ] Confirm `/admin/audit` returns 200.
+- [ ] Confirm `/admin/models` returns 200.
+- [ ] Confirm SSE stream connects (no 404).

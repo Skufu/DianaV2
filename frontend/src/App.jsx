@@ -2,6 +2,7 @@ import { useEffect, useState, Suspense, lazy, useMemo, useCallback, memo } from 
 import { useUserProfile, useLogin, useLogout } from './api';
 import { useQueryClient } from '@tanstack/react-query';
 import Sidebar from './components/layout/Sidebar';
+import AdminSidebar from './components/layout/AdminSidebar';
 import Login from './components/auth/Login';
 import BiologicalNetwork from './components/layout/BiologicalNetwork';
 import CustomCursor from './components/common/CustomCursor';
@@ -45,6 +46,7 @@ const App = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [adminView, setAdminView] = useState('overview'); // Separate state for admin navigation
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
 
@@ -84,10 +86,18 @@ const App = () => {
       localStorage.setItem('diana_refresh_token', res.refresh_token);
     }
 
-    setUserRole(res.user.role || 'user');
-    setIsAdmin(res.user.role === 'admin');
+    const role = res.user.role || 'user';
+    const userIsAdmin = role === 'admin';
+
+    setUserRole(role);
+    setIsAdmin(userIsAdmin);
     setUserId(res.user.id);
     setIsAuthenticated(true);
+
+    // Redirect admin users to admin dashboard
+    if (userIsAdmin) {
+      setActiveTab('admin');
+    }
 
     // Invalidate all queries so they refetch with the new token
     queryClient.invalidateQueries();
@@ -132,7 +142,8 @@ const App = () => {
     setActiveTab('profile');
   }, []);
 
-  const renderContent = useCallback(() => {
+  // Render content for regular users
+  const renderUserContent = useCallback(() => {
     if (showOnboarding) {
       return <Onboarding onComplete={() => setShowOnboarding(false)} />;
     }
@@ -150,16 +161,15 @@ const App = () => {
         return <Education />;
       case 'export':
         return <Export />;
-      case 'admin':
-        return isAdmin ? (
-          <AdminDashboard userRole={userRole} />
-        ) : (
-          <Dashboard_user userId={userId} />
-        );
       default:
         return <Dashboard_user userId={userId} />;
     }
-  }, [userId, isAdmin, userRole, activeTab, showOnboarding]);
+  }, [userId, activeTab, showOnboarding]);
+
+  // Render content for admin users
+  const renderAdminContent = useCallback(() => {
+    return <AdminDashboard userRole={userRole} activeView={adminView} setActiveView={setAdminView} />;
+  }, [userRole, adminView]);
 
   const handleSignupSuccess = useCallback((res) => {
     if (!res?.user) throw new Error('signup failed');
@@ -180,7 +190,29 @@ const App = () => {
         ) : (
           <Login onLogin={handleLogin} onShowSignup={() => setShowSignup(true)} />
         )
+      ) : isAdmin ? (
+        // Admin gets purple-themed layout with AdminSidebar
+        <div
+          className="flex min-h-screen relative overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #0F0A1E 0%, #1E1B4B 100%)' }}
+        >
+          {/* Purple gradient overlay for admin */}
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-900/10 via-transparent to-indigo-900/10 pointer-events-none" />
+
+          <AdminSidebar
+            activeView={adminView}
+            setActiveView={setAdminView}
+            onLogout={handleLogout}
+          />
+
+          <main className="relative z-10 flex-1 ml-20 lg:ml-72 p-6 lg:p-8">
+            <ErrorBoundary section={adminView}>
+              <Suspense fallback={<LoadingSkeleton />}>{renderAdminContent()}</Suspense>
+            </ErrorBoundary>
+          </main>
+        </div>
       ) : (
+        // Regular user gets teal-themed layout with Sidebar
         <div
           className="flex min-h-screen relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1E293B 100%)' }}
@@ -212,7 +244,7 @@ const App = () => {
             className={`relative z-10 flex-1 ${isAssessmentOpen ? '' : 'ml-20 lg:ml-72'} p-6 lg:p-8`}
           >
             <ErrorBoundary section={activeTab}>
-              <Suspense fallback={<LoadingSkeleton />}>{renderContent()}</Suspense>
+              <Suspense fallback={<LoadingSkeleton />}>{renderUserContent()}</Suspense>
             </ErrorBoundary>
           </main>
         </div>
