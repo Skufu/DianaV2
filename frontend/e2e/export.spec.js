@@ -29,6 +29,7 @@ const mockAuthenticatedSession = async (page, accessToken, overrides = {}) => {
       '/users/me/profile',
       '/users/me/assessments',
       '/users/me/onboarding',
+      '/users/me/export/pdf',
     ].some(path => url.includes(path));
 
     if (!isMockedEndpoint) {
@@ -64,6 +65,20 @@ const mockAuthenticatedSession = async (page, accessToken, overrides = {}) => {
     if (url.includes('/users/me/onboarding')) {
       const onboarding = resolveOverride(overrides.onboarding, { success: true });
       return route.fulfill(buildJsonResponse(onboarding.body, onboarding.status));
+    }
+
+    if (url.includes('/users/me/export/pdf') && method === 'GET') {
+      const mockPdfContent = Buffer.from('Mock PDF content');
+      return route.fulfill({
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'content-type': 'application/pdf',
+          'content-disposition': 'attachment; filename="diana_health_report.pdf"',
+          'content-length': mockPdfContent.length.toString(),
+        },
+        body: mockPdfContent,
+      });
     }
 
     return route.fulfill(buildJsonResponse({ error: 'Not mocked in export tests' }, 404));
@@ -194,5 +209,34 @@ test.describe('Export Page Tests', () => {
     await expect(page.locator('text=Data Privacy & Security Notice')).toBeVisible();
     await expect(page.locator('text=Exported files contain protected health information (PHI)')).toBeVisible();
     await expect(page.locator('text=HIPAA, GDPR, or applicable data protection regulations')).toBeVisible();
+  });
+
+  test('should generate PDF report and trigger download', async ({ page, context }) => {
+    const sidebar = page.locator(SELECTORS.sidebar);
+    const exportTab = sidebar.locator('button:has-text("Export Data")');
+
+    await exportTab.click();
+
+    const generateButton = page.locator('button:has-text("Generate")');
+
+    const logs = [];
+    page.on('console', msg => {
+      logs.push({ type: msg.type(), text: msg.text() });
+    });
+
+    const downloadPromise = page.waitForEvent('download');
+
+    await generateButton.click();
+
+    await page.waitForTimeout(2000);
+
+    const hasErrors = logs.some(log => log.type === 'error');
+    if (hasErrors) {
+      console.log('Console errors:', logs.filter(l => l.type === 'error'));
+    }
+
+    const download = await downloadPromise;
+
+    expect(download.suggestedFilename()).toMatch(/diana_health_report.*\.pdf$/);
   });
 });
