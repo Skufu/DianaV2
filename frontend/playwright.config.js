@@ -23,7 +23,8 @@ export default defineConfig({
     // Reporter to use
     reporter: [
         ['html', { open: 'never' }],
-        ['list']
+        ['list'],
+        ['json', { outputFile: 'test-results/results.json' }]
     ],
 
     // Shared settings for all projects

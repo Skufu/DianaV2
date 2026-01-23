@@ -8,6 +8,24 @@ export const TEST_USER = {
     name: 'E2E Test User',
 };
 
+export const ADMIN_USER = {
+    email: 'admin@diana.app',
+    password: 'admin123',
+    name: 'E2E Admin User',
+};
+
+export const MOCK_ASSESSMENT = {
+    hba1c: 5.8,
+    fbs: 100,
+    bmi: 25.0,
+    cholesterol: 200,
+    ldl: 130,
+    hdl: 50,
+    triglycerides: 150,
+    systolic_bp: 120,
+    diastolic_bp: 80,
+};
+
 export const TEST_PROFILE = {
     name: 'E2E Test User',
     email: 'clinician@example.com',
