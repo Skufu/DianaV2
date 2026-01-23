@@ -381,4 +381,93 @@ test.describe('Authentication Flow', () => {
       await expect(page.locator(SELECTORS.loginEmailInput)).toBeVisible({ timeout: 5000 });
     }
   });
+
+  test('should show error for registration with weak password', async ({ page }) => {
+    await page.route('**/auth/register', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      const body = request.postDataJSON();
+
+      if (body && body.password && body.password.length < 8) {
+        return route.fulfill({
+          status: 400,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'invalid payload',
+            details: 'password must be at least 8 characters'
+          }),
+        });
+      }
+
+      return route.fulfill({
+        status: 201,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: 'registration successful',
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: { id: '1', email: body?.email, role: 'user' },
+        }),
+      });
+    });
+
+    await page.route('**/auth/login', async route => {
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: { id: '1', email: 'test@example.com', role: 'user' },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ name: 'Test User', email: 'test@example.com', onboarding_completed: true }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    const signUpButton = page.locator('text=Sign Up, text=Don\'t have an account');
+    if (await signUpButton.isVisible()) {
+      await signUpButton.click();
+      await page.waitForTimeout(2000);
+
+      const createAccountButton = page.locator('button:has-text("Create Account")');
+      if (await createAccountButton.isVisible({ timeout: 5000 })) {
+        await page.fill('input[type="email"]', 'weakpass@example.com');
+        await page.fill('input[placeholder="Jane"]', 'John');
+        await page.fill('input[placeholder="Doe"]', 'Doe');
+        await page.fill('input[placeholder*="Password"], input[name="password"]', '123');
+        await page.fill('input[placeholder*="Confirm"], input[name="confirmPassword"]', '123');
+
+        await createAccountButton.click();
+
+        const errorMessage = page.locator('text=/password must be at least 8|invalid payload|too short|error/i');
+        await expect(errorMessage).toBeVisible({ timeout: 5000 });
+      } else {
+        await page.fill('input[type="password"]', '12345');
+        await page.click('button:has-text("Sign In")');
+      }
+    }
+  });
 });
+
