@@ -813,4 +813,487 @@ test.describe('Assessment CRUD Operations', () => {
 
     await takeScreenshot(page, 'assessment-updated');
   });
+
+  test('Delete assessment → removed from list', async ({ page }) => {
+    await page.goto('/');
+
+    let assessmentIdCounter = 0;
+    const assessments = [];
+
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: {
+            id: 'e2e-user-123',
+            email: TEST_USER.email,
+            role: 'user',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          first_name: 'Test',
+          last_name: 'User',
+          email: TEST_USER.email,
+          onboarding_completed: true,
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      if (request.method() === 'POST') {
+        const body = await request.postDataJSON();
+        const newAssessment = {
+          id: ++assessmentIdCounter,
+          hba1c: body.hba1c || MOCK_ASSESSMENT.hba1c,
+          fbs: body.fbs || MOCK_ASSESSMENT.fbs,
+          bmi: body.bmi || MOCK_ASSESSMENT.bmi,
+          cholesterol: body.cholesterol || MOCK_ASSESSMENT.cholesterol,
+          ldl: body.ldl || MOCK_ASSESSMENT.ldl,
+          hdl: body.hdl || MOCK_ASSESSMENT.hdl,
+          triglycerides: body.triglycerides || MOCK_ASSESSMENT.triglycerides,
+          systolic_bp: body.systolic_bp || MOCK_ASSESSMENT.systolic_bp,
+          diastolic_bp: body.diastolic_bp || MOCK_ASSESSMENT.diastolic_bp,
+          risk_score: 40,
+          risk_level: 'moderate',
+          cluster: 'MARD',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        assessments.push(newAssessment);
+
+        return route.fulfill({
+          status: 201,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify(newAssessment),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify(assessments),
+      });
+    });
+
+    await page.route('**/users/me/assessments/*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      const url = new URL(request.url());
+      const pathParts = url.pathname.split('/');
+      const assessmentId = parseInt(pathParts[pathParts.length - 1], 10);
+
+      const assessmentIndex = assessments.findIndex(a => a.id === assessmentId);
+
+      if (assessmentIndex === -1) {
+        return route.fulfill({
+          status: 404,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Assessment not found' }),
+        });
+      }
+
+      if (request.method() === 'DELETE') {
+        assessments.splice(assessmentIndex, 1);
+        return route.fulfill({
+          status: 204,
+          headers: corsHeaders,
+        });
+      }
+
+      const assessment = assessments.find(a => a.id === assessmentId);
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify(assessment),
+      });
+    });
+
+    await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
+    await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
+    await page.click(SELECTORS.loginButton);
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+
+    const createdAssessment = await page.evaluate(async (mockAssessment) => {
+      const response = await fetch('/api/v1/users/me/assessments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+        body: JSON.stringify(mockAssessment),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Assessment creation failed: ${response.status}`);
+      }
+
+      return await response.json();
+    }, MOCK_ASSESSMENT);
+
+    expect(createdAssessment).toHaveProperty('id');
+    const assessmentId = createdAssessment.id;
+
+    const listBeforeDelete = await page.evaluate(async () => {
+      const response = await fetch('/api/v1/users/me/assessments', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Assessment list failed: ${response.status}`);
+      }
+
+      return await response.json();
+    });
+
+    expect(listBeforeDelete).toHaveLength(1);
+    expect(listBeforeDelete[0].id).toBe(assessmentId);
+
+    const deleteResponse = await page.evaluate(async (id) => {
+      const response = await fetch(`/api/v1/users/me/assessments/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+      });
+
+      return {
+        status: response.status,
+        data: await response.json().catch(() => null),
+      };
+    }, assessmentId);
+
+    expect(deleteResponse.status).toBe(204);
+    expect(deleteResponse.data).toBeNull();
+
+    const listAfterDelete = await page.evaluate(async () => {
+      const response = await fetch('/api/v1/users/me/assessments', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Assessment list after delete failed: ${response.status}`);
+      }
+
+      return await response.json();
+    });
+
+    expect(listAfterDelete).toHaveLength(0);
+    expect(listAfterDelete).not.toContainEqual(expect.objectContaining({ id: assessmentId }));
+  });
+
+  test('Access deleted assessment → 404 error', async ({ page }) => {
+    await page.goto('/');
+
+    let assessmentIdCounter = 0;
+    const assessments = [];
+
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: {
+            id: 'e2e-user-123',
+            email: TEST_USER.email,
+            role: 'user',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          first_name: 'Test',
+          last_name: 'User',
+          email: TEST_USER.email,
+          onboarding_completed: true,
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      if (request.method() === 'POST') {
+        const body = await request.postDataJSON();
+        const newAssessment = {
+          id: ++assessmentIdCounter,
+          hba1c: body.hba1c || MOCK_ASSESSMENT.hba1c,
+          fbs: body.fbs || MOCK_ASSESSMENT.fbs,
+          bmi: body.bmi || MOCK_ASSESSMENT.bmi,
+          cholesterol: body.cholesterol || MOCK_ASSESSMENT.cholesterol,
+          ldl: body.ldl || MOCK_ASSESSMENT.ldl,
+          hdl: body.hdl || MOCK_ASSESSMENT.hdl,
+          triglycerides: body.triglycerides || MOCK_ASSESSMENT.triglycerides,
+          systolic_bp: body.systolic_bp || MOCK_ASSESSMENT.systolic_bp,
+          diastolic_bp: body.diastolic_bp || MOCK_ASSESSMENT.diastolic_bp,
+          risk_score: 40,
+          risk_level: 'moderate',
+          cluster: 'MARD',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        assessments.push(newAssessment);
+
+        return route.fulfill({
+          status: 201,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify(newAssessment),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify(assessments),
+      });
+    });
+
+    await page.route('**/users/me/assessments/*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
+      if (!authHeader) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      const url = new URL(request.url());
+      const pathParts = url.pathname.split('/');
+      const assessmentId = parseInt(pathParts[pathParts.length - 1], 10);
+
+      const assessmentIndex = assessments.findIndex(a => a.id === assessmentId);
+
+      if (assessmentIndex === -1) {
+        return route.fulfill({
+          status: 404,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Assessment not found' }),
+        });
+      }
+
+      if (request.method() === 'DELETE') {
+        assessments.splice(assessmentIndex, 1);
+        return route.fulfill({
+          status: 204,
+          headers: corsHeaders,
+        });
+      }
+
+      const assessment = assessments.find(a => a.id === assessmentId);
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify(assessment),
+      });
+    });
+
+    await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
+    await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
+    await page.click(SELECTORS.loginButton);
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+
+    const createdAssessment = await page.evaluate(async (mockAssessment) => {
+      const response = await fetch('/api/v1/users/me/assessments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+        body: JSON.stringify(mockAssessment),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Assessment creation failed: ${response.status}`);
+      }
+
+      return await response.json();
+    }, MOCK_ASSESSMENT);
+
+    expect(createdAssessment).toHaveProperty('id');
+    const assessmentId = createdAssessment.id;
+
+    const deleteResponse = await page.evaluate(async (id) => {
+      const response = await fetch(`/api/v1/users/me/assessments/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+      });
+
+      return {
+        status: response.status,
+        data: await response.json().catch(() => null),
+      };
+    }, assessmentId);
+
+    expect(deleteResponse.status).toBe(204);
+
+    const getDeletedAssessment = await page.evaluate(async (id) => {
+      const response = await fetch(`/api/v1/users/me/assessments/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+      });
+
+      return {
+        status: response.status,
+        data: await response.json().catch(() => null),
+      };
+    }, assessmentId);
+
+    expect(getDeletedAssessment.status).toBe(404);
+    expect(getDeletedAssessment.data).toHaveProperty('error');
+    expect(getDeletedAssessment.data.error).toMatch(/not found/i);
+
+    const updateDeletedAssessment = await page.evaluate(async (id) => {
+      const response = await fetch(`/api/v1/users/me/assessments/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
+        },
+        body: JSON.stringify({ hba1c: 7.0 }),
+      });
+
+      return {
+        status: response.status,
+        data: await response.json().catch(() => null),
+      };
+    }, assessmentId);
+
+    expect(updateDeletedAssessment.status).toBe(404);
+    expect(updateDeletedAssessment.data).toHaveProperty('error');
+
+    await takeScreenshot(page, 'deleted-assessment-404');
+  });
 });
