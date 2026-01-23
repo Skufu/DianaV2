@@ -114,7 +114,7 @@ func main() {
 		redisCache = nil
 	}
 
-	r := router.New(cfg, st, redisCache)
+	r, auditLogger := router.New(cfg, st, redisCache)
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
 		Handler: r,
@@ -161,5 +161,7 @@ func main() {
 		}
 	}
 	st.Close()
+	log.Printf("waiting for pending audit logs...")
+	auditLogger.Shutdown()
 	log.Printf("shutdown complete")
 }
