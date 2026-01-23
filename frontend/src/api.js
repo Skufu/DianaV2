@@ -7,14 +7,60 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api/v1'
 export { API_BASE };
 const ML_BASE = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
-// Simple fetch wrapper with JWT token support
-const apiFetch = async (endpoint, options = {}) => {
+// Token refresh lock to prevent multiple simultaneous refresh attempts
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+// Subscribe to token refresh completion
+const subscribeTokenRefresh = (callback) => {
+  refreshSubscribers.push(callback);
+};
+
+// Notify all subscribers that refresh completed
+const onTokenRefreshed = (newToken) => {
+  refreshSubscribers.forEach(callback => callback(newToken));
+  refreshSubscribers = [];
+};
+
+// Attempt to refresh access token
+const attemptTokenRefresh = async () => {
+  const refreshToken = localStorage.getItem('diana_refresh_token');
+
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const response = await fetch(`${API_BASE}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Token refresh failed');
+  }
+
+  const data = await response.json();
+
+  if (data.access_token) {
+    localStorage.setItem('diana_token', data.access_token);
+  }
+  if (data.refresh_token) {
+    localStorage.setItem('diana_refresh_token', data.refresh_token);
+  }
+
+  return data.access_token;
+};
+
+// Simple fetch wrapper with JWT token support and automatic token refresh
+const apiFetch = async (endpoint, options = {}, isRetry = false) => {
   const token = localStorage.getItem('diana_token');
-  
+
   const headers = {
     'Content-Type': 'application/json',
   };
-  
+
   // Add Authorization header if token exists
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -25,6 +71,44 @@ const apiFetch = async (endpoint, options = {}) => {
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
+
+  // Handle 401 Unauthorized - attempt token refresh and retry
+  if (response.status === 401 && !isRetry) {
+    if (isRefreshing) {
+      // Wait for ongoing refresh to complete
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh(async (newToken) => {
+          try {
+            const result = await apiFetch(endpoint, options, true);
+            resolve(result);
+          } catch (err) {
+            reject(err);
+          }
+        });
+      });
+    }
+
+    // Start token refresh
+    isRefreshing = true;
+    try {
+      const newToken = await attemptTokenRefresh();
+      onTokenRefreshed(newToken);
+      isRefreshing = false;
+
+      // Retry original request with new token
+      return apiFetch(endpoint, options, true);
+    } catch (refreshError) {
+      isRefreshing = false;
+      // Refresh failed - clear tokens and force logout
+      localStorage.removeItem('diana_token');
+      localStorage.removeItem('diana_refresh_token');
+      // Trigger page reload to go to login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+      throw new Error('Session expired. Please log in again.');
+    }
+  }
 
   if (!response.ok) {
     const error = await response.json();

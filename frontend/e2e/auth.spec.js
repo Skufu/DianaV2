@@ -565,4 +565,226 @@ test.describe('Authentication Flow', () => {
     const rateLimitError = page.locator('text=/rate limit exceeded|too many requests|429|try again later/i');
     await expect(rateLimitError).toBeVisible({ timeout: 5000 });
   });
+
+  test('should refresh token when access token expires', async ({ page }) => {
+    let profileCallCount = 0;
+    let refreshTokenCallCount = 0;
+    let accessToken = 'expired.access.token';
+
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      accessToken = 'initial.access.token';
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: accessToken,
+          refresh_token: 'test.refresh.token',
+          user: { id: '1', email: TEST_USER.email, role: 'user' },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async (route) => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      profileCallCount++;
+
+      if (profileCallCount === 1) {
+        return route.fulfill({
+          status: 401,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Unauthorized' }),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email }),
+      });
+    });
+
+    await page.route('**/auth/refresh', async (route) => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      refreshTokenCallCount++;
+      accessToken = 'new.access.token';
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: 'token refreshed successfully',
+          access_token: accessToken,
+          refresh_token: 'new.refresh.token',
+          user: { id: '1', email: TEST_USER.email, role: 'user' },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/users/me/onboarding', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      });
+    });
+
+    await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
+    await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
+    await page.click(SELECTORS.loginButton);
+    await waitForNetworkIdle(page);
+
+    const sidebarLocator = page.locator(SELECTORS.sidebar);
+    const dashboardTextLocator = page.locator('text=/dashboard/i');
+    await expect(sidebarLocator.or(dashboardTextLocator).first()).toBeVisible({ timeout: 10000 });
+
+    await page.evaluate(() => {
+      localStorage.setItem('diana_token', 'expired.access.token');
+    });
+
+    await page.reload();
+    await waitForNetworkIdle(page);
+
+    expect(refreshTokenCallCount).toBeGreaterThanOrEqual(1);
+    expect(profileCallCount).toBeGreaterThanOrEqual(2);
+  });
+
+  test('should logout on refresh token failure', async ({ page }) => {
+    let refreshTokenCallCount = 0;
+    let profileCallCount = 0;
+
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'expired.access.token',
+          refresh_token: 'expired.refresh.token',
+          user: { id: '1', email: TEST_USER.email, role: 'user' },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async (route) => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      profileCallCount++;
+
+      if (profileCallCount === 1) {
+        return route.fulfill({
+          status: 200,
+          headers: corsHeaders,
+          contentType: 'application/json',
+          body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email }),
+        });
+      }
+
+      return route.fulfill({
+        status: 401,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unauthorized' }),
+      });
+    });
+
+    await page.route('**/auth/refresh', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      refreshTokenCallCount++;
+
+      return route.fulfill({
+        status: 401,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Invalid refresh token' }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/users/me/onboarding', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      });
+    });
+
+    await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
+    await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
+    await page.click(SELECTORS.loginButton);
+    await waitForNetworkIdle(page);
+
+    await page.evaluate(() => {
+      localStorage.setItem('diana_token', 'expired.access.token');
+    });
+
+    await page.reload();
+    await page.waitForLoadState('domcontentloaded');
+
+    await page.waitForTimeout(5000);
+
+    await expect(page.locator(SELECTORS.loginEmailInput)).toBeVisible({ timeout: 10000 });
+    expect(refreshTokenCallCount).toBeGreaterThan(0);
+  });
 });
