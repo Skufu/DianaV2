@@ -38,7 +38,7 @@ func (h *InsightsHandler) cluster(c *gin.Context) {
 	cacheKey := fmt.Sprintf("cluster-distribution:%d", userID)
 
 	if h.cache != nil {
-		var cachedData interface{}
+		var cachedData any
 		if err := h.cache.Get(c.Request.Context(), cacheKey, &cachedData); err == nil {
 			c.JSON(http.StatusOK, cachedData)
 			return

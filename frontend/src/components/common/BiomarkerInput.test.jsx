@@ -40,7 +40,9 @@ describe('BiomarkerInput', () => {
     const input = screen.getByRole('spinbutton');
     await user.type(input, '100');
 
-    expect(handleChange).toHaveBeenCalledWith('100');
+    expect(handleChange).toHaveBeenCalled();
+    const lastCall = handleChange.mock.calls[handleChange.mock.calls.length - 1];
+    expect(lastCall[0]).toBe('100');
   });
 
   it('displays value when provided', () => {
@@ -201,5 +203,39 @@ describe('BiomarkerInput', () => {
     render(<BiomarkerInput label="Glucose" />);
     const input = screen.getByRole('spinbutton');
     expect(input).toHaveAttribute('placeholder', 'Enter glucose');
+  });
+
+  it('updates correctly when value prop changes', () => {
+    const { rerender } = render(<BiomarkerInput label="Glucose" value="100" />);
+    const input = screen.getByRole('spinbutton');
+    expect(input).toHaveValue(100);
+
+    rerender(<BiomarkerInput label="Glucose" value="150" />);
+    expect(input).toHaveValue(150);
+  });
+
+  it('updates correctly when unit prop changes', () => {
+    const { rerender } = render(<BiomarkerInput label="Glucose" unit="mg/dL" />);
+    expect(screen.getByText('mg/dL')).toBeInTheDocument();
+
+    rerender(<BiomarkerInput label="Glucose" unit="g/dL" />);
+    expect(screen.getByText('g/dL')).toBeInTheDocument();
+  });
+
+  it('updates correctly when label prop changes', () => {
+    const { rerender } = render(<BiomarkerInput label="Glucose" />);
+    expect(screen.getByText('Glucose')).toBeInTheDocument();
+
+    rerender(<BiomarkerInput label="HbA1c" />);
+    expect(screen.getByText('HbA1c')).toBeInTheDocument();
+    expect(screen.queryByText('Glucose')).not.toBeInTheDocument();
+  });
+
+  it('updates correctly when required prop changes', () => {
+    const { rerender } = render(<BiomarkerInput label="Glucose" required />);
+    expect(document.querySelector('.text-red-500')).toBeInTheDocument();
+
+    rerender(<BiomarkerInput label="Glucose" required={false} />);
+    expect(document.querySelector('.text-red-500')).not.toBeInTheDocument();
   });
 });

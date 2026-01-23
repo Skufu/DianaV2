@@ -229,17 +229,50 @@ func TestAuthHandler_Login_Success(t *testing.T) {
 		t.Fatalf("expected status 200, got %d: %s", w.Code, w.Body.String())
 	}
 
-	var response map[string]interface{}
+	var response map[string]any
 	json.Unmarshal(w.Body.Bytes(), &response)
 
-	if response["access_token"] == nil {
-		t.Fatal("expected access_token in response")
+	if response["message"] != "login successful" {
+		t.Fatalf("expected 'login successful' message, got %v", response["message"])
 	}
-	if response["refresh_token"] == nil {
-		t.Fatal("expected refresh_token in response")
+
+	cookies := w.Result().Cookies()
+	var dianaTokenCookie, dianaRefreshTokenCookie *http.Cookie
+	for _, cookie := range cookies {
+		if cookie.Name == "diana_token" {
+			dianaTokenCookie = cookie
+		}
+		if cookie.Name == "diana_refresh_token" {
+			dianaRefreshTokenCookie = cookie
+		}
 	}
-	if response["token_type"] != "Bearer" {
-		t.Fatalf("expected token_type 'Bearer', got %v", response["token_type"])
+
+	if dianaTokenCookie == nil {
+		t.Fatal("expected diana_token cookie")
+	}
+	if dianaRefreshTokenCookie == nil {
+		t.Fatal("expected diana_refresh_token cookie")
+	}
+
+	if !dianaTokenCookie.HttpOnly {
+		t.Error("expected diana_token cookie to be HttpOnly")
+	}
+	if !dianaRefreshTokenCookie.HttpOnly {
+		t.Error("expected diana_refresh_token cookie to be HttpOnly")
+	}
+
+	if dianaTokenCookie.Secure != true {
+		t.Error("expected diana_token cookie to be Secure")
+	}
+	if dianaRefreshTokenCookie.Secure != true {
+		t.Error("expected diana_refresh_token cookie to be Secure")
+	}
+
+	if dianaTokenCookie.SameSite != http.SameSiteStrictMode {
+		t.Error("expected diana_token cookie to be SameSiteStrict")
+	}
+	if dianaRefreshTokenCookie.SameSite != http.SameSiteStrictMode {
+		t.Error("expected diana_refresh_token cookie to be SameSiteStrict")
 	}
 }
 
@@ -297,7 +330,7 @@ func TestAuthHandler_Login_InvalidCredentials(t *testing.T) {
 				t.Fatalf("expected status 401, got %d: %s", w.Code, w.Body.String())
 			}
 
-			var response map[string]interface{}
+			var response map[string]any
 			json.Unmarshal(w.Body.Bytes(), &response)
 			if response["message"] == nil {
 				t.Fatal("expected error in response")
@@ -384,14 +417,44 @@ func TestAuthHandler_Refresh_Success(t *testing.T) {
 		t.Fatalf("expected status 200, got %d: %s", w.Code, w.Body.String())
 	}
 
-	var response map[string]interface{}
+	var response map[string]any
 	json.Unmarshal(w.Body.Bytes(), &response)
 
-	if response["access_token"] == nil {
-		t.Fatal("expected access_token in response")
+	if response["message"] == nil {
+		t.Fatal("expected message in response")
 	}
-	if response["refresh_token"] == nil {
-		t.Fatal("expected refresh_token in response")
+	if response["user"] == nil {
+		t.Fatal("expected user in response")
+	}
+
+	cookies := w.Result().Cookies()
+	var foundAccessToken, foundRefreshToken bool
+	for _, cookie := range cookies {
+		if cookie.Name == "diana_token" {
+			foundAccessToken = true
+			if !cookie.HttpOnly {
+				t.Error("expected diana_token cookie to be HttpOnly")
+			}
+			if !cookie.Secure {
+				t.Error("expected diana_token cookie to be Secure")
+			}
+		}
+		if cookie.Name == "diana_refresh_token" {
+			foundRefreshToken = true
+			if !cookie.HttpOnly {
+				t.Error("expected diana_refresh_token cookie to be HttpOnly")
+			}
+			if !cookie.Secure {
+				t.Error("expected diana_refresh_token cookie to be Secure")
+			}
+		}
+	}
+
+	if !foundAccessToken {
+		t.Fatal("expected diana_token cookie to be set")
+	}
+	if !foundRefreshToken {
+		t.Fatal("expected diana_refresh_token cookie to be set")
 	}
 
 	if !tokenRecord.Revoked {
@@ -567,11 +630,21 @@ func TestAuthHandler_JWTTokenGeneration(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	var response map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &response)
+	cookies := w.Result().Cookies()
+	var dianaTokenCookie *http.Cookie
+	for _, cookie := range cookies {
+		if cookie.Name == "diana_token" {
+			dianaTokenCookie = cookie
+			break
+		}
+	}
 
-	accessToken := response["access_token"].(string)
-	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
+	if dianaTokenCookie == nil {
+		t.Fatal("expected diana_token cookie to be set")
+	}
+
+	accessToken := dianaTokenCookie.Value
+	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (any, error) {
 		return []byte(cfg.JWTSecret), nil
 	})
 
@@ -627,4 +700,239 @@ func TestHashToken(t *testing.T) {
 	if hash == hash3 {
 		t.Error("different tokens should produce different hashes")
 	}
+}
+
+// TestLogin_EmptyEmail_ReturnsValidationError verifies that empty email returns a validation error
+func TestLogin_EmptyEmail_ReturnsValidationError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
+	h := NewAuthHandler(cfg, &fakeStoreAuth{})
+
+	r := gin.New()
+	r.POST("/login", h.login)
+
+	tests := []struct {
+		name           string
+		body           string
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name:           "empty email with valid password",
+			body:           `{"email":"","password":"password123"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+		{
+			name:           "whitespace only email",
+			body:           `{"email":"   ","password":"password123"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+		{
+			name:           "missing email field",
+			body:           `{"password":"password123"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+		{
+			name:           "invalid email format",
+			body:           `{"email":"not-an-email","password":"password123"}`,
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req, _ := http.NewRequest("POST", "/login", bytes.NewBufferString(tc.body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != tc.expectedStatus {
+				t.Fatalf("expected status %d, got %d: %s", tc.expectedStatus, w.Code, w.Body.String())
+			}
+
+			var response map[string]any
+			json.Unmarshal(w.Body.Bytes(), &response)
+
+			if response["message"] == nil {
+				t.Fatal("expected message in response")
+			}
+
+			message := response["message"].(string)
+			if message != tc.expectedError {
+				t.Errorf("expected status %d, got %d: body=%s", tc.expectedStatus, w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
+func TestLogin_InvalidEmailFormat_ReturnsValidationError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
+	h := NewAuthHandler(cfg, &fakeStoreAuth{})
+
+	r := gin.New()
+	r.POST("/login", h.login)
+
+	tests := []struct {
+		name           string
+		email          string
+		password       string
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name:           "missing @ symbol",
+			email:          "not-an-email",
+			password:       "password123",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+		{
+			name:           "missing domain",
+			email:          "user@",
+			password:       "password123",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+		{
+			name:           "missing local part",
+			email:          "@example.com",
+			password:       "password123",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+		{
+			name:           "multiple @ symbols",
+			email:          "user@name@example.com",
+			password:       "password123",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+		{
+			name:           "invalid characters",
+			email:          "user name@example.com",
+			password:       "password123",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+		{
+			name:           "no TLD",
+			email:          "user@example",
+			password:       "password123",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			body := `{"email":"` + tc.email + `","password":"` + tc.password + `"}`
+			req, _ := http.NewRequest("POST", "/login", bytes.NewBufferString(body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != tc.expectedStatus {
+				t.Fatalf("expected status %d, got %d: %s", tc.expectedStatus, w.Code, w.Body.String())
+			}
+
+			var response map[string]any
+			json.Unmarshal(w.Body.Bytes(), &response)
+
+			if response["message"] == nil {
+				t.Fatal("expected message in response")
+			}
+
+			message := response["message"].(string)
+			if message != tc.expectedError {
+				t.Errorf("expected error '%s', got '%s': body=%s", tc.expectedError, message, w.Body.String())
+			}
+		})
+	}
+}
+
+// TestLogin_TooLongPassword_ReturnsValidationError verifies that passwords exceeding max length (128 chars) return validation error
+func TestLogin_TooLongPassword_ReturnsValidationError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
+	h := NewAuthHandler(cfg, &fakeStoreAuth{})
+
+	r := gin.New()
+	r.POST("/login", h.login)
+
+	tests := []struct {
+		name           string
+		email          string
+		password       string
+		expectedStatus int
+		expectedError  string
+	}{
+		{
+			name:           "password exceeds max length by 1 char (129 chars)",
+			email:          "test@example.com",
+			password:       generatePassword(129),
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+		{
+			name:           "password greatly exceeds max length (256 chars)",
+			email:          "test@example.com",
+			password:       generatePassword(256),
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+		{
+			name:           "password greatly exceeds max length (512 chars)",
+			email:          "test@example.com",
+			password:       generatePassword(512),
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "invalid payload",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			body := map[string]string{
+				"email":    tc.email,
+				"password": tc.password,
+			}
+			jsonBody, _ := json.Marshal(body)
+			req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer(jsonBody))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != tc.expectedStatus {
+				t.Fatalf("expected status %d, got %d: %s", tc.expectedStatus, w.Code, w.Body.String())
+			}
+
+			var response map[string]any
+			json.Unmarshal(w.Body.Bytes(), &response)
+
+			if response["message"] == nil {
+				t.Fatal("expected message in response")
+			}
+
+			message := response["message"].(string)
+			if message != tc.expectedError {
+				t.Errorf("expected error '%s', got '%s': body=%s", tc.expectedError, message, w.Body.String())
+			}
+		})
+	}
+}
+
+// generatePassword creates a password string of the specified length using valid ASCII characters
+func generatePassword(length int) string {
+	password := "a"
+	for len(password) < length {
+		password += "b"
+	}
+	return password[:length]
 }

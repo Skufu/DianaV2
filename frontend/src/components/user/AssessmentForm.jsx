@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Activity, Save, AlertCircle } from 'lucide-react';
-import { createAssessmentApi } from '../../api';
+import { useCreateAssessment } from '../../api';
 
-const AssessmentForm = ({ token, onSubmit, onCancel }) => {
+const AssessmentForm = ({ onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     hba1c: '',
     fbs: '',
@@ -12,8 +12,8 @@ const AssessmentForm = ({ token, onSubmit, onCancel }) => {
     diastolic_bp: '',
     notes: ''
   });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const createAssessmentMutation = useCreateAssessment();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,12 +22,10 @@ const AssessmentForm = ({ token, onSubmit, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
 
     if (!formData.hba1c || !formData.fbs) {
       setError('HbA1c and FBS are required fields');
-      setLoading(false);
       return;
     }
 
@@ -42,13 +40,11 @@ const AssessmentForm = ({ token, onSubmit, onCancel }) => {
         notes: formData.notes || null
       };
 
-      await createAssessmentApi(payload);
+      await createAssessmentMutation.mutateAsync(payload);
       alert('Assessment logged successfully!');
       if (onSubmit) onSubmit();
     } catch (err) {
       setError(err.message || 'Failed to log assessment. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -196,11 +192,11 @@ const AssessmentForm = ({ token, onSubmit, onCancel }) => {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={loading}
+            disabled={createAssessmentMutation.isPending}
             className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 rounded-xl font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save size={20} />
-            {loading ? 'Saving...' : 'Log Assessment'}
+            {createAssessmentMutation.isPending ? 'Saving...' : 'Log Assessment'}
           </button>
         </div>
       </form>

@@ -17,8 +17,8 @@ type UserClaims struct {
 
 // ValidateToken validates a JWT token and returns the claims
 // Used by handlers that need to validate tokens outside of the middleware chain
-func ValidateToken(tokenStr, jwtSecret string) (map[string]interface{}, error) {
-	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+func ValidateToken(tokenStr, jwtSecret string) (map[string]any, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}
@@ -63,7 +63,7 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 		tokenStr := strings.TrimPrefix(authz, "Bearer ")
 
 		// Parse token with claims validation
-		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
 			// Verify signing method
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrSignatureInvalid

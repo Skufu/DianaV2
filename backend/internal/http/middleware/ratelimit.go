@@ -36,13 +36,13 @@ func (h visitorHeap) Swap(i, j int) {
 	h[j].heapIndex = j
 }
 
-func (h *visitorHeap) Push(x interface{}) {
+func (h *visitorHeap) Push(x any) {
 	v := x.(*visitor)
 	v.heapIndex = len(*h)
 	*h = append(*h, v)
 }
 
-func (h *visitorHeap) Pop() interface{} {
+func (h *visitorHeap) Pop() any {
 	old := *h
 	n := len(old)
 	v := old[n-1]

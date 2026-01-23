@@ -1,27 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { TrendingUp, Calendar, Activity } from 'lucide-react';
-import { getTrendsApi } from '../../api';
+import { useTrends } from '../../api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from 'recharts';
 
-const PersonalTrends = ({ token, userId }) => {
+const PersonalTrends = ({ userId }) => {
   const [selectedMonths, setSelectedMonths] = useState(12);
-  const [trends, setTrends] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        const data = await getTrendsApi(selectedMonths);
-        setTrends(data);
-      } catch (err) {
-        console.error('Failed to load trends:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, [selectedMonths, token]);
+  const { data: trends, isLoading } = useTrends(selectedMonths);
 
   const timeOptions = [
     { value: 1, label: '1 Month' },
@@ -33,7 +18,7 @@ const PersonalTrends = ({ token, userId }) => {
     { value: 0, label: 'All Time' },
   ];
 
-  if (loading) {
+  if (isLoading) {
     return <div className="text-center py-12 text-slate-400">Loading trends...</div>;
   }
 

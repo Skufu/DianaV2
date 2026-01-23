@@ -25,8 +25,8 @@ func NewAuthHandler(cfg config.Config, store store.Store) *AuthHandler {
 }
 
 type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" binding:"required,email,max=255"`
+	Password string `json:"password" binding:"required,min=8,max=128"`
 }
 
 func (h *AuthHandler) Register(rg *gin.RouterGroup) {
@@ -92,11 +92,12 @@ func (h *AuthHandler) login(c *gin.Context) {
 		return
 	}
 
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", true, true)
+	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", true, true)
+
 	c.JSON(http.StatusOK, gin.H{
-		"access_token":  signedAccessToken,
-		"refresh_token": refreshToken,
-		"token_type":    "Bearer",
-		"expires_in":    900,
+		"message": "login successful",
 		"user": gin.H{
 			"id":    user.ID,
 			"email": user.Email,
@@ -107,7 +108,7 @@ func (h *AuthHandler) login(c *gin.Context) {
 
 func (h *AuthHandler) refresh(c *gin.Context) {
 	var req struct {
-		RefreshToken string `json:"refresh_token"`
+		RefreshToken string `json:"refresh_token" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		ErrBadRequest(c, "invalid payload")
@@ -192,11 +193,12 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 		return
 	}
 
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", true, true)
+	c.SetCookie("diana_refresh_token", newRefreshToken, 7*24*60*60, "/", "", true, true)
+
 	c.JSON(http.StatusOK, gin.H{
-		"access_token":  signedAccessToken,
-		"refresh_token": newRefreshToken,
-		"token_type":    "Bearer",
-		"expires_in":    900,
+		"message": "token refreshed successfully",
 		"user": gin.H{
 			"id":    user.ID,
 			"email": user.Email,
@@ -216,11 +218,14 @@ func (h *AuthHandler) logout(c *gin.Context) {
 
 	if req.RefreshToken != "" {
 		tokenHash := hashToken(req.RefreshToken)
-		// Revoke refresh token (log errors for monitoring, don't fail logout)
 		if err := h.store.RefreshTokens().RevokeRefreshToken(c.Request.Context(), tokenHash); err != nil {
 			log.Printf("[WARN] Failed to revoke refresh token during logout: %v", err)
 		}
 	}
+
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie("diana_token", "", -1, "/", "", true, true)
+	c.SetCookie("diana_refresh_token", "", -1, "/", "", true, true)
 
 	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
 }

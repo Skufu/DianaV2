@@ -65,7 +65,7 @@ func TestErrorResponse_FormatConsistency(t *testing.T) {
 				ErrInternal(c, "test internal error")
 			}
 
-			var response map[string]interface{}
+			var response map[string]any
 			err := json.Unmarshal(w.Body.Bytes(), &response)
 			assert.NoError(t, err, "Response should be valid JSON")
 
@@ -104,14 +104,14 @@ func TestErrorResponse_ValidationWithDetails(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest("POST", "/test", nil)
 
-	details := map[string]interface{}{
+	details := map[string]any{
 		"email": "is required",
 		"age":   "must be positive",
 	}
 
 	ErrValidation(c, details)
 
-	var response map[string]interface{}
+	var response map[string]any
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 

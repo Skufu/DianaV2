@@ -33,7 +33,7 @@ func (h *AnalyticsHandler) Register(rg *gin.RouterGroup) {
 // @Description Returns summary analytics for authenticated user (cached for 5 minutes)
 // @Tags Analytics
 // @Produce json
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} map[string]any
 // @Failure 401 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /analytics/summary [get]
@@ -49,7 +49,7 @@ func (h *AnalyticsHandler) getSummary(c *gin.Context) {
 	cacheKey := fmt.Sprintf("summary:%d", userID)
 
 	if h.cache != nil {
-		var cachedSummary map[string]interface{}
+		var cachedSummary map[string]any
 		if err := h.cache.Get(c.Request.Context(), cacheKey, &cachedSummary); err == nil {
 			c.JSON(http.StatusOK, cachedSummary)
 			return
@@ -79,7 +79,7 @@ func (h *AnalyticsHandler) getSummary(c *gin.Context) {
 		return
 	}
 
-	summary := map[string]interface{}{
+	summary := map[string]any{
 		"assessment_count":     assessmentCount,
 		"cluster_distribution": clusterDist,
 		"trends":               trends,

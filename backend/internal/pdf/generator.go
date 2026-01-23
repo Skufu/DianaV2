@@ -24,7 +24,7 @@ func NewReportGenerator(logoPath string) *ReportGenerator {
 func (g *ReportGenerator) GenerateAssessmentReport(
 	patient models.Patient,
 	assessment models.Assessment,
-	shapData map[string]interface{},
+	shapData map[string]any,
 ) ([]byte, error) {
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(15, 15, 15)
@@ -200,7 +200,7 @@ func (g *ReportGenerator) addRiskAssessment(pdf *fpdf.Fpdf, assessment models.As
 	pdf.Ln(8)
 }
 
-func (g *ReportGenerator) addSHAPExplanation(pdf *fpdf.Fpdf, shapData map[string]interface{}) {
+func (g *ReportGenerator) addSHAPExplanation(pdf *fpdf.Fpdf, shapData map[string]any) {
 	pdf.SetFont("Arial", "B", 14)
 	pdf.SetTextColor(0, 0, 0)
 	pdf.CellFormat(180, 8, "AI Explanation (SHAP Analysis)", "", 1, "L", false, 0, "")
@@ -212,7 +212,7 @@ func (g *ReportGenerator) addSHAPExplanation(pdf *fpdf.Fpdf, shapData map[string
 	pdf.Ln(3)
 
 	// Display SHAP values if available
-	if shapValues, ok := shapData["shap_values"].([]interface{}); ok {
+	if shapValues, ok := shapData["shap_values"].([]any); ok {
 		pdf.SetFont("Arial", "B", 10)
 		pdf.SetFillColor(147, 112, 219) // Purple
 		pdf.SetTextColor(255, 255, 255)
@@ -224,7 +224,7 @@ func (g *ReportGenerator) addSHAPExplanation(pdf *fpdf.Fpdf, shapData map[string
 		pdf.SetTextColor(0, 0, 0)
 
 		for _, sv := range shapValues {
-			if svMap, ok := sv.(map[string]interface{}); ok {
+			if svMap, ok := sv.(map[string]any); ok {
 				feature := fmt.Sprintf("%v", svMap["feature"])
 				featureValue := fmt.Sprintf("%.2f", svMap["feature_value"])
 				shapValue := svMap["shap_value"].(float64)

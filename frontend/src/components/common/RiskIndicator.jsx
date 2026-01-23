@@ -63,4 +63,6 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
   );
 };
 
-export default RiskIndicator;
+RiskIndicator.displayName = 'RiskIndicator';
+
+export default React.memo(RiskIndicator);

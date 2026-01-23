@@ -3,6 +3,7 @@ package ml
 import (
 	"testing"
 
+	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/models"
 )
 
@@ -119,7 +120,8 @@ func TestValidateBiomarkers(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ValidateBiomarkers(tt.input)
+			thresholds := getDefaultThresholds()
+			result := ValidateBiomarkers(tt.input, thresholds)
 
 			if result.Valid != tt.wantValid {
 				t.Errorf("Valid = %v, want %v", result.Valid, tt.wantValid)
@@ -185,15 +187,26 @@ func TestFormatValidationStatus(t *testing.T) {
 	}
 }
 
-func TestBiomarkerRanges(t *testing.T) {
-	// Verify ranges match clinical guidelines
-	if BiomarkerRanges.FBSNormal != 100 {
-		t.Errorf("FBSNormal = %v, want 100", BiomarkerRanges.FBSNormal)
-	}
-	if BiomarkerRanges.HbA1cNormal != 5.7 {
-		t.Errorf("HbA1cNormal = %v, want 5.7", BiomarkerRanges.HbA1cNormal)
-	}
-	if BiomarkerRanges.BMINormal != 25.0 {
-		t.Errorf("BMINormal = %v, want 25.0", BiomarkerRanges.BMINormal)
+func getDefaultThresholds() config.ClinicalThresholds {
+	return config.ClinicalThresholds{
+		HbA1cNormal:             5.7,
+		HbA1cPrediabetic:        6.5,
+		HbA1cDiabetic:           6.5,
+		FBSNormal:               100,
+		FBSPrediabetic:          126,
+		FBSDiabetic:             126,
+		BPSysNormal:             120,
+		BPSysElevated:           140,
+		BPDiaNormal:             80,
+		BMINormal:               25.0,
+		BMIOverweight:           30.0,
+		BMIObese:                30.0,
+		CholesterolHigh:         200,
+		CholesterolBorderline:   200,
+		LDLHigh:                 100,
+		LDLBorderline:           100,
+		HDLLow:                  40,
+		TriglyceridesHigh:       150,
+		TriglyceridesBorderline: 150,
 	}
 }
