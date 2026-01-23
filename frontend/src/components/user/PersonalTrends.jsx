@@ -127,16 +127,16 @@ const PersonalTrends = ({ userId }) => {
                   <span className="text-slate-300 text-sm">{entry.cluster}</span>
                   <div
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      entry.riskScore < 34
+                      entry.riskScore < 30
                         ? 'bg-green-500/20 text-green-400'
-                        : entry.riskScore < 67
+                        : entry.riskScore < 70
                         ? 'bg-yellow-500/20 text-yellow-400'
                         : 'bg-red-500/20 text-red-400'
                     }`}
                   >
-                    {entry.riskScore < 34
+                    {entry.riskScore < 30
                       ? 'Low'
-                      : entry.riskScore < 67
+                      : entry.riskScore < 70
                       ? 'Moderate'
                       : 'High'}
                   </div>
