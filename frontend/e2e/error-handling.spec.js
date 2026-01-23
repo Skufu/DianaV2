@@ -82,12 +82,8 @@ test.describe('Error Handling - Network Failures', () => {
 
     await page.waitForTimeout(1000);
 
-    const errorBanner = page.locator('text=Failed to load assessments');
+    const errorBanner = page.locator('.bg-rose-500\\/10:has-text("Failed to load assessments")');
     await expect(errorBanner).toBeVisible({ timeout: 5000 });
-
-    await expect(errorBanner).toHaveClass(/bg-rose-500\/10/);
-    await expect(errorBanner).toHaveClass(/border-rose-500\/20/);
-    await expect(errorBanner).toHaveClass(/text-rose-400/);
   });
 
   test('Network disconnect → error handling', async ({ page }) => {
@@ -193,6 +189,85 @@ test.describe('Error Handling - Network Failures', () => {
 
     const assessmentCount = page.locator('.text-3xl');
     await expect(assessmentCount).toHaveText('0');
+  });
+
+  test('Retry button works when loading fails', async ({ page }) => {
+    let requestCount = 0;
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      requestCount++;
+
+      if (requestCount <= 2) {
+        return route.abort('failed');
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: '1',
+            hba1c: 5.8,
+            fbs: 100,
+            bmi: 25.0,
+            cholesterol: 200,
+            ldl: 130,
+            hdl: 50,
+            triglycerides: 150,
+            systolic_bp: 120,
+            diastolic_bp: 80,
+            risk_score: 25,
+            cluster: 'MOD',
+            created_at: '2024-01-15T10:00:00Z',
+          },
+        ]),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'E2E Test User',
+          email: TEST_USER.email,
+          onboarding_completed: true,
+        }),
+      });
+    });
+
+    await page.reload();
+
+    await page.waitForTimeout(3000);
+
+    const errorMessage = page.locator('text=Failed to load assessments');
+    await expect(errorMessage).toBeVisible({ timeout: 5000 });
+
+    const retryButton = page.locator('button:has-text("Retry")');
+    await expect(retryButton).toBeVisible();
+
+    await expect(retryButton).toHaveClass(/bg-rose-500/);
+
+    await retryButton.click();
+
+    await expect(errorMessage).not.toBeVisible({ timeout: 5000 });
+
+    const assessmentCount = page.locator('text=Total logged');
+    await expect(assessmentCount).toBeVisible({ timeout: 5000 });
+
+    expect(requestCount).toBe(3);
   });
 
   test.skip('401 Unauthorized → redirects to login', async ({ page }) => {

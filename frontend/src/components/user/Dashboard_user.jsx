@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
-import { Activity, TrendingUp, AlertCircle, Plus, Download } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Activity, TrendingUp, AlertCircle, Plus, Download, RefreshCw } from 'lucide-react';
 import RiskIndicator from '../common/RiskIndicator';
 import { useAssessments } from '../../api';
 
 const Dashboard_user = ({ userId, setActiveTab }) => {
-  const { data: assessments = [], isLoading, error } = useAssessments();
+  const queryClient = useQueryClient();
+  const { data: assessments = [], isLoading, error, refetch } = useAssessments();
 
   const latestAssessment = useMemo(() => {
     return assessments && assessments.length > 0 ? assessments[0] : null;
@@ -26,8 +28,21 @@ const Dashboard_user = ({ userId, setActiveTab }) => {
       )}
 
       {error && (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-rose-400">
-          Failed to load assessments
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-rose-400 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5" />
+            <div>
+              <div className="font-medium">Failed to load assessments</div>
+              <div className="text-sm text-rose-300/70">{error.message || 'Please check your connection and try again'}</div>
+            </div>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retry
+          </button>
         </div>
       )}
 
