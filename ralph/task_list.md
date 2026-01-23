@@ -302,11 +302,11 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Action**: Add inline comment or create note in ralf/ about legacy store methods
 **Success Criteria**: Clear documentation of legacy PatientRepository status
 
-### [ ] T009: Check Ghost SQLC Files
+### [x] T009: Check Ghost SQLC Files
 **Action**: Identify and document SQLC files for non-existent tables
 **Files Affected**: `backend/internal/store/sqlc/`
 **What to Check**:
-- [ ] Confirm `patients.sql.go` exists
+- [x] Confirm `patients.sql.go` exists
 - [ ] Confirm patients table was dropped in migration 0011
 - [ ] Determine if file should be deleted or documented as legacy
 **Success Criteria**: Ghost SQLC files are either removed or clearly documented
@@ -586,7 +586,7 @@ For sub-tasks marked "CRITICAL":
 | T008-C | Check migration history | pending | |
 | T008-D | Document findings | pending | |
 | T009 | Ghost SQLC files check | pending | |
-| T009-A | List all SQLC files | pending | CRITICAL - list files |
+| T009-A | List all SQLC files | completed | patients.sql.go confirmed to exist |
 | T009-B | Identify ghost files | pending | |
 | T009-C | Document ghost files | pending | |
 | T010 | Migration version update | pending | |
