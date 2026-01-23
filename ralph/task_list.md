@@ -47,11 +47,13 @@
 
 ## P2 / Medium
 
-- [ ] **6. Align trend data contract between backend and frontend**
-  - Location: Backend `user_repo.go` vs Frontend `PersonalTrends.jsx`
-  - Issue: Schema mismatch between `TrendData` and expected `biomarkerHistory`
-  - Direction: **Frontend should adapt** to match backend's `TrendData` schema (it's the source of truth)
-  - Fix: Update `PersonalTrends.jsx` to transform `TrendData` arrays into the expected format
+ - [x] **6. Align trend data contract between backend and frontend** ✅ COMPLETED
+   - Location: Backend `user_repo.go` vs Frontend `PersonalTrends.jsx`
+   - Issue: Schema mismatch between `TrendData` and expected `biomarkerHistory`
+   - Direction: **Frontend should adapt** to match backend's `TrendData` schema (it's the source of truth)
+   - Fix: Updated `useTrends` hook in `api.js` to transform `TrendData` arrays into the expected format
+   - Done: Added transformation in `useTrends` to map backend's parallel arrays to frontend's array-of-objects structure
+   - Note: Frontend build passes successfully
 
 - [ ] **7. Make audit logging reliable**
   - Location: `backend/internal/http/middleware/audit.go`
