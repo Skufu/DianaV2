@@ -142,7 +142,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Tests to Add**:
 - [x] List user assessments → paginated results
 - [x] Get single assessment by ID → full details
-- [ ] Update assessment → changes persist
+- [x] Update assessment → changes persist
 - [ ] Delete assessment → removed from list
 - [ ] Access deleted assessment → 404 error
 **Success Criteria**: CRUD operations all tested with error cases
