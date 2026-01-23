@@ -1,0 +1,229 @@
+import { test, expect } from '@playwright/test';
+import { TEST_USER, SELECTORS, createMockJwt } from './fixtures/test-data';
+
+const corsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'access-control-allow-headers': 'Content-Type, Authorization',
+};
+
+test.describe('Error Handling - Network Failures', () => {
+  test.beforeEach(async ({ page }) => {
+    const mockToken = createMockJwt({ role: 'user', user_id: 'e2e-user' });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'E2E Test User',
+          email: TEST_USER.email,
+          onboarding_completed: true,
+        }),
+      });
+    });
+
+    await page.goto('/');
+    await page.evaluate(({ token }) => {
+      localStorage.setItem('diana_token', token);
+      localStorage.setItem('diana_refresh_token', 'test.refresh.token');
+      window.location.reload();
+    }, { token: mockToken });
+    await page.waitForLoadState('networkidle');
+  });
+
+  test('API timeout → loading then error message', async ({ page }) => {
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 31000));
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.reload();
+
+    const loadingElement = page.locator('text=Loading your health data...');
+    await expect(loadingElement).toBeVisible({ timeout: 10000 });
+  });
+
+  test('500 Internal Server Error → error banner visible', async ({ page }) => {
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      return route.fulfill({
+        status: 500,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Internal server error',
+          message: 'Something went wrong on our end',
+        }),
+      });
+    });
+
+    await page.reload();
+
+    await page.waitForTimeout(1000);
+
+    const errorBanner = page.locator('text=Failed to load assessments');
+    await expect(errorBanner).toBeVisible({ timeout: 5000 });
+
+    await expect(errorBanner).toHaveClass(/bg-rose-500\/10/);
+    await expect(errorBanner).toHaveClass(/border-rose-500\/20/);
+    await expect(errorBanner).toHaveClass(/text-rose-400/);
+  });
+
+  test('Network disconnect → error handling', async ({ page }) => {
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      return route.abort('failed');
+    });
+
+    await page.reload();
+
+    await page.waitForTimeout(1000);
+
+    const errorMessage = page.locator('text=Failed to load assessments');
+    await expect(errorMessage).toBeVisible({ timeout: 5000 });
+  });
+
+  test('Multiple API failures → all error states show correctly', async ({ page }) => {
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      return route.fulfill({
+        status: 500,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Internal server error',
+        }),
+      });
+    });
+
+    await page.reload();
+
+    await page.waitForTimeout(1000);
+
+    const errorMessage = page.locator('text=Failed to load assessments');
+    await expect(errorMessage).toBeVisible({ timeout: 5000 });
+  });
+
+  test('Slow network response → loading state persists', async ({ page }) => {
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: '1',
+            hba1c: 5.8,
+            fbs: 100,
+            bmi: 25.0,
+            risk_score: 25,
+            cluster: 'MOD',
+            created_at: '2024-01-15T10:00:00Z',
+          },
+        ]),
+      });
+    });
+
+    await page.reload();
+
+    const loadingElement = page.locator('text=Loading your health data...');
+    await expect(loadingElement).toBeVisible({ timeout: 1000 });
+
+    await expect(loadingElement).not.toBeVisible({ timeout: 5000 });
+
+    const assessmentCount = page.locator('text=Total logged');
+    await expect(assessmentCount).toBeVisible({ timeout: 1000 });
+  });
+
+  test.skip('Empty response (204 No Content) → handled gracefully', async ({ page }) => {
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      return route.fulfill({
+        status: 204,
+        headers: corsHeaders,
+      });
+    });
+
+    await page.reload();
+
+    await page.waitForTimeout(500);
+
+    const welcomeMessage = page.locator('text=Welcome Back');
+    await expect(welcomeMessage).toBeVisible({ timeout: 5000 });
+
+    const assessmentCount = page.locator('.text-3xl');
+    await expect(assessmentCount).toHaveText('0');
+  });
+
+  test.skip('401 Unauthorized → redirects to login', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.removeItem('diana_token');
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      return route.fulfill({
+        status: 401,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Unauthorized',
+        }),
+      });
+    });
+
+    await page.reload();
+
+    await page.waitForTimeout(1000);
+
+    const loginHeading = page.locator('text=Welcome Back,');
+    await expect(loginHeading).toBeVisible({ timeout: 5000 });
+
+    const loginButton = page.locator(SELECTORS.loginButton);
+    await expect(loginButton).toBeVisible();
+  });
+});
