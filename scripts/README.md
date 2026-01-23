@@ -25,7 +25,6 @@ scripts/
 | Task | Category | Script |
 |------|----------|---------|
 | **Project Setup** | dev | `setup.sh` |
-| **Start Development** | dev | `run-dev.sh` |
 | **Start All Services** | dev | `start-all.sh` |
 | **Retrain ML Models** | dev | `retrain-all.sh` |
 | **Download NHANES Data** | data | `download_nhanes_multi.py` |
@@ -52,13 +51,8 @@ scripts/
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `setup.sh` | Install dependencies, create .env, run migrations | `bash scripts/dev/setup.sh` |
-| `setup-local-postgres.sh` | Local PostgreSQL setup (Mac) with dummy data | `bash scripts/dev/setup-local-postgres.sh` |
-| `run-dev.sh` | Start backend + frontend dev servers | `bash scripts/dev/run-dev.sh` |
 | `start-all.sh` | Start backend + frontend + ML server | `bash scripts/dev/start-all.sh` |
-| `start-ml.sh` | Train models then start ML server | `bash scripts/dev/start-ml.sh` |
-| `start-ml-server.sh` | Start ML server only (no training) | `bash scripts/dev/start-ml-server.sh` |
 | `retrain-all.sh` | Full ML pipeline retrain (process → impute → train) | `bash scripts/dev/retrain-all.sh` |
-| `test-db.sh` | Test PostgreSQL connection | `bash scripts/dev/test-db.sh` |
 
 ---
 
@@ -143,6 +137,21 @@ scripts/
 | `train_enhanced.py` | Superseded by `ml/train.py` | `ml/train.py` |
 | `remove_bg.py` | Unrelated to DIANA (image utility) | N/A |
 
+## Missing Scripts (Referenced But Not Implemented)
+
+The following scripts are referenced in project documentation or Makefile but do not currently exist:
+
+| Script | Referenced In | Status |
+|--------|---------------|--------|
+| `scripts/run-dev.sh` | Makefile line 63, README | Not implemented |
+| `scripts/test-db.sh` | Makefile line 66, README | Not implemented |
+| `scripts/debug-neon.sh` | Makefile line 69 | Not implemented |
+
+**Alternatives**:
+- For `run-dev.sh`: Use `make dev` (starts backend only) or `bash scripts/dev/start-all.sh` (starts all services)
+- For `test-db.sh`: Use `make db_status` or `make seed`
+- For `debug-neon.sh`: Use environment variables directly or check database connection via `make db_status`
+
 ---
 
 ## Common Workflows
@@ -150,11 +159,6 @@ scripts/
 ### First-Time Setup
 ```bash
 bash scripts/dev/setup.sh
-```
-
-### Daily Development
-```bash
-bash scripts/dev/run-dev.sh
 ```
 
 ### Full Stack with ML
