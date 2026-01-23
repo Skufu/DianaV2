@@ -12,7 +12,7 @@
 
 - [x] Verify `loginApi` correctly stores `access_token` in localStorage.
 - [x] Verify `apiFetch` adds `Authorization` header after login.
-- [ ] Update SSE URL to `/admin/events/stream`.
+- [x] Update SSE URL to `/admin/events/stream`.
 
 ## Validation
 
