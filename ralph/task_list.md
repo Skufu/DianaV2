@@ -307,9 +307,14 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Files Affected**: `backend/internal/store/sqlc/`
 **What to Check**:
 - [x] Confirm `patients.sql.go` exists
-- [ ] Confirm patients table was dropped in migration 0011
-- [ ] Determine if file should be deleted or documented as legacy
+- [x] Confirm patients table was dropped in migration 0011
+- [x] Determine if file should be deleted or documented as legacy
 **Success Criteria**: Ghost SQLC files are either removed or clearly documented
+**Result**:
+- Migration 0011 line 102: `DROP TABLE IF EXISTS patients CASCADE;` confirmed
+- patients.sql.go is orphaned (no corresponding queries/patients.sql source file)
+- Ghost code: Full SQLC implementation exists for non-existent table
+- Recommendation: Document as legacy in store/AGENTS.md, keep for test backward compatibility
 
 ### T009-A: List All SQLC Generated Files
 **Action**: Use glob to list all .sql.go files in `backend/internal/store/sqlc/`
