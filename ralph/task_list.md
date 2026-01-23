@@ -156,7 +156,7 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **What to Add**:
 - [x] Cache infrastructure section (`internal/cache/`)
 - [x] SSE broker section (`internal/http/sse/`)
-- [ ] PDF generation section (`internal/pdf/`)
+- [x] PDF generation section (`internal/pdf/`)
 **Success Criteria**: All infrastructure components in `backend/internal/` are documented
 
 ### T005-A: Scan Backend Internal Directory Structure
@@ -189,14 +189,33 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Action**: Add sections for each infrastructure component from T005-C
 **Format**: Follow existing documentation style
 **Success Criteria**: All infrastructure components are documented
-**Result**: Added cache infrastructure section to backend/README.md:
-- Updated Quick Search Index to include cache
-- Updated Directory Structure to show cache/ directory
+**Result**: Added cache, SSE, and PDF infrastructure sections to backend/README.md:
+- Updated Quick Search Index to include cache, SSE, PDF
+- Updated Directory Structure to show cache/, http/sse/, pdf/ directories
 - Added "Cache Infrastructure" section with:
   - Files table (redis_cache.go, redis_cache_test.go)
   - Key Functions table (NewCache, Get, Set, Delete, DeleteByPattern, GetMetrics, Close)
   - Cache Metrics documentation (Hits, Misses)
   - Usage patterns (trends caching, analytics caching examples)
+  - Testing instructions
+  - Performance considerations
+- Added "SSE Broker" section with:
+  - Files table (broker.go, broker_test.go)
+  - Key Functions table (NewBroker, Subscribe, Unsubscribe, Publish, etc.)
+  - SSE Event Format specification
+  - Usage Patterns for auth events and admin streaming
+  - Batching and Performance notes
+  - Keep-Alive Mechanism
+  - Testing instructions
+- Added "PDF Generation" section with:
+  - Files table (generator.go, generator_test.go)
+  - Key Functions table (NewReportGenerator, GenerateAssessmentReport)
+  - Report Sections breakdown (7 sections)
+  - Status Helper Functions table (HbA1c, FBS, BMI, lipids, BP)
+  - Color Coding Scheme (risk clusters, biomarker status, SHAP)
+  - Recommendation Logic rules
+  - Usage Pattern example
+  - PDF Layout Settings
   - Testing instructions
   - Performance considerations
 
