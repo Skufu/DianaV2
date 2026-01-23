@@ -337,15 +337,16 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 
 ---
 
-### [ ] T016: Create Network Failure Tests
+### [x] T016: Create Network Failure Tests
 **Action**: Test graceful degradation on network issues
 **Files Affected**: `frontend/e2e/error-handling.spec.js` (NEW FILE)
 **Tests to Add**:
-- [ ] API timeout → loading then error message
-- [ ] 500 error → error banner visible
-- [ ] Network disconnect → error handling
-- [ ] Retry button works (if exists)
+- [x] API timeout → loading then error message
+- [x] 500 error → error banner visible
+- [x] Network disconnect → error handling
+- [ ] Retry button works (if exists) - NOT IMPLEMENTED (no retry button exists)
 **Success Criteria**: Error handling verified
+**Status**: Created `error-handling.spec.js` with 7 tests. 5 tests pass, 2 skipped (204 response and 401 redirect need design review). All critical error scenarios (500, disconnect, slow network, timeout) are tested.
 
 ---
 
