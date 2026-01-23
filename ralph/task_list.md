@@ -270,14 +270,20 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Content**: List of legacy directories, reason they're deprecated, action needed (keep/remove)
 **Success Criteria**: Legacy directories clearly documented
 
-### [ ] T008: Verify Backend Store Interface Alignment
+### [x] T008: Verify Backend Store Interface Alignment
 **Action**: Check store.go for references to deleted PatientRepository
 **Files Affected**: `backend/internal/store/store.go`
 **What to Verify**:
-- [ ] Confirm PatientRepository interface exists
-- [ ] Confirm Patients() method exists in Store interface
-- [ ] Document whether these should be removed or kept for compatibility
+- [x] Confirm PatientRepository interface exists - CONFIRMED: Lines 42-52 define PatientRepository interface
+- [x] Confirm Patients() method exists in Store interface - CONFIRMED: Line 12 has `Patients() PatientRepository`
+- [x] Document whether these should be removed or kept for compatibility - DOCUMENTED: Legacy interface for deleted patients table
 **Success Criteria**: Store interface either reflects current schema or has clear documentation about legacy methods
+**Findings**:
+- PatientRepository interface and full implementation exist (patient_repo.go, 250 lines)
+- 15 references across 12 files (tests, mocks, postgres.go)
+- **Critical**: Patients table DROPPED in migration 0011 (line 102)
+- This is **ghost code** referencing non-existent database table
+- Recommendation: Mark as legacy in documentation, keep for test backward compatibility
 
 ### T008-A: Read Store Interface
 **Action**: Read `backend/internal/store/store.go` to see all repository interfaces
