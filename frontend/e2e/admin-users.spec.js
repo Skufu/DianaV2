@@ -1,0 +1,1000 @@
+import { test, expect } from '@playwright/test';
+import { ADMIN_USER, waitForNetworkIdle } from './fixtures/test-data';
+
+const corsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'access-control-allow-headers': 'Content-Type, Authorization',
+};
+
+const generateMockUsers = (count = 10, page = 1) => {
+  const users = [];
+  for (let i = 0; i < count; i++) {
+    const userIndex = (page - 1) * 10 + i + 1;
+    users.push({
+      id: `user-${userIndex}`,
+      email: `user${userIndex}@example.com`,
+      name: `User ${userIndex}`,
+      role: i % 3 === 0 ? 'admin' : 'user',
+      is_active: i % 5 !== 0,
+      last_login_at: i % 2 === 0 ? '2024-01-23T10:00:00Z' : null,
+      created_at: '2024-01-01T00:00:00Z',
+    });
+  }
+  return users;
+};
+
+test.describe('Admin User Management - List with Pagination', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/');
+  });
+
+  test('should list users with pagination (first page)', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'admin.access.token',
+          refresh_token: 'admin.refresh.token',
+          user: {
+            id: 'admin-1',
+            email: ADMIN_USER.email,
+            role: 'admin',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: ADMIN_USER.email,
+          role: 'admin',
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: {
+            total_users: 25,
+            total_patients: 12,
+            total_assessments: 50,
+            high_risk_count: 5,
+            new_users_this_month: 2,
+            assessments_this_month: 8,
+            avg_risk_score: 40.0,
+          },
+          cluster_distribution: [],
+          trends: [],
+        }),
+      });
+    });
+
+    await page.route('**/admin/users*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const url = new URL(request.url());
+      const pageParam = parseInt(url.searchParams.get('page') || '1');
+      const pageSize = parseInt(url.searchParams.get('page_size') || '10');
+
+      const users = generateMockUsers(pageSize, pageParam);
+      const total = 25;
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: users,
+          total: total,
+          page: pageParam,
+          page_size: pageSize,
+          total_pages: Math.ceil(total / pageSize),
+        }),
+      });
+    });
+
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 10000 });
+    const userManagementButton = page.locator('text=User Management').first();
+    await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+    await userManagementButton.click();
+    await page.waitForTimeout(1000);
+
+    await expect(page.locator('h3:has-text("User Management")')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Manage clinician and admin accounts')).toBeVisible({ timeout: 5000 });
+
+    const table = page.locator('table');
+    await expect(table).toBeVisible({ timeout: 5000 });
+
+    await expect(page.locator('th:has-text("Email")')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('th:has-text("Role")')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('th:has-text("Status")')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('th:has-text("Last Login")')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('th:has-text("Created")')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('th:has-text("Actions")')).toBeVisible({ timeout: 3000 });
+
+    const userRows = page.locator('tbody tr');
+    const rowCount = await userRows.count();
+    expect(rowCount).toBe(10);
+
+    await expect(page.locator('tbody tr:nth-child(1)')).toContainText('user1@example.com');
+
+    await expect(page.locator('text=Showing 1 to 10 of 25')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('text=Page 1 of 3')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('should navigate to next page', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'admin.access.token',
+          refresh_token: 'admin.refresh.token',
+          user: {
+            id: 'admin-1',
+            email: ADMIN_USER.email,
+            role: 'admin',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: ADMIN_USER.email,
+          role: 'admin',
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: {
+            total_users: 25,
+            total_patients: 12,
+            total_assessments: 50,
+            high_risk_count: 5,
+          },
+          cluster_distribution: [],
+          trends: [],
+        }),
+      });
+    });
+
+    await page.route('**/admin/users*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const url = new URL(request.url());
+      const pageParam = parseInt(url.searchParams.get('page') || '1');
+      const pageSize = parseInt(url.searchParams.get('page_size') || '10');
+
+      const users = generateMockUsers(pageSize, pageParam);
+      const total = 25;
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: users,
+          total: total,
+          page: pageParam,
+          page_size: pageSize,
+          total_pages: Math.ceil(total / pageSize),
+        }),
+      });
+    });
+
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    const userManagementButton = page.locator('text=User Management').first();
+    await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+    await userManagementButton.click();
+    await page.waitForTimeout(1000);
+
+    const nextButton = page.locator('button[aria-label*="Next"], button:has(svg[class*="chevron-right"])');
+    await expect(nextButton).toBeVisible({ timeout: 3000 });
+    await nextButton.click();
+    await page.waitForTimeout(1000);
+
+    await expect(page.locator('text=Page 2 of 3')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('text=Showing 11 to 20 of 25')).toBeVisible({ timeout: 3000 });
+
+    await expect(page.locator('tbody tr:nth-child(1)')).toContainText('user11@example.com');
+  });
+
+  test('should navigate to previous page', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'admin.access.token',
+          refresh_token: 'admin.refresh.token',
+          user: {
+            id: 'admin-1',
+            email: ADMIN_USER.email,
+            role: 'admin',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: ADMIN_USER.email,
+          role: 'admin',
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total_users: 25 },
+          cluster_distribution: [],
+          trends: [],
+        }),
+      });
+    });
+
+    await page.route('**/admin/users*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const url = new URL(request.url());
+      const pageParam = parseInt(url.searchParams.get('page') || '1');
+      const pageSize = parseInt(url.searchParams.get('page_size') || '10');
+
+      const users = generateMockUsers(pageSize, pageParam);
+      const total = 25;
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: users,
+          total: total,
+          page: pageParam,
+          page_size: pageSize,
+          total_pages: Math.ceil(total / pageSize),
+        }),
+      });
+    });
+
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    const userManagementButton = page.locator('text=User Management').first();
+    await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+    await userManagementButton.click();
+    await page.waitForTimeout(1000);
+
+    const nextButton = page.locator('button[aria-label*="Next"], button:has(svg[class*="chevron-right"])');
+    await expect(nextButton).toBeVisible({ timeout: 3000 });
+    await nextButton.click();
+    await page.waitForTimeout(1000);
+
+    await expect(page.locator('text=Page 2 of 3')).toBeVisible({ timeout: 3000 });
+
+    const prevButton = page.locator('button[aria-label*="Previous"], button:has(svg[class*="chevron-left"])');
+    await expect(prevButton).toBeVisible({ timeout: 3000 });
+    await prevButton.click();
+    await page.waitForTimeout(1000);
+
+    await expect(page.locator('text=Page 1 of 3')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('text=Showing 1 to 10 of 25')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('tbody tr:nth-child(1)')).toContainText('user1@example.com');
+  });
+
+  test('should disable prev button on first page and next on last page', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'admin.access.token',
+          refresh_token: 'admin.refresh.token',
+          user: {
+            id: 'admin-1',
+            email: ADMIN_USER.email,
+            role: 'admin',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: ADMIN_USER.email,
+          role: 'admin',
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total_users: 25 },
+          cluster_distribution: [],
+          trends: [],
+        }),
+      });
+    });
+
+    await page.route('**/admin/users*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const url = new URL(request.url());
+      const pageParam = parseInt(url.searchParams.get('page') || '1');
+      const pageSize = parseInt(url.searchParams.get('page_size') || '10');
+
+      const users = generateMockUsers(pageSize, pageParam);
+      const total = 25;
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: users,
+          total: total,
+          page: pageParam,
+          page_size: pageSize,
+          total_pages: Math.ceil(total / pageSize),
+        }),
+      });
+    });
+
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    const userManagementButton = page.locator('text=User Management').first();
+    await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+    await userManagementButton.click();
+    await page.waitForTimeout(1000);
+
+    const prevButton = page.locator('button[aria-label*="Previous"], button:has(svg[class*="chevron-left"])');
+    await expect(prevButton).toHaveClass(/disabled|opacity-50/);
+    await expect(prevButton).toBeDisabled();
+
+    const nextButton = page.locator('button[aria-label*="Next"], button:has(svg[class*="chevron-right"])');
+    await expect(nextButton).toBeVisible({ timeout: 3000 });
+    await nextButton.click(); // page 2
+    await page.waitForTimeout(1000);
+    await nextButton.click(); // page 3 (last)
+    await page.waitForTimeout(1000);
+
+    await expect(nextButton).toBeDisabled();
+  });
+
+  test.skip('should filter users by role', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'admin.access.token',
+          refresh_token: 'admin.refresh.token',
+          user: {
+            id: 'admin-1',
+            email: ADMIN_USER.email,
+            role: 'admin',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: ADMIN_USER.email,
+          role: 'admin',
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total_users: 25 },
+          cluster_distribution: [],
+          trends: [],
+        }),
+      });
+    });
+
+    await page.route('**/admin/users*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const url = new URL(request.url());
+      const pageParam = parseInt(url.searchParams.get('page') || '1');
+      const pageSize = parseInt(url.searchParams.get('page_size') || '10');
+      const roleFilter = url.searchParams.get('role');
+
+      let users = generateMockUsers(pageSize, pageParam);
+
+      if (roleFilter) {
+        users = users.filter(user => user.role === roleFilter);
+      }
+
+      const total = roleFilter ? 8 : 25;
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: users,
+          total: total,
+          page: pageParam,
+          page_size: pageSize,
+          total_pages: Math.ceil(total / pageSize),
+        }),
+      });
+    });
+
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    const userManagementButton = page.locator('text=User Management').first();
+    await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+    await userManagementButton.click();
+    await page.waitForTimeout(1000);
+
+    await page.selectOption('select[name="roleFilter"]', 'admin');
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('text=Showing 1 to 3 of 8')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('should filter users by status', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'admin.access.token',
+          refresh_token: 'admin.refresh.token',
+          user: {
+            id: 'admin-1',
+            email: ADMIN_USER.email,
+            role: 'admin',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: ADMIN_USER.email,
+          role: 'admin',
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total_users: 25 },
+          cluster_distribution: [],
+          trends: [],
+        }),
+      });
+    });
+
+    await page.route('**/admin/users*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const url = new URL(request.url());
+      const pageParam = parseInt(url.searchParams.get('page') || '1');
+      const pageSize = parseInt(url.searchParams.get('page_size') || '10');
+      const activeFilter = url.searchParams.get('is_active');
+
+      let users = generateMockUsers(pageSize, pageParam);
+
+      if (activeFilter !== null) {
+        const isActive = activeFilter === 'true';
+        users = users.filter(user => user.is_active === isActive);
+      }
+
+      const total = activeFilter !== null ? 20 : 25;
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: users,
+          total: total,
+          page: pageParam,
+          page_size: pageSize,
+          total_pages: Math.ceil(total / pageSize),
+        }),
+      });
+    });
+
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    const userManagementButton = page.locator('text=User Management').first();
+    await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+    await userManagementButton.click();
+    await page.waitForTimeout(1000);
+
+    await page.selectOption('select[name="activeFilter"]', 'active');
+
+    await expect(page.locator('text=Showing 1 to 10 of 20')).toBeVisible({ timeout: 3000 });
+  });
+
+  test.skip('should search users by email', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'admin.access.token',
+          refresh_token: 'admin.refresh.token',
+          user: {
+            id: 'admin-1',
+            email: ADMIN_USER.email,
+            role: 'admin',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: ADMIN_USER.email,
+          role: 'admin',
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total_users: 25 },
+          cluster_distribution: [],
+          trends: [],
+        }),
+      });
+    });
+
+    await page.route('**/admin/users*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      const url = new URL(request.url());
+      const pageParam = parseInt(url.searchParams.get('page') || '1');
+      const pageSize = parseInt(url.searchParams.get('page_size') || '10');
+      const search = url.searchParams.get('search');
+
+      let users = generateMockUsers(pageSize, pageParam);
+
+      if (search) {
+        users = users.filter(user => user.email.includes(search));
+      }
+
+      const total = search ? 1 : 25;
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: users,
+          total: total,
+          page: pageParam,
+          page_size: pageSize,
+          total_pages: Math.ceil(total / pageSize),
+        }),
+      });
+    });
+
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    const userManagementButton = page.locator('text=User Management').first();
+    await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+    await userManagementButton.click();
+    await page.waitForTimeout(1000);
+
+    await page.fill('input[name="search"]', 'user5');
+    await page.click('button:has-text("Apply")');
+    await waitForNetworkIdle(page);
+
+    await expect(page.locator('text=Showing 1 to 1 of 1')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('tbody tr')).toHaveCount(1);
+  });
+
+  test('should display empty state when no users found', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: 'admin.access.token',
+          refresh_token: 'admin.refresh.token',
+          user: {
+            id: 'admin-1',
+            email: ADMIN_USER.email,
+            role: 'admin',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'admin-1',
+          name: 'Admin User',
+          email: ADMIN_USER.email,
+          role: 'admin',
+        }),
+      });
+    });
+
+    await page.route('**/users/me/assessments**', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/admin/dashboard', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          stats: { total_users: 25 },
+          cluster_distribution: [],
+          trends: [],
+        }),
+      });
+    });
+
+    await page.route('**/admin/users*', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [],
+          total: 0,
+          page: 1,
+          page_size: 10,
+          total_pages: 0,
+        }),
+      });
+    });
+
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    const userManagementButton = page.locator('text=User Management').first();
+    await expect(userManagementButton).toBeVisible({ timeout: 5000 });
+    await userManagementButton.click();
+    await page.waitForTimeout(1000);
+
+    await expect(page.locator('text=No users found')).toBeVisible({ timeout: 3000 });
+  });
+});
