@@ -1,9 +1,6 @@
 # E2E Testing System Rules
 
 **Purpose**: Critical rules for Ralph when executing E2E testing tasks
-1. Log full investigation to `ralph/error_log.txt`
-2. Mark test as `NEEDS_HUMAN_REVIEW`
-3. Move to next test
 1. After configuring JSON reporter, verify `test-results/results.json` exists as a FILE
 2. Always use `ls test-results/` to see actual file names if uncertain
 3. Never assume paths are files - Windows Git Bash shows "Is a directory" error when you try to cat a directory
@@ -11,3 +8,6 @@
 2. If PASS → Continue to next test
 3. If FAIL:
 4. If FAIL (continued):
+5. Log full investigation to `ralph/error_log.txt`
+6. Mark test as `NEEDS_HUMAN_REVIEW`
+7. Move to next test

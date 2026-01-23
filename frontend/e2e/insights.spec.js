@@ -70,6 +70,31 @@ test.describe('Insights Dashboard', () => {
       ]);
     });
 
+    await page.route('**/insights/information-gain', async route => {
+      if (await handleOptions(route)) return;
+      return fulfillJson(route, {
+        feature_ranking: [
+          { feature: 'hba1c', ig: 0.28 },
+          { feature: 'fbs', ig: 0.25 },
+          { feature: 'bmi', ig: 0.18 },
+          { feature: 'age', ig: 0.12 },
+          { feature: 'systolic_bp', ig: 0.10 },
+          { feature: 'physical_activity', ig: 0.07 }
+        ]
+      });
+    });
+
+    await page.route('**/insights/metrics', async route => {
+      if (await handleOptions(route)) return;
+      return fulfillJson(route, {
+        accuracy: 0.85,
+        precision: 0.83,
+        recall: 0.87,
+        f1_score: 0.85,
+        auc: 0.92
+      });
+    });
+
     await page.goto('/');
 
     await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
@@ -335,6 +360,60 @@ test.describe('Insights Dashboard', () => {
       const biomarkerLabels = page.locator('text=/HbA1c|FBS/i');
       const hasBiomarkerLabels = await biomarkerLabels.count() > 0;
       expect(hasBiomarkerLabels).toBeTruthy();
+    }
+
+    expect(consoleErrors.length).toBe(0);
+  });
+
+  test('should render feature importance chart', async ({ page }) => {
+    const consoleErrors = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto('/');
+    await waitForNetworkIdle(page);
+
+    await page.waitForTimeout(1000);
+
+    const insightsTab = page.locator('button').filter({ hasText: 'Insights' }).first();
+    await insightsTab.click({ timeout: 5000 });
+    await waitForNetworkIdle(page);
+
+    await page.waitForTimeout(2000);
+
+    const riskFactorSection = page.locator('text=/Risk Factor Importance/i');
+    await expect(riskFactorSection.first()).toBeVisible({ timeout: 5000 });
+
+    const emptyStateMessage = page.locator('text=/No risk factor data available/i');
+    const hasEmptyState = await emptyStateMessage
+      .first()
+      .isVisible({ timeout: 2000 })
+      .catch(() => false);
+
+    if (!hasEmptyState) {
+      const svgElements = page.locator('svg');
+      expect(await svgElements.count()).toBeGreaterThan(0);
+
+      const chartContainer = page.locator('.recharts-wrapper');
+      await expect(chartContainer.first()).toBeVisible({ timeout: 5000 });
+
+      const barRectangles = page.locator('.recharts-bar-rectangle');
+      const barCount = await barRectangles.count();
+      expect(barCount).toBeGreaterThan(0);
+
+      const chartPaths = page.locator('svg path');
+      expect(await chartPaths.count()).toBeGreaterThan(0);
+
+      const axisLabels = page.locator('.recharts-cartesian-axis-tick');
+      const labelCount = await axisLabels.count();
+      expect(labelCount).toBeGreaterThan(0);
+
+      const factorLabels = page.locator('text=/HbA1c|FBS|BMI|Age|Blood Pressure|Physical Activity/i');
+      const hasFactorLabels = await factorLabels.count() > 0;
+      expect(hasFactorLabels).toBeTruthy();
     }
 
     expect(consoleErrors.length).toBe(0);

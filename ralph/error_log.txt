@@ -20,3 +20,79 @@ Sat, Jan 24, 2026  1:45:10 AM: Attempt 1 failed
 [94m[1m| [0m[90m Glob     [0m{"pattern":"frontend/e2e/*.spec.js"}
 [96m[1m| [0m[90m Read     [0mfrontend\e2e\auth.spec.js
 [96m[1m| [0m[90m Read     [0mfrontend\e2e\fixtures\test-data.js
+Sat, Jan 24, 2026  2:36:06 AM: Attempt 1 failed
+  ✓   7 [chromium] › e2e\insights.spec.js:213:3 › Insights Dashboard › should handle empty data state (10.3s)
+
+
+  1) [chromium] › e2e\insights.spec.js:146:3 › Insights Dashboard › should keep showing insights when trends endpoint fails 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m0[39m
+    Received:   [31m0[39m
+
+      159 |     const errorMessage = page.locator('text=/Failed to load insights/i');
+      160 |     const errorCount = await errorMessage.count();
+    > 161 |     expect(errorCount).toBeGreaterThan(0);
+          |                        ^
+      162 |   });
+      163 |
+      164 |   test('should show empty insights state when clusters missing', async ({ page }) => {
+        at C:\Users\ADRIAN\Github\skufu\DianaV2\frontend\e2e\insights.spec.js:161:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\insights-Insights-Dashboar-e620b--when-trends-endpoint-fails-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\insights-Insights-Dashboar-e620b--when-trends-endpoint-fails-chromium\error-context.md
+
+  1 failed
+    [chromium] › e2e\insights.spec.js:146:3 › Insights Dashboard › should keep showing insights when trends endpoint fails 
+  10 passed (18.8s)
+
+DONE
+=== T009 TEST FAILURE ANALYSIS ===
+Date: 2026-01-24 02:36:08 AM
+Test: "should keep showing insights when trends endpoint fails"
+File: frontend/e2e/insights.spec.js:146
+Error: Test expects "Failed to load insights" error message to be visible
+
+INVESTIGATION:
+- Test mocks `/insights/biomarker-trends` endpoint to return 500 error
+- Test expects page to show "text=/Failed to load insights/i" element
+- Test assertion: `expect(errorCount).toBeGreaterThan(0)` - expects error element count > 0
+- Actual: error element count = 0 (error message not found)
+
+ROOT CAUSE ANALYSIS:
+1. Component Design Issue (Insights.jsx):
+   - Uses `Promise.all()` to fetch multiple APIs in parallel
+   - When any API fails, Promise.all rejects immediately
+   - Current behavior: Catches error, sets setError('Failed to load insights')
+   - Shows error in InsightsHeader component (line 13: small span with text-xs class)
+
+2. Test Assertion Issue:
+   - Error message is a tiny span (text-xs) in header
+   - Test selector might not be finding it due to size/styling
+   - OR: Error state is set but InsightsHeader not receiving it correctly
+
+3. Design Question:
+   - Should Insights show partial data + error (better UX)?
+   - OR show nothing when any endpoint fails (current implementation)?
+
+WHY RALPH 1 FAILED:
+- Did not analyze Promise.all pattern
+- Did not check component error propagation
+- Did not consider UI element size/styling issue
+
+RECOMMENDATION:
+This is a DESIGN question, not a bug:
+- If component should show partial data on partial failures → Backend/Frontend code needs refactoring
+- If component should fail completely (current behavior) → Test expectation is wrong
+
+ACTION TAKEN:
+- Added rule to system_rules.md: "When Testing Partial API Failures"
+- Added rule: "When a Test Fails Due to Missing UI Elements"
+- Moved test to NEEDS_HUMAN_REVIEW status
+- Test requires manual decision on error handling strategy
+
+=== END ANALYSIS ===
