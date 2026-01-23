@@ -47,21 +47,25 @@ Frontend components (React)
 
 Data model (persistent)
 -----------------------
-- Users: email, password_hash (bcrypt), role, timestamps.
-- Patients: demographics, menopause status, BMI, BP, activity/smoking/hypertension/heart disease, lipid panel, timestamps.
-- Assessments: patient_id, biomarker panel, lifestyle flags, BMI, cluster, risk_score, model_version, dataset_hash, validation_status, created_at.
-- Supporting tables: model_runs (version/hash notes), audit_events (generic audit hook).
-- Schema defined in `migrations/0001_init.sql`.
+- Users: email, password_hash (bcrypt), role, is_admin, profile data (menopause status, activity level), consent settings, timestamps.
+- Assessments: user_id, biomarker panel, lifestyle flags, BMI, cluster, risk_score, model_version, dataset_hash, validation_status, created_at.
+- Supporting tables: model_runs (version/hash notes), audit_events (generic audit hook), auth_events (SSE tracking).
+- Schema defined in migrations (current version: 0012).
+- Note: Patients table dropped in migration v0011 (B2B→B2C transition); assessments now link directly to users.
 
 Core request flows
 ------------------
 - Auth: `POST /api/v1/auth/login` -> JWT; 401 on bad creds or missing payload.
-- Patients: `GET /patients` (list), `POST /patients` (create). 400 on bad payload; 500 on store errors.
+- Users: `GET /api/v1/users/me/profile` (get current user), `PUT /api/v1/users/me/profile` (update profile). 400 on bad payload; 500 on store errors.
 - Assessments:
-  - `POST /patients/:id/assessments`: parse payload, compute `validation_status` (ranges on FBS/HbA1c/lipids/BP/BMI), call predictor, persist with `model_version` + `dataset_hash`, return created row.
-  - `GET /patients/:id/assessments`: list by patient.
-- Analytics: `GET /analytics/cluster-distribution`, `GET /analytics/biomarker-trends`; aggregate via store.
-- Export: `GET /export/patients.csv`, `GET /export/assessments.csv`, `GET /export/datasets/:slice` (stubbed metadata). Rows capped by `EXPORT_MAX_ROWS`.
+  - `POST /api/v1/users/me/assessments`: parse payload, compute `validation_status` (ranges on FBS/HbA1c/lipids/BP/BMI), call predictor, persist with `model_version` + `dataset_hash`, return created row.
+  - `GET /api/v1/users/me/assessments`: list by user.
+  - `GET /api/v1/users/me/assessments/:id`: get single assessment.
+  - `PUT /api/v1/users/me/assessments/:id`: update assessment.
+  - `DELETE /api/v1/users/me/assessments/:id`: delete assessment.
+- Analytics: `GET /api/v1/analytics/summary`; aggregate via store.
+- Insights: `GET /api/v1/insights/cluster-distribution`, `GET /api/v1/insights/cluster`; cluster data from store.
+- Export: `GET /api/v1/users/me/export/pdf` (PDF export).
 - Health: `GET /healthz`, `GET /livez`.
 
 Configuration (env) and defaults
