@@ -27,12 +27,12 @@
 
 ## P1 / High
 
-- [ ] **3. Update `apiFetch` to handle empty responses (204) safely**
+- [BLOCKED] **3. Update `apiFetch` to handle empty responses (204) safely**
   - Location: `frontend/src/api.js:34`
   - Issue: Always calls `response.json()`, throws on empty body
   - Fix: Check `response.status === 204 || response.headers.get('content-length') === '0'` before parsing
 
-- [ ] **4. Relax auth state reset logic on transient profile fetch failures**
+- [x] **4. Relax auth state reset logic on transient profile fetch failures**
   - Location: `frontend/src/App.jsx`
   - Issue: Any profile fetch error flips `isAuthenticated` to false
   - Fix: Only reset on 401/403, not on network errors or 5xx

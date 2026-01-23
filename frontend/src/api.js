@@ -31,6 +31,11 @@ const apiFetch = async (endpoint, options = {}) => {
     throw new Error(error.error || 'Request failed');
   }
 
+  // Handle empty responses (204 No Content or empty body)
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    return null;
+  }
+
   return response.json();
 };
 
