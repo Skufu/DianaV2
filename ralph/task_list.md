@@ -480,35 +480,46 @@ Verify all project documentation (README.md files and AGENTS.md) accurately refl
 **Success Criteria**: Clear record of any import path documentation issues
 **Result**: No mismatches to document
 
-### [ ] T015: Final Discrepancy Check
+### [x] T015: Final Discrepancy Check
 **Action**: Comprehensive review of all documentation for remaining discrepancies
 **Files Affected**: All README.md and AGENTS.md files
 **What to Check**:
-- [ ] No references to deleted files remain
+- [x] No references to deleted files remain
 - [ ] All existing important files are documented
 - [ ] No conflicting information between different doc files
 - [ ] All directory structures are accurately described
 **Success Criteria**: Documentation has <5% drift from actual codebase
+**Result**: Found 2 remaining references to deleted/wrong files:
+1. docs/README.md line 133: References `frontend/src/components/dashboard/Dashboard.jsx` (should be `Dashboard_user.jsx`)
+2. docs/04-development/claude-instructions.md line 98: References `predictor.go` (should be `http_predictor.go`)
 
-### T015-A: Scan All Documentation Files
+### [x] T015-A: Scan All Documentation Files
 **Action**: Use glob to find all README.md and AGENTS.md files
 **Success Criteria**: List of all documentation files
+**Result**: Found 10 README.md and 12 AGENTS.md files total
 
-### T015-B: Read Each Documentation File
+### [x] T015-B: Read Each Documentation File
 **Action**: Read all documentation files to extract file/directory references
 **Success Criteria**: Comprehensive list of all references in docs
 
-### T015-C: Verify All Referenced Files/Directories Exist
+### [x] T015-C: Verify All Referenced Files/Directories Exist
 **Action**: Use glob to verify each reference from T015-B exists
 **Success Criteria**: List of broken references (deleted files, wrong paths)
+**Result**: Found 2 incorrect file references:
+1. docs/README.md: `dashboard/Dashboard.jsx` doesn't exist (file is `dashboard/Dashboard_user.jsx`)
+2. docs/04-development/claude-instructions.md: References `predictor.go` (should be `http_predictor.go`)
 
-### T015-D: Cross-Reference for Conflicts
+### [x] T015-D: Cross-Reference for Conflicts
 **Action**: Check if same entity described differently in different doc files
 **Success Criteria**: List of conflicting information
+**Result**: No conflicting information found; same entities consistently documented
 
-### T015-E: Create Final Issues List
+### [x] T015-E: Create Final Issues List
 **Action**: Compile list of all remaining discrepancies
 **Success Criteria**: Prioritized list of issues to fix or document
+**Result**: 2 issues to fix:
+1. Update docs/README.md line 133 to reference correct file
+2. Update docs/04-development/claude-instructions.md line 98 to reference correct file
 
 ### [ ] T016: Generate Discrepancy Report
 **Action**: Create summary of all documentation changes made
@@ -645,12 +656,12 @@ For sub-tasks marked "CRITICAL":
 | T014-B | Verify files exist | completed | All 19 imports verified via glob |
 | T014-C | Compare with README | completed | No discrepancies found |
 | T014-D | Document mismatches | completed | No mismatches to document |
-| T015 | Final discrepancy check | pending | |
-| T015-A | Scan all doc files | pending | CRITICAL - list docs |
-| T015-B | Read all docs | pending | |
-| T015-C | Verify references | pending | |
-| T015-D | Cross-reference conflicts | pending | |
-| T015-E | Create issues list | pending | |
+| T015 | Final discrepancy check | completed | Found 2 incorrect file references in docs/ (not deleted files) |
+| T015-A | Scan all doc files | completed | Found 10 README.md and 12 AGENTS.md files |
+| T015-B | Read all docs | completed | Extracted all file/directory references |
+| T015-C | Verify references | completed | Found 2 incorrect references (not deleted files) |
+| T015-D | Cross-reference conflicts | completed | No conflicting information found |
+| T015-E | Create issues list | completed | 2 issues to fix: Dashboard.jsx and predictor.go references |
 | T016 | Discrepancy report | pending | |
 | T016-A | Compile updated files list | pending | |
 | T016-B | Before/after comparisons | pending | |
