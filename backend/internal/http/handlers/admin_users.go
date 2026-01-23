@@ -39,13 +39,13 @@ func (h *AdminUsersHandler) Register(rg *gin.RouterGroup) {
 type CreateUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8"`
-	Role     string `json:"role" binding:"required,oneof=clinician admin"`
+	Role     string `json:"role" binding:"required,oneof=admin user"`
 }
 
 // UpdateUserRequest defines the payload for updating a user
 type UpdateUserRequest struct {
 	Email string `json:"email" binding:"omitempty,email"`
-	Role  string `json:"role" binding:"omitempty,oneof=clinician admin"`
+	Role  string `json:"role" binding:"omitempty,oneof=admin user"`
 }
 
 // listUsers returns a paginated list of users
