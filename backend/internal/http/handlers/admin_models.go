@@ -3,7 +3,6 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/models"
@@ -41,39 +40,21 @@ func (h *AdminModelsHandler) Register(rg *gin.RouterGroup) {
 // @Failure 500 {object} map[string]string
 // @Router /admin/models [get]
 func (h *AdminModelsHandler) listModelRuns(c *gin.Context) {
-	pageStr := c.DefaultQuery("page", "1")
-	pageSizeStr := c.DefaultQuery("page_size", "20")
+	params := ParsePagination(c)
 
-	page, _ := strconv.Atoi(pageStr)
-	pageSize, _ := strconv.Atoi(pageSizeStr)
-
-	if page < 1 {
-		page = 1
-	}
-	if pageSize < 1 {
-		pageSize = 20
-	}
-	if pageSize > 100 {
-		pageSize = 100
-	}
-
-	offset := (page - 1) * pageSize
-
-	runs, total, err := h.store.ModelRuns().List(c.Request.Context(), pageSize, offset)
+	runs, total, err := h.store.ModelRuns().List(c.Request.Context(), params.PageSize, params.Offset)
 	if err != nil {
 		log.Printf("[ERROR] Failed to fetch model runs: %v", err)
 		ErrInternal(c, "Failed to fetch model runs")
 		return
 	}
 
-	totalPages := (total + pageSize - 1) / pageSize
-
 	c.JSON(http.StatusOK, models.PaginatedResponse{
 		Data:       runs,
 		Total:      total,
-		Page:       page,
-		PageSize:   pageSize,
-		TotalPages: totalPages,
+		Page:       params.Page,
+		PageSize:   params.PageSize,
+		TotalPages: (total + params.PageSize - 1) / params.PageSize,
 	})
 }
 

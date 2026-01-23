@@ -59,19 +59,18 @@ func (h *AdminAuditHandler) listAuditEvents(c *gin.Context) {
 		return
 	}
 
-	// Build params
+	pagParams := ParsePagination(c)
+
 	params := models.AuditListParams{
-		Page:     queryParams.Page,
-		PageSize: queryParams.PageSize,
+		Page:     pagParams.Page,
+		PageSize: pagParams.PageSize,
 		Actor:    queryParams.Actor,
 		Action:   queryParams.Action,
 	}
 
-	// Parse dates if provided
 	if queryParams.StartDate != "" {
 		t, err := time.Parse(time.RFC3339, queryParams.StartDate)
 		if err != nil {
-			// Try date-only format
 			t, err = time.Parse("2006-01-02", queryParams.StartDate)
 		}
 		if err == nil {
@@ -82,24 +81,14 @@ func (h *AdminAuditHandler) listAuditEvents(c *gin.Context) {
 	if queryParams.EndDate != "" {
 		t, err := time.Parse(time.RFC3339, queryParams.EndDate)
 		if err != nil {
-			// Try date-only format
 			t, err = time.Parse("2006-01-02", queryParams.EndDate)
 			if err == nil {
-				// End of day
 				t = t.Add(24*time.Hour - time.Second)
 			}
 		}
 		if err == nil {
 			params.EndDate = t
 		}
-	}
-
-	// Set defaults
-	if params.Page < 1 {
-		params.Page = 1
-	}
-	if params.PageSize < 1 {
-		params.PageSize = 20
 	}
 
 	events, total, err := h.store.AuditEvents().List(c.Request.Context(), params)
@@ -109,13 +98,11 @@ func (h *AdminAuditHandler) listAuditEvents(c *gin.Context) {
 		return
 	}
 
-	totalPages := (total + params.PageSize - 1) / params.PageSize
-
 	c.JSON(http.StatusOK, models.PaginatedResponse{
 		Data:       events,
 		Total:      total,
 		Page:       params.Page,
 		PageSize:   params.PageSize,
-		TotalPages: totalPages,
+		TotalPages: (total + params.PageSize - 1) / params.PageSize,
 	})
 }
