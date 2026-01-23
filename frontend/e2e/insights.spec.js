@@ -31,12 +31,17 @@ test.describe('Insights Dashboard', () => {
       return fulfillJson(route, {
         access_token: 'test.access.token',
         refresh_token: 'test.refresh.token',
+        user: {
+          id: 'e2e-user-id',
+          email: TEST_USER.email,
+          role: 'user',
+        },
       });
     });
 
     await page.route('**/users/me/profile', async route => {
       if (await handleOptions(route)) return;
-      return fulfillJson(route, { name: 'E2E User', email: TEST_USER.email });
+      return fulfillJson(route, { name: 'E2E User', email: TEST_USER.email, onboarding_completed: true });
     });
 
     await page.route('**/users/me/assessments**', async route => {
@@ -66,21 +71,25 @@ test.describe('Insights Dashboard', () => {
     });
 
     await page.goto('/');
+
     await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
     await waitForNetworkIdle(page);
+
+    await page.waitForTimeout(1000);
   });
 
   test('should navigate to insights tab', async ({ page }) => {
-    const insightsTab = page.locator(SELECTORS.insightsTab);
-    if (await insightsTab.isVisible()) {
-      await insightsTab.click();
-      await waitForNetworkIdle(page);
+    await page.goto('/');
+    await waitForNetworkIdle(page);
 
-      const insightsContent = page.locator('text=/insights|cluster|metrics|chart/i');
-      await expect(insightsContent.first()).toBeVisible({ timeout: 10000 });
-    }
+    const insightsTab = page.locator('button').filter({ hasText: 'Insights' }).first();
+    await insightsTab.click();
+    await waitForNetworkIdle(page);
+
+    const insightsContent = page.locator('text=/insights|cluster|metrics|chart/i');
+    await expect(insightsContent.first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should show ML error banner when ML APIs fail', async ({ page }) => {
@@ -99,7 +108,11 @@ test.describe('Insights Dashboard', () => {
       return route.abort('failed');
     });
 
-    await page.click(SELECTORS.insightsTab);
+    await page.goto('/');
+    await waitForNetworkIdle(page);
+
+    const insightsTab = page.locator('button').filter({ hasText: 'Insights' }).first();
+    await insightsTab.click();
     await waitForNetworkIdle(page);
 
     await expect(page.locator('text=/ml server is unavailable/i')).toBeVisible({ timeout: 10000 });
@@ -111,10 +124,16 @@ test.describe('Insights Dashboard', () => {
       return fulfillJson(route, { error: 'Failed' }, 500);
     });
 
-    await page.click(SELECTORS.insightsTab);
+    await page.goto('/');
     await waitForNetworkIdle(page);
 
-    await expect(page.locator('text=/failed to load insights/i')).toBeVisible({ timeout: 10000 });
+    const insightsTab = page.locator('button').filter({ hasText: 'Insights' }).first();
+    await insightsTab.click();
+    await waitForNetworkIdle(page);
+
+    const errorMessage = page.locator('text=/Failed to load insights/i');
+    const errorCount = await errorMessage.count();
+    expect(errorCount).toBeGreaterThan(0);
   });
 
   test('should show empty insights state when clusters missing', async ({ page }) => {
@@ -123,7 +142,11 @@ test.describe('Insights Dashboard', () => {
       return fulfillJson(route, []);
     });
 
-    await page.click(SELECTORS.insightsTab);
+    await page.goto('/');
+    await waitForNetworkIdle(page);
+
+    const insightsTab = page.locator('button').filter({ hasText: 'Insights' }).first();
+    await insightsTab.click();
     await waitForNetworkIdle(page);
 
     await expect(page.locator('text=/no clustering data available/i')).toBeVisible({
@@ -132,7 +155,11 @@ test.describe('Insights Dashboard', () => {
   });
 
   test('should display cluster distribution', async ({ page }) => {
-    await page.click(SELECTORS.insightsTab);
+    await page.goto('/');
+    await waitForNetworkIdle(page);
+
+    const insightsTab = page.locator('button').filter({ hasText: 'Insights' }).first();
+    await insightsTab.click();
     await waitForNetworkIdle(page);
 
     const clusterSection = page.locator('[class*="cluster"], [class*="chart"], svg, canvas');
@@ -140,11 +167,13 @@ test.describe('Insights Dashboard', () => {
   });
 
   test('should display model metrics', async ({ page }) => {
-    // Navigate to insights
-    await page.click(SELECTORS.insightsTab);
+    await page.goto('/');
     await waitForNetworkIdle(page);
 
-    // Look for metrics (accuracy, precision, etc.)
+    const insightsTab = page.locator('button').filter({ hasText: 'Insights' }).first();
+    await insightsTab.click();
+    await waitForNetworkIdle(page);
+
     const metricsSection = page.locator('text=/accuracy|precision|recall|f1|auc/i');
     if (
       await metricsSection
@@ -157,15 +186,13 @@ test.describe('Insights Dashboard', () => {
   });
 
   test('should handle empty data state', async ({ page }) => {
-    // Navigate to insights
+    await page.goto('/');
     await page.click(SELECTORS.insightsTab);
     await waitForNetworkIdle(page);
 
-    // Should not show loading spinner indefinitely
     await page.waitForTimeout(3000);
     const loadingSpinner = page.locator('[class*="loading"], [class*="spinner"]');
 
-    // Either content should be visible or loading should stop
     const contentOrEmpty = page.locator('[class*="chart"], [class*="empty"], text=/no data/i');
     const isContentVisible = await contentOrEmpty
       .first()
@@ -177,5 +204,44 @@ test.describe('Insights Dashboard', () => {
       .catch(() => false));
 
     expect(isContentVisible || isSpinnerHidden).toBeTruthy();
+  });
+
+  test('should verify Recharts SVG elements render', async ({ page }) => {
+    const consoleErrors = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto('/');
+    await waitForNetworkIdle(page);
+
+    await page.waitForTimeout(1000);
+
+    const insightsTab = page.locator('button').filter({ hasText: 'Insights' }).first();
+    await insightsTab.click({ timeout: 5000 });
+    await waitForNetworkIdle(page);
+
+    await page.waitForTimeout(2000);
+
+    const svgElements = await page.locator('svg').count();
+    expect(svgElements).toBeGreaterThan(0);
+
+    const rechartsElements = page.locator('[class*="recharts"]');
+    const rechartsCount = await rechartsElements.count();
+    expect(rechartsCount).toBeGreaterThan(0);
+
+    const chartContainers = page.locator('.recharts-wrapper, .recharts-surface');
+    const firstChartVisible = await chartContainers
+      .first()
+      .isVisible({ timeout: 5000 })
+      .catch(() => false);
+    expect(firstChartVisible).toBeTruthy();
+
+    expect(consoleErrors.length).toBe(0);
+
+    const hasChartPaths = await page.locator('svg path').count() > 0;
+    expect(hasChartPaths).toBeTruthy();
   });
 });

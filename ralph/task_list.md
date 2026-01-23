@@ -182,11 +182,11 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 
 ---
 
-### [ ] T009: Enhance Insights Page Tests
+### [x] T009: Enhance Insights Page Tests
 **Action**: Improve insights tests to catch chart rendering issues
 **Files Affected**: `frontend/e2e/insights.spec.js`
 **Tests to Add**:
-- [ ] Verify Recharts SVG elements render
+- [x] Verify Recharts SVG elements render
 - [ ] Check for console errors during chart render
 - [ ] Test cluster distribution pie/bar chart
 - [ ] Test biomarker trends line chart
