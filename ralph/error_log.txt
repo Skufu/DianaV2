@@ -61,3 +61,16 @@ All subtasks for T001 are now verified complete:
 5. ✅ Screenshots enabled on failure (`screenshot: 'only-on-failure'`)
 6. ✅ Single-test mode verified: `npx playwright test auth.spec.js:16` works correctly
 DONE
+=== E2E TEST COMPLETED ===
+Timestamp: 2026-01-24T00:11:16+08:00
+Test: "Test too many login attempts (expect 429 rate limit)"
+File: frontend/e2e/auth.spec.js
+
+SUCCESS: Test added and passing
+- Added test for rate limiting after 10 failed login attempts
+- Mock backend returns 401 for first 10 attempts, then 429 on 11th
+- Frontend Login.jsx updated to display actual error message from API
+- Test verifies "rate limit exceeded" error message appears
+
+VERIFICATION: PASS (1 passed in 10.8s)
+===
