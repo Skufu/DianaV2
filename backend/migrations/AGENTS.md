@@ -1,7 +1,7 @@
 # MIGRATIONS KNOWLEDGE BASE
 
 **Generated:** 2026-01-14
-**Schema Version:** 0011
+**Schema Version:** 0012
 
 ## OVERVIEW
 Sequential SQL migrations using Goose to evolve the schema from a clinician-centric model to a direct-to-consumer menopausal platform.
@@ -16,7 +16,8 @@ Sequential SQL migrations using Goose to evolve the schema from a clinician-cent
 | 0006-08 | `mock_data`, `clusters` | Data seeding and ML cluster naming alignment |
 | 0009 | `add_clinics` | Multi-tenant/clinic support structure |
 | 0010 | `admin_features` | Admin dashboard tracking (is_active, last_login) |
-| 0011 | `refactor_to_menopausal` | **Major Refactor**: Users become the primary health subjects; `patients` table dropped |
+ | 0011 | `refactor_to_menopausal` | **Major Refactor**: Users become the primary health subjects; `patients` table dropped |
+| 0012 | `add_auth_events` | Auth events table for real-time admin monitoring (SSE streaming) |
 
 ## SCHEMA EVOLUTION
 ### Phase 1: Clinician Management (0001-0004)
