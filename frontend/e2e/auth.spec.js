@@ -977,4 +977,52 @@ test.describe('Authentication Flow', () => {
     await expect(page.locator(SELECTORS.loginEmailInput)).toBeVisible({ timeout: 10000 });
     expect(refreshTokenCallCount).toBeGreaterThan(0);
   });
+
+  test('should show error for registration with mismatched password confirmation', async ({ page }) => {
+    await page.route('**/auth/register', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      const body = request.postDataJSON();
+
+      return route.fulfill({
+        status: 201,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          message: 'registration successful',
+          access_token: 'test.access.token',
+          refresh_token: 'test.refresh.token',
+          user: { id: '1', email: body?.email, role: 'user' },
+        }),
+      });
+    });
+
+    const signUpButton = page.locator('text=Sign Up, text=Don\'t have an account');
+    if (await signUpButton.isVisible()) {
+      await signUpButton.click();
+      await page.waitForTimeout(2000);
+
+      const createAccountButton = page.locator('button:has-text("Create Account")');
+      if (await createAccountButton.isVisible({ timeout: 5000 })) {
+        await page.fill('input[placeholder="Jane"]', 'John');
+        await page.fill('input[placeholder="Doe"]', 'Doe');
+        await page.fill('input[type="email"]', 'mismatch@example.com');
+
+        const passwordInput = page.locator('input[type="password"]').first();
+        await passwordInput.fill('Password123!');
+
+        const confirmPasswordInput = page.locator('input[type="password"]').nth(1);
+        await confirmPasswordInput.fill('DifferentPass456!');
+
+        await createAccountButton.click();
+
+        const errorMessage = page.locator('text=/password.*match|confirm.*password|do not match|must match/i');
+        await expect(errorMessage).toBeVisible({ timeout: 5000 });
+
+        await expect(page.locator('h2:has-text("Create Account")')).toBeVisible({ timeout: 3000 });
+      }
+    }
+  });
 });
