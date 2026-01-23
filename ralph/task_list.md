@@ -205,7 +205,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 - [x] Navigate to profile tab
 - [x] View profile shows user data
 - [x] Edit first name → save → verify persisted
-- [ ] Edit with invalid data → validation error
+- [x] Edit with invalid data → validation error
 - [ ] Consent settings toggle works
 - [ ] Account deletion shows confirmation dialog
 - [ ] Account deletion requires confirmation
