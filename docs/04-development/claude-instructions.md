@@ -94,8 +94,7 @@ The backend follows a layered architecture with clear separation of concerns:
 - These are the application's "lingua franca" - all layers use these types
 
 **ML Layer** (`internal/ml/`)
-- `predictor.go`: Interface for ML predictions
-- `http.go`: HTTP client that calls external ML service
+- `http_predictor.go`: HTTP client that calls external ML service
 - `mock.go`: Deterministic mock predictor for development/testing
 
 ### Authentication & Authorization Flow
