@@ -140,7 +140,7 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 **Action**: Test full assessment lifecycle (Create, Read, Update, Delete)
 **Files Affected**: `frontend/e2e/assessment-crud.spec.js` (NEW FILE)
 **Tests to Add**:
-- [ ] List user assessments → paginated results
+- [x] List user assessments → paginated results
 - [ ] Get single assessment by ID → full details
 - [ ] Update assessment → changes persist
 - [ ] Delete assessment → removed from list
