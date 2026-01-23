@@ -61,10 +61,11 @@
    - Fix: Added sync.WaitGroup to AuditLogger, Shutdown() method, integrated into main.go graceful shutdown
    - Done: Go 1.24+ is used, so context.WithoutCancel is valid; audit goroutines now tracked with WaitGroup
 
-- [ ] **8. Standardize pagination via helper across handlers**
-  - Location: `backend/internal/http/handlers/admin_models.go`
-  - Issue: Manual page/page_size parsing vs standard helper
-  - Fix: Use existing pagination helper from utils or create one if missing
+  - [x] **8. Standardize pagination via helper across handlers** ✅ COMPLETED
+    - Location: `backend/internal/http/handlers/admin_models.go`
+    - Issue: Manual page/page_size parsing vs standard helper
+    - Fix: Updated `admin_models.go`, `admin_users.go`, and `admin_audit.go` to use `ParsePagination(c)` helper
+    - Done: All admin handlers now consistently use the pagination helper for parsing params
 
 ---
 

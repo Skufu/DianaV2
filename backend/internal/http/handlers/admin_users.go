@@ -70,11 +70,10 @@ func (h *AdminUsersHandler) listUsers(c *gin.Context) {
 		return
 	}
 
-	// Set defaults
 	if params.Page < 1 {
 		params.Page = 1
 	}
-	if params.PageSize < 1 {
+	if params.PageSize < 1 || params.PageSize > 100 {
 		params.PageSize = 20
 	}
 
@@ -85,14 +84,12 @@ func (h *AdminUsersHandler) listUsers(c *gin.Context) {
 		return
 	}
 
-	totalPages := (total + params.PageSize - 1) / params.PageSize
-
 	c.JSON(http.StatusOK, models.PaginatedResponse{
 		Data:       users,
 		Total:      total,
 		Page:       params.Page,
 		PageSize:   params.PageSize,
-		TotalPages: totalPages,
+		TotalPages: (total + params.PageSize - 1) / params.PageSize,
 	})
 }
 
