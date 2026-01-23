@@ -19,6 +19,7 @@
 | Database Queries | `internal/store/sqlc/*.sql.go` |
 | Config | `internal/config/config.go` |
 | Cache | `internal/cache/redis_cache.go` |
+| SSE Broker | `internal/http/sse/broker.go` |
 
 ---
 
@@ -71,14 +72,10 @@ backend/
 │   └── cache/                    # Redis caching layer
 │       ├── redis_cache.go         # Redis client wrapper with metrics
 │       └── redis_cache_test.go    # Cache metrics tests
-│       ├── store.go              # Store interface
-│       └── sqlc/                 # Generated SQLC code
-│           ├── models.go         # Generated Go structs
-│           ├── db.go             # Database connection
-│           ├── users.sql.go      # User queries
-│           ├── patients.sql.go   # Patient queries
-│           ├── assessments.sql.go # Assessment queries
-│           └── *.sql.go          # Other generated queries
+│
+│   └── http/sse/                 # SSE (Server-Sent Events) broker
+│       ├── broker.go              # SSE event broadcasting
+│       └── broker_test.go         # Broker integration tests
 │
 ├── migrations/                   # Goose SQL migrations
 │   ├── 0001_init.sql             # Users, patients, assessments, audit tables
@@ -246,6 +243,99 @@ go test ./internal/cache -v
 - **Pattern deletion**: Use sparingly - scans entire keyspace
 - **TTL**: Always set appropriate TTL to prevent stale data
 - **Miss handling**: `Get()` returns nil error on miss, not redis.Nil
+
+---
+
+## SSE Broker (`internal/http/sse/`)
+
+Server-Sent Events (SSE) broker for real-time auth event streaming to admin dashboards.
+
+### Files
+| File | Purpose |
+|------|---------|
+| `broker.go` | SSE event broadcasting and client management |
+| `broker_test.go` | Broker integration tests |
+
+### Key Functions (`internal/http/sse/broker.go`)
+- `NewBroker(batchSize int) *Broker` - Creates new SSE broker with configurable batch size
+- `Subscribe(client chan Event)` - Registers client channel to receive events
+- `Unsubscribe(client chan Event)` - Removes client from broker
+- `Publish(event Event)` - Queues event for broadcast (buffers until batch size reached)
+- `PublishAuthEvent(eventType, email, ipAddress, userAgent string, success bool, metadata map[string]any)` - Publishes auth event with standard fields
+- `ClientCount() int` - Returns number of active subscribers
+- `StreamToGin(c *gin.Context, broker *Broker, ctx context.Context)` - Streams SSE events to Gin response with keep-alive
+
+### SSE Event Format
+Events are formatted per W3C SSE specification:
+```
+id: <event-id>
+event: <event-type>
+data: <json-encoded-data>
+
+```
+
+Example auth event:
+```
+id: 2026-01-23T10:30:45.123Z
+event: auth_event
+data: {"id":"...","eventType":"login","email":"user@example.com","ipAddress":"127.0.0.1","userAgent":"Mozilla/5.0...","success":true,"metadata":{},"createdAt":"2026-01-23T10:30:45Z"}
+
+```
+
+### Usage Pattern
+
+**Publishing auth events** (in middleware/handlers):
+```go
+// In auth middleware after JWT validation
+broker.PublishAuthEvent(
+    "login_success",
+    userEmail,
+    clientIP,
+    userAgent,
+    true,
+    map[string]any{"method": "JWT"},
+)
+```
+
+**Streaming to admin dashboard**:
+```go
+// In auth_events.go handler
+func StreamAuthEvents(c *gin.Context) {
+    // Verify admin role
+    ctx := c.Request.Context()
+    sse.StreamToGin(c, broker, ctx)
+}
+```
+
+### Batching and Performance
+- Events are buffered until `batchSize` is reached before broadcast
+- Default batch size: configurable via `NewBroker(batchSize)`
+- Each subscriber receives buffered events in FIFO order
+- Non-blocking writes: full client channels skip events (no backpressure)
+
+### Keep-Alive Mechanism
+- Sends `:keep-alive\n\n` every 30 seconds to prevent proxy timeout
+- Maintains connection health even during event droughts
+- Respects context cancellation for graceful shutdown
+
+### Testing
+```bash
+# Run SSE broker tests
+go test ./internal/http/sse -v
+
+# Tests cover:
+# - Batch broadcasting (events not sent until batch reached)
+# - Subscribe/unsubscribe counting
+# - Auth event formatting
+# - SSE header writing and event serialization
+```
+
+### Performance Considerations
+- **Thread-safe**: sync.RWMutex protects client map for concurrent access
+- **Non-blocking**: Full client channels skip events (no goroutine leaks)
+- **Memory**: Bounded by channel capacity + buffer size (no unbounded growth)
+- **JSON**: All event data marshaled before broadcast
+- **Connection**: HTTP keep-alive and X-Accel-Buffering headers set for proper proxy support
 
 ---
 
