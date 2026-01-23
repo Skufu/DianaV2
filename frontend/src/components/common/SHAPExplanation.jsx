@@ -194,6 +194,10 @@ const SHAPExplanation = ({
                                 src={`data:image/png;base64,${explanation.waterfall_plot}`}
                                 alt="SHAP Waterfall Plot"
                                 className="w-full rounded-lg border border-gray-700"
+                                loading="lazy"
+                                decoding="async"
+                                width="800"
+                                height="600"
                             />
                         </div>
                     )}
