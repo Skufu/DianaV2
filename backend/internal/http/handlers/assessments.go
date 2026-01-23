@@ -184,6 +184,51 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 
+	if req.HbA1c != nil && *req.HbA1c > 15.0 {
+		ErrBadRequest(c, "HbA1c must be less than or equal to 15.0")
+		return
+	}
+
+	if req.BMI != nil && *req.BMI < 0 {
+		ErrBadRequest(c, "BMI must be non-negative")
+		return
+	}
+
+	if req.FBS != nil && *req.FBS < 0 {
+		ErrBadRequest(c, "FBS must be non-negative")
+		return
+	}
+
+	if req.Cholesterol != nil && *req.Cholesterol < 0 {
+		ErrBadRequest(c, "Cholesterol must be non-negative")
+		return
+	}
+
+	if req.LDL != nil && *req.LDL < 0 {
+		ErrBadRequest(c, "LDL must be non-negative")
+		return
+	}
+
+	if req.HDL != nil && *req.HDL < 0 {
+		ErrBadRequest(c, "HDL must be non-negative")
+		return
+	}
+
+	if req.Triglycerides != nil && *req.Triglycerides < 0 {
+		ErrBadRequest(c, "Triglycerides must be non-negative")
+		return
+	}
+
+	if req.Systolic != nil && *req.Systolic < 0 {
+		ErrBadRequest(c, "Systolic blood pressure must be non-negative")
+		return
+	}
+
+	if req.Diastolic != nil && *req.Diastolic < 0 {
+		ErrBadRequest(c, "Diastolic blood pressure must be non-negative")
+		return
+	}
+
 	// Add user_id to assessment
 	assessment := models.Assessment{
 		UserID:         userID,

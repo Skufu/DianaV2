@@ -122,14 +122,14 @@ cat frontend/test-results.json | jq '.suites[].specs[] | select(.ok == false)'
 
 ---
 
-### [ ] T005: Enhance Assessment Creation Tests
+### [x] T005: Enhance Assessment Creation Tests
 **Action**: Add real assessment creation tests with mock ML
 **Files Affected**: `frontend/e2e/assessment-creation.spec.js`
 **Tests to Add**:
 - [x] Create assessment with valid biomarkers → risk score returned
-- [ ] Create assessment with HbA1c > 15 → validation error
-- [ ] Create assessment with negative BMI → validation error
-- [ ] Create assessment with missing required fields → error
+- [x] Create assessment with HbA1c > 15 → validation error
+- [x] Create assessment with negative BMI → validation error
+- [x] Create assessment with missing required fields → error
 - [ ] Verify assessment appears in dashboard after creation
 - [ ] Verify assessment appears in trends after creation
 **Success Criteria**: Assessment creation errors surface properly
