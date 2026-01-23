@@ -28,13 +28,13 @@ func (h *CohortHandler) Register(rg *gin.RouterGroup) {
 // @Tags Insights
 // @Produce json
 // @Param groupBy query string false "Grouping parameter: cluster, risk_level, age_group, menopause_status" default(cluster)
-// @Success 200 {object} map[string]interface{}
+// @Success 200 {object} map[string]any
 // @Failure 500 {object} map[string]string
 // @Router /insights/cohort [get]
 func (h *CohortHandler) getCohortStats(c *gin.Context) {
 	groupBy := c.DefaultQuery("groupBy", "cluster")
 
-	var groups interface{}
+	var groups any
 	var err error
 
 	cohortRepo := h.store.Cohort()

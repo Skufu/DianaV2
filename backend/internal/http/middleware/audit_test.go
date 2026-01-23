@@ -186,7 +186,7 @@ func TestAuditLogger_CaptureRequestBody_SensitiveFields(t *testing.T) {
 			t.Fatal("expected audit_body to be set")
 		}
 
-		bodyMap, ok := body.(map[string]interface{})
+		bodyMap, ok := body.(map[string]any)
 		if !ok {
 			t.Fatal("expected audit_body to be map")
 		}

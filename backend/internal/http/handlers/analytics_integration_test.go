@@ -79,7 +79,7 @@ func TestCacheHitMissBehavior(t *testing.T) {
 		t.Error("Expected cache miss on first request, but miss count didn't increase")
 	}
 
-	var summary1 map[string]interface{}
+	var summary1 map[string]any
 	if err := json.Unmarshal(w1.Body.Bytes(), &summary1); err != nil {
 		t.Fatalf("Failed to parse first response: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestCacheHitMissBehavior(t *testing.T) {
 		t.Error("Expected cache hit on second request, but hit count didn't increase")
 	}
 
-	var summary2 map[string]interface{}
+	var summary2 map[string]any
 	if err := json.Unmarshal(w2.Body.Bytes(), &summary2); err != nil {
 		t.Fatalf("Failed to parse second response: %v", err)
 	}
@@ -190,7 +190,7 @@ func TestCacheInvalidation(t *testing.T) {
 		t.Fatalf("First request failed with status %d: %s", w1.Code, w1.Body.String())
 	}
 
-	var summary1 map[string]interface{}
+	var summary1 map[string]any
 	if err := json.Unmarshal(w1.Body.Bytes(), &summary1); err != nil {
 		t.Fatalf("Failed to parse first response: %v", err)
 	}
@@ -211,7 +211,7 @@ func TestCacheInvalidation(t *testing.T) {
 		t.Fatalf("Second request failed with status %d: %s", w2.Code, w2.Body.String())
 	}
 
-	var summary2 map[string]interface{}
+	var summary2 map[string]any
 	if err := json.Unmarshal(w2.Body.Bytes(), &summary2); err != nil {
 		t.Fatalf("Failed to parse second response: %v", err)
 	}
@@ -268,7 +268,7 @@ func TestCacheNilHandling(t *testing.T) {
 			t.Fatalf("Request %d failed with status %d: %s", i+1, w.Code, w.Body.String())
 		}
 
-		var summary map[string]interface{}
+		var summary map[string]any
 		if err := json.Unmarshal(w.Body.Bytes(), &summary); err != nil {
 			t.Fatalf("Failed to parse response on request %d: %v", i+1, err)
 		}
@@ -295,21 +295,22 @@ func getTestUserID(t *testing.T, pool *pgxpool.Pool, email string) int64 {
 
 func seedTestAssessments(t *testing.T, pool *pgxpool.Pool, userID int64, count int) {
 	t.Helper()
+	clusterNames := []string{"low_risk", "medium_risk", "high_risk"}
 	for i := 0; i < count; i++ {
 		_, err := pool.Exec(context.Background(), `
-			INSERT INTO assessments (user_id, hba1c, fbs, cholesterol, ldl, hdl, triglycerides, bmi, age, risk_score, cluster)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			INSERT INTO assessments (user_id, hba1c, fbs, cholesterol, ldl, hdl, triglycerides, bmi, risk_score, cluster)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 			ON CONFLICT DO NOTHING`,
 			userID, 6.0+float64(i)*0.1, 100+float64(i)*5, 200+float64(i)*10,
 			130+float64(i)*5, 50+float64(i)*2, 150+float64(i)*10,
-			25.0+float64(i), 45+float64(i), 0.5+float64(i)*0.1, i%3+1)
+			25.0+float64(i), 0.5+float64(i)*0.1, clusterNames[i%3])
 		if err != nil {
 			t.Fatalf("Failed to seed assessment %d: %v", i, err)
 		}
 	}
 }
 
-func jsonEqual(a, b map[string]interface{}) bool {
+func jsonEqual(a, b map[string]any) bool {
 	if len(a) != len(b) {
 		return false
 	}

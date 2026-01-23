@@ -296,6 +296,7 @@ const Education = () => {
                                             src={cluster.logo}
                                             alt={`${key} logo`}
                                             className="w-12 h-12 rounded-2xl object-cover"
+                                            loading="lazy"
                                         />
                                         <div>
                                             <h4 className="font-bold text-white">{key}</h4>

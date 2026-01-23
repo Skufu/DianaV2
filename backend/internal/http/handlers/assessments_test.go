@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/ml"
 	"github.com/skufu/DianaV2/backend/internal/models"
@@ -73,7 +74,7 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 			t.Fatalf("expected POST, got %s", r.Method)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"risk_cluster": "SIDD",
 			"risk_score":   87,
 		})
@@ -81,7 +82,7 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 	defer modelSrv.Close()
 
 	repo := &fakeAssessmentRepo{}
-	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), nil, "v1", "hash123")
+	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), nil, "v1", "hash123", getDefaultTestThresholds())
 
 	r := gin.New()
 	r.Use(mockAuthMiddleware())
@@ -111,7 +112,7 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 	defer modelSrv.Close()
 
 	repo := &fakeAssessmentRepo{}
-	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), nil, "v1", "hash123")
+	h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, ml.NewHTTPPredictor(modelSrv.URL, "v1", defaultTestTimeout), nil, "v1", "hash123", getDefaultTestThresholds())
 
 	r := gin.New()
 	r.Use(mockAuthMiddleware())
@@ -133,6 +134,30 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 }
 
 const defaultTestTimeout = 2 * time.Second
+
+func getDefaultTestThresholds() config.ClinicalThresholds {
+	return config.ClinicalThresholds{
+		HbA1cNormal:             5.7,
+		HbA1cPrediabetic:        6.5,
+		HbA1cDiabetic:           6.5,
+		FBSNormal:               100,
+		FBSPrediabetic:          126,
+		FBSDiabetic:             126,
+		BPSysNormal:             120,
+		BPSysElevated:           140,
+		BPDiaNormal:             80,
+		BMINormal:               25.0,
+		BMIOverweight:           30.0,
+		BMIObese:                30.0,
+		CholesterolHigh:         200,
+		CholesterolBorderline:   200,
+		LDLHigh:                 100,
+		LDLBorderline:           100,
+		HDLLow:                  40,
+		TriglyceridesHigh:       150,
+		TriglyceridesBorderline: 150,
+	}
+}
 
 type fakeStore struct {
 	repo        *fakeAssessmentRepo

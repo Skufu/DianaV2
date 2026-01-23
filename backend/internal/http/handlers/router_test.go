@@ -57,8 +57,8 @@ func seedTestUser(t *testing.T, pool *pgxpool.Pool, email, password string) {
 		t.Fatalf("hash err: %v", err)
 	}
 	_, err = pool.Exec(context.Background(), `
-		INSERT INTO users (email, password_hash, role)
-		VALUES ($1,$2,'clinician')
+		INSERT INTO users (email, password_hash, is_admin)
+		VALUES ($1,$2,false)
 		ON CONFLICT (email) DO NOTHING`, email, string(hash))
 	if err != nil {
 		t.Fatalf("seed user err: %v", err)
@@ -77,11 +77,15 @@ func getToken(t *testing.T, r http.Handler, email, password string) string {
 	if w.Code != 200 {
 		t.Fatalf("login failed code=%d body=%s", w.Code, w.Body.String())
 	}
-	var resp map[string]string
+	var resp map[string]any
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("parse token resp: %v", err)
 	}
-	return resp["token"]
+	accessToken, ok := resp["access_token"].(string)
+	if !ok {
+		t.Fatalf("no access_token in response: %v", resp)
+	}
+	return accessToken
 }
 
 func TestProtectedPatientsList(t *testing.T) {
@@ -135,7 +139,7 @@ func TestAssessmentsCreateValidation(t *testing.T) {
 	var pid int
 	_ = pool.QueryRow(ctx, `SELECT id FROM patients ORDER BY id DESC LIMIT 1`).Scan(&pid)
 
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"fbs":      130,
 		"hba1c":    6.8,
 		"activity": "Sedentary",
@@ -150,7 +154,7 @@ func TestAssessmentsCreateValidation(t *testing.T) {
 	if w.Code != 201 {
 		t.Fatalf("expected 201, got %d body=%s", w.Code, w.Body.String())
 	}
-	var resp map[string]interface{}
+	var resp map[string]any
 	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("parse resp err: %v", err)
 	}

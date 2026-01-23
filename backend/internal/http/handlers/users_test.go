@@ -251,7 +251,7 @@ func TestUsersHandler_CompleteOnboarding_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	var response map[string]any
 	err := json.NewDecoder(w.Body).Decode(&response)
 	assert.NoError(t, err)
 	assert.Equal(t, "onboarding completed", response["status"])
@@ -379,7 +379,7 @@ func TestUsersHandler_DeleteAccount_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	var response map[string]interface{}
+	var response map[string]any
 	err := json.NewDecoder(w.Body).Decode(&response)
 	assert.NoError(t, err)
 	assert.Equal(t, "account deleted", response["status"])

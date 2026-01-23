@@ -1,32 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { User, Calendar, Shield, Mail, Save, AlertTriangle, ArrowLeft, Plus } from 'lucide-react';
-import { getUserProfileApi, updateUserProfileApi, deleteAccountApi } from '../../api';
+import { useUserProfile, useUpdateProfile, useDeleteAccount } from '../../api';
 import AssessmentForm from './AssessmentForm';
 
-const UserProfile = ({ token, setActiveTab }) => {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
+const UserProfile = ({ setActiveTab }) => {
+  const { data: profileData = {}, isLoading, error, refetch } = useUserProfile();
+  const updateProfileMutation = useUpdateProfile();
+  const deleteAccountMutation = useDeleteAccount();
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAssessmentForm, setShowAssessmentForm] = useState(false);
   const [formData, setFormData] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      setLoading(true);
-      try {
-        const data = await getUserProfileApi();
-        setFormData(data || {});
-      } catch (err) {
-        setError('Failed to load profile');
-        console.error('Profile load error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadProfile();
-  }, [token]);
+  // Sync form data with profile data from React Query
+  useState(() => {
+    if (profileData && Object.keys(profileData).length > 0) {
+      setFormData(profileData);
+    }
+  }, [profileData]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -38,7 +30,6 @@ const UserProfile = ({ token, setActiveTab }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setError(null);
     try {
       const payload = {
@@ -49,13 +40,11 @@ const UserProfile = ({ token, setActiveTab }) => {
         family_history_diabetes: !!formData.family_history_diabetes,
       };
 
-      await updateUserProfileApi(payload);
+      await updateProfileMutation.mutateAsync(payload);
       setFormData(payload);
       alert('Profile updated successfully!');
     } catch (err) {
       setError(err.message || 'Failed to update profile');
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -64,16 +53,14 @@ const UserProfile = ({ token, setActiveTab }) => {
       return;
     }
     try {
-      await deleteAccountApi(token);
-      localStorage.removeItem('diana_token');
-      localStorage.removeItem('diana_refresh_token');
+      await deleteAccountMutation.mutateAsync();
       window.location.href = '/login';
     } catch (err) {
       alert('Failed to delete account. Please try again.');
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div className="text-center py-12 text-slate-400">Loading profile...</div>;
   }
 
@@ -103,7 +90,6 @@ const UserProfile = ({ token, setActiveTab }) => {
 
       {showAssessmentForm && (
         <AssessmentForm
-          token={token}
           onSubmit={() => {
             setShowAssessmentForm(false);
             setRefreshKey(prev => prev + 1);
@@ -349,11 +335,11 @@ const UserProfile = ({ token, setActiveTab }) => {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={saving}
+            disabled={updateProfileMutation.isPending}
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 rounded-xl font-semibold text-white transition-all disabled:opacity-50"
           >
             <Save size={20} />
-            {saving ? 'Saving...' : 'Save Changes'}
+            {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </form>

@@ -14,7 +14,7 @@ import (
 type Event struct {
 	ID    string
 	Event string
-	Data  interface{}
+	Data  any
 }
 
 type Broker struct {
@@ -73,7 +73,7 @@ func (b *Broker) ClientCount() int {
 	return len(b.clients)
 }
 
-func (b *Broker) PublishAuthEvent(eventType, email, ipAddress, userAgent string, success bool, metadata map[string]interface{}) {
+func (b *Broker) PublishAuthEvent(eventType, email, ipAddress, userAgent string, success bool, metadata map[string]any) {
 	event := Event{
 		ID:    time.Now().Format(time.RFC3339Nano),
 		Event: "auth_event",

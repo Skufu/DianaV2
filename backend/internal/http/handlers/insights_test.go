@@ -214,7 +214,7 @@ func TestInsightsHandler_ClusterDistribution_StoreError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
-	var response map[string]interface{}
+	var response map[string]any
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Contains(t, response, "code")
 	assert.Contains(t, response, "message")
@@ -231,7 +231,7 @@ func TestInsightsHandler_BiomarkerTrends_StoreError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
-	var response map[string]interface{}
+	var response map[string]any
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Contains(t, response, "code")
 	assert.Contains(t, response, "message")

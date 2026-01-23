@@ -9,9 +9,15 @@
    - Be testable independently (run tests for that specific file/module)
    - Be commitable independently (atomic commits)
    - Have a clear rollback strategy (git revert works cleanly)
-   - Rationale: Mass changes across multiple files create:
-     - Increased failure surface (one mistake breaks many files)
-     - Hard debugging (can't isolate which file caused the failure)
-     - Difficult rollback (must revert entire large change, losing good work)
-     - Long feedback loops (must complete all work before testing)
-   - Example: REQ-1.2 originally asked to replace 155+ error responses across all handlers in one task. This was broken down into 13 per-file tasks, each testable and commitable independently.
+    - Rationale: Mass changes across multiple files create:
+      - Increased failure surface (one mistake breaks many files)
+      - Hard debugging (can't isolate which file caused the failure)
+      - Difficult rollback (must revert entire large change, losing good work)
+      - Long feedback loops (must complete all work before testing)
+    - Example: REQ-1.2 originally asked to replace 155+ error responses across all handlers in one task. This was broken down into 13 per-file tasks, each testable and commitable independently.
+
+2. [2026-01-23] **Task List Synchronization Rule**: After successfully completing any task from task_list.md, you MUST:
+   - Mark the corresponding checkbox(es) as complete (change `- [ ]` to `- [x]`)
+   - Update progress tracking section at the bottom of task_list.md
+   - Do this BEFORE reporting task completion to the user
+   - Rationale: Ralph 1 completed `refresh_token_repo.go` successfully (86 lines, tests pass, build pass) but failed to update task_list.md line 399. This caused confusion about task status and wasted time re-analyzing completed work.

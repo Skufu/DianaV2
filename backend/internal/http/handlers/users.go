@@ -267,7 +267,7 @@ func (h *UsersHandler) GetTrends(c *gin.Context) {
 	cacheKey := fmt.Sprintf("trends:%d:%d", userClaims.UserID, months)
 
 	if h.cache != nil {
-		var cachedTrends []interface{}
+		var cachedTrends []any
 		if err := h.cache.Get(c.Request.Context(), cacheKey, &cachedTrends); err == nil {
 			c.JSON(http.StatusOK, cachedTrends)
 			return

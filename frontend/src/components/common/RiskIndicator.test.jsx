@@ -84,4 +84,32 @@ describe('RiskIndicator', () => {
     const clusterElements = container.querySelectorAll('.bg-gray-100');
     expect(clusterElements.length).toBeGreaterThan(0);
   });
+
+  it('updates correctly when riskScore changes', () => {
+    const { rerender } = render(<RiskIndicator riskScore={50} riskLevel="medium" />);
+    expect(screen.getByText('50')).toBeInTheDocument();
+
+    rerender(<RiskIndicator riskScore={75} riskLevel="high" />);
+    expect(screen.getByText('75')).toBeInTheDocument();
+    expect(screen.getByText('HIGH')).toBeInTheDocument();
+  });
+
+  it('updates correctly when riskLevel changes', () => {
+    const { rerender, container } = render(<RiskIndicator riskScore={50} riskLevel="low" />);
+    expect(container.querySelectorAll('.bg-green-100').length).toBeGreaterThan(0);
+
+    rerender(<RiskIndicator riskScore={50} riskLevel="high" />);
+    expect(container.querySelectorAll('.bg-red-100').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.bg-green-100').length).toBe(0);
+  });
+
+  it('updates correctly when cluster changes', () => {
+    const { rerender, container } = render(<RiskIndicator riskScore={50} riskLevel="medium" cluster="SIRD" />);
+    expect(screen.getByText('SIRD')).toBeInTheDocument();
+    expect(container.querySelectorAll('.bg-purple-100').length).toBeGreaterThan(0);
+
+    rerender(<RiskIndicator riskScore={50} riskLevel="medium" cluster="SIDD" />);
+    expect(screen.getByText('SIDD')).toBeInTheDocument();
+    expect(container.querySelectorAll('.bg-red-100').length).toBeGreaterThan(0);
+  });
 });

@@ -111,7 +111,7 @@ func TestAdminModelsHandler_ListModelRuns_Success(t *testing.T) {
 	assert.Equal(t, 10, response.PageSize)
 	assert.Equal(t, 3, response.TotalPages)
 
-	var dataMap []interface{}
+	var dataMap []any
 	dataBytes, _ := json.Marshal(response.Data)
 	_ = json.Unmarshal(dataBytes, &dataMap)
 	assert.Equal(t, 3, len(dataMap))
@@ -216,7 +216,7 @@ func TestAdminModelsHandler_ListModelRuns_StoreError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
-	var response map[string]interface{}
+	var response map[string]any
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, "INTERNAL_ERROR", response["code"])
 	assert.Equal(t, "Failed to fetch model runs", response["message"])
@@ -263,7 +263,7 @@ func TestAdminModelsHandler_GetActiveModel_NotFound(t *testing.T) {
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 
-	var response map[string]interface{}
+	var response map[string]any
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, "NOT_FOUND", response["code"])
 	assert.Equal(t, "model runs not found", response["message"])
@@ -281,7 +281,7 @@ func TestAdminModelsHandler_GetActiveModel_StoreError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
-	var response map[string]interface{}
+	var response map[string]any
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.Equal(t, "INTERNAL_ERROR", response["code"])
 	assert.Equal(t, "Failed to fetch active model", response["message"])

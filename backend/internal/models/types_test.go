@@ -21,7 +21,7 @@ func TestUserStructJSONSerialization(t *testing.T) {
 		data, err := json.Marshal(user)
 		assert.NoError(t, err, "JSON marshaling should succeed")
 
-		var result map[string]interface{}
+		var result map[string]any
 		err = json.Unmarshal(data, &result)
 		assert.NoError(t, err, "JSON unmarshaling should succeed")
 
