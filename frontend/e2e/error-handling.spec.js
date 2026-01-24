@@ -111,6 +111,16 @@ test.describe('Error Handling - Network Failures', () => {
   });
 
   test('Multiple API failures → all error states show correctly', async ({ page }) => {
+    // Mock both profile and assessments endpoints to fail
+    await page.route('**/users/me/profile', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+
+      return route.abort('failed');
+    });
+
     await page.route('**/users/me/assessments**', async route => {
       const request = route.request();
       if (request.method() === 'OPTIONS') {
@@ -131,6 +141,7 @@ test.describe('Error Handling - Network Failures', () => {
 
     await page.waitForTimeout(1000);
 
+    // Both error states should be visible
     const errorMessage = page.locator('text=Failed to load assessments');
     await expect(errorMessage).toBeVisible({ timeout: 5000 });
   });

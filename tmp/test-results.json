@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8315,
+                      "duration": 7987,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:21:40.100Z",
+                      "startTime": "2026-01-24T12:27:53.430Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -105,7 +105,7 @@
             },
             {
               "title": "500 Internal Server Error → error banner visible",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -118,48 +118,18 @@
                     {
                       "workerIndex": 1,
                       "parallelIndex": 1,
-                      "status": "failed",
-                      "duration": 1849,
-                      "error": {
-                        "message": "Error: page.reload: net::ERR_ABORTED; maybe frame was detached?\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n",
-                        "stack": "Error: page.reload: net::ERR_ABORTED; maybe frame was detached?\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js:87:16",
-                        "location": {
-                          "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                          "column": 16,
-                          "line": 87
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 85 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 86 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mreload()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m1000\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 90 |\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                            "column": 16,
-                            "line": 87
-                          },
-                          "message": "Error: page.reload: net::ERR_ABORTED; maybe frame was detached?\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n\n\n  85 |     });\n  86 |\n> 87 |     await page.reload();\n     |                ^\n  88 |\n  89 |     await page.waitForTimeout(1000);\n  90 |\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js:87:16"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 3032,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:21:40.094Z",
+                      "startTime": "2026-01-24T12:27:53.415Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\error-handling-Error-Handl-58b50-rror-→-error-banner-visible-chromium\\test-failed-1.png"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                        "column": 16,
-                        "line": 87
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "9f91e19d2968a941e6eb-6238c768a42cf4aee34e",
@@ -183,12 +153,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3347,
+                      "duration": 3387,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:21:40.108Z",
+                      "startTime": "2026-01-24T12:27:53.472Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -217,12 +187,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3304,
+                      "duration": 3017,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:21:40.113Z",
+                      "startTime": "2026-01-24T12:27:53.434Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -251,12 +221,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 5942,
+                      "duration": 5035,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:21:40.098Z",
+                      "startTime": "2026-01-24T12:27:53.422Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -266,7 +236,7 @@
               ],
               "id": "9f91e19d2968a941e6eb-ae52d2cd5841d36a90e4",
               "file": "error-handling.spec.js",
-              "line": 138,
+              "line": 149,
               "column": 3
             },
             {
@@ -281,7 +251,7 @@
                       "type": "skip",
                       "location": {
                         "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                        "line": 176,
+                        "line": 187,
                         "column": 8
                       }
                     }
@@ -299,13 +269,13 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:21:39.180Z",
+                      "startTime": "2026-01-24T12:27:52.470Z",
                       "annotations": [
                         {
                           "type": "skip",
                           "location": {
                             "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                            "line": 176,
+                            "line": 187,
                             "column": 8
                           }
                         }
@@ -318,7 +288,7 @@
               ],
               "id": "9f91e19d2968a941e6eb-ebb89f2a4787197d6813",
               "file": "error-handling.spec.js",
-              "line": 176,
+              "line": 187,
               "column": 8
             },
             {
@@ -337,12 +307,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 5236,
+                      "duration": 5307,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:21:40.099Z",
+                      "startTime": "2026-01-24T12:27:53.427Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -352,7 +322,7 @@
               ],
               "id": "9f91e19d2968a941e6eb-145bfab9d534d820de79",
               "file": "error-handling.spec.js",
-              "line": 200,
+              "line": 211,
               "column": 3
             },
             {
@@ -367,7 +337,7 @@
                       "type": "skip",
                       "location": {
                         "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                        "line": 279,
+                        "line": 290,
                         "column": 8
                       }
                     }
@@ -385,13 +355,13 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:21:42.259Z",
+                      "startTime": "2026-01-24T12:27:56.572Z",
                       "annotations": [
                         {
                           "type": "skip",
                           "location": {
                             "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                            "line": 279,
+                            "line": 290,
                             "column": 8
                           }
                         }
@@ -404,7 +374,7 @@
               ],
               "id": "9f91e19d2968a941e6eb-d257539dcefb5502b54d",
               "file": "error-handling.spec.js",
-              "line": 279,
+              "line": 290,
               "column": 8
             }
           ]
@@ -414,11 +384,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T12:21:39.127Z",
-    "duration": 9560.48,
-    "expected": 5,
+    "startTime": "2026-01-24T12:27:52.414Z",
+    "duration": 9248.161999999998,
+    "expected": 6,
     "skipped": 2,
-    "unexpected": 1,
+    "unexpected": 0,
     "flaky": 0
   }
 }
