@@ -114,13 +114,10 @@ test.describe('Trends Page', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    const timeButtons = page.locator('button').filter(async (btn) => {
-      const text = await btn.textContent();
-      return ['1 Month', '3 Months', '6 Months', '1 Year', '2 Years', '5 Years', 'All Time'].some(label => text?.includes(label));
-    });
+    const timeButtons = page.locator('button').filter({ hasText: /(1 Month|3 Months|6 Months|1 Year|2 Years|5 Years|All Time)/ });
     await expect(timeButtons.first()).toBeVisible();
 
-    const threeMonthsButton = page.locator('button:has-text("3 Months")');
+    const threeMonthsButton = page.getByRole('button', { name: '3 Months' });
     await expect(threeMonthsButton).toBeVisible();
     await threeMonthsButton.click();
 
