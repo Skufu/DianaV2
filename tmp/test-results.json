@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 6
+      "actualWorkers": 5
     },
     "preserveOutput": "always",
     "reporter": [
@@ -30,7 +30,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 5
         },
         "id": "chromium",
         "name": "chromium",
@@ -57,20 +57,20 @@
   },
   "suites": [
     {
-      "title": "export.spec.js",
-      "file": "export.spec.js",
+      "title": "trends.spec.js",
+      "file": "trends.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Export Page Tests",
-          "file": "export.spec.js",
-          "line": 129,
+          "title": "Trends Page",
+          "file": "trends.spec.js",
+          "line": 79,
           "column": 6,
           "specs": [
             {
-              "title": "should navigate to export tab",
+              "title": "should navigate to trends tab",
               "ok": true,
               "tags": [],
               "tests": [
@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2070,
+                      "duration": 4668,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:51:45.323Z",
+                      "startTime": "2026-01-24T13:04:30.642Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -98,13 +98,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "f5d53b089fdfe9adefb4-7f7990b3e648345bce23",
-              "file": "export.spec.js",
-              "line": 148,
+              "id": "8b9ad07d54debc77ba4f-4aad3fbed3342fb51842",
+              "file": "trends.spec.js",
+              "line": 91,
               "column": 3
             },
             {
-              "title": "should display export options visible",
+              "title": "should render charts with mock data",
               "ok": true,
               "tags": [],
               "tests": [
@@ -119,12 +119,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 2333,
+                      "duration": 4547,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:51:45.322Z",
+                      "startTime": "2026-01-24T13:04:30.635Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -132,13 +132,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "f5d53b089fdfe9adefb4-7de21dc4ed5e4448997f",
-              "file": "export.spec.js",
-              "line": 159,
+              "id": "8b9ad07d54debc77ba4f-583c35e4c2e8cb7b3fab",
+              "file": "trends.spec.js",
+              "line": 103,
               "column": 3
             },
             {
-              "title": "should display filter options",
+              "title": "should work with time range selector",
               "ok": true,
               "tags": [],
               "tests": [
@@ -153,12 +153,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 1909,
+                      "duration": 5683,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:51:45.327Z",
+                      "startTime": "2026-01-24T13:04:30.658Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -166,13 +166,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "f5d53b089fdfe9adefb4-46cbd95647557d8a772f",
-              "file": "export.spec.js",
-              "line": 190,
+              "id": "8b9ad07d54debc77ba4f-27fa15bfa844edfd27a5",
+              "file": "trends.spec.js",
+              "line": 112,
               "column": 3
             },
             {
-              "title": "should show data privacy notice",
+              "title": "should navigate from dashboard to trends via quick action button",
               "ok": true,
               "tags": [],
               "tests": [
@@ -187,12 +187,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 1909,
+                      "duration": 4508,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:51:45.334Z",
+                      "startTime": "2026-01-24T13:04:30.646Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -200,13 +200,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "f5d53b089fdfe9adefb4-386709d98ee0afd4b10e",
-              "file": "export.spec.js",
-              "line": 208,
+              "id": "8b9ad07d54debc77ba4f-c996d3c0d93d9826a494",
+              "file": "trends.spec.js",
+              "line": 133,
               "column": 3
             },
             {
-              "title": "should generate PDF report and trigger download",
+              "title": "should display loading state while fetching data",
               "ok": true,
               "tags": [],
               "tests": [
@@ -221,12 +221,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 4392,
+                      "duration": 3096,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:51:45.339Z",
+                      "startTime": "2026-01-24T13:04:30.645Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -234,43 +234,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "f5d53b089fdfe9adefb4-b3539a9e21ff22ec4c18",
-              "file": "export.spec.js",
-              "line": 219,
-              "column": 3
-            },
-            {
-              "title": "should show appropriate message when no data to export",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
-                      "status": "passed",
-                      "duration": 1670,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T12:51:45.346Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "f5d53b089fdfe9adefb4-92db4cd749f3efd594e5",
-              "file": "export.spec.js",
-              "line": 248,
+              "id": "8b9ad07d54debc77ba4f-7841e69b8555543ca0ee",
+              "file": "trends.spec.js",
+              "line": 146,
               "column": 3
             }
           ]
@@ -280,9 +246,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T12:51:44.366Z",
-    "duration": 5649.012000000001,
-    "expected": 6,
+    "startTime": "2026-01-24T13:04:29.748Z",
+    "duration": 6816.118,
+    "expected": 5,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0
