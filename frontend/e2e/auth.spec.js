@@ -134,7 +134,6 @@ test.describe('Authentication Flow', () => {
     await page.click(SELECTORS.loginButton);
     await page.waitForTimeout(1000);
 
-    // Wait for any error element to appear
     await expect(page.locator('text=/Invalid|Error|Failed|Credentials|Server|Unavailable/i')).toBeVisible({ timeout: 5000 });
   });
 
