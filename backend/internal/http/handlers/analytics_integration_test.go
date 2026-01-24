@@ -51,7 +51,7 @@ func TestCacheHitMissBehavior(t *testing.T) {
 		ModelVersion:  "test-model",
 		ExportMaxRows: 100,
 	}
-	r := appRouter.New(cfg, st, testCache)
+	r, _ := appRouter.New(cfg, st, testCache)
 
 	testEmail := "cache-test@example.com"
 	cacheKey := fmt.Sprintf("summary:%d", getTestUserID(t, pool, testEmail))
@@ -172,7 +172,7 @@ func TestCacheInvalidation(t *testing.T) {
 		ModelVersion:  "test-model",
 		ExportMaxRows: 100,
 	}
-	r := appRouter.New(cfg, st, testCache)
+	r, _ := appRouter.New(cfg, st, testCache)
 
 	testEmail := "cache-invalidation@example.com"
 	seedTestUser(t, pool, testEmail, "testpassword123")
@@ -249,7 +249,7 @@ func TestCacheNilHandling(t *testing.T) {
 		ModelVersion:  "test-model",
 		ExportMaxRows: 100,
 	}
-	r := appRouter.New(cfg, st, nil)
+	r, _ := appRouter.New(cfg, st, nil)
 
 	testEmail := "no-cache-test@example.com"
 	seedTestUser(t, pool, testEmail, "testpassword123")

@@ -35,10 +35,27 @@ const Insights = ({ token, patients = [] }) => {
       setLoading(true);
       setError(null);
       try {
-        const [c, t] = await Promise.all([
+        const [cResult, tResult] = await Promise.allSettled([
           fetchClusterDistributionApi(token),
           fetchTrendInsightsApi(token)
         ]);
+
+        const c = cResult.status === 'fulfilled' ? cResult.value : [];
+        const t = tResult.status === 'fulfilled' ? tResult.value : [];
+
+        // Log specific errors
+        if (cResult.status === 'rejected') {
+          console.error('Cluster distribution failed:', cResult.reason);
+        }
+        if (tResult.status === 'rejected') {
+          console.error('Biomarker trends failed:', tResult.reason);
+        }
+
+        // Only set a global error if EVERYTHING critical fails
+        if (cResult.status === 'rejected' && tResult.status === 'rejected') {
+          setError('Failed to load insights data');
+        }
+
         setClusters(c || []);
         setTrends(t || []);
         setHasLoadedOnce(true);
@@ -52,6 +69,7 @@ const Insights = ({ token, patients = [] }) => {
           setAllAssessments(flatAssessments);
         }
       } catch (err) {
+        console.error('Unexpected error loading insights:', err);
         setError('Failed to load insights');
       } finally {
         setLoading(false);
