@@ -21,8 +21,9 @@ test.describe('Error Handling - Network Failures', () => {
         headers: corsHeaders,
         contentType: 'application/json',
         body: JSON.stringify({
-          name: 'E2E Test User',
+          id: 'e2e-user-id',
           email: TEST_USER.email,
+          role: 'user',
           onboarding_completed: true,
         }),
       });
@@ -32,9 +33,15 @@ test.describe('Error Handling - Network Failures', () => {
     await page.evaluate(({ token }) => {
       localStorage.setItem('diana_token', token);
       localStorage.setItem('diana_refresh_token', 'test.refresh.token');
-      window.location.reload();
     }, { token: mockToken });
+    await page.reload();
     await page.waitForLoadState('networkidle');
+  });
+
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.clear();
+    });
   });
 
   test('API timeout → loading then error message', async ({ page }) => {

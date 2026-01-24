@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 4
+      "actualWorkers": 3
     },
     "preserveOutput": "always",
     "reporter": [
@@ -30,7 +30,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 4
+          "actualWorkers": 3
         },
         "id": "chromium",
         "name": "chromium",
@@ -57,20 +57,20 @@
   },
   "suites": [
     {
-      "title": "auth-errors.spec.js",
-      "file": "auth-errors.spec.js",
+      "title": "assessment.spec.js",
+      "file": "assessment.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Authorization Error Handling",
-          "file": "auth-errors.spec.js",
-          "line": 10,
+          "title": "Profile Navigation Flow",
+          "file": "assessment.spec.js",
+          "line": 4,
           "column": 6,
           "specs": [
             {
-              "title": "should redirect to login when access token expires",
+              "title": "should navigate to profile tab",
               "ok": true,
               "tags": [],
               "tests": [
@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2097,
+                      "duration": 2018,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T09:09:10.890Z",
+                      "startTime": "2026-01-24T10:01:28.886Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -98,14 +98,14 @@
                   "status": "expected"
                 }
               ],
-              "id": "e5a2193e4067c34930f0-3eec17412a0416da97ce",
-              "file": "auth-errors.spec.js",
-              "line": 11,
-              "column": 3
+              "id": "61aed3fec897fba91508-61b9450097d1852a1a77",
+              "file": "assessment.spec.js",
+              "line": 27,
+              "column": 5
             },
             {
-              "title": "should redirect to login with invalid token format",
-              "ok": true,
+              "title": "should display personal info inputs",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -118,28 +118,63 @@
                     {
                       "workerIndex": 1,
                       "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 3125,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 6955,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[name=\"name\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[name=\"name\"]')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[name=\"name\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[name=\"name\"]')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:39:58",
+                        "location": {
+                          "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
+                          "column": 58,
+                          "line": 39
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 37 |\u001b[39m     test(\u001b[32m'should display personal info inputs'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 38 |\u001b[39m         \u001b[36mawait\u001b[39m openProfileTab(page)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 39 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"name\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 40 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"email\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 41 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"dob\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
+                            "column": 58,
+                            "line": 39
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[name=\"name\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[name=\"name\"]')\u001b[22m\n\n\n  37 |     test('should display personal info inputs', async ({ page }) => {\n  38 |         await openProfileTab(page);\n> 39 |         await expect(page.locator('input[name=\"name\"]')).toBeVisible();\n     |                                                          ^\n  40 |         await expect(page.locator('input[name=\"email\"]')).toBeVisible();\n  41 |         await expect(page.locator('input[name=\"dob\"]')).toBeVisible();\n  42 |     });\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:39:58"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T09:09:10.909Z",
+                      "startTime": "2026-01-24T10:01:28.897Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\assessment-Profile-Navigat-cad70-isplay-personal-info-inputs-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\assessment-Profile-Navigat-cad70-isplay-personal-info-inputs-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
+                        "column": 58,
+                        "line": 39
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "e5a2193e4067c34930f0-95a38864b0109a78c0eb",
-              "file": "auth-errors.spec.js",
-              "line": 61,
-              "column": 3
+              "id": "61aed3fec897fba91508-2bb192baf9f30c6b30e0",
+              "file": "assessment.spec.js",
+              "line": 37,
+              "column": 5
             },
             {
-              "title": "User accessing admin route → forbidden message or redirect",
-              "ok": true,
+              "title": "should render profile sections",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -152,58 +187,59 @@
                     {
                       "workerIndex": 2,
                       "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 4174,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 7074,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Menopausal Health')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Menopausal Health')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Menopausal Health')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Menopausal Health')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:50:70",
+                        "location": {
+                          "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
+                          "column": 70,
+                          "line": 50
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 48 |\u001b[39m             \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m nextButton\u001b[33m.\u001b[39misVisible()\u001b[33m.\u001b[39m\u001b[36mcatch\u001b[39m(() \u001b[33m=>\u001b[39m \u001b[36mfalse\u001b[39m)) {\n \u001b[90m 49 |\u001b[39m                 \u001b[36mawait\u001b[39m nextButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 50 |\u001b[39m                 \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Menopausal Health'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 51 |\u001b[39m                 \u001b[36mawait\u001b[39m nextButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 52 |\u001b[39m                 \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Medical History'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 53 |\u001b[39m                 \u001b[36mawait\u001b[39m nextButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
+                            "column": 70,
+                            "line": 50
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Menopausal Health')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Menopausal Health')\u001b[22m\n\n\n  48 |             if (await nextButton.isVisible().catch(() => false)) {\n  49 |                 await nextButton.click();\n> 50 |                 await expect(page.locator('text=Menopausal Health')).toBeVisible();\n     |                                                                      ^\n  51 |                 await nextButton.click();\n  52 |                 await expect(page.locator('text=Medical History')).toBeVisible();\n  53 |                 await nextButton.click();\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:50:70"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T09:09:10.904Z",
+                      "startTime": "2026-01-24T10:01:28.892Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\assessment-Profile-Navigat-9d41c-uld-render-profile-sections-chromium\\test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\assessment-Profile-Navigat-9d41c-uld-render-profile-sections-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
+                        "column": 70,
+                        "line": 50
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "e5a2193e4067c34930f0-08c262cc7aed6f538255",
-              "file": "auth-errors.spec.js",
-              "line": 172,
-              "column": 3
-            },
-            {
-              "title": "should fully logout with stale refresh token",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 8108,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:09:10.889Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "e5a2193e4067c34930f0-952f6d3e3feb21267d18",
-              "file": "auth-errors.spec.js",
-              "line": 292,
-              "column": 3
+              "id": "61aed3fec897fba91508-d347dc412a026c133c4e",
+              "file": "assessment.spec.js",
+              "line": 44,
+              "column": 5
             }
           ]
         }
@@ -212,11 +248,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T09:09:10.086Z",
-    "duration": 9082.232,
-    "expected": 4,
+    "startTime": "2026-01-24T10:01:28.108Z",
+    "duration": 8025.357,
+    "expected": 1,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 2,
     "flaky": 0
   }
 }

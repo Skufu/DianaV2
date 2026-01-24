@@ -58,7 +58,7 @@ const App = () => {
 
   // React Query hooks
   const queryClient = useQueryClient();
-  const { data: profile, isLoading: profileLoading, error: profileError } = useUserProfile();
+  const { data: profile, isLoading: profileLoading, error: profileError } = useUserProfile(token);
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
 
@@ -74,6 +74,15 @@ const App = () => {
       document.body.classList.remove('low-perf', 'reduced-motion');
     };
   }, [disableHeavyEffects, performanceTier]);
+
+  // Restore authentication state from localStorage on mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem('diana_token');
+    if (storedToken) {
+      setToken(storedToken);
+      setIsAuthenticated(true);
+    }
+  }, []);
 
   const [loginError, setLoginError] = useState(null);
 
