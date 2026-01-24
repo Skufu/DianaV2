@@ -48,7 +48,7 @@
 - [x] Fix navigation.spec.js:163 - should open health trends and show empty state
 - [x] Fix navigation.spec.js:170 - should show profile error state when profile API fails
 - [x] Fix navigation.spec.js:192 - should render dashboard error state when assessments fail
-- [ ] Fix navigation.spec.js:203 - should send user to onboarding when profile is incomplete
+- [x] Fix navigation.spec.js:208 - should send user to onboarding when profile is incomplete
 
 ---
 
