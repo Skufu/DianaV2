@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1136,
+                      "duration": 1162,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:55:31.515Z",
+                      "startTime": "2026-01-24T11:59:53.760Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -119,12 +119,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1496,
+                      "duration": 1647,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:55:31.508Z",
+                      "startTime": "2026-01-24T11:59:53.756Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -139,7 +139,7 @@
             },
             {
               "title": "should navigate to education and export screens",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -152,53 +152,18 @@
                     {
                       "workerIndex": 2,
                       "parallelIndex": 2,
-                      "status": "failed",
-                      "duration": 2109,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Export Data')\nExpected: visible\nError: strict mode violation: locator('text=Export Data') resolved to 2 elements:\n    1) <span class=\"hidden lg:block font-medium\">Export Data</span> aka getByRole('button', { name: 'Export Data' })\n    2) <h2 class=\"text-3xl font-bold text-white\">Export Data</h2> aka getByRole('heading', { name: 'Export Data' })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Export Data')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Export Data')\nExpected: visible\nError: strict mode violation: locator('text=Export Data') resolved to 2 elements:\n    1) <span class=\"hidden lg:block font-medium\">Export Data</span> aka getByRole('button', { name: 'Export Data' })\n    2) <h2 class=\"text-3xl font-bold text-white\">Export Data</h2> aka getByRole('heading', { name: 'Export Data' })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Export Data')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js:160:52",
-                        "location": {
-                          "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js",
-                          "column": 52,
-                          "line": 160
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 158 |\u001b[39m\n \u001b[90m 159 |\u001b[39m     \u001b[36mawait\u001b[39m sidebar\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"Export Data\")'\u001b[39m)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 160 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Export Data'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 161 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 162 |\u001b[39m\n \u001b[90m 163 |\u001b[39m   test(\u001b[32m'should open health trends and show empty state'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js",
-                            "column": 52,
-                            "line": 160
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Export Data')\nExpected: visible\nError: strict mode violation: locator('text=Export Data') resolved to 2 elements:\n    1) <span class=\"hidden lg:block font-medium\">Export Data</span> aka getByRole('button', { name: 'Export Data' })\n    2) <h2 class=\"text-3xl font-bold text-white\">Export Data</h2> aka getByRole('heading', { name: 'Export Data' })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Export Data')\u001b[22m\n\n\n  158 |\n  159 |     await sidebar.locator('button:has-text(\"Export Data\")').click();\n> 160 |     await expect(page.locator('text=Export Data')).toBeVisible();\n      |                                                    ^\n  161 |   });\n  162 |\n  163 |   test('should open health trends and show empty state', async ({ page }) => {\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js:160:52"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 6987,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:55:31.526Z",
+                      "startTime": "2026-01-24T11:59:53.775Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\navigation-Navigation-shou-0485d-ducation-and-export-screens-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\navigation-Navigation-shou-0485d-ducation-and-export-screens-chromium\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js",
-                        "column": 52,
-                        "line": 160
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "ce7c070a851ea64285fd-9ca16d6b3be74aee13e4",
@@ -222,12 +187,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 1873,
+                      "duration": 2003,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:55:31.510Z",
+                      "startTime": "2026-01-24T11:59:53.757Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -256,12 +221,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 2628,
+                      "duration": 2899,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:55:31.533Z",
+                      "startTime": "2026-01-24T11:59:53.789Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -290,12 +255,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 3373,
+                      "duration": 3768,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:55:31.530Z",
+                      "startTime": "2026-01-24T11:59:53.775Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -324,12 +289,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1106,
+                      "duration": 1171,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:55:32.827Z",
+                      "startTime": "2026-01-24T11:59:55.135Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -349,11 +314,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T11:55:30.584Z",
-    "duration": 4558.1810000000005,
-    "expected": 6,
+    "startTime": "2026-01-24T11:59:52.797Z",
+    "duration": 8174.882,
+    "expected": 7,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 0,
     "flaky": 0
   }
 }
