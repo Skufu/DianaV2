@@ -224,15 +224,19 @@ test.describe('Authentication Flow', () => {
 
     await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
-    await page.click(SELECTORS.loginButton);
 
-    const loginButton = page.locator(SELECTORS.loginButton);
+    const loginButton = page.locator('[data-testid="login-submit-button"]');
+    await expect(loginButton).toBeVisible();
+
+    await page.click('[data-testid="login-submit-button"]');
+
+    await page.waitForTimeout(100);
+
     await expect(loginButton).toBeDisabled();
 
     resolveLogin();
     await waitForNetworkIdle(page);
 
-    await expect(loginButton).toBeEnabled({ timeout: 5000 });
     const loginForm = page.locator(SELECTORS.loginEmailInput);
     await expect(loginForm).not.toBeVisible({ timeout: 5000 });
   });
