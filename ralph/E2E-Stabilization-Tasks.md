@@ -69,7 +69,7 @@
 - [x] Fix export.spec.js:190 - should display filter options
 - [x] Fix export.spec.js:208 - should show data privacy notice
 - [x] Fix export.spec.js:219 - should generate PDF report and trigger download
-- [ ] Fix export.spec.js:248 - should show appropriate message when no data to export
+- [x] Fix export.spec.js:248 - should show appropriate message when no data to export
 
 ---
 
