@@ -6,7 +6,10 @@ import { useAssessments } from '../../api';
 
 const Dashboard_user = ({ userId, setActiveTab }) => {
   const queryClient = useQueryClient();
-  const { data: assessments = [], isLoading, error, refetch } = useAssessments();
+  const { data: rawAssessments, isLoading, error, refetch } = useAssessments();
+
+  // Ensure assessments is always an array (API may return null)
+  const assessments = rawAssessments ?? [];
 
   const latestAssessment = useMemo(() => {
     return assessments && assessments.length > 0 ? assessments[0] : null;
@@ -85,10 +88,10 @@ const Dashboard_user = ({ userId, setActiveTab }) => {
                 {latestAssessment?.risk_score >= 67
                   ? 'High Risk'
                   : latestAssessment?.risk_score >= 34
-                  ? 'Moderate Risk'
-                  : latestAssessment
-                  ? 'Low Risk'
-                  : 'No Assessment'}
+                    ? 'Moderate Risk'
+                    : latestAssessment
+                      ? 'Low Risk'
+                      : 'No Assessment'}
               </div>
               <div className="text-sm text-slate-400 mt-1">
                 {latestAssessment ? 'Based on latest results' : 'Log your first assessment'}
