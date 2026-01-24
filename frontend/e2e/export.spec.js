@@ -151,9 +151,9 @@ test.describe('Export Page Tests', () => {
 
     await exportTab.click();
 
-    await expect(page.locator('text=Export Data')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('h2:has-text("Export Data")')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('text=Data Management')).toBeVisible();
-    await expect(page.locator('text=Filter Options')).toBeVisible();
+    await expect(page.locator('h3:has-text("Filter Options")')).toBeVisible();
   });
 
   test('should display export options visible', async ({ page }) => {
@@ -251,7 +251,7 @@ test.describe('Export Page Tests', () => {
 
     await exportTab.click();
 
-    await expect(page.locator('text=Export Data')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('h2:has-text("Export Data")')).toBeVisible({ timeout: 5000 });
 
     await expect(page.locator('text=Export Patient Data')).toBeVisible();
     await expect(page.locator('text=Patients Data (CSV)')).toBeVisible();
