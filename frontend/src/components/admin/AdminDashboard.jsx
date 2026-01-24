@@ -43,8 +43,8 @@ const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'
 const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
   const animateCharts = useMemo(() => shouldAnimateCharts(), []);
 
-  const { data: dashboardData, isLoading, error } = useAdminDashboard();
-  const { data: clinicsData } = useClinicComparison();
+  const { data: dashboardData, isLoading, error } = useAdminDashboard({ enabled: !!token });
+  const { data: clinicsData } = useClinicComparison({ enabled: !!token });
   const clinics = clinicsData ?? [];
 
   if (userRole !== 'admin') {
@@ -89,7 +89,13 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
   };
 
   const renderOverview = () => {
-    if (isLoading) {
+    // If we have a token and data is loading, show spinner
+    // If we don't have a token yet, we might be in a transitional state (handled by App.jsx usually),
+    // but we shouldn't block rendering if we just want to show the shell.
+    // However, for data-dependent views, we do need data.
+    // React Query's isLoading is true for initial fetch. isPending is better in v5.
+    // Assuming v4/v5, safely check loading state only when we expect it to load.
+    if (isLoading && token) {
       return <LoadingSpinner />;
     }
 

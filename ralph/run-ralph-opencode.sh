@@ -22,8 +22,8 @@ done
 # Configuration (paths relative to project root)
 RALPH_DIR="ralph"
 CONTEXT_PIN="$RALPH_DIR/context_pin.md"
-PRD_FILE="$RALPH_DIR/PRD-E2E-Testing.md"
-TASK_FILE="$RALPH_DIR/task_list.md"
+PRD_FILE="$RALPH_DIR/E2E-Stabilization-PRD.md"
+TASK_FILE="$RALPH_DIR/E2E-Stabilization-Tasks.md"
 ERROR_LOG="$RALPH_DIR/error_log.txt"
 SYSTEM_RULES="$RALPH_DIR/system_rules.md"
 LOCK_FILE="$RALPH_DIR/.ralph.lock"
@@ -136,6 +136,55 @@ get_task_line() { grep -nEi "^\- ?\[ \]" "$TASK_FILE" 2>/dev/null | head -1 | cu
 get_task_text() { sed -n "${1}p" "$TASK_FILE" 2>/dev/null; }
 
 # ─────────────────────────────────────────────────────────────────
+# TEST EXTRACTION & VERIFICATION (NEW: Closed-loop ground truth)
+# ─────────────────────────────────────────────────────────────────
+FRONTEND_DIR="frontend"
+TEST_RESULTS="$TEMP_DIR/test-results.json"
+
+# Extract test file name from task text (e.g., "Fix auth.spec.js" -> "auth.spec.js")
+extract_test_file() {
+    local task="$1"
+    echo "$task" | grep -oE '[a-zA-Z0-9_-]+\.spec\.(js|ts)' | head -1
+}
+
+# Run a specific test file and return exit code (0=pass, non-zero=fail)
+run_test() {
+    local test_file="$1"
+    if [ -z "$test_file" ]; then
+        echo "⚠️ No test file detected in task"
+        return 2  # Skip - no test to run
+    fi
+    
+    local test_path="$FRONTEND_DIR/e2e/$test_file"
+    if [ ! -f "$test_path" ]; then
+        echo "⚠️ Test file not found: $test_path"
+        return 2
+    fi
+    
+    echo "🧪 Running: npx playwright test $test_file"
+    cd "$FRONTEND_DIR"
+    npx playwright test "$test_file" --reporter=json > "../$TEST_RESULTS" 2>&1
+    local exit_code=$?
+    cd "$PROJECT_ROOT"
+    
+    if [ $exit_code -eq 0 ]; then
+        echo "✅ Test PASSED"
+    else
+        local failed=$(grep -o '"status":"failed"' "../$TEST_RESULTS" 2>/dev/null | wc -l)
+        echo "❌ Test FAILED ($failed failures)"
+    fi
+    return $exit_code
+}
+
+# Get failure summary from JSON results
+get_failure_summary() {
+    if [ -f "$TEST_RESULTS" ]; then
+        # Extract first error message
+        grep -oP '"message":"[^"]*"' "$TEST_RESULTS" 2>/dev/null | head -3 | sed 's/"message":"//g' | sed 's/"//g'
+    fi
+}
+
+# ─────────────────────────────────────────────────────────────────
 # ROLE SWITCHING
 # ─────────────────────────────────────────────────────────────────
 get_role() {
@@ -188,40 +237,67 @@ for ((i=1; i<=ITERATIONS; i++)); do
     role=$(get_role "$task_text")
     echo "📋 Line $task_line: ${task_text:0:70}..."
     
-    before=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
+    # Extract test file from task for verification
+    test_file=$(extract_test_file "$task_text")
+    
+    # Run test BEFORE to establish baseline (optional but useful for tracking)
+    if [ -n "$test_file" ]; then
+        echo "📊 Pre-check: Testing $test_file"
+        run_test "$test_file"
+        pre_status=$?
+    else
+        pre_status=2  # No test file = skip verification
+    fi
     
     for ((r=1; r<=MAX_RETRIES; r++)); do
         echo "👷 Attempt $r/$MAX_RETRIES"
         
+        # Include test failure info if available
+        failure_context=""
+        if [ -f "$TEST_RESULTS" ] && [ -n "$test_file" ]; then
+            failure_context="Recent test failures: $(get_failure_summary)"
+        fi
+        
         opencode run "$role
 Read: @$CONTEXT_PIN, @$SYSTEM_RULES, @$PRD_FILE, @$TASK_FILE
 Complete this task: '$task_text'
-Run tests. Mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_DIR/out.txt" || true
+$failure_context
+Fix the code, then mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_DIR/out.txt" || true
         
-        after=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
-        
-        if [ "$after" -gt "$before" ]; then
-            echo "✅ Task completed"
-            # Conventional commit format - detect type from task text
-            commit_type="chore"
-            [[ "$task_text" =~ [Tt]est ]] && commit_type="test"
-            [[ "$task_text" =~ [Ff]ix|[Bb]ug|[Ee]rror ]] && commit_type="fix"
-            [[ "$task_text" =~ [Aa]dd|[Ii]mplement|[Cc]reate ]] && commit_type="feat"
-            [[ "$task_text" =~ [Rr]efactor|[Ss]plit|[Mm]ove ]] && commit_type="refactor"
-            [[ "$task_text" =~ [Dd]oc|README ]] && commit_type="docs"
-            [[ "$task_text" =~ [Ss]ecurity|[Aa]uth|[Jj]wt ]] && commit_type="fix"
+        # ═══════════════════════════════════════════════════════════════
+        # GROUND TRUTH VERIFICATION: Run the actual test
+        # ═══════════════════════════════════════════════════════════════
+        if [ -n "$test_file" ]; then
+            echo "🔍 Verifying fix with actual test..."
+            run_test "$test_file"
+            post_status=$?
             
-            # Clean up any problematic 'nul' files (Windows reserved name issue)
-            find . -name "nul" -type f -delete 2>/dev/null || true
-            rm -rf ralph/tmp/* 2>/dev/null || true
-            
-            # Git commit with explicit error handling
-            if git add -A 2>&1; then
-                git commit -m "$commit_type: ${task_text:5:70}" --no-verify 2>/dev/null && echo "📝 Committed" || echo "📝 No changes to commit"
+            if [ $post_status -eq 0 ]; then
+                echo "✅ VERIFIED: Test actually passes now!"
+                # Mark as complete (in case AI didn't)
+                sed -i "${task_line}s/\[ \]/[x]/" "$TASK_FILE" 2>/dev/null || true
+                
+                # Commit
+                commit_type="fix"
+                [[ "$task_text" =~ [Tt]est ]] && commit_type="test"
+                find . -name "nul" -type f -delete 2>/dev/null || true
+                rm -rf ralph/tmp/* 2>/dev/null || true
+                git add -A 2>&1 && git commit -m "$commit_type: ${task_text:5:70}" --no-verify 2>/dev/null && echo "📝 Committed" || echo "📝 No changes"
+                break
             else
-                echo "⚠️ Git add failed - will retry next iteration"
+                echo "⚠️ Test still fails after AI fix attempt $r"
             fi
-            break
+        else
+            # No test file to verify - fall back to checkbox detection
+            after=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
+            if [ "$after" -gt "$before" ]; then
+                echo "✅ Task marked complete (no test verification)"
+                commit_type="chore"
+                [[ "$task_text" =~ [Ff]ix ]] && commit_type="fix"
+                find . -name "nul" -type f -delete 2>/dev/null || true
+                git add -A 2>&1 && git commit -m "$commit_type: ${task_text:5:70}" --no-verify 2>/dev/null && echo "📝 Committed" || true
+                break
+            fi
         fi
         
         if grep -qi "BLOCKED" "$TEMP_DIR/out.txt"; then
@@ -229,12 +305,15 @@ Run tests. Mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_DIR/out.t
             break
         fi
         
-        # Escalate to Ralph 2
-        echo "👔 Ralph 2 analyzing..."
-        echo "$(date): Attempt $r failed" >> "$ERROR_LOG"
+        # Escalate to Ralph 2 with real test failure info
+        echo "👔 Ralph 2 analyzing failure..."
+        echo "$(date): Attempt $r failed - Test exit code: ${post_status:-unknown}" >> "$ERROR_LOG"
+        echo "Failure details: $(get_failure_summary)" >> "$ERROR_LOG"
         tail -30 "$TEMP_DIR/out.txt" >> "$ERROR_LOG"
         
         opencode run "You are Ralph 2. Ralph 1 failed on: '$task_text'
+Test exit code: ${post_status:-unknown}
+Error: $(get_failure_summary)
 Read @$ERROR_LOG, @$TASK_FILE. Either break down the task or add a rule to @$SYSTEM_RULES. Do NOT code." 2>&1 || true
         
         prune_rules

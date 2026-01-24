@@ -48,6 +48,11 @@ const mockAuthenticatedSession = async (page, accessToken, overrides = {}) => {
         buildJsonResponse({
           access_token: accessToken,
           refresh_token: 'refresh-token',
+          user: {
+            id: 'e2e-user',
+            email: TEST_PROFILE.email,
+            role: 'user',
+          },
         })
       );
     }

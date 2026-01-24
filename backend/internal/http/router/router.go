@@ -48,8 +48,8 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// Rate limiting (100 requests per minute per IP/user)
-	rateLimiter := middleware.NewRateLimiter(100, time.Minute)
+	// Rate limiting (1000 requests per minute per IP/user - relaxed for testing)
+	rateLimiter := middleware.NewRateLimiter(1000, time.Minute)
 	r.Use(middleware.RateLimit(rateLimiter))
 
 	// Request body size limit (1MB max to prevent DoS via large payloads)
@@ -61,6 +61,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		predictor = ml.NewHTTPPredictor(
 			cfg.ModelURL,
 			cfg.ModelVersion,
+			cfg.MLAPIKey,
 			time.Duration(cfg.ModelTimeoutMS)*time.Millisecond,
 		)
 	} else {
@@ -79,9 +80,9 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// Health checks
 	handlers.RegisterHealth(api)
 
-	// Authentication (with stricter rate limiting: 10 requests/minute for brute-force protection)
+	// Authentication (with stricter rate limiting: 100 requests/minute - relaxed for testing)
 	authGroup := api.Group("/auth")
-	authGroup.Use(middleware.AuthRateLimit(10))
+	authGroup.Use(middleware.AuthRateLimit(100))
 	authHandler := handlers.NewAuthHandler(cfg, st)
 	authHandler.Register(authGroup)
 

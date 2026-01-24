@@ -31,6 +31,11 @@ test.describe('Visual Regression: Insights Component', () => {
       return fulfillJson(route, {
         access_token: 'test.access.token',
         refresh_token: 'test.refresh.token',
+        user: {
+          id: 'e2e-user-id',
+          email: TEST_USER.email,
+          role: 'user',
+        },
       });
     });
 

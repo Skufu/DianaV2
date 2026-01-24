@@ -117,10 +117,10 @@ export const SELECTORS = {
     startAssessmentButton: 'button:has-text("Log Assessment"), button:has-text("Start Assessment"), button:has-text("New Assessment")',
 
     // Patient form
-    patientNameInput: 'input[name="name"], input[placeholder*="name"]',
-    patientAgeInput: 'input[name="age"], input[placeholder*="age"]',
+    patientNameInput: 'input[name="first_name"], input[name="last_name"], input[placeholder="Jane"], input[placeholder="Doe"], input[name="name"], input[placeholder*="name"]',
+    patientAgeInput: 'input[name="date_of_birth"], input[type="date"], input[name="age"], input[placeholder*="age"]',
     nextStepButton: 'button:has-text("Next"), button:has-text("Continue")',
-    submitButton: 'button:has-text("Submit"), button[type="submit"]',
+    submitButton: 'button:has-text("Complete Setup"), button:has-text("Submit"), button[type="submit"]',
 
     // Results
     riskScore: '[data-testid="risk-score"], [class*="risk"]',

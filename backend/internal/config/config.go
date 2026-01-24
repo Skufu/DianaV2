@@ -38,6 +38,7 @@ type Config struct {
 	ModelURL           string
 	ModelVersion       string
 	DatasetHash        string
+	MLAPIKey           string
 	ModelTimeoutMS     int
 	ExportMaxRows      int
 	RedisAddr          string
@@ -65,6 +66,7 @@ func Load() Config {
 		ModelURL:       getEnv("MODEL_URL", ""),
 		ModelVersion:   getEnv("MODEL_VERSION", "v0-placeholder"),
 		DatasetHash:    getEnv("MODEL_DATASET_HASH", ""),
+		MLAPIKey:       getEnv("ML_API_KEY", ""),
 		ModelTimeoutMS: 2000,
 		RedisAddr:      getEnv("REDIS_ADDR", "localhost:6379"),
 		RedisPassword:  getEnv("REDIS_PASSWORD", ""),

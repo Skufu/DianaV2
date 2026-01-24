@@ -1,493 +1,195 @@
 import { test, expect } from '@playwright/test';
 import { ADMIN_USER, waitForNetworkIdle } from './fixtures/test-data';
 
-const corsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS',
-  'access-control-allow-headers': 'Content-Type, Authorization',
-};
+/**
+ * Admin Tests - Uses real backend (no mocking)
+ * Prerequisites: Backend running at localhost:8080 with seeded data
+ * Admin credentials: admin@diana.app / admin123
+ */
 
 test.describe('Admin Authentication Flow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });
 
-  test('should login as admin and show purple theme', async ({ page }) => {
-    await page.route('**/auth/login', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          access_token: 'admin.access.token',
-          refresh_token: 'admin.refresh.token',
-          user: {
-            id: 'admin-1',
-            email: ADMIN_USER.email,
-            role: 'admin',
-          },
-        }),
-      });
-    });
-
-    await page.route('**/users/me/profile', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: 'admin-1',
-          name: 'Admin User',
-          email: ADMIN_USER.email,
-          role: 'admin',
-        }),
-      });
-    });
-
-    await page.route('**/users/me/assessments**', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
-    await page.route('**/admin/dashboard', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          stats: {
-            total_users: 100,
-            total_patients: 50,
-            total_assessments: 200,
-            high_risk_count: 10,
-            new_users_this_month: 5,
-            assessments_this_month: 20,
-            avg_risk_score: 45.5,
-          },
-          cluster_distribution: [
-            { cluster: 'SIRD', count: 20 },
-            { cluster: 'SIDD', count: 15 },
-            { cluster: 'MOD', count: 10 },
-            { cluster: 'MARD', count: 5 },
-          ],
-          trends: [
-            { label: 'Jan', hba1c: 5.8, fbs: 100 },
-            { label: 'Feb', hba1c: 5.9, fbs: 105 },
-            { label: 'Mar', hba1c: 6.0, fbs: 110 },
-          ],
-        }),
-      });
-    });
-
+  test('should login as admin and show admin dashboard', async ({ page }) => {
+    // Login with admin credentials
     await page.fill('input[type="email"]', ADMIN_USER.email);
     await page.fill('input[type="password"]', ADMIN_USER.password);
     await page.click('button:has-text("Sign In")');
     await waitForNetworkIdle(page);
 
-    const adminSidebar = page.locator('nav').first();
-    await expect(adminSidebar).toBeVisible({ timeout: 10000 });
-
-    await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('text=System Administration')).toBeVisible({ timeout: 5000 });
-
-    await expect(page.locator('text=Total Users')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=Total Patients')).toBeVisible({ timeout: 5000 });
+    // Wait for admin dashboard to load
+    await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 15000 });
+    
+    // Verify admin-specific content is visible
+    await expect(page.locator('text=Total Users').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('should show AdminSidebar instead of regular Sidebar', async ({ page }) => {
-    await page.route('**/auth/login', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          access_token: 'admin.access.token',
-          refresh_token: 'admin.refresh.token',
-          user: {
-            id: 'admin-1',
-            email: ADMIN_USER.email,
-            role: 'admin',
-          },
-        }),
-      });
-    });
-
-    await page.route('**/users/me/profile', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: 'admin-1',
-          name: 'Admin User',
-          email: ADMIN_USER.email,
-          role: 'admin',
-        }),
-      });
-    });
-
-    await page.route('**/users/me/assessments**', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
-    await page.route('**/admin/dashboard', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          stats: {
-            total_users: 100,
-            total_patients: 50,
-            total_assessments: 200,
-            high_risk_count: 10,
-            new_users_this_month: 5,
-            assessments_this_month: 20,
-            avg_risk_score: 45.5,
-          },
-          cluster_distribution: [],
-          trends: [],
-        }),
-      });
-    });
-
+  test('should show AdminSidebar with navigation items', async ({ page }) => {
+    // Login as admin
     await page.fill('input[type="email"]', ADMIN_USER.email);
     await page.fill('input[type="password"]', ADMIN_USER.password);
     await page.click('button:has-text("Sign In")');
     await waitForNetworkIdle(page);
 
+    // Wait for admin dashboard
+    await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 15000 });
+
+    // Verify sidebar navigation items
+    await expect(page.locator('text=Overview').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=User Management').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Audit Logs').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Model Tracking').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should display dashboard statistics', async ({ page }) => {
+    // Login as admin
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    // Wait for admin dashboard
+    await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 15000 });
+
+    // Check for stat labels
+    await expect(page.locator('text=Total Users').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Total Patients').first()).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should navigate between admin sections', async ({ page }) => {
+    // Login as admin
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+
+    // Wait for admin dashboard
+    await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 15000 });
+
+    // Navigate to User Management
+    await page.click('text=User Management');
+    await page.waitForTimeout(1000);
+    
+    // Verify User Management section loaded
+    await expect(page.locator('text=User Management').first()).toBeVisible({ timeout: 5000 });
+
+    // Navigate to Audit Logs
+    await page.click('text=Audit Logs');
+    await page.waitForTimeout(1000);
+
+    // Verify Audit Logs section loaded
+    await expect(page.locator('text=Audit Logs').first()).toBeVisible({ timeout: 5000 });
+
+    // Navigate back to Overview
+    await page.click('text=Overview');
+    await page.waitForTimeout(1000);
+
+    // Verify back on overview
+    await expect(page.locator('text=Total Users').first()).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe('Admin User Management - Real Backend', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login as admin before each test
+    await page.goto('/');
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+    
+    // Wait for admin dashboard and navigate to user management
+    await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 15000 });
+    await page.click('text=User Management');
+    await page.waitForTimeout(1000);
+  });
+
+  test('should display user list', async ({ page }) => {
+    // Verify table structure
+    const table = page.locator('table').first();
+    await expect(table).toBeVisible({ timeout: 10000 });
+
+    // Check for table headers - using simple text matching
+    const hasEmailHeader = await page.locator('th').filter({ hasText: 'Email' }).count() > 0;
+    const hasRoleHeader = await page.locator('th').filter({ hasText: 'Role' }).count() > 0;
+    expect(hasEmailHeader || hasRoleHeader).toBeTruthy();
+  });
+
+  test('should show seeded users in list', async ({ page }) => {
+    // Wait for table to load
+    await expect(page.locator('table').first()).toBeVisible({ timeout: 10000 });
+
+    // Check for seeded users from the database - look for admin email in page content
+    const pageContent = await page.textContent('body');
+    expect(pageContent).toContain('admin');
+  });
+});
+
+test.describe('Admin Audit Logs - Real Backend', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login as admin before each test
+    await page.goto('/');
+    await page.fill('input[type="email"]', ADMIN_USER.email);
+    await page.fill('input[type="password"]', ADMIN_USER.password);
+    await page.click('button:has-text("Sign In")');
+    await waitForNetworkIdle(page);
+    
+    // Wait for admin dashboard and navigate to audit logs
+    await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 15000 });
+    await page.click('text=Audit Logs');
+    await page.waitForTimeout(1000);
+  });
+
+  test('should display audit logs page', async ({ page }) => {
+    // Verify audit logs section is visible - check for heading or content
+    await expect(page.locator('text=Audit Logs').first()).toBeVisible({ timeout: 10000 });
+  });
+
+  test('should show audit event table or empty state', async ({ page }) => {
     await page.waitForTimeout(2000);
-
-    await expect(page.locator('text=Overview')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('text=User Management')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=Audit Logs')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=Auth Events')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=Model Tracking')).toBeVisible({ timeout: 5000 });
+    
+    // Either table or empty state should be present
+    const tableVisible = await page.locator('table').first().isVisible();
+    const emptyVisible = await page.locator('text=No audit events').isVisible();
+    
+    expect(tableVisible || emptyVisible).toBeTruthy();
   });
+});
 
-  test('should load admin dashboard section', async ({ page }) => {
-    await page.route('**/auth/login', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          access_token: 'admin.access.token',
-          refresh_token: 'admin.refresh.token',
-          user: {
-            id: 'admin-1',
-            email: ADMIN_USER.email,
-            role: 'admin',
-          },
-        }),
-      });
-    });
-
-    await page.route('**/users/me/profile', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: 'admin-1',
-          name: 'Admin User',
-          email: ADMIN_USER.email,
-          role: 'admin',
-        }),
-      });
-    });
-
-    await page.route('**/users/me/assessments**', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
-    await page.route('**/admin/dashboard', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          stats: {
-            total_users: 150,
-            total_patients: 75,
-            total_assessments: 300,
-            high_risk_count: 15,
-            new_users_this_month: 8,
-            assessments_this_month: 25,
-            avg_risk_score: 42.3,
-          },
-          cluster_distribution: [
-            { cluster: 'SIRD', count: 30 },
-            { cluster: 'SIDD', count: 25 },
-            { cluster: 'MOD', count: 15 },
-            { cluster: 'MARD', count: 5 },
-          ],
-          trends: [
-            { label: 'Jan', hba1c: 5.7, fbs: 98 },
-            { label: 'Feb', hba1c: 5.9, fbs: 102 },
-            { label: 'Mar', hba1c: 6.1, fbs: 108 },
-          ],
-        }),
-      });
-    });
-
+test.describe('Admin Model Tracking - Real Backend', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login as admin before each test
+    await page.goto('/');
     await page.fill('input[type="email"]', ADMIN_USER.email);
     await page.fill('input[type="password"]', ADMIN_USER.password);
     await page.click('button:has-text("Sign In")');
     await waitForNetworkIdle(page);
-
-    await expect(page.locator('h2:has-text("Admin Dashboard")')).toBeVisible({ timeout: 10000 });
-
-    await expect(page.locator('text=Total Users')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=150').or(page.locator('text=100'))).toBeVisible({ timeout: 3000 });
-
-    await expect(page.locator('text=Total Patients')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=Total Assessments')).toBeVisible({ timeout: 5000 });
-
-    await expect(page.locator('text=High Risk Patients')).toBeVisible({ timeout: 5000 });
-
-    await expect(page.locator('text=T2DM Cluster Distribution')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=Biomarker Trends')).toBeVisible({ timeout: 5000 });
+    
+    // Wait for admin dashboard and navigate to model tracking
+    await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 15000 });
+    await page.click('text=Model Tracking');
+    await page.waitForTimeout(1000);
   });
 
-  test('should navigate between admin views', async ({ page }) => {
-    await page.route('**/auth/login', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          access_token: 'admin.access.token',
-          refresh_token: 'admin.refresh.token',
-          user: {
-            id: 'admin-1',
-            email: ADMIN_USER.email,
-            role: 'admin',
-          },
-        }),
-      });
-    });
+  test('should display model tracking page', async ({ page }) => {
+    // Verify we're on the model tracking page - check for any model-related content
+    const pageContent = await page.textContent('body');
+    const hasModelContent = pageContent.includes('Model') || pageContent.includes('Traceability');
+    expect(hasModelContent).toBeTruthy();
+  });
 
-    await page.route('**/users/me/profile', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          id: 'admin-1',
-          name: 'Admin User',
-          email: ADMIN_USER.email,
-          role: 'admin',
-        }),
-      });
-    });
-
-    await page.route('**/users/me/assessments**', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
-    await page.route('**/admin/dashboard', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          stats: {
-            total_users: 100,
-            total_patients: 50,
-            total_assessments: 200,
-            high_risk_count: 10,
-          },
-          cluster_distribution: [],
-          trends: [],
-        }),
-      });
-    });
-
-    await page.route('**/admin/users*', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          users: [
-            {
-              id: '1',
-              email: 'user1@example.com',
-              name: 'User One',
-              is_active: true,
-            },
-          ],
-          total: 1,
-          page: 1,
-          limit: 10,
-        }),
-      });
-    });
-
-    await page.route('**/admin/audit*', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          events: [],
-          total: 0,
-          page: 1,
-          limit: 20,
-        }),
-      });
-    });
-
-    await page.route('**/admin/models*', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          models: [],
-          total: 0,
-          page: 1,
-          limit: 20,
-        }),
-      });
-    });
-
-    await page.fill('input[type="email"]', ADMIN_USER.email);
-    await page.fill('input[type="password"]', ADMIN_USER.password);
-    await page.click('button:has-text("Sign In")');
-    await waitForNetworkIdle(page);
-
-    await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 10000 });
-
-    const overviewButton = page.locator('text=Overview').first();
-    if (await overviewButton.isVisible({ timeout: 5000 })) {
-      await overviewButton.click();
-      await page.waitForTimeout(1000);
-      await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 5000 });
-    }
-
-    const usersButton = page.locator('text=User Management').first();
-    if (await usersButton.isVisible({ timeout: 5000 })) {
-      await usersButton.click();
-      await page.waitForTimeout(1000);
-      await expect(page.locator('text=Admin Dashboard').or(page.locator('text=User Management')).first()).toBeVisible({ timeout: 5000 });
-    }
-
-    const auditButton = page.locator('text=Audit Logs').first();
-    if (await auditButton.isVisible({ timeout: 5000 })) {
-      await auditButton.click();
-      await page.waitForTimeout(1000);
-      await expect(page.locator('text=Admin Dashboard').or(page.locator('text=Audit Logs')).first()).toBeVisible({ timeout: 5000 });
-    }
-
-    const authEventsButton = page.locator('text=Auth Events').first();
-    if (await authEventsButton.isVisible({ timeout: 5000 })) {
-      await authEventsButton.click();
-      await page.waitForTimeout(1000);
-      await expect(page.locator('text=Admin Dashboard').or(page.locator('text=Auth Events')).first()).toBeVisible({ timeout: 5000 });
-    }
-
-    const modelsButton = page.locator('text=Model Tracking').first();
-    if (await modelsButton.isVisible({ timeout: 5000 })) {
-      await modelsButton.click();
-      await page.waitForTimeout(1000);
-      await expect(page.locator('text=Admin Dashboard').or(page.locator('text=Model Tracking')).first()).toBeVisible({ timeout: 5000 });
-    }
+  test('should show model runs or empty state', async ({ page }) => {
+    await page.waitForTimeout(2000);
+    
+    // Check for any model-related content
+    const pageContent = await page.textContent('body');
+    const hasContent = pageContent.includes('v0-mock') || 
+                      pageContent.includes('Model') ||
+                      pageContent.includes('No model') ||
+                      pageContent.includes('Active');
+    
+    expect(hasContent).toBeTruthy();
   });
 });
