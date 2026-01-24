@@ -57,20 +57,20 @@
   },
   "suites": [
     {
-      "title": "assessment-creation.spec.js",
-      "file": "assessment-creation.spec.js",
+      "title": "profile.spec.js",
+      "file": "profile.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Assessment Creation Flow",
-          "file": "assessment-creation.spec.js",
-          "line": 10,
+          "title": "Profile Management",
+          "file": "profile.spec.js",
+          "line": 124,
           "column": 6,
           "specs": [
             {
-              "title": "should login → create assessment → verify authenticated",
+              "title": "should navigate to profile tab",
               "ok": true,
               "tags": [],
               "tests": [
@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2791,
+                      "duration": 1706,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:32:00.152Z",
+                      "startTime": "2026-01-24T11:35:11.816Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -98,13 +98,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b0912d8e665eea0153e5-9e95b531625563d5d8b3",
-              "file": "assessment-creation.spec.js",
-              "line": 11,
+              "id": "d3b94327e94fcbd90a1b-85844526f9d92e117786",
+              "file": "profile.spec.js",
+              "line": 142,
               "column": 3
             },
             {
-              "title": "should fail to create assessment without authentication",
+              "title": "should display user data in profile form",
               "ok": true,
               "tags": [],
               "tests": [
@@ -119,12 +119,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1253,
+                      "duration": 1285,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:32:00.157Z",
+                      "startTime": "2026-01-24T11:35:11.803Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -132,21 +132,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b0912d8e665eea0153e5-8fbdfac9d7999e470f7f",
-              "file": "assessment-creation.spec.js",
-              "line": 180,
+              "id": "d3b94327e94fcbd90a1b-dfa418ae6f76b12fd320",
+              "file": "profile.spec.js",
+              "line": 150,
               "column": 3
-            }
-          ]
-        },
-        {
-          "title": "Real Backend Assessment Tests",
-          "file": "assessment-creation.spec.js",
-          "line": 216,
-          "column": 6,
-          "specs": [
+            },
             {
-              "title": "Create assessment with valid biomarkers → risk score returned",
+              "title": "should edit first name, save, and verify persisted",
               "ok": true,
               "tags": [],
               "tests": [
@@ -161,12 +153,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3435,
+                      "duration": 1896,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:32:00.138Z",
+                      "startTime": "2026-01-24T11:35:11.812Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -174,13 +166,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b0912d8e665eea0153e5-e7ded28eb339e7872f55",
-              "file": "assessment-creation.spec.js",
-              "line": 217,
+              "id": "d3b94327e94fcbd90a1b-1515e0305c6319255f8a",
+              "file": "profile.spec.js",
+              "line": 170,
               "column": 3
             },
             {
-              "title": "should fail when HbA1c > 15 (validation error)",
+              "title": "should show validation error when editing with invalid data",
               "ok": true,
               "tags": [],
               "tests": [
@@ -195,12 +187,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3077,
+                      "duration": 1812,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:32:00.147Z",
+                      "startTime": "2026-01-24T11:35:11.801Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -208,13 +200,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b0912d8e665eea0153e5-10e5b8be4715d74165a1",
-              "file": "assessment-creation.spec.js",
-              "line": 404,
+              "id": "d3b94327e94fcbd90a1b-a144f4cd7346c7defeda",
+              "file": "profile.spec.js",
+              "line": 189,
               "column": 3
             },
             {
-              "title": "should fail when BMI is negative (validation error)",
+              "title": "should toggle consent settings and save",
               "ok": true,
               "tags": [],
               "tests": [
@@ -229,12 +221,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 2763,
+                      "duration": 1183,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:32:00.143Z",
+                      "startTime": "2026-01-24T11:35:11.807Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -242,13 +234,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b0912d8e665eea0153e5-3f75a8f0f6025072e85d",
-              "file": "assessment-creation.spec.js",
-              "line": 535,
+              "id": "d3b94327e94fcbd90a1b-346882bbcf8a079fe090",
+              "file": "profile.spec.js",
+              "line": 212,
               "column": 3
             },
             {
-              "title": "should fail when required fields are missing (validation error)",
+              "title": "should show confirmation dialog when clicking delete",
               "ok": true,
               "tags": [],
               "tests": [
@@ -263,12 +255,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 2689,
+                      "duration": 1406,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:32:00.142Z",
+                      "startTime": "2026-01-24T11:35:11.841Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -276,13 +268,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "b0912d8e665eea0153e5-dcf3cdabd634da5f58fa",
-              "file": "assessment-creation.spec.js",
-              "line": 666,
+              "id": "d3b94327e94fcbd90a1b-8c5621dd257ad04dae77",
+              "file": "profile.spec.js",
+              "line": 232,
               "column": 3
             },
             {
-              "title": "should verify assessment appears in dashboard after creation",
+              "title": "should delete account and redirect to login",
               "ok": true,
               "tags": [],
               "tests": [
@@ -294,15 +286,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 2693,
+                      "duration": 1001,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:32:01.584Z",
+                      "startTime": "2026-01-24T11:35:13.112Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -310,43 +302,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "b0912d8e665eea0153e5-0c3b3d8607d54d92104b",
-              "file": "assessment-creation.spec.js",
-              "line": 792,
-              "column": 3
-            },
-            {
-              "title": "should verify assessment appears in trends after creation",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
-                      "status": "passed",
-                      "duration": 3089,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T11:32:02.963Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "b0912d8e665eea0153e5-080d0e6b984586b69c6c",
-              "file": "assessment-creation.spec.js",
-              "line": 962,
+              "id": "d3b94327e94fcbd90a1b-d82a50b15b555b2959e6",
+              "file": "profile.spec.js",
+              "line": 245,
               "column": 3
             }
           ]
@@ -356,9 +314,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T11:31:59.157Z",
-    "duration": 6979.896,
-    "expected": 8,
+    "startTime": "2026-01-24T11:35:10.884Z",
+    "duration": 3301.045,
+    "expected": 7,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

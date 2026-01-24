@@ -30,13 +30,13 @@
 
 ## Phase 3: Profile Tests (HIGH)
 
-- [ ] Fix profile.spec.js:142 - should navigate to profile tab
-- [ ] Fix profile.spec.js:150 - should display user data in profile form
-- [ ] Fix profile.spec.js:170 - should edit first name, save, and verify persisted
-- [ ] Fix profile.spec.js:189 - should show validation error when editing with invalid data
-- [ ] Fix profile.spec.js:212 - should toggle consent settings and save
-- [ ] Fix profile.spec.js:232 - should show confirmation dialog when clicking delete
-- [ ] Fix profile.spec.js:245 - should delete account and redirect to login
+- [x] Fix profile.spec.js:142 - should navigate to profile tab
+- [x] Fix profile.spec.js:150 - should display user data in profile form
+- [x] Fix profile.spec.js:170 - should edit first name, save, and verify persisted
+- [x] Fix profile.spec.js:189 - should show validation error when editing with invalid data
+- [x] Fix profile.spec.js:212 - should toggle consent settings and save
+- [x] Fix profile.spec.js:232 - should show confirmation dialog when clicking delete
+- [x] Fix profile.spec.js:245 - should delete account and redirect to login
 
 ---
 
