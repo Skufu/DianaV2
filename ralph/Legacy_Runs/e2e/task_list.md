@@ -466,17 +466,17 @@ Before marking any task complete:
 | T006 | Assessment CRUD tests | pending | NEW FILE |
 | T007 | Dashboard rendering tests | pending | NEW FILE |
 | T008 | Trends page tests | completed | Created trends.spec.js with 6 tests: navigation, charts rendering, time range selector, loading state, dashboard navigation |
-| T009 | Insights page tests | completed | All 8 tests pass including feature importance chart |
-| T010 | Profile management tests | pending | NEW FILE |
-| T011 | Export page tests | pending | NEW FILE |
-| T012 | Admin login tests | pending | NEW FILE |
-| T013 | Admin user mgmt tests | completed | 8/10 tests pass (2 skipped for route mocking complexity) |
-| T014 | Admin audit log tests | pending | NEW FILE |
+| T009 | Insights page tests | completed | Fixed Promise.all failure pattern to allow partial loading (clusters only). Updated component and test. |
+| T010 | Profile management tests | completed | Added account deletion tests (UI + functional) |
+| T011 | Export page tests | completed | All tests pass. |
+| T012 | Admin login tests | completed | NEW FILE |
+| T013 | Admin user mgmt tests | completed | All tests pass, including filtering by role and status (verified implementation). |
+| T014 | Admin audit log tests | completed | NEW FILE |
 | T015 | Admin model tests | completed | Created admin-models.spec.js with 5 tests covering model runs page viewing, active model display, history listing, pagination, and empty state |
-| T016 | Network failure tests | pending | NEW FILE |
+| T016 | Network failure tests | completed | NEW FILE |
 | T017 | Auth error tests | completed | Created auth-errors.spec.js with 4 tests covering expired token, admin route protection (403), invalid token, and stale refresh token |
 | T018 | Input validation tests | completed | Created validation.spec.js with 6 tests including XSS sanitization test |
-| T019 | Console error detection | pending | |
+| T019 | Console error detection | partial | Implemented in critical profile flows. Ready for global rollout. |
 | T020 | Integration test suite | pending | NEW DIRECTORY |
 
 ---
