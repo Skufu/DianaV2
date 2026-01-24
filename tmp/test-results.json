@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1304,
+                      "duration": 1996,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:40.931Z",
+                      "startTime": "2026-01-24T09:06:45.831Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -119,12 +119,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1653,
+                      "duration": 1514,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:40.949Z",
+                      "startTime": "2026-01-24T09:06:45.844Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -153,12 +153,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 2530,
+                      "duration": 2515,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:40.952Z",
+                      "startTime": "2026-01-24T09:06:45.839Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -187,12 +187,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 5737,
+                      "duration": 5197,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:40.960Z",
+                      "startTime": "2026-01-24T09:06:45.830Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -221,12 +221,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 3661,
+                      "duration": 3621,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:40.971Z",
+                      "startTime": "2026-01-24T09:06:45.838Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -255,12 +255,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 2769,
+                      "duration": 3024,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:40.948Z",
+                      "startTime": "2026-01-24T09:06:45.852Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -275,7 +275,7 @@
             },
             {
               "title": "should prevent double submit while login is loading",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -286,55 +286,20 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 7615,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js:230:31",
-                        "location": {
-                          "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js",
-                          "column": 31,
-                          "line": 230
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 228 |\u001b[39m\n \u001b[90m 229 |\u001b[39m     \u001b[36mconst\u001b[39m loginButton \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[33mSELECTORS\u001b[39m\u001b[33m.\u001b[39mloginButton)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 230 |\u001b[39m     \u001b[36mawait\u001b[39m expect(loginButton)\u001b[33m.\u001b[39mtoBeDisabled()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 231 |\u001b[39m\n \u001b[90m 232 |\u001b[39m     resolveLogin()\u001b[33m;\u001b[39m\n \u001b[90m 233 |\u001b[39m     \u001b[36mawait\u001b[39m waitForNetworkIdle(page)\u001b[33m;\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js",
-                            "column": 31,
-                            "line": 230
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\u001b[22m\n\n\n  228 |\n  229 |     const loginButton = page.locator(SELECTORS.loginButton);\n> 230 |     await expect(loginButton).toBeDisabled();\n      |                               ^\n  231 |\n  232 |     resolveLogin();\n  233 |     await waitForNetworkIdle(page);\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js:230:31"
-                        }
-                      ],
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2991,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:42.369Z",
+                      "startTime": "2026-01-24T09:06:47.523Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\auth-Authentication-Flow-s-06cdf-bmit-while-login-is-loading-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\auth-Authentication-Flow-s-06cdf-bmit-while-login-is-loading-chromium\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js",
-                        "column": 31,
-                        "line": 230
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "d5ed79a6b333c2ba7209-db5c30f853fc9afe59e1",
@@ -355,15 +320,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2766,
+                      "duration": 2607,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:42.793Z",
+                      "startTime": "2026-01-24T09:06:48.005Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -373,7 +338,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-a0533cf450e34a29287a",
               "file": "auth.spec.js",
-              "line": 240,
+              "line": 244,
               "column": 3
             },
             {
@@ -392,12 +357,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3349,
+                      "duration": 3557,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:43.693Z",
+                      "startTime": "2026-01-24T09:06:48.518Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -407,7 +372,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-75c75dac53578a48e333",
               "file": "auth.spec.js",
-              "line": 310,
+              "line": 314,
               "column": 3
             },
             {
@@ -426,12 +391,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 1161,
+                      "duration": 1543,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:43.926Z",
+                      "startTime": "2026-01-24T09:06:49.132Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -441,7 +406,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-53827af8e3e4ed157497",
               "file": "auth.spec.js",
-              "line": 383,
+              "line": 387,
               "column": 3
             },
             {
@@ -460,12 +425,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 3834,
+                      "duration": 3406,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:44.837Z",
+                      "startTime": "2026-01-24T09:06:49.712Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -475,7 +440,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-2c1afcf4edb938cb82a8",
               "file": "auth.spec.js",
-              "line": 407,
+              "line": 411,
               "column": 3
             },
             {
@@ -491,15 +456,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1062,
+                      "duration": 1045,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:45.118Z",
+                      "startTime": "2026-01-24T09:06:50.589Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -509,7 +474,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-2d85086020e58d25ccbe",
               "file": "auth.spec.js",
-              "line": 495,
+              "line": 499,
               "column": 3
             },
             {
@@ -525,15 +490,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 2578,
+                      "duration": 1368,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:45.591Z",
+                      "startTime": "2026-01-24T09:06:50.711Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -543,7 +508,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-6e8cef5ec62af3950a29",
               "file": "auth.spec.js",
-              "line": 583,
+              "line": 587,
               "column": 3
             },
             {
@@ -559,15 +524,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 2271,
+                      "duration": 4361,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:46.206Z",
+                      "startTime": "2026-01-24T09:06:50.781Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -577,7 +542,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-5b15ed3ca1fbac9862ef",
               "file": "auth.spec.js",
-              "line": 637,
+              "line": 641,
               "column": 3
             },
             {
@@ -596,12 +561,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 18547,
+                      "duration": 18613,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:46.858Z",
+                      "startTime": "2026-01-24T09:06:51.179Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -611,7 +576,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-18996246dadfb3899115",
               "file": "auth.spec.js",
-              "line": 722,
+              "line": 726,
               "column": 3
             },
             {
@@ -627,15 +592,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 3668,
+                      "duration": 3693,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:47.076Z",
+                      "startTime": "2026-01-24T09:06:51.669Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -645,7 +610,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-7e36436823f9c1b082a0",
               "file": "auth.spec.js",
-              "line": 766,
+              "line": 770,
               "column": 3
             },
             {
@@ -661,15 +626,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 7651,
+                      "duration": 8573,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:48.199Z",
+                      "startTime": "2026-01-24T09:06:52.105Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -679,7 +644,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-0c48a195970111f10ae2",
               "file": "auth.spec.js",
-              "line": 882,
+              "line": 886,
               "column": 3
             },
             {
@@ -695,15 +660,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 1254,
+                      "duration": 1709,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:48.501Z",
+                      "startTime": "2026-01-24T09:06:52.119Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -713,7 +678,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-1e05684ff9c4b45f81ea",
               "file": "auth.spec.js",
-              "line": 988,
+              "line": 992,
               "column": 3
             },
             {
@@ -732,12 +697,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 4548,
+                      "duration": 4024,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:58:48.699Z",
+                      "startTime": "2026-01-24T09:06:53.145Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -747,7 +712,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-db839abee87b9dcd2cb7",
               "file": "auth.spec.js",
-              "line": 1036,
+              "line": 1040,
               "column": 3
             }
           ]
@@ -757,11 +722,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T08:58:39.711Z",
-    "duration": 25778.529000000002,
-    "expected": 18,
+    "startTime": "2026-01-24T09:06:44.830Z",
+    "duration": 25057.457000000002,
+    "expected": 19,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 0,
     "flaky": 0
   }
 }

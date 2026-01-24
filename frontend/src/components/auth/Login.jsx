@@ -127,6 +127,7 @@ const Login = ({ onLogin, onShowSignup, error: errorProp }) => {
             <button
               type="submit"
               disabled={loading}
+              data-testid="login-submit-button"
               className={`w-full py-4 rounded-xl font-semibold text-white transition-all duration-300
                          bg-gradient-to-r from-teal-500 to-cyan-500 
                          hover:from-teal-400 hover:to-cyan-400 
