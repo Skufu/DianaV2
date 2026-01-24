@@ -75,34 +75,38 @@ const App = () => {
     };
   }, [disableHeavyEffects, performanceTier]);
 
+  const [loginError, setLoginError] = useState(null);
+
   const handleLogin = useCallback(async (email, password) => {
-    const res = await loginMutation.mutateAsync({ email, password });
-    if (!res?.user) throw new Error('login failed');
+    setLoginError(null);
+    try {
+      const res = await loginMutation.mutateAsync({ email, password });
+      if (!res?.user) throw new Error('login failed');
 
-    // Store JWT tokens in localStorage for authenticated API requests
-    if (res.access_token) {
-      localStorage.setItem('diana_token', res.access_token);
-      setToken(res.access_token);
+      // Store JWT tokens in localStorage for authenticated API requests
+      if (res.access_token) {
+        localStorage.setItem('diana_token', res.access_token);
+        setToken(res.access_token);
+      }
+      if (res.refresh_token) {
+        localStorage.setItem('diana_refresh_token', res.refresh_token);
+      }
+
+      const role = res.user.role || 'user';
+      const userIsAdmin = role === 'admin';
+
+      setUserRole(role);
+      setIsAdmin(userIsAdmin);
+      setUserId(res.user.id);
+      setIsAuthenticated(true);
+
+      // Redirect admin users to admin dashboard
+      if (userIsAdmin) {
+        setActiveTab('admin');
+      }
+    } catch (err) {
+      setLoginError(err.message || 'Login failed');
     }
-    if (res.refresh_token) {
-      localStorage.setItem('diana_refresh_token', res.refresh_token);
-    }
-
-    const role = res.user.role || 'user';
-    const userIsAdmin = role === 'admin';
-
-    setUserRole(role);
-    setIsAdmin(userIsAdmin);
-    setUserId(res.user.id);
-    setIsAuthenticated(true);
-
-    // Redirect admin users to admin dashboard
-    if (userIsAdmin) {
-      setActiveTab('admin');
-    }
-
-    // Invalidate all queries so they refetch with the new token
-    queryClient.invalidateQueries();
   }, [loginMutation, queryClient]);
 
   const handleLogout = useCallback(async () => {
@@ -197,7 +201,7 @@ const App = () => {
           {showSignup ? (
             <Signup onSignup={handleSignupSuccess} onShowLogin={() => setShowSignup(false)} />
           ) : (
-            <Login onLogin={handleLogin} onShowSignup={() => setShowSignup(true)} />
+            <Login onLogin={handleLogin} onShowSignup={() => setShowSignup(true)} error={loginError} />
           )}
         </Suspense>
       ) : isAdmin ? (
