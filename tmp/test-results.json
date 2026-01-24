@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 3
+      "actualWorkers": 6
     },
     "preserveOutput": "always",
     "reporter": [
@@ -30,7 +30,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 6
         },
         "id": "chromium",
         "name": "chromium",
@@ -57,20 +57,20 @@
   },
   "suites": [
     {
-      "title": "assessment.spec.js",
-      "file": "assessment.spec.js",
+      "title": "assessment-creation.spec.js",
+      "file": "assessment-creation.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Profile Navigation Flow",
-          "file": "assessment.spec.js",
-          "line": 4,
+          "title": "Assessment Creation Flow",
+          "file": "assessment-creation.spec.js",
+          "line": 10,
           "column": 6,
           "specs": [
             {
-              "title": "should navigate to profile tab",
+              "title": "should login → create assessment → verify authenticated",
               "ok": true,
               "tags": [],
               "tests": [
@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1792,
+                      "duration": 2791,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:27:34.712Z",
+                      "startTime": "2026-01-24T11:32:00.152Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -98,14 +98,14 @@
                   "status": "expected"
                 }
               ],
-              "id": "61aed3fec897fba91508-61b9450097d1852a1a77",
-              "file": "assessment.spec.js",
-              "line": 99,
-              "column": 5
+              "id": "b0912d8e665eea0153e5-9e95b531625563d5d8b3",
+              "file": "assessment-creation.spec.js",
+              "line": 11,
+              "column": 3
             },
             {
-              "title": "should display personal info inputs",
-              "ok": false,
+              "title": "should fail to create assessment without authentication",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -118,62 +118,35 @@
                     {
                       "workerIndex": 1,
                       "parallelIndex": 1,
-                      "status": "failed",
-                      "duration": 7327,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[name=\"email\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[name=\"email\"]')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[name=\"email\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[name=\"email\"]')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:113:59",
-                        "location": {
-                          "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
-                          "column": 59,
-                          "line": 113
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 111 |\u001b[39m\n \u001b[90m 112 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"first_name\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 113 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"email\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                           \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 114 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"date_of_birth\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 115 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 116 |\u001b[39m\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
-                            "column": 59,
-                            "line": 113
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[name=\"email\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[name=\"email\"]')\u001b[22m\n\n\n  111 |\n  112 |         await expect(page.locator('input[name=\"first_name\"]')).toBeVisible();\n> 113 |         await expect(page.locator('input[name=\"email\"]')).toBeVisible();\n      |                                                           ^\n  114 |         await expect(page.locator('input[name=\"date_of_birth\"]')).toBeVisible();\n  115 |     });\n  116 |\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:113:59"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 1253,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:27:34.708Z",
+                      "startTime": "2026-01-24T11:32:00.157Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\assessment-Profile-Navigat-cad70-isplay-personal-info-inputs-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\assessment-Profile-Navigat-cad70-isplay-personal-info-inputs-chromium\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
-                        "column": 59,
-                        "line": 113
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "61aed3fec897fba91508-2bb192baf9f30c6b30e0",
-              "file": "assessment.spec.js",
-              "line": 109,
-              "column": 5
-            },
+              "id": "b0912d8e665eea0153e5-8fbdfac9d7999e470f7f",
+              "file": "assessment-creation.spec.js",
+              "line": 180,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Real Backend Assessment Tests",
+          "file": "assessment-creation.spec.js",
+          "line": 216,
+          "column": 6,
+          "specs": [
             {
-              "title": "should render profile sections",
+              "title": "Create assessment with valid biomarkers → risk score returned",
               "ok": true,
               "tags": [],
               "tests": [
@@ -188,12 +161,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 1925,
+                      "duration": 3435,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:27:34.735Z",
+                      "startTime": "2026-01-24T11:32:00.138Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -201,10 +174,180 @@
                   "status": "expected"
                 }
               ],
-              "id": "61aed3fec897fba91508-d347dc412a026c133c4e",
-              "file": "assessment.spec.js",
-              "line": 117,
-              "column": 5
+              "id": "b0912d8e665eea0153e5-e7ded28eb339e7872f55",
+              "file": "assessment-creation.spec.js",
+              "line": 217,
+              "column": 3
+            },
+            {
+              "title": "should fail when HbA1c > 15 (validation error)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 3077,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-24T11:32:00.147Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b0912d8e665eea0153e5-10e5b8be4715d74165a1",
+              "file": "assessment-creation.spec.js",
+              "line": 404,
+              "column": 3
+            },
+            {
+              "title": "should fail when BMI is negative (validation error)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "passed",
+                      "duration": 2763,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-24T11:32:00.143Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b0912d8e665eea0153e5-3f75a8f0f6025072e85d",
+              "file": "assessment-creation.spec.js",
+              "line": 535,
+              "column": 3
+            },
+            {
+              "title": "should fail when required fields are missing (validation error)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 2689,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-24T11:32:00.142Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b0912d8e665eea0153e5-dcf3cdabd634da5f58fa",
+              "file": "assessment-creation.spec.js",
+              "line": 666,
+              "column": 3
+            },
+            {
+              "title": "should verify assessment appears in dashboard after creation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 2693,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-24T11:32:01.584Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b0912d8e665eea0153e5-0c3b3d8607d54d92104b",
+              "file": "assessment-creation.spec.js",
+              "line": 792,
+              "column": 3
+            },
+            {
+              "title": "should verify assessment appears in trends after creation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
+                      "status": "passed",
+                      "duration": 3089,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-24T11:32:02.963Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b0912d8e665eea0153e5-080d0e6b984586b69c6c",
+              "file": "assessment-creation.spec.js",
+              "line": 962,
+              "column": 3
             }
           ]
         }
@@ -213,11 +356,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T11:27:33.914Z",
-    "duration": 8288.238,
-    "expected": 2,
+    "startTime": "2026-01-24T11:31:59.157Z",
+    "duration": 6979.896,
+    "expected": 8,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 0,
     "flaky": 0
   }
 }
