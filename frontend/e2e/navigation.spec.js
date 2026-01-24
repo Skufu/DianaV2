@@ -164,7 +164,12 @@ test.describe('Navigation', () => {
     const sidebar = page.locator(SELECTORS.sidebar);
     await sidebar.locator('button:has-text("Health Trends")').click();
     await expect(page.locator('text=Health Trends')).toBeVisible();
-    await expect(page.locator('text=No trend data available')).toBeVisible();
+
+    // Wait for loading state to complete
+    await expect(page.locator('text=Loading trends...')).not.toBeVisible({ timeout: 5000 });
+
+    // Check for empty state message
+    await expect(page.locator('text=No trend data available. Log your first assessment to start tracking.')).toBeVisible();
   });
 
   test('should show profile error state when profile API fails', async ({ page }) => {
