@@ -155,3 +155,7 @@ REFACTORING_README.md
 !docs/**/*.pdf
 catboost_info/
 .sisyphus
+
+# Ralph logs and tmp
+ralph/*.txt
+ralph/tmp/

@@ -187,6 +187,11 @@ test.describe('Authentication Flow', () => {
         body: JSON.stringify({
           access_token: 'test.access.token',
           refresh_token: 'test.refresh.token',
+          user: {
+            id: 'user-1',
+            email: TEST_USER.email,
+            role: 'user',
+          },
         }),
       });
     });
@@ -258,6 +263,11 @@ test.describe('Authentication Flow', () => {
         body: JSON.stringify({
           access_token: 'test.access.token',
           refresh_token: 'test.refresh.token',
+          user: {
+            id: 'user-1',
+            email: TEST_USER.email,
+            role: 'user',
+          },
         }),
       });
     });
@@ -306,7 +316,7 @@ test.describe('Authentication Flow', () => {
     await page.click(SELECTORS.loginButton);
     await waitForNetworkIdle(page);
 
-    const dashboardOrSidebar = page.locator(`${SELECTORS.sidebar}, text=/dashboard/i`);
+    const dashboardOrSidebar = page.locator(`${SELECTORS.sidebar}, nav >> text=/dashboard/i`);
     await expect(dashboardOrSidebar.first()).toBeVisible({ timeout: 10000 });
   });
 
@@ -323,6 +333,11 @@ test.describe('Authentication Flow', () => {
         body: JSON.stringify({
           access_token: 'test.access.token',
           refresh_token: 'test.refresh.token',
+          user: {
+            id: 'user-1',
+            email: TEST_USER.email,
+            role: 'user',
+          },
         }),
       });
     });
@@ -415,6 +430,11 @@ test.describe('Authentication Flow', () => {
         body: JSON.stringify({
           access_token: 'test.access.token',
           refresh_token: 'test.refresh.token',
+          user: {
+            id: 'user-1',
+            email: TEST_USER.email,
+            role: 'user',
+          },
         }),
       });
     });

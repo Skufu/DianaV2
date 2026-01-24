@@ -23,6 +23,11 @@ test.describe('Assessment Creation Flow', () => {
         body: JSON.stringify({
           access_token: 'test.access.token',
           refresh_token: 'test.refresh.token',
+          user: {
+            id: 'e2e-user-123',
+            email: TEST_USER.email,
+            role: 'user',
+          },
         }),
       });
     });

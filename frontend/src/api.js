@@ -366,10 +366,11 @@ export const useExportPDF = () => {
 // ADMIN HOOKS
 // ============================================================================
 
-export const useAdminDashboard = () => {
+export const useAdminDashboard = (options = {}) => {
   return useQuery({
     queryKey: ['admin', 'dashboard'],
     queryFn: fetchAdminDashboardApi,
+    ...options,
   });
 };
 
@@ -442,10 +443,11 @@ export const useActiveModel = () => {
   });
 };
 
-export const useClinicComparison = () => {
+export const useClinicComparison = (options = {}) => {
   return useQuery({
     queryKey: ['admin', 'clinics', 'comparison'],
     queryFn: fetchClinicComparisonApi,
+    ...options,
   });
 };
 
