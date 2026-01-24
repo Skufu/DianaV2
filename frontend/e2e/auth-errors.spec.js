@@ -157,6 +157,8 @@ test.describe('Authorization Error Handling', () => {
     });
 
     await page.reload();
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
 
     await expect(page.locator(SELECTORS.loginEmailInput)).toBeVisible({ timeout: 15000 });
     await expect(page.locator(SELECTORS.loginPasswordInput)).toBeVisible({ timeout: 5000 });
