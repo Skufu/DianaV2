@@ -43,27 +43,29 @@ export const TEST_PROFILE = {
 };
 
 export const TEST_TRENDS = {
-    biomarkerHistory: [],
-    clusterHistory: [],
-    riskLevels: null,
+    dates: [],
+    hba1c_values: [],
+    bmi_values: [],
+    systolic_values: [],
+    diastolic_values: [],
+    ldl_values: [],
+    hdl_values: [],
+    triglycerides_values: [],
+    fbs_values: [],
+    risk_scores: [],
 };
 
 export const MOCK_TRENDS_DATA = {
-    biomarkerHistory: [
-        { date: '2024-01-15', hba1c: 5.8, fbs: 100 },
-        { date: '2024-02-15', hba1c: 5.6, fbs: 95 },
-        { date: '2024-03-15', hba1c: 5.9, fbs: 105 },
-    ],
-    clusterHistory: [
-        { date: '2024-01-15', cluster: 'MOD', riskScore: 25 },
-        { date: '2024-02-15', cluster: 'MOD', riskScore: 22 },
-        { date: '2024-03-15', cluster: 'MARD', riskScore: 28 },
-    ],
-    riskLevels: {
-        low: 2,
-        medium: 1,
-        high: 0,
-    },
+    dates: ['2024-01-15', '2024-02-15', '2024-03-15'],
+    hba1c_values: [5.8, 5.6, 5.9],
+    bmi_values: [25.0, 24.5, 25.5],
+    fbs_values: [100, 95, 105],
+    systolic_values: [120, 118, 122],
+    diastolic_values: [80, 78, 82],
+    ldl_values: [130, 125, 135],
+    hdl_values: [50, 52, 48],
+    triglycerides_values: [150, 145, 155],
+    risk_scores: ['low', 'low', 'medium'],
 };
 
 export const createMockJwt = (payload = {}) => {

@@ -337,11 +337,11 @@ export const useTrends = (months = 12) => {
         };
       });
 
-      const riskLevels = {
+      const riskLevels = data.dates.length > 0 ? {
         low: data.risk_scores?.filter(r => r === 'low').length || 0,
         medium: data.risk_scores?.filter(r => r === 'medium').length || 0,
         high: data.risk_scores?.filter(r => r === 'high').length || 0,
-      };
+      } : null;
 
       return {
         biomarkerHistory,

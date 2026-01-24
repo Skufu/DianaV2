@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1432,
+                      "duration": 1300,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:43:37.251Z",
+                      "startTime": "2026-01-24T11:51:12.450Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -119,12 +119,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1649,
+                      "duration": 1958,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:43:37.244Z",
+                      "startTime": "2026-01-24T11:51:12.439Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -153,12 +153,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 6582,
+                      "duration": 6393,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:43:37.247Z",
+                      "startTime": "2026-01-24T11:51:12.467Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -173,7 +173,7 @@
             },
             {
               "title": "should open health trends and show empty state",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -186,53 +186,18 @@
                     {
                       "workerIndex": 3,
                       "parallelIndex": 3,
-                      "status": "failed",
-                      "duration": 6338,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=No trend data available')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=No trend data available')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=No trend data available')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=No trend data available')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js:167:64",
-                        "location": {
-                          "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js",
-                          "column": 64,
-                          "line": 167
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 165 |\u001b[39m     \u001b[36mawait\u001b[39m sidebar\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"Health Trends\")'\u001b[39m)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 166 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Health Trends'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 167 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=No trend data available'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 168 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 169 |\u001b[39m\n \u001b[90m 170 |\u001b[39m   test(\u001b[32m'should show profile error state when profile API fails'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js",
-                            "column": 64,
-                            "line": 167
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=No trend data available')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=No trend data available')\u001b[22m\n\n\n  165 |     await sidebar.locator('button:has-text(\"Health Trends\")').click();\n  166 |     await expect(page.locator('text=Health Trends')).toBeVisible();\n> 167 |     await expect(page.locator('text=No trend data available')).toBeVisible();\n      |                                                                ^\n  168 |   });\n  169 |\n  170 |   test('should show profile error state when profile API fails', async ({ page }) => {\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js:167:64"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 1854,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:43:37.270Z",
+                      "startTime": "2026-01-24T11:51:12.457Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\navigation-Navigation-shou-5907b-trends-and-show-empty-state-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\navigation-Navigation-shou-5907b-trends-and-show-empty-state-chromium\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js",
-                        "column": 64,
-                        "line": 167
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "ce7c070a851ea64285fd-a84015892b6f53fd4e2b",
@@ -256,31 +221,31 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "failed",
-                      "duration": 11924,
+                      "duration": 11689,
                       "error": {
                         "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=/failed to load profile/i')\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=/failed to load profile/i')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=/failed to load profile/i')\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=/failed to load profile/i')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js:184:66",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=/failed to load profile/i')\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=/failed to load profile/i')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js:189:66",
                         "location": {
                           "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js",
                           "column": 66,
-                          "line": 184
+                          "line": 189
                         },
-                        "snippet": "\u001b[0m \u001b[90m 182 |\u001b[39m     \u001b[36mawait\u001b[39m sidebar\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"My Profile\")'\u001b[39m)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 183 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 184 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/failed to load profile/i'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 185 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 186 |\u001b[39m\n \u001b[90m 187 |\u001b[39m   test(\u001b[32m'should render dashboard error state when assessments fail'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 187 |\u001b[39m     \u001b[36mawait\u001b[39m sidebar\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"My Profile\")'\u001b[39m)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 188 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 189 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/failed to load profile/i'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m10000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 190 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 191 |\u001b[39m\n \u001b[90m 192 |\u001b[39m   test(\u001b[32m'should render dashboard error state when assessments fail'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
                             "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js",
                             "column": 66,
-                            "line": 184
+                            "line": 189
                           },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=/failed to load profile/i')\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=/failed to load profile/i')\u001b[22m\n\n\n  182 |     await sidebar.locator('button:has-text(\"My Profile\")').click();\n  183 |\n> 184 |     await expect(page.locator('text=/failed to load profile/i')).toBeVisible({ timeout: 10000 });\n      |                                                                  ^\n  185 |   });\n  186 |\n  187 |   test('should render dashboard error state when assessments fail', async ({ page }) => {\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js:184:66"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=/failed to load profile/i')\nExpected: visible\nTimeout: 10000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 10000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=/failed to load profile/i')\u001b[22m\n\n\n  187 |     await sidebar.locator('button:has-text(\"My Profile\")').click();\n  188 |\n> 189 |     await expect(page.locator('text=/failed to load profile/i')).toBeVisible({ timeout: 10000 });\n      |                                                                  ^\n  190 |   });\n  191 |\n  192 |   test('should render dashboard error state when assessments fail', async ({ page }) => {\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js:189:66"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:43:37.270Z",
+                      "startTime": "2026-01-24T11:51:12.454Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -297,7 +262,7 @@
                       "errorLocation": {
                         "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\navigation.spec.js",
                         "column": 66,
-                        "line": 184
+                        "line": 189
                       }
                     }
                   ],
@@ -306,7 +271,7 @@
               ],
               "id": "ce7c070a851ea64285fd-d0f100c879286cda8231",
               "file": "navigation.spec.js",
-              "line": 170,
+              "line": 175,
               "column": 3
             },
             {
@@ -325,12 +290,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 3610,
+                      "duration": 3328,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:43:37.281Z",
+                      "startTime": "2026-01-24T11:51:12.448Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -340,7 +305,7 @@
               ],
               "id": "ce7c070a851ea64285fd-4c68479dc993b57aa6b8",
               "file": "navigation.spec.js",
-              "line": 187,
+              "line": 192,
               "column": 3
             },
             {
@@ -359,12 +324,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1223,
+                      "duration": 1511,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:43:38.876Z",
+                      "startTime": "2026-01-24T11:51:13.918Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -374,7 +339,7 @@
               ],
               "id": "ce7c070a851ea64285fd-b9fd77b5fa9e21da8c92",
               "file": "navigation.spec.js",
-              "line": 203,
+              "line": 208,
               "column": 3
             }
           ]
@@ -384,11 +349,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T11:43:36.352Z",
-    "duration": 13082.038,
-    "expected": 5,
+    "startTime": "2026-01-24T11:51:11.533Z",
+    "duration": 12860.918,
+    "expected": 6,
     "skipped": 0,
-    "unexpected": 2,
+    "unexpected": 1,
     "flaky": 0
   }
 }
