@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1950,
+                      "duration": 1792,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:04:03.847Z",
+                      "startTime": "2026-01-24T11:27:34.712Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -100,7 +100,7 @@
               ],
               "id": "61aed3fec897fba91508-61b9450097d1852a1a77",
               "file": "assessment.spec.js",
-              "line": 27,
+              "line": 99,
               "column": 5
             },
             {
@@ -119,31 +119,31 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "failed",
-                      "duration": 7039,
+                      "duration": 7327,
                       "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Menopausal Health')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Menopausal Health')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Menopausal Health')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Menopausal Health')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:43:66",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[name=\"email\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[name=\"email\"]')\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[name=\"email\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[name=\"email\"]')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:113:59",
                         "location": {
                           "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
-                          "column": 66,
-                          "line": 43
+                          "column": 59,
+                          "line": 113
                         },
-                        "snippet": "\u001b[0m \u001b[90m 41 |\u001b[39m             \u001b[36mconst\u001b[39m nextButton \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'button:has-text(\"Next\")'\u001b[39m)\u001b[33m.\u001b[39mfirst()\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m             \u001b[36mawait\u001b[39m nextButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 43 |\u001b[39m             \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Menopausal Health'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 44 |\u001b[39m             \u001b[36mawait\u001b[39m nextButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m 45 |\u001b[39m             \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Medical History'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 46 |\u001b[39m             \u001b[36mawait\u001b[39m nextButton\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 111 |\u001b[39m\n \u001b[90m 112 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"first_name\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 113 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"email\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                           \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 114 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"date_of_birth\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 115 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 116 |\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
                             "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
-                            "column": 66,
-                            "line": 43
+                            "column": 59,
+                            "line": 113
                           },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Menopausal Health')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Menopausal Health')\u001b[22m\n\n\n  41 |             const nextButton = page.locator('button:has-text(\"Next\")').first();\n  42 |             await nextButton.click();\n> 43 |             await expect(page.locator('text=Menopausal Health')).toBeVisible();\n     |                                                                  ^\n  44 |             await nextButton.click();\n  45 |             await expect(page.locator('text=Medical History')).toBeVisible();\n  46 |             await nextButton.click();\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:43:66"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('input[name=\"email\"]')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('input[name=\"email\"]')\u001b[22m\n\n\n  111 |\n  112 |         await expect(page.locator('input[name=\"first_name\"]')).toBeVisible();\n> 113 |         await expect(page.locator('input[name=\"email\"]')).toBeVisible();\n      |                                                           ^\n  114 |         await expect(page.locator('input[name=\"date_of_birth\"]')).toBeVisible();\n  115 |     });\n  116 |\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:113:59"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:04:03.856Z",
+                      "startTime": "2026-01-24T11:27:34.708Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -159,8 +159,8 @@
                       ],
                       "errorLocation": {
                         "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
-                        "column": 66,
-                        "line": 43
+                        "column": 59,
+                        "line": 113
                       }
                     }
                   ],
@@ -169,12 +169,12 @@
               ],
               "id": "61aed3fec897fba91508-2bb192baf9f30c6b30e0",
               "file": "assessment.spec.js",
-              "line": 37,
+              "line": 109,
               "column": 5
             },
             {
               "title": "should render profile sections",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -187,58 +187,23 @@
                     {
                       "workerIndex": 2,
                       "parallelIndex": 2,
-                      "status": "failed",
-                      "duration": 6868,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Menopausal Health')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Menopausal Health')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Menopausal Health')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Menopausal Health')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:69:66",
-                        "location": {
-                          "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
-                          "column": 66,
-                          "line": 69
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 67 |\u001b[39m             }\n \u001b[90m 68 |\u001b[39m         } \u001b[36melse\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 69 |\u001b[39m             \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Menopausal Health'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 70 |\u001b[39m             \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Medical History'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 71 |\u001b[39m             \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Settings'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 72 |\u001b[39m         }\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
-                            "column": 66,
-                            "line": 69
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=Menopausal Health')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Menopausal Health')\u001b[22m\n\n\n  67 |             }\n  68 |         } else {\n> 69 |             await expect(page.locator('text=Menopausal Health')).toBeVisible();\n     |                                                                  ^\n  70 |             await expect(page.locator('text=Medical History')).toBeVisible();\n  71 |             await expect(page.locator('text=Settings')).toBeVisible();\n  72 |         }\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js:69:66"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 1925,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:04:03.846Z",
+                      "startTime": "2026-01-24T11:27:34.735Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\assessment-Profile-Navigat-9d41c-uld-render-profile-sections-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\assessment-Profile-Navigat-9d41c-uld-render-profile-sections-chromium\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\assessment.spec.js",
-                        "column": 66,
-                        "line": 69
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "61aed3fec897fba91508-d347dc412a026c133c4e",
               "file": "assessment.spec.js",
-              "line": 56,
+              "line": 117,
               "column": 5
             }
           ]
@@ -248,11 +213,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T11:04:03.078Z",
-    "duration": 8004.773999999999,
-    "expected": 1,
+    "startTime": "2026-01-24T11:27:33.914Z",
+    "duration": 8288.238,
+    "expected": 2,
     "skipped": 0,
-    "unexpected": 2,
+    "unexpected": 1,
     "flaky": 0
   }
 }
