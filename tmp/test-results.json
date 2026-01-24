@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8262,
+                      "duration": 8315,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:17:57.746Z",
+                      "startTime": "2026-01-24T12:21:40.100Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -119,7 +119,7 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "failed",
-                      "duration": 1823,
+                      "duration": 1849,
                       "error": {
                         "message": "Error: page.reload: net::ERR_ABORTED; maybe frame was detached?\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n",
                         "stack": "Error: page.reload: net::ERR_ABORTED; maybe frame was detached?\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js:87:16",
@@ -143,7 +143,7 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:17:57.751Z",
+                      "startTime": "2026-01-24T12:21:40.094Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -183,12 +183,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3173,
+                      "duration": 3347,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:17:57.750Z",
+                      "startTime": "2026-01-24T12:21:40.108Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -217,12 +217,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3623,
+                      "duration": 3304,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:17:57.846Z",
+                      "startTime": "2026-01-24T12:21:40.113Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -251,12 +251,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 6184,
+                      "duration": 5942,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:17:57.777Z",
+                      "startTime": "2026-01-24T12:21:40.098Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -299,7 +299,7 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:17:56.866Z",
+                      "startTime": "2026-01-24T12:21:39.180Z",
                       "annotations": [
                         {
                           "type": "skip",
@@ -337,12 +337,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 5207,
+                      "duration": 5236,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:17:57.776Z",
+                      "startTime": "2026-01-24T12:21:40.099Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -385,7 +385,7 @@
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:17:59.876Z",
+                      "startTime": "2026-01-24T12:21:42.259Z",
                       "annotations": [
                         {
                           "type": "skip",
@@ -414,8 +414,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T12:17:56.816Z",
-    "duration": 9420.448,
+    "startTime": "2026-01-24T12:21:39.127Z",
+    "duration": 9560.48,
     "expected": 5,
     "skipped": 2,
     "unexpected": 1,
