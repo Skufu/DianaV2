@@ -46,7 +46,7 @@
 - [x] Fix navigation.spec.js:147 - should hide sidebar on profile tab
 - [x] Fix navigation.spec.js:154 - should navigate to education and export screens
 - [x] Fix navigation.spec.js:163 - should open health trends and show empty state
-- [ ] Fix navigation.spec.js:170 - should show profile error state when profile API fails
+- [x] Fix navigation.spec.js:170 - should show profile error state when profile API fails
 - [ ] Fix navigation.spec.js:187 - should render dashboard error state when assessments fail
 - [ ] Fix navigation.spec.js:203 - should send user to onboarding when profile is incomplete
 
