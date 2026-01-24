@@ -13,19 +13,21 @@ import (
 )
 
 type SeedUser struct {
-	Email    string
-	Password string
-	IsAdmin  bool
+	Email     string
+	Password  string
+	IsAdmin   bool
+	FirstName string
+	LastName  string
 }
 
 func main() {
-	// Load .env file if it exists
 	_ = godotenv.Load()
 
 	cfg := config.Load()
 	if cfg.DBDSN == "" {
 		log.Fatalf("DB_DSN is required for seeding")
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -37,11 +39,20 @@ func main() {
 
 	users := []SeedUser{
 		{Email: "admin@diana.app", Password: "admin123", IsAdmin: true},
-		{Email: "demo@diana.app", Password: "demopassword123", IsAdmin: false},
+		{Email: "demo@diana.app", Password: "demopassword123", IsAdmin: false, FirstName: "Demo", LastName: "User"},
 	}
 
 	for _, u := range users {
-		if err := seedUser(ctx, pool, u.Email, u.Password, u.IsAdmin); err != nil {
+		firstName := ""
+		lastName := ""
+		if u.FirstName != "" {
+			firstName = u.FirstName
+		}
+		if u.LastName != "" {
+			lastName = u.LastName
+		}
+
+		if err := seedUser(ctx, pool, u.Email, u.Password, firstName, lastName, u.IsAdmin); err != nil {
 			log.Printf("failed to seed user %s: %v", u.Email, err)
 		} else {
 			role := "user"
@@ -65,24 +76,26 @@ func main() {
 	fmt.Println("==================================")
 }
 
-func seedUser(ctx context.Context, pool *pgxpool.Pool, email, password string, isAdmin bool) error {
+func seedUser(ctx context.Context, pool *pgxpool.Pool, email, password, firstName, lastName string, isAdmin bool) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	// Using is_admin, account_status, onboarding_completed based on schema analysis
-	const q = `
-	INSERT INTO users (email, password_hash, is_admin, is_active, account_status, onboarding_completed, created_at, updated_at)
-	VALUES ($1, $2, $3, true, 'active', true, NOW(), NOW())
-	ON CONFLICT (email) 
-	DO UPDATE SET 
-		password_hash = EXCLUDED.password_hash,
-		is_admin = EXCLUDED.is_admin,
-		is_active = true,
-		account_status = 'active',
-		onboarding_completed = true,
-		updated_at = NOW()`
 
-	_, err = pool.Exec(ctx, q, email, string(hash), isAdmin)
+	const q = `
+		DELETE FROM users WHERE email = $1
+	`
+
+	_, err = pool.Exec(ctx, q, email)
+	if err != nil {
+		return err
+	}
+
+	const insertQ = `
+		INSERT INTO users (email, password_hash, is_admin, is_active, account_status, onboarding_completed, first_name, last_name, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+	`
+
+	_, err = pool.Exec(ctx, insertQ, email, string(hash), isAdmin)
 	return err
 }
