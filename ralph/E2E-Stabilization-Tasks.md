@@ -64,7 +64,7 @@
 
 ## Phase 6: Export Tests (MEDIUM)
 
-- [ ] Fix export.spec.js:148 - should navigate to export tab
+- [x] Fix export.spec.js:148 - should navigate to export tab
 - [ ] Fix export.spec.js:159 - should display export options visible
 - [ ] Fix export.spec.js:190 - should display filter options
 - [ ] Fix export.spec.js:208 - should show data privacy notice
