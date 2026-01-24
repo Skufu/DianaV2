@@ -57,20 +57,20 @@
   },
   "suites": [
     {
-      "title": "error-handling.spec.js",
-      "file": "error-handling.spec.js",
+      "title": "export.spec.js",
+      "file": "export.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Error Handling - Network Failures",
-          "file": "error-handling.spec.js",
-          "line": 10,
+          "title": "Export Page Tests",
+          "file": "export.spec.js",
+          "line": 129,
           "column": 6,
           "specs": [
             {
-              "title": "API timeout → loading then error message",
+              "title": "should navigate to export tab",
               "ok": true,
               "tags": [],
               "tests": [
@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8227,
+                      "duration": 1711,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:33:04.331Z",
+                      "startTime": "2026-01-24T12:37:07.707Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -98,13 +98,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "9f91e19d2968a941e6eb-70482441109f49f4c5dd",
-              "file": "error-handling.spec.js",
-              "line": 48,
+              "id": "f5d53b089fdfe9adefb4-7f7990b3e648345bce23",
+              "file": "export.spec.js",
+              "line": 148,
               "column": 3
             },
             {
-              "title": "500 Internal Server Error → error banner visible",
+              "title": "should display export options visible",
               "ok": true,
               "tags": [],
               "tests": [
@@ -119,12 +119,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 3463,
+                      "duration": 2296,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:33:04.349Z",
+                      "startTime": "2026-01-24T12:37:07.713Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -132,13 +132,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "9f91e19d2968a941e6eb-6238c768a42cf4aee34e",
-              "file": "error-handling.spec.js",
-              "line": 69,
+              "id": "f5d53b089fdfe9adefb4-7de21dc4ed5e4448997f",
+              "file": "export.spec.js",
+              "line": 159,
               "column": 3
             },
             {
-              "title": "Network disconnect → error handling",
+              "title": "should display filter options",
               "ok": true,
               "tags": [],
               "tests": [
@@ -153,12 +153,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3003,
+                      "duration": 1975,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:33:04.344Z",
+                      "startTime": "2026-01-24T12:37:07.720Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -166,13 +166,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "9f91e19d2968a941e6eb-947130ca6d77d39a9955",
-              "file": "error-handling.spec.js",
-              "line": 95,
+              "id": "f5d53b089fdfe9adefb4-46cbd95647557d8a772f",
+              "file": "export.spec.js",
+              "line": 190,
               "column": 3
             },
             {
-              "title": "Multiple API failures → all error states show correctly",
+              "title": "should show data privacy notice",
               "ok": true,
               "tags": [],
               "tests": [
@@ -187,12 +187,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 3183,
+                      "duration": 1653,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:33:04.362Z",
+                      "startTime": "2026-01-24T12:37:07.721Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -200,13 +200,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "9f91e19d2968a941e6eb-8b1443285879634730cd",
-              "file": "error-handling.spec.js",
-              "line": 113,
+              "id": "f5d53b089fdfe9adefb4-386709d98ee0afd4b10e",
+              "file": "export.spec.js",
+              "line": 208,
               "column": 3
             },
             {
-              "title": "Slow network response → loading state persists",
+              "title": "should generate PDF report and trigger download",
               "ok": true,
               "tags": [],
               "tests": [
@@ -221,12 +221,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 6308,
+                      "duration": 3988,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:33:04.355Z",
+                      "startTime": "2026-01-24T12:37:07.712Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -234,65 +234,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "9f91e19d2968a941e6eb-ae52d2cd5841d36a90e4",
-              "file": "error-handling.spec.js",
-              "line": 149,
+              "id": "f5d53b089fdfe9adefb4-b3539a9e21ff22ec4c18",
+              "file": "export.spec.js",
+              "line": 219,
               "column": 3
             },
             {
-              "title": "Empty response (204 No Content) → handled gracefully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "location": {
-                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                        "line": 187,
-                        "column": 8
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": -1,
-                      "parallelIndex": -1,
-                      "status": "skipped",
-                      "duration": 0,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T12:33:03.478Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "location": {
-                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                            "line": 187,
-                            "column": 8
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "9f91e19d2968a941e6eb-ebb89f2a4787197d6813",
-              "file": "error-handling.spec.js",
-              "line": 187,
-              "column": 8
-            },
-            {
-              "title": "Retry button works when loading fails",
+              "title": "should show appropriate message when no data to export",
               "ok": true,
               "tags": [],
               "tests": [
@@ -307,12 +255,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 5196,
+                      "duration": 1968,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T12:33:04.382Z",
+                      "startTime": "2026-01-24T12:37:07.726Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -320,62 +268,10 @@
                   "status": "expected"
                 }
               ],
-              "id": "9f91e19d2968a941e6eb-145bfab9d534d820de79",
-              "file": "error-handling.spec.js",
-              "line": 211,
+              "id": "f5d53b089fdfe9adefb4-92db4cd749f3efd594e5",
+              "file": "export.spec.js",
+              "line": 248,
               "column": 3
-            },
-            {
-              "title": "401 Unauthorized → redirects to login",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "location": {
-                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                        "line": 290,
-                        "column": 8
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": -1,
-                      "parallelIndex": -1,
-                      "status": "skipped",
-                      "duration": 0,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T12:33:07.478Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "location": {
-                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
-                            "line": 290,
-                            "column": 8
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "9f91e19d2968a941e6eb-d257539dcefb5502b54d",
-              "file": "error-handling.spec.js",
-              "line": 290,
-              "column": 8
             }
           ]
         }
@@ -384,10 +280,10 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T12:33:03.427Z",
-    "duration": 9377.5,
+    "startTime": "2026-01-24T12:37:06.784Z",
+    "duration": 5151.62,
     "expected": 6,
-    "skipped": 2,
+    "skipped": 0,
     "unexpected": 0,
     "flaky": 0
   }
