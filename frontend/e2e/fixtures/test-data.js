@@ -109,7 +109,7 @@ export const SELECTORS = {
     sidebar: 'nav',
     dashboardTab: '[data-testid="dashboard-tab"], button:has-text("Dashboard")',
     profileTab: '[data-testid="profile-tab"], button:has-text("My Profile")',
-    trendsTab: '[data-testid="trends-tab"], button:has-text("Health Trends")',
+    trendsTab: 'button:has-text("Health Trends")',
     insightsTab: '[data-testid="insights-tab"], button:has-text("Insights")',
     educationTab: '[data-testid="education-tab"], button:has-text("Education")',
     exportTab: '[data-testid="export-tab"], button:has-text("Export Data")',
