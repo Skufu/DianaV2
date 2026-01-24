@@ -54,7 +54,7 @@
 
 ## Phase 5: Error Handling Tests (MEDIUM)
 
-- [ ] Fix error-handling.spec.js:40 - API timeout → loading then error message
+- [x] Fix error-handling.spec.js:40 - API timeout → loading then error message
 - [ ] Fix error-handling.spec.js:63 - 500 Internal Server Error → error banner visible
 - [ ] Fix error-handling.spec.js:107 - Multiple API failures → all error states show correctly
 - [ ] Fix error-handling.spec.js:132 - Slow network response → loading state persists

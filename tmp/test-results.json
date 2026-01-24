@@ -57,20 +57,20 @@
   },
   "suites": [
     {
-      "title": "navigation.spec.js",
-      "file": "navigation.spec.js",
+      "title": "error-handling.spec.js",
+      "file": "error-handling.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Navigation",
-          "file": "navigation.spec.js",
-          "line": 120,
+          "title": "Error Handling - Network Failures",
+          "file": "error-handling.spec.js",
+          "line": 10,
           "column": 6,
           "specs": [
             {
-              "title": "should show primary navigation items",
+              "title": "API timeout → loading then error message",
               "ok": true,
               "tags": [],
               "tests": [
@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1162,
+                      "duration": 8262,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:59:53.760Z",
+                      "startTime": "2026-01-24T12:17:57.746Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -98,14 +98,14 @@
                   "status": "expected"
                 }
               ],
-              "id": "ce7c070a851ea64285fd-b366ab8519ce7dcbc0e9",
-              "file": "navigation.spec.js",
-              "line": 131,
+              "id": "9f91e19d2968a941e6eb-70482441109f49f4c5dd",
+              "file": "error-handling.spec.js",
+              "line": 48,
               "column": 3
             },
             {
-              "title": "should hide sidebar on profile tab",
-              "ok": true,
+              "title": "500 Internal Server Error → error banner visible",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -118,27 +118,57 @@
                     {
                       "workerIndex": 1,
                       "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 1647,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 1823,
+                      "error": {
+                        "message": "Error: page.reload: net::ERR_ABORTED; maybe frame was detached?\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.reload: net::ERR_ABORTED; maybe frame was detached?\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js:87:16",
+                        "location": {
+                          "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
+                          "column": 16,
+                          "line": 87
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 85 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 86 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 87 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mreload()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 88 |\u001b[39m\n \u001b[90m 89 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m1000\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 90 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
+                            "column": 16,
+                            "line": 87
+                          },
+                          "message": "Error: page.reload: net::ERR_ABORTED; maybe frame was detached?\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n\n\n  85 |     });\n  86 |\n> 87 |     await page.reload();\n     |                ^\n  88 |\n  89 |     await page.waitForTimeout(1000);\n  90 |\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js:87:16"
+                        }
+                      ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:59:53.756Z",
+                      "startTime": "2026-01-24T12:17:57.751Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\error-handling-Error-Handl-58b50-rror-→-error-banner-visible-chromium\\test-failed-1.png"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
+                        "column": 16,
+                        "line": 87
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "ce7c070a851ea64285fd-c78cb53e29916af3dddf",
-              "file": "navigation.spec.js",
-              "line": 147,
+              "id": "9f91e19d2968a941e6eb-6238c768a42cf4aee34e",
+              "file": "error-handling.spec.js",
+              "line": 69,
               "column": 3
             },
             {
-              "title": "should navigate to education and export screens",
+              "title": "Network disconnect → error handling",
               "ok": true,
               "tags": [],
               "tests": [
@@ -153,12 +183,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 6987,
+                      "duration": 3173,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:59:53.775Z",
+                      "startTime": "2026-01-24T12:17:57.750Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -166,13 +196,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "ce7c070a851ea64285fd-9ca16d6b3be74aee13e4",
-              "file": "navigation.spec.js",
-              "line": 154,
+              "id": "9f91e19d2968a941e6eb-947130ca6d77d39a9955",
+              "file": "error-handling.spec.js",
+              "line": 95,
               "column": 3
             },
             {
-              "title": "should open health trends and show empty state",
+              "title": "Multiple API failures → all error states show correctly",
               "ok": true,
               "tags": [],
               "tests": [
@@ -187,12 +217,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 2003,
+                      "duration": 3623,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:59:53.757Z",
+                      "startTime": "2026-01-24T12:17:57.846Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -200,13 +230,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "ce7c070a851ea64285fd-a84015892b6f53fd4e2b",
-              "file": "navigation.spec.js",
-              "line": 163,
+              "id": "9f91e19d2968a941e6eb-8b1443285879634730cd",
+              "file": "error-handling.spec.js",
+              "line": 113,
               "column": 3
             },
             {
-              "title": "should show profile error state when profile API fails",
+              "title": "Slow network response → loading state persists",
               "ok": true,
               "tags": [],
               "tests": [
@@ -221,12 +251,12 @@
                       "workerIndex": 4,
                       "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 2899,
+                      "duration": 6184,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:59:53.789Z",
+                      "startTime": "2026-01-24T12:17:57.777Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -234,13 +264,65 @@
                   "status": "expected"
                 }
               ],
-              "id": "ce7c070a851ea64285fd-d0f100c879286cda8231",
-              "file": "navigation.spec.js",
-              "line": 175,
+              "id": "9f91e19d2968a941e6eb-ae52d2cd5841d36a90e4",
+              "file": "error-handling.spec.js",
+              "line": 138,
               "column": 3
             },
             {
-              "title": "should render dashboard error state when assessments fail",
+              "title": "Empty response (204 No Content) → handled gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
+                        "line": 176,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-01-24T12:17:56.866Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "location": {
+                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
+                            "line": 176,
+                            "column": 8
+                          }
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "skipped"
+                }
+              ],
+              "id": "9f91e19d2968a941e6eb-ebb89f2a4787197d6813",
+              "file": "error-handling.spec.js",
+              "line": 176,
+              "column": 8
+            },
+            {
+              "title": "Retry button works when loading fails",
               "ok": true,
               "tags": [],
               "tests": [
@@ -255,12 +337,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 3768,
+                      "duration": 5207,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:59:53.775Z",
+                      "startTime": "2026-01-24T12:17:57.776Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -268,44 +350,62 @@
                   "status": "expected"
                 }
               ],
-              "id": "ce7c070a851ea64285fd-4c68479dc993b57aa6b8",
-              "file": "navigation.spec.js",
-              "line": 192,
+              "id": "9f91e19d2968a941e6eb-145bfab9d534d820de79",
+              "file": "error-handling.spec.js",
+              "line": 200,
               "column": 3
             },
             {
-              "title": "should send user to onboarding when profile is incomplete",
+              "title": "401 Unauthorized → redirects to login",
               "ok": true,
               "tags": [],
               "tests": [
                 {
                   "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "location": {
+                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
+                        "line": 279,
+                        "column": 8
+                      }
+                    }
+                  ],
+                  "expectedStatus": "skipped",
                   "projectId": "chromium",
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1171,
+                      "workerIndex": -1,
+                      "parallelIndex": -1,
+                      "status": "skipped",
+                      "duration": 0,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T11:59:55.135Z",
-                      "annotations": [],
+                      "startTime": "2026-01-24T12:17:59.876Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "location": {
+                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\error-handling.spec.js",
+                            "line": 279,
+                            "column": 8
+                          }
+                        }
+                      ],
                       "attachments": []
                     }
                   ],
-                  "status": "expected"
+                  "status": "skipped"
                 }
               ],
-              "id": "ce7c070a851ea64285fd-b9fd77b5fa9e21da8c92",
-              "file": "navigation.spec.js",
-              "line": 208,
-              "column": 3
+              "id": "9f91e19d2968a941e6eb-d257539dcefb5502b54d",
+              "file": "error-handling.spec.js",
+              "line": 279,
+              "column": 8
             }
           ]
         }
@@ -314,11 +414,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T11:59:52.797Z",
-    "duration": 8174.882,
-    "expected": 7,
-    "skipped": 0,
-    "unexpected": 0,
+    "startTime": "2026-01-24T12:17:56.816Z",
+    "duration": 9420.448,
+    "expected": 5,
+    "skipped": 2,
+    "unexpected": 1,
     "flaky": 0
   }
 }
