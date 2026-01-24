@@ -21,7 +21,7 @@
 
 ## Phase 2: Assessment Tests (HIGH)
 
-- [ ] Fix assessment.spec.js:27 - should navigate to profile tab
+- [x] Fix assessment.spec.js:27 - should navigate to profile tab
 - [ ] Fix assessment.spec.js:37 - should display personal info inputs
 - [ ] Fix assessment.spec.js:44 - should render profile sections
 - [ ] Fix assessment-creation.spec.js:11 - should login → create assessment → verify authenticated

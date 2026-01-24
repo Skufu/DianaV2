@@ -12,6 +12,12 @@ test.describe('Authentication Flow', () => {
     await page.goto('/');
   });
 
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.clear();
+    });
+  });
+
   test('should display login form', async ({ page }) => {
     await expect(page.locator(SELECTORS.loginEmailInput)).toBeVisible();
     await expect(page.locator(SELECTORS.loginPasswordInput)).toBeVisible();
