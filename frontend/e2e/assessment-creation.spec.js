@@ -122,7 +122,7 @@ test.describe('Assessment Creation Flow', () => {
     await page.click('button:has-text("Sign In")');
     await waitForNetworkIdle(page);
 
-    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h1:has-text("Welcome")')).toBeVisible({ timeout: 10000 });
 
     const assessmentResponse = await page.evaluate(async () => {
       const response = await fetch('/api/v1/users/me/assessments', {
@@ -174,7 +174,7 @@ test.describe('Assessment Creation Flow', () => {
       email: TEST_USER.email,
     });
 
-    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible();
+    await expect(page.locator('h1:has-text("Welcome")')).toBeVisible();
   });
 
   test('should fail to create assessment without authentication', async ({ page }) => {
@@ -338,7 +338,7 @@ test.describe('Real Backend Assessment Tests', () => {
     await page.click(SELECTORS.loginButton);
     await waitForNetworkIdle(page);
 
-    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h1:has-text("Welcome")')).toBeVisible({ timeout: 10000 });
 
     const assessmentResponse = await page.evaluate(async () => {
       const response = await fetch('/api/v1/users/me/assessments', {
@@ -496,7 +496,7 @@ test.describe('Real Backend Assessment Tests', () => {
     await page.click(SELECTORS.loginButton);
     await waitForNetworkIdle(page);
 
-    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h1:has-text("Welcome")')).toBeVisible({ timeout: 10000 });
 
     const assessmentResponse = await page.evaluate(async () => {
       const response = await fetch('/api/v1/users/me/assessments', {
@@ -627,7 +627,7 @@ test.describe('Real Backend Assessment Tests', () => {
     await page.click(SELECTORS.loginButton);
     await waitForNetworkIdle(page);
 
-    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h1:has-text("Welcome")')).toBeVisible({ timeout: 10000 });
 
     const assessmentResponse = await page.evaluate(async () => {
       const response = await fetch('/api/v1/users/me/assessments', {
@@ -758,7 +758,7 @@ test.describe('Real Backend Assessment Tests', () => {
     await page.click(SELECTORS.loginButton);
     await waitForNetworkIdle(page);
 
-    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h1:has-text("Welcome")')).toBeVisible({ timeout: 10000 });
 
     const assessmentResponse = await page.evaluate(async () => {
       const response = await fetch('/api/v1/users/me/assessments', {
@@ -900,7 +900,7 @@ test.describe('Real Backend Assessment Tests', () => {
     await page.click(SELECTORS.loginButton);
     await waitForNetworkIdle(page);
 
-    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h1:has-text("Welcome")')).toBeVisible({ timeout: 10000 });
 
     const initialCallCount = dashboardCallCount;
     const initialAssessments = latestAssessmentsResponse;
@@ -1126,7 +1126,7 @@ test.describe('Real Backend Assessment Tests', () => {
     await page.click(SELECTORS.loginButton);
     await waitForNetworkIdle(page);
 
-    await expect(page.locator('text=/dashboard|welcome/i')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('h1:has-text("Welcome")')).toBeVisible({ timeout: 10000 });
 
     const initialTrendsResponse = await page.evaluate(async () => {
       const response = await fetch('/api/v1/users/me/trends?months=12', {
