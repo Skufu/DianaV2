@@ -9,8 +9,6 @@ const corsHeaders = {
 
 test.describe('Error Handling - Network Failures', () => {
   test.beforeEach(async ({ page }) => {
-    const mockToken = createMockJwt({ role: 'user', user_id: 'e2e-user' });
-
     await page.route('**/users/me/profile', async route => {
       const request = route.request();
       if (request.method() === 'OPTIONS') {
@@ -21,21 +19,24 @@ test.describe('Error Handling - Network Failures', () => {
         headers: corsHeaders,
         contentType: 'application/json',
         body: JSON.stringify({
-          id: 'e2e-user-id',
+          id: '1',
           email: TEST_USER.email,
-          role: 'user',
+          name: 'Test User',
           onboarding_completed: true,
+          first_name: 'Test',
+          last_name: 'User',
         }),
       });
     });
 
-    await page.goto('/');
-    await page.evaluate(({ token }) => {
-      localStorage.setItem('diana_token', token);
+    await page.addInitScript(() => {
+      localStorage.setItem('diana_token', 'test.access.token');
       localStorage.setItem('diana_refresh_token', 'test.refresh.token');
-    }, { token: mockToken });
-    await page.reload();
-    await page.waitForLoadState('networkidle');
+    });
+
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1000);
   });
 
   test.afterEach(async ({ page }) => {
@@ -51,20 +52,18 @@ test.describe('Error Handling - Network Failures', () => {
         return route.fulfill({ status: 204, headers: corsHeaders });
       }
 
-      await new Promise(resolve => setTimeout(resolve, 31000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
+      return route.abort('timedout');
     });
 
     await page.reload();
 
     const loadingElement = page.locator('text=Loading your health data...');
-    await expect(loadingElement).toBeVisible({ timeout: 10000 });
+    await expect(loadingElement).toBeVisible({ timeout: 5000 });
+
+    const errorBanner = page.locator('.bg-rose-500\\/10:has-text("Failed to load assessments")');
+    await expect(errorBanner).toBeVisible({ timeout: 10000 });
   });
 
   test('500 Internal Server Error → error banner visible', async ({ page }) => {
