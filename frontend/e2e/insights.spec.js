@@ -156,9 +156,13 @@ test.describe('Insights Dashboard', () => {
     await insightsTab.click();
     await waitForNetworkIdle(page);
 
+    // Should NOT show global error
     const errorMessage = page.locator('text=/Failed to load insights/i');
-    const errorCount = await errorMessage.count();
-    expect(errorCount).toBeGreaterThan(0);
+    await expect(errorMessage).toBeHidden();
+
+    // Should show clusters (partial success)
+    const clusterSection = page.locator('[class*="cluster"], [class*="chart"], svg, canvas');
+    await expect(clusterSection.first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should show empty insights state when clusters missing', async ({ page }) => {

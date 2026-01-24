@@ -71,6 +71,11 @@ const mockAuthenticatedSession = async (page, accessToken, overrides = {}) => {
       return route.fulfill(buildJsonResponse(onboarding.body, onboarding.status));
     }
 
+    if (url.includes('/users/me/account') && method === 'DELETE') {
+      const deletion = resolveOverride(overrides.accountDeletion, { success: true });
+      return route.fulfill(buildJsonResponse(deletion.body, deletion.status));
+    }
+
     return route.fulfill(buildJsonResponse({ error: 'Not mocked in profile tests' }, 404));
   });
 };
@@ -113,6 +118,13 @@ const waitForAppShell = async page => {
 
 test.describe('Profile Management', () => {
   test.beforeEach(async ({ page }) => {
+    // Fail test on console errors (T019)
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        throw new Error(`Console error: ${msg.text()}`);
+      }
+    });
+
     const accessToken = createMockJwt();
     await mockAuthenticatedSession(page, accessToken);
     await setStoredSession(page, accessToken);
@@ -210,5 +222,32 @@ test.describe('Profile Management', () => {
 
     const finalState = await consentCheckbox.isChecked();
     expect(finalState).toBe(toggledState);
+  });
+
+  test('should show confirmation dialog when clicking delete', async ({ page }) => {
+    const sidebar = page.locator(SELECTORS.sidebar);
+    await sidebar.locator('button:has-text("My Profile")').click();
+
+    await page.locator('button:has-text("Delete My Account")').click();
+    await expect(page.locator('text=Confirm Account Deletion')).toBeVisible();
+    await expect(page.locator('text=permanently delete your account')).toBeVisible();
+    
+    // Cancel should close modal
+    await page.locator('button:has-text("Cancel")').click();
+    await expect(page.locator('text=Confirm Account Deletion')).toBeHidden();
+  });
+
+  test('should delete account and redirect to login', async ({ page }) => {
+    const sidebar = page.locator(SELECTORS.sidebar);
+    await sidebar.locator('button:has-text("My Profile")').click();
+
+    await page.locator('button:has-text("Delete My Account")').click();
+    
+    // Confirm deletion
+    const confirmButton = page.locator('button:has-text("Delete Account")'); 
+    await confirmButton.click();
+
+    // Should redirect to login (root or /login)
+    await expect(page).toHaveURL(/(\/login|\/$)/);
   });
 });

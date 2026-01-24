@@ -1458,4 +1458,6 @@ const generateMockUsers = (count = 10, page = 1) => {
     await expect(page.locator('h3:has-text("Create User")')).toBeVisible({ timeout: 2000 });
     await expect(page.locator('text=Showing 1 to 10 of 25')).toBeVisible({ timeout: 3000 });
   });
+});
+
 

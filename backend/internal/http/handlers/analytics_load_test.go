@@ -53,7 +53,7 @@ func TestAnalyticsLoadTest_1000Requests(t *testing.T) {
 		ModelVersion:  "test-model",
 		ExportMaxRows: 100,
 	}
-	r := appRouter.New(cfg, st, testCache)
+	r, _ := appRouter.New(cfg, st, testCache)
 
 	testEmail := "loadtest@example.com"
 	seedTestUser(t, pool, testEmail, "password123")
