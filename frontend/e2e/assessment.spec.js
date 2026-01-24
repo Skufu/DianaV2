@@ -36,9 +36,21 @@ test.describe('Profile Navigation Flow', () => {
 
     test('should display personal info inputs', async ({ page }) => {
         await openProfileTab(page);
-        await expect(page.locator('input[name="name"]')).toBeVisible();
+
+        if (await isOnboardingVisible(page)) {
+            const nextButton = page.locator('button:has-text("Next")').first();
+            await nextButton.click();
+            await expect(page.locator('text=Menopausal Health')).toBeVisible();
+            await nextButton.click();
+            await expect(page.locator('text=Medical History')).toBeVisible();
+            await nextButton.click();
+            await expect(page.locator('text=Settings')).toBeVisible();
+            await nextButton.click();
+        }
+
+        await expect(page.locator('input[name="first_name"]')).toBeVisible();
         await expect(page.locator('input[name="email"]')).toBeVisible();
-        await expect(page.locator('input[name="dob"]')).toBeVisible();
+        await expect(page.locator('input[name="date_of_birth"]')).toBeVisible();
     });
 
     test('should render profile sections', async ({ page }) => {
