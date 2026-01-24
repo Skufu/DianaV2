@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 6
+      "actualWorkers": 4
     },
     "preserveOutput": "always",
     "reporter": [
@@ -30,7 +30,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 6
+          "actualWorkers": 4
         },
         "id": "chromium",
         "name": "chromium",
@@ -57,20 +57,20 @@
   },
   "suites": [
     {
-      "title": "auth.spec.js",
-      "file": "auth.spec.js",
+      "title": "auth-errors.spec.js",
+      "file": "auth-errors.spec.js",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Authentication Flow",
-          "file": "auth.spec.js",
+          "title": "Authorization Error Handling",
+          "file": "auth-errors.spec.js",
           "line": 10,
           "column": 6,
           "specs": [
             {
-              "title": "should display login form",
+              "title": "should redirect to login when access token expires",
               "ok": true,
               "tags": [],
               "tests": [
@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1996,
+                      "duration": 2097,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T09:06:45.831Z",
+                      "startTime": "2026-01-24T09:09:10.890Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -98,13 +98,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "d5ed79a6b333c2ba7209-ec67a95be9b8c08c59de",
-              "file": "auth.spec.js",
-              "line": 15,
+              "id": "e5a2193e4067c34930f0-3eec17412a0416da97ce",
+              "file": "auth-errors.spec.js",
+              "line": 11,
               "column": 3
             },
             {
-              "title": "should display branding on login screen",
+              "title": "should redirect to login with invalid token format",
               "ok": true,
               "tags": [],
               "tests": [
@@ -119,12 +119,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1514,
+                      "duration": 3125,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T09:06:45.844Z",
+                      "startTime": "2026-01-24T09:09:10.909Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -132,13 +132,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "d5ed79a6b333c2ba7209-20b27408988f971f28b4",
-              "file": "auth.spec.js",
-              "line": 21,
+              "id": "e5a2193e4067c34930f0-95a38864b0109a78c0eb",
+              "file": "auth-errors.spec.js",
+              "line": 61,
               "column": 3
             },
             {
-              "title": "should display signup form from login page",
+              "title": "User accessing admin route → forbidden message or redirect",
               "ok": true,
               "tags": [],
               "tests": [
@@ -153,12 +153,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 2515,
+                      "duration": 4174,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T09:06:45.839Z",
+                      "startTime": "2026-01-24T09:09:10.904Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -166,13 +166,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "d5ed79a6b333c2ba7209-cba5c71e51074e6504b5",
-              "file": "auth.spec.js",
-              "line": 26,
+              "id": "e5a2193e4067c34930f0-08c262cc7aed6f538255",
+              "file": "auth-errors.spec.js",
+              "line": 172,
               "column": 3
             },
             {
-              "title": "should register with valid credentials and redirect to onboarding",
+              "title": "should fully logout with stale refresh token",
               "ok": true,
               "tags": [],
               "tests": [
@@ -187,12 +187,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 5197,
+                      "duration": 8108,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T09:06:45.830Z",
+                      "startTime": "2026-01-24T09:09:10.889Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -200,519 +200,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "d5ed79a6b333c2ba7209-0ef4da2ed0979474d256",
-              "file": "auth.spec.js",
-              "line": 54,
-              "column": 3
-            },
-            {
-              "title": "should show error for invalid credentials",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 4,
-                      "parallelIndex": 4,
-                      "status": "passed",
-                      "duration": 3621,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:45.838Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-84edf7d4d2bc8982060d",
-              "file": "auth.spec.js",
-              "line": 131,
-              "column": 3
-            },
-            {
-              "title": "should show error when login request fails",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
-                      "status": "passed",
-                      "duration": 3024,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:45.852Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-7601d4a4bc5c3b620cf6",
-              "file": "auth.spec.js",
-              "line": 140,
-              "column": 3
-            },
-            {
-              "title": "should prevent double submit while login is loading",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 2991,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:47.523Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-db5c30f853fc9afe59e1",
-              "file": "auth.spec.js",
-              "line": 158,
-              "column": 3
-            },
-            {
-              "title": "should login successfully with valid credentials",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 2607,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:48.005Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-a0533cf450e34a29287a",
-              "file": "auth.spec.js",
-              "line": 244,
-              "column": 3
-            },
-            {
-              "title": "should persist session after page reload",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 3557,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:48.518Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-75c75dac53578a48e333",
-              "file": "auth.spec.js",
-              "line": 314,
-              "column": 3
-            },
-            {
-              "title": "should redirect to login if stored token is invalid",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
-                      "status": "passed",
-                      "duration": 1543,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:49.132Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-53827af8e3e4ed157497",
-              "file": "auth.spec.js",
-              "line": 387,
-              "column": 3
-            },
-            {
-              "title": "should logout successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 4,
-                      "parallelIndex": 4,
-                      "status": "passed",
-                      "duration": 3406,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:49.712Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-2c1afcf4edb938cb82a8",
-              "file": "auth.spec.js",
-              "line": 411,
-              "column": 3
-            },
-            {
-              "title": "should show error for registration with weak password",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 1045,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:50.589Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-2d85086020e58d25ccbe",
-              "file": "auth.spec.js",
-              "line": 499,
-              "column": 3
-            },
-            {
-              "title": "should show error for registration with duplicate email",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
-                      "status": "passed",
-                      "duration": 1368,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:50.711Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-6e8cef5ec62af3950a29",
-              "file": "auth.spec.js",
-              "line": 587,
-              "column": 3
-            },
-            {
-              "title": "should show frontend validation error for invalid email format",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4361,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:50.781Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-5b15ed3ca1fbac9862ef",
-              "file": "auth.spec.js",
-              "line": 641,
-              "column": 3
-            },
-            {
-              "title": "should enforce rate limit after too many failed login attempts",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 18613,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:51.179Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-18996246dadfb3899115",
-              "file": "auth.spec.js",
-              "line": 726,
-              "column": 3
-            },
-            {
-              "title": "should refresh token when access token expires",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 3693,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:51.669Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-7e36436823f9c1b082a0",
-              "file": "auth.spec.js",
-              "line": 770,
-              "column": 3
-            },
-            {
-              "title": "should logout on refresh token failure",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
-                      "status": "passed",
-                      "duration": 8573,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:52.105Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-0c48a195970111f10ae2",
-              "file": "auth.spec.js",
-              "line": 886,
-              "column": 3
-            },
-            {
-              "title": "should show error for registration with mismatched password confirmation",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 1709,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:52.119Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-1e05684ff9c4b45f81ea",
-              "file": "auth.spec.js",
-              "line": 992,
-              "column": 3
-            },
-            {
-              "title": "should show frontend validation error for invalid email format on login",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 4,
-                      "parallelIndex": 4,
-                      "status": "passed",
-                      "duration": 4024,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-01-24T09:06:53.145Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "d5ed79a6b333c2ba7209-db839abee87b9dcd2cb7",
-              "file": "auth.spec.js",
-              "line": 1040,
+              "id": "e5a2193e4067c34930f0-952f6d3e3feb21267d18",
+              "file": "auth-errors.spec.js",
+              "line": 292,
               "column": 3
             }
           ]
@@ -722,9 +212,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T09:06:44.830Z",
-    "duration": 25057.457000000002,
-    "expected": 19,
+    "startTime": "2026-01-24T09:09:10.086Z",
+    "duration": 9082.232,
+    "expected": 4,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

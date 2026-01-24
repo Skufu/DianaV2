@@ -15,7 +15,7 @@
 
 - [x] Fix auth.spec.js:131 - should show error for invalid credentials
 - [x] Fix auth.spec.js:171 - should prevent double submit while login is loading
-- [ ] Fix auth-errors.spec.js:61 - should redirect to login with invalid token format
+- [x] Fix auth-errors.spec.js:61 - should redirect to login with invalid token format
 
 ---
 
