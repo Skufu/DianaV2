@@ -67,7 +67,7 @@
 - [x] Fix export.spec.js:148 - should navigate to export tab
 - [x] Fix export.spec.js:159 - should display export options visible
 - [x] Fix export.spec.js:190 - should display filter options
-- [ ] Fix export.spec.js:208 - should show data privacy notice
+- [x] Fix export.spec.js:208 - should show data privacy notice
 - [ ] Fix export.spec.js:219 - should generate PDF report and trigger download
 - [ ] Fix export.spec.js:248 - should show appropriate message when no data to export
 
