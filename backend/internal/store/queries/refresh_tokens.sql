@@ -7,8 +7,6 @@ RETURNING id, user_id, token_hash, expires_at, revoked, created_at, revoked_at;
 SELECT id, user_id, token_hash, expires_at, revoked, created_at, revoked_at
 FROM refresh_tokens
 WHERE token_hash = $1
-AND revoked = FALSE
-AND expires_at > NOW()
 LIMIT 1;
 
 -- name: RevokeRefreshToken :exec

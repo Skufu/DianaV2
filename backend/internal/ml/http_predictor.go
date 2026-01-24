@@ -18,6 +18,7 @@ type HTTPPredictor struct {
 	client  *http.Client
 	url     string
 	version string
+	apiKey  string
 }
 
 type predictResp struct {
@@ -25,11 +26,12 @@ type predictResp struct {
 	RiskScore int    `json:"risk_score"`
 }
 
-func NewHTTPPredictor(url, version string, timeout time.Duration) *HTTPPredictor {
+func NewHTTPPredictor(url, version, apiKey string, timeout time.Duration) *HTTPPredictor {
 	return &HTTPPredictor{
 		client:  &http.Client{Timeout: timeout},
 		url:     url,
 		version: version,
+		apiKey:  apiKey,
 	}
 }
 
@@ -52,6 +54,9 @@ func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (s
 		return "error", 0, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if p.apiKey != "" {
+		req.Header.Set("X-API-Key", p.apiKey)
+	}
 	if p.version != "" {
 		req.Header.Set("X-Model-Version", p.version)
 	}
