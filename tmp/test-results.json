@@ -85,12 +85,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 3031,
+                      "duration": 1304,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:05.632Z",
+                      "startTime": "2026-01-24T08:58:40.931Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -119,12 +119,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 4626,
+                      "duration": 1653,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:05.018Z",
+                      "startTime": "2026-01-24T08:58:40.949Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -153,12 +153,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 4607,
+                      "duration": 2530,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:05.462Z",
+                      "startTime": "2026-01-24T08:58:40.952Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -187,12 +187,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 6889,
+                      "duration": 5737,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:04.996Z",
+                      "startTime": "2026-01-24T08:58:40.960Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -207,7 +207,7 @@
             },
             {
               "title": "should show error for invalid credentials",
-              "ok": false,
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -220,53 +220,18 @@
                     {
                       "workerIndex": 4,
                       "parallelIndex": 4,
-                      "status": "failed",
-                      "duration": 9310,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=/invalid credentials|invalid|error|failed/i')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=/invalid credentials|invalid|error|failed/i')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=/invalid credentials|invalid|error|failed/i')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=/invalid credentials|invalid|error|failed/i')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js:150:32",
-                        "location": {
-                          "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js",
-                          "column": 32,
-                          "line": 150
-                        },
-                        "snippet": "\u001b[0m \u001b[90m 148 |\u001b[39m\n \u001b[90m 149 |\u001b[39m     \u001b[36mconst\u001b[39m errorMessage \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=/invalid credentials|invalid|error|failed/i'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 150 |\u001b[39m     \u001b[36mawait\u001b[39m expect(errorMessage)\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m5000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 151 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 152 |\u001b[39m\n \u001b[90m 153 |\u001b[39m   test(\u001b[32m'should show error when login request fails'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js",
-                            "column": 32,
-                            "line": 150
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('text=/invalid credentials|invalid|error|failed/i')\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=/invalid credentials|invalid|error|failed/i')\u001b[22m\n\n\n  148 |\n  149 |     const errorMessage = page.locator('text=/invalid credentials|invalid|error|failed/i');\n> 150 |     await expect(errorMessage).toBeVisible({ timeout: 5000 });\n      |                                ^\n  151 |   });\n  152 |\n  153 |   test('should show error when login request fails', async ({ page }) => {\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js:150:32"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 3661,
+                      "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:05.047Z",
+                      "startTime": "2026-01-24T08:58:40.971Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\auth-Authentication-Flow-s-c1b41-ror-for-invalid-credentials-chromium\\test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\test-results\\auth-Authentication-Flow-s-c1b41-ror-for-invalid-credentials-chromium\\error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js",
-                        "column": 32,
-                        "line": 150
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
               "id": "d5ed79a6b333c2ba7209-84edf7d4d2bc8982060d",
@@ -290,12 +255,12 @@
                       "workerIndex": 5,
                       "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 4344,
+                      "duration": 2769,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:05.570Z",
+                      "startTime": "2026-01-24T08:58:40.948Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -305,7 +270,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-7601d4a4bc5c3b620cf6",
               "file": "auth.spec.js",
-              "line": 153,
+              "line": 140,
               "column": 3
             },
             {
@@ -324,31 +289,31 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 7779,
+                      "duration": 7615,
                       "error": {
                         "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\u001b[22m\n",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js:243:31",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\u001b[22m\n\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js:230:31",
                         "location": {
                           "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js",
                           "column": 31,
-                          "line": 243
+                          "line": 230
                         },
-                        "snippet": "\u001b[0m \u001b[90m 241 |\u001b[39m\n \u001b[90m 242 |\u001b[39m     \u001b[36mconst\u001b[39m loginButton \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[33mSELECTORS\u001b[39m\u001b[33m.\u001b[39mloginButton)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 243 |\u001b[39m     \u001b[36mawait\u001b[39m expect(loginButton)\u001b[33m.\u001b[39mtoBeDisabled()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 244 |\u001b[39m\n \u001b[90m 245 |\u001b[39m     resolveLogin()\u001b[33m;\u001b[39m\n \u001b[90m 246 |\u001b[39m     \u001b[36mawait\u001b[39m waitForNetworkIdle(page)\u001b[33m;\u001b[39m\u001b[0m"
+                        "snippet": "\u001b[0m \u001b[90m 228 |\u001b[39m\n \u001b[90m 229 |\u001b[39m     \u001b[36mconst\u001b[39m loginButton \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[33mSELECTORS\u001b[39m\u001b[33m.\u001b[39mloginButton)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 230 |\u001b[39m     \u001b[36mawait\u001b[39m expect(loginButton)\u001b[33m.\u001b[39mtoBeDisabled()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 231 |\u001b[39m\n \u001b[90m 232 |\u001b[39m     resolveLogin()\u001b[33m;\u001b[39m\n \u001b[90m 233 |\u001b[39m     \u001b[36mawait\u001b[39m waitForNetworkIdle(page)\u001b[33m;\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
                           "location": {
                             "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js",
                             "column": 31,
-                            "line": 243
+                            "line": 230
                           },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\u001b[22m\n\n\n  241 |\n  242 |     const loginButton = page.locator(SELECTORS.loginButton);\n> 243 |     await expect(loginButton).toBeDisabled();\n      |                               ^\n  244 |\n  245 |     resolveLogin();\n  246 |     await waitForNetworkIdle(page);\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js:243:31"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeDisabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\nExpected: disabled\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeDisabled\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('button:has-text(\"Sign In\"), button:has-text(\"Login\")')\u001b[22m\n\n\n  228 |\n  229 |     const loginButton = page.locator(SELECTORS.loginButton);\n> 230 |     await expect(loginButton).toBeDisabled();\n      |                               ^\n  231 |\n  232 |     resolveLogin();\n  233 |     await waitForNetworkIdle(page);\n    at C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js:230:31"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:09.311Z",
+                      "startTime": "2026-01-24T08:58:42.369Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -365,7 +330,7 @@
                       "errorLocation": {
                         "file": "C:\\Users\\ADRIAN\\Github\\skufu\\DianaV2\\frontend\\e2e\\auth.spec.js",
                         "column": 31,
-                        "line": 243
+                        "line": 230
                       }
                     }
                   ],
@@ -374,7 +339,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-db5c30f853fc9afe59e1",
               "file": "auth.spec.js",
-              "line": 171,
+              "line": 158,
               "column": 3
             },
             {
@@ -393,12 +358,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 2189,
+                      "duration": 2766,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:09.799Z",
+                      "startTime": "2026-01-24T08:58:42.793Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -408,7 +373,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-a0533cf450e34a29287a",
               "file": "auth.spec.js",
-              "line": 253,
+              "line": 240,
               "column": 3
             },
             {
@@ -424,15 +389,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 4592,
+                      "duration": 3349,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:10.374Z",
+                      "startTime": "2026-01-24T08:58:43.693Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -442,7 +407,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-75c75dac53578a48e333",
               "file": "auth.spec.js",
-              "line": 323,
+              "line": 310,
               "column": 3
             },
             {
@@ -458,15 +423,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 3315,
+                      "duration": 1161,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:10.389Z",
+                      "startTime": "2026-01-24T08:58:43.926Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -476,7 +441,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-53827af8e3e4ed157497",
               "file": "auth.spec.js",
-              "line": 396,
+              "line": 383,
               "column": 3
             },
             {
@@ -492,15 +457,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 2242,
+                      "duration": 3834,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:12.021Z",
+                      "startTime": "2026-01-24T08:58:44.837Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -510,7 +475,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-2c1afcf4edb938cb82a8",
               "file": "auth.spec.js",
-              "line": 420,
+              "line": 407,
               "column": 3
             },
             {
@@ -526,15 +491,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 1277,
+                      "duration": 1062,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:12.020Z",
+                      "startTime": "2026-01-24T08:58:45.118Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -544,7 +509,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-2d85086020e58d25ccbe",
               "file": "auth.spec.js",
-              "line": 508,
+              "line": 495,
               "column": 3
             },
             {
@@ -560,15 +525,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 1555,
+                      "duration": 2578,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:13.326Z",
+                      "startTime": "2026-01-24T08:58:45.591Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -578,7 +543,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-6e8cef5ec62af3950a29",
               "file": "auth.spec.js",
-              "line": 596,
+              "line": 583,
               "column": 3
             },
             {
@@ -594,15 +559,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 3282,
+                      "duration": 2271,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:13.746Z",
+                      "startTime": "2026-01-24T08:58:46.206Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -612,7 +577,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-5b15ed3ca1fbac9862ef",
               "file": "auth.spec.js",
-              "line": 650,
+              "line": 637,
               "column": 3
             },
             {
@@ -628,15 +593,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 18483,
+                      "duration": 18547,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:14.293Z",
+                      "startTime": "2026-01-24T08:58:46.858Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -646,7 +611,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-18996246dadfb3899115",
               "file": "auth.spec.js",
-              "line": 735,
+              "line": 722,
               "column": 3
             },
             {
@@ -662,15 +627,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 3120,
+                      "duration": 3668,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:14.905Z",
+                      "startTime": "2026-01-24T08:58:47.076Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -680,7 +645,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-7e36436823f9c1b082a0",
               "file": "auth.spec.js",
-              "line": 779,
+              "line": 766,
               "column": 3
             },
             {
@@ -696,15 +661,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 5,
-                      "parallelIndex": 5,
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 8566,
+                      "duration": 7651,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:15.019Z",
+                      "startTime": "2026-01-24T08:58:48.199Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -714,7 +679,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-0c48a195970111f10ae2",
               "file": "auth.spec.js",
-              "line": 895,
+              "line": 882,
               "column": 3
             },
             {
@@ -730,15 +695,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 6,
-                      "parallelIndex": 4,
+                      "workerIndex": 5,
+                      "parallelIndex": 5,
                       "status": "passed",
-                      "duration": 1330,
+                      "duration": 1254,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:17.802Z",
+                      "startTime": "2026-01-24T08:58:48.501Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -748,7 +713,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-1e05684ff9c4b45f81ea",
               "file": "auth.spec.js",
-              "line": 1001,
+              "line": 988,
               "column": 3
             },
             {
@@ -764,15 +729,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
                       "status": "passed",
-                      "duration": 3498,
+                      "duration": 4548,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-01-24T08:49:17.069Z",
+                      "startTime": "2026-01-24T08:58:48.699Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -782,7 +747,7 @@
               ],
               "id": "d5ed79a6b333c2ba7209-db839abee87b9dcd2cb7",
               "file": "auth.spec.js",
-              "line": 1049,
+              "line": 1036,
               "column": 3
             }
           ]
@@ -792,11 +757,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-01-24T08:49:03.877Z",
-    "duration": 29011.193,
-    "expected": 17,
+    "startTime": "2026-01-24T08:58:39.711Z",
+    "duration": 25778.529000000002,
+    "expected": 18,
     "skipped": 0,
-    "unexpected": 2,
+    "unexpected": 1,
     "flaky": 0
   }
 }
