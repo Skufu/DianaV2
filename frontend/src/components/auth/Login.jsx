@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import BiologicalNetwork from '../layout/BiologicalNetwork';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 
-const Login = ({ onLogin, onShowSignup }) => {
+const Login = ({ onLogin, onShowSignup, error: errorProp }) => {
   const [mounted, setMounted] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,6 +42,9 @@ const Login = ({ onLogin, onShowSignup }) => {
       setLoading(false);
     }
   };
+
+  // Use error from prop if provided (from parent), otherwise use local state
+  const displayError = errorProp || error;
 
   return (
     <div
@@ -115,9 +118,9 @@ const Login = ({ onLogin, onShowSignup }) => {
               />
             </div>
 
-            {error && (
+            {displayError && (
               <div className="text-rose-400 text-sm bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
-                {error}
+                {displayError}
               </div>
             )}
 

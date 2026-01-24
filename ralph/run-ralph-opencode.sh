@@ -144,7 +144,7 @@ TEST_RESULTS="$TEMP_DIR/test-results.json"
 # Extract test file name from task text (e.g., "Fix auth.spec.js" -> "auth.spec.js")
 extract_test_file() {
     local task="$1"
-    echo "$task" | grep -oE '[a-zA-Z0-9_-]+\.spec\.(js|ts)' | head -1
+    echo "$task" | grep -oE '[a-zA-Z0-9_/-]+\.spec\.(js|ts)' | head -1
 }
 
 # Run a specific test file and return exit code (0=pass, non-zero=fail)
@@ -161,16 +161,24 @@ run_test() {
         return 2
     fi
     
+    # Use absolute path for results file
+    local results_file="$PROJECT_ROOT/$TEST_RESULTS"
+    mkdir -p "$(dirname "$results_file")"
+    
     echo "🧪 Running: npx playwright test $test_file"
     cd "$FRONTEND_DIR"
-    npx playwright test "$test_file" --reporter=json > "../$TEST_RESULTS" 2>&1
-    local exit_code=$?
+    npx playwright test "$test_file" --reporter=json > "$results_file" 2>&1 || true
+    local exit_code=${PIPESTATUS[0]}
+    # Fallback: check if results file indicates failure
+    if [ $exit_code -eq 0 ] && grep -q '"status":"failed"' "$results_file" 2>/dev/null; then
+        exit_code=1
+    fi
     cd "$PROJECT_ROOT"
     
     if [ $exit_code -eq 0 ]; then
         echo "✅ Test PASSED"
     else
-        local failed=$(grep -o '"status":"failed"' "../$TEST_RESULTS" 2>/dev/null | wc -l)
+        local failed=$(grep -o '"status":"failed"' "$results_file" 2>/dev/null | wc -l)
         echo "❌ Test FAILED ($failed failures)"
     fi
     return $exit_code
@@ -178,9 +186,10 @@ run_test() {
 
 # Get failure summary from JSON results
 get_failure_summary() {
-    if [ -f "$TEST_RESULTS" ]; then
-        # Extract first error message
-        grep -oP '"message":"[^"]*"' "$TEST_RESULTS" 2>/dev/null | head -3 | sed 's/"message":"//g' | sed 's/"//g'
+    local results_file="$PROJECT_ROOT/$TEST_RESULTS"
+    if [ -f "$results_file" ]; then
+        # Extract first error message (using extended regex for portability)
+        grep -oE '"message":"[^"]*"' "$results_file" 2>/dev/null | head -3 | sed 's/"message":"//g' | sed 's/"//g'
     fi
 }
 
