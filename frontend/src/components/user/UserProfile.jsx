@@ -65,6 +65,23 @@ const UserProfile = ({ setActiveTab }) => {
     return <div className="text-center py-12 text-slate-400">Loading profile...</div>;
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-6 text-rose-400 max-w-md mx-auto">
+          <AlertTriangle size={20} className="mx-auto mb-2" />
+          <p>Failed to load profile</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-4 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
