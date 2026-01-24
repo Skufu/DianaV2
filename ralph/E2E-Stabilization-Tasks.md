@@ -75,7 +75,7 @@
 
 ## Phase 7: Trends Tests (MEDIUM)
 
-- [ ] Fix trends.spec.js:70 - should navigate to trends tab
+- [x] Fix trends.spec.js:70 - should navigate to trends tab
 - [ ] Fix trends.spec.js:82 - should render charts with mock data
 - [ ] Fix trends.spec.js:91 - should work with time range selector
 - [ ] Fix trends.spec.js:112 - should navigate from dashboard to trends via quick action button
