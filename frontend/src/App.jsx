@@ -7,6 +7,7 @@ import Login from './components/auth/Login';
 import BiologicalNetwork from './components/layout/BiologicalNetwork';
 import CustomCursor from './components/common/CustomCursor';
 import ErrorBoundary from './components/common/ErrorBoundary';
+import AssessmentForm from './components/user/AssessmentForm';
 import {
   getAnimationNodeCount,
   shouldDisableHeavyEffects,
@@ -50,6 +51,7 @@ const App = () => {
   const [adminView, setAdminView] = useState('overview'); // Separate state for admin navigation
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [showAssessmentModal, setShowAssessmentModal] = useState(false);
 
   // Device performance detection (computed once)
   const performanceTier = useMemo(() => getPerformanceTier(), []);
@@ -161,7 +163,7 @@ const App = () => {
 
 
   const handleStartAssessment = useCallback(() => {
-    setActiveTab('profile');
+    setShowAssessmentModal(true);
   }, []);
 
   // Render content for regular users
@@ -280,6 +282,27 @@ const App = () => {
               <Suspense fallback={<LoadingSkeleton />}>{renderUserContent()}</Suspense>
             </ErrorBoundary>
           </main>
+
+          {/* Assessment Modal */}
+          {showAssessmentModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={() => setShowAssessmentModal(false)}
+              />
+              <div className="relative z-10 w-full max-w-2xl">
+                <AssessmentForm
+                  onSubmit={() => {
+                    setShowAssessmentModal(false);
+                    // Refresh data by invalidating queries
+                    queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+                    queryClient.invalidateQueries({ queryKey: ['user', 'assessments'] });
+                  }}
+                  onCancel={() => setShowAssessmentModal(false)}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
     </>
