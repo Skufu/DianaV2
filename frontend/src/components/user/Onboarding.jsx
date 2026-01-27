@@ -370,7 +370,7 @@ const Onboarding = ({ onComplete }) => {
 
 
 
-        <div className="flex justify-between mt-8">
+        <div className="flex justify-between items-center mt-8">
           {step > 1 && (
             <button
               onClick={prevStep}
@@ -380,26 +380,33 @@ const Onboarding = ({ onComplete }) => {
             </button>
           )}
 
-          {step < 5 && (
+          <div className="flex gap-3">
             <button
-              onClick={nextStep}
-              className="ml-auto px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 transition-all"
+              onClick={onComplete}
+              className="px-6 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors"
             >
-              Next
+              Skip for now
             </button>
-          )}
 
-          {step === 5 && (
-            <button
-              onClick={handleSubmit}
-              disabled={completeOnboardingMutation.isPending}
-              className="ml-auto px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {completeOnboardingMutation.isPending ? 'Submitting...' : 'Complete Setup'}
-            </button>
-          )}
+            {step < 5 && (
+              <button
+                onClick={nextStep}
+                className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 transition-all"
+              >
+                Next
+              </button>
+            )}
 
-
+            {step === 5 && (
+              <button
+                onClick={handleSubmit}
+                disabled={completeOnboardingMutation.isPending}
+                className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {completeOnboardingMutation.isPending ? 'Submitting...' : 'Complete Setup'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
