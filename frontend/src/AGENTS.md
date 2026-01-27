@@ -1,6 +1,7 @@
 # FRONTEND SOURCE KNOWLEDGE BASE
 
-**Directory**: `frontend/src/`
+**Directory**: `frontend/src`
+**Generated:** 2026-01-28
 
 ## OVERVIEW
 React 18 application entry point with custom routing, authentication state, and performance optimization.

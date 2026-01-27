@@ -1,6 +1,7 @@
 # ROUTER KNOWLEDGE BASE
 
-**Directory**: `backend/internal/http/router/`
+**Directory**: `backend/internal/http/router`
+**Generated:** 2026-01-28
 
 ## OVERVIEW
 Centralized route registration using Gin framework, organizing endpoints by domain and applying middleware consistently.

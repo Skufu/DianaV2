@@ -1,6 +1,7 @@
 # DATA STORE KNOWLEDGE BASE
 
-**Directory**: `backend/internal/store/`
+**Directory**: `backend/internal/store`
+**Generated:** 2026-01-28
 
 ## OVERVIEW
 Repository pattern data access layer using SQLC for type-safe CRUD and pgx/pool for complex queries.
