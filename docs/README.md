@@ -1,7 +1,7 @@
 # DIANA V2 - Documentation Hub
 
 > **Purpose**: Centralized documentation index for thesis defense and development
-> **Last Updated**: January 23, 2026
+> **Last Updated**: January 28, 2026
 
 ---
 
@@ -122,32 +122,83 @@
 | Auth handler | `backend/internal/http/handlers/auth.go` |
 | Users handler | `backend/internal/http/handlers/users.go` |
 | Assessment handler | `backend/internal/http/handlers/assessments.go` |
+| Analytics handler | `backend/internal/http/handlers/analytics.go` |
+| Insights handler | `backend/internal/http/handlers/insights.go` |
+| Auth Events handler | `backend/internal/http/handlers/auth_events.go` |
+| Clinic Dashboard handler | `backend/internal/http/handlers/clinic_dashboard.go` |
+| Cohort handler | `backend/internal/http/handlers/cohort.go` |
+| Export handler | `backend/internal/http/handlers/export.go` |
+| Health handler | `backend/internal/http/handlers/health.go` |
+| Admin Users handler | `backend/internal/http/handlers/admin_users.go` |
+| Admin Audit handler | `backend/internal/http/handlers/admin_audit.go` |
+| Admin Models handler | `backend/internal/http/handlers/admin_models.go` |
+| Admin Dashboard handler | `backend/internal/http/handlers/admin_dashboard.go` |
+| Utils | `backend/internal/http/handlers/utils.go` |
+| JWT Middleware | `backend/internal/http/middleware/auth.go` |
+| RBAC Middleware | `backend/internal/http/middleware/rbac.go` |
+| CORS Middleware | `backend/internal/http/middleware/cors.go` |
+| Rate Limit Middleware | `backend/internal/http/middleware/ratelimit.go` |
+| Security Middleware | `backend/internal/http/middleware/security.go` |
 | ML predictor client | `backend/internal/ml/http_predictor.go` |
+| Mock predictor | `backend/internal/ml/mock.go` |
+| Biomarker validation | `backend/internal/ml/validation.go` |
+| PDF Generator | `backend/internal/pdf/generator.go` |
+| SSE Broker | `backend/internal/http/sse/broker.go` |
+| Redis Cache | `backend/internal/cache/redis_cache.go` |
+| Validation Service | `backend/internal/services/validation_service.go` |
+| PDF Export Service | `backend/internal/services/pdf_export_service.go` |
+| Notification Service | `backend/internal/services/notification_service.go` |
 | Database queries | `backend/internal/store/sqlc/*.sql.go` |
+| Postgres repositories | `backend/internal/store/postgres.go` |
+| Store interface | `backend/internal/store/store.go` |
+| Models | `backend/internal/models/types.go` |
+| Config | `backend/internal/config/config.go` |
 
 ### Frontend (React)
 | Purpose | File |
 |---------|------|
 | Main app | `frontend/src/App.jsx` |
 | API wrapper | `frontend/src/api.js` |
+| Main Dashboard | `frontend/src/components/dashboard/Dashboard_user.jsx` | Main dashboard component |
 | User Dashboard | `frontend/src/components/user/Dashboard_user.jsx` | User overview, assessments |
-| Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` | Admin system stats |
-| Profile | `frontend/src/components/user/UserProfile.jsx` | Profile management |
+| User Profile | `frontend/src/components/user/UserProfile.jsx` | Profile management |
 | Onboarding | `frontend/src/components/user/Onboarding.jsx` | Multi-step onboarding |
-| Insights | `frontend/src/components/insights/Insights.jsx` | ML visualizations, analytics |
-| Export | `frontend/src/components/export/Export.jsx` | PDF export functionality |
-| Analytics | `frontend/src/components/insights/Insights.jsx` | ML visualizations, model metrics |
-| Cohort Analysis | `frontend/src/components/insights/CohortAnalysis.jsx` | Cohort comparison analysis |
-| Login | `frontend/src/components/auth/Login.jsx` |
-| Export | `frontend/src/components/export/Export.jsx` | CSV export functionality |
-| Education | `frontend/src/components/education/Education.jsx` | Educational content for clinicians |
-| Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` | Admin panel (users, audit, models) |
+| Personal Trends | `frontend/src/components/user/PersonalTrends.jsx` | Assessment trend charts |
+| Assessment Form | `frontend/src/components/user/AssessmentForm.jsx` | Biomarker input form |
+| Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` | Admin system stats |
 | User Management | `frontend/src/components/admin/UserManagement.jsx` | User CRUD operations |
 | Audit Log Viewer | `frontend/src/components/admin/AuditLogViewer.jsx` | Audit log viewing |
+| Auth Event Log Viewer | `frontend/src/components/admin/AuthEventLogViewer.jsx` | Auth event streaming |
 | Model Traceability | `frontend/src/components/admin/ModelTraceability.jsx` | ML model tracking |
-| Clinic Dashboard | `frontend/src/components/clinic/ClinicDashboard.jsx` | Clinic-specific dashboard |
-| Sidebar | `frontend/src/components/layout/Sidebar.jsx` | Navigation sidebar |
+| Admin Sidebar | `frontend/src/components/layout/AdminSidebar.jsx` | Admin navigation |
+| Main Sidebar | `frontend/src/components/layout/Sidebar.jsx` | Main navigation sidebar |
 | Biological Network | `frontend/src/components/layout/BiologicalNetwork.jsx` | Animated background |
+| Mouse Glow | `frontend/src/components/layout/MouseGlow.jsx` | Visual effect |
+| Login | `frontend/src/components/auth/Login.jsx` | Authentication forms |
+| Signup | `frontend/src/components/auth/Signup.jsx` | Registration form |
+| Insights Main | `frontend/src/components/insights/Insights.jsx` | ML visualizations, analytics |
+| Insights Header | `frontend/src/components/insights/InsightsHeader.jsx` | Insights navigation |
+| Insights Summary | `frontend/src/components/insights/InsightsSummary.jsx` | Overview cards |
+| Biomarker Trends | `frontend/src/components/insights/BiomarkerTrends.jsx` | Trend charts |
+| BMI Glucose Correlation | `frontend/src/components/insights/BMIGlucoseCorrelation.jsx` | Correlation analysis |
+| Cluster Comparison | `frontend/src/components/insights/ClusterComparison.jsx` | Cluster comparison |
+| Cohort Analysis | `frontend/src/components/insights/CohortAnalysis.jsx` | Cohort comparison analysis |
+| Model Performance | `frontend/src/components/insights/ModelPerformance.jsx` | ML metrics |
+| Risk Distribution | `frontend/src/components/insights/RiskDistribution.jsx` | Risk visualization |
+| Risk Factor Chart | `frontend/src/components/insights/RiskFactorChart.jsx` | Feature importance |
+| Subgroup Distribution | `frontend/src/components/insights/SubgroupDistribution.jsx` | Cluster distribution |
+| Visualization Card | `frontend/src/components/insights/VisualizationCard.jsx` | Card component |
+| Export | `frontend/src/components/export/Export.jsx` | PDF export functionality |
+| Education | `frontend/src/components/education/Education.jsx` | Educational content |
+| Biomarker Input | `frontend/src/components/common/BiomarkerInput.jsx` | Biomarker input component |
+| Button | `frontend/src/components/common/Button.jsx` | Button component |
+| Cluster Recommendations | `frontend/src/components/common/ClusterRecommendations.jsx` | Recommendations display |
+| Cluster Tooltip | `frontend/src/components/common/ClusterTooltip.jsx` | Tooltip component |
+| Risk Indicator | `frontend/src/components/common/RiskIndicator.jsx` | Risk status display |
+| SHAP Explanation | `frontend/src/components/common/SHAPExplanation.jsx` | Feature contributions |
+| PDF Export | `frontend/src/components/common/PDFExport.jsx` | PDF export button |
+| Error Boundary | `frontend/src/components/common/ErrorBoundary.jsx` | Error handling |
+| Custom Cursor | `frontend/src/components/common/CustomCursor.jsx` | Custom cursor effect |
 
 ### ML (Python)
 | Purpose | File |
@@ -156,6 +207,12 @@
 | Predictors | `ml/predict.py` |
 | Model training | `ml/train.py` |
 | Clustering | `ml/clustering.py` |
+| Data Processing | `ml/data_processing.py` |
+| Explainability | `ml/explainability.py` |
+| Explainer | `ml/explainer.py` |
+| A/B Testing | `ml/ab_testing.py` |
+| Drift Detection | `ml/drift_detection.py` |
+| MLflow Config | `ml/mlflow_config.py` |
 
 ---
 

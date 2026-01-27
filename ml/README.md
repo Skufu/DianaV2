@@ -1,7 +1,7 @@
 # ML Module - DIANA Machine Learning Server
 
-> **Purpose**: Flask API server for diabetes risk prediction using trained ML models  
-> **Framework**: Flask | **ML**: scikit-learn, XGBoost  
+> **Purpose**: Flask API server for diabetes risk prediction using trained ML models
+> **Framework**: Flask | **ML**: scikit-learn, XGBoost, CatBoost
 > **Port**: 5000
 
 ---
