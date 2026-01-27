@@ -20,9 +20,32 @@ const Export = ({ token }) => {
     return params.toString() ? `?${params.toString()}` : '';
   };
 
-  const openLink = (path) => () => {
-    const queryString = buildQueryString();
-    window.open(`${API_BASE}${path}${queryString}`, '_blank', 'noopener');
+  const downloadCSV = (path) => async () => {
+    try {
+      const queryString = buildQueryString();
+      const response = await fetch(`${API_BASE}${path}${queryString}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = path.split('/').pop();
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert(`Failed to download CSV: ${error.message}`);
+    }
   };
 
   return (
@@ -170,7 +193,7 @@ const Export = ({ token }) => {
               </div>
               <Button
                 variant="outline"
-                onClick={openLink('/export/patients.csv')}
+                onClick={downloadCSV('/export/patients.csv')}
                 className="ml-4 bg-teal-500 text-white hover:bg-[#3311DD] flex items-center gap-2"
               >
                 <Download size={16} />
@@ -195,7 +218,7 @@ const Export = ({ token }) => {
               </div>
               <Button
                 variant="outline"
-                onClick={openLink('/export/assessments.csv')}
+                onClick={downloadCSV('/export/assessments.csv')}
                 className="ml-4 bg-teal-500 text-white hover:bg-[#3311DD] flex items-center gap-2"
               >
                 <Download size={16} />
