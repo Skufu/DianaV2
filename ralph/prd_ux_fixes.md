@@ -38,6 +38,8 @@ Fix critical authentication bugs, broken API endpoints, and UX issues affecting 
 - Frontend: `localhost:4000`
 - Database: `localhost:5432`
 
+> **To start all services**: Run `./scripts/dev/start-all.sh` from project root
+
 ## Constraints
 
 - [ ] Do not modify database schema

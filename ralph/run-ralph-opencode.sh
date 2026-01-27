@@ -22,8 +22,8 @@ done
 # Configuration (paths relative to project root)
 RALPH_DIR="ralph"
 CONTEXT_PIN="$RALPH_DIR/context_pin.md"
-PRD_FILE="$RALPH_DIR/E2E-Stabilization-PRD.md"
-TASK_FILE="$RALPH_DIR/E2E-Stabilization-Tasks.md"
+PRD_FILE="$RALPH_DIR/prd_ux_fixes.md"
+TASK_FILE="$RALPH_DIR/task_list_ux_fixes.md"
 ERROR_LOG="$RALPH_DIR/error_log.txt"
 SYSTEM_RULES="$RALPH_DIR/system_rules.md"
 LOCK_FILE="$RALPH_DIR/.ralph.lock"
@@ -118,7 +118,7 @@ init_rules() {
 EOF
 }
 
-count_rules() { grep -c "^[0-9]\+\." "$SYSTEM_RULES" 2>/dev/null || echo "0"; }
+count_rules() { grep -c "^[0-9]\+\." "$SYSTEM_RULES" 2>/dev/null || echo "0"; true; }
 
 prune_rules() {
     local c=$(count_rules)
@@ -144,7 +144,7 @@ TEST_RESULTS="$TEMP_DIR/test-results.json"
 # Extract test file name from task text (e.g., "Fix auth.spec.js" -> "auth.spec.js")
 extract_test_file() {
     local task="$1"
-    echo "$task" | grep -oE '[a-zA-Z0-9_/-]+\.spec\.(js|ts)' | head -1
+    echo "$task" | grep -oE '[a-zA-Z0-9_/-]+\.spec\.(js|ts)' | head -1 || true
 }
 
 # Run a specific test file and return exit code (0=pass, non-zero=fail)
@@ -189,7 +189,7 @@ get_failure_summary() {
     local results_file="$PROJECT_ROOT/$TEST_RESULTS"
     if [ -f "$results_file" ]; then
         # Extract first error message (using extended regex for portability)
-        grep -oE '"message":"[^"]*"' "$results_file" 2>/dev/null | head -3 | sed 's/"message":"//g' | sed 's/"//g'
+        grep -oE '"message":"[^"]*"' "$results_file" 2>/dev/null | head -3 | sed 's/"message":"//g' | sed 's/"//g' || true
     fi
 }
 
@@ -248,6 +248,9 @@ for ((i=1; i<=ITERATIONS; i++)); do
     
     # Extract test file from task for verification
     test_file=$(extract_test_file "$task_text")
+    
+    # Capture current checkbox count BEFORE attempt (for non-test verification)
+    before=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
     
     # Run test BEFORE to establish baseline (optional but useful for tracking)
     if [ -n "$test_file" ]; then
@@ -309,7 +312,7 @@ Fix the code, then mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_D
             fi
         fi
         
-        if grep -qi "BLOCKED" "$TEMP_DIR/out.txt"; then
+        if grep -qi "BLOCKED" "$TEMP_DIR/out.txt" 2>/dev/null; then
             sed -i "${task_line}s/\[ \]/[BLOCKED]/" "$TASK_FILE" 2>/dev/null || true
             break
         fi

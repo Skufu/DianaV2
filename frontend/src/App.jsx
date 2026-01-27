@@ -195,6 +195,17 @@ const App = () => {
 
   const handleSignupSuccess = useCallback((res) => {
     if (!res?.user) throw new Error('signup failed');
+
+    // Store JWT tokens in localStorage for authenticated API requests
+    if (res.access_token) {
+      localStorage.setItem('diana_token', res.access_token);
+      setToken(res.access_token);
+    }
+    if (res.refresh_token) {
+      localStorage.setItem('diana_refresh_token', res.refresh_token);
+      setRefreshToken(res.refresh_token);
+    }
+
     setUserRole(res.user.role || 'user');
     setIsAdmin(res.user.role === 'admin');
     setUserId(res.user.id);
