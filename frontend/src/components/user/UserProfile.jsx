@@ -11,7 +11,6 @@ const UserProfile = ({ setActiveTab }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAssessmentForm, setShowAssessmentForm] = useState(false);
   const [formData, setFormData] = useState({});
-  const [refreshKey, setRefreshKey] = useState(0);
   const [formError, setFormError] = useState(null);
 
   // Sync form data with profile data from React Query
@@ -110,7 +109,6 @@ const UserProfile = ({ setActiveTab }) => {
         <AssessmentForm
           onSubmit={() => {
             setShowAssessmentForm(false);
-            setRefreshKey(prev => prev + 1);
           }}
           onCancel={() => setShowAssessmentForm(false)}
         />
