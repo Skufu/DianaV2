@@ -8,8 +8,6 @@ const Signup = ({ onSignup, onShowLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -67,7 +65,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
     setLoading(true);
     try {
       const { signupApi } = await import('../../api');
-      const res = await signupApi(email, password, firstName, lastName);
+      const res = await signupApi(email, password);
       await onSignup(res);
     } catch (err) {
       setError(err.message || 'Failed to create account. Please try again.');
@@ -113,34 +111,6 @@ const Signup = ({ onSignup, onShowLogin }) => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-slate-300 text-sm font-medium ml-1">First Name</label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={e => setFirstName(e.target.value)}
-                  required
-                  className="w-full bg-slate-800/50 border border-slate-600/60 text-white p-4 rounded-xl
-                           focus:outline-none focus:border-teal-400/70 focus:ring-2 focus:ring-teal-400/30
-                           transition-all duration-300 placeholder-slate-500"
-                  placeholder="Jane"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-slate-300 text-sm font-medium ml-1">Last Name</label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={e => setLastName(e.target.value)}
-                  required
-                  className="w-full bg-slate-800/50 border border-slate-600/60 text-white p-4 rounded-xl
-                           focus:outline-none focus:border-teal-400/70 focus:ring-2 focus:ring-teal-400/30
-                           transition-all duration-300 placeholder-slate-500"
-                  placeholder="Doe"
-                />
-              </div>
-            </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between ml-1">

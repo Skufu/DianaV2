@@ -80,10 +80,13 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// Health checks
 	handlers.RegisterHealth(api)
 
+	// SSE broker for auth events (must be created before auth handler)
+	broker := sse.NewBroker(1) // batchSize of 1 for immediate event delivery
+
 	// Authentication (with stricter rate limiting: 100 requests/minute - relaxed for testing)
 	authGroup := api.Group("/auth")
 	authGroup.Use(middleware.AuthRateLimit(100))
-	authHandler := handlers.NewAuthHandler(cfg, st)
+	authHandler := handlers.NewAuthHandler(cfg, st, broker)
 	authHandler.Register(authGroup)
 
 	// -------------------------------------------------------------------------
@@ -135,10 +138,8 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// -------------------------------------------------------------------------
 	auditLogger := middleware.NewAuditLogger(st)
 
-	// SSE broker for auth events (must be created before admin routes)
-	broker := sse.NewBroker(100)
-
 	// Auth events SSE endpoint (must be registered BEFORE protected admin routes - uses token query param, not Bearer)
+	// Reuses the broker created earlier for auth handlers
 	authEventHandler := handlers.NewAuthEventHandler(cfg, st, broker)
 	api.GET("/admin/events/stream", authEventHandler.StreamAuthEvents)
 

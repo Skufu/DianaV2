@@ -146,7 +146,8 @@ const App = () => {
       if (profile?.onboarding_completed === true) {
         setShowOnboarding(false);
       } else {
-        setShowOnboarding(!profile.first_name || !profile.last_name);
+        // Show onboarding if not explicitly completed
+        setShowOnboarding(true);
       }
     } else if (profileError) {
       const status = profileError.response?.status;
@@ -252,7 +253,7 @@ const App = () => {
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5 pointer-events-none" />
 
-          {!isAssessmentOpen && (
+          {!isAssessmentOpen && !showOnboarding && (
             <Sidebar
               activeTab={activeTab}
               setActiveTab={setActiveTab}

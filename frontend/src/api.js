@@ -651,14 +651,12 @@ export const adminExportResearchDataApi = async () => {
   return apiFetch('/admin/export/research');
 };
 
-export const signupApi = async (email, password, firstName, lastName) => {
+export const signupApi = async (email, password) => {
   return apiFetch('/auth/register', {
     method: 'POST',
     body: {
       email,
       password,
-      first_name: firstName,
-      last_name: lastName,
     },
   });
 };
