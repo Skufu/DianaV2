@@ -459,12 +459,6 @@ export const useAdminStats = () => {
   });
 };
 
-export const useAdminExportResearchData = () => {
-  return useMutation({
-    mutationFn: () => adminExportResearchDataApi(),
-  });
-};
-
 export const useClusterDistribution = () => {
   return useQuery({
     queryKey: ['insights', 'cluster-distribution'],
@@ -645,11 +639,6 @@ export const activateAdminUserApi = async (token, userId) => {
 // Get system statistics
 export const adminGetStatsApi = async () => {
   return apiFetch('/admin/dashboard');
-};
-
-// Export research data (anonymized, consented users only)
-export const adminExportResearchDataApi = async () => {
-  return apiFetch('/admin/export/research');
 };
 
 export const signupApi = async (email, password) => {
