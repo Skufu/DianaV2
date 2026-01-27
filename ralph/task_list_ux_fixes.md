@@ -17,7 +17,7 @@
 ## Phase 1: Critical Auth & API Fixes (CRITICAL)
 
 - [x] Fix App.jsx:196-202 - Add token persistence in handleSignupSuccess (store access_token and refresh_token like handleLogin does)
-- [ ] Fix Export.jsx:173,198 - Remove `/api/v1` prefix from CSV paths (API_BASE already includes it)
+- [x] Fix Export.jsx:173,198 - Remove `/api/v1` prefix from CSV paths (API_BASE already includes it)
 - [ ] Fix Export.jsx:23-26 - Replace window.open with fetch+blob download that includes Authorization header
 - [ ] Fix api.js:645-647 - Change `/admin/stats` to `/admin/dashboard` to match backend endpoint
 
