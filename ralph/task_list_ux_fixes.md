@@ -52,7 +52,7 @@
 ## Final Verification
 
 - [x] Test signup flow - new user can sign up AND make authenticated API calls
-- [ ] Test export page - PDF export works, CSV buttons hidden or working
+- [x] Test export page - PDF export works, CSV buttons hidden or working
 - [ ] Test admin dashboard - stats and charts load without 404
 - [ ] Test profile page - sidebar visible, form syncs on data load
 - [ ] Run lint: `npm run lint` in frontend dir
