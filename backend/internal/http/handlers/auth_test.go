@@ -214,7 +214,7 @@ func TestAuthHandler_Login_Success(t *testing.T) {
 	}
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, fakeStoreAuth)
+	h := NewAuthHandler(cfg, fakeStoreAuth, nil)
 
 	r := gin.New()
 	r.POST("/login", h.login)
@@ -315,7 +315,7 @@ func TestAuthHandler_Login_InvalidCredentials(t *testing.T) {
 			}
 
 			cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-			h := NewAuthHandler(cfg, fakeStoreAuth)
+			h := NewAuthHandler(cfg, fakeStoreAuth, nil)
 
 			r := gin.New()
 			r.POST("/login", h.login)
@@ -343,7 +343,7 @@ func TestAuthHandler_Login_InvalidPayload(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, &fakeStoreAuth{})
+	h := NewAuthHandler(cfg, &fakeStoreAuth{}, nil)
 
 	r := gin.New()
 	r.POST("/login", h.login)
@@ -402,7 +402,7 @@ func TestAuthHandler_Refresh_Success(t *testing.T) {
 	}
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, fakeStoreAuth)
+	h := NewAuthHandler(cfg, fakeStoreAuth, nil)
 
 	r := gin.New()
 	r.POST("/refresh", h.refresh)
@@ -522,7 +522,7 @@ func TestAuthHandler_Refresh_InvalidToken(t *testing.T) {
 			}
 
 			cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-			h := NewAuthHandler(cfg, fakeStoreAuth)
+			h := NewAuthHandler(cfg, fakeStoreAuth, nil)
 
 			r := gin.New()
 			r.POST("/refresh", h.refresh)
@@ -558,7 +558,7 @@ func TestAuthHandler_Logout_Success(t *testing.T) {
 	}
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, fakeStoreAuth)
+	h := NewAuthHandler(cfg, fakeStoreAuth, nil)
 
 	r := gin.New()
 	r.POST("/logout", h.logout)
@@ -582,7 +582,7 @@ func TestAuthHandler_Logout_NoToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, &fakeStoreAuth{})
+	h := NewAuthHandler(cfg, &fakeStoreAuth{}, nil)
 
 	r := gin.New()
 	r.POST("/logout", h.logout)
@@ -621,7 +621,7 @@ func TestAuthHandler_JWTTokenGeneration(t *testing.T) {
 	}
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, fakeStoreAuth)
+	h := NewAuthHandler(cfg, fakeStoreAuth, nil)
 	r.POST("/login", h.login)
 
 	body := `{"email":"test@example.com","password":"password123"}`
@@ -707,7 +707,7 @@ func TestLogin_EmptyEmail_ReturnsValidationError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, &fakeStoreAuth{})
+	h := NewAuthHandler(cfg, &fakeStoreAuth{}, nil)
 
 	r := gin.New()
 	r.POST("/login", h.login)
@@ -774,7 +774,7 @@ func TestLogin_InvalidEmailFormat_ReturnsValidationError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, &fakeStoreAuth{})
+	h := NewAuthHandler(cfg, &fakeStoreAuth{}, nil)
 
 	r := gin.New()
 	r.POST("/login", h.login)
@@ -862,7 +862,7 @@ func TestLogin_TooLongPassword_ReturnsValidationError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	cfg := config.Config{JWTSecret: "test-secret-key-for-testing-only"}
-	h := NewAuthHandler(cfg, &fakeStoreAuth{})
+	h := NewAuthHandler(cfg, &fakeStoreAuth{}, nil)
 
 	r := gin.New()
 	r.POST("/login", h.login)

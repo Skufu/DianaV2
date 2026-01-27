@@ -53,15 +53,15 @@ const Onboarding = ({ onComplete }) => {
         consent_research_participation: formData.consent_research_participation,
         consent_email_updates: formData.consent_email_updates,
         consent_analytics: formData.consent_analytics,
-        assessment_frequency_months: parseInt(formData.assessment_frequency_months, 10) ||3,
+        assessment_frequency_months: parseInt(formData.assessment_frequency_months, 10) || 3,
         reminder_email: true,
       };
-       await completeOnboardingMutation.mutateAsync(payload);
-       onComplete();
-     } catch (err) {
-       setError(err.message || 'Failed to complete onboarding');
-     }
-   };
+      await completeOnboardingMutation.mutateAsync(payload);
+      onComplete();
+    } catch (err) {
+      setError(err.message || 'Failed to complete onboarding');
+    }
+  };
 
   const validateStep = (stepNum) => {
     switch (stepNum) {
@@ -368,18 +368,10 @@ const Onboarding = ({ onComplete }) => {
           </div>
         )}
 
-        {step === 6 && (
-          <div className="space-y-6 text-center">
-            <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center mb-6">
-              <Check size={40} className="text-white" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Setup Complete!</h2>
-            <p className="text-slate-400 mb-8">Your health profile has been created. You can now log your first assessment.</p>
-          </div>
-        )}
+
 
         <div className="flex justify-between mt-8">
-          {step > 1 && step < 6 && (
+          {step > 1 && (
             <button
               onClick={prevStep}
               className="px-6 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors"
@@ -407,14 +399,7 @@ const Onboarding = ({ onComplete }) => {
             </button>
           )}
 
-          {step === 6 && (
-            <button
-              onClick={onComplete}
-              className="ml-auto px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 transition-all"
-            >
-              Go to Dashboard
-            </button>
-          )}
+
         </div>
       </div>
     </div>
