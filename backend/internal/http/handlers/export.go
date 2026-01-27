@@ -28,7 +28,10 @@ func NewExportHandler(store store.Store) *ExportHandler {
 // Register registers the handler routes
 func (h *ExportHandler) Register(r *gin.RouterGroup) {
 	r.GET("/pdf", h.ExportPDF)
-	// r.GET("/research", h.ExportResearchData) // Uncomment when needed
+	// Note: /research endpoint (h.ExportResearchData) is intentionally disabled
+	// The handler returns placeholder JSON and requires full implementation before registration
+	// See ExportResearchData() below for TODO items
+	// Uncomment only after implementing anonymized CSV generation
 }
 
 // ExportPDF generates a PDF health report for the logged-in user
