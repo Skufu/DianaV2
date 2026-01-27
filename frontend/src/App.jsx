@@ -212,8 +212,6 @@ const App = () => {
     setIsAuthenticated(true);
   }, []);
 
-  const isAssessmentOpen = useMemo(() => activeTab === 'profile', [activeTab]);
-
   return (
     <>
       <CustomCursor isLoggedIn={isAuthenticated} />
@@ -264,7 +262,7 @@ const App = () => {
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5 pointer-events-none" />
 
-          {!isAssessmentOpen && !showOnboarding && (
+          {!showOnboarding && (
             <Sidebar
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -276,7 +274,7 @@ const App = () => {
           )}
 
           <main
-            className={`relative z-10 flex-1 ${isAssessmentOpen ? '' : 'ml-20 lg:ml-72'} p-6 lg:p-8`}
+            className="relative z-10 flex-1 ml-20 lg:ml-72 p-6 lg:p-8"
           >
             <ErrorBoundary section={activeTab}>
               <Suspense fallback={<LoadingSkeleton />}>{renderUserContent()}</Suspense>

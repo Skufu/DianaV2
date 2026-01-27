@@ -48,12 +48,23 @@ backend/
 │   │   │   ├── users.go          # User profile, onboarding, consent, trends
 │   │   │   ├── assessments.go    # Create/list assessments
 │   │   │   ├── analytics.go      # Dashboard analytics
+│   │   │   ├── insights.go       # ML insights and cluster data
+│   │   │   ├── auth_events.go    # SSE auth event streaming
+│   │   │   ├── clinic_dashboard.go  # Clinic member dashboard
+│   │   │   ├── cohort.go         # Cohort analysis endpoints
 │   │   │   ├── export.go         # CSV export functionality
-│   │   │   └── health.go         # Health check endpoints
+│   │   │   ├── health.go         # Health check endpoints
+│   │   │   ├── admin_dashboard.go  # Admin system stats
+│   │   │   ├── admin_users.go    # User CRUD operations
+│   │   │   ├── admin_audit.go    # Audit log viewing
+│   │   │   ├── admin_models.go   # ML model tracking
+│   │   │   └── utils.go         # Handler utilities
 │   │   └── middleware/           # HTTP middleware
 │   │       ├── auth.go           # JWT validation, user extraction
 │   │       ├── cors.go           # CORS handling
-│   │       └── ratelimit.go      # Rate limiting
+│   │       ├── rbac.go           # Role-based access control
+│   │       ├── ratelimit.go      # Rate limiting
+│   │       └── security.go       # Security headers
 │   │
 │   ├── ml/                       # ML server integration
 │   │   ├── http_predictor.go     # HTTPPredictor client
@@ -65,6 +76,7 @@ backend/
 │   │
 │   ├── store/                    # Database layer
 │   │   ├── store.go              # Store interface
+│   │   ├── postgres.go           # Repository implementations
 │   │   └── sqlc/                 # Generated SQLC code
 │   │       ├── models.go         # Generated Go structs
 │   │       ├── db.go             # Database connection
@@ -73,17 +85,23 @@ backend/
 │   │       ├── assessments.sql.go # Assessment queries
 │   │       └── *.sql.go          # Other generated queries
 │   │
-│   └── cache/                    # Redis caching layer
-│       ├── redis_cache.go         # Redis client wrapper with metrics
-│       └── redis_cache_test.go    # Cache metrics tests
-│
-│   └── http/sse/                 # SSE (Server-Sent Events) broker
-│       ├── broker.go              # SSE event broadcasting
-│       └── broker_test.go         # Broker integration tests
-│
-│   └── pdf/                      # PDF report generation
-│       ├── generator.go          # PDF generator for assessments
-│       └── generator_test.go     # PDF generator tests
+│   ├── cache/                    # Redis caching layer
+│   │   ├── redis_cache.go         # Redis client wrapper with metrics
+│   │   └── redis_cache_test.go    # Cache metrics tests
+│   │
+│   ├── http/sse/                 # SSE (Server-Sent Events) broker
+│   │   ├── broker.go              # SSE event broadcasting
+│   │   └── broker_test.go         # Broker integration tests
+│   │
+│   ├── pdf/                      # PDF report generation
+│   │   ├── generator.go          # PDF generator for assessments
+│   │   └── generator_test.go     # PDF generator tests
+│   │
+│   └── services/                 # Business logic services
+│       ├── validation_service.go    # Biomarker validation service
+│       ├── pdf_export_service.go   # PDF export service
+│       ├── notification_service.go  # Notification service
+│       └── AGENTS.md              # Service documentation
 │
 ├── migrations/                   # Goose SQL migrations
 │   ├── 0001_init.sql             # Users, patients, assessments, audit tables
@@ -113,7 +131,6 @@ backend/
 | GET | `/api/v1/livez` | `health.go` | Liveness probe |
 | POST | `/api/v1/auth/login` | `auth.go` | User login → JWT |
 | POST | `/api/v1/auth/register` | `auth.go` | Create account |
-| POST | `/api/v1/auth/refresh` | `auth.go` | Refresh JWT token |
 
 ### Protected (JWT Required)
 | Method | Path | Handler | Purpose |
@@ -123,19 +140,40 @@ backend/
 | POST | `/api/v1/users/me/onboarding` | `users.go` | Complete onboarding flow |
 | GET | `/api/v1/users/me/consent` | `users.go` | Get consent settings |
 | PUT | `/api/v1/users/me/consent` | `users.go` | Update consent settings |
-| GET | `/api/v1/users/me/assessments` | `users.go` | Get user assessments |
 | GET | `/api/v1/users/me/trends` | `users.go` | Get assessment trends |
-| GET | `/api/v1/users/me/account` | `users.go` | Get user account |
 | DELETE | `/api/v1/users/me/account` | `users.go` | Delete user account |
-| GET | `/api/v1/users/me/assessments` | `users.go` | Get user assessments |
+| GET | `/api/v1/users/me/assessments` | `assessments.go` | Get user assessments |
 | POST | `/api/v1/users/me/assessments` | `assessments.go` | Create assessment (calls ML) |
 | GET | `/api/v1/users/me/assessments/:id` | `assessments.go` | Get single assessment |
 | PUT | `/api/v1/users/me/assessments/:id` | `assessments.go` | Update assessment |
 | DELETE | `/api/v1/users/me/assessments/:id` | `assessments.go` | Delete assessment |
 | GET | `/api/v1/analytics/summary` | `analytics.go` | Dashboard statistics |
 | GET | `/api/v1/analytics/cluster-distribution` | `analytics.go` | Risk cluster data |
+| GET | `/api/v1/insights/metrics` | `insights.go` | ML model metrics |
+| GET | `/api/v1/insights/cluster` | `insights.go` | Cluster distribution |
 | GET | `/api/v1/export/patients.csv` | `export.go` | Export patients CSV |
 | GET | `/api/v1/export/assessments.csv` | `export.go` | Export assessments CSV |
+
+### SSE Endpoints
+| Method | Path | Handler | Purpose |
+|--------|------|---------|---------|
+| GET | `/api/v1/auth/events` | `auth_events.go` | SSE auth event streaming (admin only) |
+
+### Admin (JWT + Admin Role Required)
+| Method | Path | Handler | Purpose |
+|--------|------|---------|---------|
+| GET | `/api/v1/admin/users` | `admin_users.go` | List users (paginated) |
+| POST | `/api/v1/admin/users` | `admin_users.go` | Create user |
+| PUT | `/api/v1/admin/users/:id` | `admin_users.go` | Update user |
+| DELETE | `/api/v1/admin/users/:id` | `admin_users.go` | Deactivate user |
+| GET | `/api/v1/admin/audit` | `admin_audit.go` | Audit logs |
+| GET | `/api/v1/admin/models` | `admin_models.go` | Model run history |
+| GET | `/api/v1/admin/dashboard` | `admin_dashboard.go` | Admin dashboard stats |
+
+### Cohort Analysis (JWT Required)
+| Method | Path | Handler | Purpose |
+|--------|------|---------|---------|
+| GET | `/api/v1/cohort/:clinic_id` | `cohort.go` | Cohort analysis for clinic |
 
 ---
 
@@ -157,7 +195,10 @@ backend/
 
 ### Assessments (`internal/http/handlers/assessments.go`)
 - `Create(c *gin.Context)` - Create assessment, call ML predictor
-- `List(c *gin.Context)` - Get assessment history for patient
+- `List(c *gin.Context)` - Get assessment history for user
+- `GetByID(c *gin.Context)` - Get single assessment by ID
+- `Update(c *gin.Context)` - Update existing assessment
+- `Delete(c *gin.Context)` - Delete assessment
 
 ### Analytics (`internal/http/handlers/analytics.go`)
 - `getSummary(c *gin.Context)` - Returns summary analytics for authenticated user (cached for 5 minutes)
@@ -165,6 +206,7 @@ backend/
 ### Insights (`internal/http/handlers/insights.go`)
 - `cluster(c *gin.Context)` - Get cluster distribution data for user (cached 10 minutes)
 - `trends(c *gin.Context)` - Get biomarker trend averages by user
+- `metrics(c *gin.Context)` - Get ML model performance metrics
 
 ### Auth Events (`internal/http/handlers/auth_events.go`)
 - `StreamAuthEvents(c *gin.Context)` - SSE stream for real-time auth monitoring (admin only)
@@ -173,8 +215,39 @@ backend/
 - `listClinics(c *gin.Context)` - List all clinics user belongs to
 - `getClinicDashboard(c *gin.Context)` - Get aggregate statistics for a clinic (clinic_admin or admin)
 
+### Cohort Analysis (`internal/http/handlers/cohort.go`)
+- `getCohortAnalysis(c *gin.Context)` - Get cohort analysis data for clinic
+
+### Export (`internal/http/handlers/export.go`)
+- `exportPatientsCSV(c *gin.Context)` - Export patients data to CSV
+- `exportAssessmentsCSV(c *gin.Context)` - Export assessments data to CSV
+
+### Admin Users (`internal/http/handlers/admin_users.go`)
+- `listUsers(c *gin.Context)` - List all users with pagination
+- `createUser(c *gin.Context)` - Create new user
+- `updateUser(c *gin.Context)` - Update user details
+- `deleteUser(c *gin.Context)` - Deactivate user account
+
+### Admin Audit (`internal/http/handlers/admin_audit.go`)
+- `getAuditLogs(c *gin.Context)` - Get audit logs with filtering
+
+### Admin Models (`internal/http/handlers/admin_models.go`)
+- `getModelHistory(c *gin.Context)` - Get ML model run history
+
+### Admin Dashboard (`internal/http/handlers/admin_dashboard.go`)
+- `getDashboardStats(c *gin.Context)` - Get admin dashboard statistics
+
+### Health (`internal/http/handlers/health.go`)
+- `Healthz(c *gin.Context)` - Health check endpoint
+- `Livez(c *gin.Context)` - Liveness probe endpoint
+
 ### ML Predictor (`internal/ml/http_predictor.go`)
 - `Predict(input PredictionInput) (*PredictionResult, error)` - Call ML server
+
+### Services
+- `validation_service.go` - Biomarker range validation
+- `pdf_export_service.go` - PDF export service
+- `notification_service.go` - Notification service
 
 ---
 

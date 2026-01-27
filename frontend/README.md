@@ -37,23 +37,66 @@ frontend/
 │       │   ├── Dashboard_user.jsx  # User overview, assessments
 │       │   ├── UserProfile.jsx    # Profile management
 │       │   ├── Onboarding.jsx    # Multi-step user setup
-│       │   └── PersonalTrends.jsx # Assessment trend charts
+│       │   ├── PersonalTrends.jsx # Assessment trend charts
+│       │   └── AssessmentForm.jsx # Biomarker input form
 │       ├── admin/
 │       │   ├── AdminDashboard.jsx  # Admin system stats
 │       │   ├── UserManagement.jsx  # User CRUD operations
 │       │   ├── AuditLogViewer.jsx  # Audit log viewing
-│       │   └── ModelTraceability.jsx # ML model tracking
+│       │   ├── AuthEventLogViewer.jsx # Auth event streaming
+│       │   ├── ModelTraceability.jsx # ML model tracking
+│       │   └── AdminSidebar.jsx    # Admin navigation
+│       ├── dashboard/
+│       │   └── Dashboard_user.jsx # Main dashboard component
 │       ├── insights/
-│       │   └── Insights.jsx     # ML metrics, visualizations
+│       │   ├── Insights.jsx     # Main insights container
+│       │   ├── InsightsHeader.jsx # Insights navigation
+│       │   ├── InsightsSummary.jsx # Overview cards
+│       │   ├── BiomarkerTrends.jsx # Trend charts
+│       │   ├── BMIGlucoseCorrelation.jsx # Correlation analysis
+│       │   ├── ClusterComparison.jsx # Cluster comparison
+│       │   ├── CohortAnalysis.jsx # Cohort comparison analysis
+│       │   ├── ModelPerformance.jsx # ML metrics
+│       │   ├── RiskDistribution.jsx # Risk visualization
+│       │   ├── RiskFactorChart.jsx # Feature importance
+│       │   ├── SubgroupDistribution.jsx # Cluster distribution
+│       │   ├── VisualizationCard.jsx # Card component
+│       │   └── index.jsx # Export file
 │       ├── auth/
-│       │   └── Login.jsx         # Login/register forms
+│       │   ├── Login.jsx         # Login/register forms
+│       │   └── Signup.jsx        # Registration form
 │       ├── common/
-│       │   └── *.jsx             # Reusable UI components
+│       │   ├── BiomarkerInput.jsx # Biomarker input component
+│       │   ├── Button.jsx         # Button component
+│       │   ├── ClusterRecommendations.jsx # Recommendations display
+│       │   ├── ClusterTooltip.jsx # Tooltip component
+│       │   ├── RiskIndicator.jsx  # Risk status display
+│       │   ├── SHAPExplanation.jsx # Feature contributions
+│       │   ├── PDFExport.jsx      # PDF export button
+│       │   ├── ErrorBoundary.jsx  # Error handling
+│       │   ├── ErrorFallback.jsx  # Error fallback UI
+│       │   └── CustomCursor.jsx   # Custom cursor effect
 │       ├── layout/
-│       │   └── *.jsx             # Navigation, sidebar
-│       └── export/
-│           └── Export.jsx        # PDF export functionality
+│       │   ├── Sidebar.jsx       # Main navigation sidebar
+│       │   ├── BiologicalNetwork.jsx # Animated background
+│       │   ├── MouseGlow.jsx     # Visual effect
+│       │   └── AdminLayout.jsx   # Admin layout wrapper
+│       ├── export/
+│       │   └── Export.jsx        # PDF export functionality
+│       ├── education/
+│       │   └── Education.jsx     # Educational content
+│       └── backup/
+│           ├── clinic/
+│           │   └── ClinicDashboard.jsx # Legacy clinic dashboard
+│           ├── dashboard/
+│           │   └── Dashboard.jsx # Legacy dashboard
+│           └── patients/
+│               ├── PatientHistory.jsx # Legacy patient history
+│               └── RiskTrendChart.jsx # Legacy risk trends
 │
+├── e2e/                          # Playwright E2E tests
+│   ├── auth.spec.js             # Authentication tests
+│   └── user-flows.spec.js       # User journey tests
 ├── index.html                    # HTML entry
 ├── vite.config.js                # Vite build config
 ├── tailwind.config.cjs           # Tailwind configuration
@@ -84,11 +127,43 @@ The following directories contain legacy components from the previous B2B (clini
 | `Login` | `components/auth/Login.jsx` | Authentication forms |
 | `Signup` | `components/auth/Signup.jsx` | Registration form |
 | `Onboarding` | `components/user/Onboarding.jsx` | Multi-step user profile setup |
-| `Dashboard_user` | `components/user/Dashboard_user.jsx` | User overview, assessments |
+| `AssessmentForm` | `components/user/AssessmentForm.jsx` | Biomarker input form |
+| `Dashboard_user` (user) | `components/user/Dashboard_user.jsx` | User overview, assessments |
+| `Dashboard_user` (main) | `components/dashboard/Dashboard_user.jsx` | Main dashboard component |
 | `UserProfile` | `components/user/UserProfile.jsx` | Profile management |
 | `PersonalTrends` | `components/user/PersonalTrends.jsx` | Assessment trend charts |
 | `Insights` | `components/insights/Insights.jsx` | ML visualizations, model metrics |
+| `InsightsHeader` | `components/insights/InsightsHeader.jsx` | Insights navigation |
+| `InsightsSummary` | `components/insights/InsightsSummary.jsx` | Overview cards |
+| `BiomarkerTrends` | `components/insights/BiomarkerTrends.jsx` | Trend charts |
+| `BMIGlucoseCorrelation` | `components/insights/BMIGlucoseCorrelation.jsx` | Correlation analysis |
+| `ClusterComparison` | `components/insights/ClusterComparison.jsx` | Cluster comparison |
+| `CohortAnalysis` | `components/insights/CohortAnalysis.jsx` | Cohort comparison analysis |
+| `ModelPerformance` | `components/insights/ModelPerformance.jsx` | ML metrics |
+| `RiskDistribution` | `components/insights/RiskDistribution.jsx` | Risk visualization |
+| `RiskFactorChart` | `components/insights/RiskFactorChart.jsx` | Feature importance |
+| `SubgroupDistribution` | `components/insights/SubgroupDistribution.jsx` | Cluster distribution |
+| `VisualizationCard` | `components/insights/VisualizationCard.jsx` | Card component |
 | `Export` | `components/export/Export.jsx` | CSV export functionality |
+| `Education` | `components/education/Education.jsx` | Educational content |
+| `AdminDashboard` | `components/admin/AdminDashboard.jsx` | Admin system stats |
+| `UserManagement` | `components/admin/UserManagement.jsx` | User CRUD operations |
+| `AuditLogViewer` | `components/admin/AuditLogViewer.jsx` | Audit log viewing |
+| `AuthEventLogViewer` | `components/admin/AuthEventLogViewer.jsx` | Auth event streaming |
+| `ModelTraceability` | `components/admin/ModelTraceability.jsx` | ML model tracking |
+| `AdminSidebar` | `components/layout/AdminSidebar.jsx` | Admin navigation |
+| `Sidebar` | `components/layout/Sidebar.jsx` | Main navigation sidebar |
+| `BiologicalNetwork` | `components/layout/BiologicalNetwork.jsx` | Animated background |
+| `MouseGlow` | `components/layout/MouseGlow.jsx` | Visual effect |
+| `BiomarkerInput` | `components/common/BiomarkerInput.jsx` | Biomarker input component |
+| `Button` | `components/common/Button.jsx` | Button component |
+| `ClusterRecommendations` | `components/common/ClusterRecommendations.jsx` | Recommendations display |
+| `ClusterTooltip` | `components/common/ClusterTooltip.jsx` | Tooltip component |
+| `RiskIndicator` | `components/common/RiskIndicator.jsx` | Risk status display |
+| `SHAPExplanation` | `components/common/SHAPExplanation.jsx` | Feature contributions |
+| `PDFExport` | `components/common/PDFExport.jsx` | PDF export button |
+| `ErrorBoundary` | `components/common/ErrorBoundary.jsx` | Error handling |
+| `CustomCursor` | `components/common/CustomCursor.jsx` | Custom cursor effect |
 
 ---
 
