@@ -1,6 +1,7 @@
 # FRONTEND COMPONENTS KNOWLEDGE BASE
 
-**Directory**: `frontend/src/components/`
+**Directory**: `frontend/src/components`
+**Generated:** 2026-01-28
 
 ## OVERVIEW
 Domain-organized React components with lazy loading and tab-based navigation.

@@ -1,11 +1,11 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-01-14
-**Commit:** N/A
-**Branch:** N/A
+**Generated:** 2026-01-28
+**Commit:** Current
+**Branch:** main
 
 ## OVERVIEW
-Go/Gin REST API for DIANA diabetes risk assessment. PostgreSQL with SQLC, JWT auth, ML prediction integration.
+Go/Gin REST API for DIANA diabetes risk assessment. PostgreSQL with SQLC, JWT auth, ML prediction integration, SSE events, Redis caching, and PDF generation.
 
 ## STRUCTURE
 ```

@@ -1,9 +1,9 @@
 # HTTP HANDLERS KNOWLEDGE BASE
 
-**Directory**: `backend/internal/http/handlers/`
+**Directory**: `backend/internal/http/handlers`
 
 ## OVERVIEW
-HTTP request handlers implementing REST API endpoints for authentication, user management, assessments, admin functions, and ML integration.
+HTTP request handlers implementing REST API endpoints for authentication, user management, assessments, admin functions, ML integration, analytics, and real-time auth event streaming.
 
 ## WHERE TO LOOK
 
@@ -13,12 +13,17 @@ HTTP request handlers implementing REST API endpoints for authentication, user m
 | Auth | `auth.go` | `/auth/login`, `/auth/refresh`, `/auth/logout` | JWT token management |
 | Users | `users.go` | `/users/me/*` (profile, onboarding, consent, trends, account) | User-facing operations |
 | Assessments | `assessments.go` | `/users/me/assessments/*` | Risk assessments with ML prediction |
-| Export | `export.go` | `/users/me/export/pdf` | PDF generation (gopdf) |
+| Analytics | `analytics.go` | `/analytics/summary`, `/analytics/cluster-distribution` | Dashboard statistics and cluster data |
+| Insights | `insights.go` | `/insights/*` | Analytics, metrics, cluster distribution |
+| Auth Events | `auth_events.go` | `/auth/events` | SSE auth event streaming (admin only) |
+| Clinic Dashboard | `clinic_dashboard.go` `/clinic/dashboard` | Clinic member dashboard |
+| Cohort | `cohort.go` | `/cohort/:clinic_id` | Cohort analysis endpoints |
+| Export | `export.go` | `/export/patients.csv`, `/export/assessments.csv` | CSV export functionality |
+| Health | `health.go` | `/healthz`, `/livez` | Health check endpoints |
 | Admin Dashboard | `admin_dashboard.go` | `/admin/dashboard` | System stats |
 | Admin Users | `admin_users.go` | `/admin/users/*` | User CRUD, activation/deactivation |
 | Admin Audit | `admin_audit.go` | `/admin/audit` | Audit log viewer |
 | Admin Models | `admin_models.go` | `/admin/models` | ML model run tracking |
-| Insights | `insights.go` | `/insights/*` | Analytics, cluster distribution |
 
 ## HANDLER STRUCTURE
 
