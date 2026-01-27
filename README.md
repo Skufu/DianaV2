@@ -29,14 +29,25 @@ A full-stack health application designed for menopausal women to assess diabetes
 | Auth Handler | `backend/internal/http/handlers/auth.go` | Login, register, JWT |
 | Users Handler | `backend/internal/http/handlers/users.go` | User profile, onboarding, consent, trends |
 | Assessment Handler | `backend/internal/http/handlers/assessments.go` | Create assessments, call ML |
-| Auth Events Handler | `backend/internal/http/handlers/auth_events.go` | SSE auth event streaming |
 | Analytics Handler | `backend/internal/http/handlers/analytics.go` | Dashboard statistics |
 | Insights Handler | `backend/internal/http/handlers/insights.go` | ML metrics, cluster distribution |
+| Auth Events Handler | `backend/internal/http/handlers/auth_events.go` | SSE auth event streaming |
 | Clinic Dashboard | `backend/internal/http/handlers/clinic_dashboard.go` | Clinic member dashboard |
 | Cohort Handler | `backend/internal/http/handlers/cohort.go` | Cohort analysis endpoints |
-| Admin Handlers | `backend/internal/http/handlers/admin_*.go` | User mgmt, audit, models |
+| Export Handler | `backend/internal/http/handlers/export.go` | CSV export functionality |
+| Health Handler | `backend/internal/http/handlers/health.go` | Health check endpoints |
+| Admin Users | `backend/internal/http/handlers/admin_users.go` | User CRUD operations |
+| Admin Audit | `backend/internal/http/handlers/admin_audit.go` | Audit log viewing |
+| Admin Models | `backend/internal/http/handlers/admin_models.go` | ML model tracking |
+| Admin Dashboard | `backend/internal/http/handlers/admin_dashboard.go` | Admin system stats |
+| Utils | `backend/internal/http/handlers/utils.go` | Handler utilities |
 | RBAC Middleware | `backend/internal/http/middleware/rbac.go` | Role-based access control |
 | ML Predictor | `backend/internal/ml/http_predictor.go` | HTTP client for ML server |
+| PDF Generator | `backend/internal/pdf/generator.go` | PDF report generation |
+| SSE Broker | `backend/internal/http/sse/broker.go` | Server-Sent Events broker |
+| Redis Cache | `backend/internal/cache/redis_cache.go` | Caching layer |
+| Validation Service | `backend/internal/services/validation_service.go` | Biomarker validation |
+| PDF Export Service | `backend/internal/services/pdf_export_service.go` | PDF export service |
 | DB Queries | `backend/internal/store/sqlc/*.sql.go` | SQLC generated query code |
 | Config | `backend/internal/config/config.go` | Environment loading |
 
@@ -45,25 +56,65 @@ A full-stack health application designed for menopausal women to assess diabetes
 |------|---------------|---------|
 | Main App | `frontend/src/App.jsx` | Routing, auth state |
 | API Layer | `frontend/src/api.js` | Fetch wrapper, token refresh |
+| Main Dashboard | `frontend/src/components/dashboard/Dashboard_user.jsx` | Main dashboard overview |
 | User Dashboard | `frontend/src/components/user/Dashboard_user.jsx` | User overview, assessments |
-| Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` | Admin system stats |
-| Profile | `frontend/src/components/user/UserProfile.jsx` | Profile management |
+| User Profile | `frontend/src/components/user/UserProfile.jsx` | Profile management |
 | Onboarding | `frontend/src/components/user/Onboarding.jsx` | Multi-step onboarding |
-| Insights | `frontend/src/components/insights/Insights.jsx` | ML visualizations, analytics |
-| Export | `frontend/src/components/export/Export.jsx` | PDF export functionality |
+| Personal Trends | `frontend/src/components/user/PersonalTrends.jsx` | Assessment trend charts |
+| Assessment Form | `frontend/src/components/user/AssessmentForm.jsx` | Biomarker input form |
+| Admin Dashboard | `frontend/src/components/admin/AdminDashboard.jsx` | Admin system stats |
+| User Management | `frontend/src/components/admin/UserManagement.jsx` | User CRUD operations |
+| Audit Log Viewer | `frontend/src/components/admin/AuditLogViewer.jsx` | Audit log viewing |
+| Auth Event Log Viewer | `frontend/src/components/admin/AuthEventLogViewer.jsx` | Auth event streaming |
+| Model Traceability | `frontend/src/components/admin/ModelTraceability.jsx` | ML model tracking |
+| Admin Sidebar | `frontend/src/components/layout/AdminSidebar.jsx` | Admin navigation |
+| Main Sidebar | `frontend/src/components/layout/Sidebar.jsx` | Main navigation |
+| Biological Network | `frontend/src/components/layout/BiologicalNetwork.jsx` | Animated background |
+| Mouse Glow | `frontend/src/components/layout/MouseGlow.jsx` | Visual effect |
 | Login | `frontend/src/components/auth/Login.jsx` | Authentication forms |
+| Signup | `frontend/src/components/auth/Signup.jsx` | Registration form |
+| Insights Main | `frontend/src/components/insights/Insights.jsx` | ML visualizations, analytics |
+| Insights Header | `frontend/src/components/insights/InsightsHeader.jsx` | Insights navigation |
+| Insights Summary | `frontend/src/components/insights/InsightsSummary.jsx` | Overview cards |
+| Biomarker Trends | `frontend/src/components/insights/BiomarkerTrends.jsx` | Trend charts |
+| BMI Glucose Correlation | `frontend/src/components/insights/BMIGlucoseCorrelation.jsx` | Correlation analysis |
+| Cluster Comparison | `frontend/src/components/insights/ClusterComparison.jsx` | Cluster comparison |
+| Cohort Analysis | `frontend/src/components/insights/CohortAnalysis.jsx` | Cohort comparison analysis |
+| Model Performance | `frontend/src/components/insights/ModelPerformance.jsx` | ML metrics |
+| Risk Distribution | `frontend/src/components/insights/RiskDistribution.jsx` | Risk visualization |
+| Risk Factor Chart | `frontend/src/components/insights/RiskFactorChart.jsx` | Feature importance |
+| Subgroup Distribution | `frontend/src/components/insights/SubgroupDistribution.jsx` | Cluster distribution |
+| Visualization Card | `frontend/src/components/insights/VisualizationCard.jsx` | Card component |
+| Export | `frontend/src/components/export/Export.jsx` | PDF export functionality |
+| Education | `frontend/src/components/education/Education.jsx` | Educational content |
+| Biomarker Input | `frontend/src/components/common/BiomarkerInput.jsx` | Biomarker input component |
+| Button | `frontend/src/components/common/Button.jsx` | Button component |
+| Cluster Recommendations | `frontend/src/components/common/ClusterRecommendations.jsx` | Recommendations display |
+| Cluster Tooltip | `frontend/src/components/common/ClusterTooltip.jsx` | Tooltip component |
+| Risk Indicator | `frontend/src/components/common/RiskIndicator.jsx` | Risk status display |
+| SHAP Explanation | `frontend/src/components/common/SHAPExplanation.jsx` | Feature contributions |
+| PDF Export | `frontend/src/components/common/PDFExport.jsx` | PDF export button |
+| Error Boundary | `frontend/src/components/common/ErrorBoundary.jsx` | Error handling |
+| Custom Cursor | `frontend/src/components/common/CustomCursor.jsx` | Custom cursor effect |
 
 ### ML (Python)
 | File | Absolute Path | Purpose |
 |------|---------------|---------|
 | Flask Server | `ml/server.py` | API endpoints |
 | Predictors | `ml/predict.py` | DianaPredictor, ClinicalPredictor |
-| Training | `ml/train.py` | Clinical model training (non-circular) |
+| Training | `ml/train.py` | Clinical model training |
 | Clustering | `ml/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
-| Data Processing | `scripts/process_nhanes_multi.py` | NHANES data pipeline |
-| Feature Selection | `scripts/feature_selection.py` | Mutual Information + IG analysis |
-| Thesis Outputs | `scripts/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
-| ML Rationale | `docs/ml-rationale.md` | Defense-ready methodology justification |
+| Data Processing | `ml/data_processing.py` | NHANES data pipeline |
+| Explainability | `ml/explainability.py` | SHAP explanations |
+| Explainer | `ml/explainer.py` | Explainer utilities |
+| A/B Testing | `ml/ab_testing.py` | A/B testing infrastructure |
+| Drift Detection | `ml/drift_detection.py` | Model drift monitoring |
+| MLflow Config | `ml/mlflow_config.py` | MLflow experiment tracking |
+| Data Pipeline Script | `scripts/data/process_nhanes_multi.py` | NHANES download and processing |
+| Feature Selection | `scripts/data/feature_selection.py` | Mutual Information + IG analysis |
+| Cluster Training | `scripts/train/train_clusters.py` | K-Means, CatBoost |
+| Thesis Outputs | `scripts/thesis/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
+| ML Rationale | `docs/03-ml/rationale.md` | Defense-ready methodology justification |
 
 ---
 
@@ -237,13 +288,18 @@ VITE_ML_API_KEY=your-secure-ml-api-key  # Must match ML_API_KEY
 
 | Topic | Document |
 |-------|----------|
-| Architecture | [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) |
-| Backend Guide | [docs/BACKEND.md](./docs/BACKEND.md) |
-| Frontend Guide | [docs/FRONTEND.md](./docs/FRONTEND.md) |
-| **Admin Dashboard** | [docs/ADMIN.md](./docs/ADMIN.md) |
-| ML System | [docs/ML_SYSTEM.md](./docs/ML_SYSTEM.md) |
-| Database | [docs/DATABASE.md](./docs/DATABASE.md) |
-| API Contract | [docs/ml-api-contract.md](./docs/ml-api-contract.md) |
+| System Overview | [docs/01-architecture/overview.md](./docs/01-architecture/overview.md) |
+| Architecture Details | [docs/01-architecture/detailed-architecture.md](./docs/01-architecture/detailed-architecture.md) |
+| Backend Guide | [docs/02-guides/backend.md](./docs/02-guides/backend.md) |
+| Frontend Guide | [docs/02-guides/frontend.md](./docs/02-guides/frontend.md) |
+| ML System | [docs/02-guides/ml-system.md](./docs/02-guides/ml-system.md) |
+| Database | [docs/02-guides/database.md](./docs/02-guides/database.md) |
+| Admin Dashboard | [docs/02-guides/admin.md](./docs/02-guides/admin.md) |
+| ML API Contract | [docs/03-ml/api-contract.md](./docs/03-ml/api-contract.md) |
+| ML Methodology | [docs/03-ml/methodology.md](./docs/03-ml/methodology.md) |
+| Local Setup | [docs/04-development/local-setup.md](./docs/04-development/local-setup.md) |
+| Deployment | [docs/06-operations/deployment.md](./docs/06-operations/deployment.md) |
+| Documentation Hub | [docs/README.md](./docs/README.md) |
 
 ---
 

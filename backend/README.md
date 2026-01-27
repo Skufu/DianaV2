@@ -21,6 +21,9 @@
 | Cache | `internal/cache/redis_cache.go` |
 | SSE Broker | `internal/http/sse/broker.go` |
 | PDF Generation | `internal/pdf/generator.go` |
+| Validation Service | `internal/services/validation_service.go` |
+| PDF Export Service | `internal/services/pdf_export_service.go` |
+| Notification Service | `internal/services/notification_service.go` |
 
 ---
 
