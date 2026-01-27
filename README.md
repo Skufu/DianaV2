@@ -2,7 +2,7 @@
 
 > **Predictive diabetes risk assessment application for menopausal women**
 
-A full-stack health application designed for Diabetes Users to assess diabetes risk using machine learning predictions. Built with Go, React, and PostgreSQL.
+A full-stack health application designed for menopausal women to assess diabetes risk using machine learning predictions. Built with Go, React, Flask (Python), and PostgreSQL.
 
 ---
 
