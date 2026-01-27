@@ -26,7 +26,7 @@
 ## Phase 2: Code Bug Fixes (HIGH)
 
 - [x] Fix UserProfile.jsx:17-22 - Replace useState callback with useEffect to sync formData with profileData
-- [ ] Fix UserProfile.jsx:7 - Pass token to useUserProfile hook OR make hook check localStorage internally
+- [x] Fix UserProfile.jsx:7 - Pass token to useUserProfile hook OR make hook check localStorage internally
 - [ ] Delete dashboard/Dashboard_user.jsx - Remove legacy file with syntax errors (unused, hazardous)
 - [ ] Fix api.js:649-652 - Remove or disable adminExportResearchDataApi (endpoint not registered)
 

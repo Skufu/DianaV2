@@ -199,7 +199,8 @@ export const useLogout = () => {
 // USER PROFILE HOOKS
 // ============================================================================
 
-export const useUserProfile = (token) => {
+export const useUserProfile = () => {
+  const token = localStorage.getItem('diana_token');
   return useQuery({
     queryKey: ['user', 'profile'],
     queryFn: getUserProfileApi,
