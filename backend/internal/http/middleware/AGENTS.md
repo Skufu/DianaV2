@@ -1,6 +1,7 @@
 # MIDDLEWARE KNOWLEDGE BASE
 
-**Directory**: `internal/http/middleware`
+**Directory**: `backend/internal/http/middleware`
+**Generated:** 2026-01-28
 
 ## OVERVIEW
 Security, observability, and request validation layer using Gin middleware.
@@ -10,11 +11,12 @@ Security, observability, and request validation layer using Gin middleware.
 |------------|------|-------------|
 | Authentication | `auth.go` | JWT validation, user extraction to context |
 | Rate Limiting | `ratelimit.go` | Token bucket limiting, body size limits |
-| Audit Logging | `audit.go` | Async action logging (Success only) |
+| Audit Logging | `audit.go` | Async action logging |
 | Request ID | `logger.go` | Unique ID generation per request |
 | RBAC | `rbac.go` | Role-based access control (AdminOnly, etc.) |
 | Security | `security.go` | HSTS, CSP, and other security headers |
 | Structured Log | `logger.go` | Zerolog integration with request stats |
+| CORS | `cors.go` | Cross-origin resource sharing (github.com/gin-contrib/cors) |
 
 ## CONVENTIONS
 - **State Propagation**: Use `c.Set()` with standard keys:

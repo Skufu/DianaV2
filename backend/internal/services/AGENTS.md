@@ -1,6 +1,7 @@
 # SERVICES KNOWLEDGE BASE
 
-**Directory**: `backend/internal/services/`
+**Directory**: `backend/internal/services`
+**Generated:** 2026-01-28
 
 ## OVERVIEW
 Business logic layer handling PDF generation, notification scheduling, and biomarker validation.

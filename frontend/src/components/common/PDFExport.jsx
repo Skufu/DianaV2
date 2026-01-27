@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { exportPDFApi } from '../../api';
 
 const PDFExport = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -9,33 +10,7 @@ const PDFExport = () => {
     setError('');
 
     try {
-      const token = localStorage.getItem('diana_token');
-      if (!token) {
-        setError('Please log in to export your data');
-        return;
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_API_BASE || 'http://localhost:8080'}/api/v1/users/me/export/pdf`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate PDF');
-      }
-
-      // Get blob and create download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `diana_health_report_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
+      await exportPDFApi();
     } catch (err) {
       setError(err.message || 'Failed to export PDF. Please try again.');
     } finally {
@@ -99,4 +74,3 @@ const PDFExport = () => {
 };
 
 export default PDFExport;
-EOF'

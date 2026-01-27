@@ -1,8 +1,7 @@
-# ML INTEGRATION KNOWLEDGE BASE (internal/ml)
+# ML INTEGRATION KNOWLEDGE BASE
 
-**Generated:** 2026-01-14
-**Commit:** N/A
-**Branch:** N/A
+**Directory**: `backend/internal/ml`
+**Generated:** 2026-01-28
 
 ## OVERVIEW
 Integration layer for diabetes risk assessment, supporting external ML server calls and local mock prediction logic.

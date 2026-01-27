@@ -1,6 +1,7 @@
 # MIGRATIONS KNOWLEDGE BASE
 
-**Generated:** 2026-01-14
+**Directory**: `backend/migrations`
+**Generated:** 2026-01-28
 **Schema Version:** 0012
 
 ## OVERVIEW
