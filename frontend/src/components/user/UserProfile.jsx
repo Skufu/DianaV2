@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Calendar, Shield, Mail, Save, AlertTriangle, ArrowLeft, Plus } from 'lucide-react';
 import { useUserProfile, useUpdateProfile, useDeleteAccount } from '../../api';
 import AssessmentForm from './AssessmentForm';
@@ -15,7 +15,7 @@ const UserProfile = ({ setActiveTab }) => {
   const [formError, setFormError] = useState(null);
 
   // Sync form data with profile data from React Query
-  useState(() => {
+  useEffect(() => {
     if (profileData && Object.keys(profileData).length > 0) {
       setFormData(profileData);
     }
