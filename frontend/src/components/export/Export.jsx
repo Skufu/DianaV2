@@ -176,53 +176,56 @@ const Export = ({ token }) => {
           Download CSV files containing patient demographics, biomarkers, and assessment history
         </p>
 
-        <div className="space-y-4">
-          {/* Patients CSV */}
-          <div className="p-4 border-2 border-slate-600/30 rounded-xl hover:border-teal-500 transition-all">
+        <div className="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 mb-6">
+          <div className="flex items-start gap-3">
+            <div className="text-amber-400 text-2xl">🚧</div>
+            <div>
+              <h4 className="font-bold text-white mb-1">CSV Export Coming Soon</h4>
+              <p className="text-sm text-slate-400">
+                CSV export functionality is currently under development. In the meantime, please use the PDF export feature below to download comprehensive insights reports.
+              </p>
+              <p className="text-xs text-teal-400 mt-2 font-medium">
+                Check back soon for CSV downloads with filtering support
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 opacity-50">
+          <div className="p-4 border-2 border-slate-600/30 rounded-xl">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h4 className="font-bold text-white mb-1">Patients Data (CSV)</h4>
-                <p className="text-sm text-slate-400">
+                <h4 className="font-bold text-slate-400 mb-1">Patients Data (CSV)</h4>
+                <p className="text-sm text-slate-500">
                   Patient demographics: name, age, menopause status, blood pressure, activity level, and complete lipid panel
                 </p>
-                {(menopauseFilter !== 'all' || riskFilter !== 'all') && (
-                  <p className="text-xs text-teal-400 mt-2 font-medium">
-                    ✓ Filters will be applied to this export
-                  </p>
-                )}
               </div>
               <Button
                 variant="outline"
-                onClick={downloadCSV('/export/patients.csv')}
-                className="ml-4 bg-teal-500 text-white hover:bg-[#3311DD] flex items-center gap-2"
+                disabled
+                className="ml-4 bg-slate-600 text-slate-400 cursor-not-allowed flex items-center gap-2"
               >
                 <Download size={16} />
-                Download
+                Coming Soon
               </Button>
             </div>
           </div>
 
-          {/* Assessments CSV */}
-          <div className="p-4 border-2 border-slate-600/30 rounded-xl hover:border-teal-500 transition-all">
+          <div className="p-4 border-2 border-slate-600/30 rounded-xl">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h4 className="font-bold text-white mb-1">Assessments Data (CSV)</h4>
-                <p className="text-sm text-slate-400">
+                <h4 className="font-bold text-slate-400 mb-1">Assessments Data (CSV)</h4>
+                <p className="text-sm text-slate-500">
                   Assessment records: FBS, HbA1c, BMI, risk scores, cluster assignments, timestamps, and validation status
                 </p>
-                {(menopauseFilter !== 'all' || riskFilter !== 'all') && (
-                  <p className="text-xs text-teal-400 mt-2 font-medium">
-                    ✓ Filters will be applied to this export
-                  </p>
-                )}
               </div>
               <Button
                 variant="outline"
-                onClick={downloadCSV('/export/assessments.csv')}
-                className="ml-4 bg-teal-500 text-white hover:bg-[#3311DD] flex items-center gap-2"
+                disabled
+                className="ml-4 bg-slate-600 text-slate-400 cursor-not-allowed flex items-center gap-2"
               >
                 <Download size={16} />
-                Download
+                Coming Soon
               </Button>
             </div>
           </div>
