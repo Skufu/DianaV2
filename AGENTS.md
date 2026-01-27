@@ -1,12 +1,12 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2025-01-23
-**Updated:** 2025-01-22
+**Generated:** 2026-01-28
+**Updated:** 2026-01-28
 **Commit:** Current
 **Branch:** main
 
 ## OVERVIEW
-Multi-tier medical AI platform: diabetes risk prediction for menopausal women. Go backend, React frontend, Python ML, PostgreSQL.
+Multi-tier medical AI platform: diabetes risk prediction for menopausal women. Go backend (Gin), React frontend (Vite), Python ML (Flask), PostgreSQL with SQLC.
 
 ## STRUCTURE
 ```
