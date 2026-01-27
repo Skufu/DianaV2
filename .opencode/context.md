@@ -2,17 +2,17 @@
 
 ## Environment
 - Language: Go (backend), JavaScript/React (frontend), Python (ML)
-- Runtime: Go 1.24 (go.mod toolchain go1.24.1), Node/Vite (frontend), Python 3.x (requirements.txt)
+- Runtime: Go 1.24+ (go.mod toolchain go1.24.1), Node/Vite (frontend), Python 3.x (requirements.txt)
 - Build: `make build` (backend), `cd frontend && npm run build`
-- Test: `make test` (backend), `cd frontend && npm run test` (Playwright), `make test-ml` (ML)
+- Test: `make test` (backend), `cd frontend && npx playwright test` (Playwright), `make test-ml` (ML)
 - Package Manager: Go modules, npm (frontend), pip (ML)
 
 ## Project Type
 - [ ] Library/Package
-- [x] Application (CLI/Web/Mobile/Desktop)
+- [x] Application (Web/Mobile/Desktop)
 - [ ] Microservice
 - [ ] Monorepo
-- [ ] Other: Multi-tier web app (Go API + React + ML service)
+- [x] Other: Multi-tier web app (Go API + React + ML service)
 
 ## Infrastructure
 - Container: docker-compose.yml
@@ -22,8 +22,8 @@
 
 ## Structure
 - Source: backend/, frontend/src/, ml/
-- Tests: backend/*_test.go, frontend/e2e/, ml (pytest)
-- Docs: README.md, docs/
+- Tests: backend/*_test.go, frontend/e2e/, ml/*_test.py (pytest)
+- Docs: README.md, docs/, AGENTS.md
 - Entry: backend/cmd/server/main.go, frontend/src/main.jsx, ml/server.py
 
 ## Conventions (OBSERVE from existing code)
@@ -36,3 +36,14 @@
 - Frontend uses React 18 + Vite + Tailwind; no Redux/Zustand
 - API calls centralized in frontend/src/api.js (no raw fetch)
 - ML service is Flask with prediction endpoints
+- Database migrations via Goose (backend/migrations/)
+- SQLC for type-safe SQL queries
+- Redis caching in backend for trends/analytics (5-10 min TTL)
+- SSE broker for real-time auth event streaming
+- PDF generation via gopdf library
+- ML models: XGBoost, CatBoost, Random Forest
+- K-Means clustering for diabetes subtypes (K=4 Ahlqvist categories)
+- SHAP explanations for feature importance
+- MLflow for experiment tracking
+- A/B testing framework in ML service
+- Drift detection in ML service

@@ -35,7 +35,7 @@
 ## Phase 3: UX Improvements (MEDIUM)
 
 - [x] Fix App.jsx:204,256-265 - Keep sidebar visible on profile tab (remove isAssessmentOpen condition)
-- [ ] Fix App.jsx:146-151 - Add skip option for onboarding OR allow partial dashboard access
+- [x] Fix App.jsx:146-151 - Add skip option for onboarding OR allow partial dashboard access
 - [ ] Fix Sidebar.jsx:40 + App.jsx:163-165 - Make "Log Assessment" CTA open assessment form directly (modal or inline)
 - [ ] Consolidate PDFExport.jsx - Make it use exportPDFApi from api.js instead of direct fetch
 
