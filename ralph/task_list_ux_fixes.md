@@ -44,7 +44,7 @@
 ## Phase 4: Backend Alignment (MEDIUM)
 
 - [x] Fix export.go:31 - Uncomment or properly register `/research` endpoint if needed
-- [ ] Verify admin dashboard routes match frontend calls
+- [x] Verify admin dashboard routes match frontend calls
 - [ ] Remove or deprecate CSV export buttons until backend implements them
 
 ---
