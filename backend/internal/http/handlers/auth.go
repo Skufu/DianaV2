@@ -11,18 +11,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/skufu/DianaV2/backend/internal/config"
+	"github.com/skufu/DianaV2/backend/internal/http/sse"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
-	cfg   config.Config
-	store store.Store
+	cfg    config.Config
+	store  store.Store
+	broker *sse.Broker
 }
 
-func NewAuthHandler(cfg config.Config, store store.Store) *AuthHandler {
-	return &AuthHandler{cfg: cfg, store: store}
+func NewAuthHandler(cfg config.Config, store store.Store, broker *sse.Broker) *AuthHandler {
+	return &AuthHandler{cfg: cfg, store: store, broker: broker}
 }
 
 type loginRequest struct {
@@ -55,11 +57,19 @@ func (h *AuthHandler) login(c *gin.Context) {
 	user, err := h.store.Users().FindByEmail(c.Request.Context(), req.Email)
 	if err != nil {
 		log.Printf("[ERROR] Login failed for email %s: %v", req.Email, err)
+		// Publish failed login event
+		if h.broker != nil {
+			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "user not found"})
+		}
 		ErrUnauthorized(c)
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		log.Printf("[WARN] Invalid password attempt for email %s", req.Email)
+		// Publish failed login event
+		if h.broker != nil {
+			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "invalid password"})
+		}
 		ErrUnauthorized(c)
 		return
 	}
@@ -102,6 +112,11 @@ func (h *AuthHandler) login(c *gin.Context) {
 	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", true, true)
 	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", true, true)
+
+	// Publish successful login event
+	if h.broker != nil {
+		h.broker.PublishAuthEvent("login", user.Email, c.ClientIP(), c.GetHeader("User-Agent"), true, nil)
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "login successful",
@@ -292,6 +307,11 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", true, true)
 	c.SetCookie("diana_refresh_token", newRefreshToken, 7*24*60*60, "/", "", true, true)
 
+	// Publish token refresh event
+	if h.broker != nil {
+		h.broker.PublishAuthEvent("token_refresh", user.Email, c.ClientIP(), c.GetHeader("User-Agent"), true, nil)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":       "token refreshed successfully",
 		"access_token":  signedAccessToken,
@@ -323,6 +343,17 @@ func (h *AuthHandler) logout(c *gin.Context) {
 	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("diana_token", "", -1, "/", "", true, true)
 	c.SetCookie("diana_refresh_token", "", -1, "/", "", true, true)
+
+	// Publish logout event (using email from context if available)
+	if h.broker != nil {
+		// Try to get email from JWT claims if set by middleware
+		email, _ := c.Get("user_email")
+		emailStr, _ := email.(string)
+		if emailStr == "" {
+			emailStr = "unknown"
+		}
+		h.broker.PublishAuthEvent("logout", emailStr, c.ClientIP(), c.GetHeader("User-Agent"), true, nil)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
 }

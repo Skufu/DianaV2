@@ -1,0 +1,38 @@
+═══════════════════════════════════════════════════════════════
+  RALPH SUMMARY - Sat, Jan 24, 2026  9:14:07 PM
+═══════════════════════════════════════════════════════════════
+
+Duration: 4h 25m
+Iterations: 31 / 50
+
+📊 Task Status:
+   ✅ Completed: 39
+   ⏳ Remaining: 12
+   🚫 Blocked:   0
+0
+
+📝 Recent Commits:
+e338d31 fix:  Fix trends.spec.js:112 - should navigate from dashboard to trends via
+da28f6f fix(e2e): stabilize trends - quick action button navigation test
+5327636 fix:  Fix trends.spec.js:91 - should work with time range selector
+73cebc3 fix:  Fix trends.spec.js:82 - should render charts with mock data
+42d2da5 fix:  Fix trends.spec.js:70 - should navigate to trends tab
+104d169 fix:  Fix export.spec.js:248 - should show appropriate message when no data
+e4a3e66 fix(e2e): stabilize export.spec.js - no data to export test
+8417aac fix:  Fix export.spec.js:219 - should generate PDF report and trigger downl
+42cda5c fix:  Fix export.spec.js:208 - should show data privacy notice
+5513925 fix:  Fix export.spec.js:190 - should display filter options
+
+📋 Remaining Tasks (first 10):
+- [ ] Fix integration/auth-real.spec.js:26 - should login successfully with demo user credentials
+- [ ] Fix integration/auth-real.spec.js:81 - should logout successfully and clear tokens
+- [ ] Fix integration/auth-real.spec.js:106 - should persist session after page reload
+- [ ] Fix integration/auth-real.spec.js:120 - should redirect to login after token expires
+- [ ] Fix integration/assessment-real.spec.js:26 - should create assessment with valid biomarkers via API
+- [ ] Fix integration/assessment-real.spec.js:70 - should fail validation with HbA1c > 15 via API
+- [ ] Fix integration/assessment-real.spec.js:107 - should fail validation with missing required fields via API
+- [ ] Fix integration/assessment-real.spec.js:212 - should fetch user assessments after creation
+- [ ] Fix validation.spec.js:673 - XSS input sanitized
+- [ ] Fix visual-regression.spec.js:183 - should capture all extracted components individually
+
+Check ralph/error_log.txt for failure details.

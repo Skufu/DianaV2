@@ -215,7 +215,7 @@ VITE_ML_API_KEY=your-secure-ml-api-key  # Must match ML_API_KEY
 
 | Role | Email | Password |
 |------|-------|----------|
-| Demo (User) | demo@diana.app | demopassword123 |
+| Demo (User) | demo@diana.app | demo123 |
 | Admin | admin@diana.app | admin123 |
 
 ---
