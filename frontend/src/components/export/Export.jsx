@@ -170,7 +170,7 @@ const Export = ({ token }) => {
               </div>
               <Button
                 variant="outline"
-                onClick={openLink('/api/v1/export/patients.csv')}
+                onClick={openLink('/export/patients.csv')}
                 className="ml-4 bg-teal-500 text-white hover:bg-[#3311DD] flex items-center gap-2"
               >
                 <Download size={16} />
@@ -195,7 +195,7 @@ const Export = ({ token }) => {
               </div>
               <Button
                 variant="outline"
-                onClick={openLink('/api/v1/export/assessments.csv')}
+                onClick={openLink('/export/assessments.csv')}
                 className="ml-4 bg-teal-500 text-white hover:bg-[#3311DD] flex items-center gap-2"
               >
                 <Download size={16} />
