@@ -643,7 +643,7 @@ export const activateAdminUserApi = async (token, userId) => {
 
 // Get system statistics
 export const adminGetStatsApi = async () => {
-  return apiFetch('/admin/stats');
+  return apiFetch('/admin/dashboard');
 };
 
 // Export research data (anonymized, consented users only)
