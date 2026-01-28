@@ -78,15 +78,6 @@ const App = () => {
     };
   }, [disableHeavyEffects, performanceTier]);
 
-  // Restore authentication state from localStorage on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem('diana_token');
-    if (storedToken) {
-      setToken(storedToken);
-      setIsAuthenticated(true);
-    }
-  }, []);
-
   const [loginError, setLoginError] = useState(null);
 
   const handleLogin = useCallback(async (email, password) => {
@@ -94,15 +85,6 @@ const App = () => {
     try {
       const res = await loginMutation.mutateAsync({ email, password });
       if (!res?.user) throw new Error('login failed');
-
-      // Store JWT tokens in localStorage for authenticated API requests
-      if (res.access_token) {
-        localStorage.setItem('diana_token', res.access_token);
-        setToken(res.access_token);
-      }
-      if (res.refresh_token) {
-        localStorage.setItem('diana_refresh_token', res.refresh_token);
-      }
 
       const role = res.user.role || 'user';
       const userIsAdmin = role === 'admin';
@@ -112,7 +94,6 @@ const App = () => {
       setUserId(res.user.id);
       setIsAuthenticated(true);
 
-      // Redirect admin users to admin dashboard
       if (userIsAdmin) {
         setActiveTab('admin');
       }
@@ -123,10 +104,6 @@ const App = () => {
 
   const handleLogout = useCallback(async () => {
     await logoutMutation.mutateAsync();
-
-    // Clear JWT tokens from localStorage
-    localStorage.removeItem('diana_token');
-    localStorage.removeItem('diana_refresh_token');
 
     setIsAuthenticated(false);
     setToken(null);
@@ -143,10 +120,6 @@ const App = () => {
       setIsAdmin(profile.role === 'admin');
       setUserId(profile.id);
       setIsAuthenticated(true);
-      const storedToken = localStorage.getItem('diana_token');
-      if (storedToken) {
-        setToken(storedToken);
-      }
       if (profile?.onboarding_completed === true) {
         setShowOnboarding(false);
       } else {
@@ -199,16 +172,6 @@ const App = () => {
 
   const handleSignupSuccess = useCallback((res) => {
     if (!res?.user) throw new Error('signup failed');
-
-    // Store JWT tokens in localStorage for authenticated API requests
-    if (res.access_token) {
-      localStorage.setItem('diana_token', res.access_token);
-      setToken(res.access_token);
-    }
-    if (res.refresh_token) {
-      localStorage.setItem('diana_refresh_token', res.refresh_token);
-      setRefreshToken(res.refresh_token);
-    }
 
     setUserRole(res.user.role || 'user');
     setIsAdmin(res.user.role === 'admin');

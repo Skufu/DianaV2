@@ -242,14 +242,14 @@ make build      # Build backend
 PORT=8080
 ENV=dev
 DB_DSN=postgres://user:pass@localhost:5432/diana?sslmode=disable
-JWT_SECRET=your-secure-secret-min-32-chars  # REQUIRED for production/staging
+JWT_SECRET=your-secure-random-secret-min-32-chars  # REQUIRED for ALL environments
 CORS_ORIGINS=http://localhost:4000
 MODEL_URL=http://localhost:5000
 ML_PORT=5001
 ML_API_KEY=your-secure-ml-api-key  # REQUIRED for all environments
 ```
 
-**Important**: `JWT_SECRET` is **required** for all non-local environments (production, staging). The application will fail to start with a fatal error if `JWT_SECRET` is missing in production. For local development with `ENV=local`, a fallback secret is used if not provided.
+**Important**: `JWT_SECRET` is **required** for ALL environments (development, staging, production). The application will fail to start with a fatal error if `JWT_SECRET` is missing. Use a secure random string of at least 32 characters.
 
 **ML API Key**: `ML_API_KEY` is **required** for all environments (development, staging, production). The ML server will return 401 Unauthorized for requests without a valid `X-API-Key` header. The frontend must be configured with `VITE_ML_API_KEY` to authenticate with the ML service.
 

@@ -50,12 +50,7 @@ type Config struct {
 func Load() Config {
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		env := getEnv("ENV", "dev")
-		if env != "local" {
-			log.Fatalf("JWT_SECRET environment variable is required in %s. Cannot start without it.", env)
-		}
-		jwtSecret = "dev-secret-change-in-production"
-		log.Println("WARNING: Using default JWT secret. Set JWT_SECRET environment variable!")
+		log.Fatalf("FATAL: JWT_SECRET environment variable is required. Cannot start without it. Set JWT_SECRET to a secure random string (min 32 characters).")
 	}
 
 	cfg := Config{
