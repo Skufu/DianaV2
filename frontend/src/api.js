@@ -22,18 +22,11 @@ const onTokenRefreshed = (newToken) => {
   refreshSubscribers = [];
 };
 
-// Attempt to refresh access token
 const attemptTokenRefresh = async () => {
-  const refreshToken = localStorage.getItem('diana_refresh_token');
-
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
-
   const response = await fetch(`${API_BASE}/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshToken }),
+    body: JSON.stringify({}),
   });
 
   if (!response.ok) {
@@ -42,29 +35,13 @@ const attemptTokenRefresh = async () => {
   }
 
   const data = await response.json();
-
-  if (data.access_token) {
-    localStorage.setItem('diana_token', data.access_token);
-  }
-  if (data.refresh_token) {
-    localStorage.setItem('diana_refresh_token', data.refresh_token);
-  }
-
   return data.access_token;
 };
 
-// Simple fetch wrapper with JWT token support and automatic token refresh
 const apiFetch = async (endpoint, options = {}, isRetry = false) => {
-  const token = localStorage.getItem('diana_token');
-
   const headers = {
     'Content-Type': 'application/json',
   };
-
-  // Add Authorization header if token exists
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method: options.method || 'GET',
@@ -99,10 +76,6 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
       return apiFetch(endpoint, options, true);
     } catch (refreshError) {
       isRefreshing = false;
-      // Refresh failed - clear tokens and force logout
-      localStorage.removeItem('diana_token');
-      localStorage.removeItem('diana_refresh_token');
-      // Trigger page reload to go to login
       if (typeof window !== 'undefined') {
         window.location.href = '/';
       }
@@ -124,18 +97,9 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
 };
 
 const blobFetch = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('diana_token');
-
-  const headers = {};
-
-  // Add Authorization header if token exists
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method: options.method || 'GET',
-    headers,
+    headers: {},
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
@@ -200,12 +164,10 @@ export const useLogout = () => {
 // ============================================================================
 
 export const useUserProfile = () => {
-  const token = localStorage.getItem('diana_token');
   return useQuery({
     queryKey: ['user', 'profile'],
     queryFn: getUserProfileApi,
     retry: 1,
-    enabled: !!token,
   });
 };
 
@@ -260,7 +222,6 @@ export const useAssessments = () => {
   return useQuery({
     queryKey: ['assessments'],
     queryFn: getAssessmentsApi,
-    enabled: !!localStorage.getItem('diana_token'),
     retry: 1,
   });
 };

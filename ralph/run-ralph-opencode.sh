@@ -22,8 +22,8 @@ done
 # Configuration (paths relative to project root)
 RALPH_DIR="ralph"
 CONTEXT_PIN="$RALPH_DIR/context_pin.md"
-PRD_FILE="$RALPH_DIR/prd_ux_fixes.md"
-TASK_FILE="$RALPH_DIR/task_list_ux_fixes.md"
+PRD_FILE="$RALPH_DIR/prd_overnight_audit.md"
+TASK_FILE="$RALPH_DIR/task_list_overnight_audit.md"
 ERROR_LOG="$RALPH_DIR/error_log.txt"
 SYSTEM_RULES="$RALPH_DIR/system_rules.md"
 LOCK_FILE="$RALPH_DIR/.ralph.lock"
@@ -309,6 +309,8 @@ Fix the code, then mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_D
                 find . -name "nul" -type f -delete 2>/dev/null || true
                 git add -A 2>&1 && git commit -m "$commit_type: ${task_text:5:70}" --no-verify 2>/dev/null && echo "📝 Committed" || true
                 break
+            else
+                echo "⚠️ Task not marked complete after AI attempt $r"
             fi
         fi
         
@@ -317,16 +319,28 @@ Fix the code, then mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_D
             break
         fi
         
-        # Escalate to Ralph 2 with real test failure info
+        # Escalate to Ralph 2 for BOTH test failures AND unmarked checkboxes
         echo "👔 Ralph 2 analyzing failure..."
-        echo "$(date): Attempt $r failed - Test exit code: ${post_status:-unknown}" >> "$ERROR_LOG"
-        echo "Failure details: $(get_failure_summary)" >> "$ERROR_LOG"
-        tail -30 "$TEMP_DIR/out.txt" >> "$ERROR_LOG"
+        echo "$(date): Attempt $r failed - Task: $task_text" >> "$ERROR_LOG"
+        if [ -n "$test_file" ]; then
+            echo "Test exit code: ${post_status:-unknown}" >> "$ERROR_LOG"
+            echo "Failure details: $(get_failure_summary)" >> "$ERROR_LOG"
+        else
+            echo "Reason: Checkbox not marked [x] after AI attempt" >> "$ERROR_LOG"
+        fi
+        tail -30 "$TEMP_DIR/out.txt" >> "$ERROR_LOG" 2>/dev/null || true
+        
+        # Ralph 2 prompt - works for both test and non-test tasks
+        failure_info=""
+        if [ -n "$test_file" ]; then
+            failure_info="Test exit code: ${post_status:-unknown}. Error: $(get_failure_summary)"
+        else
+            failure_info="AI did not mark task [x] complete. Check if fix was applied correctly."
+        fi
         
         opencode run "You are Ralph 2. Ralph 1 failed on: '$task_text'
-Test exit code: ${post_status:-unknown}
-Error: $(get_failure_summary)
-Read @$ERROR_LOG, @$TASK_FILE. Either break down the task or add a rule to @$SYSTEM_RULES. Do NOT code." 2>&1 || true
+$failure_info
+Read @$ERROR_LOG, @$TASK_FILE. Either break down the task into subtasks OR add a rule to @$SYSTEM_RULES. Do NOT code." 2>&1 || true
         
         prune_rules
         sleep 2
