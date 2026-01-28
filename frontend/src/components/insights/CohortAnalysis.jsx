@@ -6,7 +6,6 @@ import {
     ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
 import { Users, TrendingUp, Activity, Filter } from 'lucide-react';
-import { shouldAnimateCharts } from '../../utils/deviceCapabilities';
 
 const GROUPING_OPTIONS = [
     { value: 'cluster', label: 'T2DM Cluster' },
@@ -24,7 +23,7 @@ const CohortAnalysis = ({ token }) => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const animateCharts = useMemo(() => shouldAnimateCharts(), []);
+    // Animation enabled by default
 
     useEffect(() => {
         if (!token) return;
@@ -167,7 +166,7 @@ const CohortAnalysis = ({ token }) => {
                                     }}
                                 />
                                 <Legend />
-                                <Bar dataKey="count" name="Patient Count" fill="#7C3AED" radius={[8, 8, 0, 0]} isAnimationActive={animateCharts} />
+                                <Bar dataKey="count" name="Patient Count" fill="#7C3AED" radius={[8, 8, 0, 0]} isAnimationActive={true} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -197,9 +196,9 @@ const CohortAnalysis = ({ token }) => {
                                     formatter={(value) => value.toFixed(1)}
                                 />
                                 <Legend />
-                                <Bar dataKey="avg_hba1c" name="HbA1c (%)" fill="#7C3AED" isAnimationActive={animateCharts} />
-                                <Bar dataKey="avg_bmi" name="BMI" fill="#06B6D4" isAnimationActive={animateCharts} />
-                                <Bar dataKey="avg_risk_score" name="Risk Score" fill="#F43F5E" isAnimationActive={animateCharts} />
+                                <Bar dataKey="avg_hba1c" name="HbA1c (%)" fill="#7C3AED" isAnimationActive={true} />
+                                <Bar dataKey="avg_bmi" name="BMI" fill="#06B6D4" isAnimationActive={true} />
+                                <Bar dataKey="avg_risk_score" name="Risk Score" fill="#F43F5E" isAnimationActive={true} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -230,7 +229,7 @@ const CohortAnalysis = ({ token }) => {
                                             stroke={GROUP_COLORS[groups.indexOf(g) % GROUP_COLORS.length]}
                                             fill={GROUP_COLORS[groups.indexOf(g) % GROUP_COLORS.length]}
                                             fillOpacity={0.2}
-                                            isAnimationActive={animateCharts}
+                                            isAnimationActive={true}
                                         />
                                     ))}
                                 </RadarChart>

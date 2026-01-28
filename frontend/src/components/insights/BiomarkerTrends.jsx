@@ -1,12 +1,10 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer
 } from 'recharts';
-import { shouldAnimateCharts } from '../../utils/deviceCapabilities';
 
 const BiomarkerTrends = React.memo(({ trends = [] }) => {
-  const animateCharts = useMemo(() => shouldAnimateCharts(), []);
 
   return (
     <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
@@ -38,7 +36,6 @@ const BiomarkerTrends = React.memo(({ trends = [] }) => {
               strokeWidth={3}
               name="HbA1c (%)"
               dot={{ fill: '#4318FF', r: 5 }}
-              isAnimationActive={animateCharts}
             />
             <Line
               type="monotone"
@@ -47,7 +44,6 @@ const BiomarkerTrends = React.memo(({ trends = [] }) => {
               strokeWidth={3}
               name="FBS (mg/dL)"
               dot={{ fill: '#6AD2FF', r: 5 }}
-              isAnimationActive={animateCharts}
             />
           </LineChart>
         ) : (

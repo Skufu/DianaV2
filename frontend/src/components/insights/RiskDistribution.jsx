@@ -3,10 +3,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from 'recharts';
-import { shouldAnimateCharts } from '../../utils/deviceCapabilities';
 
 const RiskDistribution = React.memo(({ data = [] }) => {
-  const animateCharts = useMemo(() => shouldAnimateCharts(), []);
+  // Animation enabled by default
 
   return (
     <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
@@ -34,7 +33,7 @@ const RiskDistribution = React.memo(({ data = [] }) => {
                 'Count'
               ]}
             />
-            <Bar dataKey="value" radius={[8, 8, 0, 0]} isAnimationActive={animateCharts}>
+            <Bar dataKey="value" radius={[8, 8, 0, 0]} isAnimationActive={true}>
               {data.map((entry) => (
                 <Cell key={entry.name} fill={entry.color} />
               ))}

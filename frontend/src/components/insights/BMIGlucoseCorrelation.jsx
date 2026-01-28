@@ -1,12 +1,10 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   ScatterChart, Scatter, CartesianGrid, XAxis, YAxis, Tooltip,
   ResponsiveContainer
 } from 'recharts';
-import { shouldAnimateCharts } from '../../utils/deviceCapabilities';
 
 const BMIGlucoseCorrelation = React.memo(({ data = [] }) => {
-  const animateCharts = useMemo(() => shouldAnimateCharts(), []);
 
   return (
     <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
@@ -48,7 +46,7 @@ const BMIGlucoseCorrelation = React.memo(({ data = [] }) => {
                 return [value, name];
               }}
             />
-            <Scatter name="Patients" data={data} fill="#14B8A6" isAnimationActive={animateCharts} />
+            <Scatter name="Patients" data={data} fill="#14B8A6" isAnimationActive={true} />
           </ScatterChart>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-slate-400">
