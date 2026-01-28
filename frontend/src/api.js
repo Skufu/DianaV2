@@ -23,25 +23,42 @@ const onTokenRefreshed = (newToken) => {
 };
 
 const attemptTokenRefresh = async () => {
+  const refreshToken = localStorage.getItem('diana_refresh_token');
+
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
   const response = await fetch(`${API_BASE}/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({}),
+    body: JSON.stringify({ refresh_token: refreshToken }),
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({ error: 'Token refresh failed' }));
     throw new Error(error.error || 'Token refresh failed');
   }
 
   const data = await response.json();
+
+  // Store the new tokens
+  localStorage.setItem('diana_token', data.access_token);
+  localStorage.setItem('diana_refresh_token', data.refresh_token);
+
   return data.access_token;
 };
 
 const apiFetch = async (endpoint, options = {}, isRetry = false) => {
+  const token = localStorage.getItem('diana_token');
   const headers = {
     'Content-Type': 'application/json',
   };
+
+  // Add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method: options.method || 'GET',
@@ -76,8 +93,13 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
       return apiFetch(endpoint, options, true);
     } catch (refreshError) {
       isRefreshing = false;
+
+      // Clear tokens and redirect to login on refresh failure
+      localStorage.removeItem('diana_token');
+      localStorage.removeItem('diana_refresh_token');
+
       if (typeof window !== 'undefined') {
-        window.location.href = '/';
+        window.location.href = '/login?error=session_expired';
       }
       throw new Error('Session expired. Please log in again.');
     }
@@ -152,7 +174,7 @@ export const useLogin = () => {
 export const useLogout = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => logoutApi(),
+    mutationFn: (refreshToken) => logoutApi(refreshToken),
     onSuccess: () => {
       queryClient.clear();
     },
@@ -163,11 +185,12 @@ export const useLogout = () => {
 // USER PROFILE HOOKS
 // ============================================================================
 
-export const useUserProfile = () => {
+export const useUserProfile = (enabled = true) => {
   return useQuery({
     queryKey: ['user', 'profile'],
     queryFn: getUserProfileApi,
     retry: 1,
+    enabled,
   });
 };
 
