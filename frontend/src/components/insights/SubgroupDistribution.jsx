@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { shouldAnimateCharts } from '../../utils/deviceCapabilities';
 
 const subgroupInfo = {
   'SIDD': { name: 'Severe Insulin-Deficient Diabetes', color: '#EE5D50', description: 'Early onset, low BMI, poor metabolic control' },
@@ -17,7 +16,7 @@ const clusterColor = (label) => {
 };
 
 const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) => {
-  const animateCharts = useMemo(() => shouldAnimateCharts(), []);
+  // Animation enabled by default
 
   if (isLoading) {
     return (
@@ -79,7 +78,7 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
             outerRadius={100}
             fill="#8884d8"
             dataKey="value"
-            isAnimationActive={animateCharts}
+            isAnimationActive={true}
           >
             {clusters.map((c) => (
               <Cell key={c.cluster} fill={clusterColor(c.cluster)} />

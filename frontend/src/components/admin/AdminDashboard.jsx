@@ -28,7 +28,6 @@ import {
   LayoutDashboard,
   Wifi,
 } from 'lucide-react';
-import { shouldAnimateCharts } from '../../utils/deviceCapabilities';
 
 // Lazy load subviews for code splitting
 const UserManagement = lazy(() => import('./UserManagement'));
@@ -41,7 +40,7 @@ const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'
 // activeView and setActiveView are now passed from App.jsx
 // Navigation is handled by AdminSidebar
 const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
-  const animateCharts = useMemo(() => shouldAnimateCharts(), []);
+  // Animation enabled by default
 
   const { data: dashboardData, isLoading, error } = useAdminDashboard({ enabled: !!token });
   const { data: clinicsData } = useClinicComparison({ enabled: !!token });
@@ -176,7 +175,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                     cy="50%"
                     outerRadius={100}
                     label={({ cluster, count }) => `${cluster}: ${count}`}
-                    isAnimationActive={animateCharts}
+                    isAnimationActive={true}
                   >
                     {clusterDist.map((c) => (
                       <Cell key={c.cluster} fill={COLORS[clusterDist.indexOf(c) % COLORS.length]} />
@@ -223,7 +222,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                     name="HbA1c"
                     stroke="#7C3AED"
                     strokeWidth={2}
-                    isAnimationActive={animateCharts}
+                    isAnimationActive={true}
                   />
                   <Line
                     type="monotone"
@@ -231,7 +230,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                     name="FBS"
                     stroke="#06B6D4"
                     strokeWidth={2}
-                    isAnimationActive={animateCharts}
+                    isAnimationActive={true}
                   />
                 </LineChart>
               ) : (

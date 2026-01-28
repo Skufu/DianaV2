@@ -8,12 +8,7 @@ import BiologicalNetwork from './components/layout/BiologicalNetwork';
 import CustomCursor from './components/common/CustomCursor';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import AssessmentForm from './components/user/AssessmentForm';
-import {
-  getAnimationNodeCount,
-  shouldDisableHeavyEffects,
-  getPerformanceTier,
-  PERF_TIER,
-} from './utils/deviceCapabilities';
+
 
 // Lazy-loaded route components for code splitting
 const Dashboard_user = lazy(() => import('./components/user/Dashboard_user'));
@@ -54,29 +49,11 @@ const App = () => {
   const [showSignup, setShowSignup] = useState(false);
   const [showAssessmentModal, setShowAssessmentModal] = useState(false);
 
-  // Device performance detection (computed once)
-  const performanceTier = useMemo(() => getPerformanceTier(), []);
-  const animationNodeCount = useMemo(() => getAnimationNodeCount(), []);
-  const disableHeavyEffects = useMemo(() => shouldDisableHeavyEffects(), []);
-
-  // React Query hooks
+  // React Query hooks - only fetch profile when authenticated
   const queryClient = useQueryClient();
-  const { data: profile, isLoading: profileLoading, error: profileError } = useUserProfile(token);
+  const { data: profile, isLoading: profileLoading, error: profileError } = useUserProfile(isAuthenticated);
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
-
-  // Apply low-perf CSS class to body for global effect reduction
-  useEffect(() => {
-    if (disableHeavyEffects) {
-      document.body.classList.add('low-perf');
-    }
-    if (performanceTier !== PERF_TIER.HIGH) {
-      document.body.classList.add('reduced-motion');
-    }
-    return () => {
-      document.body.classList.remove('low-perf', 'reduced-motion');
-    };
-  }, [disableHeavyEffects, performanceTier]);
 
   const [loginError, setLoginError] = useState(null);
 
@@ -86,9 +63,15 @@ const App = () => {
       const res = await loginMutation.mutateAsync({ email, password });
       if (!res?.user) throw new Error('login failed');
 
+      // Store tokens in localStorage for API authentication
+      localStorage.setItem('diana_token', res.access_token);
+      localStorage.setItem('diana_refresh_token', res.refresh_token);
+
       const role = res.user.role || 'user';
       const userIsAdmin = role === 'admin';
 
+      setToken(res.access_token);
+      setRefreshToken(res.refresh_token);
       setUserRole(role);
       setIsAdmin(userIsAdmin);
       setUserId(res.user.id);
@@ -103,7 +86,16 @@ const App = () => {
   }, [loginMutation, queryClient]);
 
   const handleLogout = useCallback(async () => {
-    await logoutMutation.mutateAsync();
+    const currentRefreshToken = localStorage.getItem('diana_refresh_token');
+
+    try {
+      await logoutMutation.mutateAsync(currentRefreshToken);
+    } catch (err) {
+      console.error('Logout API error:', err);
+    }
+
+    localStorage.removeItem('diana_token');
+    localStorage.removeItem('diana_refresh_token');
 
     setIsAuthenticated(false);
     setToken(null);
@@ -115,11 +107,13 @@ const App = () => {
 
   // Sync auth state with profile data from React Query
   useEffect(() => {
+    // Only process profile data if user is authenticated
+    if (!isAuthenticated) return;
+
     if (profile && !profileLoading && !profileError) {
       setUserRole(profile.role || 'user');
       setIsAdmin(profile.role === 'admin');
       setUserId(profile.id);
-      setIsAuthenticated(true);
       if (profile?.onboarding_completed === true) {
         setShowOnboarding(false);
       } else {
@@ -129,11 +123,18 @@ const App = () => {
     } else if (profileError) {
       const status = profileError.response?.status;
       if (status === 401 || status === 403) {
+        // Clear all auth state and storage on auth error
+        localStorage.removeItem('diana_token');
+        localStorage.removeItem('diana_refresh_token');
         setIsAuthenticated(false);
         setToken(null);
+        setRefreshToken(null);
+        setUserRole(null);
+        setIsAdmin(false);
+        setUserId(null);
       }
     }
-  }, [profile, profileLoading, profileError]);
+  }, [profile, profileLoading, profileError, isAuthenticated]);
 
 
 
@@ -173,6 +174,12 @@ const App = () => {
   const handleSignupSuccess = useCallback((res) => {
     if (!res?.user) throw new Error('signup failed');
 
+    // Store tokens in localStorage for API authentication
+    localStorage.setItem('diana_token', res.access_token);
+    localStorage.setItem('diana_refresh_token', res.refresh_token);
+
+    setToken(res.access_token);
+    setRefreshToken(res.refresh_token);
     setUserRole(res.user.role || 'user');
     setIsAdmin(res.user.role === 'admin');
     setUserId(res.user.id);
@@ -217,14 +224,12 @@ const App = () => {
           className="flex min-h-screen relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1E293B 100%)' }}
         >
-          {/* Animated Background - disabled on low-end devices */}
-          {animationNodeCount > 0 && (
-            <BiologicalNetwork
-              nodeCount={animationNodeCount}
-              connectionDistance={200}
-              speed={0.15}
-            />
-          )}
+          {/* Animated Background */}
+          <BiologicalNetwork
+            nodeCount={40}
+            connectionDistance={200}
+            speed={0.15}
+          />
 
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5 pointer-events-none" />
@@ -241,7 +246,7 @@ const App = () => {
           )}
 
           <main
-            className="relative z-10 flex-1 ml-20 lg:ml-72 p-6 lg:p-8"
+            className={`relative z-10 flex-1 ${!showOnboarding ? 'ml-20 lg:ml-72 p-6 lg:p-8' : ''}`}
           >
             <ErrorBoundary section={activeTab}>
               <Suspense fallback={<LoadingSkeleton />}>{renderUserContent()}</Suspense>

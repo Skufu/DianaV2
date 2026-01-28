@@ -3,10 +3,9 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from 'recharts';
-import { shouldAnimateCharts } from '../../utils/deviceCapabilities';
 
 const RiskFactorChart = React.memo(({ riskFactorImportance }) => {
-  const animateCharts = useMemo(() => shouldAnimateCharts(), []);
+  // Animation enabled by default
 
   if (!riskFactorImportance || riskFactorImportance.length === 0) {
     return (
@@ -42,7 +41,7 @@ const RiskFactorChart = React.memo(({ riskFactorImportance }) => {
             }}
             formatter={(value) => `${(value * 100).toFixed(1)}%`}
           />
-          <Bar dataKey="importance" radius={[0, 8, 8, 0]} isAnimationActive={animateCharts}>
+          <Bar dataKey="importance" radius={[0, 8, 8, 0]} isAnimationActive={true}>
             {riskFactorImportance.map((entry) => (
               <Cell key={entry.factor} fill={entry.color} />
             ))}
