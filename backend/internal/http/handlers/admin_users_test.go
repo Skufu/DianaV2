@@ -231,7 +231,8 @@ func setupAdminUsersRouter() (*gin.Engine, *mockAdminUsersStore) {
 			Role:   "admin",
 		})
 	})
-	handler.Register(router.Group("/admin"))
+	auditLogger := middleware.NewAuditLogger(store)
+	handler.Register(router.Group("/admin"), auditLogger)
 
 	return router, store
 }

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { API_BASE, exportPDFApi } from '../../api';
 import Button from '../common/Button';
-import { Download, FileText, Filter } from 'lucide-react';
+import { Download, FileText, Filter, AlertTriangle } from 'lucide-react';
 
 const Export = ({ token }) => {
   const [menopauseFilter, setMenopauseFilter] = useState('all');
@@ -51,27 +51,29 @@ const Export = ({ token }) => {
   return (
     <div className="space-y-6 animate-fade-in pb-8">
       <header className="mb-8">
-        <h4 className="text-[#707EAE] font-medium text-sm mb-1">Data Management</h4>
-        <h2 className="text-3xl font-bold text-white">Export Data</h2>
-        <p className="text-slate-400 text-sm mt-1">
+        <h4 className="text-diana-text-muted font-medium text-sm mb-1 uppercase tracking-wider">Data Management</h4>
+        <h2 className="text-3xl font-bold text-diana-text-primary">Export Data</h2>
+        <p className="text-diana-text-secondary text-sm mt-1">
           Download patient data and insights reports for clinical records or research
         </p>
       </header>
 
       {/* Filtering Options */}
-      <div className="glass-card p-6 rounded-3xl shadow-sm border border-slate-600/30">
+      <div className="glass-card p-6 bg-white">
         <div className="flex items-center gap-2 mb-4">
-          <Filter size={20} className="text-teal-400" />
-          <h3 className="text-xl font-bold text-white">Filter Options</h3>
+          <div className="w-8 h-8 rounded-lg bg-diana-forest/10 flex items-center justify-center">
+            <Filter size={18} className="text-diana-forest" />
+          </div>
+          <h3 className="text-xl font-bold text-diana-text-primary">Filter Options</h3>
         </div>
-        <p className="text-slate-400 text-sm mb-6">
+        <p className="text-diana-text-secondary text-sm mb-6">
           Apply filters to export specific patient subsets based on menopausal status and risk level
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Menopause Status Filter */}
           <div>
-            <label className="block text-sm font-semibold text-white mb-3">
+            <label className="block text-sm font-semibold text-diana-text-primary mb-3">
               Menopausal Status
             </label>
             <div className="space-y-2">
@@ -85,8 +87,8 @@ const Export = ({ token }) => {
                   key={option.value}
                   htmlFor={`export-menopause-${option.value}`}
                   className={`flex items-center p-3 rounded-xl border-2 cursor-pointer transition-all ${menopauseFilter === option.value
-                    ? 'border-teal-500 bg-slate-700/30'
-                    : 'border-slate-600/30 hover:border-[#A3AED0]'
+                    ? 'border-diana-forest bg-diana-forest/5'
+                    : 'border-diana-sand hover:border-diana-forest/30'
                     }`}
                 >
                   <input
@@ -96,9 +98,9 @@ const Export = ({ token }) => {
                     value={option.value}
                     checked={menopauseFilter === option.value}
                     onChange={(e) => setMenopauseFilter(e.target.value)}
-                    className="mr-3 w-4 h-4 text-teal-400"
+                    className="mr-3 w-4 h-4 text-diana-forest accent-diana-forest"
                   />
-                  <span className="text-sm font-medium text-white">{option.label}</span>
+                  <span className="text-sm font-medium text-diana-text-primary">{option.label}</span>
                 </label>
               ))}
             </div>
@@ -106,22 +108,22 @@ const Export = ({ token }) => {
 
           {/* Risk Level Filter */}
           <div>
-            <label className="block text-sm font-semibold text-white mb-3">
+            <label className="block text-sm font-semibold text-diana-text-primary mb-3">
               Diabetes Risk Level
             </label>
             <div className="space-y-2">
               {[
-                { value: 'all', label: 'All Risk Levels', color: '#A3AED0' },
-                { value: 'low', label: 'Low Risk (0-33%)', color: '#6AD2FF' },
-                { value: 'moderate', label: 'Moderate Risk (34-66%)', color: '#FFB547' },
-                { value: 'high', label: 'High Risk (67-100%)', color: '#EE5D50' }
+                { value: 'all', label: 'All Risk Levels', color: '#94A3B8' },
+                { value: 'low', label: 'Low Risk (0-33%)', color: '#22C55E' },
+                { value: 'moderate', label: 'Moderate Risk (34-66%)', color: '#F59E0B' },
+                { value: 'high', label: 'High Risk (67-100%)', color: '#EF4444' }
               ].map(option => (
                 <label
                   key={option.value}
                   htmlFor={`export-risk-${option.value}`}
                   className={`flex items-center p-3 rounded-xl border-2 cursor-pointer transition-all ${riskFilter === option.value
-                    ? 'border-teal-500 bg-slate-700/30'
-                    : 'border-slate-600/30 hover:border-[#A3AED0]'
+                    ? 'border-diana-forest bg-diana-forest/5'
+                    : 'border-diana-sand hover:border-diana-forest/30'
                     }`}
                 >
                   <input
@@ -131,14 +133,14 @@ const Export = ({ token }) => {
                     value={option.value}
                     checked={riskFilter === option.value}
                     onChange={(e) => setRiskFilter(e.target.value)}
-                    className="mr-3 w-4 h-4 text-teal-400"
+                    className="mr-3 w-4 h-4 text-diana-forest accent-diana-forest"
                   />
                   <div className="flex items-center gap-2 flex-1">
                     <div
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: option.color }}
                     />
-                    <span className="text-sm font-medium text-white">{option.label}</span>
+                    <span className="text-sm font-medium text-diana-text-primary">{option.label}</span>
                   </div>
                 </label>
               ))}
@@ -148,16 +150,16 @@ const Export = ({ token }) => {
 
         {/* Active Filters Display */}
         {(menopauseFilter !== 'all' || riskFilter !== 'all') && (
-          <div className="mt-6 p-4 bg-slate-700/30 rounded-xl border border-slate-600/30">
-            <p className="text-sm font-semibold text-white mb-2">Active Filters:</p>
+          <div className="mt-6 p-4 bg-diana-stone rounded-xl border border-diana-sand">
+            <p className="text-sm font-semibold text-diana-text-primary mb-2">Active Filters:</p>
             <div className="flex flex-wrap gap-2">
               {menopauseFilter !== 'all' && (
-                <span className="px-3 py-1 glass-card rounded-lg text-sm text-teal-400 border border-teal-500">
+                <span className="px-3 py-1 bg-diana-forest/10 rounded-lg text-sm text-diana-forest border border-diana-forest/20 font-medium">
                   Menopause: {menopauseFilter}
                 </span>
               )}
               {riskFilter !== 'all' && (
-                <span className="px-3 py-1 glass-card rounded-lg text-sm text-teal-400 border border-teal-500">
+                <span className="px-3 py-1 bg-diana-forest/10 rounded-lg text-sm text-diana-forest border border-diana-forest/20 font-medium">
                   Risk: {riskFilter}
                 </span>
               )}
@@ -167,24 +169,26 @@ const Export = ({ token }) => {
       </div>
 
       {/* Export Options */}
-      <div className="glass-card p-6 rounded-3xl shadow-sm border border-slate-600/30">
+      <div className="glass-card p-6 bg-white">
         <div className="flex items-center gap-2 mb-4">
-          <Download size={20} className="text-teal-400" />
-          <h3 className="text-xl font-bold text-white">Export Patient Data</h3>
+          <div className="w-8 h-8 rounded-lg bg-diana-forest/10 flex items-center justify-center">
+            <Download size={18} className="text-diana-forest" />
+          </div>
+          <h3 className="text-xl font-bold text-diana-text-primary">Export Patient Data</h3>
         </div>
-        <p className="text-slate-400 text-sm mb-6">
+        <p className="text-diana-text-secondary text-sm mb-6">
           Download CSV files containing patient demographics, biomarkers, and assessment history
         </p>
 
-        <div className="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 mb-6">
+        <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 mb-6">
           <div className="flex items-start gap-3">
-            <div className="text-amber-400 text-2xl">🚧</div>
+            <div className="text-amber-500 text-2xl">🚧</div>
             <div>
-              <h4 className="font-bold text-white mb-1">CSV Export Coming Soon</h4>
-              <p className="text-sm text-slate-400">
+              <h4 className="font-bold text-amber-800 mb-1">CSV Export Coming Soon</h4>
+              <p className="text-sm text-amber-700">
                 CSV export functionality is currently under development. In the meantime, please use the PDF export feature below to download comprehensive insights reports.
               </p>
-              <p className="text-xs text-teal-400 mt-2 font-medium">
+              <p className="text-xs text-diana-forest mt-2 font-medium">
                 Check back soon for CSV downloads with filtering support
               </p>
             </div>
@@ -192,18 +196,18 @@ const Export = ({ token }) => {
         </div>
 
         <div className="space-y-4 opacity-50">
-          <div className="p-4 border-2 border-slate-600/30 rounded-xl">
+          <div className="p-4 border-2 border-diana-sand rounded-xl">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h4 className="font-bold text-slate-400 mb-1">Patients Data (CSV)</h4>
-                <p className="text-sm text-slate-500">
+                <h4 className="font-bold text-diana-text-muted mb-1">Patients Data (CSV)</h4>
+                <p className="text-sm text-diana-text-muted">
                   Patient demographics: name, age, menopause status, blood pressure, activity level, and complete lipid panel
                 </p>
               </div>
               <Button
                 variant="outline"
                 disabled
-                className="ml-4 bg-slate-600 text-slate-400 cursor-not-allowed flex items-center gap-2"
+                className="ml-4 bg-diana-stone text-diana-text-muted cursor-not-allowed flex items-center gap-2"
               >
                 <Download size={16} />
                 Coming Soon
@@ -211,18 +215,18 @@ const Export = ({ token }) => {
             </div>
           </div>
 
-          <div className="p-4 border-2 border-slate-600/30 rounded-xl">
+          <div className="p-4 border-2 border-diana-sand rounded-xl">
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <h4 className="font-bold text-slate-400 mb-1">Assessments Data (CSV)</h4>
-                <p className="text-sm text-slate-500">
+                <h4 className="font-bold text-diana-text-muted mb-1">Assessments Data (CSV)</h4>
+                <p className="text-sm text-diana-text-muted">
                   Assessment records: FBS, HbA1c, BMI, risk scores, cluster assignments, timestamps, and validation status
                 </p>
               </div>
               <Button
                 variant="outline"
                 disabled
-                className="ml-4 bg-slate-600 text-slate-400 cursor-not-allowed flex items-center gap-2"
+                className="ml-4 bg-diana-stone text-diana-text-muted cursor-not-allowed flex items-center gap-2"
               >
                 <Download size={16} />
                 Coming Soon
@@ -233,23 +237,25 @@ const Export = ({ token }) => {
       </div>
 
       {/* Insights Report */}
-      <div className="glass-card p-6 rounded-3xl shadow-sm border border-slate-600/30">
+      <div className="glass-card p-6 bg-white">
         <div className="flex items-center gap-2 mb-4">
-          <FileText size={20} className="text-teal-400" />
-          <h3 className="text-xl font-bold text-white">Insights Report</h3>
+          <div className="w-8 h-8 rounded-lg bg-diana-forest/10 flex items-center justify-center">
+            <FileText size={18} className="text-diana-forest" />
+          </div>
+          <h3 className="text-xl font-bold text-diana-text-primary">Insights Report</h3>
         </div>
-        <p className="text-slate-400 text-sm mb-6">
+        <p className="text-diana-text-secondary text-sm mb-6">
           Generate comprehensive insights report with visualizations and statistical summaries
         </p>
 
-        <div className="p-4 border-2 border-slate-600/30 rounded-xl hover:border-teal-500 transition-all">
+        <div className="p-4 border-2 border-diana-sand rounded-xl hover:border-diana-forest transition-all">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h4 className="font-bold text-white mb-1">Cohort Insights Report</h4>
-              <p className="text-sm text-slate-400">
+              <h4 className="font-bold text-diana-text-primary mb-1">Cohort Insights Report</h4>
+              <p className="text-sm text-diana-text-secondary">
                 Comprehensive PDF report including: risk distribution, cluster analysis, biomarker trends, and correlation matrices
               </p>
-              <p className="text-xs text-[#707EAE] mt-2">
+              <p className="text-xs text-diana-text-muted mt-2">
                 Note: This export includes aggregate statistics suitable for clinical review and research purposes
               </p>
             </div>
@@ -267,7 +273,7 @@ const Export = ({ token }) => {
                 }
               }}
               disabled={pdfGenerating}
-              className="ml-4 glass-card text-teal-400 border-2 border-teal-500 hover:bg-slate-700/30 flex items-center gap-2"
+              className="ml-4 bg-diana-forest text-white border-2 border-diana-forest hover:bg-diana-forest-light flex items-center gap-2"
             >
               <FileText size={16} />
               {pdfGenerating ? 'Generating...' : 'Generate'}
@@ -277,12 +283,12 @@ const Export = ({ token }) => {
       </div>
 
       {/* Data Privacy Notice */}
-      <div className="bg-amber-500/10 p-6 rounded-3xl border border-amber-500/30">
-        <h4 className="font-bold text-amber-300 mb-2 flex items-center gap-2">
-          <span>⚠️</span>
+      <div className="bg-amber-50 p-6 rounded-3xl border border-amber-200">
+        <h4 className="font-bold text-amber-800 mb-2 flex items-center gap-2">
+          <AlertTriangle size={20} className="text-amber-600" />
           Data Privacy & Security Notice
         </h4>
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-amber-700">
           Exported files contain protected health information (PHI). Ensure compliance with HIPAA, GDPR, or applicable data protection regulations.
           Store files securely, encrypt when transmitting, and delete when no longer needed for clinical or research purposes.
         </p>

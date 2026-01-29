@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 	"golang.org/x/crypto/bcrypt"
@@ -23,15 +24,15 @@ func NewAdminUsersHandler(store store.Store) *AdminUsersHandler {
 
 // Register registers admin user routes on the given router group
 // All routes require admin role (enforced by RBAC middleware at group level)
-func (h *AdminUsersHandler) Register(rg *gin.RouterGroup) {
+func (h *AdminUsersHandler) Register(rg *gin.RouterGroup, auditLogger *middleware.AuditLogger) {
 	users := rg.Group("/users")
 	{
 		users.GET("", h.listUsers)
-		users.POST("", h.createUser)
+		users.POST("", middleware.CaptureRequestBody(), auditLogger.LogAction("user.create", "user"), h.createUser)
 		users.GET("/:id", h.getUser)
-		users.PUT("/:id", h.updateUser)
-		users.DELETE("/:id", h.deactivateUser)
-		users.POST("/:id/activate", h.activateUser)
+		users.PUT("/:id", middleware.CaptureRequestBody(), auditLogger.LogAction("user.update", "user"), h.updateUser)
+		users.DELETE("/:id", auditLogger.LogAction("user.deactivate", "user"), h.deactivateUser)
+		users.POST("/:id/activate", auditLogger.LogAction("user.activate", "user"), h.activateUser)
 	}
 }
 

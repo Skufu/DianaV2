@@ -4,27 +4,32 @@ import { useQueryClient } from '@tanstack/react-query';
 import Sidebar from './components/layout/Sidebar';
 import AdminSidebar from './components/layout/AdminSidebar';
 import Login from './components/auth/Login';
-import BiologicalNetwork from './components/layout/BiologicalNetwork';
-import CustomCursor from './components/common/CustomCursor';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import AssessmentForm from './components/user/AssessmentForm';
+import ToastContainer from './components/common/Toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { pageVariants, useReducedMotion, breathing } from './utils/animations';
 
-
-// Lazy-loaded route components for code splitting
+// Lazy load components for code splitting
+const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
 const Dashboard_user = lazy(() => import('./components/user/Dashboard_user'));
 const UserProfile = lazy(() => import('./components/user/UserProfile'));
-const Onboarding = lazy(() => import('./components/user/Onboarding'));
 const PersonalTrends = lazy(() => import('./components/user/PersonalTrends'));
 const Insights = lazy(() => import('./components/insights/Insights'));
 const Education = lazy(() => import('./components/education/Education'));
 const Export = lazy(() => import('./components/export/Export'));
-const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
+const Onboarding = lazy(() => import('./components/user/Onboarding'));
 const Signup = lazy(() => import('./components/auth/Signup'));
+
 
 // Loading skeleton for lazy components
 const LoadingSkeleton = memo(function LoadingSkeleton() {
   return (
-    <div className="space-y-4 animate-pulse">
+    <motion.div
+      variants={breathing}
+      animate="animate"
+      className="space-y-4"
+    >
       <div className="h-8 w-48 bg-slate-700/50 rounded" />
       <div className="h-4 w-full max-w-md bg-slate-700/30 rounded" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
@@ -32,11 +37,13 @@ const LoadingSkeleton = memo(function LoadingSkeleton() {
           <div key={id} className="h-40 bg-slate-700/20 rounded-2xl" />
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 });
 
+
 const App = () => {
+  const isReduced = useReducedMotion();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
@@ -45,7 +52,9 @@ const App = () => {
   const [userId, setUserId] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [adminView, setAdminView] = useState('overview'); // Separate state for admin navigation
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+
   const [showSignup, setShowSignup] = useState(false);
   const [showAssessmentModal, setShowAssessmentModal] = useState(false);
 
@@ -142,6 +151,11 @@ const App = () => {
     setShowAssessmentModal(true);
   }, []);
 
+  const handleAssessmentSubmit = useCallback((data) => {
+    // AssessmentForm now handles submission and mock modal
+    setShowAssessmentModal(false);
+  }, []);
+
   // Render content for regular users
   const renderUserContent = useCallback(() => {
     if (showOnboarding) {
@@ -150,11 +164,11 @@ const App = () => {
 
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard_user userId={userId} setActiveTab={setActiveTab} />;
+        return <Dashboard_user userId={userId} setActiveTab={setActiveTab} onStartAssessment={handleStartAssessment} />;
       case 'profile':
         return <UserProfile userId={userId} setActiveTab={setActiveTab} />;
       case 'trends':
-        return <PersonalTrends userId={userId} />;
+        return <PersonalTrends userId={userId} onStartAssessment={handleStartAssessment} />;
       case 'insights':
         return <Insights />;
       case 'education':
@@ -187,95 +201,133 @@ const App = () => {
   }, []);
 
   return (
-    <>
-      <CustomCursor isLoggedIn={isAuthenticated} />
+    <AnimatePresence mode="wait">
       {!isAuthenticated ? (
-        <Suspense fallback={<LoadingSkeleton />}>
-          {showSignup ? (
-            <Signup onSignup={handleSignupSuccess} onShowLogin={() => setShowSignup(false)} />
-          ) : (
-            <Login onLogin={handleLogin} onShowSignup={() => setShowSignup(true)} error={loginError} />
-          )}
-        </Suspense>
+        <motion.div key="auth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <Suspense fallback={<LoadingSkeleton />}>
+            {showSignup ? (
+              <Signup onSignup={handleSignupSuccess} onShowLogin={() => setShowSignup(false)} />
+            ) : (
+              <Login onLogin={handleLogin} onShowSignup={() => setShowSignup(true)} error={loginError} />
+            )}
+          </Suspense>
+        </motion.div>
       ) : isAdmin ? (
-        // Admin gets purple-themed layout with AdminSidebar
-        <div
-          className="flex min-h-screen relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #0F0A1E 0%, #1E1B4B 100%)' }}
-        >
-          {/* Purple gradient overlay for admin */}
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-900/10 via-transparent to-indigo-900/10 pointer-events-none" />
+        // Admin Layout - Clean & Distinct
+        <motion.div key="admin" className="flex min-h-screen relative overflow-hidden bg-diana-stone">
+          <AnimatePresence mode="wait">
+            <motion.div
+              initial={{ x: isReduced ? 0 : -300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: isReduced ? 0 : -300, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="fixed left-0 top-0 z-50"
+            >
+              <AdminSidebar
+                activeView={adminView}
+                setActiveView={setAdminView}
+                onLogout={handleLogout}
+                isCollapsed={isSidebarCollapsed}
+                setIsCollapsed={setIsSidebarCollapsed}
+              />
+            </motion.div>
+          </AnimatePresence>
 
-          <AdminSidebar
-            activeView={adminView}
-            setActiveView={setAdminView}
-            onLogout={handleLogout}
-          />
-
-          <main className="relative z-10 flex-1 ml-20 lg:ml-72 p-6 lg:p-8">
+          <main className={`relative z-10 flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'ml-20' : 'ml-20 lg:ml-72'} p-6 lg:p-8`}>
             <ErrorBoundary section={adminView}>
-              <Suspense fallback={<LoadingSkeleton />}>{renderAdminContent()}</Suspense>
+              <Suspense fallback={<LoadingSkeleton />}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={adminView}
+                    variants={pageVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                  >
+                    {renderAdminContent()}
+                  </motion.div>
+                </AnimatePresence>
+              </Suspense>
             </ErrorBoundary>
           </main>
-        </div>
+        </motion.div>
       ) : (
-        // Regular user gets teal-themed layout with Sidebar
-        <div
-          className="flex min-h-screen relative overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #1E293B 100%)' }}
-        >
-          {/* Animated Background */}
-          <BiologicalNetwork
-            nodeCount={40}
-            connectionDistance={200}
-            speed={0.15}
-          />
+        // User Layout - Soft Modernism (Light Mode)
+        <motion.div key="user" className="flex min-h-screen relative overflow-hidden bg-diana-cream">
+          {/* Subtle Grain or Pattern could go here if needed, keeping it clean for now */}
 
-          {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-teal-900/5 via-transparent to-cyan-900/5 pointer-events-none" />
-
-          {!showOnboarding && (
-            <Sidebar
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              onStartAssessment={handleStartAssessment}
-              onLogout={handleLogout}
-              userRole={userRole}
-              isAdmin={isAdmin}
-            />
-          )}
+          <AnimatePresence>
+            {!showOnboarding && (
+              <motion.div
+                initial={{ x: isReduced ? 0 : -300, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: isReduced ? 0 : -300, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="fixed left-0 top-0 z-50"
+              >
+                <Sidebar
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  onStartAssessment={handleStartAssessment}
+                  onLogout={handleLogout}
+                  userRole={userRole}
+                  isAdmin={isAdmin}
+                  isCollapsed={isSidebarCollapsed}
+                  setIsCollapsed={setIsSidebarCollapsed}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <main
-            className={`relative z-10 flex-1 ${!showOnboarding ? 'ml-20 lg:ml-72 p-6 lg:p-8' : ''}`}
+            className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? (isSidebarCollapsed ? 'ml-20' : 'ml-20 lg:ml-72') + ' p-6 lg:p-8' : ''}`}
           >
             <ErrorBoundary section={activeTab}>
-              <Suspense fallback={<LoadingSkeleton />}>{renderUserContent()}</Suspense>
+              <Suspense fallback={<LoadingSkeleton />}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    variants={pageVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                  >
+                    {renderUserContent()}
+                  </motion.div>
+                </AnimatePresence>
+              </Suspense>
             </ErrorBoundary>
           </main>
 
           {/* Assessment Modal */}
-          {showAssessmentModal && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              <div
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                onClick={() => setShowAssessmentModal(false)}
-              />
-              <div className="relative z-10 w-full max-w-2xl">
-                <AssessmentForm
-                  onSubmit={() => {
-                    setShowAssessmentModal(false);
-                    // Refresh data by invalidating queries
-                    queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
-                    queryClient.invalidateQueries({ queryKey: ['user', 'assessments'] });
-                  }}
-                  onCancel={() => setShowAssessmentModal(false)}
+          <AnimatePresence>
+            {showAssessmentModal && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-diana-forest/20 backdrop-blur-sm"
+                  onClick={() => setShowAssessmentModal(false)}
                 />
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                  className="relative z-10 w-full max-w-2xl"
+                >
+                  <AssessmentForm
+                    onSubmit={() => {
+                      setShowAssessmentModal(false);
+                      // Refresh data by invalidating queries
+                      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+                      queryClient.invalidateQueries({ queryKey: ['user', 'assessments'] });
+                    }}
+                    onCancel={() => setShowAssessmentModal(false)}
+                  />
+                </motion.div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       )}
-    </>
+    </AnimatePresence>
   );
 };
 

@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer
 } from 'recharts';
+import { motion } from 'framer-motion';
+import { cardVariants, staggerContainer, slideUp } from '../../utils/animations';
 
 const subgroupInfo = {
   'SIDD': { name: 'Severe Insulin-Deficient Diabetes', color: '#EE5D50', description: 'Early onset, low BMI, poor metabolic control' },
@@ -40,7 +42,13 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
 
   if (!clusters || clusters.length === 0) {
     return (
-      <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
+      <motion.div
+        variants={cardVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.3 }}
+        className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30"
+      >
         <div className="mb-6">
           <h3 className="text-2xl font-bold text-white">T2DM Subgroups (Novel Clustering)</h3>
           <p className="text-slate-400 text-sm mt-2">
@@ -50,15 +58,22 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
         <div className="text-center py-12 text-slate-400">
           No clustering data available. Complete patient assessments to see subgroup distribution.
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
+    <motion.div
+      variants={cardVariants}
+      initial="offscreen"
+      whileInView="onscreen"
+      viewport={{ once: true, amount: 0.3 }}
+      whileHover={{ y: -5, transition: { type: "spring", stiffness: 300 } }}
+      className="glass-card p-8 bg-white border border-diana-stone/50"
+    >
       <div className="mb-6">
-        <h3 className="text-2xl font-bold text-white">T2DM Subgroups (Novel Clustering)</h3>
-        <p className="text-slate-400 text-sm mt-2">
+        <h3 className="text-2xl font-serif font-bold text-diana-text-primary">T2DM Subgroups (Novel Clustering)</h3>
+        <p className="text-diana-text-secondary text-sm mt-2">
           Distribution across four diabetes subgroups based on Ahlqvist et al. classification
         </p>
       </div>
@@ -81,16 +96,18 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
             isAnimationActive={true}
           >
             {clusters.map((c) => (
-              <Cell key={c.cluster} fill={clusterColor(c.cluster)} />
+              <Cell key={c.cluster} fill={clusterColor(c.cluster)} stroke="#fff" strokeWidth={2} />
             ))}
           </Pie>
           <Tooltip
             contentStyle={{
-              backgroundColor: '#1B2559',
-              border: 'none',
+              backgroundColor: '#fff',
+              border: '1px solid #e2e8f0',
               borderRadius: '12px',
-              color: '#fff'
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              color: '#0f172a'
             }}
+            itemStyle={{ color: '#0f172a' }}
             formatter={(value, name, props) => {
               const total = clusters.reduce((sum, c) => sum + (c.count || 0), 0);
               const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
@@ -100,32 +117,51 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
         </PieChart>
       </ResponsiveContainer>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-        {Object.entries(subgroupInfo).map(([key, info]) => {
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8"
+      >
+        {Object.entries(subgroupInfo).map(([key, info], index) => {
           const clusterData = clusters.find(c => c.cluster?.toUpperCase() === key);
           const count = clusterData?.count || 0;
+          const imagePath = `/src/assets/clusters/${key.toLowerCase()}.png`;
 
           return (
-            <div key={key} className="p-4 rounded-xl border border-slate-600/30 hover:border-teal-500 transition-colors">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: info.color }}
-                  />
-                  <div>
-                    <h4 className="font-bold text-white">{key}</h4>
-                    <p className="text-xs text-slate-400 font-medium">{info.name}</p>
+            <motion.div
+              variants={slideUp}
+              whileHover={{ scale: 1.02, borderColor: 'rgba(75, 85, 99, 0.5)' }}
+              key={key}
+              className="glass-card bg-white rounded-3xl border-2 transition-all cursor-pointer border-diana-sand hover:border-diana-forest/50"
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={imagePath}
+                      alt={`${key} logo`}
+                      className="w-12 h-12 rounded-2xl object-cover"
+                      loading="lazy"
+                      decoding="async"
+                      width="48"
+                      height="48"
+                    />
+                    <div>
+                      <h4 className="font-bold text-diana-text-primary">{key}</h4>
+                      <p className="text-xs text-diana-text-muted">{info.name}</p>
+                    </div>
                   </div>
+                  <span className="text-2xl font-bold text-diana-forest">{count}</span>
                 </div>
-                <span className="text-2xl font-bold text-teal-400">{count}</span>
+                <p className="text-diana-text-secondary text-sm">{info.description}</p>
               </div>
-              <p className="text-sm text-slate-400 mt-2">{info.description}</p>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 });
 
