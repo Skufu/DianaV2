@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER, MOCK_ASSESSMENT, SELECTORS, waitForNetworkIdle, takeScreenshot } from './fixtures/test-data';
+import { TEST_USER, MOCK_ASSESSMENT, SELECTORS, waitForNetworkIdle, takeScreenshot, waitForAnimations } from './fixtures/test-data';
 
 const corsHeaders = {
   'access-control-allow-origin': '*',
@@ -120,6 +120,7 @@ test.describe('Assessment Creation Flow', () => {
     await page.fill('input[type="email"]', TEST_USER.email);
     await page.fill('input[type="password"]', TEST_USER.password);
     await page.click('button:has-text("Sign In")');
+    await waitForAnimations(page);
     await waitForNetworkIdle(page);
 
     await expect(page.locator('h1:has-text("Welcome")')).toBeVisible({ timeout: 10000 });

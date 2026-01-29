@@ -1,10 +1,11 @@
 // BiologicalNetwork: Premium animated canvas background with connected nodes
 // Uses React.memo and stable refs to prevent re-initialization on parent re-renders
 import React, { useEffect, useRef, memo } from 'react';
+import { shouldDisableHeavyEffects, getAnimationNodeCount } from '../../utils/deviceCapabilities';
 
 const BiologicalNetwork = memo(({
     className = '',
-    nodeCount = 80,
+    nodeCount = getAnimationNodeCount(),
     connectionDistance = 180,
     speed = 0.25
 }) => {
@@ -17,6 +18,11 @@ const BiologicalNetwork = memo(({
     const dprRef = useRef(1);
     const isVisibleRef = useRef(true); // Track if canvas is visible
     const reducedMotionRef = useRef(false); // Track reduced motion preference
+
+    // Return null on low-tier devices to save resources
+    if (shouldDisableHeavyEffects()) {
+        return null;
+    }
 
     useEffect(() => {
         const canvas = canvasRef.current;

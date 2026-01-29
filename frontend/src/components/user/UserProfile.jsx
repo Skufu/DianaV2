@@ -2,8 +2,13 @@ import { useState, useEffect } from 'react';
 import { User, Calendar, Shield, Mail, Save, AlertTriangle, ArrowLeft, Plus } from 'lucide-react';
 import { useUserProfile, useUpdateProfile, useDeleteAccount } from '../../api';
 import AssessmentForm from './AssessmentForm';
+import { motion, AnimatePresence } from 'framer-motion';
+import Button from '../common/Button';
+import { staggerContainer, fadeIn, slideUp, useInputFocusVariants, useReducedMotion } from '../../utils/animations';
 
 const UserProfile = ({ setActiveTab }) => {
+  const isReduced = useReducedMotion();
+  const inputFocusVariants = useInputFocusVariants();
   const { data: profileData = {}, isLoading, error, refetch } = useUserProfile();
   const updateProfileMutation = useUpdateProfile();
   const deleteAccountMutation = useDeleteAccount();
@@ -42,16 +47,13 @@ const UserProfile = ({ setActiveTab }) => {
 
       await updateProfileMutation.mutateAsync(payload);
       setFormData(payload);
-      alert('Profile updated successfully!');
+      // Removed alert, prefer toast in real app, but for now just no throw
     } catch (err) {
       setFormError(err.message || 'Failed to update profile');
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      return;
-    }
     try {
       await deleteAccountMutation.mutateAsync();
       window.location.href = '/login';
@@ -61,7 +63,11 @@ const UserProfile = ({ setActiveTab }) => {
   };
 
   if (isLoading) {
-    return <div className="text-center py-12 text-slate-400">Loading profile...</div>;
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 text-slate-400">
+        Loading profile...
+      </motion.div>
+    );
   }
 
   if (error) {
@@ -70,146 +76,132 @@ const UserProfile = ({ setActiveTab }) => {
         <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-6 text-rose-400 max-w-md mx-auto">
           <AlertTriangle size={20} className="mx-auto mb-2" />
           <p>Failed to load profile</p>
-          <button
+          <Button
             onClick={() => refetch()}
-            className="mt-4 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition-colors"
+            variant="danger"
+            className="mt-4"
           >
             Retry
-          </button>
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="max-w-4xl mx-auto space-y-6">
+      <motion.div variants={slideUp} className="bg-gradient-to-r from-diana-forest to-diana-forest-light rounded-3xl p-8 shadow-lg text-white">
         <div className="flex items-center gap-4 mb-2">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setActiveTab('dashboard')}
-            className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white transition-colors"
+            className="!p-2 !bg-white/10 hover:!bg-white/20 !text-white"
           >
             <ArrowLeft size={20} />
-          </button>
+          </Button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white">My Profile</h1>
-            <p className="text-slate-400">Manage your personal information and preferences</p>
+            <h1 className="text-3xl font-serif font-bold text-white">My Profile</h1>
+            <p className="text-blue-100">Manage your personal information and preferences</p>
           </div>
-          <button
+          <Button
             onClick={() => setShowAssessmentForm(!showAssessmentForm)}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-medium transition-colors"
+            className="!bg-white !text-diana-forest hover:!bg-blue-50 shadow-sm"
           >
-            <Plus size={18} />
+            <Plus size={18} className="mr-2" />
             Log Assessment
-          </button>
+          </Button>
         </div>
-      </div>
+      </motion.div>
 
-      {showAssessmentForm && (
-        <AssessmentForm
-          onSubmit={() => {
-            setShowAssessmentForm(false);
-          }}
-          onCancel={() => setShowAssessmentForm(false)}
-        />
-      )}
+      <AnimatePresence>
+        {showAssessmentForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <AssessmentForm
+              onSubmit={() => {
+                setShowAssessmentForm(false);
+              }}
+              onCancel={() => setShowAssessmentForm(false)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {formError && (
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-rose-400">
-          {formError}
-        </div>
-      )}
+      <AnimatePresence>
+        {formError && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-rose-400"
+          >
+            {formError}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <User size={20} className="text-teal-400" />
+        <motion.div variants={fadeIn} className="glass-card p-8 bg-white">
+          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
+            <User size={24} className="text-diana-forest" />
             Personal Information
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">First Name</label>
-              <input
-                type="text"
-                name="first_name"
-                value={formData.first_name || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Last Name</label>
-              <input
-                type="text"
-                name="last_name"
-                value={formData.last_name || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Date of Birth</label>
-              <input
-                type="date"
-                name="date_of_birth"
-                value={formData.date_of_birth ? new Date(formData.date_of_birth).toISOString().split('T')[0] : ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Phone Number</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              { label: 'First Name', name: 'first_name', type: 'text' },
+              { label: 'Last Name', name: 'last_name', type: 'text' },
+              { label: 'Email Address', name: 'email', type: 'email' },
+              { label: 'Date of Birth', name: 'date_of_birth', type: 'date', valueTransform: (val) => val ? new Date(val).toISOString().split('T')[0] : '' },
+              { label: 'Phone Number', name: 'phone', type: 'tel' },
+            ].map((field) => (
+              <div key={field.name}>
+                <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">{field.label}</label>
+                <motion.input
+                  whileFocus="focus"
+                  variants={inputFocusVariants}
+                  type={field.type}
+                  name={field.name}
+                  value={field.valueTransform ? field.valueTransform(formData[field.name]) : (formData[field.name] || '')}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none transition-all"
+                />
+              </div>
+            ))}
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">Address</label>
-            <textarea
+          <div className="mt-6">
+            <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Address</label>
+            <motion.textarea
+              whileFocus="focus"
+              variants={inputFocusVariants}
               name="address"
               value={formData.address || ''}
               onChange={handleChange}
               rows="3"
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
+              className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none transition-all"
             />
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Calendar size={20} className="text-teal-400" />
+        <motion.div variants={fadeIn} className="glass-card p-8 bg-white">
+          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
+            <Calendar size={24} className="text-diana-lime-dark" />
             Menopausal Health
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Menopause Status</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Menopause Status</label>
               <select
                 name="menopause_status"
                 value={formData.menopause_status || ''}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
+                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all"
               >
                 <option value="">Select status</option>
                 <option value="pre">Premenopausal</option>
@@ -219,47 +211,51 @@ const UserProfile = ({ setActiveTab }) => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Type (if postmenopausal)</label>
-              <select
-                name="menopause_type"
-                value={formData.menopause_type || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
-              >
-                <option value="">Select type</option>
-                <option value="natural">Natural</option>
-                <option value="surgical">Surgical</option>
-              </select>
-            </div>
+            {formData.menopause_status === 'post' && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Menopause Type</label>
+                <select
+                  name="menopause_type"
+                  value={formData.menopause_type || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all"
+                >
+                  <option value="">Select type</option>
+                  <option value="natural">Natural</option>
+                  <option value="surgical">Surgical</option>
+                </select>
+              </motion.div>
+            )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Years Post-Menopause</label>
-              <input
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Years Post-Menopause</label>
+              <motion.input
+                whileFocus="focus"
+                variants={inputFocusVariants}
                 type="number"
                 name="years_menopause"
                 value={formData.years_menopause || ''}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
+                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none transition-all"
               />
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Shield size={20} className="text-teal-400" />
+        <motion.div variants={fadeIn} className="glass-card p-8 bg-white">
+          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
+            <Shield size={24} className="text-amber-500" />
             Medical History
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Hypertension</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Hypertension</label>
               <select
                 name="hypertension"
                 value={formData.hypertension || ''}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
+                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all"
               >
                 <option value="">Select</option>
                 <option value="no">No</option>
@@ -269,12 +265,12 @@ const UserProfile = ({ setActiveTab }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Heart Disease</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Heart Disease</label>
               <select
                 name="heart_disease"
                 value={formData.heart_disease || ''}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
+                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all"
               >
                 <option value="">Select</option>
                 <option value="yes">Yes</option>
@@ -283,7 +279,7 @@ const UserProfile = ({ setActiveTab }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Family History of Diabetes</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Family History of Diabetes</label>
               <select
                 name="family_history_diabetes"
                 value={formData.family_history_diabetes ? 'yes' : 'no'}
@@ -291,7 +287,7 @@ const UserProfile = ({ setActiveTab }) => {
                   ...prev,
                   family_history_diabetes: e.target.value === 'yes'
                 }))}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
+                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all"
               >
                 <option value="no">No</option>
                 <option value="yes">Yes</option>
@@ -299,12 +295,12 @@ const UserProfile = ({ setActiveTab }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Smoking Status</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Smoking Status</label>
               <select
                 name="smoking_status"
                 value={formData.smoking_status || ''}
                 onChange={handleChange}
-                className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500"
+                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all"
               >
                 <option value="">Select</option>
                 <option value="never">Never</option>
@@ -313,21 +309,21 @@ const UserProfile = ({ setActiveTab }) => {
               </select>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <Mail size={20} className="text-teal-400" />
+        <motion.div variants={fadeIn} className="glass-card p-8 bg-white">
+          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
+            <Mail size={24} className="text-diana-forest" />
             Settings
           </h2>
 
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Assessment Reminder Frequency</label>
+            <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Assessment Reminder Frequency</label>
             <select
               name="assessment_frequency_months"
               value={formData.assessment_frequency_months || 1}
               onChange={handleChange}
-              className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-teal-500 mb-4"
+              className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all mb-6"
             >
               <option value="1">Monthly</option>
               <option value="3">Quarterly (Every 3 months)</option>
@@ -335,32 +331,37 @@ const UserProfile = ({ setActiveTab }) => {
               <option value="12">Annually (Every 12 months)</option>
             </select>
 
-            <label className="flex items-center gap-2 cursor-pointer">
+            <motion.label
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              className="flex items-center gap-3 cursor-pointer p-4 rounded-xl border border-diana-sand hover:bg-diana-stone/30 transition-colors"
+            >
               <input
                 type="checkbox"
                 name="reminder_email"
                 checked={formData.reminder_email || false}
                 onChange={handleChange}
-                className="w-4 h-4 rounded border-slate-700 bg-slate-900/50 text-teal-500 focus:ring-teal-500 focus:ring-offset-0"
+                className="w-5 h-5 rounded border-diana-forest text-diana-forest focus:ring-diana-forest focus:ring-offset-0"
               />
-              <span className="text-sm text-slate-300">Receive email reminders</span>
-            </label>
+              <span className="text-sm font-medium text-diana-text-primary">Receive email reminders for your next assessment</span>
+            </motion.label>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="flex justify-end">
-          <button
+        <div className="flex justify-end pt-4">
+          <Button
             type="submit"
-            disabled={updateProfileMutation.isPending}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 rounded-xl font-semibold text-white transition-all disabled:opacity-50"
+            isLoading={updateProfileMutation.isPending}
+            variant="primary"
+            className="px-8 py-4 bg-diana-forest hover:bg-diana-forest-light shadow-lg shadow-diana-forest/20"
+            icon={!updateProfileMutation.isPending ? Save : undefined}
           >
-            <Save size={20} />
             {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
-          </button>
+          </Button>
         </div>
       </form>
 
-      <div className="bg-rose-500/10 backdrop-blur-sm rounded-2xl border border-rose-500/20 p-6">
+      <motion.div variants={fadeIn} className="bg-rose-500/10 backdrop-blur-sm rounded-2xl border border-rose-500/20 p-6">
         <div className="flex items-start gap-3">
           <AlertTriangle size={20} className="text-rose-400 mt-1" />
           <div className="flex-1">
@@ -368,41 +369,51 @@ const UserProfile = ({ setActiveTab }) => {
             <p className="text-slate-400 text-sm mb-4">
               Deleting your account will permanently remove all your data. This action cannot be undone.
             </p>
-            <button
+            <Button
+              variant="danger"
               onClick={() => setShowDeleteConfirm(true)}
-              className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="!px-4 !py-2 !text-sm"
             >
               Delete My Account
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 border border-slate-700">
-            <h3 className="text-xl font-bold text-white mb-2">Confirm Account Deletion</h3>
-            <p className="text-slate-400 mb-6">
-              Are you sure you want to permanently delete your account? All your health data will be lost.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                className="flex-1 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors"
-              >
-                Delete Account
-              </button>
-            </div>
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 border border-slate-700"
+            >
+              <h3 className="text-xl font-bold text-white mb-2">Confirm Account Deletion</h3>
+              <p className="text-slate-400 mb-6">
+                Are you sure you want to permanently delete your account? All your health data will be lost.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 !bg-slate-700 hover:!bg-slate-600 !text-white"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleDeleteAccount}
+                  className="flex-1"
+                >
+                  Delete Account
+                </Button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 

@@ -150,9 +150,9 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		adminDashboardHandler := handlers.NewAdminDashboardHandler(st)
 		adminDashboardHandler.Register(admin)
 
-		// User management
+		// User management (with audit logging)
 		adminUsersHandler := handlers.NewAdminUsersHandler(st)
-		adminUsersHandler.Register(admin)
+		adminUsersHandler.Register(admin, auditLogger)
 
 		// Audit logs
 		adminAuditHandler := handlers.NewAdminAuditHandler(st)

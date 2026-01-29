@@ -130,6 +130,15 @@ export const SELECTORS = {
 };
 
 /**
+ * Wait for Framer Motion animations to complete
+ */
+export async function waitForAnimations(page, timeout = 1000) {
+    // Wait for a small amount of time for animations to settle
+    // In production, we could check for presence of animating classes if we had them
+    await page.waitForTimeout(timeout);
+}
+
+/**
  * Wait for network to be idle (useful after form submissions)
  */
 export async function waitForNetworkIdle(page, timeout = 5000) {

@@ -159,3 +159,4 @@ catboost_info/
 # Ralph logs and tmp
 ralph/*.txt
 ralph/tmp/
+.opencode

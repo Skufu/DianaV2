@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER, NEW_USER, SELECTORS, waitForNetworkIdle } from './fixtures/test-data';
+import { TEST_USER, NEW_USER, SELECTORS, waitForNetworkIdle, waitForAnimations } from './fixtures/test-data';
 
 const corsHeaders = {
   'access-control-allow-origin': '*',
@@ -10,6 +10,8 @@ const corsHeaders = {
 test.describe('Authentication Flow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+    // Wait for the form to be ready (after any initial loading/skeleton)
+    await expect(page.locator(SELECTORS.loginEmailInput)).toBeVisible({ timeout: 10000 });
   });
 
   test.afterEach(async ({ page }) => {
@@ -26,19 +28,20 @@ test.describe('Authentication Flow', () => {
 
   test('should display branding on login screen', async ({ page }) => {
     await expect(page.locator(SELECTORS.brandLogo)).toBeVisible();
-    await expect(page.locator('text=Diabetes Identification & Analysis')).toBeVisible();
+    await expect(page.locator('text=Sign in to DIANA')).toBeVisible();
   });
 
   test('should display signup form from login page', async ({ page }) => {
-    const signUpButton = page.locator('text=/Sign Up/i');
+    const signUpButton = page.locator('text=/Request access/i');
     await expect(signUpButton).toBeVisible();
 
     await signUpButton.click();
+    await waitForAnimations(page);
 
-    const loginHeading = page.locator('text=Welcome Back');
+    const loginHeading = page.locator('text=Sign in to DIANA');
     await expect(loginHeading).not.toBeVisible({ timeout: 5000 });
 
-    const createAccountHeading = page.locator('h2:has-text("Create Account")');
+    const createAccountHeading = page.locator('h1:has-text("Create an account")');
     await expect(createAccountHeading).toBeVisible({ timeout: 10000 });
 
     const firstNameInput = page.locator('input[placeholder="Jane"]');
@@ -311,6 +314,7 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
+    await waitForAnimations(page);
     await waitForNetworkIdle(page);
 
     const dashboardOrSidebar = page.locator(`${SELECTORS.sidebar}, nav >> text=/dashboard/i`);
@@ -381,6 +385,7 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
+    await waitForAnimations(page);
     await waitForNetworkIdle(page);
 
     await page.reload();
@@ -491,6 +496,7 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
+    await waitForAnimations(page);
     await waitForNetworkIdle(page);
 
     const logoutButton = page.locator(SELECTORS.logoutButton);
@@ -872,6 +878,7 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
+    await waitForAnimations(page);
     await waitForNetworkIdle(page);
 
     const sidebarLocator = page.locator(SELECTORS.sidebar);
@@ -980,6 +987,7 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
+    await waitForAnimations(page);
     await waitForNetworkIdle(page);
 
     await page.evaluate(() => {

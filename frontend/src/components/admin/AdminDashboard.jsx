@@ -1,6 +1,7 @@
 // AdminDashboard: System administration with tabbed subviews
 import React, { useState, useMemo, lazy, Suspense } from 'react';
 import { useAdminDashboard, useClinicComparison } from '../../api';
+import { shouldDisableHeavyEffects } from '../../utils/deviceCapabilities';
 import {
   BarChart,
   Bar,
@@ -28,6 +29,8 @@ import {
   LayoutDashboard,
   Wifi,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeIn, cardVariants, slideUp, useReducedMotion, breathing } from '../../utils/animations';
 
 // Lazy load subviews for code splitting
 const UserManagement = lazy(() => import('./UserManagement'));
@@ -40,6 +43,7 @@ const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'
 // activeView and setActiveView are now passed from App.jsx
 // Navigation is handled by AdminSidebar
 const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
+  const isReduced = useReducedMotion();
   // Animation enabled by default
 
   const { data: dashboardData, isLoading, error } = useAdminDashboard({ enabled: !!token });
@@ -48,11 +52,16 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
 
   if (userRole !== 'admin') {
     return (
-      <div className="glass-card p-12 text-center">
-        <Shield className="w-16 h-16 text-rose-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
-        <p className="text-slate-400">Admin role required to view this dashboard.</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="glass-card p-12 text-center bg-white/80"
+      >
+        <Shield className="w-16 h-16 text-rose-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
+        <p className="text-slate-500">Admin role required to view this dashboard.</p>
+      </motion.div>
     );
   }
 
@@ -99,7 +108,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
     }
 
     if (error) {
-      return <div className="glass-card p-6 border border-rose-500/30 text-rose-400">{error.message || 'Failed to load dashboard data'}</div>;
+      return <div className="glass-card p-6 border border-rose-200 text-rose-600 bg-white/80">{error.message || 'Failed to load dashboard data'}</div>;
     }
 
     const stats = dashboardData?.stats || {};
@@ -110,50 +119,50 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
       <div className="space-y-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="glass-card p-6">
+          <div className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-violet-500/10 flex items-center justify-center">
-                <Users className="text-violet-400" size={24} />
+              <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center">
+                <Users className="text-violet-600" size={24} />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-white">{stats.total_users || 0}</h3>
-            <p className="text-slate-400 text-sm mt-1">Total Users</p>
-            <p className="text-emerald-400 text-xs mt-2">
+            <h3 className="text-3xl font-bold text-slate-900">{stats.total_users || 0}</h3>
+            <p className="text-slate-500 text-sm mt-1">Total Users</p>
+            <p className="text-emerald-600 text-xs mt-2">
               +{stats.new_users_this_month || 0} this month
             </p>
           </div>
 
-          <div className="glass-card p-6">
+          <div className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-teal-500/10 flex items-center justify-center">
-                <Activity className="text-teal-400" size={24} />
+              <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center">
+                <Activity className="text-teal-600" size={24} />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-white">{stats.total_patients || 0}</h3>
-            <p className="text-slate-400 text-sm mt-1">Total Patients</p>
+            <h3 className="text-3xl font-bold text-slate-900">{stats.total_patients || 0}</h3>
+            <p className="text-slate-500 text-sm mt-1">Total Patients</p>
           </div>
 
-          <div className="glass-card p-6">
+          <div className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center">
-                <TrendingUp className="text-cyan-400" size={24} />
+              <div className="w-12 h-12 rounded-full bg-cyan-100 flex items-center justify-center">
+                <TrendingUp className="text-cyan-600" size={24} />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-white">{stats.total_assessments || 0}</h3>
-            <p className="text-slate-400 text-sm mt-1">Total Assessments</p>
-            <p className="text-emerald-400 text-xs mt-2">
+            <h3 className="text-3xl font-bold text-slate-900">{stats.total_assessments || 0}</h3>
+            <p className="text-slate-500 text-sm mt-1">Total Assessments</p>
+            <p className="text-emerald-600 text-xs mt-2">
               +{stats.assessments_this_month || 0} this month
             </p>
           </div>
 
-          <div className="glass-card p-6">
+          <div className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50">
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center">
-                <AlertTriangle className="text-rose-400" size={24} />
+              <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center">
+                <AlertTriangle className="text-rose-600" size={24} />
               </div>
             </div>
-            <h3 className="text-3xl font-bold text-white">{stats.high_risk_count || 0}</h3>
-            <p className="text-slate-400 text-sm mt-1">High Risk Patients</p>
+            <h3 className="text-3xl font-bold text-slate-900">{stats.high_risk_count || 0}</h3>
+            <p className="text-slate-500 text-sm mt-1">High Risk Patients</p>
             <p className="text-slate-500 text-xs mt-2">
               Avg Risk: {(stats.avg_risk_score || 0).toFixed(1)}%
             </p>
@@ -162,8 +171,8 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Cluster Distribution */}
-          <div className="glass-card p-8">
-            <h3 className="text-2xl font-bold text-white mb-6">T2DM Cluster Distribution</h3>
+          <div className="glass-card p-8 bg-white/80 shadow-sm border border-slate-200/50">
+            <h3 className="text-2xl font-bold text-slate-900 mb-6">T2DM Cluster Distribution</h3>
             <ResponsiveContainer width="100%" height={300}>
               {clusterDist && clusterDist.length > 0 ? (
                 <PieChart>
@@ -175,7 +184,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                     cy="50%"
                     outerRadius={100}
                     label={({ cluster, count }) => `${cluster}: ${count}`}
-                    isAnimationActive={true}
+                    isAnimationActive={!shouldDisableHeavyEffects()}
                   >
                     {clusterDist.map((c) => (
                       <Cell key={c.cluster} fill={COLORS[clusterDist.indexOf(c) % COLORS.length]} />
@@ -188,6 +197,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                       borderRadius: '12px',
                       color: '#fff',
                     }}
+                    itemStyle={{ color: '#fff' }}
                   />
                 </PieChart>
               ) : (
@@ -199,20 +209,20 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
           </div>
 
           {/* Biomarker Trends */}
-          <div className="glass-card p-8">
-            <h3 className="text-2xl font-bold text-white mb-6">Biomarker Trends</h3>
+          <div className="glass-card p-8 bg-white/80 shadow-sm border border-slate-200/50">
+            <h3 className="text-2xl font-bold text-slate-900 mb-6">Biomarker Trends</h3>
             <ResponsiveContainer width="100%" height={300}>
               {trends && trends.length > 0 ? (
                 <LineChart data={trends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-                  <XAxis dataKey="label" stroke="#94A3B8" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#94A3B8" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="label" stroke="#64748b" style={{ fontSize: '12px' }} />
+                  <YAxis stroke="#64748b" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#1B2559',
-                      border: 'none',
+                      backgroundColor: '#fff',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '12px',
-                      color: '#fff',
+                      color: '#0f172a',
                     }}
                   />
                   <Legend />
@@ -222,7 +232,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                     name="HbA1c"
                     stroke="#7C3AED"
                     strokeWidth={2}
-                    isAnimationActive={true}
+                    isAnimationActive={!shouldDisableHeavyEffects()}
                   />
                   <Line
                     type="monotone"
@@ -230,7 +240,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                     name="FBS"
                     stroke="#06B6D4"
                     strokeWidth={2}
-                    isAnimationActive={true}
+                    isAnimationActive={!shouldDisableHeavyEffects()}
                   />
                 </LineChart>
               ) : (
@@ -244,14 +254,14 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
 
         {/* Clinic Comparison Table */}
         {clinics.length > 0 && (
-          <div className="glass-card p-8 overflow-x-auto">
+          <div className="glass-card p-8 overflow-x-auto bg-white/80 shadow-sm border border-slate-200/50">
             <div className="flex items-center gap-3 mb-6">
-              <Building2 className="text-teal-400" size={24} />
-              <h3 className="text-2xl font-bold text-white">Clinic Comparison</h3>
+              <Building2 className="text-teal-600" size={24} />
+              <h3 className="text-2xl font-bold text-slate-900">Clinic Comparison</h3>
             </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-slate-400 border-b border-slate-600/50">
+                <tr className="text-slate-500 border-b border-slate-200">
                   <th className="text-left py-3 px-4">Clinic</th>
                   <th className="text-right py-3 px-4">Patients</th>
                   <th className="text-right py-3 px-4">Assessments</th>
@@ -263,7 +273,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                 {clinics.map((clinic) => (
                   <tr
                     key={clinic.clinic_id}
-                    className="border-b border-slate-700/50 text-white hover:bg-slate-700/30"
+                    className="border-b border-slate-200 text-slate-700 hover:bg-slate-50"
                   >
                     <td className="py-3 px-4 font-medium flex items-center gap-2">
                       <div
@@ -278,7 +288,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                       {clinic.avg_risk_score?.toFixed(1) || 'N/A'}%
                     </td>
                     <td className="text-right py-3 px-4">
-                      <span className={clinic.high_risk_count > 0 ? 'text-rose-400' : ''}>
+                      <span className={clinic.high_risk_count > 0 ? 'text-rose-600' : ''}>
                         {clinic.high_risk_count}
                       </span>
                     </td>
@@ -297,10 +307,10 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
       {/* Header */}
       <header>
         <div className="flex items-center gap-3 mb-2">
-          <Shield className="text-violet-400" size={28} />
-          <h4 className="text-violet-300 font-medium text-sm">System Administration</h4>
+          <Shield className="text-violet-600" size={28} />
+          <h4 className="text-violet-600 font-medium text-sm">System Administration</h4>
         </div>
-        <h2 className="text-3xl font-bold text-white">Admin Dashboard</h2>
+        <h2 className="text-3xl font-bold text-slate-900">Admin Dashboard</h2>
       </header>
 
       {/* Content */}
@@ -311,10 +321,14 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
 
 // Loading spinner component with purple theme
 const LoadingSpinner = () => (
-  <div className="glass-card p-12 text-center">
-    <div className="animate-spin w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full mx-auto mb-4" />
-    <p className="text-slate-400">Loading...</p>
-  </div>
+  <motion.div
+    variants={breathing}
+    animate="animate"
+    className="glass-card p-12 text-center bg-white/80"
+  >
+    <div className="animate-spin w-8 h-8 border-4 border-violet-600 border-t-transparent rounded-full mx-auto mb-4" />
+    <p className="text-slate-500">Loading...</p>
+  </motion.div>
 );
 
 export default AdminDashboard;

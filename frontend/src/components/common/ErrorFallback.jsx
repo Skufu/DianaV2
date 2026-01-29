@@ -30,7 +30,7 @@ const ErrorFallback = ({ section = 'This section', error, errorInfo, onRetry }) 
                     </h3>
 
                     <p className="text-gray-600 dark:text-gray-400 text-sm">
-                        {section} encountered an error and couldn't load properly.
+                        {section} encountered an error and couldn&apos;t load properly.
                     </p>
                 </div>
 

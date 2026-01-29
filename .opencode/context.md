@@ -9,9 +9,9 @@
 
 ## Project Type
 - [x] Library/Package
-- [ ] Application (CLI/Web/Mobile/Desktop)
+- [x] Application (CLI/Web/Mobile/Desktop)
 - [x] Microservice
-- [ ] Monorepo
+- [x] Monorepo
 - [x] Other: Multi-tier full-stack web application
 
 ## Infrastructure
@@ -68,3 +68,13 @@
 - Frontend uses deviceCapabilities.js for performance-tiered rendering
 - Audit logging uses fire-and-forget goroutines (silenced errors)
 - Backend has .golangci.yml for linting with continue-on-error:true
+
+## Animation Enhancement (2026-01-28)
+- Framer Motion v12.29.2 installed in frontend (package.json)
+- `frontend/src/utils/animations.js` created with shared variants (fadeIn, slideUp, slideInRight, scaleIn, staggerContainer, pageVariants, cardVariants)
+- Comprehensive strategy plan: `.opencode/docs/framer-motion-strategy.md` (5 phases, 28 hours, 17 tasks)
+- Existing sophisticated animations: BiologicalNetwork (canvas), MouseGlow (cursor following)
+- Animation opportunities identified across 48 components
+- Medical app aesthetic: subtle, intentional, not playful (spring stiffness: 300, damping: 30)
+- Performance-tiered animations using deviceCapabilities.js
+- Accessibility-first with useReducedMotion hook integration planned

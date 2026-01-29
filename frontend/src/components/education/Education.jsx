@@ -1,5 +1,7 @@
 // Education: comprehensive educational content about diabetes clusters and risk assessment
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, slideUp } from '../../utils/animations';
 import {
     BookOpen, ChevronDown, ChevronUp, Heart, Activity,
     AlertTriangle, Info, HelpCircle, Lightbulb, Target
@@ -11,13 +13,14 @@ import SIRDLogo from '../../assets/clusters/sird.png';
 import MODLogo from '../../assets/clusters/mod.png';
 import MARDLogo from '../../assets/clusters/mard.png';
 
-// Comprehensive cluster education data
+// Comprehensive cluster education data - using light mode compatible colors
 export const clusterEducation = {
     SIDD: {
         name: 'Severe Insulin-Deficient Diabetes',
         shortDesc: 'Early onset, low BMI, poor metabolic control',
-        color: '#EE5D50',
-        bgColor: 'bg-[#EE5D50]/10',
+        color: '#DC2626', // red-600
+        bgColor: 'bg-red-50',
+        borderColor: 'border-red-200',
         logo: SIDDLogo,
         fullDesc: `SIDD is characterized by early diabetes onset with significantly reduced insulin secretion. 
     Patients in this cluster typically have lower BMI but experience poor glycemic control. 
@@ -46,8 +49,9 @@ export const clusterEducation = {
     SIRD: {
         name: 'Severe Insulin-Resistant Diabetes',
         shortDesc: 'High insulin resistance, elevated risk of kidney disease',
-        color: '#FFB547',
-        bgColor: 'bg-[#FFB547]/10',
+        color: '#D97706', // amber-600
+        bgColor: 'bg-amber-50',
+        borderColor: 'border-amber-200',
         logo: SIRDLogo,
         fullDesc: `SIRD is marked by severe insulin resistance where the body produces insulin but cells don't respond effectively. 
     This subtype is strongly associated with metabolic syndrome and carries a significantly higher risk of diabetic kidney disease 
@@ -76,8 +80,9 @@ export const clusterEducation = {
     MOD: {
         name: 'Mild Obesity-Related Diabetes',
         shortDesc: 'High BMI but relatively stable metabolic state',
-        color: '#6AD2FF',
-        bgColor: 'bg-[#6AD2FF]/10',
+        color: '#2563EB', // blue-600
+        bgColor: 'bg-blue-50',
+        borderColor: 'border-blue-200',
         logo: MODLogo,
         fullDesc: `MOD is primarily driven by obesity and excess body weight. Despite having high BMI, patients in this cluster 
     often maintain relatively normal metabolic function initially. Weight management is the key therapeutic target, 
@@ -106,8 +111,9 @@ export const clusterEducation = {
     MARD: {
         name: 'Mild Age-Related Diabetes',
         shortDesc: 'Later onset with modest metabolic changes',
-        color: '#05CD99',
-        bgColor: 'bg-[#05CD99]/10',
+        color: '#16A34A', // green-600
+        bgColor: 'bg-green-50',
+        borderColor: 'border-green-200',
         logo: MARDLogo,
         fullDesc: `MARD typically develops later in life and progresses more slowly than other subtypes. 
     These patients generally have modest metabolic abnormalities and a more favorable prognosis. 
@@ -221,28 +227,46 @@ const faqData = [
     }
 ];
 
-// Expandable card component
+// Expandable card component with Framer Motion
 const ExpandableCard = ({ title, children, defaultOpen = false, icon: Icon }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
     return (
-        <div className="glass-card rounded-2xl border border-slate-600/30 overflow-hidden transition-all">
+        <motion.div
+            variants={slideUp}
+            className="glass-card bg-white rounded-2xl border border-diana-sand overflow-hidden transition-all"
+        >
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full p-6 flex items-center justify-between hover:bg-slate-700/30 transition-colors"
+                className="w-full p-6 flex items-center justify-between hover:bg-diana-stone/30 transition-colors"
             >
                 <div className="flex items-center gap-3">
-                    {Icon && <Icon size={20} className="text-teal-400" />}
-                    <h3 className="text-lg font-bold text-white">{title}</h3>
+                    {Icon && <Icon size={20} className="text-diana-forest" />}
+                    <h3 className="text-lg font-bold text-diana-text-primary">{title}</h3>
                 </div>
-                {isOpen ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
+                <motion.span
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    <ChevronDown size={20} className="text-diana-text-muted" />
+                </motion.span>
             </button>
-            {isOpen && (
-                <div className="px-6 pb-6 animate-fade-in">
-                    {children}
-                </div>
-            )}
-        </div>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="px-6 pb-6">
+                            {children}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
 
@@ -254,21 +278,21 @@ const Education = () => {
         <div className="space-y-8 animate-fade-in pb-8">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8">
                 <div>
-                    <h4 className="text-[#707EAE] font-medium text-sm mb-1">Learn More</h4>
-                    <h2 className="text-3xl font-bold text-white">Education Center</h2>
-                    <p className="text-slate-400 text-sm mt-1">
+                    <h4 className="text-diana-text-muted font-medium text-sm mb-1 uppercase tracking-wider">Learn More</h4>
+                    <h2 className="text-3xl font-bold text-diana-text-primary">Education Center</h2>
+                    <p className="text-diana-text-secondary text-sm mt-1">
                         Understanding diabetes clusters, biomarkers, and your risk assessment
                     </p>
                 </div>
             </header>
 
             {/* Quick Overview */}
-            <div className="bg-gradient-to-br from-teal-500 to-cyan-500 p-8 rounded-3xl text-white">
+            <div className="bg-gradient-to-r from-diana-forest to-diana-forest-light p-8 rounded-3xl text-white">
                 <div className="flex items-center gap-3 mb-4">
                     <BookOpen size={28} />
                     <h3 className="text-2xl font-bold">Understanding Your Results</h3>
                 </div>
-                <p className="text-white/80 leading-relaxed">
+                <p className="text-blue-100 leading-relaxed">
                     DIANA uses machine learning to analyze your biomarkers and assign you to one of four diabetes clusters.
                     Each cluster represents a distinct subtype of Type 2 Diabetes with unique characteristics and treatment considerations.
                     This personalized approach helps guide more effective management strategies.
@@ -277,15 +301,23 @@ const Education = () => {
 
             {/* Cluster Cards */}
             <div>
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <Target size={20} className="text-teal-400" />
+                <h3 className="text-xl font-bold text-diana-text-primary mb-4 flex items-center gap-2">
+                    <Target size={20} className="text-diana-forest" />
                     Diabetes Clusters Explained
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <motion.div
+                    variants={staggerContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.1 }}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                >
                     {Object.entries(clusterEducation).map(([key, cluster]) => (
-                        <div
+                        <motion.div
                             key={key}
-                            className={`glass-card rounded-3xl border-2 transition-all cursor-pointer ${activeCluster === key ? 'border-[#4318FF] shadow-lg' : 'border-slate-600/30 hover:border-[#4318FF]/50'
+                            variants={slideUp}
+                            whileHover={{ scale: 1.02, borderColor: 'rgba(75, 85, 99, 0.5)' }}
+                            className={`glass-card bg-white rounded-3xl border-2 transition-all cursor-pointer ${activeCluster === key ? 'border-diana-forest shadow-lg' : 'border-diana-sand hover:border-diana-forest/50'
                                 }`}
                             onClick={() => setActiveCluster(activeCluster === key ? null : key)}
                         >
@@ -302,56 +334,66 @@ const Education = () => {
                                             height="48"
                                         />
                                         <div>
-                                            <h4 className="font-bold text-white">{key}</h4>
-                                            <p className="text-xs text-[#707EAE]">{cluster.name}</p>
+                                            <h4 className="font-bold text-diana-text-primary">{key}</h4>
+                                            <p className="text-xs text-diana-text-muted">{cluster.name}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-slate-400 text-sm mb-4">{cluster.shortDesc}</p>
+                                <p className="text-diana-text-secondary text-sm mb-4">{cluster.shortDesc}</p>
 
-                                {activeCluster === key && (
-                                    <div className="mt-4 pt-4 border-t border-slate-600/30 space-y-4 animate-fade-in">
-                                        <p className="text-white text-sm leading-relaxed">{cluster.fullDesc}</p>
+                                <AnimatePresence>
+                                    {activeCluster === key && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="mt-4 pt-4 border-t border-diana-sand space-y-4">
+                                                <p className="text-diana-text-primary text-sm leading-relaxed">{cluster.fullDesc}</p>
 
-                                        <div>
-                                            <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Risk Factors</h5>
-                                            <ul className="space-y-1">
-                                                {cluster.riskFactors.map((factor) => (
-                                                    <li key={`${key}-risk-${factor.substring(0, 20).replace(/\s+/g, '-')}`} className="text-sm text-white flex items-start gap-2">
-                                                        <span className="text-teal-400 mt-1">•</span> {factor}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
+                                                <div>
+                                                    <h5 className="text-xs font-bold text-diana-text-muted uppercase mb-2">Risk Factors</h5>
+                                                    <ul className="space-y-1">
+                                                        {cluster.riskFactors.map((factor) => (
+                                                            <li key={`${key}-risk-${factor.substring(0, 20).replace(/\s+/g, '-')}`} className="text-sm text-diana-text-primary flex items-start gap-2">
+                                                                <span className="text-diana-forest mt-1">•</span> {factor}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
 
-                                        <div>
-                                            <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Recommendations</h5>
-                                            <ul className="space-y-1">
-                                                {cluster.recommendations.map((rec) => (
-                                                    <li key={`${key}-rec-${rec.substring(0, 20).replace(/\s+/g, '-')}`} className="text-sm text-white flex items-start gap-2">
-                                                        <span className="text-[#05CD99] mt-1">✓</span> {rec}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
+                                                <div>
+                                                    <h5 className="text-xs font-bold text-diana-text-muted uppercase mb-2">Recommendations</h5>
+                                                    <ul className="space-y-1">
+                                                        {cluster.recommendations.map((rec) => (
+                                                            <li key={`${key}-rec-${rec.substring(0, 20).replace(/\s+/g, '-')}`} className="text-sm text-diana-text-primary flex items-start gap-2">
+                                                                <span className="text-green-600 mt-1">✓</span> {rec}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
 
-                                        <div className={`p-4 rounded-xl ${cluster.bgColor}`}>
-                                            <h5 className="text-xs font-bold text-[#707EAE] uppercase mb-2">Clinical Implications</h5>
-                                            <ul className="space-y-1">
-                                                {cluster.clinicalImplications.map((imp) => (
-                                                    <li key={`${key}-imp-${imp.substring(0, 20).replace(/\s+/g, '-')}`} className="text-sm text-white flex items-start gap-2">
-                                                        <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" style={{ color: cluster.color }} />
-                                                        {imp}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                )}
+                                                <div className={`p-4 rounded-xl ${cluster.bgColor} ${cluster.borderColor} border`}>
+                                                    <h5 className="text-xs font-bold text-diana-text-secondary uppercase mb-2">Clinical Implications</h5>
+                                                    <ul className="space-y-1">
+                                                        {cluster.clinicalImplications.map((imp) => (
+                                                            <li key={`${key}-imp-${imp.substring(0, 20).replace(/\s+/g, '-')}`} className="text-sm text-diana-text-primary flex items-start gap-2">
+                                                                <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" style={{ color: cluster.color }} />
+                                                                {imp}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
-                </div>
+                </motion.div>
             </div>
 
             {/* Biomarker Reference */}
@@ -359,23 +401,23 @@ const Education = () => {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="border-b border-slate-600/30">
-                                <th className="text-left py-3 text-[#707EAE] font-medium">Biomarker</th>
-                                <th className="text-center py-3 text-[#05CD99] font-medium">Normal</th>
-                                <th className="text-center py-3 text-[#FFB547] font-medium">Pre-diabetic</th>
-                                <th className="text-center py-3 text-[#EE5D50] font-medium">Diabetic</th>
+                            <tr className="border-b border-diana-sand">
+                                <th className="text-left py-3 text-diana-text-muted font-medium">Biomarker</th>
+                                <th className="text-center py-3 text-green-600 font-medium">Normal</th>
+                                <th className="text-center py-3 text-amber-600 font-medium">Pre-diabetic</th>
+                                <th className="text-center py-3 text-red-600 font-medium">Diabetic</th>
                             </tr>
                         </thead>
                         <tbody>
                             {biomarkerReference.map((bio) => (
-                                <tr key={bio.name} className="border-b border-slate-600/30">
+                                <tr key={bio.name} className="border-b border-diana-sand">
                                     <td className="py-4">
-                                        <div className="font-bold text-white">{bio.name}</div>
-                                        <div className="text-xs text-slate-400 mt-1">{bio.description}</div>
+                                        <div className="font-bold text-diana-text-primary">{bio.name}</div>
+                                        <div className="text-xs text-diana-text-muted mt-1">{bio.description}</div>
                                     </td>
-                                    <td className="text-center py-4 text-[#05CD99] font-medium">{bio.normal}</td>
-                                    <td className="text-center py-4 text-[#FFB547] font-medium">{bio.prediabetic}</td>
-                                    <td className="text-center py-4 text-[#EE5D50] font-medium">{bio.diabetic}</td>
+                                    <td className="text-center py-4 text-green-600 font-medium">{bio.normal}</td>
+                                    <td className="text-center py-4 text-amber-600 font-medium">{bio.prediabetic}</td>
+                                    <td className="text-center py-4 text-red-600 font-medium">{bio.diabetic}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -386,26 +428,26 @@ const Education = () => {
             {/* Understanding Risk */}
             <ExpandableCard title="Understanding Your Risk Score" icon={Lightbulb}>
                 <div className="space-y-4">
-                    <p className="text-white leading-relaxed">
+                    <p className="text-diana-text-primary leading-relaxed">
                         Your risk score is calculated using machine learning algorithms trained on large population datasets.
                         The score represents the probability of developing or having Type 2 Diabetes based on your biomarker profile.
                     </p>
 
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="p-4 rounded-xl bg-[#6AD2FF]/10 border border-[#6AD2FF]/30 text-center">
-                            <div className="text-2xl font-bold text-[#6AD2FF]">0-33%</div>
-                            <div className="text-sm font-medium text-white mt-1">Low Risk</div>
-                            <div className="text-xs text-slate-400 mt-2">Maintain healthy lifestyle, annual screening</div>
+                        <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-center">
+                            <div className="text-2xl font-bold text-green-600">0-33%</div>
+                            <div className="text-sm font-medium text-diana-text-primary mt-1">Low Risk</div>
+                            <div className="text-xs text-diana-text-muted mt-2">Maintain healthy lifestyle, annual screening</div>
                         </div>
-                        <div className="p-4 rounded-xl bg-[#FFB547]/10 border border-[#FFB547]/30 text-center">
-                            <div className="text-2xl font-bold text-[#FFB547]">34-66%</div>
-                            <div className="text-sm font-medium text-white mt-1">Moderate Risk</div>
-                            <div className="text-xs text-slate-400 mt-2">Lifestyle modifications, more frequent monitoring</div>
+                        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-center">
+                            <div className="text-2xl font-bold text-amber-600">34-66%</div>
+                            <div className="text-sm font-medium text-diana-text-primary mt-1">Moderate Risk</div>
+                            <div className="text-xs text-diana-text-muted mt-2">Lifestyle modifications, more frequent monitoring</div>
                         </div>
-                        <div className="p-4 rounded-xl bg-[#EE5D50]/10 border border-[#EE5D50]/30 text-center">
-                            <div className="text-2xl font-bold text-[#EE5D50]">67-100%</div>
-                            <div className="text-sm font-medium text-white mt-1">High Risk</div>
-                            <div className="text-xs text-slate-400 mt-2">Consult healthcare provider, consider treatment</div>
+                        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-center">
+                            <div className="text-2xl font-bold text-red-600">67-100%</div>
+                            <div className="text-sm font-medium text-diana-text-primary mt-1">High Risk</div>
+                            <div className="text-xs text-diana-text-muted mt-2">Consult healthcare provider, consider treatment</div>
                         </div>
                     </div>
                 </div>
@@ -413,26 +455,32 @@ const Education = () => {
 
             {/* FAQ Section */}
             <div>
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <HelpCircle size={20} className="text-teal-400" />
+                <h3 className="text-xl font-bold text-diana-text-primary mb-4 flex items-center gap-2">
+                    <HelpCircle size={20} className="text-diana-forest" />
                     Frequently Asked Questions
                 </h3>
-                <div className="space-y-3">
+                <motion.div
+                    variants={staggerContainer}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.1 }}
+                    className="space-y-3"
+                >
                     {faqData.map((faq) => (
                         <ExpandableCard key={faq.question} title={faq.question} icon={Info}>
-                            <p className="text-white leading-relaxed">{faq.answer}</p>
+                            <p className="text-diana-text-primary leading-relaxed">{faq.answer}</p>
                         </ExpandableCard>
                     ))}
-                </div>
+                </motion.div>
             </div>
 
             {/* Disclaimer */}
-            <div className="bg-[#EE5D50]/10 border border-[#EE5D50]/30 p-6 rounded-2xl">
+            <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl">
                 <div className="flex items-start gap-3">
-                    <AlertTriangle size={24} className="text-[#EE5D50] flex-shrink-0 mt-1" />
+                    <AlertTriangle size={24} className="text-amber-600 flex-shrink-0 mt-1" />
                     <div>
-                        <h4 className="font-bold text-white mb-2">Medical Disclaimer</h4>
-                        <p className="text-sm text-white leading-relaxed">
+                        <h4 className="font-bold text-amber-800 mb-2">Medical Disclaimer</h4>
+                        <p className="text-sm text-amber-700 leading-relaxed">
                             This tool is for educational and informational purposes only. It is not intended to diagnose, treat, cure, or prevent any disease.
                             The risk predictions and cluster assignments are based on statistical models and should not replace professional medical advice.
                             Always consult with a qualified healthcare provider for diagnosis and treatment decisions.

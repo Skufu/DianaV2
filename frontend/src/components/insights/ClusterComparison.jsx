@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import { Layers } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { cardVariants } from '../../utils/animations';
 
 const subgroupInfo = {
   'SIDD': {
@@ -86,7 +88,13 @@ const ClusterComparison = React.memo(({ clusters = [], isLoading = false }) => {
 
   if (!clusterData || clusterData.length === 0) {
     return (
-      <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
+      <motion.div
+        variants={cardVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.3 }}
+        className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30"
+      >
         <div className="mb-6">
           <h3 className="text-2xl font-bold text-white">Cluster Comparison</h3>
           <p className="text-slate-400 text-sm mt-2">
@@ -96,67 +104,72 @@ const ClusterComparison = React.memo(({ clusters = [], isLoading = false }) => {
         <div className="text-center py-12 text-slate-400">
           No clustering data available. Complete patient assessments to see cluster comparison.
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
+    <motion.div
+      variants={cardVariants}
+      initial="offscreen"
+      whileInView="onscreen"
+      viewport={{ once: true, amount: 0.3 }}
+      className="glass-card p-8 bg-white border border-diana-stone/50"
+    >
       <div className="mb-6">
         <div className="flex items-center gap-3">
-          <Layers size={28} className="text-teal-400" />
-          <h3 className="text-2xl font-bold text-white">Cluster Comparison</h3>
+          <Layers size={28} className="text-diana-forest" />
+          <h3 className="text-2xl font-serif font-bold text-diana-text-primary">Cluster Comparison</h3>
         </div>
-        <p className="text-slate-400 text-sm mt-2">
+        <p className="text-diana-text-secondary text-sm mt-2">
           Comparative analysis of T2DM subgroups based on Ahlqvist et al. classification
         </p>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-xl border border-diana-stone">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-slate-400 border-b border-slate-600/50">
-              <th className="text-left py-3 px-4">Cluster</th>
-              <th className="text-left py-3 px-4">Description</th>
-              <th className="text-left py-3 px-4">Key Characteristics</th>
-              <th className="text-right py-3 px-4">Patient Count</th>
+            <tr className="bg-diana-stone/30 text-diana-text-secondary border-b border-diana-stone">
+              <th className="text-left py-4 px-6 font-bold uppercase tracking-wider">Cluster</th>
+              <th className="text-left py-4 px-6 font-bold uppercase tracking-wider">Description</th>
+              <th className="text-left py-4 px-6 font-bold uppercase tracking-wider">Key Characteristics</th>
+              <th className="text-right py-4 px-6 font-bold uppercase tracking-wider">Patient Count</th>
             </tr>
           </thead>
           <tbody>
             {clusterData.map((cluster, index) => (
               <tr
                 key={cluster.key}
-                className={`border-b border-slate-700/50 text-white hover:bg-slate-700/20 transition-colors ${
-                  index % 2 === 0 ? 'bg-slate-800/10' : ''
-                }`}
+                className={`border-b border-diana-stone last:border-0 hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
+                  }`}
               >
-                <td className="py-3 px-4">
+                <td className="py-4 px-6">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      className="w-4 h-4 rounded-full flex-shrink-0 shadow-sm"
                       style={{ backgroundColor: cluster.color }}
                     />
                     <div>
-                      <div className="font-bold">{cluster.key}</div>
-                      <div className="text-xs text-slate-400">{cluster.name}</div>
+                      <div className="font-bold text-diana-text-primary">{cluster.key}</div>
+                      <div className="text-xs text-diana-text-secondary font-medium">{cluster.name}</div>
                     </div>
                   </div>
                 </td>
-                <td className="py-3 px-4 text-slate-300">
+                <td className="py-4 px-6 text-diana-text-secondary">
                   {cluster.description}
                 </td>
-                <td className="py-3 px-4">
-                  <ul className="space-y-1">
+                <td className="py-4 px-6">
+                  <ul className="space-y-1.5">
                     {cluster.characteristics.map((char, i) => (
-                      <li key={i} className="text-slate-400 text-xs flex items-center gap-2">
-                        <span className="w-1 h-1 rounded-full bg-teal-400 flex-shrink-0" />
+                      <li key={i} className="text-diana-text-secondary text-xs flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-diana-lime-dark flex-shrink-0" />
                         {char}
                       </li>
                     ))}
                   </ul>
                 </td>
-                <td className="py-3 px-4 text-right">
-                  <span className="text-2xl font-bold text-teal-400">{cluster.count}</span>
+                <td className="py-4 px-6 text-right">
+                  <span className="text-2xl font-bold text-diana-forest">{cluster.count}</span>
                 </td>
               </tr>
             ))}
@@ -164,12 +177,12 @@ const ClusterComparison = React.memo(({ clusters = [], isLoading = false }) => {
         </table>
       </div>
 
-      <div className="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
-        <p className="text-xs text-slate-400">
-          <span className="font-semibold text-white">Clinical Note:</span> These subgroups represent distinct phenotypes of type 2 diabetes with different etiologies, complications, and treatment responses. Understanding a patient's subgroup can inform personalized treatment strategies.
+      <div className="mt-6 p-6 bg-blue-50/50 rounded-xl border border-blue-100">
+        <p className="text-sm text-diana-text-secondary">
+          <span className="font-bold text-diana-forest">Clinical Note:</span> These subgroups represent distinct phenotypes of type 2 diabetes with different etiologies, complications, and treatment responses. Understanding a patient's subgroup can inform personalized treatment strategies.
         </p>
       </div>
-    </div>
+    </motion.div>
   );
 });
 
