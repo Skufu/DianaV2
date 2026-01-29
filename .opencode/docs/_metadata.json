@@ -20,7 +20,28 @@
       "fetchedAt": "2026-01-27T14:22:25.755Z",
       "expiresAt": "2026-01-28T14:22:25.755Z",
       "size": 3451
+    },
+    "motion_dev_docs_react-gestures.md": {
+      "url": "https://motion.dev/docs/react-gestures",
+      "title": "React gesture animations — hover, drag, press | Motion",
+      "fetchedAt": "2026-01-28T14:55:07.811Z",
+      "expiresAt": "2026-01-29T14:55:07.811Z",
+      "size": 13510
+    },
+    "motion_dev_docs_react-animate-presence.md": {
+      "url": "https://motion.dev/docs/react-animate-presence",
+      "title": "AnimatePresence — React exit animations | Motion",
+      "fetchedAt": "2026-01-28T14:55:08.111Z",
+      "expiresAt": "2026-01-29T14:55:08.111Z",
+      "size": 15175
+    },
+    "motion_dev_docs_react-use-reduced-motion.md": {
+      "url": "https://motion.dev/docs/react-use-reduced-motion",
+      "title": "useReducedMotion — Accessible React animations | Motion",
+      "fetchedAt": "2026-01-28T14:55:08.210Z",
+      "expiresAt": "2026-01-29T14:55:08.210Z",
+      "size": 3420
     }
   },
-  "lastUpdated": "2026-01-27T14:22:25.756Z"
+  "lastUpdated": "2026-01-28T14:55:08.211Z"
 }

@@ -16,10 +16,10 @@ const RiskFactorChart = React.memo(({ riskFactorImportance }) => {
   }
 
   return (
-    <div className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30">
+    <div className="glass-card p-8 bg-white border border-diana-stone/50">
       <div className="mb-6">
-        <h3 className="text-2xl font-bold text-white">Risk Factor Importance</h3>
-        <p className="text-slate-400 text-sm mt-2">
+        <h3 className="text-2xl font-serif font-bold text-diana-text-primary">Risk Factor Importance</h3>
+        <p className="text-diana-text-secondary text-sm mt-2">
           Feature importance ranking based on contribution to T2DM risk prediction
         </p>
       </div>
@@ -29,17 +29,19 @@ const RiskFactorChart = React.memo(({ riskFactorImportance }) => {
           layout="vertical"
           margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-          <XAxis type="number" stroke="#94A3B8" domain={[0, 0.3]} />
-          <YAxis type="category" dataKey="factor" stroke="#94A3B8" style={{ fontSize: '14px', fontWeight: 600 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+          <XAxis type="number" stroke="#64748b" domain={[0, 0.3]} />
+          <YAxis type="category" dataKey="factor" stroke="#64748b" style={{ fontSize: '14px', fontWeight: 600, fill: '#475569' }} />
           <Tooltip
             contentStyle={{
-              backgroundColor: '#1B2559',
-              border: 'none',
+              backgroundColor: '#fff',
+              border: '1px solid #e2e8f0',
               borderRadius: '12px',
-              color: '#fff'
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              color: '#0f172a'
             }}
-            formatter={(value) => `${(value * 100).toFixed(1)}%`}
+            formatter={(value) => [`${(value * 100).toFixed(1)}%`, 'Importance']}
+            cursor={{ fill: '#f1f5f9' }}
           />
           <Bar dataKey="importance" radius={[0, 8, 8, 0]} isAnimationActive={true}>
             {riskFactorImportance.map((entry) => (

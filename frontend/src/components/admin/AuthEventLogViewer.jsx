@@ -17,7 +17,11 @@ import {
   Calendar,
 } from 'lucide-react';
 
+import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, fadeIn, slideUp, useReducedMotion } from '../../utils/animations';
+
 const AuthEventLogViewer = ({ token }) => {
+  const isReduced = useReducedMotion();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -136,34 +140,34 @@ const AuthEventLogViewer = ({ token }) => {
       login: {
         label: 'Login',
         icon: CheckCircle,
-        color: 'text-emerald-400',
-        bg: 'bg-emerald-500/20',
+        color: 'text-emerald-600',
+        bg: 'bg-emerald-100',
       },
       logout: {
         label: 'Logout',
         icon: XCircle,
-        color: 'text-amber-400',
-        bg: 'bg-amber-500/20',
+        color: 'text-amber-600',
+        bg: 'bg-amber-100',
       },
       failed_login: {
         label: 'Failed Login',
         icon: AlertCircle,
-        color: 'text-rose-400',
-        bg: 'bg-rose-500/20',
+        color: 'text-rose-600',
+        bg: 'bg-rose-100',
       },
       token_refresh: {
         label: 'Token Refresh',
         icon: RefreshCw,
-        color: 'text-blue-400',
-        bg: 'bg-blue-500/20',
+        color: 'text-blue-600',
+        bg: 'bg-blue-100',
       },
     };
 
     const conf = config[type] || {
       label: type,
       icon: Shield,
-      color: 'text-slate-400',
-      bg: 'bg-slate-500/20',
+      color: 'text-slate-500',
+      bg: 'bg-slate-100',
     };
     const Icon = conf.icon;
 
@@ -226,37 +230,37 @@ const AuthEventLogViewer = ({ token }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <Shield className="text-violet-400" size={24} />
+          <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <Shield className="text-violet-600" size={24} />
             Real-time Auth Events
           </h3>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-sm mt-1">
             Live authentication activity and security events
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/50 border border-slate-700/50">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 shadow-sm">
             {connected ? (
               <>
-                <Wifi className="text-emerald-400" size={16} />
-                <span className="text-emerald-400 text-sm font-medium">Connected</span>
+                <Wifi className="text-emerald-500" size={16} />
+                <span className="text-emerald-600 text-sm font-medium">Connected</span>
               </>
             ) : (
               <>
-                <WifiOff className="text-rose-400" size={16} />
-                <span className="text-rose-400 text-sm font-medium">Disconnected</span>
+                <WifiOff className="text-rose-500" size={16} />
+                <span className="text-rose-600 text-sm font-medium">Disconnected</span>
               </>
             )}
           </div>
           <button
             onClick={exportEvents}
-            className="px-3 py-1.5 rounded-lg bg-slate-700/50 border border-slate-600/50 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-sm"
+            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors text-sm shadow-sm"
           >
             Export CSV
           </button>
           <button
             onClick={clearEvents}
-            className="px-3 py-1.5 rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:bg-rose-500/30 transition-colors text-sm"
+            className="px-3 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition-colors text-sm"
           >
             Clear
           </button>
@@ -264,16 +268,16 @@ const AuthEventLogViewer = ({ token }) => {
       </div>
 
       {error && (
-        <div className="glass-card p-4 border border-rose-500/30 text-rose-400 flex items-center gap-2">
+        <div className="glass-card p-4 border border-rose-200 text-rose-600 flex items-center gap-2 bg-white/80">
           <AlertCircle size={18} />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="glass-card p-4">
+      <div className="glass-card p-4 bg-white/80 shadow-sm border border-slate-200/50">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-4"
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-4"
         >
           <Filter size={16} />
           <span className="text-sm font-medium">Filters</span>
@@ -283,14 +287,14 @@ const AuthEventLogViewer = ({ token }) => {
         {showFilters && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label htmlFor="event-type-filter" className="text-slate-400 text-sm block mb-1">
+              <label htmlFor="event-type-filter" className="text-slate-600 text-sm block mb-1">
                 Event Type
               </label>
               <select
                 id="event-type-filter"
                 value={filters.eventType}
                 onChange={e => setFilters({ ...filters, eventType: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:border-teal-500 focus:outline-none"
               >
                 <option value="">All Events</option>
                 <option value="login">Login</option>
@@ -300,7 +304,7 @@ const AuthEventLogViewer = ({ token }) => {
               </select>
             </div>
             <div>
-              <label htmlFor="event-user-filter" className="text-slate-400 text-sm block mb-1">
+              <label htmlFor="event-user-filter" className="text-slate-600 text-sm block mb-1">
                 User Email
               </label>
               <input
@@ -309,16 +313,16 @@ const AuthEventLogViewer = ({ token }) => {
                 value={filters.user}
                 onChange={e => setFilters({ ...filters, user: e.target.value })}
                 placeholder="Search by email..."
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-500 focus:border-teal-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:border-teal-500 focus:outline-none"
               />
             </div>
             <div>
-              <label htmlFor="event-from-date" className="text-slate-400 text-sm block mb-1">
+              <label htmlFor="event-from-date" className="text-slate-600 text-sm block mb-1">
                 From Date
               </label>
               <div className="relative">
                 <Calendar
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   size={16}
                 />
                 <input
@@ -326,12 +330,12 @@ const AuthEventLogViewer = ({ token }) => {
                   type="date"
                   value={filters.dateFrom}
                   onChange={e => setFilters({ ...filters, dateFrom: e.target.value })}
-                  className="w-full pl-10 pr-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                  className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:border-teal-500 focus:outline-none"
                 />
               </div>
             </div>
             <div>
-              <label htmlFor="event-to-date" className="text-slate-400 text-sm block mb-1">
+              <label htmlFor="event-to-date" className="text-slate-600 text-sm block mb-1">
                 To Date
               </label>
               <input
@@ -339,125 +343,219 @@ const AuthEventLogViewer = ({ token }) => {
                 type="date"
                 value={filters.dateTo}
                 onChange={e => setFilters({ ...filters, dateTo: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-600/50 rounded-lg text-white focus:border-teal-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:border-teal-500 focus:outline-none"
               />
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex items-center justify-between glass-card px-4 py-3">
+      <div className="flex items-center justify-between glass-card px-4 py-3 bg-white/80 shadow-sm border border-slate-200/50">
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-slate-400 text-sm cursor-pointer">
+          <label className="flex items-center gap-2 text-slate-500 text-sm cursor-pointer">
             <input
               type="checkbox"
               checked={autoScroll}
               onChange={e => setAutoScroll(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-600 text-teal-500 focus:ring-teal-500 bg-slate-800"
+              className="w-4 h-4 rounded border-slate-300 text-teal-500 focus:ring-teal-500 bg-slate-50"
             />
             <span>Auto-scroll to new events</span>
           </label>
         </div>
-        <div className="text-slate-400 text-sm">Showing {filteredEvents.length} events</div>
+        <div className="text-slate-500 text-sm">Showing {filteredEvents.length} events</div>
       </div>
 
-      <div className="glass-card overflow-hidden">
-        {loading ? (
-          <div className="p-12 text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full mx-auto mb-4" />
-            <p className="text-slate-400">Connecting to event stream...</p>
-          </div>
-        ) : filteredEvents.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
-            <Clock size={48} className="mx-auto mb-4 opacity-50" />
-            <p>No auth events yet</p>
-            <p className="text-sm mt-2">Waiting for authentication activity...</p>
-          </div>
-        ) : (
-          <div className="max-h-[600px] overflow-y-auto">
-            <div className="divide-y divide-slate-700/30">
-              {filteredEvents.map((event, index) => {
-                const eventKey = event.id || `${event.event_type}-${event.timestamp || event.created_at}-${event.email || event.user_email || 'unknown'}`;
-                return (
-                  <React.Fragment key={eventKey}>
-                    <div
-                      className="px-4 py-3 hover:bg-slate-700/20 transition-colors"
-                      style={{
-                        animation: 'fadeIn 0.3s ease-out',
-                        animationDelay: `${Math.min(index * 0.05, 0.5)}s`,
-                      }}
-                    >
-                      <div className="flex items-start gap-3">
-                        <button
-                          onClick={() => toggleExpand(eventKey)}
-                          className="text-slate-500 hover:text-slate-300 mt-1"
-                        >
-                          {expandedRows.has(eventKey) ? (
-                            <ChevronUp size={16} />
-                          ) : (
-                            <ChevronDown size={16} />
-                          )}
-                        </button>
+      <div className="glass-card overflow-hidden bg-white/80 shadow-sm border border-slate-200/50">
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="loading-state"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: { staggerChildren: 0.15, delayChildren: 0.2 }
+                },
+                exit: { opacity: 0, transition: { duration: 0.2 } }
+              }}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="p-16 text-center"
+            >
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, scale: 0.8 },
+                  visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 200, damping: 20 } }
+                }}
+                className="relative mb-8 w-20 h-20 mx-auto"
+              >
+                {/* Outer Spinning Ring */}
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="absolute inset-0 border-4 border-teal-500/20 border-t-teal-500 rounded-full"
+                />
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          {formatEventType(event.event_type)}
-                          <span className="text-white font-medium truncate">
-                            {event.email || event.user_email || 'Unknown User'}
-                          </span>
-                          <span className="text-slate-400 text-xs">
-                            {new Date(event.timestamp || event.created_at).toLocaleString()}
-                          </span>
-                          {event.success === false && (
-                            <span className="text-rose-400 text-xs font-medium">FAILED</span>
-                          )}
-                        </div>
+                {/* Inner Pulsing Wifi Icon */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.15, 1],
+                      opacity: [0.7, 1, 0.7]
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  >
+                    <Wifi size={24} className="text-teal-500" />
+                  </motion.div>
+                </div>
+              </motion.div>
 
-                        <div className="flex items-center gap-4 mt-1 text-sm">
-                          {event.ip_address || event.remote_ip ? (
-                            <div className="flex items-center gap-1 text-slate-400">
-                              <MapPin size={14} />
-                              <span className="font-mono text-xs">
-                                {event.ip_address || event.remote_ip}
-                              </span>
-                            </div>
-                          ) : null}
-                        </div>
+              <motion.p
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                className="text-slate-900 text-lg font-bold mb-2"
+              >
+                Connecting to event stream...
+              </motion.p>
 
-                        {expandedRows.has(eventKey) && (
-                          <div className="mt-3 bg-slate-800/50 rounded-lg p-3">
-                            <h4 className="text-slate-400 text-sm font-medium mb-2">
-                              Event Details:
-                            </h4>
-                            <pre className="text-xs text-slate-300 overflow-x-auto">
-                              {JSON.stringify(
-                                {
-                                  event_type: event.event_type,
-                                  timestamp: event.timestamp || event.created_at,
-                                  email: event.email || event.user_email,
-                                  ip_address: event.ip_address || event.remote_ip,
-                                  user_agent: event.user_agent,
-                                  success: event.success !== false,
-                                  ...(event.device_info && { device_info: event.device_info }),
-                                  ...(event.location && { location: event.location }),
-                                  ...(event.metadata && { metadata: event.metadata }),
-                                },
-                                null,
-                                2
-                              )}
-                            </pre>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </React.Fragment>
-                );
-              })}
+              <motion.p
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                className="text-slate-500"
+              >
+                Waiting for authentication events
+              </motion.p>
+
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: { opacity: 1 }
+                }}
+                className="mt-6 flex justify-center gap-1.5"
+              >
+                {[0, 1, 2].map((i) => (
+                  <motion.span
+                    key={i}
+                    animate={{
+                      y: [0, -8, 0],
+                      opacity: [0.4, 1, 0.4]
+                    }}
+                    transition={{
+                      duration: 0.8,
+                      repeat: Infinity,
+                      delay: i * 0.15,
+                      ease: "easeInOut"
+                    }}
+                    className="w-2.5 h-2.5 bg-teal-500 rounded-full shadow-sm shadow-teal-500/20"
+                  />
+                ))}
+              </motion.div>
+            </motion.div>
+          ) : filteredEvents.length === 0 ? (
+            <div className="p-12 text-center text-slate-500">
+              <Clock size={48} className="mx-auto mb-4 opacity-50" />
+              <p>No auth events yet</p>
+              <p className="text-sm mt-2">Waiting for authentication activity...</p>
             </div>
-            <div ref={eventsEndRef} />
-          </div>
-        )}
+          ) : (
+            <div className="max-h-[600px] overflow-y-auto">
+              <motion.div
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+                className="divide-y divide-slate-200"
+              >
+                <AnimatePresence initial={false}>
+                  {filteredEvents.map((event, index) => {
+                    const eventKey = event.id || `${event.event_type}-${event.timestamp || event.created_at}-${event.email || event.user_email || 'unknown'}`;
+                    return (
+                      <motion.div
+                        key={eventKey}
+                        variants={fadeIn}
+                        layout
+                        className="px-4 py-3 hover:bg-slate-50 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <button
+                            onClick={() => toggleExpand(eventKey)}
+                            className="text-slate-400 hover:text-slate-600 mt-1"
+                          >
+                            {expandedRows.has(eventKey) ? (
+                              <ChevronUp size={16} />
+                            ) : (
+                              <ChevronDown size={16} />
+                            )}
+                          </button>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              {formatEventType(event.event_type)}
+                              <span className="text-slate-900 font-medium truncate">
+                                {event.email || event.user_email || 'Unknown User'}
+                              </span>
+                              <span className="text-slate-500 text-xs">
+                                {new Date(event.timestamp || event.created_at).toLocaleString()}
+                              </span>
+                              {event.success === false && (
+                                <span className="text-rose-600 text-xs font-medium">FAILED</span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-4 mt-1 text-sm">
+                              {event.ip_address || event.remote_ip ? (
+                                <div className="flex items-center gap-1 text-slate-500">
+                                  <MapPin size={14} />
+                                  <span className="font-mono text-xs">
+                                    {event.ip_address || event.remote_ip}
+                                  </span>
+                                </div>
+                              ) : null}
+                            </div>
+
+                            {expandedRows.has(eventKey) && (
+                              <div className="mt-3 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                                <h4 className="text-slate-500 text-sm font-medium mb-2">
+                                  Event Details:
+                                </h4>
+                                <pre className="text-xs text-slate-600 overflow-x-auto">
+                                  {JSON.stringify(
+                                    {
+                                      event_type: event.event_type,
+                                      timestamp: event.timestamp || event.created_at,
+                                      email: event.email || event.user_email,
+                                      ip_address: event.ip_address || event.remote_ip,
+                                      user_agent: event.user_agent,
+                                      success: event.success !== false,
+                                      ...(event.device_info && { device_info: event.device_info }),
+                                      ...(event.location && { location: event.location }),
+                                      ...(event.metadata && { metadata: event.metadata }),
+                                    },
+                                    null,
+                                    2
+                                  )}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </motion.div>
+              <div ref={eventsEndRef} />
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

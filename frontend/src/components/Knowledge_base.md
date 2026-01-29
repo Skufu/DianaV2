@@ -19,6 +19,27 @@ Domain-organized React components with lazy loading and tab-based navigation.
 | Common | `common/` | ErrorBoundary, ErrorFallback, RiskIndicator, BiomarkerInput, PDFExport, Button, CustomCursor, SHAPExplanation | Reusable components |
 | Layout | `layout/` | Sidebar, AdminSidebar, BiologicalNetwork | Navigation and background |
 
+## ANIMATION DESIGN SYSTEM (NEW)
+Implemented with **Framer Motion v12** for clinical precision.
+
+### Performance Tiering
+Managed via `src/utils/deviceCapabilities.js`:
+- **LOW Tier**: Animations disabled (`duration: 0`).
+- **MEDIUM Tier**: Standard animations.
+- **HIGH Tier**: Premium network backgrounds and complex transitions.
+
+### Key Animation Features
+- **Route Transitions**: `AnimatePresence` + `mode="wait"` in `App.jsx`.
+- **Sidebars**: Spring-based width transitions with `layoutId` synchronization and manual collapse toggle.
+- **Forms**: Staggered field entry, breathing loading states, and skeleton transitions for auth.
+- **Accessibility**: All animations respect `prefers-reduced-motion` via `useReducedMotion` hook.
+
+### Core Variants (`src/utils/animations.js`)
+- `fadeIn`, `slideUp`, `scaleIn`: Basic entry animations.
+- `staggerContainer`: Automated orchestration for lists/grids.
+- `cardVariants`: Standard physics for dashboard modules.
+- `navLabelVariants`: Synchronized label visibility for collapsing sidebars.
+
 ## COMPONENT ARCHITECTURE
 
 ### Component Pattern
@@ -243,6 +264,14 @@ const handleSubmit = async (data) => {
   - Disabled state
   - Icon support
   - Click handler
+  - **Animations**: `whileHover`, `whileTap`, `whileFocus` with spring physics
+
+### Animation Patterns
+- **Entrance**: Use `staggerContainer` for parent and `fadeIn` or `slideUp` for children.
+- **Micro-interactions**: Use `whileHover={{ scale: 1.02 }}` and `whileTap={{ scale: 0.98 }}` for buttons.
+- **Transitions**: Wrap multi-step forms in `AnimatePresence` with `mode="wait"`.
+- **Accessibility**: Always check `useReducedMotion()` from `utils/animations.js`.
+- **Performance**: Use `shouldDisableHeavyEffects()` to skip heavy animations on low-tier devices.
 
 ### PDFExport.jsx
 - **Purpose**: Download health report PDF

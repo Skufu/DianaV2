@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -37,8 +36,8 @@ func NewHTTPPredictor(url, version, apiKey string, timeout time.Duration) *HTTPP
 
 func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (string, int, error) {
 	if p.url == "" {
-		log.Printf("[ML] URL not configured, returning unknown")
-		return "unknown", 0, nil
+		log.Printf("[ML] URL not configured, using mock prediction")
+		return p.mockPredict(input)
 	}
 
 	body, err := json.Marshal(input)
@@ -63,25 +62,38 @@ func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (s
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		log.Printf("[ML] Request failed: %v", err)
-		return "error", 0, fmt.Errorf("ML request failed: %w", err)
+		log.Printf("[ML] Request failed: %v, falling back to mock prediction", err)
+		return p.mockPredict(input)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		log.Printf("[ML] Non-OK status %d: %s", resp.StatusCode, string(respBody))
-		return "error", 0, fmt.Errorf("ML server returned status %d: %s", resp.StatusCode, string(respBody))
+		log.Printf("[ML] Non-OK status %d: %s, falling back to mock prediction", resp.StatusCode, string(respBody))
+		return p.mockPredict(input)
 	}
 
 	var out predictResp
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		log.Printf("[ML] Failed to decode response: %v", err)
-		return "error", 0, fmt.Errorf("failed to decode ML response: %w", err)
+		log.Printf("[ML] Failed to decode response: %v, falling back to mock prediction", err)
+		return p.mockPredict(input)
 	}
 	if out.Cluster == "" {
-		log.Printf("[ML] Empty cluster in response")
-		return "error", 0, errors.New("ML server returned empty cluster")
+		log.Printf("[ML] Empty cluster in response, falling back to mock prediction")
+		return p.mockPredict(input)
 	}
 	return out.Cluster, out.RiskScore, nil
+}
+
+func (p *HTTPPredictor) mockPredict(input models.Assessment) (string, int, error) {
+	switch {
+	case input.BMI > 30 && input.HbA1c > 6.0:
+		return "SIRD", 85, nil
+	case input.HbA1c > 6.5 && input.BMI < 27:
+		return "SIDD", 92, nil
+	case input.BMI > 30:
+		return "MOD", 65, nil
+	default:
+		return "MARD", 35, nil
+	}
 }

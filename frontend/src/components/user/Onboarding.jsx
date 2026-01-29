@@ -1,9 +1,14 @@
 import { useState } from 'react';
-import { User, Heart, Shield, FileText, Check, ChevronRight, ChevronLeft } from 'lucide-react';
+import { User, Heart, Shield, FileText, Check, ChevronRight, ChevronLeft, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useCompleteOnboarding } from '../../api';
+import { motion, AnimatePresence } from 'framer-motion';
+import Button from '../common/Button';
+import { slideUp, fadeIn, staggerContainer, useReducedMotion, SPRING_GENTLE } from '../../utils/animations';
 
 const Onboarding = ({ onComplete }) => {
+  const isReduced = useReducedMotion();
   const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState(1);
   const [error, setError] = useState(null);
   const completeOnboardingMutation = useCompleteOnboarding();
 
@@ -34,7 +39,7 @@ const Onboarding = ({ onComplete }) => {
 
   const handleSubmit = async () => {
     if (!formData.consent_personal_data) {
-      setError('You must agree to Data Usage Agreement to continue');
+      setError('You must agree to the Data Usage Agreement to continue.');
       return;
     }
     setError(null);
@@ -59,7 +64,7 @@ const Onboarding = ({ onComplete }) => {
       await completeOnboardingMutation.mutateAsync(payload);
       onComplete();
     } catch (err) {
-      setError(err.message || 'Failed to complete onboarding');
+      setError(err.message || 'Failed to complete onboarding. Please try again.');
     }
   };
 
@@ -67,13 +72,13 @@ const Onboarding = ({ onComplete }) => {
     switch (stepNum) {
       case 1:
         if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.date_of_birth) {
-          setError('Please fill in all required fields (First Name, Last Name, Date of Birth)');
+          setError('Please fill in all required fields.');
           return false;
         }
         break;
       case 2:
         if (!formData.menopause_status) {
-          setError('Please select your menopause status');
+          setError('Please select your menopause status.');
           return false;
         }
         break;
@@ -86,353 +91,388 @@ const Onboarding = ({ onComplete }) => {
 
   const nextStep = () => {
     if (validateStep(step)) {
+      setDirection(1);
       setStep(prev => prev + 1);
     }
   };
-  const prevStep = () => setStep(prev => prev - 1);
+  const prevStep = () => {
+    setError(null);
+    setDirection(-1);
+    setStep(prev => prev - 1)
+  };
+
+  const steps = [
+    { title: 'Personal', icon: User },
+    { title: 'Health', icon: Heart },
+    { title: 'History', icon: Shield },
+    { title: 'Settings', icon: FileText },
+    { title: 'Consent', icon: CheckCircle2 },
+  ];
+
+  const stepVariants = {
+    enter: (direction) => ({
+      x: isReduced ? 0 : (direction > 0 ? 50 : -50),
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        x: SPRING_GENTLE,
+        opacity: { duration: 0.2 }
+      }
+    },
+    exit: (direction) => ({
+      x: isReduced ? 0 : (direction > 0 ? -50 : 50),
+      opacity: 0,
+      transition: {
+        x: SPRING_GENTLE,
+        opacity: { duration: 0.2 }
+      }
+    })
+  };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-slate-800/80 backdrop-blur-xl rounded-2xl border border-slate-700/50 shadow-2xl p-8 transform transition-all duration-300">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-slate-50 font-sans text-slate-900 selection:bg-diana-forest-light/20 selection:text-diana-forest-light">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={slideUp}
+        className="w-full max-w-2xl bg-white shadow-xl border border-slate-200 rounded-2xl p-8 md:p-10"
+      >
 
-        {/* Progress Stepper */}
-        <div className="flex items-center justify-between mb-8 px-2">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <div key={s} className="flex flex-col items-center gap-2 relative z-10">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300
-                  ${s === step
-                    ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white ring-4 ring-teal-500/20 shadow-lg scale-110'
-                    : s < step
-                      ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30'
-                      : 'bg-slate-700/50 text-slate-500 border border-slate-600/30'
-                  }`}
-              >
-                {s < step ? <Check size={14} /> : s}
-              </div>
-              <span className={`text-xs font-medium transition-colors duration-300 ${s === step ? 'text-teal-400' : 'text-slate-600'}`}>
-                {s === 1 ? 'Personal' : s === 2 ? 'Health' : s === 3 ? 'History' : s === 4 ? 'Settings' : 'Consent'}
-              </span>
-            </div>
-          ))}
-          {/* Progress Bar Background */}
-          <div className="absolute top-[4.5rem] left-0 w-full px-12 h-0.5 -z-0 hidden md:block">
-            <div className="w-full h-full bg-slate-700/50 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all duration-500 ease-out"
-                style={{ width: `${((step - 1) / 4) * 100}%` }}
-              />
-            </div>
+        {/* Header & Progress */}
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-8">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Step {step} of 5</span>
+            <motion.span
+              key={step} // Animate text change
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-xs font-bold uppercase tracking-wider text-diana-forest-light"
+            >
+              {steps[step - 1].title}
+            </motion.span>
           </div>
+
+          {/* Minimal Progress Bar */}
+          <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden mb-8">
+            <motion.div
+              layout
+              className="h-full bg-diana-navy"
+              initial={{ width: 0 }}
+              animate={{ width: `${(step / 5) * 100}%` }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+            />
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              aria-live="polite"
+            >
+              <h1 className="text-2xl font-semibold text-diana-midnight mb-2">
+                {step === 1 && "Start your clinical profile"}
+                {step === 2 && "Menopausal health status"}
+                {step === 3 && "Medical history overview"}
+                {step === 4 && "System preferences"}
+                {step === 5 && "Privacy & Consent"}
+              </h1>
+              <p className="text-slate-500">
+                {step === 1 && "We need a few basic details to personalize your care plan."}
+                {step === 2 && "Understanding where you are in your journey helps us tailor recommendations."}
+                {step === 3 && "This information creates the baseline for your clinical risk assessment."}
+                {step === 4 && "Customize how often you'd like to check in with the platform."}
+                {step === 5 && "Please review how your data will be used and protected."}
+              </p>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent mb-2">
-            Welcome to DIANA
-          </h1>
-          <p className="text-slate-400">
-            Let's set up your health profile{formData.first_name ? `, ${formData.first_name}` : ''}
-          </p>
-        </div>
-
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center gap-3 text-rose-400">
-            <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-            <span className="text-sm font-medium">{error}</span>
-          </div>
-        )}
-
-        <div className="min-h-[320px]">
-          {step === 1 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="flex items-center gap-3 mb-6 p-4 bg-slate-900/30 rounded-xl border border-slate-700/30">
-                <div className="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                  <User size={20} className="text-teal-400" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Personal Information</h2>
-                  <p className="text-sm text-slate-500">Basic details to personalize your experience</p>
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-5">
-                  <div className="group">
-                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-teal-400 transition-colors">First Name</label>
-                    <input
-                      type="text"
-                      name="first_name"
-                      value={formData.first_name}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 transition-all"
-                      placeholder="e.g. Jane"
-                    />
-                  </div>
-                  <div className="group">
-                    <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-teal-400 transition-colors">Last Name</label>
-                    <input
-                      type="text"
-                      name="last_name"
-                      value={formData.last_name}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 transition-all"
-                      placeholder="e.g. Doe"
-                    />
-                  </div>
-                </div>
-
-                <div className="group">
-                  <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-teal-400 transition-colors">Date of Birth</label>
-                  <input
-                    type="date"
-                    name="date_of_birth"
-                    value={formData.date_of_birth}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 transition-all"
-                  />
-                </div>
-              </div>
-            </div>
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+              animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+              className="p-4 rounded-lg bg-red-50 border border-red-100 flex items-start gap-3 text-red-700 overflow-hidden"
+            >
+              <AlertCircle size={18} className="mt-0.5" />
+              <span className="text-sm font-medium">{error}</span>
+            </motion.div>
           )}
+        </AnimatePresence>
 
-          {step === 2 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="flex items-center gap-3 mb-6 p-4 bg-slate-900/30 rounded-xl border border-slate-700/30">
-                <div className="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                  <Heart size={20} className="text-teal-400" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Menopausal Health</h2>
-                  <p className="text-sm text-slate-500">Understanding your current stage</p>
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <div className="group">
-                  <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-teal-400 transition-colors">Menopause Status</label>
-                  <select
-                    name="menopause_status"
-                    value={formData.menopause_status}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 transition-all appearance-none"
-                  >
-                    <option value="">Select status...</option>
-                    <option value="pre">Premenopausal</option>
-                    <option value="peri">Perimenopausal</option>
-                    <option value="post">Postmenopausal</option>
-                    <option value="surgical">Surgical Menopause</option>
-                  </select>
-                </div>
-
-                <div className="group">
-                  <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-teal-400 transition-colors">Years Since Menopause</label>
-                  <input
-                    type="number"
-                    name="years_menopause"
-                    value={formData.years_menopause}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 transition-all"
-                    placeholder="Enter 0 if not applicable"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="flex items-center gap-3 mb-6 p-4 bg-slate-900/30 rounded-xl border border-slate-700/30">
-                <div className="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                  <Shield size={20} className="text-teal-400" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Medical History</h2>
-                  <p className="text-sm text-slate-500">Important health context</p>
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <div className="group">
-                  <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-teal-400 transition-colors">Hypertension</label>
-                  <select
-                    name="hypertension"
-                    value={formData.hypertension}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 transition-all"
-                  >
-                    <option value="">Select...</option>
-                    <option value="no">No</option>
-                    <option value="controlled">Controlled</option>
-                    <option value="uncontrolled">Uncontrolled</option>
-                  </select>
-                </div>
-
-                <div className="group">
-                  <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-teal-400 transition-colors">Heart Disease</label>
-                  <select
-                    name="heart_disease"
-                    value={formData.heart_disease}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 transition-all"
-                  >
-                    <option value="">Select...</option>
-                    <option value="no">No</option>
-                    <option value="yes">Yes</option>
-                  </select>
-                </div>
-
-                <div className="group">
-                  <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-teal-400 transition-colors">Family History of Diabetes</label>
-                  <select
-                    name="family_history_diabetes"
-                    value={formData.family_history_diabetes ? 'true' : 'false'}
-                    onChange={e => setFormData(prev => ({ ...prev, family_history_diabetes: e.target.value === 'true' }))}
-                    className="w-full px-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 transition-all"
-                  >
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                  </select>
-                </div>
-
-                <div className="group">
-                  <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-teal-400 transition-colors">Smoking Status</label>
-                  <select
-                    name="smoking_status"
-                    value={formData.smoking_status}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 transition-all"
-                  >
-                    <option value="">Select...</option>
-                    <option value="never">Never</option>
-                    <option value="former">Former</option>
-                    <option value="current">Current</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 4 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="flex items-center gap-3 mb-6 p-4 bg-slate-900/30 rounded-xl border border-slate-700/30">
-                <div className="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                  <FileText size={20} className="text-teal-400" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Settings</h2>
-                  <p className="text-sm text-slate-500">Configure your reminders</p>
-                </div>
-              </div>
-
-              <div className="space-y-5">
-                <div className="group">
-                  <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 group-focus-within:text-teal-400 transition-colors">Assessment Reminder Frequency</label>
-                  <select
-                    name="assessment_frequency_months"
-                    value={formData.assessment_frequency_months}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3.5 bg-slate-900/50 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-teal-500/50 focus:ring-2 focus:ring-teal-500/20 transition-all"
-                  >
-                    <option value="1">Monthly</option>
-                    <option value="3">Quarterly (3 Months)</option>
-                    <option value="6">Semi-Annually (6 Months)</option>
-                    <option value="12">Annually (12 Months)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 5 && (
-            <div className="space-y-6 animate-fadeIn">
-              <div className="flex items-center gap-3 mb-6 p-4 bg-slate-900/30 rounded-xl border border-slate-700/30">
-                <div className="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                  <Shield size={20} className="text-teal-400" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-white">Consent Preferences</h2>
-                  <p className="text-sm text-slate-500">How we handle your data</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {[
-                  { name: 'consent_research_participation', label: 'Research Participation', sub: 'Allow anonymized health data to contribute to menopausal diabetes research' },
-                  { name: 'consent_email_updates', label: 'Email Communications', sub: 'Receive health tips, reminders, and research updates via email' },
-                  { name: 'consent_analytics', label: 'Analytics & Usage Data', sub: 'Allow anonymized usage analytics to help improve the platform' },
-                  { name: 'consent_personal_data', label: 'Data Usage Agreement (Required)', sub: 'I understand my health data will be stored securely and used according to privacy policy', required: true }
-                ].map((item) => (
-                  <label key={item.name} className="flex items-start gap-4 p-4 rounded-xl bg-slate-900/30 border border-slate-700/30 cursor-pointer hover:bg-slate-900/50 transition-colors group">
-                    <div className="relative flex items-center">
+        <div className="min-h-[300px] overflow-hidden">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={step}
+              custom={direction}
+              variants={stepVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              className="w-full"
+            >
+              {step === 1 && (
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+                  <div className="grid grid-cols-2 gap-5">
+                    <motion.div variants={fadeIn} className="group space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">First Name</label>
                       <input
-                        type="checkbox"
-                        name={item.name}
-                        checked={formData[item.name]}
+                        type="text"
+                        name="first_name"
+                        value={formData.first_name}
                         onChange={handleInputChange}
-                        required={item.required}
-                        className="peer sr-only"
+                        className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm"
+                        placeholder="Jane"
                       />
-                      <div className="w-5 h-5 rounded border border-slate-600 bg-slate-950 flex items-center justify-center peer-checked:bg-teal-500 peer-checked:border-teal-500 transition-all">
-                        <Check size={12} className="text-white opacity-0 peer-checked:opacity-100" strokeWidth={3} />
+                    </motion.div>
+                    <motion.div variants={fadeIn} className="group space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Name</label>
+                      <input
+                        type="text"
+                        name="last_name"
+                        value={formData.last_name}
+                        onChange={handleInputChange}
+                        className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm"
+                        placeholder="Doe"
+                      />
+                    </motion.div>
+                  </div>
+
+                  <motion.div variants={fadeIn} className="group space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Date of Birth</label>
+                    <input
+                      type="date"
+                      name="date_of_birth"
+                      value={formData.date_of_birth}
+                      onChange={handleInputChange}
+                      className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm"
+                    />
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {step === 2 && (
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+                  <motion.div variants={fadeIn} className="group space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Menopause Status</label>
+                    <div className="relative">
+                      <select
+                        name="menopause_status"
+                        value={formData.menopause_status}
+                        onChange={handleInputChange}
+                        className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none cursor-pointer"
+                      >
+                        <option value="">Select status...</option>
+                        <option value="pre">Premenopausal</option>
+                        <option value="peri">Perimenopausal</option>
+                        <option value="post">Postmenopausal</option>
+                        <option value="surgical">Surgical Menopause</option>
+                      </select>
+                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                    </div>
+                  </motion.div>
+
+                  <motion.div variants={fadeIn} className="group space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Years Since Menopause (approx.)</label>
+                    <input
+                      type="number"
+                      name="years_menopause"
+                      value={formData.years_menopause}
+                      onChange={handleInputChange}
+                      className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm"
+                      placeholder="0"
+                    />
+                    <p className="text-[10px] text-slate-400">Leave as 0 if not applicable</p>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {step === 3 && (
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+                  <motion.div variants={fadeIn} className="group space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Hypertension Status</label>
+                    <div className="relative">
+                      <select
+                        name="hypertension"
+                        value={formData.hypertension}
+                        onChange={handleInputChange}
+                        className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
+                      >
+                        <option value="">Select...</option>
+                        <option value="no">No History</option>
+                        <option value="controlled">Yes (Controlled)</option>
+                        <option value="uncontrolled">Yes (Uncontrolled)</option>
+                      </select>
+                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                    </div>
+                  </motion.div>
+
+                  <div className="grid grid-cols-2 gap-5">
+                    <motion.div variants={fadeIn} className="group space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Heart Disease</label>
+                      <div className="relative">
+                        <select
+                          name="heart_disease"
+                          value={formData.heart_disease}
+                          onChange={handleInputChange}
+                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
+                        >
+                          <option value="">Select...</option>
+                          <option value="no">No</option>
+                          <option value="yes">Yes</option>
+                        </select>
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
                       </div>
+                    </motion.div>
+
+                    <motion.div variants={fadeIn} className="group space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Diabetes History</label>
+                      <div className="relative">
+                        <select
+                          name="family_history_diabetes"
+                          value={formData.family_history_diabetes ? 'true' : 'false'}
+                          onChange={e => setFormData(prev => ({ ...prev, family_history_diabetes: e.target.value === 'true' }))}
+                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
+                        >
+                          <option value="false">No</option>
+                          <option value="true">Yes</option>
+                        </select>
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  <motion.div variants={fadeIn} className="group space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Smoking Status</label>
+                    <div className="relative">
+                      <select
+                        name="smoking_status"
+                        value={formData.smoking_status}
+                        onChange={handleInputChange}
+                        className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
+                      >
+                        <option value="">Select...</option>
+                        <option value="never">Never Smoked</option>
+                        <option value="former">Former Smoker</option>
+                        <option value="current">Current Smoker</option>
+                      </select>
+                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
                     </div>
-                    <div className="flex-1">
-                      <p className={`text-sm font-medium transition-colors ${formData[item.name] ? 'text-white' : 'text-slate-300'}`}>{item.label}</p>
-                      <p className="text-xs text-slate-500 mt-1">{item.sub}</p>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {step === 4 && (
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+                  <motion.div variants={fadeIn} className="group space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Assessment Reminder Frequency</label>
+                    <div className="relative">
+                      <select
+                        name="assessment_frequency_months"
+                        value={formData.assessment_frequency_months}
+                        onChange={handleInputChange}
+                        className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
+                      >
+                        <option value="1">Monthly</option>
+                        <option value="3">Quarterly (Recommended)</option>
+                        <option value="6">Semi-Annually</option>
+                        <option value="12">Annually</option>
+                      </select>
+                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
                     </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
+                    <p className="text-[10px] text-slate-400 mt-1">We'll send you an email when it's time for your next check-in.</p>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {step === 5 && (
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
+                  {[
+                    { name: 'consent_research_participation', label: 'Research Participation', sub: 'Allow anonymized data contribution to diabetes research.' },
+                    { name: 'consent_email_updates', label: 'Email Communications', sub: 'Receive health tips and platform updates.' },
+                    { name: 'consent_analytics', label: 'Analytics', sub: 'Help us improve by sharing usage data.' },
+                    { name: 'consent_personal_data', label: 'Data Usage Agreement', sub: 'I agree to the secure processing of my health data.', required: true }
+                  ].map((item) => (
+                    <label key={item.name} className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-diana-forest-light/30 cursor-pointer transition-all group">
+                      <div className="relative flex items-center pt-0.5">
+                        <input
+                          type="checkbox"
+                          name={item.name}
+                          checked={formData[item.name]}
+                          onChange={handleInputChange}
+                          required={item.required}
+                          className="peer sr-only"
+                        />
+                        <div className="w-4 h-4 rounded border border-slate-300 bg-white flex items-center justify-center peer-checked:bg-diana-forest-light peer-checked:border-diana-forest-light transition-all">
+                          <Check size={10} className="text-white opacity-0 peer-checked:opacity-100" strokeWidth={3} />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-medium transition-colors ${formData[item.name] ? 'text-diana-forest-light' : 'text-slate-700'}`}>{item.label}</span>
+                          {item.required && <span className="text-[10px] font-bold text-diana-forest-light/60 bg-diana-forest-light/5 px-1.5 py-0.5 rounded uppercase">Required</span>}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">{item.sub}</p>
+                      </div>
+                    </label>
+                  ))}
+                </motion.div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
-        <div className="flex justify-between items-center mt-12 pt-8 border-t border-slate-700/50">
-          <button
+        {/* Footer Navigation */}
+        <div className="flex justify-between items-center mt-10 pt-6 border-t border-slate-100">
+          <Button
+            variant="ghost"
             onClick={onComplete}
-            className="text-sm font-medium text-slate-500 hover:text-slate-300 transition-colors px-4 py-2 rounded-lg hover:bg-slate-800/50"
+            className="text-xs font-semibold !text-slate-400 hover:!text-slate-600 px-2 py-2"
           >
-            Skip for now
-          </button>
+            Skip setup
+          </Button>
 
           <div className="flex gap-3">
             {step > 1 && (
-              <button
+              <Button
+                variant="ghost"
                 onClick={prevStep}
-                className="px-6 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/80 border border-transparent hover:border-slate-700 transition-all flex items-center gap-2"
+                icon={ChevronLeft}
               >
-                <ChevronLeft size={16} />
                 Back
-              </button>
+              </Button>
             )}
 
-            {step < 5 && (
-              <button
+            {step < 5 ? (
+              <Button
+                variant="primary"
                 onClick={nextStep}
-                className="px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 shadow-lg shadow-teal-500/20 transition-all flex items-center gap-2 active:scale-95"
+                className="bg-diana-navy hover:bg-diana-midnight"
               >
                 Next Step
-                <ChevronRight size={16} />
-              </button>
-            )}
-
-            {step === 5 && (
-              <button
+                <ArrowRight size={16} className="ml-1.5" />
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
                 onClick={handleSubmit}
-                disabled={completeOnboardingMutation.isPending}
-                className="px-6 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                isLoading={completeOnboardingMutation.isPending}
+                className="bg-diana-navy hover:bg-diana-midnight"
+                icon={!completeOnboardingMutation.isPending ? CheckCircle2 : undefined}
               >
-                {completeOnboardingMutation.isPending ? 'Submitting...' : 'Complete Setup'}
-                {!completeOnboardingMutation.isPending && <Check size={16} />}
-              </button>
+                {completeOnboardingMutation.isPending ? 'Completing...' : 'Complete Setup'}
+              </Button>
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

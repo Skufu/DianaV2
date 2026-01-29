@@ -7,8 +7,7 @@ import ErrorBoundary from '../common/ErrorBoundary';
 const AdminLayout = ({ activeView, setActiveView, onLogout, children }) => {
   return (
     <div
-      className="flex min-h-screen relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #020617 0%, #1E1B4B 100%)' }}
+      className="flex min-h-screen relative overflow-hidden bg-slate-50"
     >
       {/* Animated Background */}
       <BiologicalNetwork
@@ -18,7 +17,7 @@ const AdminLayout = ({ activeView, setActiveView, onLogout, children }) => {
       />
 
       {/* Indigo Gradient Overlay for Admin Theme */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-transparent to-violet-900/10 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-transparent to-violet-50/50 pointer-events-none" />
 
       <AdminSidebar
         activeView={activeView}
