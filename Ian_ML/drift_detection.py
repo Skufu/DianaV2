@@ -3,7 +3,7 @@ DIANA Drift Detection Module
 Monitors model performance by detecting feature and prediction distribution shifts.
 
 Usage:
-    from ml.drift_detection import DriftMonitor
+    from Ian_ML.drift_detection import DriftMonitor
     
     monitor = DriftMonitor(reference_data)
     report = monitor.check_feature_drift(current_data)

@@ -416,14 +416,14 @@ frontend/e2e/user-flows.spec.js
 1. **Add Unit Tests (P0 - CRITICAL)**
    ```bash
    # Create comprehensive test suite:
-   ml/predict_test.py
-   ml/server_test.py
-   ml/clustering_test.py
-   ml/train_test.py
-   ml/explainability_test.py
-   ml/ab_testing_test.py
-   ml/drift_detection_test.py
-   ml/data_processing_test.py
+   Ian_ML/predict_test.py
+   Ian_ML/server_test.py
+   Ian_ML/clustering_test.py
+   Ian_ML/train_test.py
+   Ian_ML/explainability_test.py
+   Ian_ML/ab_testing_test.py
+   Ian_ML/drift_detection_test.py
+   Ian_ML/data_processing_test.py
    ```
 
 2. **ML Prediction Tests**
@@ -503,7 +503,7 @@ backend/internal/test/fixtures/
   - Auth tokens (valid, expired, invalid signature)
   - ML predictions (mock responses)
 
-ml/internal/test/fixtures/
+Ian_ML/internal/test/fixtures/
   - Biomarker datasets (valid ranges, edge cases)
   - Prediction responses
   - Model files for testing

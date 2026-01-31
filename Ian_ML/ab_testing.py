@@ -3,7 +3,7 @@ DIANA A/B Testing Module
 Provides infrastructure for comparing model versions in production.
 
 Usage:
-    from ml.ab_testing import ABTestManager
+    from Ian_ML.ab_testing import ABTestManager
     
     manager = ABTestManager()
     

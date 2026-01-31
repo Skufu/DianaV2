@@ -17,6 +17,7 @@ const VisualizationCard = React.memo(({ title, visualizationName }) => {
       initial="offscreen"
       whileInView="onscreen"
       viewport={{ once: true, amount: 0.3 }}
+      whileHover="hover"
       className="glass-card p-8 bg-white"
     >
       <h3 className="text-xl font-serif font-bold text-diana-text-primary mb-6">{title}</h3>

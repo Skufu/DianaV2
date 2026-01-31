@@ -12,7 +12,7 @@ A full-stack health application designed for menopausal women to assess diabetes
 |-----------|---------|-----------|--------|
 | `backend/` | Go/Gin REST API server | `cmd/server/main.go`, `internal/http/handlers/*.go` | [backend/README.md](./backend/README.md) |
 | `frontend/` | React/Vite web client | `src/App.jsx`, `src/api.js`, `src/components/` | [frontend/README.md](./frontend/README.md) |
-| `ml/` | Flask ML prediction server | `server.py`, `predict.py`, `train.py` | [ml/README.md](./ml/README.md) |
+| `Ian_ML/` | Flask ML prediction server | `server.py`, `predict.py`, `train.py` | [Ian_ML/README.md](./Ian_ML/README.md) |
 | `scripts/` | Dev utilities & data processing | `setup.sh`, `run-dev.sh`, `process_nhanes_multi.py` | [scripts/README.md](./scripts/README.md) |
 | `docs/` | Documentation | `ARCHITECTURE.md`, `BACKEND.md`, `ML_SYSTEM.md` | [docs/README.md](./docs/README.md) |
 | `data/` | NHANES dataset files | `nhanes/*.XPT` | [data/README.md](./data/README.md) |
@@ -100,16 +100,16 @@ A full-stack health application designed for menopausal women to assess diabetes
 ### ML (Python)
 | File | Absolute Path | Purpose |
 |------|---------------|---------|
-| Flask Server | `ml/server.py` | API endpoints |
-| Predictors | `ml/predict.py` | DianaPredictor, ClinicalPredictor |
-| Training | `ml/train.py` | Clinical model training |
-| Clustering | `ml/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
-| Data Processing | `ml/data_processing.py` | NHANES data pipeline |
-| Explainability | `ml/explainability.py` | SHAP explanations |
-| Explainer | `ml/explainer.py` | Explainer utilities |
-| A/B Testing | `ml/ab_testing.py` | A/B testing infrastructure |
-| Drift Detection | `ml/drift_detection.py` | Model drift monitoring |
-| MLflow Config | `ml/mlflow_config.py` | MLflow experiment tracking |
+| Flask Server | `Ian_ML/server.py` | API endpoints |
+| Predictors | `Ian_ML/predict.py` | DianaPredictor, ClinicalPredictor |
+| Training | `Ian_ML/train.py` | Clinical model training |
+| Clustering | `Ian_ML/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
+| Data Processing | `Ian_ML/data_processing.py` | NHANES data pipeline |
+| Explainability | `Ian_ML/explainability.py` | SHAP explanations |
+| Explainer | `Ian_ML/explainer.py` | Explainer utilities |
+| A/B Testing | `Ian_ML/ab_testing.py` | A/B testing infrastructure |
+| Drift Detection | `Ian_ML/drift_detection.py` | Model drift monitoring |
+| MLflow Config | `Ian_ML/mlflow_config.py` | MLflow experiment tracking |
 | Data Pipeline Script | `scripts/data/process_nhanes_multi.py` | NHANES download and processing |
 | Feature Selection | `scripts/data/feature_selection.py` | Mutual Information + IG analysis |
 | Cluster Training | `scripts/train/train_clusters.py` | K-Means, CatBoost |

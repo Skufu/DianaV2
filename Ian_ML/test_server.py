@@ -1,5 +1,5 @@
 """
-Test suite for ml/server.py - Flask API Endpoints
+Test suite for Ian_ML/server.py - Flask API Endpoints
 """
 
 import pytest
@@ -12,7 +12,7 @@ from unittest.mock import Mock, MagicMock, patch
 @pytest.fixture
 def mock_client():
     """Create a test client for Flask API."""
-    from ml.server import app
+    from Ian_ML.server import app
     app.config['TESTING'] = True
     app.config['WTF_CSRF_ENABLED'] = False
     
@@ -23,9 +23,9 @@ def mock_client():
 @pytest.fixture
 def mock_predictor():
     """Mock DianaPredictor for testing."""
-    from ml.predict import DianaPredictor
+    from Ian_ML.predict import DianaPredictor
 
-    with patch('ml.predict.DianaPredictor') as mock_ada:
+    with patch('Ian_ML.predict.DianaPredictor') as mock_ada:
         instance_ada = mock_ada.return_value
         instance_ada.predict.return_value = {
             'success': True,
@@ -43,9 +43,9 @@ def mock_predictor():
 @pytest.fixture
 def mock_clinical_predictor():
     """Mock ClinicalPredictor for testing."""
-    from ml.predict import ClinicalPredictor
+    from Ian_ML.predict import ClinicalPredictor
 
-    with patch('ml.predict.clinicalPredictor') as mock_clinical:
+    with patch('Ian_ML.predict.clinicalPredictor') as mock_clinical:
         instance_clinical = mock_clinical.return_value
         instance_clinical.predict.return_value = {
             'success': True,
@@ -140,7 +140,7 @@ class TestErrorHandling:
 def authenticated_client():
     """Create test client with ML_API_KEY set."""
     os.environ['ML_API_KEY'] = 'test-api-key-12345'
-    from ml.server import app
+    from Ian_ML.server import app
     app.config['TESTING'] = True
     app.config['WTF_CSRF_ENABLED'] = False
 
@@ -156,7 +156,7 @@ def unauthenticated_client():
     """Create test client without ML_API_KEY set."""
     if 'ML_API_KEY' in os.environ:
         del os.environ['ML_API_KEY']
-    from ml.server import app
+    from Ian_ML.server import app
     app.config['TESTING'] = True
     app.config['WTF_CSRF_ENABLED'] = False
 
@@ -189,7 +189,7 @@ class TestAPIKeyAuthentication:
 
     def test_predict_with_valid_api_key_succeeds(self, authenticated_client, mock_predictor):
         """Test that requests with valid API key succeed."""
-        with patch('ml.server.get_predictor') as mock_get_predictor:
+        with patch('Ian_ML.server.get_predictor') as mock_get_predictor:
             mock_get_predictor.return_value = mock_predictor
             mock_predictor.predict.return_value = {
                 'success': True,

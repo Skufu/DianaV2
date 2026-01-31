@@ -79,13 +79,23 @@ For panel defense, also compute Information Gain using clinical thresholds.
 |-------|------------|---------|
 | Logistic Regression | C=0.1, balanced weights | Interpretable baseline |
 | Random Forest | n_estimators=300, max_depth=6, min_samples_leaf=15 | Captures nonlinear relationships |
-| **XGBoost** ⭐ | n_estimators=300, max_depth=4, learning_rate=0.05, reg_lambda=2.0 | **Best performer (AUC 0.6732)** |
+| **XGBoost** ⭐ | n_estimators=300, max_depth=4, learning_rate=0.05, min_child_weight=5-10, reg_alpha=0.5-2.0, reg_lambda=2.0-10.0, subsample=0.6-0.8, colsample_bytree=0.6-0.8 | **Best performer (AUC 0.6732)** |
+
+**Note on XGBoost Hyperparameter Tuning**: The model uses an extensive grid search with 8 parameters (3×3×3×3×3×3×2×2 = 972 combinations tested). Grid search parameters include:
+- `n_estimators`: [100, 200, 300]
+- `max_depth`: [2, 3, 4] (shallow trees for regularization)
+- `learning_rate`: [0.01, 0.03, 0.05]
+- `min_child_weight`: [5, 7, 10] (higher = more regularization)
+- `reg_alpha`: [0.5, 1.0, 2.0] (L1 regularization)
+- `reg_lambda`: [2.0, 5.0, 10.0] (L2 regularization)
+- `subsample`: [0.6, 0.8] (row sampling)
+- `colsample_bytree`: [0.6, 0.8] (column sampling)
 | CatBoost | depth=5, iterations=300, l2_leaf_reg=5 | Handles categorical features natively |
 | LightGBM | num_leaves=31, n_estimators=300, reg_lambda=10 | Fast gradient boosting |
 | Voting Ensemble | soft voting, weighted (LR+RF+XGB+LightGBM) | Combines base learners |
 | Stacking Ensemble | LR meta-learner on 4 base models | Learns optimal combination |
 
-### Feature Engineering (25 features)
+### Feature Engineering (24 features)
 | Category | Features |
 |----------|----------|
 | Base | bmi, triglycerides, ldl, hdl, age, systolic, diastolic |

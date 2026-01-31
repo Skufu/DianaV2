@@ -119,7 +119,14 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
       <div className="space-y-6">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50">
+          <motion.div
+            variants={cardVariants}
+            initial="offscreen"
+            whileInView="onscreen"
+            viewport={{ once: true, amount: 0.3 }}
+            whileHover="hover"
+            className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center">
                 <Users className="text-violet-600" size={24} />
@@ -130,9 +137,16 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
             <p className="text-emerald-600 text-xs mt-2">
               +{stats.new_users_this_month || 0} this month
             </p>
-          </div>
+          </motion.div>
 
-          <div className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50">
+          <motion.div
+            variants={cardVariants}
+            initial="offscreen"
+            whileInView="onscreen"
+            viewport={{ once: true, amount: 0.3 }}
+            whileHover="hover"
+            className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center">
                 <Activity className="text-teal-600" size={24} />
@@ -140,9 +154,16 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
             </div>
             <h3 className="text-3xl font-bold text-slate-900">{stats.total_patients || 0}</h3>
             <p className="text-slate-500 text-sm mt-1">Total Patients</p>
-          </div>
+          </motion.div>
 
-          <div className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50">
+          <motion.div
+            variants={cardVariants}
+            initial="offscreen"
+            whileInView="onscreen"
+            viewport={{ once: true, amount: 0.3 }}
+            whileHover="hover"
+            className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-full bg-cyan-100 flex items-center justify-center">
                 <TrendingUp className="text-cyan-600" size={24} />
@@ -153,9 +174,16 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
             <p className="text-emerald-600 text-xs mt-2">
               +{stats.assessments_this_month || 0} this month
             </p>
-          </div>
+          </motion.div>
 
-          <div className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50">
+          <motion.div
+            variants={cardVariants}
+            initial="offscreen"
+            whileInView="onscreen"
+            viewport={{ once: true, amount: 0.3 }}
+            whileHover="hover"
+            className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center">
                 <AlertTriangle className="text-rose-600" size={24} />
@@ -166,12 +194,19 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
             <p className="text-slate-500 text-xs mt-2">
               Avg Risk: {(stats.avg_risk_score || 0).toFixed(1)}%
             </p>
-          </div>
-        </div>
+          </motion.div>
+        </div >
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Cluster Distribution */}
-          <div className="glass-card p-8 bg-white/80 shadow-sm border border-slate-200/50">
+          <motion.div
+            variants={cardVariants}
+            initial="offscreen"
+            whileInView="onscreen"
+            viewport={{ once: true, amount: 0.3 }}
+            whileHover="hover"
+            className="glass-card p-8 bg-white/80 shadow-sm border border-slate-200/50"
+          >
             <h3 className="text-2xl font-bold text-slate-900 mb-6">T2DM Cluster Distribution</h3>
             <ResponsiveContainer width="100%" height={300}>
               {clusterDist && clusterDist.length > 0 ? (
@@ -206,10 +241,17 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                 </div>
               )}
             </ResponsiveContainer>
-          </div>
+          </motion.div>
 
           {/* Biomarker Trends */}
-          <div className="glass-card p-8 bg-white/80 shadow-sm border border-slate-200/50">
+          <motion.div
+            variants={cardVariants}
+            initial="offscreen"
+            whileInView="onscreen"
+            viewport={{ once: true, amount: 0.3 }}
+            whileHover="hover"
+            className="glass-card p-8 bg-white/80 shadow-sm border border-slate-200/50"
+          >
             <h3 className="text-2xl font-bold text-slate-900 mb-6">Biomarker Trends</h3>
             <ResponsiveContainer width="100%" height={300}>
               {trends && trends.length > 0 ? (
@@ -249,56 +291,65 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                 </div>
               )}
             </ResponsiveContainer>
-          </div>
-        </div>
+          </motion.div>
+        </div >
 
         {/* Clinic Comparison Table */}
-        {clinics.length > 0 && (
-          <div className="glass-card p-8 overflow-x-auto bg-white/80 shadow-sm border border-slate-200/50">
-            <div className="flex items-center gap-3 mb-6">
-              <Building2 className="text-teal-600" size={24} />
-              <h3 className="text-2xl font-bold text-slate-900">Clinic Comparison</h3>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-slate-500 border-b border-slate-200">
-                  <th className="text-left py-3 px-4">Clinic</th>
-                  <th className="text-right py-3 px-4">Patients</th>
-                  <th className="text-right py-3 px-4">Assessments</th>
-                  <th className="text-right py-3 px-4">Avg Risk</th>
-                  <th className="text-right py-3 px-4">High Risk</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clinics.map((clinic) => (
-                  <tr
-                    key={clinic.clinic_id}
-                    className="border-b border-slate-200 text-slate-700 hover:bg-slate-50"
-                  >
-                    <td className="py-3 px-4 font-medium flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: COLORS[clinics.indexOf(clinic) % COLORS.length] }}
-                      />
-                      {clinic.clinic_name}
-                    </td>
-                    <td className="text-right py-3 px-4">{clinic.patient_count}</td>
-                    <td className="text-right py-3 px-4">{clinic.assessment_count}</td>
-                    <td className="text-right py-3 px-4">
-                      {clinic.avg_risk_score?.toFixed(1) || 'N/A'}%
-                    </td>
-                    <td className="text-right py-3 px-4">
-                      <span className={clinic.high_risk_count > 0 ? 'text-rose-600' : ''}>
-                        {clinic.high_risk_count}
-                      </span>
-                    </td>
+        {
+          clinics.length > 0 && (
+            <motion.div
+              variants={cardVariants}
+              initial="offscreen"
+              whileInView="onscreen"
+              viewport={{ once: true, amount: 0.3 }}
+              whileHover="hover"
+              className="glass-card p-8 overflow-x-auto bg-white/80 shadow-sm border border-slate-200/50"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <Building2 className="text-teal-600" size={24} />
+                <h3 className="text-2xl font-bold text-slate-900">Clinic Comparison</h3>
+              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-slate-500 border-b border-slate-200">
+                    <th className="text-left py-3 px-4">Clinic</th>
+                    <th className="text-right py-3 px-4">Patients</th>
+                    <th className="text-right py-3 px-4">Assessments</th>
+                    <th className="text-right py-3 px-4">Avg Risk</th>
+                    <th className="text-right py-3 px-4">High Risk</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                </thead>
+                <tbody>
+                  {clinics.map((clinic) => (
+                    <tr
+                      key={clinic.clinic_id}
+                      className="border-b border-slate-200 text-slate-700 hover:bg-slate-50"
+                    >
+                      <td className="py-3 px-4 font-medium flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: COLORS[clinics.indexOf(clinic) % COLORS.length] }}
+                        />
+                        {clinic.clinic_name}
+                      </td>
+                      <td className="text-right py-3 px-4">{clinic.patient_count}</td>
+                      <td className="text-right py-3 px-4">{clinic.assessment_count}</td>
+                      <td className="text-right py-3 px-4">
+                        {clinic.avg_risk_score?.toFixed(1) || 'N/A'}%
+                      </td>
+                      <td className="text-right py-3 px-4">
+                        <span className={clinic.high_risk_count > 0 ? 'text-rose-600' : ''}>
+                          {clinic.high_risk_count}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </motion.div>
+          )
+        }
+      </div >
     );
   };
 

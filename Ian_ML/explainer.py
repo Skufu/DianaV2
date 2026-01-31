@@ -3,7 +3,7 @@ DIANA SHAP Explainer Module
 Provides model interpretability using SHAP values.
 
 Usage:
-    from ml.explainer import SHAPExplainer
+    from Ian_ML.explainer import SHAPExplainer
     explainer = SHAPExplainer(model, scaler, feature_names)
     explanation = explainer.explain(features)
 """
@@ -223,7 +223,7 @@ def get_clinical_explainer() -> Optional[SHAPExplainer]:
     global _clinical_explainer
     if _clinical_explainer is None:
         try:
-            from ml.predict import CLINICAL_FEATURES, CLINICAL_MODELS_DIR
+            from Ian_ML.predict import CLINICAL_FEATURES, CLINICAL_MODELS_DIR
             
             model_path = CLINICAL_MODELS_DIR / "best_model.joblib"
             scaler_path = CLINICAL_MODELS_DIR / "scaler.joblib"
@@ -242,7 +242,7 @@ def get_ada_explainer() -> Optional[SHAPExplainer]:
     global _ada_explainer
     if _ada_explainer is None:
         try:
-            from ml.predict import REQUIRED_FEATURES
+            from Ian_ML.predict import REQUIRED_FEATURES
             
             models_dir = Path(__file__).parent.parent / "models"
             model_path = models_dir / "best_model.joblib"

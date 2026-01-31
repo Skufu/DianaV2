@@ -104,7 +104,7 @@ ML_PORT=${ML_PORT:-5001}
 echo -e "\n${YELLOW}[1/3] Starting ML Server...${NC}"
 kill_on_port $ML_PORT
 echo -e "${CYAN}   Port: $ML_PORT${NC}"
-$PYTHON ml/server.py &
+$PYTHON Ian_ML/server.py &
 ML_PID=$!
 sleep 2
 

@@ -68,7 +68,7 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
       initial="offscreen"
       whileInView="onscreen"
       viewport={{ once: true, amount: 0.3 }}
-      whileHover={{ y: -5, transition: { type: "spring", stiffness: 300 } }}
+      whileHover="hover"
       className="glass-card p-8 bg-white border border-diana-stone/50"
     >
       <div className="mb-6">

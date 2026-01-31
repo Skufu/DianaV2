@@ -174,7 +174,7 @@ const html2 = '<div>&lt;!--&gt;&lt;script&gt;alert(1)&lt;/script&gt;</div>';
 
 ## 3. ML Service Dependencies (Python)
 
-### Dependency File: `ml/requirements.txt`
+### Dependency File: `Ian_ML/requirements.txt`
 
 **Direct Dependencies:** 12
 
@@ -214,7 +214,7 @@ def require_api_key(f):
 
 **Current Implementation Analysis:**
 ```python
-# ml/server.py (lines 188-207):
+# Ian_ML/server.py (lines 188-207):
 def require_api_key(f):
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
@@ -236,7 +236,7 @@ def require_api_key(f):
    ```
 2. **Alternative:** Remove development mode bypass:
    ```python
-   # Update ml/server.py:
+   # Update Ian_ML/server.py:
    @app.before_request
    def check_env():
        if os.environ.get('ENV') == 'production' and not API_KEY:
@@ -304,7 +304,7 @@ npm audit --production
 # Python
 pip install safety
 safety check -r requirements.txt
-bandit -r ml/
+bandit -r Ian_ML/
 pip-audit
 ```
 
@@ -318,7 +318,7 @@ security-scan:
   - name: Run npm audit
     run: cd frontend && npm audit --production
   - name: Run Python security scan
-    run: safety check -r ml/requirements.txt
+    run: safety check -r Ian_ML/requirements.txt
 ```
 
 ### 4.2 Dependency Updates
@@ -366,7 +366,7 @@ require (
 ```
 
 ```python
-# ml/requirements.txt - Pin versions
+# Ian_ML/requirements.txt - Pin versions
 Flask==3.0.2  # Pin specific version
 pandas==2.2.0
 scikit-learn==1.4.0

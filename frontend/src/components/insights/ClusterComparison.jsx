@@ -93,6 +93,7 @@ const ClusterComparison = React.memo(({ clusters = [], isLoading = false }) => {
         initial="offscreen"
         whileInView="onscreen"
         viewport={{ once: true, amount: 0.3 }}
+        whileHover="hover"
         className="glass-card p-8 rounded-3xl shadow-sm border border-slate-600/30"
       >
         <div className="mb-6">
@@ -114,6 +115,7 @@ const ClusterComparison = React.memo(({ clusters = [], isLoading = false }) => {
       initial="offscreen"
       whileInView="onscreen"
       viewport={{ once: true, amount: 0.3 }}
+      whileHover="hover"
       className="glass-card p-8 bg-white border border-diana-stone/50"
     >
       <div className="mb-6">

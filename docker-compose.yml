@@ -55,7 +55,7 @@ services:
   # Python ML Server
   ml:
     build:
-      context: ./ml
+      context: ./Ian_ML
       dockerfile: Dockerfile
     container_name: diana-ml
     environment:

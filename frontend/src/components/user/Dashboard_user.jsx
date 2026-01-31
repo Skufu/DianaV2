@@ -90,7 +90,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
       {!isLoading && !error && (
         <>
           <motion.div variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div variants={cardVariants} className={`glass-card p-6 flex flex-col justify-between h-full ${assessments.length === 0 ? 'bg-diana-stone/50 border-dashed border-2 border-diana-sand' : 'bg-white'}`}>
+            <motion.div variants={cardVariants} whileHover="hover" className={`glass-card p-6 flex flex-col justify-between h-full ${assessments.length === 0 ? 'bg-diana-stone/50 border-dashed border-2 border-diana-sand' : 'bg-white'}`}>
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${assessments.length === 0 ? 'bg-diana-sand text-diana-text-muted' : 'bg-diana-stone text-diana-forest'}`}>
@@ -107,7 +107,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
               </div>
             </motion.div>
 
-            <motion.div variants={cardVariants} className="glass-card p-6 flex flex-col justify-between h-full bg-white">
+            <motion.div variants={cardVariants} whileHover="hover" className="glass-card p-6 flex flex-col justify-between h-full bg-white">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-diana-stone flex items-center justify-center text-diana-forest">
                   <TrendingUp size={20} />
@@ -123,7 +123,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
               )}
             </motion.div>
 
-            <motion.div variants={cardVariants} transformTemplate={({ scale }) => `scale(${scale})`} className="glass-card p-6 flex flex-col justify-between h-full bg-white">
+            <motion.div variants={cardVariants} whileHover="hover" transformTemplate={({ scale }) => `scale(${scale})`} className="glass-card p-6 flex flex-col justify-between h-full bg-white">
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl bg-diana-stone flex items-center justify-center text-amber-500">
@@ -150,7 +150,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
           <motion.div variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <motion.button
               variants={cardVariants}
-              whileHover={{ scale: isReduced ? 1 : 1.02, backgroundColor: "#ffffff" }}
+              whileHover="hover"
               whileTap={{ scale: isReduced ? 1 : 0.98 }}
               onClick={() => setActiveTab('profile')}
               className="glass-card p-6 text-left hover:border-diana-forest/30 transition-all group bg-white"
@@ -168,7 +168,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
 
             <motion.button
               variants={cardVariants}
-              whileHover={{ scale: isReduced ? 1 : 1.02, backgroundColor: "#ffffff" }}
+              whileHover="hover"
               whileTap={{ scale: isReduced ? 1 : 0.98 }}
               onClick={() => setActiveTab('trends')}
               className="glass-card p-6 text-left hover:border-diana-forest/30 transition-all group bg-white"
@@ -186,7 +186,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
 
             <motion.button
               variants={cardVariants}
-              whileHover={{ scale: isReduced ? 1 : 1.02, backgroundColor: "#ffffff" }}
+              whileHover="hover"
               whileTap={{ scale: isReduced ? 1 : 0.98 }}
               onClick={() => setActiveTab('export')}
               className="glass-card p-6 text-left hover:border-amber-400/30 transition-all group bg-white"
@@ -204,7 +204,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
 
             <motion.button
               variants={cardVariants}
-              whileHover={{ scale: isReduced ? 1 : 1.02, backgroundColor: "#ffffff" }}
+              whileHover="hover"
               whileTap={{ scale: isReduced ? 1 : 0.98 }}
               onClick={() => setActiveTab('profile')}
               className="glass-card p-6 text-left hover:border-diana-forest/30 transition-all group bg-white"

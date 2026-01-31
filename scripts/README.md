@@ -134,7 +134,7 @@ scripts/
 | `download_nhanes.sh` | Deprecated (Python version exists) | `data/download_nhanes_multi.py` |
 | `download_nhanes_py.py` | Superseded by multi-cycle version | `data/download_nhanes_multi.py` |
 | `process_nhanes.py` | Superseded by multi-cycle version | `data/process_nhanes_multi.py` |
-| `train_enhanced.py` | Superseded by `ml/train.py` | `ml/train.py` |
+| `train_enhanced.py` | Superseded by `Ian_ML/train.py` | `Ian_ML/train.py` |
 | `remove_bg.py` | Unrelated to DIANA (image utility) | N/A |
 
 ## Missing Scripts (Referenced But Not Implemented)
@@ -181,13 +181,13 @@ python scripts/data/download_lifestyle_data.py
 python scripts/data/process_nhanes_multi.py
 
 # 3. Clean and label
-python ml/data_processing.py
+python Ian_ML/data_processing.py
 
 # 4. Impute missing values
 python scripts/data/impute_missing_data.py
 
 # 5. Train classifiers
-python ml/train.py
+python Ian_ML/train.py
 
 # 6. Train clustering
 python scripts/train/train_clusters.py

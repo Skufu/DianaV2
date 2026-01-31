@@ -19,6 +19,8 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
     { id: 'export', icon: Download, label: 'Export Data' },
   ];
 
+  const [hoveredTab, setHoveredTab] = useState(null);
+
   const navItems = isAdmin ? adminNavItems : userNavItems;
 
   return (
@@ -83,32 +85,47 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
       )}
 
       {/* Navigation */}
-      <nav className={`flex-1 ${isCollapsed ? 'px-2' : 'px-3 lg:px-4'} space-y-1 mt-4`}>
+      <nav
+        className={`flex-1 ${isCollapsed ? 'px-2' : 'px-3 lg:px-4'} space-y-1 mt-4`}
+        onMouseLeave={() => setHoveredTab(null)}
+      >
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
+          const isHovered = hoveredTab === item.id;
           const Icon = item.icon;
           return (
             <motion.button
               key={item.id}
-              whileHover={{ x: isCollapsed ? 0 : 4 }}
+              onMouseEnter={() => setHoveredTab(item.id)}
               whileTap={{ scale: 0.98 }}
               whileFocus={{ x: 4, backgroundColor: "rgba(16, 185, 129, 0.1)" }}
               onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} gap-4 p-4 rounded-xl transition-all duration-200 group relative
                 ${isActive
                   ? 'text-diana-forest'
-                  : 'text-diana-text-secondary hover:text-diana-forest hover:bg-diana-stone'}`}
+                  : 'text-diana-text-secondary hover:text-diana-forest'}`}
             >
+              {/* Active Background */}
               {isActive && (
                 <motion.div
                   layoutId="sidebar-active"
-                  className="absolute inset-0 bg-diana-forest/5 rounded-xl"
+                  className="absolute inset-0 bg-diana-forest/5 rounded-xl z-10"
                   initial={false}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
 
-              <div className="relative z-10 flex items-center gap-4">
+              {/* Hover Background (Gliding Pill) */}
+              {isHovered && !isActive && (
+                <motion.div
+                  layoutId="sidebar-hover"
+                  className="absolute inset-0 bg-diana-stone rounded-xl z-0"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
+
+              <div className="relative z-20 flex items-center gap-4">
                 <Icon
                   size={22}
                   className={isActive ? 'text-diana-forest' : 'text-diana-text-muted group-hover:text-diana-forest transition-colors'}
@@ -133,7 +150,7 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
               {isActive && !isCollapsed && (
                 <motion.div
                   layoutId="sidebar-pip"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-diana-forest rounded-r-full hidden lg:block"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-diana-forest rounded-r-full hidden lg:block z-30"
                 />
               )}
             </motion.button>

@@ -22,8 +22,8 @@ done
 # Configuration (paths relative to project root)
 RALPH_DIR="ralph"
 CONTEXT_PIN="$RALPH_DIR/context_pin.md"
-PRD_FILE="$RALPH_DIR/prd_overnight_audit.md"
-TASK_FILE="$RALPH_DIR/task_list_overnight_audit.md"
+PRD_FILE="$RALPH_DIR/manuscript-merge/PRD.md"
+TASK_FILE="$RALPH_DIR/manuscript-merge/task_list.md"
 ERROR_LOG="$RALPH_DIR/error_log.txt"
 SYSTEM_RULES="$RALPH_DIR/system_rules.md"
 LOCK_FILE="$RALPH_DIR/.ralph.lock"

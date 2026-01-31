@@ -117,7 +117,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
       )}
 
       {(activeTrends.biomarkerHistory && activeTrends.biomarkerHistory.length > 0) && (
-        <motion.div variants={cardVariants} className="glass-card p-6 bg-white">
+        <motion.div variants={cardVariants} whileHover="hover" className="glass-card p-6 bg-white">
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">HbA1c Over Time</h2>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -158,7 +158,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
       )}
 
       {trends?.biomarkerHistory && trends.biomarkerHistory.length > 0 && (
-        <motion.div variants={cardVariants} className="glass-card p-6 bg-white">
+        <motion.div variants={cardVariants} whileHover="hover" className="glass-card p-6 bg-white">
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">Fasting Blood Sugar</h2>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -194,7 +194,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
       )}
 
       {activeTrends.clusterHistory && activeTrends.clusterHistory.length > 0 && (
-        <motion.div variants={cardVariants} className="glass-card p-6 bg-white">
+        <motion.div variants={cardVariants} whileHover="hover" className="glass-card p-6 bg-white">
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">Risk Evolution</h2>
           <div className="space-y-4">
             {activeTrends.clusterHistory.map((entry) => (
@@ -233,7 +233,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
       )}
 
       {activeTrends.riskLevels && (
-        <motion.div variants={cardVariants} className="glass-card p-6 bg-white">
+        <motion.div variants={cardVariants} whileHover="hover" className="glass-card p-6 bg-white">
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">Risk Distribution</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <motion.div whileHover={{ scale: isReduced ? 1 : 1.05 }} className="text-center p-6 bg-green-50 rounded-2xl border border-green-100">

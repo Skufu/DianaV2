@@ -3,7 +3,7 @@ DIANA MLflow Configuration Module
 Provides experiment tracking, model logging, and model registry utilities.
 
 Usage:
-    from ml.mlflow_config import MLflowManager
+    from Ian_ML.mlflow_config import MLflowManager
     
     manager = MLflowManager()
     with manager.start_run("training_run"):
