@@ -1,9 +1,12 @@
 // ModelTraceability: Display ML model version history
 import React, { useEffect, useState } from 'react';
 import { fetchModelRunsApi, fetchActiveModelApi } from '../../api';
-import { Cpu, Clock, Hash, FileText, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Cpu, Clock, Hash, FileText, CheckCircle, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
 
 const ModelTraceability = ({ token }) => {
+  const isReduced = useReducedMotion();
   const [activeModel, setActiveModel] = useState(null);
   const [modelRuns, setModelRuns] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -52,19 +55,26 @@ const ModelTraceability = ({ token }) => {
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
       {/* Header */}
-      <div>
+      <motion.div variants={fadeIn}>
         <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
           <Cpu className="text-violet-600" size={24} />
           Model Traceability
         </h3>
         <p className="text-slate-500 text-sm mt-1">ML model version history and dataset tracking</p>
-      </div>
+      </motion.div>
 
       {/* Active Model Card */}
       {activeModel && (
-        <div className="glass-card p-6 border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 bg-white/80 shadow-sm">
+        <motion.div
+          variants={cardVariants}
+          initial="offscreen"
+          whileInView="onscreen"
+          viewport={{ once: true, amount: 0.3 }}
+          whileHover="hover"
+          className="glass-card p-6 border border-emerald-200 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 bg-white/80 shadow-sm"
+        >
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center">
               <CheckCircle className="text-emerald-600" size={24} />
@@ -110,11 +120,19 @@ const ModelTraceability = ({ token }) => {
               <p className="text-slate-700">{activeModel.notes}</p>
             </div>
           )}
-        </div>
+        </motion.div>
+
       )}
 
       {/* Model History */}
-      <div className="glass-card overflow-hidden bg-white/80 shadow-sm border border-slate-200/50">
+      <motion.div
+        variants={cardVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.3 }}
+        whileHover="hover"
+        className="glass-card overflow-hidden bg-white/80 shadow-sm border border-slate-200/50"
+      >
         <div className="px-6 py-4 border-b border-slate-200">
           <h4 className="text-lg font-semibold text-slate-900">Training History</h4>
         </div>
@@ -138,39 +156,52 @@ const ModelTraceability = ({ token }) => {
                   </td>
                 </tr>
               ) : (
-                modelRuns.map(run => (
-                  <tr key={run.id} className="border-b border-slate-200 hover:bg-slate-50">
-                    <td className="px-6 py-4">
-                      <span className="font-mono text-slate-900">{run.model_version}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className="font-mono text-slate-500 text-sm truncate block max-w-[200px]"
-                        title={run.dataset_hash}
-                      >
-                        {run.dataset_hash || 'N/A'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">
-                      {new Date(run.created_at).toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 text-slate-500 max-w-[300px] truncate">
-                      {run.notes || '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      {run.is_active ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-600 rounded text-xs font-medium">
-                          <CheckCircle size={12} />
-                          Active
+                <motion.tbody
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {modelRuns.map(run => (
+                    <motion.tr
+                      key={run.id}
+                      variants={{
+                        hidden: { opacity: 0, x: isReduced ? 0 : -20 },
+                        visible: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } }
+                      }}
+                      className="border-b border-slate-200 hover:bg-slate-50"
+                    >
+                      <td className="px-6 py-4">
+                        <span className="font-mono text-slate-900">{run.model_version}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className="font-mono text-slate-500 text-sm truncate block max-w-[200px]"
+                          title={run.dataset_hash}
+                        >
+                          {run.dataset_hash || 'N/A'}
                         </span>
-                      ) : (
-                        <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-xs font-medium">
-                          Historical
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">
+                        {new Date(run.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 text-slate-500 max-w-[300px] truncate">
+                        {run.notes || '-'}
+                      </td>
+                      <td className="px-6 py-4">
+                        {run.is_active ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-600 rounded text-xs font-medium">
+                            <CheckCircle size={12} />
+                            Active
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-slate-100 text-slate-500 rounded text-xs font-medium">
+                            Historical
+                          </span>
+                        )}
+                      </td>
+                    </motion.tr>
+                  ))}
+                </motion.tbody>
               )}
             </tbody>
           </table>
@@ -203,8 +234,8 @@ const ModelTraceability = ({ token }) => {
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

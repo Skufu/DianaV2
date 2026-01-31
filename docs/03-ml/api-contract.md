@@ -3,7 +3,7 @@
 This document specifies the HTTP contract between DianaV2 and the external ML inference service used to score patient assessments.
 
 ## Endpoint & Transport
-- Method/URL: `POST MODEL_URL` (environment variable `MODEL_URL`).
+- Method/URL: `POST /predict` with optional query parameter `?model_type=ada` or `?model_type=clinical`
 - Timeout: `MODEL_TIMEOUT_MS` (ms) applies to the entire HTTP request.
 - Auth: none currently enforced by the backend; add if the model service requires it.
 
@@ -12,60 +12,110 @@ This document specifies the HTTP contract between DianaV2 and the external ML in
 - `X-Model-Version: <string>` (sent when `MODEL_VERSION` is non-empty)
 
 ## Request Schema (JSON)
-Payload shape matches `internal/models.Assessment`. Fields sent by the backend:
 
-| Field | Type | Units / Notes |
-| --- | --- | --- |
-| patient_id | integer | Internal patient identifier |
-| fbs | number | mg/dL |
-| hba1c | number | % |
-| cholesterol | integer | mg/dL |
-| ldl | integer | mg/dL |
-| hdl | integer | mg/dL |
-| triglycerides | integer | mg/dL |
-| systolic | integer | mmHg |
-| diastolic | integer | mmHg |
-| activity | string | e.g., "low", "moderate" |
-| history_flag | boolean | Patient history present |
-| smoking | string | e.g., "never", "former", "current" |
-| hypertension | string | free text flag |
-| heart_disease | string | free text flag |
-| bmi | number | kg/m² |
-| model_version | string | Copied from env `MODEL_VERSION` |
-| dataset_hash | string | Copied from env `DATASET_HASH` (if set) |
-| validation_status | string | `ok` or `warning:<comma-separated-flags>` |
+### ADA Model (Default) - 6 Required Fields
+
+The ADA model accepts these 6 biomarker fields:
+
+| Field | Type | Units / Notes | Required |
+| --- | --- | --- | --- |
+| hba1c | number | % (Glycated hemoglobin) | ✅ Yes |
+| fbs | number | mg/dL (Fasting blood glucose) | ✅ Yes |
+| bmi | number | kg/m² (Body mass index) | ✅ Yes |
+| triglycerides | integer | mg/dL | ✅ Yes |
+| ldl | integer | mg/dL (Low-density lipoprotein) | ✅ Yes |
+| hdl | integer | mg/dL (High-density lipoprotein) | ✅ Yes |
 
 Example request:
 ```json
 {
-  "patient_id": 42,
-  "fbs": 118,
   "hba1c": 6.2,
-  "cholesterol": 205,
+  "fbs": 118,
+  "bmi": 29.4,
+  "triglycerides": 180,
+  "ldl": 132,
+  "hdl": 48
+}
+```
+
+### Clinical Model - 5 Required Fields
+
+The Clinical model (non-circular, no HbA1c/FBS) accepts these 5 fields:
+
+| Field | Type | Units / Notes | Required |
+| --- | --- | --- | --- |
+| bmi | number | kg/m² (Body mass index) | ✅ Yes |
+| triglycerides | integer | mg/dL | ✅ Yes |
+| ldl | integer | mg/dL (Low-density lipoprotein) | ✅ Yes |
+| hdl | integer | mg/dL (High-density lipoprotein) | ✅ Yes |
+| age | integer | years | ✅ Yes |
+
+Example request:
+```json
+{
+  "bmi": 29.4,
+  "triglycerides": 180,
   "ldl": 132,
   "hdl": 48,
-  "triglycerides": 180,
-  "systolic": 138,
-  "diastolic": 86,
-  "activity": "moderate",
-  "history_flag": true,
-  "smoking": "former",
-  "hypertension": "yes",
-  "heart_disease": "no",
-  "bmi": 29.4,
-  "model_version": "v1",
-  "dataset_hash": "abc123",
-  "validation_status": "warning:fbs_prediabetic_range,hba1c_prediabetic_range"
+  "age": 55
 }
 ```
 
 ## Response Schema
-- Success (HTTP 200):
-  ```json
-  { "risk_cluster": "<non-empty string>", "risk_score": <int> }
-  ```
-  - `risk_cluster` must be non-empty; otherwise treated as an error.
-  - `risk_score` is an integer (0 is acceptable).
+
+### Success Response (HTTP 200)
+
+The API returns different response structures depending on the model type:
+
+#### ADA Model Response
+```json
+{
+  "success": true,
+  "medical_status": "Pre-diabetic",
+  "risk_cluster": "MODERATE",
+  "risk_level": "MODERATE",
+  "risk_score": 65,
+  "probability": 0.652,
+  "confidence": 0.652,
+  "model_info": {
+    "n_clusters": 4,
+    "classifier_accuracy": 0.85
+  }
+}
+```
+
+#### Clinical Model Response
+```json
+{
+  "success": true,
+  "model_type": "clinical",
+  "predicted_status": "Pre-diabetic",
+  "risk_cluster": "MODERATE",
+  "probability": 0.58,
+  "risk_score": 58,
+  "confidence": 0.58,
+  "model_info": {
+    "classifier": "XGBoost",
+    "auc_roc": 0.6732,
+    "features_used": ["bmi", "triglycerides", "ldl", "hdl", "age"],
+    "note": "Non-circular model (no HbA1c/FBS in features)"
+  }
+}
+```
+
+### Response Field Descriptions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | boolean | Whether the prediction was successful |
+| `medical_status` / `predicted_status` | string | Diabetes classification: "Normal", "Pre-diabetic", or "Diabetic" |
+| `risk_cluster` | string | Risk cluster assignment (e.g., "SIRD", "SIDD", "MOD", "MARD" or "HIGH", "MODERATE", "LOW") |
+| `risk_level` | string | Simplified risk level: "HIGH", "MODERATE", or "LOW" (ADA model only) |
+| `risk_score` | integer | Risk score from 0-100 (derived from probability) |
+| `probability` | float | Diabetes probability (0.0 to 1.0) from classifier |
+| `confidence` | float | Confidence score (max probability from classifier) |
+| `model_info` | object | Model metadata including classifier type, accuracy, and feature information |
+| `error` | string | Error message if `success` is false |
 
 ## Error & Timeout Handling (backend behavior)
 - Any non-200 status, network error, timeout, JSON decode failure, or empty `cluster` results in the backend treating the model call as failed.
@@ -82,7 +132,7 @@ Example request:
 
 ## Cluster Definitions (per Research Paper)
 
-The model should return one of the following cluster assignments based on the research paper's diabetes subtype classification for menopausal women:
+The model returns one of the following cluster assignments based on the research paper's diabetes subtype classification for menopausal women:
 
 | Cluster | Full Name | Characteristics | Risk Level |
 |---------|-----------|-----------------|------------|
@@ -102,11 +152,19 @@ ELSE → MOD (risk_score: 25-40)
 
 ## Input Validation
 
-The backend performs input validation before calling the model. The `validation_status` field in the request indicates:
-- `ok`: All biomarkers within normal ranges
-- `warning:<codes>`: Comma-separated warning codes (e.g., `fbs_prediabetic_range,hba1c_elevated`)
+The backend performs input validation before calling the model. Valid input ranges:
 
-Warning codes include:
+| Field | Valid Range |
+|-------|-------------|
+| `hba1c` | 2.0 - 20.0 % |
+| `fbs` | 20 - 600 mg/dL |
+| `bmi` | 10 - 80 kg/m² |
+| `triglycerides` | 20 - 1500 mg/dL |
+| `ldl` | 10 - 400 mg/dL |
+| `hdl` | 10 - 150 mg/dL |
+| `age` | 18 - 120 years |
+
+Warning codes for borderline values:
 - `fbs_prediabetic_range` (FBS 100-125 mg/dL)
 - `fbs_diabetic_range` (FBS ≥126 mg/dL)
 - `hba1c_prediabetic` (HbA1c 5.7-6.4%)

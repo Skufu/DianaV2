@@ -4,7 +4,7 @@ Provides functions for making predictions on new patient data.
 Returns BOTH medical status and risk cluster per paper requirements.
 
 Usage:
-    from ml.predict import DianaPredictor
+    from Ian_ML.predict import DianaPredictor
     predictor = DianaPredictor()
     result = predictor.predict(patient_data)
 """

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { navLabelVariants } from '../../utils/animations';
 
 const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsCollapsed }) => {
+  const [hoveredView, setHoveredView] = React.useState(null);
   const navItems = [
     { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
     { id: 'users', icon: Users, label: 'User Management' },
@@ -50,32 +51,46 @@ const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsC
       </div>
 
       {/* Navigation */}
-      <nav className={`flex-1 ${isCollapsed ? 'px-2' : 'px-3 lg:px-4'} space-y-1 mt-6`}>
+      <nav
+        className={`flex-1 ${isCollapsed ? 'px-2' : 'px-3 lg:px-4'} space-y-1 mt-6`}
+        onMouseLeave={() => setHoveredView(null)}
+      >
         {navItems.map((item) => {
           const isActive = activeView === item.id;
+          const isHovered = hoveredView === item.id;
           const Icon = item.icon;
           return (
             <motion.button
               key={item.id}
-              whileHover={{ x: isCollapsed ? 0 : 4 }}
+              onMouseEnter={() => setHoveredView(item.id)}
               whileTap={{ scale: 0.98 }}
               whileFocus={{ x: isCollapsed ? 0 : 4, backgroundColor: "rgba(79, 70, 229, 0.1)" }}
               onClick={() => setActiveView(item.id)}
               className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} gap-4 p-4 rounded-xl transition-all duration-200 group relative
                 ${isActive
                   ? 'text-indigo-600'
-                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                  : 'text-slate-500 hover:text-slate-900'}`}
             >
               {isActive && (
                 <motion.div
                   layoutId="admin-sidebar-active"
-                  className="absolute inset-0 bg-indigo-50 rounded-xl"
+                  className="absolute inset-0 bg-indigo-50 rounded-xl z-10"
                   initial={false}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
 
-              <div className="relative z-10 flex items-center gap-4">
+              {/* Hover Background (Gliding Pill) */}
+              {isHovered && !isActive && (
+                <motion.div
+                  layoutId="admin-sidebar-hover"
+                  className="absolute inset-0 bg-slate-50 rounded-xl z-0"
+                  initial={false}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              )}
+
+              <div className="relative z-20 flex items-center gap-4">
                 <Icon
                   size={20}
                   className={isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600 transition-colors'}
@@ -98,7 +113,7 @@ const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsC
               {isActive && !isCollapsed && (
                 <motion.div
                   layoutId="admin-sidebar-pip"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-l-full hidden lg:block"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-l-full hidden lg:block z-30"
                 />
               )}
             </motion.button>

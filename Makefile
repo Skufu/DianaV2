@@ -70,10 +70,10 @@ debug-neon:
 
 # ML targets
 ml:
-	$(PYTHON) ml/server.py
+	$(PYTHON) Ian_ML/server.py
 
 ml-train:
-	$(PYTHON) ml/train.py
+	$(PYTHON) Ian_ML/train.py
 
 # Start all services (ML + Backend + Frontend)
 start-all:

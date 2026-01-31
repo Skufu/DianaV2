@@ -167,12 +167,12 @@ else
 fi
 
 print_step "Installing ML dependencies into venv..."
-if [ -f "ml/requirements.txt" ]; then
+if [ -f "Ian_ML/requirements.txt" ]; then
   python -m pip install --upgrade pip
-  pip install -r ml/requirements.txt
+  pip install -r Ian_ML/requirements.txt
   print_success "ML dependencies installed"
 else
-  print_warning "ml/requirements.txt not found. Skipping ML dependency install."
+  print_warning "Ian_ML/requirements.txt not found. Skipping ML dependency install."
 fi
 echo ""
 

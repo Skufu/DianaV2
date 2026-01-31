@@ -49,7 +49,7 @@ def test_server_decorator():
     """Verify server.py uses @require_api_key on protected endpoints"""
     print("\n3. Checking ML server endpoint protection...")
 
-    with open('../ml/server.py', 'r') as f:
+    with open('../Ian_ML/server.py', 'r') as f:
         content = f.read()
 
     # Check for decorator usage on key endpoints

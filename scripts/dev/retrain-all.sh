@@ -109,7 +109,7 @@ echo -e "${GREEN}✓ Raw data processing complete${NC}"
 echo ""
 echo -e "${BLUE}Step 2/6: Cleaning and labeling data...${NC}"
 echo "------------------------------------------------------------"
-python ml/data_processing.py
+python Ian_ML/data_processing.py
 if [ $? -ne 0 ]; then
     echo -e "${RED}ERROR: Data cleaning failed${NC}"
     exit 1
@@ -131,7 +131,7 @@ echo -e "${GREEN}✓ Imputation complete${NC}"
 echo ""
 echo -e "${BLUE}Step 4/6: Training ML models...${NC}"
 echo "------------------------------------------------------------"
-python ml/train.py
+python Ian_ML/train.py
 if [ $? -ne 0 ]; then
     echo -e "${RED}ERROR: Model training failed${NC}"
     exit 1

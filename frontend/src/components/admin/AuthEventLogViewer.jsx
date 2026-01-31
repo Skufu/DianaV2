@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, fadeIn, slideUp, useReducedMotion } from '../../utils/animations';
+import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
 
 const AuthEventLogViewer = ({ token }) => {
   const isReduced = useReducedMotion();
@@ -274,7 +274,14 @@ const AuthEventLogViewer = ({ token }) => {
         </div>
       )}
 
-      <div className="glass-card p-4 bg-white/80 shadow-sm border border-slate-200/50">
+      <motion.div
+        variants={cardVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.3 }}
+        whileHover="hover"
+        className="glass-card p-4 bg-white/80 shadow-sm border border-slate-200/50"
+      >
         <button
           onClick={() => setShowFilters(!showFilters)}
           className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-4"
@@ -348,9 +355,17 @@ const AuthEventLogViewer = ({ token }) => {
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <div className="flex items-center justify-between glass-card px-4 py-3 bg-white/80 shadow-sm border border-slate-200/50">
+
+      <motion.div
+        variants={cardVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.3 }}
+        whileHover="hover"
+        className="flex items-center justify-between glass-card px-4 py-3 bg-white/80 shadow-sm border border-slate-200/50"
+      >
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 text-slate-500 text-sm cursor-pointer">
             <input
@@ -363,9 +378,17 @@ const AuthEventLogViewer = ({ token }) => {
           </label>
         </div>
         <div className="text-slate-500 text-sm">Showing {filteredEvents.length} events</div>
-      </div>
+      </motion.div>
 
-      <div className="glass-card overflow-hidden bg-white/80 shadow-sm border border-slate-200/50">
+
+      <motion.div
+        variants={cardVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.3 }}
+        whileHover="hover"
+        className="glass-card overflow-hidden bg-white/80 shadow-sm border border-slate-200/50"
+      >
         <AnimatePresence mode="wait">
           {loading ? (
             <motion.div
@@ -556,7 +579,7 @@ const AuthEventLogViewer = ({ token }) => {
             </div>
           )}
         </AnimatePresence>
-      </div>
+      </motion.div>
     </div>
   );
 };

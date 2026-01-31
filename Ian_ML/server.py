@@ -22,7 +22,7 @@ Endpoints:
     POST /models/<id>/promote - Promote to production
 
 Usage:
-    python ml/server.py
+    python Ian_ML/server.py
     
 Environment:
     ML_PORT: Port to run on (default: 5000)
@@ -44,7 +44,7 @@ from flask_cors import CORS
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ml.predict import DianaPredictor, ClinicalPredictor, REQUIRED_FEATURES, CLINICAL_FEATURES
+from Ian_ML.predict import DianaPredictor, ClinicalPredictor, REQUIRED_FEATURES, CLINICAL_FEATURES
 
 # Configuration
 MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB max request size
@@ -53,25 +53,25 @@ API_KEY = os.environ.get('ML_API_KEY')  # API key for authentication (required i
 
 # Import new ML infrastructure modules
 try:
-    from ml.explainability import SHAPExplainer, format_for_clinician
+    from Ian_ML.explainability import SHAPExplainer, format_for_clinician
     SHAP_AVAILABLE = True
 except ImportError:
     SHAP_AVAILABLE = False
 
 try:
-    from ml.ab_testing import get_ab_manager, ABTestConfig
+    from Ian_ML.ab_testing import get_ab_manager, ABTestConfig
     AB_TESTING_AVAILABLE = True
 except ImportError:
     AB_TESTING_AVAILABLE = False
 
 try:
-    from ml.drift_detection import get_drift_monitor
+    from Ian_ML.drift_detection import get_drift_monitor
     DRIFT_AVAILABLE = True
 except ImportError:
     DRIFT_AVAILABLE = False
 
 try:
-    from ml.mlflow_config import get_mlflow_manager
+    from Ian_ML.mlflow_config import get_mlflow_manager
     MLFLOW_AVAILABLE = True
 except ImportError:
     MLFLOW_AVAILABLE = False

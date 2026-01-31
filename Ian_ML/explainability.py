@@ -3,7 +3,7 @@ DIANA Explainability Module
 Provides SHAP-based explanations for diabetes risk predictions.
 
 Usage:
-    from ml.explainability import SHAPExplainer
+    from Ian_ML.explainability import SHAPExplainer
     
     explainer = SHAPExplainer(model)
     explanation = explainer.explain(features, feature_names)

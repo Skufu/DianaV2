@@ -12,9 +12,13 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
+type PDFReportGenerator interface {
+	GenerateHealthReport(user models.UserProfile, assessments []models.Assessment) ([]byte, error)
+}
+
 type ExportHandler struct {
 	store      store.Store
-	pdfService *services.PDFExportService
+	pdfService PDFReportGenerator
 }
 
 // NewExportHandler creates a new export handler with PDF service
