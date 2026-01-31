@@ -7,7 +7,7 @@
 ## Prerequisites
 - [x] Subtask: Read ralph/manuscript-merge/PRD.md - Verify file exists and is readable
 - [x] Subtask: Verify PRD.md contains key requirements - Check for target file name, section order, line count requirements
-- [ ] Subtask: Document requirements summary - Create ralph/manuscript-merge/prd_summary.md with extracted constraints
+- [x] Subtask: Document requirements summary - Create ralph/manuscript-merge/prd_summary.md with extracted constraints
 - [ ] Verify all source files exist: splitPaper/*.md
 
 ---
