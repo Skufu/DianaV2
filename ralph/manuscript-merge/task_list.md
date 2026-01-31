@@ -28,7 +28,7 @@
 - [x] Merge Manuscript_part1.md content - Add with `<!-- SECTION: Introduction -->` comment
 - [x] Merge manuscript_part2.md content - Add with `<!-- SECTION: Review of Literature -->` comment
 - [x] Merge manuscript_part3.md content - Add with `<!-- SECTION: Methodology -->` comment
-- [ ] Merge Transcript.md content - Add with `<!-- SECTION: Expert Interviews -->` comment
+- [x] Merge Transcript.md content - Add with `<!-- SECTION: Expert Interviews -->` comment
 - [ ] Consolidate References section - Merge all references from all parts
 
 ---
