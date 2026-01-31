@@ -80,12 +80,10 @@ const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsC
                 />
               )}
 
-              {/* Hover Background (Gliding Pill) */}
               {isHovered && !isActive && (
                 <motion.div
                   layoutId="admin-sidebar-hover"
                   className="absolute inset-0 bg-slate-50 rounded-xl z-0"
-                  initial={false}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
