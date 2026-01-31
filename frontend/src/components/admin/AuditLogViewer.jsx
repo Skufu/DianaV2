@@ -278,7 +278,7 @@ const AuditLogViewer = ({ token }) => {
                                 initial={{ opacity: 0, height: 0, y: -10 }}
                                 animate={{ opacity: 1, height: "auto", y: 0 }}
                                 exit={{ opacity: 0, height: 0, y: -10 }}
-                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 className="overflow-hidden"
                               >
                                 <div className="px-8 py-4 text-sm">

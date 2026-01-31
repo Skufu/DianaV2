@@ -120,7 +120,6 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
                 <motion.div
                   layoutId="sidebar-hover"
                   className="absolute inset-0 bg-diana-stone rounded-xl z-0"
-                  initial={false}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
