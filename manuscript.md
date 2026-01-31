@@ -1273,6 +1273,8 @@ interpretability of the system's risk predictions and visualizations using a str
 survey. Their feedback ensures that the tool aligns with clinical practice needs and supports
 informed decision-making in the Philippine healthcare context.
 
+<!-- SECTION: Methodology -->
+
 **Data Gathering Tools and Procedures**
 
 The study will utilize de-identified patient records from selected hospitals in the
