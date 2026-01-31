@@ -21,7 +21,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, fadeIn, slideUp, useReducedMotion } from '../../utils/animations';
+import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
 
 const UserManagement = ({ token }) => {
   const isReduced = useReducedMotion();
@@ -225,7 +225,14 @@ const UserManagement = ({ token }) => {
       </AnimatePresence>
 
       {/* Filters */}
-      <motion.div variants={slideUp} className="glass-card p-4 bg-white/80 shadow-sm border border-slate-200/50">
+      <motion.div
+        variants={cardVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.3 }}
+        whileHover="hover"
+        className="glass-card p-4 bg-white/80 shadow-sm border border-slate-200/50"
+      >
         <form onSubmit={handleSearch} className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[200px]">
             <label htmlFor="user-search" className="text-slate-600 text-sm block mb-1">
@@ -297,7 +304,14 @@ const UserManagement = ({ token }) => {
       </motion.div>
 
       {/* Users Table */}
-      <motion.div variants={fadeIn} className="glass-card overflow-hidden bg-white/80 shadow-sm border border-slate-200/50">
+      <motion.div
+        variants={cardVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.3 }}
+        whileHover="hover"
+        className="glass-card overflow-hidden bg-white/80 shadow-sm border border-slate-200/50"
+      >
         {loading ? (
           <div className="p-12 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full mx-auto" />

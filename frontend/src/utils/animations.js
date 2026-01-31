@@ -154,6 +154,16 @@ export const cardVariants = {
           bounce: 0.2,
           duration: 0.6
         }
+  },
+  hover: {
+    y: -5,
+    scale: 1.02,
+    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 25
+    }
   }
 };
 

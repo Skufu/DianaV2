@@ -12,7 +12,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, fadeIn, slideUp, useReducedMotion } from '../../utils/animations';
+import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
 
 const AuditLogViewer = ({ token }) => {
   const isReduced = useReducedMotion();
@@ -106,7 +106,14 @@ const AuditLogViewer = ({ token }) => {
       </motion.div>
 
       {/* Filters */}
-      <motion.div variants={slideUp} className="glass-card p-4 bg-white/80 shadow-sm border border-slate-200/50">
+      <motion.div
+        variants={cardVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.3 }}
+        whileHover="hover"
+        className="glass-card p-4 bg-white/80 shadow-sm border border-slate-200/50"
+      >
         <form onSubmit={handleSearch} className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[150px]">
             <label htmlFor="audit-actor-search" className="text-slate-600 text-sm block mb-1">
@@ -196,7 +203,14 @@ const AuditLogViewer = ({ token }) => {
       )}
 
       {/* Events Table */}
-      <motion.div variants={fadeIn} className="glass-card overflow-hidden bg-white/80 shadow-sm border border-slate-200/50">
+      <motion.div
+        variants={cardVariants}
+        initial="offscreen"
+        whileInView="onscreen"
+        viewport={{ once: true, amount: 0.3 }}
+        whileHover="hover"
+        className="glass-card overflow-hidden bg-white/80 shadow-sm border border-slate-200/50"
+      >
         {loading ? (
           <div className="p-12 text-center">
             <div className="animate-spin w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full mx-auto" />
@@ -254,21 +268,25 @@ const AuditLogViewer = ({ token }) => {
                       <AnimatePresence>
                         {expandedRows.has(event.id) && event.details && (
                           <motion.tr
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0, transition: { delay: 0.2 } }}
                             className="bg-slate-50"
                           >
-                            <td colSpan="5" className="px-8 py-4">
+                            <td colSpan="5" className="p-0 border-0">
                               <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-sm"
+                                initial={{ opacity: 0, height: 0, y: -10 }}
+                                animate={{ opacity: 1, height: "auto", y: 0 }}
+                                exit={{ opacity: 0, height: 0, y: -10 }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                className="overflow-hidden"
                               >
-                                <h4 className="text-slate-600 mb-2 font-medium">Details:</h4>
-                                <pre className="bg-slate-100 p-3 rounded text-slate-700 overflow-x-auto text-xs border border-slate-200">
-                                  {JSON.stringify(event.details, null, 2)}
-                                </pre>
+                                <div className="px-8 py-4 text-sm">
+                                  <h4 className="text-slate-600 mb-2 font-medium">Details:</h4>
+                                  <pre className="bg-slate-100 p-3 rounded text-slate-700 overflow-x-auto text-xs border border-slate-200">
+                                    {JSON.stringify(event.details, null, 2)}
+                                  </pre>
+                                </div>
                               </motion.div>
                             </td>
                           </motion.tr>
