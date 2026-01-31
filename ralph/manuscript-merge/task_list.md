@@ -24,7 +24,7 @@
 
 ## Phase 2: Structured Merging (HIGH)
 
-- [ ] Create manuscript.md with NHANES comment header - Add `<!-- NHANES should now be the data -->`
+- [x] Create manuscript.md with NHANES comment header - Add `<!-- NHANES should now be the data -->`
 - [ ] Merge Manuscript_part1.md content - Add with `<!-- SECTION: Introduction -->` comment
 - [ ] Merge manuscript_part2.md content - Add with `<!-- SECTION: Review of Literature -->` comment
 - [ ] Merge manuscript_part3.md content - Add with `<!-- SECTION: Methodology -->` comment

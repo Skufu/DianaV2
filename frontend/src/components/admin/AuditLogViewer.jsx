@@ -217,7 +217,7 @@ const AuditLogViewer = ({ token }) => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full border-separate border-spacing-y-0 relative">
               <thead>
                 <tr className="border-b border-slate-200 text-left">
                   <th className="px-4 py-3 text-slate-500 font-medium w-8" />
@@ -243,9 +243,15 @@ const AuditLogViewer = ({ token }) => {
                     <React.Fragment key={event.id}>
                       <motion.tr
                         variants={rowVariants}
-                        className="border-b border-slate-200 hover:bg-slate-50 cursor-pointer"
+                        className="border-b border-slate-200 cursor-pointer"
                         onClick={() => toggleExpand(event.id)}
-                        whileHover={{ backgroundColor: "#F8FAFC" }} // slate-50
+                        whileHover={{
+                          backgroundColor: "#F8FAFC",
+                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                          y: -2,
+                          zIndex: 10,
+                        }}
+                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
                       >
                         <td className="px-4 py-3 text-slate-500">
                           {event.details &&
