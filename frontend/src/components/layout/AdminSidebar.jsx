@@ -66,7 +66,7 @@ const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsC
               whileTap={{ scale: 0.98 }}
               whileFocus={{ x: isCollapsed ? 0 : 4, backgroundColor: "rgba(79, 70, 229, 0.1)" }}
               onClick={() => setActiveView(item.id)}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} gap-4 p-4 rounded-xl transition-all duration-200 group relative
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} gap-4 p-4 rounded-xl relative
                 ${isActive
                   ? 'text-indigo-600'
                   : 'text-slate-500 hover:text-slate-900'}`}
@@ -80,10 +80,11 @@ const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsC
                 />
               )}
 
-              {isHovered && !isActive && (
+              {isHovered && (
                 <motion.div
                   layoutId="admin-sidebar-hover"
                   className="absolute inset-0 bg-slate-50 rounded-xl z-0"
+                  animate={{ opacity: isActive ? 0 : 1 }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
