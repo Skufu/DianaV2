@@ -64,7 +64,8 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
             onClick={onStartAssessment}
             className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-center lg:justify-start'} gap-3 py-3.5 px-4 rounded-xl font-bold text-white
                        bg-diana-forest hover:bg-diana-forest-light hover:shadow-md
-                       transition-all`}
+                       bg-diana-forest hover:bg-diana-forest-light hover:shadow-md
+                       transition-colors duration-200`}
           >
             <Plus size={20} className="stroke-[3px]" />
             <AnimatePresence mode="wait">
@@ -100,7 +101,7 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
               whileTap={{ scale: 0.98 }}
               whileFocus={{ x: 4, backgroundColor: "rgba(16, 185, 129, 0.1)" }}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} gap-4 p-4 rounded-xl transition-all duration-200 group relative
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} gap-4 p-4 rounded-xl relative
                 ${isActive
                   ? 'text-diana-forest'
                   : 'text-diana-text-secondary hover:text-diana-forest'}`}
@@ -116,10 +117,11 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
               )}
 
               {/* Hover Background (Gliding Pill) */}
-              {isHovered && !isActive && (
+              {isHovered && (
                 <motion.div
                   layoutId="sidebar-hover"
                   className="absolute inset-0 bg-diana-stone rounded-xl z-0"
+                  animate={{ opacity: isActive ? 0 : 1 }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
