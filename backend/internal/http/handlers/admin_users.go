@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
+	"github.com/skufu/DianaV2/backend/internal/http/sse"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 	"golang.org/x/crypto/bcrypt"
@@ -14,12 +15,13 @@ import (
 
 // AdminUsersHandler handles admin user management operations
 type AdminUsersHandler struct {
-	store store.Store
+	store  store.Store
+	broker *sse.Broker
 }
 
 // NewAdminUsersHandler creates a new AdminUsersHandler
-func NewAdminUsersHandler(store store.Store) *AdminUsersHandler {
-	return &AdminUsersHandler{store: store}
+func NewAdminUsersHandler(store store.Store, broker *sse.Broker) *AdminUsersHandler {
+	return &AdminUsersHandler{store: store, broker: broker}
 }
 
 // Register registers admin user routes on the given router group
@@ -162,6 +164,17 @@ func (h *AdminUsersHandler) createUser(c *gin.Context) {
 		// Log audit error but don't fail the response
 		// In production, this should be sent to a monitoring system
 		// TODO: Implement proper async audit logging with retry
+	}
+
+	// Publish user creation event for real-time tracking
+	if h.broker != nil {
+		h.broker.PublishAuthEvent("user_created", createdUser.Email, c.ClientIP(), c.GetHeader("User-Agent"), true, map[string]any{
+			"user_id":        createdUser.ID,
+			"role":           createdUser.Role,
+			"created_by":     claims.Email,
+			"creator_id":     claims.UserID,
+			"is_self_signup": false,
+		})
 	}
 
 	c.JSON(http.StatusCreated, createdUser)

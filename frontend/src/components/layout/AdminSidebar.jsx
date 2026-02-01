@@ -112,7 +112,8 @@ const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsC
               {isActive && !isCollapsed && (
                 <motion.div
                   layoutId="admin-sidebar-pip"
-                  className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-l-full hidden lg:block z-30"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-r-full hidden lg:block z-30"
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
             </motion.button>

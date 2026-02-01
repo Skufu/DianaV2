@@ -15,6 +15,7 @@ import {
   X,
   Filter,
   Calendar,
+  UserPlus,
 } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,7 +30,7 @@ const AuthEventLogViewer = ({ token }) => {
   const [autoScroll, setAutoScroll] = useState(true);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [filters, setFilters] = useState({
-    eventType: '', // login, logout, failed_login, token_refresh
+    eventType: '', // login, logout, failed_login, token_refresh, user_created
     user: '',
     dateFrom: '',
     dateTo: '',
@@ -160,6 +161,12 @@ const AuthEventLogViewer = ({ token }) => {
         icon: RefreshCw,
         color: 'text-blue-600',
         bg: 'bg-blue-100',
+      },
+      user_created: {
+        label: 'User Created',
+        icon: UserPlus,
+        color: 'text-emerald-600',
+        bg: 'bg-emerald-100',
       },
     };
 
@@ -308,6 +315,7 @@ const AuthEventLogViewer = ({ token }) => {
                 <option value="logout">Logout</option>
                 <option value="failed_login">Failed Login</option>
                 <option value="token_refresh">Token Refresh</option>
+                <option value="user_created">User Created</option>
               </select>
             </div>
             <div>

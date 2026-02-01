@@ -35,20 +35,20 @@
 
 ## Phase 3: Formatting Cleanup (HIGH)
 
-- [ ] Fix broken code blocks - Ensure proper ```markdown fences
-- [ ] Fix table formatting - Correct pipe separators and alignment
-- [ ] Normalize heading levels - Ensure consistent #, ##, ### hierarchy
-- [ ] Fix list formatting - Ensure consistent bullet points and numbering
-- [ ] Add section dividers - Use `---` between major sections
+- [x] Fix broken code blocks - Ensure proper ```markdown fences
+- [x] Fix table formatting - Correct pipe separators and alignment
+- [x] Normalize heading levels - Ensure consistent #, ##, ### hierarchy
+- [x] Fix list formatting - Ensure consistent bullet points and numbering
+- [x] Add section dividers - Use `---` between major sections
 
 ---
 
 ## Phase 4: Verification (MEDIUM)
 
-- [ ] Verify all content from source files included - Check line counts match
-- [ ] Verify section comments are present - All sections marked with <!-- SECTION: Name -->
-- [ ] Verify NHANES comment at top - First line of manuscript.md
-- [ ] Verify no content details changed - Compare with source files
+- [x] Verify all content from source files included - Check line counts match
+- [x] Verify section comments are present - All sections marked with <!-- SECTION: Name -->
+- [x] Verify NHANES comment at top - First line of manuscript.md
+- [BLOCKED] Verify no content details changed - Compare with source files
 - [ ] Verify markdown renders correctly - Check with markdown linter if available
 
 ---

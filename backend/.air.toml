@@ -2,22 +2,23 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  cmd = "go build -o ./tmp/main.exe ./cmd/server"
-  bin = "tmp/main.exe"
-  include_ext = ["go", "tpl", "tmpl", "html"]
-  exclude_dir = ["assets", "tmp", "vendor", "node_modules", "migrations"]
-  exclude_file = []
+  bin = "tmp\\main.exe"
+  full_bin = ".\\tmp\\main.exe"
+  cmd = "go build -o tmp/main.exe ./cmd/server"
+  delay = 1000
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "migrations", "venv", "node_modules", ".git", "logs", "frontend", "Ian_ML", "Neoron_ML", "models"]
   exclude_regex = ["_test.go"]
   exclude_unchanged = true
   follow_symlink = false
-  log = "air.log"
-  delay = 1000
-  stop_on_error = true
+  include_ext = ["go", "tpl", "tmpl", "html"]
+  kill_delay = "500ms"
+  log = "build-errors.log"
   send_interrupt = true
-  kill_delay = 500
+  stop_on_error = false
 
 [log]
-  time = false
+  time = true
+  color = true
 
 [color]
   main = "magenta"
