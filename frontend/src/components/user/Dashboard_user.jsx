@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Activity, TrendingUp, AlertCircle, Plus, Download, RefreshCw, User as UserIcon } from 'lucide-react';
+import { Activity, TrendingUp, AlertCircle, Plus, Download, RefreshCw, User as UserIcon, Calendar } from 'lucide-react';
 import RiskIndicator from '../common/RiskIndicator';
 import { useAssessments } from '../../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
   const isReduced = useReducedMotion();
@@ -18,6 +19,59 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
     return assessments && assessments.length > 0 ? assessments[0] : null;
   }, [assessments]);
 
+  // --- NEW: Data for Sparkline ---
+  // We take the last 5 assessments and reverse them to show chronological order (oldest -> newest) for the chart
+  const sparklineData = useMemo(() => {
+    if (!assessments || assessments.length === 0) return [];
+    return [...assessments].slice(0, 10).reverse().map(a => ({
+      date: a.date, // simple date for key
+      risk_score: a.risk_score || 0
+    }));
+  }, [assessments]);
+
+  // --- NEW: Health Tip Logic ---
+  const healthTip = useMemo(() => {
+    if (!latestAssessment) return null;
+    const cluster = latestAssessment.cluster;
+
+    // Simple mapping for now - can be expanded later or moved to a utility
+    const tips = {
+      'SIDD': {
+        title: "Focus on Insulin Sensitivity",
+        text: "Your profile suggests insulin deficiency. Prioritize strength training to improve muscle glucose uptake.",
+        icon: Activity,
+        color: "text-rose-600 bg-rose-50 border-rose-100"
+      },
+      'SIRD': {
+        title: "Manage Insulin Resistance",
+        text: "Focus on weight management and reducing processed carb intake to help your body use insulin more effectively.",
+        icon: TrendingUp, // Using available icons
+        color: "text-amber-600 bg-amber-50 border-amber-100"
+      },
+      'MOD': {
+        title: "Balanced Lifestyle",
+        text: "Maintain a healthy BMI and monitor cardiovascular health. Regular moderate cardio is highly beneficial.",
+        icon: UserIcon,
+        color: "text-blue-600 bg-blue-50 border-blue-100"
+      },
+      'MARD': {
+        title: "Healthy Aging",
+        text: "Focus on metabolic health and preventing frailty. distinct nutritional needs may apply.",
+        icon: Calendar, // 需要 import Calendar? It's not imported yet, let's stick to generic or check imports
+        color: "text-indigo-600 bg-indigo-50 border-indigo-100"
+      }
+    };
+
+    // Fallback/Default tip
+    return tips[cluster] || {
+      title: "Stay Consistent",
+      text: "Regular monitoring is key to understanding your health trends. Keep logging your assessments!",
+      icon: Activity,
+      color: "text-diana-forest bg-diana-forest/5 border-diana-forest/10"
+    };
+  }, [latestAssessment]);
+
+
   return (
     <motion.div
       variants={staggerContainer}
@@ -25,6 +79,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
       animate="visible"
       className="space-y-8"
     >
+      {/* Welcome Section */}
       {assessments.length === 0 ? (
         <motion.div variants={slideUp} className="bg-gradient-to-r from-diana-forest to-diana-forest-light rounded-3xl p-8 md:p-10 text-white shadow-xl relative overflow-hidden">
           <div className="relative z-10">
@@ -47,17 +102,58 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
           <div className="absolute bottom-0 right-20 w-40 h-40 bg-blue-400/20 rounded-full blur-2xl -mb-10 pointer-events-none" />
         </motion.div>
       ) : (
-        <motion.div variants={slideUp} className="bg-gradient-to-r from-diana-forest to-diana-forest-light rounded-3xl p-8 md:p-10 text-white shadow-xl relative overflow-hidden">
-          <div className="relative z-10">
-            <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3">Welcome Back!</h1>
-            <p className="text-blue-100 text-lg max-w-xl leading-relaxed">
-              Your latest health profile has been analyzed. Review your personalized summary below.
-            </p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Col: Welcome + Health Tip */}
+          <div className="lg:col-span-2 space-y-6">
+            <motion.div variants={slideUp} className="bg-gradient-to-r from-diana-forest to-diana-forest-light rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+              <div className="relative z-10">
+                <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3">Welcome Back!</h1>
+                <p className="text-blue-100 text-lg max-w-xl leading-relaxed">
+                  Your latest health profile has been analyzed.
+                </p>
+              </div>
+              <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+              <div className="absolute bottom-0 right-20 w-40 h-40 bg-blue-400/20 rounded-full blur-2xl -mb-10 pointer-events-none" />
+            </motion.div>
+
+            {/* --- NEW: Daily Insight / Health Tip --- */}
+            {healthTip && (
+              <motion.div variants={slideUp} className={`rounded-3xl p-6 border ${healthTip.color} flex items-start gap-4 shadow-sm`}>
+                <div className={`p-3 rounded-full bg-white/60 shrink-0`}>
+                  <healthTip.icon size={24} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg mb-1">{healthTip.title}</h3>
+                  <p className="text-sm opacity-90 leading-relaxed">{healthTip.text}</p>
+                </div>
+              </motion.div>
+            )}
           </div>
-          {/* Abstract shapes for visual interest */}
-          <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
-          <div className="absolute bottom-0 right-20 w-40 h-40 bg-blue-400/20 rounded-full blur-2xl -mb-10 pointer-events-none" />
-        </motion.div>
+
+          {/* Right Col: Recent Activity Feed (Mini) */}
+          <motion.div variants={slideUp} className="glass-card p-6 bg-white h-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-diana-text-primary">Recent Activity</h3>
+              <button onClick={() => setActiveTab('trends')} className="text-xs font-bold text-diana-forest hover:underline">View All</button>
+            </div>
+            <div className="space-y-4">
+              {assessments.slice(0, 3).map((assessment, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold text-xs">
+                    {assessment.risk_score}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-sm text-diana-text-primary truncate">Assessment Logged</div>
+                    <div className="text-xs text-diana-text-secondary">{new Date(assessment.date).toLocaleDateString()}</div>
+                  </div>
+                </div>
+              ))}
+              {assessments.length === 0 && (
+                <div className="text-center text-diana-text-muted text-sm py-4">No recent activity</div>
+              )}
+            </div>
+          </motion.div>
+        </div>
       )}
 
       {isLoading && (
@@ -90,21 +186,34 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
       {!isLoading && !error && (
         <>
           <motion.div variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div variants={cardVariants} whileHover="hover" className={`glass-card p-6 flex flex-col justify-between h-full ${assessments.length === 0 ? 'bg-diana-stone/50 border-dashed border-2 border-diana-sand' : 'bg-white'}`}>
-              <div>
-                <div className="flex items-center gap-3 mb-4">
+
+            {/* --- MODIFIED: Assessment Card with Sparkline --- */}
+            <motion.div variants={cardVariants} whileHover="hover" className={`glass-card p-6 flex flex-col justify-between h-56 ${assessments.length === 0 ? 'bg-diana-stone/50 border-dashed border-2 border-diana-sand' : 'bg-white overflow-hidden relative'}`}>
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-2">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${assessments.length === 0 ? 'bg-diana-sand text-diana-text-muted' : 'bg-diana-stone text-diana-forest'}`}>
                     <Activity size={20} />
                   </div>
                   <span className="text-diana-text-secondary font-bold text-sm tracking-wide uppercase">Assessments</span>
                 </div>
-                <div className={`text-4xl font-serif font-bold mt-2 ${assessments.length === 0 ? 'text-diana-text-muted' : 'text-diana-text-primary'}`}>
+                <div className={`text-4xl font-serif font-bold mt-1 ${assessments.length === 0 ? 'text-diana-text-muted' : 'text-diana-text-primary'}`}>
                   {assessments.length}
                 </div>
+                <div className="text-sm text-diana-text-muted mt-2">
+                  {assessments.length === 0 ? 'No records yet' : 'Total logged records'}
+                </div>
               </div>
-              <div className="text-sm text-diana-text-muted mt-4">
-                {assessments.length === 0 ? 'No records yet' : 'Total logged records'}
-              </div>
+
+              {/* Sparkline Chart */}
+              {assessments.length > 1 && (
+                <div className="absolute bottom-0 left-0 right-0 h-24 opacity-20 pointer-events-none">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={sparklineData}>
+                      <Area type="monotone" dataKey="risk_score" stroke="#10B981" fill="#10B981" strokeWidth={3} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </motion.div>
 
             <motion.div variants={cardVariants} whileHover="hover" className="glass-card p-6 flex flex-col justify-between h-full bg-white">

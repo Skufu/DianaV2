@@ -234,6 +234,11 @@ const ExpandableCard = ({ title, children, defaultOpen = false, icon: Icon }) =>
     return (
         <motion.div
             variants={slideUp}
+            whileHover={{
+                scale: 1.01,
+                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)"
+            }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
             className="glass-card bg-white rounded-2xl border border-diana-sand overflow-hidden transition-all"
         >
             <button
@@ -316,7 +321,12 @@ const Education = () => {
                         <motion.div
                             key={key}
                             variants={slideUp}
-                            whileHover={{ scale: 1.02, borderColor: 'rgba(75, 85, 99, 0.5)' }}
+                            whileHover={{
+                                scale: 1.02,
+                                y: -5,
+                                borderColor: 'rgba(75, 85, 99, 0.5)',
+                                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+                            }}
                             className={`glass-card bg-white rounded-3xl border-2 transition-all cursor-pointer ${activeCluster === key ? 'border-diana-forest shadow-lg' : 'border-diana-sand hover:border-diana-forest/50'
                                 }`}
                             onClick={() => setActiveCluster(activeCluster === key ? null : key)}

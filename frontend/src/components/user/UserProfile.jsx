@@ -145,7 +145,12 @@ const UserProfile = ({ setActiveTab }) => {
       </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <motion.div variants={fadeIn} className="glass-card p-8 bg-white">
+        <motion.div
+          variants={fadeIn}
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="glass-card p-8 bg-white"
+        >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
             <User size={24} className="text-diana-forest" />
             Personal Information
@@ -188,7 +193,12 @@ const UserProfile = ({ setActiveTab }) => {
           </div>
         </motion.div>
 
-        <motion.div variants={fadeIn} className="glass-card p-8 bg-white">
+        <motion.div
+          variants={fadeIn}
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="glass-card p-8 bg-white"
+        >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
             <Calendar size={24} className="text-diana-lime-dark" />
             Menopausal Health
@@ -242,7 +252,12 @@ const UserProfile = ({ setActiveTab }) => {
           </div>
         </motion.div>
 
-        <motion.div variants={fadeIn} className="glass-card p-8 bg-white">
+        <motion.div
+          variants={fadeIn}
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="glass-card p-8 bg-white"
+        >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
             <Shield size={24} className="text-amber-500" />
             Medical History
@@ -311,7 +326,12 @@ const UserProfile = ({ setActiveTab }) => {
           </div>
         </motion.div>
 
-        <motion.div variants={fadeIn} className="glass-card p-8 bg-white">
+        <motion.div
+          variants={fadeIn}
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="glass-card p-8 bg-white"
+        >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
             <Mail size={24} className="text-diana-forest" />
             Settings

@@ -1,5 +1,3 @@
-version: '3.8'
-
 # DIANA V2 Multi-Service Docker Compose
 # Usage: docker-compose up --build
 #

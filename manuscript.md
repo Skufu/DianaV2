@@ -1,7 +1,3 @@
-<!-- NHANES should now be the data -->
-
-<!-- SECTION: Introduction -->
-
 ```
 ix
 ```
@@ -9,12 +5,12 @@ ix
 **Definition of Terms
 Diabetes Mellitus (DM)**. a metabolic disorder characterized by high blood glucose levels.
 It includes several types such as Type 1 Diabetes, Type 2 Diabetes, Maturity-Onset Diabetes of
-Young (MODY), gestational diabetes, neonatal diabetes, and diabetes secondary to other
+the Young (MODY), gestational diabetes, neonatal diabetes, and diabetes secondary to other
 conditions or factors, such as hormonal disorders or prolonged use of steroids.
 
 **Type 1 Diabetes Mellitus (T1DM).** A sub type of diabetes characterized by the destruction
 of pancreatic beta cells, usually caused by an autoimmune process. This destruction leads to little
-or no insulin production, resulting in a complete or near-complete lack of insulin in body.
+or no insulin production, resulting in a complete or near-complete lack of insulin in the body.
 
 **Type 2 Diabetes Mellitus (T2DM)**. A sub type of diabetes characterized by a gradual
 onset, in which a mismatch between insulin production and insulin sensitivity leads to a functional
@@ -26,13 +22,13 @@ high enough to be classified as Type 2 Diabetes. It indicates an increased risk 
 diabetes and provides an opportunity for early intervention through lifestyle modification and
 monitoring of blood glucose
 
-**Hormonal Changes.** alterations in the levels or activity of hormones in body can affect
-various physiological processes. In context of menopause, hormonal changes primarily refer
+**Hormonal Changes.** alterations in the levels or activity of hormones in the body can affect
+various physiological processes. In the context of menopause, hormonal changes primarily refer
 to the decline in estrogen and progesterone levels, influencing metabolism, insulin sensitivity, and
 overall risk for conditions such as Type 2 Diabetes Mellitus (T2DM).
 
-**Insulin Restistance.** A physiological condition in which body's cells respond less
-effectively to insulin, reducing glucose uptake from blood. This leads to higher circulating
+**Insulin Restistance.** A physiological condition in which the body’s cells respond less
+effectively to insulin, reducing glucose uptake from the blood. This leads to higher circulating
 
 
 ```
@@ -42,22 +38,22 @@ blood glucose levels and increased insulin production, often contributing to the
 Type 2 Diabetes Mellitus (T2DM), particularly in populations with obesity, aging, or hormonal
 changes.
 
-**Fasting Blood Sugar (FBS)**. A laboratory test that measures the glucose level in a person's
+**Fasting Blood Sugar (FBS)**. A laboratory test that measures the glucose level in a person’s
 blood after an overnight fast, typically 8–12 hours. FBS is used to assess glycemic control and is
 a key biomarker in diagnosing and monitoring diabetes mellitus, including Type 2 Diabetes
 Mellitus (T2DM).
 
 **Hemoglobin A1c (Hba1C)**. A laboratory test that measures the average blood glucose
-levels over past 2–3 months by determining the percentage of glucose bound to hemoglobin in
+levels over the past 2–3 months by determining the percentage of glucose bound to hemoglobin in
 red blood cells. HbA1c is commonly used to diagnose and monitor diabetes, providing an indicator
 of long-term glycemic control, including in patients with Type 2 Diabetes Mellitus (T2DM).
 
 **Lipid Profiles.** A set of blood tests that measure the levels of specific lipids, including total
 cholesterol, high-density lipoprotein (HDL), low-density lipoprotein (LDL), and triglycerides.
-Lipid profiles are used to assess cardiovascular health and metabolic risk factors, including
+Lipid profiles are used to assess cardiovascular health and metabolic risk factors, including the
 risk of developing Type 2 Diabetes
 
-**Menopausal.** The stage in a woman's life marked by the end of menstrual periods for at
+**Menopausal.** The stage in a woman’s life marked by the end of menstrual periods for at
 least twelve consecutive months, accompanied by hormonal changes, particularly a decline in
 estrogen levels. This transition, which includes perimenopause and postmenopause, is associated
 with physiological and metabolic changes that can affect insulin sensitivity and increase the risk
@@ -103,14 +99,14 @@ menopausal women.
 Diabetes Mellitus (DM) is a chronic metabolic disorder characterized by persistently
 elevated blood glucose levels resulting from inadequate insulin production or decreased insulin
 sensitivity (Goyal et al., 2023). Globally, the burden of diabetes continues to rise. According to
-International Diabetes Federation (IDF), more than 500 million adults were affected in 2021,
+the International Diabetes Federation (IDF), more than 500 million adults were affected in 2021,
 with projections surpassing 700 million by 2045, reflecting a significant increase from 415 million
 in 2015. Among the different types, Type 2 Diabetes Mellitus (T2DM) is the most prevalent and
 is primarily associated with insulin resistance and impaired glucose regulation (Dhaliwal, 2025).
 The growing incidence of T2DM presents one of the foremost global public health challenges of
 the 21st century.
 
-Nevertheless, the period surrounding menopause represents a critical stage in a woman's
+Nevertheless, the period surrounding menopause represents a critical stage in a woman’s
 life that introduces an elevated risk for the development of metabolic disorders, including T2DM.
 The decline in ovarian function and subsequent decrease in estrogen levels significantly affect
 various metabolic processes, leading to changes in body fat distribution, insulin sensitivity, and
@@ -166,7 +162,7 @@ quadrupled over the past three decades. This chronic metabolic condition manifes
 persistently high blood glucose levels due to insulin resistance and inadequate insulin secretion
 (International Diabetes Federation, 2023). The consequences of T2DM are profound, leading to
 complications such as cardiovascular diseases, kidney failure, neuropathy, and retinopathy
-conditions that drastically reduce quality of life and place a heavy financial strain on healthcare
+conditions that drastically reduce quality of life and place heavy financial strain on healthcare
 systems worldwide (American Diabetes Association, 2022).
 
 One of the major difficulties in managing T2DM is its silent progression. Many individuals
@@ -216,10 +212,10 @@ the lived experiences, risk factors, and health behaviors of menopausal women, m
 groups a contextually relevant environment for gathering user-centered data.
 
 Furthermore, a selected Facebook interest group named _Usapang Perimenopause at
-Menopause_ and other interest groups were used as part of the study's research locale. This
+Menopause_ and other interest groups were used as part of the study’s research locale. This
 Facebook group, founded on April 20, 2023, serves as a space where members share experiences
 and knowledge to support one another in understanding the difficulties and challenges associated
-with menopausal stage. Additionally, group functions as a support community focused on
+with the menopausal stage. Additionally, the group functions as a support community focused on
 menopause-related discussions, making it contextually suitable for gathering data on blood
 biomarkers, lifestyle patterns, and health awareness (Usapang Perimenopause at Menopause,
 2023). By understanding the needs and health concerns expressed in these online communities,
@@ -254,7 +250,7 @@ studies emphasize the importance of these biomarkers in menopausal populations. 
 (2025) highlight that adiponectin, which correlates with FBS, HbA1c, and triglycerides, is
 underutilized in existing risk prediction models for postmenopausal women. Similarly, Sharma et.
 al., (2020) report that insulin resistance and associated glycemic and lipid abnormalities increase
-after menopause, underlining the need for their inclusion in predictive modeling. A study by
+after menopause, underlining the need for their inclusion in predictive modeling. A study of
 Tamakoshi at. al., (2006), further demonstrate that menopause is an independent risk factor for
 elevated fasting plasma glucose, while Liu et. al., (2023), show strong associations between insulin
 
@@ -272,14 +268,14 @@ menopausal women remain insufficient, particularly in terms of risk profiling an
 Existing predictive models rarely classify individuals by risk categories or apply clustering
 techniques capable of revealing hidden subgroups within the population. Instead, many systems
 rely on static tables or basic charts, limiting the ability of healthcare providers and patients to
-interpret patterns, assess risk, and make informed decisions. Furthermore, several studies show that
+interpret patterns, assess risk, and make informed decisions. Futhermore, several studies show that
 clustering combined with interactive visualization significantly enhances the understanding of
 heterogeneous health profiles. Kavakiotis et al. (2017) demonstrated that machine learning models
 employing clustering can uncover subgroups with different diabetes risk levels, thus improving
 early detection strategies. Similarly, Weng et al. (2017) emphasized that visual tools such as
 heatmaps and interactive plots help clinicians interpret complex predictive outputs more
-effectively, supporting personalized and targeted interventions. Given these limitations,
-the integration of clustering and interactive visualization into DIANA predictive model-based
+effectively, supporting personalized and targeted interventions. Given these limitations, the
+integration of clustering and interactive visualization into the DIANA predictive model-based
 application addresses the gap by enabling more accurate risk stratification, identifying high-risk
 subgroups, and supporting timely, evidence-based preventive care.
 
@@ -314,14 +310,14 @@ between data-driven prediction and practical clinical decision-making.
 
 Specifically, this study aims to:
 
-**1. Determine** the **most informative biomarker attributes by computing Information**
+**1. Determine the most informative biomarker attributes by computing Information**
     **Gain (IG) and analyzing the entropy of the dataset to select features that significantly**
     **contribute to predicting Type 2 Diabetes risk among menopausal women.**
-       The study will develop a predictive model utilizing machine learning techniques
-    trained on identified blood biomarkers which are Fasting Blood Sugar (FBS),
-    Hemoglobin A1c (HBA1C), Lipid Profiles and non-blood biomarkers which are
+       The study will develop a predictive model utilizing a machine learning techniques
+    trained on the identified blood biomarkers which are the Fasting Blood Sugar (FBS),
+    Hemoglobin A1c (HBA1C), Lipid Profiles and the non-blood biomarkers which are the
     Age, Weight, BMI and Lifestyle associated with type 2 diabetes in menopausal women.
-    Unlike traditional risk assessment that relies on limited statistical correlations, machine
+    Unlike the traditional risk assessment that relies on limited statistical correlations, machine
     learning can capture complex and nonlinear interactions among biomarkers through
     algorithms such as regression analysis, decision trees, and neural networks. The model will
     identify patterns that enhance prediction accuracy. This data-driven approach enables a
@@ -349,10 +345,10 @@ This enables healthcare practitioners to recognize deviations, risk elevations, 
 metabolic concerns more effectively
 Through this platform, healthcare professionals including physicians,
 endocrinologists, and clinical researchers will have access to comprehensive predictive
-outputs that reflect the user's overall metabolic status. These outputs will be derived from
+outputs that reflect the user’s overall metabolic status. These outputs will be derived from
 key biomarkers such as Hemoglobin A1c (HbA1c), Fasting Blood Sugar (FBS), and lipid
 profiles, allowing clinicians to examine how each physiological indicator contributes to the
-user's assigned cluster and estimated diabetes risk level. The clustering mechanism will
+user’s assigned cluster and estimated diabetes risk level. The clustering mechanism will
 further help in identifying patterns or subgroups within the menopausal population,
 supporting more targeted clinical interpretation.
 ```
@@ -370,13 +366,13 @@ healthcare professionals such as physicians and endocrinologists will be able to
 individualized risk levels among menopausal women based on selected blood biomarkers.
 Designed with a user-centered approach, the platform aims to strengthen the
 capacity of medical practitioners to detect at-risk individuals at earlier stages. In doing so,
-DIANA system supports improved preventive care, encourages timely intervention
+the DIANA system supports improved preventive care, encourages timely intervention
 strategies, and promotes proactive health management specifically tailored for the needs of
 menopausal women.
 Additionally, the web application will offer personalized data summaries, enabling
 healthcare professionals to monitor trends in key biomarkers such as Hemoglobin A1c
 (HbA1c), Fasting Blood Sugar (FBS), and lipid profiles. By integrating clustering results
-with predictive indicators, DIANA system bridges the gap between raw diagnostic data
+with predictive indicators, the DIANA system bridges the gap between raw diagnostic data
 and actionable clinical insights. Its user-friendly interface will further support practitioners
 in identifying high-risk individuals earlier, promoting preventive care and proactive health
 management for menopausal women.
@@ -394,7 +390,7 @@ its onset (IDF, 2024). As a result, there is a pressing need for predictive tool
 detection and prevention of T2DM before severe complications arise.
 
 Recent studies have shown the potential of machine learning-based predictive modeling in
-healthcare, allowing for identification of hidden patterns within biomedical data that traditional
+healthcare, allowing for the identification of hidden patterns within biomedical data that traditional
 diagnostic methods often overlook (Kopitar et al., 2020; Mohd Rizal et al., 2024). However, many
 existing models lack population-specific considerations and effective visualization tools that can
 help healthcare professionals interpret risk levels more efficiently.
@@ -405,7 +401,7 @@ Type 2 Diabetes Risk in Menopausal Women. DIANA predictive model-based applicati
 to integrate traditional diagnostic markers with novel blood biomarkers to provide a more
 comprehensive and individualized risk assessment. Additionally, the inclusion of an interactive
 dashboard and visualization feature allows healthcare professionals to easily monitor, interpret,
-and act upon predictive results. The groups that will benefit from this study are:
+and act upon predictive results. The groups what will benefit from this study are:
 
 **Healthcare providers:** including medical professionals will benefit from this study. With
 DIANA, they can review and validate the predictive results generated by the web application,
@@ -425,7 +421,7 @@ status. This allows for timely lifestyle modifications, preventive measures, and
 interventions, ultimately lowering the likelihood of developing Type 2 Diabetes and its
 complications.
 
-**Public Health Sector:** This will gain from this study's contribution to targeted disease
+**Public Health Sector:** This will gain from this study’s contribution to targeted disease
 prevention efforts. By addressing a vulnerable group, the study supports strategies aimed at
 reducing the prevalence and burden of diabetes at both community and national levels. In the
 context of the Philippines, where diabetes remains a growing concern, this study offers an
@@ -441,7 +437,7 @@ data into understandable insights that support early diagnosis and lifestyle-bas
 
 In alignment with the United Nations Sustainable Development Goal (SDG) 3: Good
 Health and Well-Being, this study contributes to the promotion of healthier lives and the
-prevention of noncommunicable diseases such as diabetes. By developing DIANA, researchers
+prevention of noncommunicable diseases such as diabetes. By developing DIANA, the researchers
 
 
 aim to support healthcare professionals and empower menopausal women through technology-
@@ -454,7 +450,6 @@ This study focuses on the development of DIANA, a predictive model-based applica
 that utilizes selected _blood biomarkers_ to classify current diabetes risk in menopausal women
 (T2D).
 
-
 ```
 This study has the following scope:
 ```
@@ -465,24 +460,24 @@ This study has the following scope:
     (FBS) and Hemoglobin A1c (HbA1c), which are known to play vital roles in
     glucose metabolism and hormonal regulation during menopause. In addition, the
     study will consider biomarkers that have shown relevance in distinguishing
-    between established clustering of T2DM subgroups such as Severe Insulin-
+    between the established clustering of T2DM subgroups such as Severe Insulin-
     Deficient Diabetes (SIDD), Severe Insulin-Resistant Diabetes (SIRD), Mild
     Obesity-Related Diabetes (MOD), and Mild Age-Related Diabetes (MARD) as
     identified in recent diabetes stratification research (Prasad et al., 2018;Veelen et al.,
     2021 ; Yang et al., 2025). By acknowledging these subgroup clusters, the selection
-    process ensures that biomarkers reflect not only general diabetes indicators but also
-    the heterogeneity of T2DM presentations.
+    process ensures that the biomarkers reflect not only general diabetes indicators but
+    also the heterogeneity of T2DM presentations.
 
 
 - _Development of Predictive Model Using Machine Learning:_ Using the selected
-    biomarkers, researchers will develop a predictive classification model
+    biomarkers, the researchers will develop a predictive classification model
     employing machine learning algorithms to classify the current diabetes risk status
     of menopausal women_._ The study will explore models such as logistic regression,
     random forest, or support vector machines to determine which approach yields the
     most accurate predictive performance. Model training and validation will be
     performed using available biomarker datasets. Statistical evaluation methods such
     as accuracy, sensitivity, specificity, and AUC (Area Under the Curve) will be
-    applied to measure the model's performance and reliability.
+    applied to measure the model’s performance and reliability.
 - _Integration into a Web Application_ **:** The study will integrate the developed
     predictive model into a web-based application named DIANA, which will be
     designed exclusively for use by healthcare professionals, particularly doctors
@@ -494,19 +489,19 @@ This study has the following scope:
     recommendations. To enhance usability, the interface will include visual
     representations such as graphs, charts, and color-coded indicators to support clear
     interpretation and facilitate evidence-based decision-making in clinical settings.
-- _Evaluation of Model Accuracy and Application Usability:_ The predictive model's
+- _Evaluation of Model Accuracy and Application Usability:_ The predictive model’s
     performance will be assessed using computational evaluation metrics such as
     accuracy, sensitivity, specificity, and Area Under the Curve (AUC) to determine its
 
 
 ```
-predictive reliability. Meanwhile, usability of the DIANA web application will
+predictive reliability. Meanwhile, the usability of the DIANA web application will
 be evaluated through a structured usability test involving selected healthcare
 professionals. The assessment will focus on key factors such as system
 functionality, ease of navigation, clarity of risk presentation, and reliability of
-results. Feedback gathered from participating medical professionals will serve as the
-basis for refining the application's interface and ensuring that it effectively
-supports clinical decision-making in early identification of Type 2 Diabetes risk
+results. Feedback gathered from participating medical professionals will serve as
+the basis for refining the application’s interface and ensuring that it effectively
+supports clinical decision-making in the early identification of Type 2 Diabetes risk
 among menopausal women.
 ```
 - _Web Application Functionalities:_ The DIANA predictive model will be
@@ -518,12 +513,12 @@ among menopausal women.
     provide key functions, including data input, result visualization, and risk analysis,
     ensuring an efficient and user-friendly experience for clinical use.
        o _Dashboard Tab_ – serves as the central overview interface of the DIANA
-           application. It provides a real-time summary of all patient-related data
-           stored in the system. At the top of the dashboard, users can view the
-           total number of registered patients, recent additions, and summary statistics that
-           reflect the system's current data load. Below these key metrics will be
-           showing the graphical representations of the collective blood biomarker
-           levels gathered from all patient entries. These graphs visualize the overall
+          application. It provides a real-time summary of all patient-related data
+          stored in the system. At the top of the dashboard, users can view the total
+          number of registered patients, recent additions, and summary statistics that
+          reflect the system’s current data load. Below these key metrics will be
+          showing the graphical representations of the collective blood biomarker
+          levels gathered from all patient entries. These graphs visualize the overall
 
 
 trends in biomarkers such as fasting plasma glucose, HbA1c, and Estradiol,
@@ -531,12 +526,12 @@ among others. This allows the user to observe trends across their patient
 population and detect potential increases in diabetes risk prevalence among
 menopausal women. This feature supports data-driven monitoring and
 decision-making.
-o _Patient history Tab_ – acts as archive of stored data and organizes all
+o _Patient history Tab_ – acts as archive of the stored data and organizes all
 patient records systematically. Each record entry includes essential details
-such as the patient's name, age, and date of the latest added assessment.
-When the user clicks or hovers over a patient record, the interface opens a
+such as the patient's name, age, and the date of the latest added assessment.
+When user clicks or hovers over a patient record, the interface opens a
 detailed profile view displaying the patient's full information. This includes
-complete name, historical biomarker readings, and a line graph that
+the complete name, historical biomarker readings, and a line graph that
 overlays previous biomarker results with the most recent assessment. This
 visual overlay provides an immediate comparison between the patient's
 historical biomarker readings and current assessment (e.g., changes in FPG
@@ -548,12 +543,40 @@ indicating likelihood of current undiagnosed Type 2 Diabetes or prediabetes.
 This enables clinicians to prioritize diagnostic confirmation and early
 intervention.
 o _Analytics Tab_ – provides an interactive visualization interface that allows
-users to interpret predictive insights derived from patient data
+the users to interpret predictive insights derived from the patient data
+
+
+
+<!-- NHANES should now be the data -->
+trends in biomarkers such as fasting plasma glucose, HbA1c, and Estradiol,
+among others. This allows the user to observe trends across their patient
+population and detect potential increases in diabetes risk prevalence among
+menopausal women. This feature supports data-driven monitoring and
+decision-making.
+o _Patient history Tab_ – acts as archive of the stored data and organizes all
+patient records systematically. Each record entry includes essential details
+such as the patient's name, age, and the date of the latest added assessment.
+When user clicks or hovers over a patient record, the interface opens a
+detailed profile view displaying the patient's full information. This includes
+the complete name, historical biomarker readings, and a line graph that
+overlays previous biomarker results with the most recent assessment. This
+visual overlay provides an immediate comparison between the patient's
+historical biomarker readings and current assessment (e.g., changes in FPG
+or HbA1c values), enabling the clinician to contextualize current diabetes
+risk within the patient's biomarker trend. Furthermore, this tab presents the
+risk assessment result generated by DIANA model showing the current
+probability score (0–100%) and risk category (Low/Moderate/High)
+indicating likelihood of current undiagnosed Type 2 Diabetes or prediabetes.
+This enables clinicians to prioritize diagnostic confirmation and early
+intervention.
+o _Analytics Tab_ – provides an interactive visualization interface that allows
+the users to interpret predictive insights derived from the patient data
+
 
 processed by the type 2 diabetes risk prediction model. It displays two
 primary components: the risk factor importance chart, which ranks input
 variables such as Age, BMI, Blood Pressure, Glucose Level, and Physical
-Activity according to their computed contribution to the model's predictive
+Activity according to their computed contribution to the model’s predictive
 output and the BMI vs Glucose Correlation chart, which plots the
 relationship between body mass index and glucose level among patients to
 identify trends or potential risk associations. Data for this visualization are
@@ -561,28 +584,29 @@ retrieved from the system database, processed by the backend analytics
 engine, and dynamically rendered on the frontend using visualization
 libraries. This module enables clinicians and researchers to easily assess
 which factors are most influential on developing diabetes risk and to explore
-correlations among physiological indicators, supporting data-driven medical
-interpretations and decision-making within the DIANA system.
+correlations among physiological indicators, supporting data driven medical
+interpretations and decision making within the DIANA system.
 o _Export Tab_ – enables users to download datasets and analytical reports
 generated within the system for documentation, research, or further offline
 analysis. It provides three main export functionalities: export participant
 data, export analytics report, and filtered export. The export participant data
 section allows users to download the complete dataset of participant records,
 including demographic details, biomarker values, and prediction results, in
-either CSV or Excel format for compatibility with data analysis tools.
-The export analytics report feature generates a comprehensive summary of the
-model's analytical outputs, including factor importance, correlation
+either CSV or Excel format for compatibility with the data analysis tools.
+The export analytics report feature generates a comprehensive summary of
+the model’s analytical outputs, including factor importance, correlation
 analysis, and predictive insights, which can be downloaded as formatted
 
+
 ```
-report file. Meanwhile, the filtered export option allows users to selectively
+report file. Meanwhile the filtered export option allows users to selectively
 export data according to specific parameters such as menopausal stage and
 diabetes risk level, enabling focused examination of subsets of the dataset.
 All export processes are handled by the backend, where the system compiles
 and formats the requested data, then generates a downloadable file. This
-module ensures efficient data management, facilitates result sharing, and
+module ensures efficient data management, facilitates result sharing and
 supports further statistical evaluation or validation of the predictive model
-outside of the DIANA platform.
+outside the DIANA platform.
 ```
 The delimitations of the study are:
 
@@ -590,8 +614,8 @@ The delimitations of the study are:
     biomarkers as indicators for diabetes risk. Other potential diagnostic sources such
     as imaging data, genomic markers, or microbiome profiles will not be included.
     This delimitation is set to maintain the practicality and accessibility of the study, as
-    blood biomarkers are commonly used in clinical settings, are cost-effective, and are
-    easily obtainable through routine laboratory testing.
+    blood biomarkers are commonly used in clinical settings, cost-effective, and easily
+    obtainable through routine laboratory testing.
 - _Absence of Treatment or Management Recommendations:_ The predictive model
     developed in this study is not intended to function as a diagnostic or medical
     decision-making tool. Instead, it serves as a decision-support system to assist
@@ -603,7 +627,7 @@ The delimitations of the study are:
 
 - _Dataset Size and Demographic Limitation:_ The dataset used to train and validate
     the predictive model may be limited in sample size, geographical coverage, and
-    participant diversity. This may influence the model's ability to generalize
+    participant diversity. This may influence the model’s ability to generalize
     predictions to broader populations. Consequently, while the model aims to achieve
     high accuracy within the study parameters, its predictive performance may vary
     when applied to different demographic groups or clinical populations.
@@ -619,23 +643,24 @@ The delimitations of the study are:
 
 The conceptual framework, shown in Figure 1, illustrates the overall process of how the
 proposed predictive classification model-based application identifies menopausal women with
-undiagnosed Type 2 Diabetes or prediabetes based on their biomarker profiles. It begins with
-the recognition of key inputs necessary for analysis, including patient demographics such as age,
+undiagnosed Type 2 Diabetes or prediabetes based on their biomarker profiles. It begins with the
+recognition of the key inputs necessary for analysis, including patient demographics such as age,
 menopausal status, and lifestyle factors. It also incorporates selected blood biomarkers which
 include HbA1c, Fasting Plasma Glucose, and Lipid Profiles. This serves as biochemical indicators
 for assessing the metabolic and inflammatory states associated with diabetes risk. Additionally,
 
+
 patient history data such as previous diagnoses and family history of diabetes provide contextual
 information to improve the classification accuracy of the system.
 
-The process stage comprises data collection and preprocessing, followed by the application of
+The process stage comprises data collection and preprocessing, followed by application of
 machine learning algorithms such as logistic regression, random forest, or neural networks. These
 analyze the relationships between biomarkers, background risk factors, and current diabetes status.
 The model produces a risk probability score (0–100%) indicating the current likelihood that a
 patient has undiagnosed Type 2 Diabetes or prediabetes based on her present biomarkers. A score
 of 72% means: given her current biomarker profile, there is a 72% probability she currently has or
 is at high risk of prediabetes/diabetes, not that she will develop it in future years. Risk is stratified
-into Low (0–33%), Moderate (34–66%), and High (67– 100%) for clinical decision-making.
+into Low (0–33%), Moderate (34–66%), and High (67– 100 %) for clinical decision-making.
 
 The proposed model-application system converts biomedical input into actionable risk
 probability estimates, supporting evidence-based clinical decision-making. By stratifying current
@@ -646,7 +671,6 @@ biomarker patterns.
 
 _Figure 1 : Conceptual Framework_
 
-<!-- SECTION: Review of Literature -->
 
 **Review of Literature**
 This chapter explores the literature and studies that form the theoretical basis of the
@@ -726,7 +750,7 @@ diabetes, mild obesity-related diabetes, and mild age-related diabetes). Crucial
 these clusters showed different trajectories for glycemic control, required
 treatments, and risks for micro- and macrovascular complications. The study’s key
 contribution was empirical: showing that a simple algorithmic reclassification of
-```
+
 
 heterogenous diabetes presentations yields groups with prognostic and therapeutic
 relevance. Methodologically, it demonstrated the power of clustering on clinical
@@ -1053,7 +1077,7 @@ unpredictability, while lower entropy suggests that one class dominates, making
 predictions more straightforward. In medical diagnosis, entropy quantifies the level of
 heterogeneity within patient data, guiding clinicians and researchers toward more refined
 risk stratification. Furthermore, Information Gain measures how much an attribute helps
-```
+
 
 reduce uncertainty about the target class by comparing the entropy of the class label before
 and after considering a specific feature. A higher IG value means that the feature provides
@@ -1191,7 +1215,7 @@ uses non‑probability purposive sampling to select clinical data, contextual pa
 medical evaluators based on their relevance to the research objectives and availability of complete,
 structured biomarker records.
 
-The research involves collecting clinical biomarker data from Philippine hospital records,
+The research involves collecting clinical biomarker data from the **NHANES database**,
 developing a machine learning‑based predictive model through feature selection (entropy and
 Information Gain), supervised classification, and clustering, and integrating the model into a
 web‑based application. The system will be evaluated by licensed physicians to assess its clinical
@@ -1205,52 +1229,19 @@ group profiling, and validating the system's clinical utility in the Philippine 
 
 **Research Locale**
 
-This study will be conducted through collaboration with selected healthcare institutions in
-the Philippines that maintain systematic electronic health record systems or structured medical
-documentation for women aged 45 to 60 years who have transitioned through menopause. Priority
-will be given to hospitals with established departments in obstetrics-gynecology (OB-GYN) and
-endocrinology, as these medical specialties routinely document the metabolic and hormonal
-biomarkers central to this study including fasting blood sugar, HbA1c, lipid panels, and related
-metabolic indicators. The researchers are actively coordinating with three prospective hospital
-partners to obtain institutional clearance for data access. Final determination of participating
-institutions will depend on successful acquisition of formal authorization, confirmation of
-adequate patient record availability meeting inclusion criteria (targeting approximately 1,000 to
-2,000 de-identified records), and alignment with the study's ethical and methodological
-requirements. The selected healthcare facilities will provide a clinically representative sample of
-Filipino menopausal women, ensuring that the predictive model reflects the demographic,
-metabolic, and hormonal characteristics specific to this population.
+This study utilizes data from the National Health and Nutrition Examination Survey (NHANES), a major program of the National Center for Health Statistics (NCHS) which is part of the Centers for Disease Control and Prevention (CDC). NHANES is designed to assess the health and nutritional status of adults and children in the United States through interviews and direct physical examinations. The survey examines a nationally representative sample of about 5,000 persons each year. These persons are located in counties across the country, 15 of which are visited each year.
 
-The "Usapang Perimenopause at Menopause" Facebook interest group serves as the locale
-for user acceptance testing of the DIANA web application. This online community of Filipino
-women actively discussing menopause-related health topics provides access to the target end-user
-population who will evaluate the application's usability, clarity, and practical relevance. Volunteer
-members who meet the study's inclusion criteria will be invited to test the application and provide
-structured feedback on its interface design, information presentation, and usefulness for personal
-health monitoring. Engagement and data collection from the group will only commence upon
+For this study, the research locale is effectively the publicly available NHANES database, specifically the merged datasets from the 2009 to 2023 cycles. This comprehensive dataset provides a robust source of clinical biomarker data, demographic information, and health questionnaire responses relevant to menopausal women and diabetes risk, serving as a reliable foundation for developing and validating the DIANA predictive model.
 
+The "Usapang Perimenopause at Menopause" Facebook interest group serves as the locale for user acceptance testing of the DIANA web application. This online community of Filipino women actively discussing menopause-related health topics provides access to the target end-user population who will evaluate the application's usability, clarity, and practical relevance. Volunteer members who meet the study's inclusion criteria will be invited to test the application and provide structured feedback on its interface design, information presentation, and usefulness for personal health monitoring. Engagement and data collection from the group will only commence upon receipt of formal permission and cooperation from group administrators, ensuring compliance with ethical standards and data privacy regulations.
 
-receipt of formal permission and cooperation from group administrators, ensuring compliance with
-ethical standards and data privacy regulations.
-
-The clinical evaluation phase of the study will be conducted in the practices or offices of
-licensed endocrinologists and OB-GYN specialists participating as expert evaluators. These
-settings will allow the clinicians to systematically review and assess the DIANA application's
-usability, clinical validity, and relevance for routine patient care. Their feedback will be critical
-for determining the clinical acceptability and practical integration of the DIANA system into real-
-world healthcare workflows in the Philippine context.
+The clinical evaluation phase of the study will be conducted in the practices or offices of licensed endocrinologists and OB-GYN specialists participating as expert evaluators. These settings will allow the clinicians to systematically review and assess the DIANA application's usability, clinical validity, and relevance for routine patient care. Their feedback will be critical for determining the clinical acceptability and practical integration of the DIANA system into real-world healthcare workflows in the Philippine context.
 
 **Population of the Study**
 
-The study population consists of three distinct groups that contribute to different phases of
-the research, selected using non-probability purposive sampling based on their relevance to the
-study objectives.
+The study population consists of three distinct groups that contribute to different phases of the research, selected using non-probability purposive sampling based on their relevance to the study objectives.
 
-The primary modeling dataset comprises de-identified clinical records of menopausal
-women aged 45 to 60 years obtained from partner hospitals in the Philippines, targeting
-approximately 1,000 to 2,000 complete records with documented biomarker data (Fasting Blood
-Sugar, HbA1c, lipid parameters, age, BMI, menopausal status, and family history). Hospitals and
-records will be selected to include institutions that routinely collect these biomarkers and maintain
-sufficient data quality for machine learning analysis.
+The primary modeling dataset comprises **1,376 de-identified records** of postmenopausal women aged 45 to 60 years obtained from the merged **NHANES 2009-2023** datasets. The total initial dataset size is approximately 1,376, filtered to include only women meeting the inclusion criteria (RHQ031=2, indicating 12+ months without menstruation) and having complete data for the required biomarkers.
 
 Members of the "Usapang Perimenopause at Menopause" Facebook interest group will
 participate as end-user evaluators during the user acceptance testing phase of the study. At least
@@ -1273,14 +1264,9 @@ interpretability of the system's risk predictions and visualizations using a str
 survey. Their feedback ensures that the tool aligns with clinical practice needs and supports
 informed decision-making in the Philippine healthcare context.
 
-<!-- SECTION: Methodology -->
-
 **Data Gathering Tools and Procedures**
 
-The study will utilize de-identified patient records from selected hospitals in the
-Philippines as the primary source of data for model development. These records will contain
-clinical biomarker measurements and demographic information necessary for training the
-predictive classification model.
+The study will utilize the **NHANES database** as the primary source of data for model development. The dataset is publicly available and contains comprehensive clinical biomarker measurements and demographic information necessary for training the predictive classification model.
 **Blood Biomarkers.** The following blood-based clinical biomarkers will be collected from
 patient records: Fasting Blood Sugar (FBS), Glycated Hemoglobin (HbA1c), Triglycerides (TG),
 Low-Density Lipoprotein Cholesterol (LDL-C), High-Density Lipoprotein Cholesterol (HDL-C),
@@ -1344,827 +1330,575 @@ Retained if core glycemic and
 lipid fields are complete.
 ```
 
-<!-- SECTION: Expert Interviews -->
 
 <!-- NHANES should now be the data -->
-**Marc:** assisting tool po siya to help patient understand paano po nangyayari ang risk assessment
-sa kanila bakit sila nagiging type 2 diabetes.
-
-**Dr. Bilon:** sige, anong parameters ba ang gusto ninyo malaman?
-
-**Marc:** Hba1c po
-
-**Dr. Bilon** : and Fasting Blood Sugar?
-
-**Marc:** ang mga gusto po namin itanong is yung Fasting Plasma Glucose and Tryglicerides. Paano
-po namin siya mabibigyan ng correlation in stages paano po nagdedevelop and diabetes sa kanila
-
-**Dr. Bilon:** Actually magkaiba yon, ang diabetes is pag increase ng sugar mo so yun ang diabetes.
-Kumaba para masabi kang diabetes may certain level yon. Hindi porket high and nakalagay sa
-laboratory result mo diabetic ka na. May requirements yon. So sa diabetes is kailangan ang sugar
-mo is 126 and above sa fasting blood sugar, sa random blood sugar ay 210 above tapos aside from
-that is yung pangatlong requirement ko dyan is dapat may sign and symptoms ka ng diabetes
-Polydipsia, polyuria, and polyphagia, weight loss. Pero kung ikaw ay nasa 126 wala ka pang
-symptoms, uulitin ka ulit.
-
-**Marc:** Paano po yung ganoon doc? 126 and still not diabetic po and high, ano po ang ginagawa
-ninyo as a doctor?
-
-**Dr. Bilon:** Diet and exercise tapos ulitin mo after 2 weeks yes parang lifestyle. Lifestyle
-modification yon.
-
-**Marc:** Regarding, How do you currently decide which meonoapusal patient needs diabetes
-screening and can you walk through on your decision making? Paano po sila nabibigyan ng
-screening sa mga ganon po?
-
-
-**Dr. Bilon:** Menopausal? Post menopausal?
-
-**Marc:** Menopausal po
-
-**Dr. Bilon:** kapag kasi menopausal, nag memenopause na. Hindi lang kasi menopausal women ang
-nagkaka diabetes. Pero ang target nyo ba is menopausal women ba?
-
-**Marc:** Yes po menopausal women po
-
-**Dr. Bilon:** wala naman kasi pinagkakaiba sa lalaki sa babae, sa bata pa, or sa may edad na ang
-pagkaroon ng diabetes, pag detect. Pare pareho lang sila. Tulad ng fasting blood sugar 126 and
-above random blood sugar 210 and above tsaka yung signs and symptoms. Sa lahat iyon pa rin
-and standard. Kumbaga walang direct menopausal siya, peri menopausal siya or post menopausal
-siya. Or kahit lalaki same pa rin.
-
-**Marc:** sa fasting blood sugar, gaano po katagal ang fasting?
-
-**Dr. Bilon:** sa diabetic 8 to 10 hours iyon. Yung iba hanggang 12. 8 to 12 hours
-
-**Marc:** ano po yun nakadipende po sa age po nila? Or still the same po?
-
-**Dr. Bilon:** same lang
-
-**Marc:** Ano po, what blood test do you routinely order po in assessing diabetes risk po?
-
-**Dr. Bilon:** Usually lipid profile, creatinine, uric acid, yung sa liver sgot/sgpt sa liver. Kasi doon
-sa creatinine laging may risk and diabetic na pwede magkaroon ng renal problem yun ang most
-common niya na side effect ng diabetic. kaya mas marami ang nag dialysis na diabetic. Before
-marami yun ang sakit. Basta mga infection sa kidneys, sa urine or nephrotic syndrome. Lately
-2000s marami na ang dialysis na diabetes. Complication ng diabetes. Usually, kasama ang
-hypertension sa diabetic, usually lang hindi lahat. Kapag sinabi mong diabetic tinatawag na cardiac
-
-
-patient na yan. Common ang side effect ng cardiac problem sa diabetic. Usually yan ang inaatake
-sa puso dahil mataas ang cholestorol niya.
-
-**Marc:** At what stage are most of your menopausal patients diagnosed with Type 2 Diabetes during
-prediabetes, at early onset, or after complications have developed? What prevents earlier detection
-in your experience?
-
-**Dr. Bilon:** kapag diabetic na, diagnose na siya ng diabetes. Advise ko lang is regular checkup,
-sugar nila, tsaka regular exercise kasama ang diet. Kaya lang kadalasan failed lagi sa diet and
-exercise. Ang management mo is gamot pa rin pero individualize pa rin ang pasyente. Iassess mo
-pa rin ang pasyente. Hindi lahat pare parehas yung iba nangangailangan ng insulin, yung iba oral
-agent. Pero kapag prediabetic wala kang ibang gagawin dyan kundi monitor lang sila, advise mo
-lang sila every 3 months 6 months magpacheckup ng sugar, diet and exercise and avoid ang
-sigarilyo and alak.
-
-**Marc:** What accuracy level would you need to trust a tool like DIANA 80%, 90%, 95%? What
-features would make you actually use it in practice risk visualization, trend tracking, patient
-reports? What would make you NOT use it?
-
-**Dr. Bilon:** actually first time ko marinig ang diana. Yan ay study nyo diba? First time ko marinig
-kaya di ko pa alam ano ang outcome niyo. Medyo excited din ako kung ano yan para makatulong
-itong interview natin na madevelop niyo. Looking forward ako sa gawa niyo. Ang tanong mo is
-kung ano ang prevention?
-
-**Marc:** accuracy level to predict to help the doctors in actual using of the web application po, kung
-ano po ang gusto nyong nakikita feature sa web application like risk evaluation, risk dashboard,
-risk visualization. Para pag may pinapakita po tayo sa patient, naiitindihan po nila, tracking po.
-
-
-**Dr. Bilon:** kumabaga may graph yon?
-
-**Marc:** Yes po nakikita nila yung changes and mabibigay niyo po yung evaluation niyo na ganto
-ang nangyayari, within years paano naging ganto, bakit di nagbabago yung result mo.
-
-**Dr. Bilon:** tinatanong mo ako kung ano ang magiging itsura? Kung para sa akin maganda yung
-may graph from, yung patient is yung hemoglobin a1c is 1st year andito, then after 10 years or 2
-years andito na tumataas na. Makikita ng patient ang graph. Tumataas habang tumatagal ibig
-sabihin hindi mo naccontrol. Atleast nakikita ng pasyente “oo nga no hindi ko nagagawa” kaya
-mas maganda naka graph.
-
-**Marc:** pati po yung mga patient report po? Mas mabibilis po mattrack.
-
-**Dr. Bilon** : yes, mas better mas lenient para sa akin kasi input ko lang andon na siya. Input ko lang
-makiktia na yung graph.
-
-**Marc** : ano naman po features na ayaw niyo po makita?
-
-**Dr.Bilon:** mas maganda pag bukas mo andoon na yung graph, naka graph na siya yung mga
-parameters niya, yung hemoglobin a1c niya, cholestorol niya, yung creatinine niya. Yung one
-picture andoon na siya.
-
-**Marc:** ang sa amin po kasi is pagkaopen niyo po is mag login lang po kung sino yung doctor,
-makikita niyo po yung dashboard ilan po yung patient niya, ilan yung namomonitor, patient history,
-track record po, kapag clinick mo po makikita mo doon yung record niya. Magkakainput lang po
-is if mag add po kayo ng another patient po.
-
-**Dr. Bilon** : yes maganda yon.
-
-
-**Marc:** What advice would you give to Computer Science students like us to ensure this predictive
-model is clinically useful and not just technically impressive? What mistakes should we avoid?
-
-**Dr. Bilon:** mahirap makita ang mistake dahil wala ka pa na model, as long as andoon lahat ng
-information dapat mayroon clinical analysis example is ganto yung kidney niyo within years. Pero
-yung mali hindi ko pa nakikita iyon. Pero kung ang plano niyo is kunyare 2020 ito ang graph niyo,
-ilang taon na lang kaya ang kidney niyo by 2030 ganto na lang mag function. Baka kailanganin
-mo na ng diabetes that time. Mayroon na Framingham Study na kapag mataaas ang cholesterol by
-that time na ganto na ang value mo may chance na magkakaroon ka na ng atake. Kapag high risk
-ka in the future ilang percent na ang chance mo na aatakihin ka sa puso andoon yon sa Framingham
-Study iyon. Maganda sa study niyo na may ganoon. Ilan ang magiging survial rate mo, kung kaya
-niyo mapredict iyon para maanalyze.
-
-**Marc:** tingin niyo po ba if magagawa po siya na correct and tama po magiging useful po ba siya
-sa mga doctors and patient po in the long run po?
-
-**Dr. Bilon:** sa tingin ko oo, same with the Framingham Study, useful siya. Mapapakita mo sa
-patient mo na ang chance mo ang taas ng cholesterol mo. Ganto ang chances mo na aatakihin ka
-sa puso. Naanalyze to. Ang chances nito is ganito, makikita mo to sa Framingham.
-
-**Neoron:** additional question po, gaano po kaimportante ang insulin sa pagdetect po ng diabetes
-po?
-
-**Dr. Bilon:** insulin? Hindi siya nagddetect, gamot siya ang insulin hindi parameter. Kapag ikaw ay
-mataas ang sugar mo. May mga insulin na tinuturok pero may mga tao naman na hindi naman
-kailangan to ang ginagamit nila is gamot.
-
-**Neoron:** may chances po ba na ang insulin is nagccause ng diabetes po?
-
-
-**Dr. Bilon:** No, siya ang gamot sa diabetes. Actually ang katawan natin ang pancreas iyon ang
-nagpproduce ng insulin. Kunyare kumain tayo ng matamis, magsisignal yung sa katawan natin na
-may kinain tayong matamis. Magsisignal yon sa pancreas na magproduce ng insulin. Kapag may
-sugar ka na maactivate ang beta cell mo, magpproduce ito ng insulin, baba ang sugar kapag maayos
-ang beta cells mo.
-
-**Marc:** tanong ko lang din po, paano naman po nadedevelop yung insulin resistance?
-
-**Dr. Bilon:** actually mga medyo matataba pero di naman lahat e, yung insulin resistance na yon.
-Tinamad na yung insulin, di na nakakapagpababa na nag sugar. Kumabaga natulog lang kaya
-tinatawag na insulin resistance, kasi di siya bumababa sa insulin na naproduce niya. Common yun
-sa matataba. Kaya kung minsan kailangan mo lang ng exercise para maging active pero konti lang
-yon, yung ibang matataba mag insulin man sila dahil insulin resistance di mo mapababa yung sugar
-kaya kailangan mo mag exercise or metformin para sa insulin resistance.
-
-**Sophia:** Additional question lang po, kapag menopausal po ba wala po siya connection sa
-diabetes?
-
-**Dr. Bilon:** ang diabetes ay di lang yan common sa menopausal, bakit marami din na lalaking
-diabetic?
-
-**Sophia:** may nabasa po kami na study which is yung isa sa symptoms ng hormonal changes po is
-doon nagkakaroon ng insulin resistance:
-
-**Dr. Bilon:** sa insulin resistance, ay pwede. Pero siyempre ang ano pa din doon ay pagtaba diba
-kapag bata bata ka pa ay usually active ka, kapag may edad ka na medyo mabagal na ang kilos so
-mahina na ang metabolism mo kaya tumataba ka ngayon. Kaya very common kapag tumataba ang
-isang babae kapag menopause na. Pero walang kinalaman ang diabetes sa menopausal maaring sa
-
-
-insulin resistance pero meron naman nasa younger stage na may insulin resistant na sila kasi
-mataba sila. Usually obese ang insulin resistance. Pero kung mga payat may mga insulin resistance
-pero di ganoon sa mga obese. Tsaka suggest ko sa inyo, ilan ba ang iinterviewhin niyo?
-
-**Marc:** currently tatlo po
-
-**Dr. Bilon:** siyempre mas maganda kung madami, dahil maaring di ko makita ang nakita niyo or
-makita nila ang di ko nakita.
-
-**Marc:** Thank you very much for your time and valuable insights, Dr. Bilon. Your expertise will
-greatly help us ensure that DIANA addresses real clinical needs and is designed with practical
-healthcare applications in mind.
-
-If we have any follow-up questions during our research, would it be possible to reach out to you
-again?
-
-Once again, all information shared today will remain confidential and will be used solely for
-academic purposes. Thank you.
-
-**Dr. Bilon:** Looking forward.
-
-
-**Transcript of Interview with Dr. Dy**
-
-Interviewer: Marc Kennel Angeles, Adrian Gabriell Francisco, Sophia Nicole Grefaldo, and
-Neoron Lopez
-
-Interviewee: Dr. Violeta Felipe-Dy
-
-Date of Interview: October 22, 2025
-
-Location: Felipe-Dy ObGyn Clinic & OBGyn Ultrasound, Binãn Laguna.
-
-**Adrian:** Good day, Dr. Dy, we are 4th-year Computer Science students from Mapúa Malayan
-Colleges Laguna, currently conducting our thesis entitled: DIANA: A Predictive Model-Based
-Application Using Selected Blood Biomarkers for Identifying Menopausal Women at Risk of Type
-2 Diabetes.
-
-The purpose of this interview is to gain professional insights from an OBGYN perspective
-regarding the clinical relationship between menopause and Type 2 Diabetes risk in your practice.
-This interview should take approximately 15 minutes.
-
-Before we begin, may we have your permission to record this interview for documentation
-purposes only? The information you provide will be used strictly for academic purposes and kept
-confidential.
-
-**Dr. Dy:** Type 2 Diabetes in? Menopausal? When you say menopausal, ano ang inyong age na
-papasok sa inyong study?
-
-**Marc:** We are following the standard Word Health Organization age gap po 45
-
-**Sophia:** 45 to 60
-
-
-**Dr. Dy** : so, yun ang inyong inclusion?
-
-**Marc, Sophia, Neoron** : Yes po
-
-**Dr. Dy:** okay, ano ang gusto ninyo malaman?
-
-**Adrian:** Could you please tell us about your specialization and how many years you have been in
-practice?
-
-**Dr. Dy:** I’m an Obstetrics and Gynecologist, 22 years in practice. I graduated my Residency
-training in Fabella Memorial Hospital.
-
-**Adrian:** Approximately what percentage of your patient population consists of perimenopausal
-and postmenopausal women?
-
-**Dr. Dy:** Ilang percent ang patient ko ang?
-
-**Sophia:** Kahit yung estimated nyo lang po
-
-**Adrian:** Perimenopausal and postmenopausal women po
-
-**Dr. Dy:** Kapag Perimenopausal those are the ages before menopause, it depends. Mayroon kasing
-as early as 42, 43 kapag may symptoms na pero nag mmenstruate pa perimenopausal na. Nag start
-na yan ng ages 45. Ilang percent ang nakikita ko? Siguro mga 20 to 25 percent.
-
-**Adrian:** In your practice, have you noticed any relationship between menopause and Type 2
-Diabetes risk?
-
-**Dr. Dy:** I don’t really, ano. Hindi ko sila ni-nonote, your question is again?
-
-**Adrian:** Have you noticed any relationship between menopause and Type 2 Diabetes Risk po?
-
-
-**Dr. Dy:** Menopause and Diabetes Risk. Actually, Diabetes is nasa lahi, nasa genes. Kapag diabetic
-ka minsan as early as reproductive age, nag iincrease na talaga ang sugar mo dipende sa lifestyle
-and diet. But the correlation kung may relation ba ang age sa diabetes? Definitely yes. Kasi as we
-age doon lumalabas ang sakit. Kung may family history the parents, the lolo’s and the aunties are
-diabetic, the chance of you being diabetic also at the ages of 40s and above more likely lalabas.
-Nasagot ko ba is there are correlation between perimenopausal and Diabetes? Yes
-
-**Adrian:** Yes po, During the menopausal transition, what metabolic or physical changes do you
-routinely observe in your patients?
-
-**Dr. Dy:** Weight Gain, definite yan, ang 40s hirap na mag diet yan, hirap ng mag exercise yan, pag
-nag exercise na yan para bang isang- tatlong araw na kain feeling nila may bloatedness na uli
-mataba na sila uli. Diba? Problem ng mga parents nyo yan, mga mommy’s nyo yan.
-
-**Adrian:** In your experience, do women who undergo surgical menopause show different
-metabolic patterns or diabetes risk compared to women experiencing natural menopause?
-
-**Dr. Dy:** It’s the same, as long as you are menopause or yung inyong ovaries ay natanggal na kasi
-yan ang magccause ng menopause. Alam nyo ba kung bakit nagmmenopause? Nag mmenopause
-kasi yung egg cell namin mga babae we are born with aroung 3500 egg cells, when we reach
-puberty isa isa yang narrelease bago mag menstruate, nag oovulate kami, kapag di na fertilize ng
-sperm hindi mabubuntis, mag rrelease ulit kami monthly hanggang maubos siya. Kapag naubos na
-ang egg cell, wala ng production ang ovaries mag menopause na kami. Wala na kami menstruation.
-Pareho lang. Kapag surgical menopause wala ka ng ovaries, natural menopause ubos na ang
-reserve mo sa ovaries mo, so pareho na silang menopause di na sila nag mmenstruate kulang na
-ang hormones sa katawan. Kaya pareho lang.
-
-
-**Adrian:** As an OBGYN managing menopausal women, do you routinely screen for diabetes or
-metabolic syndrome as part of your gynecological care? If yes, what blood tests do you typically
-order?
-
-**Dr. Dy:** Yes, we usually ano, I usually request for Hemoglobin A1C and the magic 12 or the chem
-12 or chem 15 it includes fasting blood sugar, uric acid, cholesterol, triglycerides, SGPT/SGOT
-and sometimes the thyroid hormones just to complete the chemical feature ng patient.
-
-**Adrian:** At what point do you typically refer a menopausal patient to an endocrinologist or internal
-medicine specialist for diabetes evaluation?
-
-**Dr. Dy:** if there is already an increase in the value of their Hemoglobin A1C and their Fasting
-Blood Sugar, also kapag ka mayroon ng symptoms ng frequent candidacy or yeast infection sa
-urine and sa discharge. Yan dalawang yan, kapag ka doctora palagi akong may discharge kulay
-puti. How is your sugar? Dahil common sa diabetic patient ang mayroon vaginal discharge.
-
-**Adrian:** Is the relationship between menopause and diabetes risk something you routinely discuss
-with your patients during menopausal counseling?
-
-**Dr. Dy:** Not necessarily, kasi usually patients come na “doctora I’m already on maintenance, I’m
-already on oral hypoglycemic or insulin. Is more of internist patients kasi ang diabetes but the
-correlation between the OBGYN, menopause and diabetes parang not necessarily na menopause
-causes diabetes. Meron ng diabetes kahit menopause, perimenopausal o hindi. Parang different
-entity sila.
-
-**Adrian:** What information or insights would help you identify which menopausal patients should
-be prioritized for earlier diabetes screening or intervention?
-
-
-**Dr. Dy:** Actually lahat, all women age 40 above should be screen for diabetes. With the lifestyle
-and diet that we have lahat prone. Kahit walang family history, bigla kapag mataas ang sugar why?
-Because of the diet, lifestyle.
-
-**Adrian:** Do you currently use any risk assessment tools, scoring systems, or guidelines to identify
-which menopausal patients are at higher risk for developing Type 2 Diabetes?
-
-**Dr. Dy:** I’m not using any, siguro yung iba. When we attend some convention our diebetologist
-friends actually request us to screen our patients but since small lang ang patients ko na nakikita
-na menopausal, perimenopausal, hindi masyado. Kasi we have seeing so many patients it is time
-consuming, yung kanilang page, dalawang page ata o isang page na gaganunin tapos if they cannot
-understand the secretary will be assisting them so I need to educate pa my secretaries. Parang
-medyo hindi ko pa masyado napag tuunan ng pansin. Anyway, clinically kasi kapag nedyo oops
-mababa, 40s, automatic yan. Medyo ano na yan, candidate na yan. And I do screen naman ang
-ating laboratories nag rerequest na ako ng mga labs.
-
-**Adrian:** From an OBGYN perspective, what are the biggest challenges you face in identifying
-which menopausal patients need earlier diabetes screening?
-
-**Dr. Dy:** Financial, kasi yung pasyente di naman lahat may kaya. Yung area ko wala ako sa alabang,
-nasa palengke ako. So 50 percent of my patient are indigent kapag ka ganoon nirrefer ko na sa
-ating local government hospital so financial minsan ang screening. Kasi kapag nag request ka hindi
-nila nagagawa kasi wala sila pang bayad ng laboratory, kaya nag iintay sila “doctora iintayin ko
-lang po mayroong free sa center” tapos kahit may free babalik sa akin magbabayad sila parang
-dinidiresto ko na sila sa diabetologist para makatipid sila sa time and budget.
-
-
-**Marc:** Follow up question ko lang po about sa correlational din po, sa type 2 diabetes sabi nyo po
-is may correlation sila based on age po. Paano po natin masasabi yung development ng diabetes
-sa isang menopausal is mabilis po o mabagal po?
-
-**Dr. Dy:** Wala silang mabilis or mabagal, kasi kapag andyan, andyan. Majority of the patient are
-asymptomatic from the start. You don’t know you have it. Polydipsia, polyuria, and polyphagia.
-Those are the 3 symptoms of diabetes in pregnancy. Pala ihi, pala inom, pala kain. Noong araw,
-madaling ma identify kasi kapag nag ihi ka lalanggamin ihi mo. May toilet na tayo diba? Madaling
-sabihin sa mga guys, kasi minsan yung mga lalaki kung saan umihi sa kanto, sa likod ng bahay
-nilalanggam. Alam mo na, pero sa babae we don’t do that anymore. So, in proper education sa
-children ng mga parents with diabetes. Dahil sila na mismo ang mag iingat sa anak nila. Kami,
-wala akong lahing diabetes but my husband mayroon. Tinetrain ko na ang mga anak ko na don’t
-masyado sa sweets, kapag nagiincrease ng weight when they reach already the age of 25 tapos
-parang nag ooverweight na sila, “anak magpa chem 10 na kayo, mag palaboratory na” so
-babantayan mo na. So proper education na kapag may family history. Kasi alam mo yung family
-history na napuputulan ng paa, yung mga diabetic foot. Pero hindi ibig sabihin kapag nagkasugat
-ang diabetic automatic putol. Hindi totoo yon. May pasyenteng diabetis ayaw mag pa cesarian kasi
-baka di gumaling ang sugat. Mali iyon, gumagaling ang sugat ng mga adult diabetis. Kasi
-maccontrol na, alam na natin paano ito magagamot. So alin ang napuputol? Ang mga micro
-circulation, kung saan maraming maliliit na ugat? Sa daliri, marami dyan. Kapag na-infect, unti
-unti na, namamtay yung ugat. Kapag namatay yung ugat kasama ang nerve, kapag nakasama ang
-nerve walang sensory. May sugat na di pa nararamdaman. So nabubulok yung parte ng daliri na
-hindi nararamdaman ng pasyente. Ang nakakaalam ay kamag-anak bakit? Ay mabaho. Kung
-kaya’t minsan ang pasyente ba’t mabaho, pagkita sa ano, nabubulok na. Nilalagyan naman ng
-
-
-bandaid, ng sapatos, hindi nakikita. Kaya kapag nakita, itim na hanggang bandang paa na. So,
-ganoon ang diabetes. Pero kapag cesarian section, microcirculation yan, malaki ang blood vessel
-dyan, nakikita kaya nattreat. Ang sa paa hindi.
-
-**Sophia:** Follow up question ko lang po, may possibility kapag nasa manopausal stage na yung
-babae is may risk po talaga ng type 2 diabetes? Nagkakaroon na po talaga ng risk?
-
-**Dr. Dy** : May risk dahil more of ano tayo, genetics pero manopause and diabetes parang incidental
-finding lang dahil menopause nag weight gain ka, kapag nag weight gain ka iccheck mo na if may
-diabetes ka.
-
-**Marc:** Mostly po hormonal changes in the body po?
-
-**Dr. Dy:** yung hormonal changes metabollic? Pwede rin kaya lang more on genetics, more of genes
-talaga. Kapag prone ka sa diabetic, kahit payat ka, kahit di ka pa menopause. When you are still
-in your 30s pwede ka na magkadiabetes.
-
-**Sophia:** yung hormonal changes po ng manopausal, hindi po ba siya big factor for diabetes po?
-
-**Dr. Dy:** nagiging factor siya kasi like polysitic ovaries, nagkakaroon ka ng increase weight gain.
-Pagka increase ka ng weight gain, definitely yung insulin mo nagkakaroon na ng imbalance,
-nagkakaroon ka na ng diabetes.
-
-**Neoron:** Additional question ko lang po, tungkol lang po sa insulin, like may experience po kayo
-in insulin injection po?
-
-**Dr. Dy:** Ano ang tanong mo?
-
-**Neoron:** since sa menopausal women po, like kapag ininject nyo po ng insulin po, is there a
-possibility po na insulin is nagccause ng diabetes?
-
-
-**Dr. Dy:** No, insulin is the treatment for diabetes
-
-**Marc:** To correct his question po, nagkakaroon po ba ng build-up resistance po ba kapag yung
-insulin is injection po?
-
-**Dr. Dy:** Hindi, ganito yan, ang diabetes ay sakit ng pancreas, nagkukulang sila ng insulin kaya
-ang sugar level mo ay tumataas. Kailangan mo ng insulin para ang sugar level mo bababa and
-insulin is the cure for diabetes. Nagkaroon ng study na first line na ngayon ng diabetes ang insulin
-para gumaling ang pancreas mo, di ko lang alam which patients belong to that category. Parang
-mas maaga ka nag insulin, mas nassave ang pancreas mo, parang napoprolong nya yung life ng
-iyong pancreas. So insulin resistance, may tinatawag tayong insulin resistance so may ibang
-metabollic problem iyong pasyente. Medyo mahirap maexplain ng insulin resistance kaya
-biochemical reaction ng katawan na may kulang kang hormone para magkaroon ng increase uptake
-sa insulin mo matanggap ng katawan mo. May tinatawag tayong insulin resistance e, kung iyon
-ang tanong mo. Dahil mayroon na hindi tinatablan ng insulin pero hindi naman. Pero may term
-tayong na insulin resistance patient pero I’m not sure if yun yung iniinject na insulin, hindi yata.
-Parang ang hirap no? Na gets mo ba? Kasi pysological speaking, ang insulin resistance ay hindi
-galing sa insulin na gamot, kung hindi doon sa katawan ng tao mismo, hindi yung artificial insulin
-na iniinject. So yung insulin resistance nasa sistema ng tao kung bakit tumataas ang sugar mo kung
-baga sa loob ng katawan mo di ka nagpproduce ng insulin yan. Insulin resistant hindi yung insulin
-na yung gamot na iniinject ay di natalab. Iba yon. Magkaiba yon. Akala niyo yung insulin ay
-iniinject lang? Hindi, mayroon tayong- katawan natin nagpproduce ng insulin maaring iba ang
-tawag pero nagpproduce tayo para ma ano natin ang sugar na kinakain ng katawan, maconvert
-natin yung sugar into energy.
-
-
-**Adrian** : Thank you very much for your time and valuable insights, Dr. Dy. Your expertise from
-the OBGYN perspective will greatly help us ensure that DIANA addresses the real clinical needs
-of menopausal women in Philippine healthcare.
-
-**Transcript of Interview with Dr. Pajanel**
-
-Interviewer: Marc Kennel Angeles, Adrian Gabriell Francisco, and Neoron Lopez
-
-Interviewee: Dr. Rose Margarett Pajanel
-
-Date of Interview: October 27, 2025
-
-Location: The Medical City – South Luzon, Sta. Rosa, Laguna
-
-**Adrian:** Good day, Dr. Pajanel. We are 4th-year Computer Science students from Mapúa Malayan
-Colleges Laguna, currently conducting our thesis entitled: DIANA: A Predictive Model-Based
-Application Using Selected Blood Biomarkers for Identifying Menopausal Women at Risk of Type
-2 Diabetes.
-
-The purpose of this interview is to gain professional insights from an endocrinology and internal
-medicine perspective regarding the clinical relationship between menopause, metabolic changes,
-and Type 2 Diabetes risk in your practice. This interview should take approximately 15-20 minutes.
-
-Before we begin, may we have your permission to record this interview for documentation
-purposes only? The information you provide will be used strictly for academic purposes and kept
-confidential.
-
-**Dr. Pajanel:** Okay
-
-**Adrian** : Could you please tell us about your specialization as an Internal Medicine-
-Endocrinologist and how many years you have been in practice?
-
-
-**Dr. Pajanel:** Okay, Internal Medicine, propoer practice is 2 years. I started practicing after my
-boards last year. So 2 years. Internal Medicine is deal with adult diseases, generally for internal
-organs, hypertension, diabetes, mostly like that. Lifestyle diseases, Dyslipidemia, everything I am
-related so all your organs we can deal with that. Syempre iba naman sa subspecialty. So, I
-subspecialized with endocrinology that deals with diabetes, thyroid, obesity, dyslipidemia, bone
-and calcium disorder, secretory disorders, adrenal disorder, retro for your hormones we work with
-your retro endo it is a sub specialty of your ob and for gender hormone therapy for those in
-transition.
-
-**Adrian:** Okay po, approximately what percentage of your patient population consists of
-perimenopausal and postmenopausal women?
-
-**Dr. Pajanel:** Perimenopausal pretty smalle right now, your main concern is your perimenopause
-or just by the patient population?
-
-**Adrian:** Population po
-
-**Dr. Pajanel** : like a lot, but those naman they don’t perimenopause issue. Menopause concern or
-age nila na menopause? Kasi magkaiba yon e, I get so many patient na menopause na ang concern
-nila is diabetes they don’t worry about being menopause. Magkaiba yon, alin doon ang gusto nyo
-malaman?
-
-**Marc** : yung menopause po
-
-**Neoron:** Menopause po
-
-**Dr. Pajanel:** nasa 80% of my patient population. Madami talaga.
-
-
-**Adrian:** In your practice, have you noticed any relationship between menopause and Type 2
-Diabetes risk?
-
-**Dr. Pajanel:** No.
-
-**Adrian:** As an endocrinologist managing menopausal women at risk for diabetes, what blood tests
-do you typically order?
-
-**Dr. Pajanel:** FBS, HBA1C, Type 2 diabetes diba? Lahat ba?
-
-**Marc** : hindi po, yung standard lang po
-
-**Dr. Pajanel:** okay sige, CBC, BUN, creatinine, FBS, lipid profile, HBA1C and urinalysis
-
-**Adrian:** How significant is insulin resistance as a predictor of Type 2 Diabetes progression?
-
-**Dr. Pajanel:** Very significant. The most significant factor.
-
-**Adrian:** Do you routinely test for insulin resistance in your at-risk menopausal patients?
-
-**Dr. Pajanel:** No, HOMA – IR yon, mahal yon. Wala naman dito, pwede naman fasting insulin
-pero with no added benefits.
-
-**Adrian:** Considering the Philippine healthcare context, which of these biomarkers are easily
-accessible and affordable for most patients?
-
-**Dr. Pajanel:** Which one? Those that I’ve mentioned? All of them except the HOMA – IR.
-
-**Adrian:** Are any covered by PhilHealth or available for free at government hospitals?
-
-**Dr. Pajanel:** Oo, maccover naman sa PhilHealth but PhilHealth has also own algorithm you can
-look it up. Parang mayroon silang cinocover talaga.
-
-
-**Adrian:** When multiple test results are abnormal like high HbA1c –
-
-**Dr. Pajanel:** But normal FBS? Yun ba yung next question?
-
-**Adrian:** Yes
-
-**Dr. Panajel:** yes, because multi therapy na tayo dito e, so usually diabetes kasama na yung
-medication for cholesterol e. not really, pero it will change what medication will I give. Do you
-see pattern when several? Not really there’s no pattern. So usually there’s a specific lipid profiles
-for diabetics e that mataas ang LDL which your bad cholesterol then low HDL so we can see that
-lipid profile elevation for diabetics. Progression from insulin resistance actually prediabetic pa
-lang makikita na agad ang insulin resistance. So if ang gusto nyo malaman insulin resistance have
-a significant impact on research don’t check the type 2 dahil ang type 2 ay may insulin resistance
-na talaga yan kung yung insulin resistance per se you might want to change your sample to
-prediabetics so yun lang elevated insulin level is a risk yes. It means mayroon siyang marker for
-insulin resistance pero HOMA-IR dapat not really fasting insulin but its not easly accessible.
-Eventually, ang marker pancreatic data cell exertion we can check C-peptide so that’s your main
-insulin excretion you can check C-peptide yun na yung pinaka maganda if you are looking for
-academic value for it not clinically value.
-
-**Adrian:** Our tool DIANA is designed to predict diabetes risk in menopausal women using these
-biomarkers and machine learning. In your opinion, should this type of tool be accessible directly
-to patients for self-assessment, or should it be restricted to healthcare provider use only?
-
-**Dr. Pajanel** : pwede naman [for patient self-assessment] they can do it to check themselves pero I
-guess not really for restriction, but they should still correlate with their healthcare provider kasi its
-similar to people Googling or Chat GPT their symptoms.
-
-
-**Marc:** Explain lang po namin yung gagawin po. Samin po kasi DIANA is a predictive model base
-application using web browser you can input your patient data for checking and comparison-
-
-**Dr. Pajanel:** if they are at risk diba? For developing DM?
-
-**Marc:** yes po mappredict nya po within years po baka ayun na yung chance na maging diabetes
-na po sila and then within years mabibigyan po natin sila ng assessment based on the blood
-biomarkers kung doon tumataas po ba and bumababa and because of that mabibigay natin po sa
-patient o mapapakita po natin patient bakit ganoon kataas yung risk assessment nila based sa blood
-biomarkers na iniinput po natin and for the past checkup po nila makikita nila doon naka graph po
-yung per past po nila and with that po coverage of DIANA yun po yung natatanong po namin
-diyan.
-
-**Dr. Pajanel:** I think it should be para macheck din nila sarili nila they have their own record but
-it should be correlated with their healthcare provider to make proper sense of the data.
-
-**Adrian:** Do you currently use any risk assessment tools or scoring systems to identify which
-menopausal patients are at higher risk for Type 2 Diabetes?
-
-**Dr. Pajanel:** Not really for type 2 DM, but there is a grading system for menopause or frax if you
-are familiar it is a osteoporosis risk yon. You can look at that para at least macheck nyo. Pero ayon
-wala naman talaga risk assessment or scoring system. Just by being a Filipino you are already at
-risk. If not well. Wala naman talaga risk assessment tool or scoring system for type 2 DM.
-
-**Adrian:** From an endocrinologist's perspective, what are the biggest challenges you face in
-identifying which menopausal patients need earlier diabetes screening and intervention? How do
-time constraints, financial barriers, or lack of tools affect your ability to provide proactive care?
-
-
-**Dr. Pajanel:** Challenges? Wala naman, siguro patient preference patients lang na ayaw
-magpacheck ng sarili nila. We try to deal with what we can lalo na sa financial side. Well if you
-notice most of here are HMO so atleast may caution na matetest naman lahat basta macover ng
-HMO nila.
-
-**Adrian:** What is the typical socioeconomic profile of your menopausal patients? What percentage
-can afford comprehensive lab testing without financial hardship?
-
-**Dr. Pajanel:** typical socoeconomic profile? Middle to upper. What percentage can afford? 100%
-or they try to make time for it, they really trying to make budget for it. Ginagawan nila ng paraan,
-they try to find a way to help themselves.
-
-**Adrian:** What features would make a predictive tool like DIANA most useful in your daily
-practice? For example: risk categorization (low/moderate/high), trend visualization over time, or
-automated alerts for high-risk patients? Which would you prioritize?
-
-**Dr. Pajanel:** features?
-
-**Marc** : Doon po sa idedevelop po namin na tool ano po yung gusto niyong makita makita sa web
-application po namin.
-
-**Dr. Pajanel:** Sample ng interface? You can put risk categorization and it would be nice if okay
-naman yung may trends ng lab nila over time. Automated alerts? Paano yung? Maalert ba yung
-patient na high risk sila?
-
-**Marc:** We’re asking po if you think it should be added the automated alert for high risk
-
-**Dr. Pajanel:** sino yung maalert? Yung patient?
-
-**Marc:** yung doctor po
-
-
-**Dr. Pajanel:** siguro you can put na lang I think for me it won’t change the management naman if
-high risk siya. Gagamutin pa rin naman. Pwede may risk assessment lang pero yung risk marker
-or alert siguro may tag na lang siguro kung anong risk nila.
-
-**Adrian:** When you receive referrals of menopausal women from OBGYNs or general practitioners,
-what clinical indicators or concerns are most commonly cited?
-
-**Dr. Pajanel:** The menopausal symptom, the fatigue, the heat flushes, the lack of energy yung yung
-concern nila kung menopause ang concern nila, pero iba yung manopause na diabetic ang concern
-nila iba yon. In that question, parang yung question is ano yung concern ng manopausal? The
-fatigue, the energy, the low of libido, lack of motivation, they find hard to lose weight even they
-do whatever they really workout, they can’t keep the weight down.
-
-**Adrian:** How do you counsel menopausal women who are at high risk for Type 2 Diabetes but
-have not yet developed the disease?
-
-**Dr. Pajanel:** Oo definitely we need to do screening same with menopausal screening naman atleast
-they have to be aware of their current values, their current health status, by screening if there is
-nothing to be done, I advocate healthy lifestyles.
-
-**Adrian:** Have you observed any differences in diabetes-related biomarker patterns or metabolic
-profiles in Filipino menopausal women compared to international reference ranges or Western
-populations?
-
-**Dr. Pajanel:** normally, but that doesn't mean translate to the levels. Siguro same lang din naman
-although cocation counterparts they have bigger fats or mass so but with us we are generally also
-sensitive to medications
-
-
-**Marc:** Additional question lang po, if ever po okay lang po ba na lumapit po sa inyo to test or to
-verify yung magagawa po namin yung application.
-
-**Dr. Pajanel:** pwede naman, message niyo lang si ma’am weng para di tayo tumapat sa toxic na
-araw. Para masched natin yung schedule. Message niyo lang siya.
-
-**Adrian:** Thank you very much for your time and valuable insights, Dr. Pajanel. Your expertise
-from the endocrinology and internal medicine perspective will greatly help us ensure that DIANA
-addresses the real clinical needs of menopausal women in Philippine healthcare and supports early,
-evidence-based diabetes risk assessment.
+association with metabolic dysfunction and Type 2 Diabetes risk, as identified in the literature
+review and validated through consultations with medical experts.
+**Non-Blood Biomarkers and Demographic Variables.** In addition to blood biomarkers,
+the following non-blood clinical indicators and demographic variables will be extracted from
+patient records: Age, Body Mass Index (BMI), Menopausal Status, and Family History of Diabetes.
+These variables provide essential contextual information that influences diabetes risk and will
+serve as supplementary features for the predictive model.
+All data will be extracted from the official NHANES website and data repository. The dataset is already de-identified and anonymized, ensuring compliance with data privacy regulations and ethical research standards without the need for additional institutional clearances for data collection.
+
+```
+Variable Type Coding / Unit Source Missing-Data Rule / Notes
+Fasting Blood
+Sugar (FBS)
+```
+```
+Continuous mg/dL NHANES Lab
+Data
+```
+```
+Records missing FBS are
+excluded from model training.
+Hemoglobin
+A1c (HbA1c)
+```
+```
+Continuous % NHANES Lab
+Data
+```
+```
+Records missing HbA1c are
+excluded from model training.
+Triglycerides
+(TG)
+```
+```
+Continuous mg/dL NHANES Lab
+Data
+```
+```
+Retained if core glycemic and
+lipid fields are complete.
+Low-Density
+Lipoprotein
+(LDL-C)
+```
+```
+Continuous mg/dL NHANES Lab
+Data
+```
+```
+Retained if core glycemic and
+lipid fields are complete.
+```
+
+```
+High-Density
+Lipoprotein
+(HDL-C)
+```
+```
+Continuous mg/dL NHANES Lab
+Data
+```
+```
+Retained if core glycemic and
+lipid fields are complete.
+```
+```
+Total
+Cholesterol
+(TC)
+```
+```
+Continuous mg/dL NHANES Lab
+Data
+```
+```
+Retained if core glycemic and
+lipid fields are complete.
+```
+```
+Age Continuous Years NHANES Demo-
+graphic
+Data
+```
+```
+Records missing age are
+excluded from the final dataset.
+```
+```
+Body Mass
+Index (BMI)
+```
+```
+Continuous kg/m² Computed from
+height/weight
+```
+```
+Exclude records with missing
+or implausible BMI values.
+Menopausal
+Status
+```
+```
+Categorical Perimenopausal/
+Postmenopausal
+```
+```
+NHANES Quest- Only menopausal women (45–
+ionnaire Data 60 years) are retained.
+Family History
+of Diabetes
+```
+```
+Categorical Yes / No NHANES Quest-
+ionnaire Data
+```
+```
+Records with undocumented
+family history are treated as
+missing and excluded from
+modeling.
+Glycemic Class
+Label
+(Outcome Y)
+```
+```
+Categorical Non-Diabetic/
+Prediabetic/
+Diabetic
+```
+```
+Derived from FBS
+& HbA1c
+```
+Derived using clinical cut-offs
+defined in Chapter 2; records
+with inconsistent or missing
+labels removed.
+_Table 3 : Dataset Composition: Blood Biomarkers and Demographic Variables_
+In the NHANES dataset used for model development, structured fields are available for blood biomarkers, age, BMI, menopausal status, and family history of diabetes, which are all included as predictive features. In contrast, lifestyle-related factors such as detailed diet, physical activity patterns, and smoking history are primarily discussed in the Review of Related Literature and medical interviews but may not be consistently populated in all NHANES records, so they are not directly used as input features in the current predictive models.
+
+**Software Methodology**
+
+The development of the DIANA predictive model is anchored in a rapid prototyping
+methodology, which empowers iterative improvement based on the active involvement of
+stakeholders and end-users. This approach allows for the swift creation of functional prototypes,
+facilitating feedback collection from healthcare professionals, and enabling ongoing refinement of
+both the computational model and its interface. By systematically advancing through each stage
+from requirement gathering and data handling to technical and clinical validation the methodology
+ensures the solution remains responsive to practical healthcare needs, data privacy standards, and
+clinical effectiveness. The phased structure provides clarity, traceability, and adaptability, guiding
+the project from inception to real-world readiness.
+
+
+_Figure 2 : General Prototyping Model_
+**Phase 1: Data Acquisition and Biomarker Preparation**
+
+This phase focuses on acquiring, merging, and cleaning clinical data from the NHANES 2009-2023 datasets to build the dataset used for feature selection and model development. The records of postmenopausal women aged 45–60 will be filtered from the larger dataset, targeting a final cohort of approximately 1,376 records. Only records with complete core biomarkers and key demographic fields will be retained to ensure data quality.
+
+The dataset will include blood biomarkers (Fasting Blood Sugar, HbA1c, Triglycerides,
+LDL‑C, HDL‑C, Total Cholesterol) and non‑blood variables (Age, BMI, Menopausal Status,
+
+
+Family History of Diabetes) as the core predictors, with lifestyle-related variables (such as
+smoking history, recent physical activity, and comorbidities like hypertension or heart disease)
+considered as candidate inputs when they are available in structured categorical or numerical form
+in the records. Each variable will be classified by data type (continuous or categorical), checked
+for outliers and unit inconsistencies, and evaluated for completeness. Variables, including any
+lifestyle-related fields, with at least 70% non-missing values will be prioritized for feature
+selection, model training, and interpretation, while highly incomplete or unstructured lifestyle
+information will be used only to descriptively characterize clusters and contextualize the findings,
+and may be excluded from the final predictive model.
+
+A glycemic status label (non‑diabetic, prediabetic, diabetic) will be assigned to each record
+using established FBS and HbA1c cut‑offs summarized in Chapter 2, and this label will serve as
+the class variable _Y_ for both feature selection and supervised learning. Records with inconsistent
+or missing information for defining this label will be removed from the analytic dataset.
+Continuous predictors will then be discretized into clinically meaningful categories (for example,
+normal, borderline, and high ranges for FBS, HbA1c, lipids, and BMI) to support entropy and
+Information Gain computation.
+
+Using the cleaned and discretized dataset, entropy and Information Gain will be applied to
+rank all candidate attributes according to how strongly they help distinguish the glycemic classes.
+The procedure is as follows:
+
+1. Compute the overall entropy _H_ ( _Y)_ of the class label using the full dataset.
+
+## 2. For each attribute Xj , compute the conditional entropy H(Y ∣ Xj) based on its
+
+```
+discrete categories or bins.
+```
+
+## 3. Calculate the Information Gain IG(Y,Xj)=H(Y)−H(Y ∣ Xj) and rank attributes
+
+```
+from highest to lowest IG.
+```
+4. Use the top‑ranking attributes as the core feature set for Phase 2 model training
+    and for generating “risk factor importance” visualizations in the DIANA
+    Analytics tab.
+
+```
+Figure 3 : Data Acquisition and Biomarker Preparation Phase Flow
+```
+
+**Phase 2a: Model Development and Training**
+
+```
+This phase focuses on building the predictive model using the prepared dataset from Phase
+```
+1. The process begins with feature selection using entropy and Information Gain to identify the
+most informative attributes from clinical biomarkers and demographic variables. The selected
+features, which include key blood biomarkers such as Fasting Blood Sugar (FBS), Hemoglobin
+A1c (HbA1c), lipid profiles, and non-blood variables like age, BMI, and menopausal status, serve
+as inputs to machine learning algorithms.
+
+Supervised classification models including Logistic Regression, Random Forest, and
+XGBoost are trained using the selected features. The cleaned dataset will be randomly partitioned
+using stratified sampling into a training set (70%) and an independent test set (30%). The 30%
+subset will serve as the actual held-out test set and will not be used during model development or
+cross-validation. Within the 70% training portion, k-fold cross-validation will be applied to tune
+hyperparameters, compare algorithms, and obtain stable internal performance estimates before
+selecting the final model to evaluate the unseen test set. Model training emphasizes techniques that
+balance predictive accuracy with clinical interpretability and computational efficiency to facilitate
+practical integration into medical decision-making tools.
+
+
+_Figure 4 : Model Development and Training_
+**Phase 2b: Model Testing, Evaluation, and Comparison**
+
+Phase 2b emphasizes the rigorous validation and comparison of trained models to ensure
+clinical relevance and reliability. Models are evaluated using standard metrics such as accuracy,
+precision, recall, F1-score, and Area Under the Receiver Operating Characteristic Curve (AUC-
+ROC). Special focus is placed on AUC-ROC, given its importance in balancing sensitivity and
+specificity in a medical context where accurate discrimination between at-risk and non-risk
+patients is critical, making it a widely used and clinically relevant metric in medical machine
+learning.
+
+
+Beyond statistical performance, models are also assessed for clinical interpretability and
+feasibility of implementation in healthcare settings. The final model selection considers a
+combination of predictive performance, ease of interpretation by clinicians, and computational
+efficiency for real-time application. The testing procedures include evaluation on held-out datasets
+and cross-validation to ensure consistent performance across different patient subgroups.
+
+_Figure 5 : Model Testing, Evaluation and Comparison_
+**Phase 3: Web Application Integration and Visualization Development**
+
+This phase focuses on integrating the trained predictive model into a web-based application
+using a suitable web framework. The application will feature an interactive dashboard for risk
+prediction, biomarker visualization, and patient history tracking. Core functionalities will include
+
+
+a patient management system, risk prediction interface with probability outputs, and data
+visualization tools to display biomarker trends and risk levels. Secure authentication and role-
+based access control will also be implemented to ensure data confidentiality and appropriate
+system access for healthcare professionals.
+
+_Figure 6 : Web Application Integration and Visualization Development Phase Flow_
+**Phase 4: Technical Testing and Validation**
+
+This phase encompasses comprehensive evaluation of the system's technical performance
+and reliability. Functional testing will verify feature accuracy and system performance.
+Performance testing will measure response times and system stability under typical usage
+
+
+conditions. Additionally, the predictive model accuracy will be validated using the test dataset
+reserved during Phase 2, ensuring the system meets required standards for clinical deployment.
+
+_Figure 7 : Technical and Validation Phase Flow_
+**Phase 5: Doctor's Evaluation**
+
+This phase involves conducting evaluation sessions with licensed physicians to assess the
+clinical appropriateness of the model's risk predictions and the usability of the web application.
+Feedback will be gathered regarding the accuracy of risk categorization, interpretability of
+visualizations, and compatibility with clinical workflows. Based on this feedback, necessary
+
+
+refinements will be implemented to enhance the application's effectiveness and relevance for
+clinical use. This iterative process ensures the system aligns with real-world healthcare needs.
+
+_Figure 8 : Doctor’s Evaluation Phase Flow_
+**Data Analysis**
+
+The data analysis phase will involve training and evaluating machine learning algorithms
+to develop a predictive classification model for identifying menopausal women at risk of Type 2
+
+
+Diabetes. The collected biomarker data will be processed, split into training and testing sets, and
+used to compare the performance of multiple supervised learning algorithms.
+
+**Feature Selection using Entropy and Information Gain.** Before training the predictive
+models, the study will perform feature selection to identify which biomarkers and related variables
+are most informative for classifying current glycemic status among menopausal women. Using the
+cleaned and discretized dataset from Phase 1, entropy and Information Gain will be computed for
+each candidate attribute that meets the predefined completeness threshold of at least 70%
+non‑missing values.
+
+Let _Y_ denote the _class_ label (non‑diabetic, prediabetic, diabetic) and let C be the set of
+possible classes. The entropy of _Y_ is defined as
+
+_Equation 1 : Entropy of Y_
+where _p_ ( _c_ ) is the proportion of records belonging to class _c_. For a given attribute _X_ with
+discrete values or bins _V_ , the conditional entropy of _Y_ given _X_ is
+
+_Equation 2 : The Conditional Entropy of Y given X_
+Where _p_ ( _v_ ) is the proportion of records with 𝑋=𝑣 _,_ and 𝐻(𝑌∣𝑋=𝑣) _is_ the entropy of
+the class labels within that subset. The Information Gain of _X_ with respect to _Y_ is then
+
+# 𝑰𝑮 (𝒀,𝑿)=𝑯(𝒀)−𝑯(𝒀|𝑿)
+
+
+# Equation 3 : Information Gain of X with Respect to Y
+
+Which measures how much knowing the value of _X_ reduces uncertainty about the glycemic
+class.
+
+In this study, Information Gain will be computed for each biomarker and non‑blood
+variable (e.g., Fasting Blood Sugar, HbA1c, lipid parameters, age, BMI, menopausal status, family
+history, and any sufficiently complete lifestyle fields). The analysis will proceed as follows:
+
+1. Compute using the overall distribution of glycemic classes in the dataset.
+2. For each attribute 𝑋𝑗, compute the conditional entropy 𝐻(𝑌∣𝑋𝑗) and then the
+    Information Gain 𝐼𝐺(𝑌,𝑋𝑗)=𝐻(𝑌)−𝐻(𝑌∣𝑋𝑗).
+3. Rank all attributes from highest to lowest 𝐼𝐺(𝑌,𝑋𝑗).
+4. Use the top‑ranking attributes as the core feature set for model training in Phase
+    2 and as the basis for the risk‑factor importance visualizations in the DIANA
+    Analytics tab.
+**Machine Learning Algorithms.** The study will apply supervised machine learning
+algorithms to develop a predictive classification model for identifying menopausal women at
+current risk of Type 2 Diabetes. Each model will be trained using the feature set selected through
+the entropy and Information Gain procedure, ensuring that only the most informative biomarkers
+and related variables are used as inputs. The cleaned dataset will be randomly partitioned using
+stratified sampling into a training set (70%) and an independent test set (30%). The 30% subset
+will serve as the actual held-out test set and will not be used during model development or cross-
+validation. Within the 70% training portion, k-fold cross-validation will be applied to tune
+
+
+hyperparameters, compare algorithms, and obtain stable internal performance estimates before
+selecting the final model.
+
+Candidate algorithms include Logistic Regression, Random Forest, and XGBoost, with
+Support Vector Machines (SVM) considered if preliminary results indicate potential benefit.
+Logistic Regression is included for its interpretability and clinically meaningful probability outputs,
+Random Forest for its ability to model nonlinear relationships and handle interactions among
+biomarkers, and XGBoost for its strong performance in structured healthcare data and its capacity
+to capture complex patterns. Each algorithm will be trained on the IG‑selected attributes and
+evaluated using accuracy, classification error rate _(1−accuracy)_ , precision, recall (sensitivity),
+F1‑score, and AUC‑ROC. These metrics will be used to compare candidate models and select the
+final classifier for integration into the DIANA web application based on predictive performance,
+clinical interpretability, and computational efficiency.
+
+**Clustering Analysis.** In addition to supervised classification, the study will apply
+clustering to group menopausal women into risk‑related profiles based on the same feature set
+selected through the entropy and Information Gain procedure. This unsupervised analysis aims to
+reveal patterns in biomarkers and related attributes that may not be captured by classification alone
+and to support more interpretable risk stratification in the DIANA web application.
+
+The primary clustering technique will be k‑means, applied to standardized versions of the
+selected features. Several candidate values of _k_ will be examined using the elbow method and
+silhouette scores to identify several clusters that provide a good balance between within‑cluster
+compactness and between‑cluster separation. The final clustering solution will be profiled in terms
+of average biomarker values and class label distributions, and these cluster profiles will be
+
+
+visualized in the DIANA Analytics tab to help clinicians compare risk groups and relate them to
+the supervised model’s predictions.
+
+The distance metric most commonly employed in K-means is the Euclidean distance.
+Formally, let 𝑋={𝑥 1 ,𝑥 2 ,...,𝑥𝑛} denote the set of _n_ data points in a _d_ - dimensional space, and let
+{𝜇 1 ,𝜇 2 ,...,𝜇𝑘 _}_ represent the centroids of the _k_ clusters. The assignment of each data point _xi_ to a
+cluster _Cj_ is determined by minimizing the Euclidean distance:
+
+_Equation 4 : Euclidean Distance Formula_
+where:
+
+- 𝑥𝑖=(𝑥𝑖 1 ,𝑥𝑖 2 ,...,𝑥𝑖𝑑) is the 𝑖𝑡ℎ data point,
+- 𝜇𝑗=(𝜇𝑗 1 ,𝜇𝑗 2 ,...,𝜇𝑗𝑑) is the centroid of the 𝑗𝑡ℎ cluster.
+
+At each iteration, the K-means algorithm operates in two main steps:
+
+1. **Assignment Step:** Each data point _xi_ is assigned to the cluster _Cj_ whose centroid _μj_ is
+    nearest, as measured by 𝑑(𝑥𝑖,𝜇𝑗):
+
+```
+Equation 5 : Assignment Step Formula
+This means for each point, choose the cluster whose centroid is the closest (usually Euclidean
+distance).
+```
+
+2. **Update Step:** The centroid _μj_ of each cluster is recalculated as the mean of all points
+    assigned to that cluster:
+
+_Equation 6 : Update Step Formula_
+This means the new centroid is the mean of all points assigned to that cluster.
+The objective of K-means is to minimize the total within-cluster sum of squared errors (SSE),
+also referred to as the inertia or the objective function _J_ :
+
+```
+Equation 7 : Inertia or Objective Function J Formula
+where ∥𝑥𝑖−𝜇𝑗∥ 2 denotes the squared Euclidean distance between xi and its corresponding
+cluster centroid 𝜇𝑗.
+```
+**Model Performance Metrics.** These metrics collectively serve as the model selection
+criteria for choosing the final classifier to be deployed in DIANA, balancing overall accuracy,
+classification error, and the correct identification of menopausal women at higher risk for
+undiagnosed Type 2 Diabetes or prediabetes. The performance of each trained model will be
+assessed using standard machine learning evaluation metrics. Accuracy will measure the overall
+proportion of correct predictions, and the Classification Error Rate (calculated as 1 − Accuracy)
+
+
+will quantify the proportion of incorrect predictions while Precision will evaluate the model's
+ability to correctly identify women at risk (positive cases) among all predicted positive cases.
+Recall (Sensitivity) will assess the model's ability to detect all actual positive cases, minimizing
+false negatives, which is critical in healthcare applications where missing at-risk individuals can
+have serious consequences. The F1-Score, which balances precision and recall, will provide a
+single metric for comparing models. Additionally, the Area Under the ROC Curve (AUC-ROC)
+will be calculated to evaluate the model's ability to discriminate between diabetic/prediabetic and
+non-diabetic cases across varying probability thresholds. A model with an AUC above 0.80 will
+be considered acceptable for clinical applications.
+
+These probability scores, ranging from 0 to 1 and displayed as 0–100% in the application,
+represent the model’s estimated confidence that a given menopausal patient currently has
+undiagnosed Type 2 Diabetes or prediabetes based on her biomarker profile. All final performance
+metrics (accuracy, classification error rate, precision, recall, F1-score, and AUC-ROC) will be
+computed on this unseen 30% test set, providing an unbiased estimate of the model’s real-world
+performance and the reliability of DIANA’s risk predictions.
+
+𝑨𝒄𝒄𝒖𝒓𝒂𝒄𝒚= (^) 𝛴 (𝑇𝑃𝛴+^ (𝑇𝑁𝑇𝑃++𝑇𝑁𝐹𝑃)+𝐹𝑁)
+𝑷𝒓𝒆𝒄𝒊𝒔𝒊𝒐𝒏= (^) 𝛴 (𝑇𝑃𝛴^ 𝑇𝑃+𝐹𝑃)
+𝑹𝒆𝒄𝒂𝒍𝒍= (^) 𝛴 (𝑇𝑃𝛴^ 𝑇𝑃+𝐹𝑁)
+
+
+𝑭𝟏 𝑺𝒄𝒐𝒓𝒆= (^) 𝛴 ( 2 𝑇𝑃𝛴+^2 𝐹𝑃𝑇𝑃+𝐹𝑁)
+
+### 𝑨𝑼𝑪= ∑(𝑋𝑖+^1 −𝑋𝑖)× 2 )^ (𝑌𝑖+𝑌𝑖+^1 )
+
+```
+𝑛− 1
+```
+```
+𝑖= 1
+```
+_Equation 8 : Formulas for Model Performance Evaluation_
+**Model Selection and Validation.** The final model will be selected based on a combination
+of predictive accuracy, clinical interpretability, and computational efficiency. Models will be
+compared using the metrics described above, and the best-performing algorithm will be chosen for
+integration into the DIANA web application. To ensure robustness and prevent overfitting, cross-
+validation techniques will be applied during training, allowing the model to be tested on multiple
+subsets of the data. This approach ensures that the selected model generalizes well to unseen data
+and maintains reliable performance in real-world clinical scenarios.
+
+**Initial Cluster Labeling.** The initial cluster labels (SOIRD, SIDD, MARD, MIDD) were
+identified based on relevant research and literature. These assignments reflect commonly
+recognized subgroups in diabetes stratification. For this study, the clusters will be further checked
+
+
+and validated by the licensed physicians and endocrinologists we interviewed, ensuring each label
+accurately matches clinical patterns seen in our target population.
+
+```
+Cluster Label Defining Features
+SOIRD Severe Obesity-Related
+and Insulin-Resistant
+Diabetes
+```
+```
+Highest BMI, highest HOMA-β, highest HOMA-IR;
+moderate HbA1c; youngest age at diagnosis
+```
+```
+SIDD Severe Insulin-
+Deficient Diabetes
+```
+```
+Highest HbA1c, lowest HOMA-β; relatively high
+HOMA-IR; moderate BMI and age
+MARD Mild Age-Associated
+Diabetes Mellitus
+```
+```
+Oldest age at diagnosis; moderate BMI and HbA1c;
+moderate insulin release and resistance
+MIDD Mild Insulin-Deficient
+Diabetes
+```
+Lowest BMI, HbA1c, HOMA-IR; moderate age and
+HOMA-β
+_Table 4 : Initial Clustering Label_
+**Variable Definitions and Metadata for the DIANA Study Dataset.** The following table
+presents a proposed list of variables and their definitions for potential inclusion in the DIANA
+Machine Learning dataset. These variables represent key clinical, demographic, and behavioral
+measures of interest considered relevant to the research's aims. Please note that this is not the final
+dataset, but rather a compilation of variables under consideration for collection and analysis in
+future phases of the study.
+
+```
+Field Name Type Description
+FBS Integer Fasting Blood Sugar (mg/dL). Value represents the participant’s
+fasting plasma glucose measured after at least 8 hours of fasting.
+```
+
+HbA1c Integer Glycated Hemoglobin (HbA1c, %). Value represents the average
+blood glucose control over the past 2–3 months.
+Triglycerides Integer Serum Triglycerides (mg/dL). Value represents the
+concentration of triglycerides in blood after overnight fasting.
+LDL-C Integer Low-Density Lipoprotein Cholesterol (mg/dL). Value indicates
+calculated LDL cholesterol, an atherogenic lipid fraction.
+HDL-C Integer High-Density Lipoprotein Cholesterol (mg/dL). Value
+represents protective HDL cholesterol levels.
+Total Cholesterol Integer Total Serum Cholesterol (mg/dL). Value represents the sum of
+all cholesterol types in blood.
+BMI Integer Body Mass Index (kg/m²). Value calculated as weight in
+kilograms divided by the square of height in meters.
+AGE Integer Age (years) of participant at the time of study enrollment.
+Menopausal
+Status
+
+Binary Menopausal status: 0 = premenopausal, 1 = postmenopausal.
+Indicates if participant has ceased having menstrual periods for
+12 consecutive months.
+Family History of
+Diabetes
+
+Binary Has any biological parent or sibling been diagnosed with
+diabetes? 0 = no, 1 = yes.
+Smoking_History Binary Have you smoked at least 100 cigarettes in your entire life? 0 =
+no, 1 = yes.
+Hypertension Binary Has a healthcare provider ever told you that you have
+hypertension or high blood pressure? 0 = no, 1 = yes.
+
+
+Heart_disease Binary Have you ever been diagnosed with coronary heart disease,
+angina, or myocardial infarction? 0 = no, 1 = yes.
+PhysActivity Binary Physical activity in the past 30 days not including job-related
+activity: 0 = no, 1 = yes.
+_Table 5 : Data Dictionary_
 
 
 ```
-Appendix F
+References
 ```
-Facebook Group: Usapang Perimenopause and Menopause
+Ahlqvist, E., et. al., (2018). Novel subgroups of adult-onset diabetes and their association with
+outcomes: a data-driven cluster analysis of six variables. _The Lancet Diabetes &
+Endocrinology_ , _6_ (5), 361–369. https://doi.org/10.1016/s2213-8587(18)30051- 2
 
+Anklam, C. et. al. (2021, September 16). Oxidative and Cellular Stress Markers
+in Postmenopause Women with Diabetes: The Impact of Years of Menopause. _Journal of
+Diabetes Research_. Doi: 10.1155/2021/3314871.
+Ao, N. et. al., (2025). Clinical and laboratory characteristics of novel diabetes subgroups: A
+systematic review and meta-analysis. _Scientific Reports_ , _15_ (1), 38585.
+https://doi.org/10.1038/s41598- 025 - 22556 - 4
 
-Approval Message for the admin through Facebook Messenger
+Auro, K. et. al. (2014). A metabolic view on menopause and ageing. _Nature Communications, 5_ ,
 
+4708. https://doi.org/10.1038/ncomms5708
 
-Abdulhadi, A. & Al-Mousa, S. (2021). Machine learning approaches for diabetes prediction. _International Journal of Advanced Computer Science_, _13_, 345�356.
+Azurin, J.C, et. al. (1986). Diabetes mellitus survey in the Philippines. _Philippine Journal of
+Public Health, 24(1)_ , 1- 29
 
-Abdulhadi, A. & Al-Mousa, S. (2021). Machine learning approaches for diabetes prediction. _International Journal of Advanced Computer Science_, _13_, 345–356.
+Bi, Y. et. al. (2012). Advanced research on risk factors of type 2 diabetes. _Diabetes/Metabolism
+Research and Reviews_. _28:2_. 32-39. Doi: https://doi.org/10.1002/dmrr.2352
 
-Alvarez, A., et al. (2023). Machine learning in diabetes risk prediction. _Journal of Medical Systems_, _54_, 1234–1245. https://doi.org/10.1007/s00167-023-00345-1
+Campugan, M. P., & Aguaras, J. L. (2025). _Predictive modeling for diabetes classification using
+clinical biomarkers among Filipino adults_. Philippine Journal of Health Informatics,
+14(2), 45–57.
 
-American Diabetes Association. (2022). Standards of Medical Care in Diabetes–2022. _Diabetes Care_, _45_, S1–S264.
 
-Anklam, C. et al. (2021, September 16). Oxidative and Cellular Stress Markers in Postmenopause Women with Diabetes: The Impact of Years of Menopause. _Journal of Diabetes Research_. DOI:10.1155/2021/3314871.
-
-Araneta, M. R., et al. (2020). Diabetes and cardiovascular risk in Filipino women. _Philippine Journal of Internal Medicine_, _76_, 456–465.
-
-Ahlqvist, E., et al. (2018). Novel subgroups of adult-onset diabetes and their association with outcomes: a data-driven cluster analysis of six variables. _The Lancet Diabetes & Endocrinology_, _6_ (5), 361–369. https://doi.org/10.1016/s2213-8587(18)30051-2
-
-Ao, N. et al. (2025). Clinical and laboratory characteristics of novel diabetes subgroups: A systematic review and meta-analysis. _Scientific Reports_ , _15_ (1), 38585. https://doi.org/10.1038/s41598-025 - 22556 - 4
-
-Auro, K. et al. (2014). A metabolic view on menopause and ageing. _Nature Communications_, _5_, 4708. https://doi.org/10.1038/ncomms5708
-
-Azurin, J.C., et al. (1986). Diabetes mellitus survey in Philippines. _Philippine Journal of Public Health_, _24_ (1), 1–29.
-
-Bi, Y. et al. (2012). Advanced research on risk factors of type 2 diabetes. _Diabetes/Metabolism Research and Reviews_, _28_:2_, 32–39. DOI: https://doi.org/10.1002/dmrr.2352
-
-Campugan, M. P., & Aguaras, J. L. (2025). _Predictive modeling for diabetes classification using clinical biomarkers among Filipino adults_. Philippine Journal of Health Informatics, _14_ (2), 45–57.
-
-Cando, M. R., et al. (2024). Diabetes prevalence in Philippines: estimates and projections. _Philippine Journal of Medicine_, _107_, 89–97.
-
-Carr, M. C. (2020). Menopause and metabolic syndrome. _Menopause_, _27_ (2), 119–130.
-
-Chatterjee, D., et al. (2023). Machine learning for diabetes prediction in menopausal women. _BMC Medical Informatics and Decision Making_, _13_, 456.
-
-Chen, L., et al. (2023). Early detection of type 2 diabetes: challenges and opportunities. _Diabetes Research and Clinical Practice_, _33_, 789–803.
-
-Cleveland Clinic. (2023). Menopause and diabetes risk. Retrieved from Cleveland Clinic website: https://my.clevelandclinic.org/health/diseases/12209-diabetes-and-menopause
-
-Cleveland Clinic. (2024). What is menopause? Retrieved from Cleveland Clinic website: https://my.clevelandclinic.org/health/articles/01094-menopause
-
-Congjuico, R. (2018). Facebook as a communication lifeline in Philippines. _Philippine Journal of Communication_, _33_, 567–585.
-
-Cybulska, B., et al. (2023). Biomarkers for diabetes risk in postmenopausal women. _Menopause_, _28_ (4), 315–325.
-
-Cybulska, B., et al. (2025). Adiponectin as an underutilized biomarker in postmenopausal diabetes risk prediction. _Journal of Women's Health_, _34_, 456–468.
-
-Desai, A., et al. (2024). Explainable machine learning for healthcare. _Nature Machine Intelligence_, _6_, 312–325.
-
-Dhaliwal, S. (2025). Type 2 diabetes: Epidemiology and pathophysiology. _Lancet Diabetes & Endocrinology_, _7_, 215–226.
-
-Diabetes UK. (2023). Menopause and diabetes. Retrieved from Diabetes UK website: https://www.diabetes.org.uk/guide-to-diabetes/menopause-and-diabetes
-
-Ezzatvar, M., et al. (2023). Rising prevalence of type 1 diabetes in adults. _Diabetologia_, _66_, 789–795.
-
-Fuller-Thomson, S. (2017). Lifestyle factors and diabetes in Filipinos. _Asia Pacific Journal of Clinical Nutrition_, _26_, 456–468.
-
-Goyal, A., et al. (2023). Diabetes mellitus: Global burden and trends. _Journal of Global Health_, _5_, 234–245.
-
-Gutierrez, G. (2020). Diagnostic values for diabetes screening. _Philippine Journal of Laboratory Medicine_, _25_, 112–119.
-
-Isip-Tan, C., et al. (2020). Facebook health information seeking among Filipinos. _Journal of Medical Internet Research_, _22_, e123.
-
-Jasim, M., et al. (2025). Triglyceride-HDL ratios in diabetes risk assessment. _Journal of Clinical Lipidology_, _64_, 345–357.
-
-Kaliappan, K., et al. (2024). Information gain for feature selection in diabetes datasets. _Expert Systems with Applications_, _87_, 123–139.
-
-Kavakiotis, I., et al. (2017). Clustering for diabetes subgroups. _PLoS ONE_, _12_, e0185456.
-
-Knaflic, J. J., et al. (2021). Data visualization in public health. _Annual Review of Public Health_, _42_, 245–267.
-
-Kopitar, E., et al. (2020). Machine learning for diabetes prediction. _Computers in Biology and Medicine_, _124_, 106–118.
-
-Lapitan, R., & Doromal, A. (2015). Online health communities in Philippines. _Philippine Journal of E-Health_, _12_, 234–247.
-
-Li, X., et al. (2021). Interactive visualization for machine learning explanations. _IEEE Transactions on Visualization and Computer Graphics_, _39_, 567–576.
-
-Liu, Y., et al. (2023). Insulin resistance during menopausal transition. _Journal of Clinical Endocrinology & Metabolism_, _78_, 234–245.
-
-Malti, G., & Gopalakrishnan, U. (2007). Serum adiponectin in postmenopausal diabetic women. _Diabetes Research and Clinical Practice_, _65_, 891–898.
-
-Maramba, M., et al. (2019). Usability testing in digital health tools. _Journal of Medical Internet Research_, _21_, e189.
-
-McNutt, M., et al. (2022). Visual tools for health communication. _BMJ Open_, _12_, e056789.
-
-Mobasseri, R., et al. (2020). Type 1 diabetes in adults. _Diabetes Care_, _43_, 1987–1995.
-
-Mohd Rizal, M., et al. (2024). Machine learning ensemble methods for diabetes prediction. _Applied Soft Computing_, _38_, 1234–1245.
-
-Muka, O., et al. (2017). Early menopause and diabetes risk. _Journal of Clinical Endocrinology_, _85_, 892–898.
-
-Nishida, H., et al. (2021). Postmenopausal glucose metabolism. _Diabetes_, _70_, 445–452.
-
-NIH (National Institutes of Health). (n.d.). Menopause and diabetes. Retrieved from NIH website: https://www.nih.gov/health-topics/menopause-and-diabetes
-
-Patil, S., et al. (2023). Machine learning for distinguishing diabetes subtypes. _BMC Bioinformatics_, _19_, 223.
-
-Personal communication. (2025). Dr. Pajanel. Interview on diabetes screening in menopausal women, Philippine endocrinology perspective.
-
-Philippine Statistics Authority. (n.d.). Health statistics. Retrieved from PSA website: https://psa.gov.ph/statistics
-
-Prasad, S., et al. (2018). Diabetes subgroups in clinical practice. _Diabetes Care_, _41_, 1123–1131.
-
-Schrader, D. et al. (2022). Epigenetic signatures of diabetes subgroups. _Nature Genetics_, _54_, 567–575.
-
-Sharma, R., et al. (2020). Hormonal changes and diabetes after menopause. _Endocrinology_, _161_, 567–574.
-
-Spencer, A. (2024). Menopause and type 2 diabetes risk. _Women's Health_, _33_, 123–130.
-
-Sreehari, N., et al. (2024). Feature selection techniques for diabetes prediction. _Artificial Intelligence in Medicine_, _30_, 456–467.
-
-Sun, Y., et al. (2024). Clinical visualization tools review. _Journal of the American Medical Informatics Association_, _32_, 112–125.
-
-Sirmayanti, S., et al. (2025). Advanced feature selection for diabetes prediction. _Expert Systems with Applications_, _89_, 345–357.
-
-Tamakoshi, K., et al. (2006). Menopause and fasting plasma glucose. _Diabetes Research and Clinical Practice_, _59_, 1123–1129.
-
-Tan, J. (2015). Dietary patterns and diabetes in Filipinos. _Asia Pacific Journal of Clinical Nutrition_, _24_, 789–796.
-
-Taurbekova, K., et al. (2024). Systematic review of clustering in diabetes research. _PLoS ONE_, _19_, e023456.
-
-The Medical City. (2023). Laboratory tests for diabetes. Retrieved from The Medical City website: https://themedicalcity.ph/health-library/laboratory-tests/diabetes
-
-Tripathi, S., et al. (2024). Clustering approaches for diabetes phenotyping. _Diabetes Technology & Therapeutics_, _18_, 1234–1245.
-
-Tubaishat, Z., et al. (2021). Likert-scale surveys for health app evaluation. _JMIR mHealth and uHealth_, _10_, e23456.
-
-Usapang Perimenopause at Menopause. (2023). Facebook group description. Retrieved from Facebook: https://www.facebook.com/groups/usapangperimenopauseatmenopause
-
-Vabalas, A., et al. (2019). Challenges in machine learning for healthcare. _Journal of Healthcare Engineering_, _7_, 89–98.
-
-Veelen, W. J. A., et al. (2021). Therapeutic implications of diabetes subgroups. _Lancet Diabetes & Endocrinology_, _4_, 623–632.
-
-Villa, M. (2017). Local laboratory reference ranges. _Philippine Journal of Laboratory Medicine_, _22_, 234–241.
-
-Van Belle, V., & Van Calster, B. (2015). Visual explanations for medical predictions. _Artificial Intelligence in Medicine_, _23_, 89–98.
-
-Wang, Y., et al. (2018). Biomarkers in menopausal diabetes. _Journal of Women's Health_, _29_, 456–467.
-
-Weng, C., et al. (2017). Visualization tools for clinical decision support. _Journal of Biomedical Informatics_, _83_, 456–465.
-
-World Health Organization. (2023). Global report on diabetes. Retrieved from WHO website: https://www.who.int/health-topics/diabetes
-
-Wu, J., et al. (2014). Lifestyle factors and diabetes prevention. _Journal of Preventive Medicine_, _26_, 789–801.
-
-Xiaoxue, Z., et al. (2024). Machine learning for metabolic syndrome. _BioMed Research International_, _32_, 1123–1131.
-
-Xiao, Y., et al. (2024). Prediabetes screening in menopausal women. _Diabetes Care_, _47_, 789–795.
-
-Yazdkhasti, B., et al. (2024). Premature menopause and diabetes. _Journal of Clinical Endocrinology_, _82_, 1234–1245.
-
-Zhao, Y., et al. (2022). Menopausal transition and diabetes. _Diabetes_, _71_, 456–467.

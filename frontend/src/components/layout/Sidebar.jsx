@@ -152,6 +152,7 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
                 <motion.div
                   layoutId="sidebar-pip"
                   className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-diana-forest rounded-r-full hidden lg:block z-30"
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
             </motion.button>

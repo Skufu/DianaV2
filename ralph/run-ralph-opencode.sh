@@ -3,8 +3,8 @@ set -e
 set -o pipefail
 
 # ═══════════════════════════════════════════════════════════════
-# RALPH V3.1 - Overnight-Safe AI Coding Loop
-# Fixed: Working directory, Summary output
+# RALPH V3.2 - Overnight-Safe AI Coding Loop
+# Features: Hallucination detection, auto-archive, improved verification
 # ═══════════════════════════════════════════════════════════════
 
 # CRITICAL: Change to project root (parent of ralph/ directory)
@@ -15,8 +15,13 @@ echo "📂 Working directory: $(pwd)"
 
 ITERATIONS="${1:-10}"
 UNATTENDED=false
+ARCHIVE_ON_EXIT=false
+ARCHIVE_ONLY=false
+
 for arg in "$@"; do
     [[ "$arg" == "--unattended" || "$arg" == "-u" ]] && UNATTENDED=true
+    [[ "$arg" == "--archive" || "$arg" == "-a" ]] && ARCHIVE_ON_EXIT=true
+    [[ "$arg" == "--archive-only" ]] && ARCHIVE_ONLY=true
 done
 
 # Configuration (paths relative to project root)
@@ -32,6 +37,7 @@ MAX_RETRIES=2
 MAX_RULES=10
 PAUSE_EVERY=10
 TEMP_DIR="${TMPDIR:-$RALPH_DIR/tmp}"
+ARCHIVE_DIR="$RALPH_DIR/archive"
 
 mkdir -p "$TEMP_DIR"
 
@@ -76,8 +82,70 @@ EOF
     echo "📄 Summary written to $SUMMARY_FILE"
 }
 
-# Trap to write summary on ANY exit (Ctrl+C, error, natural end)
-trap write_summary EXIT
+# ─────────────────────────────────────────────────────────────────
+# ARCHIVE / CLEANUP (call after run completes)
+# ─────────────────────────────────────────────────────────────────
+archive_run() {
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local run_name=$(basename "$(dirname "$TASK_FILE")")
+    local archive_path="$ARCHIVE_DIR/${run_name}_${timestamp}"
+    
+    echo ""
+    echo "📦 Archiving run to $archive_path..."
+    mkdir -p "$archive_path"
+    
+    # Archive logs and artifacts
+    [ -f "$SUMMARY_FILE" ] && cp "$SUMMARY_FILE" "$archive_path/" && echo "   ✔ Summary"
+    [ -f "$ERROR_LOG" ] && cp "$ERROR_LOG" "$archive_path/" && echo "   ✔ Error log"
+    [ -f "$SYSTEM_RULES" ] && cp "$SYSTEM_RULES" "$archive_path/" && echo "   ✔ System rules"
+    [ -f "$TASK_FILE" ] && cp "$TASK_FILE" "$archive_path/" && echo "   ✔ Task list"
+    [ -f "$PRD_FILE" ] && cp "$PRD_FILE" "$archive_path/" && echo "   ✔ PRD"
+    
+    # Archive any output files from tmp
+    if [ -d "$TEMP_DIR" ] && [ "$(ls -A "$TEMP_DIR" 2>/dev/null)" ]; then
+        cp -r "$TEMP_DIR"/* "$archive_path/" 2>/dev/null && echo "   ✔ Temp files"
+    fi
+    
+    # Clear error log
+    echo "" > "$ERROR_LOG"
+    echo "   ✔ Cleared error log"
+    
+    # Reset system rules to fresh state
+    cat > "$SYSTEM_RULES" << 'RULES_EOF'
+# System Rules (Learned Patterns)
+## Active Rules
+RULES_EOF
+    echo "   ✔ Reset system rules"
+    
+    # Clean up temp directory
+    rm -rf "$TEMP_DIR"/* 2>/dev/null || true
+    echo "   ✔ Cleared temp files"
+    
+    # Remove lock file
+    rm -f "$LOCK_FILE" 2>/dev/null || true
+    
+    # Clean up stray 'nul' files (Windows artifact)
+    find . -name "nul" -type f -delete 2>/dev/null || true
+    
+    echo "🌟 Archive complete: $archive_path"
+    echo ""
+}
+
+# Handle --archive-only mode (just archive, don't run)
+if [ "$ARCHIVE_ONLY" = true ]; then
+    echo "📦 Archive-only mode"
+    archive_run
+    exit 0
+fi
+
+# Trap: write summary on exit, optionally archive
+cleanup_on_exit() {
+    write_summary
+    if [ "$ARCHIVE_ON_EXIT" = true ]; then
+        archive_run
+    fi
+}
+trap cleanup_on_exit EXIT
 
 # ─────────────────────────────────────────────────────────────────
 # LOCK FILE
@@ -123,8 +191,25 @@ count_rules() { grep -c "^[0-9]\+\." "$SYSTEM_RULES" 2>/dev/null || echo "0"; tr
 prune_rules() {
     local c=$(count_rules)
     if [ "$c" -gt "$MAX_RULES" ]; then
+        # Keep header (first 3 lines)
         head -n 3 "$SYSTEM_RULES" > "$TEMP_DIR/r.md"
-        grep "^[0-9]\+\." "$SYSTEM_RULES" | tail -n "$MAX_RULES" >> "$TEMP_DIR/r.md"
+        
+        # Extract complete rules (handle multi-line by getting content between numbered lines)
+        # Use awk to properly extract the last MAX_RULES complete rules
+        awk -v max="$MAX_RULES" '
+            /^[0-9]+\./ { 
+                if (rule != "") rules[++count] = rule
+                rule = $0
+                next
+            }
+            rule != "" { rule = rule "\n" $0 }
+            END {
+                if (rule != "") rules[++count] = rule
+                start = (count > max) ? count - max + 1 : 1
+                for (i = start; i <= count; i++) print rules[i]
+            }
+        ' "$SYSTEM_RULES" >> "$TEMP_DIR/r.md"
+        
         mv "$TEMP_DIR/r.md" "$SYSTEM_RULES"
     fi
 }
@@ -216,6 +301,32 @@ comprehension_check() {
 }
 
 # ─────────────────────────────────────────────────────────────────
+# HALLUCINATION DETECTION
+# ─────────────────────────────────────────────────────────────────
+detect_hallucination() {
+    local output_file="$1"
+    # Detect excessive non-ASCII (Chinese, etc.) - indicates model confusion
+    local non_ascii_count=$(grep -oP '[^\x00-\x7F]' "$output_file" 2>/dev/null | wc -l)
+    local total_chars=$(wc -c < "$output_file" 2>/dev/null || echo "1")
+    
+    # If more than 20% non-ASCII, likely hallucination
+    if [ "$total_chars" -gt 100 ] && [ "$non_ascii_count" -gt $((total_chars / 5)) ]; then
+        echo "🚨 HALLUCINATION DETECTED: Excessive non-ASCII content ($non_ascii_count chars)"
+        echo "$(date): HALLUCINATION - Non-English response detected" >> "$ERROR_LOG"
+        return 0  # true = hallucination detected
+    fi
+    
+    # Detect completely irrelevant responses (no mention of task-related keywords)
+    if ! grep -qiE '(read|file|task|done|blocked|edit|verify|fix|create)' "$output_file" 2>/dev/null; then
+        echo "🚨 HALLUCINATION DETECTED: No task-related keywords found"
+        echo "$(date): HALLUCINATION - No task keywords in response" >> "$ERROR_LOG"
+        return 0
+    fi
+    
+    return 1  # false = no hallucination
+}
+
+# ─────────────────────────────────────────────────────────────────
 # MAIN LOOP
 # ─────────────────────────────────────────────────────────────────
 echo "═══════════════════════════════════════════════════════════════"
@@ -274,7 +385,24 @@ for ((i=1; i<=ITERATIONS; i++)); do
 Read: @$CONTEXT_PIN, @$SYSTEM_RULES, @$PRD_FILE, @$TASK_FILE
 Complete this task: '$task_text'
 $failure_context
-Fix the code, then mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_DIR/out.txt" || true
+
+IMPORTANT: After completing the task, you MUST:
+1. Edit the task_list.md file to change '- [ ]' to '- [x]' for this exact task
+2. Re-read the file to verify the checkbox was saved
+3. Say DONE if successful, or BLOCKED if you cannot complete it
+
+Do NOT just say DONE without editing the checkbox!" 2>&1 | tee "$TEMP_DIR/out.txt" || true
+        
+        # Allow filesystem to sync after AI completes
+        sync 2>/dev/null || true
+        sleep 1
+        
+        # Check for hallucination before proceeding
+        if detect_hallucination "$TEMP_DIR/out.txt"; then
+            echo "⚠️ Retrying due to hallucination..."
+            sleep 2
+            continue
+        fi
         
         # ═══════════════════════════════════════════════════════════════
         # GROUND TRUTH VERIFICATION: Run the actual test
@@ -301,8 +429,14 @@ Fix the code, then mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_D
             fi
         else
             # No test file to verify - fall back to checkbox detection
+            # Re-read file to ensure we have latest state (filesystem sync)
+            sync 2>/dev/null || true
+            sleep 0.5
             after=$(grep -cEi "\- ?\[x\]" "$TASK_FILE" 2>/dev/null || echo "0")
-            if [ "$after" -gt "$before" ]; then
+            
+            # Also check if THIS specific task line changed
+            current_task=$(get_task_text "$task_line")
+            if [ "$after" -gt "$before" ] || [[ "$current_task" == *"[x]"* ]]; then
                 echo "✅ Task marked complete (no test verification)"
                 commit_type="chore"
                 [[ "$task_text" =~ [Ff]ix ]] && commit_type="fix"
@@ -311,6 +445,7 @@ Fix the code, then mark [x] when done. Say DONE or BLOCKED." 2>&1 | tee "$TEMP_D
                 break
             else
                 echo "⚠️ Task not marked complete after AI attempt $r"
+                echo "   Expected line $task_line to be [x], found: ${current_task:0:50}..."
             fi
         fi
         

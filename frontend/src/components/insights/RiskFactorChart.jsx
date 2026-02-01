@@ -3,6 +3,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from 'recharts';
+import { motion } from 'framer-motion';
+import { cardVariants } from '../../utils/animations';
 
 const RiskFactorChart = React.memo(({ riskFactorImportance }) => {
   // Animation enabled by default
@@ -16,7 +18,14 @@ const RiskFactorChart = React.memo(({ riskFactorImportance }) => {
   }
 
   return (
-    <div className="glass-card p-8 bg-white border border-diana-stone/50">
+    <motion.div
+      variants={cardVariants}
+      initial="offscreen"
+      whileInView="onscreen"
+      viewport={{ once: true, amount: 0.3 }}
+      whileHover="hover"
+      className="glass-card p-8 bg-white border border-diana-stone/50"
+    >
       <div className="mb-6">
         <h3 className="text-2xl font-serif font-bold text-diana-text-primary">Risk Factor Importance</h3>
         <p className="text-diana-text-secondary text-sm mt-2">
@@ -50,7 +59,7 @@ const RiskFactorChart = React.memo(({ riskFactorImportance }) => {
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </motion.div>
   );
 });
 

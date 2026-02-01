@@ -19,6 +19,9 @@ import (
 // New creates and configures the Gin router with all routes and middleware.
 // Returns gin.Engine and AuditLogger for graceful shutdown.
 func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *middleware.AuditLogger) {
+	// Initialize zerolog with appropriate settings for the environment
+	middleware.InitLogger(cfg.Env)
+
 	// Set Gin mode based on environment
 	if cfg.Env == "production" || cfg.Env == "prod" {
 		gin.SetMode(gin.ReleaseMode)
@@ -151,7 +154,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		adminDashboardHandler.Register(admin)
 
 		// User management (with audit logging)
-		adminUsersHandler := handlers.NewAdminUsersHandler(st)
+		adminUsersHandler := handlers.NewAdminUsersHandler(st, broker)
 		adminUsersHandler.Register(admin, auditLogger)
 
 		// Audit logs

@@ -180,6 +180,9 @@ def main():
     df = pd.read_csv(INPUT_PATH)
     print(f"   Total records: {len(df)}")
     
+    # Track original missing values for accurate imputation flag
+    original_missing = df[CONTINUOUS_COLS].isnull().copy()
+    
     # Before imputation stats
     summarize_missing(df, "(BEFORE)")
     
@@ -202,8 +205,30 @@ def main():
     print(f"\n   Complete core records after: {len(complete_after)}")
     print(f"   Improvement: +{len(complete_after) - len(complete_before)} records")
     
-    # Add imputation flag
-    df['imputed'] = True
+    # Round to clinically realistic precision (fix: no more 14 decimal places)
+    print("\n[ROUND] Rounding to clinical precision...")
+    if 'bmi' in df.columns:
+        df['bmi'] = df['bmi'].round(1)
+    if 'triglycerides' in df.columns:
+        df['triglycerides'] = df['triglycerides'].round(0)
+    if 'ldl' in df.columns:
+        df['ldl'] = df['ldl'].round(0)
+    if 'hdl' in df.columns:
+        df['hdl'] = df['hdl'].round(0)
+    if 'total_cholesterol' in df.columns:
+        df['total_cholesterol'] = df['total_cholesterol'].round(0)
+    if 'systolic' in df.columns:
+        df['systolic'] = df['systolic'].round(0)
+    if 'diastolic' in df.columns:
+        df['diastolic'] = df['diastolic'].round(0)
+    print("   Rounded: bmi(1dp), lipids/BP(0dp)")
+    
+    # Mark which rows had any imputation done (fix: not all marked True)
+    current_missing = df[CONTINUOUS_COLS].isnull()
+    was_imputed = (original_missing & ~current_missing).any(axis=1)
+    df['imputed'] = was_imputed
+    imputed_count = was_imputed.sum()
+    print(f"\n[FLAG] Rows with imputed values: {imputed_count} ({imputed_count/len(df)*100:.1f}%)")
     
     # Save
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -218,7 +243,8 @@ def main():
     print("=" * 60)
     print(f"   Records before: {len(complete_before)} complete")
     print(f"   Records after:  {len(complete_after)} complete")
-    print(f"   Gain: +{len(complete_after) - len(complete_before)} ({(len(complete_after) - len(complete_before)) / len(complete_before) * 100:.1f}%)")
+    if len(complete_before) > 0:
+        print(f"   Gain: +{len(complete_after) - len(complete_before)} ({(len(complete_after) - len(complete_before)) / len(complete_before) * 100:.1f}%)")
     
     # Class distribution check
     print("\n   Diabetes class distribution:")

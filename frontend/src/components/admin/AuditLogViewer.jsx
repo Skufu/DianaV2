@@ -1,6 +1,6 @@
 // AuditLogViewer: Paginated, searchable audit event log viewer
-import React, { useEffect, useState, useCallback } from 'react';
-import { fetchAuditLogsApi } from '../../api';
+import React, { useState, useMemo } from 'react';
+import { useAuditLogs } from '../../api';
 import {
   FileText,
   Search,
@@ -12,19 +12,14 @@ import {
   Filter,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
+import { staggerContainer, fadeIn, cardVariants, useReducedMotion } from '../../utils/animations';
 
 const AuditLogViewer = ({ token }) => {
   const isReduced = useReducedMotion();
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
   // Pagination
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
 
   // Filters
   const [actor, setActor] = useState('');
@@ -35,36 +30,28 @@ const AuditLogViewer = ({ token }) => {
   // Expanded rows
   const [expandedRows, setExpandedRows] = useState(new Set());
 
-  const loadEvents = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = { page, page_size: pageSize };
-      if (actor) params.actor = actor;
-      if (action) params.action = action;
-      if (startDate) params.start_date = startDate;
-      if (endDate) params.end_date = endDate;
+  // Build params for React Query
+  const params = useMemo(() => {
+    const p = { page, page_size: pageSize };
+    if (actor) p.actor = actor;
+    if (action) p.action = action;
+    if (startDate) p.start_date = startDate;
+    if (endDate) p.end_date = endDate;
+    return p;
+  }, [page, pageSize, actor, action, startDate, endDate]);
 
-      const response = await fetchAuditLogsApi(token, params);
-      setEvents(response.data || []);
-      setTotal(response.total || 0);
-      setTotalPages(response.total_pages || 1);
-    } catch (err) {
-      setError('Failed to load audit logs');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [token, page, pageSize, actor, action, startDate, endDate]);
+  // Use React Query hook for fetching audit logs
+  const { data, isLoading: loading, error: queryError } = useAuditLogs(params, { enabled: !!token });
 
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
+  const events = data?.data || [];
+  const total = data?.total || 0;
+  const totalPages = data?.total_pages || 1;
+  const error = queryError?.message || null;
 
   const handleSearch = e => {
     e.preventDefault();
     setPage(1);
-    loadEvents();
+    // React Query will automatically refetch due to params change
   };
 
   const toggleExpand = id => {

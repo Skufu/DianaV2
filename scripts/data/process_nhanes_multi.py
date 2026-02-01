@@ -188,6 +188,9 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
     paq = load_xpt(f"PAQ_{suffix}")
     alq = load_xpt(f"ALQ_{suffix}")
     
+    # Load diabetes questionnaire (self-reported diagnosis)
+    diq = load_xpt(f"DIQ_{suffix}")
+    
     if demo.empty:
         return pd.DataFrame()
     
@@ -259,6 +262,11 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
                 alq_cols.append(col)
         if len(alq_cols) > 1:
             df = df.merge(alq[alq_cols], on='SEQN', how='left')
+    
+    # Merge DIQ010 (self-reported diabetes diagnosis)
+    if not diq.empty and 'DIQ010' in diq.columns:
+        df = df.merge(diq[['SEQN', 'DIQ010']], on='SEQN', how='left')
+        print(f"  DIQ010 available: {df['DIQ010'].notna().sum()} records")
     
     df['cycle'] = year
     print(f"  Raw records: {len(df)}")
@@ -333,10 +341,11 @@ def main():
     }
     df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
     
-    # Select final columns (including lifestyle)
+    # Select final columns (including lifestyle and self-reported diabetes)
     final_cols = ['SEQN', 'age', 'hba1c', 'fbs', 'bmi', 'total_cholesterol', 
                   'ldl', 'hdl', 'triglycerides', 'systolic', 'diastolic',
-                  'smoking_status', 'physical_activity', 'alcohol_use', 'cycle']
+                  'smoking_status', 'physical_activity', 'alcohol_use', 
+                  'DIQ010', 'cycle']  # DIQ010 = self-reported diabetes
     df = df[[c for c in final_cols if c in df.columns]]
     
     # Save

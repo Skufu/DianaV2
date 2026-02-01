@@ -107,7 +107,7 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error || 'Request failed');
+    throw new Error(error.message || error.error || 'Request failed');
   }
 
   // Handle empty responses (204 No Content or empty body)
@@ -407,10 +407,11 @@ export const useActivateAdminUser = (userId) => {
   });
 };
 
-export const useAuditLogs = (params = {}) => {
+export const useAuditLogs = (params = {}, options = {}) => {
   return useQuery({
     queryKey: ['admin', 'audit', params],
     queryFn: () => fetchAuditLogsApi(params),
+    ...options,
   });
 };
 
@@ -582,7 +583,7 @@ export const fetchAdminUsersApi = adminListUsersApi;
 export const fetchAdminClinicsApi = async token => {
   return apiFetch('/admin/clinics');
 };
-export const fetchAuditLogsApi = async (token, params = {}) => {
+export const fetchAuditLogsApi = async (params = {}) => {
   const query = new URLSearchParams(params);
   return apiFetch(`/admin/audit?${query}`);
 };

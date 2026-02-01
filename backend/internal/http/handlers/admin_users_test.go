@@ -222,7 +222,7 @@ func setupAdminUsersRouter() (*gin.Engine, *mockAdminUsersStore) {
 		UpdatedAt:    time.Now(),
 	})
 
-	handler := NewAdminUsersHandler(store)
+	handler := NewAdminUsersHandler(store, nil)
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
 		c.Set("user", middleware.UserClaims{

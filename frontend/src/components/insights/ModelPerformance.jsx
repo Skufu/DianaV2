@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import { Brain } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { cardVariants } from '../../utils/animations';
 
 const formatMetric = (value, isPercentage = false, decimals = 1) => {
   if (value === null || value === undefined) return 'N/A';
@@ -42,7 +44,14 @@ const ModelPerformance = React.memo(({ mlMetrics, isLoading = false }) => {
   }
 
   return (
-    <div className="glass-card p-8 bg-white border border-diana-lime/30 shadow-lg shadow-diana-lime/5">
+    <motion.div
+      variants={cardVariants}
+      initial="offscreen"
+      whileInView="onscreen"
+      viewport={{ once: true, amount: 0.3 }}
+      whileHover="hover"
+      className="glass-card p-8 bg-white border border-diana-lime/30 shadow-lg shadow-diana-lime/5"
+    >
       <div className="flex items-center gap-4 mb-8">
         <div className="p-3 bg-diana-lime/10 rounded-xl">
           <Brain size={32} className="text-diana-lime-dark" />
@@ -103,7 +112,7 @@ const ModelPerformance = React.memo(({ mlMetrics, isLoading = false }) => {
           </table>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 });
 

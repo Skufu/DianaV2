@@ -76,7 +76,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
       case 'audit':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <AuditLogViewer />
+            <AuditLogViewer token={token} />
           </Suspense>
         );
       case 'models':

@@ -61,7 +61,7 @@ func (h *AuthHandler) login(c *gin.Context) {
 		if h.broker != nil {
 			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "user not found"})
 		}
-		ErrUnauthorized(c)
+		ErrInvalidCredentials(c)
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
@@ -70,8 +70,13 @@ func (h *AuthHandler) login(c *gin.Context) {
 		if h.broker != nil {
 			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "invalid password"})
 		}
-		ErrUnauthorized(c)
+		ErrInvalidCredentials(c)
 		return
+	}
+
+	// Update last login timestamp (fire and forget - don't fail login if this errors)
+	if err := h.store.Users().UpdateLastLogin(c.Request.Context(), int32(user.ID)); err != nil {
+		log.Printf("[WARN] Failed to update last login for user %d: %v", user.ID, err)
 	}
 
 	// Generate access token (short-lived, 15 minutes)
@@ -203,6 +208,16 @@ func (h *AuthHandler) register(c *gin.Context) {
 	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", true, true)
 	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", true, true)
+
+	// Publish user creation event for real-time tracking
+	if h.broker != nil {
+		h.broker.PublishAuthEvent("user_created", createdUser.Email, c.ClientIP(), c.GetHeader("User-Agent"), true, map[string]any{
+			"user_id":        createdUser.ID,
+			"role":           createdUser.Role,
+			"created_by":     "self", // Self-registration
+			"is_self_signup": true,
+		})
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message":       "registration successful",

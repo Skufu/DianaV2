@@ -2,11 +2,9 @@
 # DIANA V2 - Start All Services
 # Starts: ML Server, Go Backend, Frontend
 
-set -e
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
-cd "$PROJECT_DIR"
+cd "$PROJECT_DIR" || exit 1
 
 # Colors
 GREEN='\033[0;32m'
@@ -19,19 +17,19 @@ echo "============================================================"
 echo -e "${CYAN}DIANA V2 - Starting All Services${NC}"
 echo "============================================================"
 
-# Detect Python version
+# Detect if running on Windows (Git Bash/MSYS/Cygwin)
+IS_WINDOWS=false
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$WINDIR" ]] || [[ -n "$MSYSTEM" ]]; then
+    IS_WINDOWS=true
+fi
+
+# Detect Python
 if [ -d "venv/Scripts" ]; then
-    PYTHON="venv/Scripts/python"
+    PYTHON="venv/Scripts/python.exe"
     echo -e "${GREEN}Using virtual environment (venv/Scripts)${NC}"
 elif [ -d "venv/bin" ]; then
     PYTHON="venv/bin/python"
     echo -e "${GREEN}Using virtual environment (venv/bin)${NC}"
-elif [ -d "../venv/Scripts" ]; then
-    PYTHON="../venv/Scripts/python"
-    echo -e "${GREEN}Using virtual environment (../venv/Scripts)${NC}"
-elif [ -d "../venv/bin" ]; then
-    PYTHON="../venv/bin/python"
-    echo -e "${GREEN}Using virtual environment (../venv/bin)${NC}"
 elif command -v python3 &> /dev/null; then
     PYTHON=python3
 elif command -v python &> /dev/null; then
@@ -41,33 +39,24 @@ else
     exit 1
 fi
 
-# Trap to clean up background processes on exit
-cleanup() {
-    echo ""
-    echo -e "${YELLOW}Shutting down services...${NC}"
-    kill $ML_PID $BACKEND_PID $FRONTEND_PID 2>/dev/null || true
-    exit 0
-}
-trap cleanup SIGINT SIGTERM
-
-# Function to kill process on a specific port (cross-platform)
+# Function to kill process on a specific port
 kill_on_port() {
     local port=$1
     echo -e "${CYAN}Checking port $port...${NC}"
     
-    # Use lsof on macOS/Linux, netstat on Windows
-    if [[ "$OSTYPE" == "darwin"* ]] || [[ "$OSTYPE" == "linux"* ]]; then
+    if [ "$IS_WINDOWS" = true ]; then
+        local pid=$(netstat -ano 2>/dev/null | grep ":$port" | grep "LISTENING" | awk '{print $5}' | head -n 1)
+        if [ -n "$pid" ] && [ "$pid" != "0" ]; then
+            echo -e "${YELLOW}Killing process $pid on port $port...${NC}"
+            taskkill //F //PID "$pid" > /dev/null 2>&1 || true
+            sleep 1
+        fi
+    else
         local pid=$(lsof -ti :$port 2>/dev/null | head -n 1)
         if [ -n "$pid" ]; then
             echo -e "${YELLOW}Killing process $pid on port $port...${NC}"
             kill -9 "$pid" 2>/dev/null || true
-        fi
-    else
-        # Windows/Git Bash
-        local pid=$(netstat -ano 2>/dev/null | grep ":$port" | grep "LISTENING" | awk '{print $5}' | head -n 1)
-        if [ -n "$pid" ]; then
-            echo -e "${YELLOW}Killing process $pid on port $port...${NC}"
-            taskkill //F //PID "$pid" &>/dev/null || kill -9 "$pid" 2>/dev/null || true
+            sleep 1
         fi
     fi
 }
@@ -80,92 +69,208 @@ fi
 
 # Load environment
 if [ -f ".env" ]; then
-    # Use a more reliable way to export env vars
     set -a
     source .env
     set +a
     
-    # Ensure backend has access to .env for godotenv
     if [ ! -f "backend/.env" ]; then
         cp .env backend/.env
     fi
 fi
 
-# Port 5001 is the project standard for ML server
-# Port 5000 conflicts with macOS AirPlay Receiver
-if [ -z "${ML_PORT:-}" ]; then
-    export ML_PORT=5001
-    export MODEL_URL="http://localhost:5001/predict"
-fi
+# Set default ports
+export ML_PORT="${ML_PORT:-5001}"
+export MODEL_URL="${MODEL_URL:-http://localhost:5001/predict}"
+export PORT="${PORT:-8080}"
 
-ML_PORT=${ML_PORT:-5001}
+# Create logs directory
+mkdir -p logs
 
+# Cleanup function
+cleanup() {
+    echo ""
+    echo -e "${YELLOW}Shutting down services...${NC}"
+    
+    # Kill tail process if running
+    if [ -n "$TAIL_PID" ]; then
+        kill $TAIL_PID 2>/dev/null || true
+    fi
+    
+    # Kill by port to be safe
+    if [ "$IS_WINDOWS" = true ]; then
+        for p in $ML_PORT $PORT 4000; do
+            local pid=$(netstat -ano 2>/dev/null | grep ":$p" | grep "LISTENING" | awk '{print $5}' | head -n 1)
+            if [ -n "$pid" ]; then
+                taskkill //F //PID "$pid" > /dev/null 2>&1 || true
+            fi
+        done
+    fi
+    echo -e "${GREEN}All services stopped.${NC}"
+    exit 0
+}
+trap cleanup SIGINT SIGTERM EXIT
+
+# ============================================
 # Start ML Server
+# ============================================
 echo -e "\n${YELLOW}[1/3] Starting ML Server...${NC}"
 kill_on_port $ML_PORT
 echo -e "${CYAN}   Port: $ML_PORT${NC}"
-$PYTHON Ian_ML/server.py &
+
+# Convert to Windows path if needed
+if [ "$IS_WINDOWS" = true ]; then
+    # Use absolute path
+    ML_SCRIPT="$PROJECT_DIR/Ian_ML/server.py"
+    # Convert /c/Users/... to C:/Users/... format for Python
+    ML_SCRIPT=$(echo "$ML_SCRIPT" | sed 's|^/\([a-zA-Z]\)/|\1:/|')
+else
+    ML_SCRIPT="Ian_ML/server.py"
+fi
+
+# Start ML server in background
+cd "$PROJECT_DIR"
+"$PYTHON" "$ML_SCRIPT" > logs/ml-server.log 2>&1 &
 ML_PID=$!
-sleep 2
+sleep 5
 
 # Check if ML server started
-if ! kill -0 $ML_PID 2>/dev/null; then
+ML_RUNNING=false
+for i in {1..8}; do
+    if kill -0 $ML_PID 2>/dev/null; then
+        # Try to connect to the health endpoint
+        if curl -s http://localhost:$ML_PORT/health > /dev/null 2>&1; then
+            ML_RUNNING=true
+            break
+        fi
+    else
+        # Process died
+        break
+    fi
+    sleep 1
+done
+
+if [ "$ML_RUNNING" = false ]; then
     echo -e "${RED}Failed to start ML Server${NC}"
-    echo -e "${YELLOW}Hint: If port 5000 is in use, try changing ML_PORT to 5001 in .env${NC}"
-    echo -e "${YELLOW}On macOS, you may need to disable 'AirPlay Receiver' in System Settings > General > AirDrop & Handoff${NC}"
+    echo -e "${YELLOW}Last 20 lines of logs/ml-server.log:${NC}"
+    tail -20 logs/ml-server.log 2>/dev/null || echo "(log file not found or empty)"
     exit 1
 fi
-echo -e "${GREEN}   ML Server running on port ${ML_PORT:-5001}${NC}"
+echo -e "${GREEN}   ML Server running on port $ML_PORT (PID: $ML_PID)${NC}"
 
-# Start Go Backend (port 8080)
+# ============================================
+# Start Go Backend
+# ============================================
 echo -e "\n${YELLOW}[2/3] Starting Go Backend...${NC}"
-kill_on_port ${PORT:-8080}
-cd backend
+kill_on_port $PORT
+cd backend || exit 1
 
-# On Windows, air has issues with PowerShell - use go run directly
-if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$WINDIR" ]]; then
-    echo -e "${YELLOW}   Windows detected, using 'go run' (air has PowerShell issues)...${NC}"
-    go run ./cmd/server &
-elif command -v air &> /dev/null; then
+# Check if air is available (skip on Windows - has PowerShell compatibility issues)
+USE_AIR=false
+if [ "$IS_WINDOWS" = false ]; then
+    if command -v air &> /dev/null; then
+        # Use air -v which just prints version without watching
+        if air -v > /dev/null 2>&1; then
+            USE_AIR=true
+        fi
+    fi
+fi
+
+if [ "$USE_AIR" = true ]; then
     echo -e "${GREEN}   Using 'air' for live reloading...${NC}"
-    air &
+    echo -e "${CYAN}   Config: .air.toml${NC}"
+    air > ../logs/backend.log 2>&1 &
 else
-    echo -e "${YELLOW}   'air' not found, using 'go run'...${NC}"
-    go run ./cmd/server &
+    echo -e "${YELLOW}   Using 'go run' (no live reloading on Windows)...${NC}"
+    # On Windows, use the correct Go from PATH (avoid nohup which can break PATH)
+    if [ "$IS_WINDOWS" = true ]; then
+        GO_BIN=$(which go)
+        "$GO_BIN" run ./cmd/server > ../logs/backend.log 2>&1 &
+    else
+        go run ./cmd/server > ../logs/backend.log 2>&1 &
+    fi
 fi
 BACKEND_PID=$!
 cd ..
-sleep 3
+sleep 15  # Go build can take a while
 
-# Check if backend started
-if ! kill -0 $BACKEND_PID 2>/dev/null; then
+# Check if backend started (wait up to 45 seconds for build + startup)
+BACKEND_RUNNING=false
+for i in {1..30}; do
+    if kill -0 $BACKEND_PID 2>/dev/null; then
+        if curl -s http://localhost:$PORT/api/v1/healthz > /dev/null 2>&1; then
+            BACKEND_RUNNING=true
+            break
+        fi
+    else
+        break
+    fi
+    sleep 1
+done
+
+if [ "$BACKEND_RUNNING" = false ]; then
     echo -e "${RED}Failed to start Backend${NC}"
-    kill $ML_PID 2>/dev/null
+    echo -e "${YELLOW}Last 20 lines of logs/backend.log:${NC}"
+    tail -20 logs/backend.log 2>/dev/null || echo "(log file not found or empty)"
     exit 1
 fi
-echo -e "${GREEN}   Backend running on port ${PORT:-8080}${NC}"
+echo -e "${GREEN}   Backend running on port $PORT (PID: $BACKEND_PID)${NC}"
 
-# Start Frontend (port 4000)
+# ============================================
+# Start Frontend
+# ============================================
 echo -e "\n${YELLOW}[3/3] Starting Frontend...${NC}"
 kill_on_port 4000
-cd frontend
-npm run dev &
+cd frontend || exit 1
+
+npm run dev > ../logs/frontend.log 2>&1 &
 FRONTEND_PID=$!
 cd ..
-sleep 2
+sleep 5
 
+# Check if frontend started
+FRONTEND_RUNNING=false
+for i in {1..8}; do
+    if kill -0 $FRONTEND_PID 2>/dev/null; then
+        if curl -s http://localhost:4000 > /dev/null 2>&1; then
+            FRONTEND_RUNNING=true
+            break
+        fi
+    else
+        break
+    fi
+    sleep 1
+done
+
+if [ "$FRONTEND_RUNNING" = true ]; then
+    echo -e "${GREEN}   Frontend running on port 4000 (PID: $FRONTEND_PID)${NC}"
+else
+    echo -e "${YELLOW}Frontend starting... (may take a moment)${NC}"
+fi
+
+# ============================================
+# Summary
+# ============================================
 echo ""
 echo "============================================================"
 echo -e "${GREEN}All services started!${NC}"
 echo "============================================================"
 echo ""
 echo "Services:"
-echo -e "  ${CYAN}ML Server:${NC}  http://localhost:${ML_PORT:-5000}/health"
-echo -e "  ${CYAN}Backend:${NC}    http://localhost:${PORT:-8080}/api/v1/healthz"
+echo -e "  ${CYAN}ML Server:${NC}  http://localhost:$ML_PORT/health"
+echo -e "  ${CYAN}Backend:${NC}    http://localhost:$PORT/api/v1/healthz"
 echo -e "  ${CYAN}Frontend:${NC}   http://localhost:4000"
 echo ""
-echo "Press Ctrl+C to stop all services"
+echo -e "Press ${YELLOW}Ctrl+C${NC} to stop all services"
 echo ""
+echo "============================================================"
+echo -e "${CYAN}Live Logs${NC}"
+echo "============================================================"
 
-# Wait for any process to exit
-wait
+# Start tail in background
+tail -f logs/ml-server.log logs/backend.log logs/frontend.log &
+TAIL_PID=$!
+
+# Wait loop that responds to Ctrl+C
+while kill -0 $TAIL_PID 2>/dev/null; do
+    sleep 1
+done
