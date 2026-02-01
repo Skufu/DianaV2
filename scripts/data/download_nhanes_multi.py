@@ -41,6 +41,7 @@ FILE_BASES = [
     "SMQ",     # Smoking questionnaire
     "PAQ",     # Physical activity questionnaire
     "ALQ",     # Alcohol use questionnaire
+    "DIQ",     # Diabetes questionnaire (self-reported diagnosis)
 ]
 
 

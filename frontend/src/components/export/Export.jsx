@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { API_BASE, exportPDFApi } from '../../api';
 import Button from '../common/Button';
 import { Download, FileText, Filter, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Export = ({ token }) => {
   const [menopauseFilter, setMenopauseFilter] = useState('all');
@@ -59,7 +60,11 @@ const Export = ({ token }) => {
       </header>
 
       {/* Filtering Options */}
-      <div className="glass-card p-6 bg-white">
+      <motion.div
+        whileHover={{ scale: 1.01, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.1)" }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className="glass-card p-6 bg-white"
+      >
         <div className="flex items-center gap-2 mb-4">
           <div className="w-8 h-8 rounded-lg bg-diana-forest/10 flex items-center justify-center">
             <Filter size={18} className="text-diana-forest" />
@@ -166,10 +171,14 @@ const Export = ({ token }) => {
             </div>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Export Options */}
-      <div className="glass-card p-6 bg-white">
+      <motion.div
+        whileHover={{ scale: 1.01, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.1)" }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className="glass-card p-6 bg-white"
+      >
         <div className="flex items-center gap-2 mb-4">
           <div className="w-8 h-8 rounded-lg bg-diana-forest/10 flex items-center justify-center">
             <Download size={18} className="text-diana-forest" />
@@ -234,10 +243,14 @@ const Export = ({ token }) => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Insights Report */}
-      <div className="glass-card p-6 bg-white">
+      <motion.div
+        whileHover={{ scale: 1.01, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.1)" }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className="glass-card p-6 bg-white"
+      >
         <div className="flex items-center gap-2 mb-4">
           <div className="w-8 h-8 rounded-lg bg-diana-forest/10 flex items-center justify-center">
             <FileText size={18} className="text-diana-forest" />
@@ -280,10 +293,14 @@ const Export = ({ token }) => {
             </Button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Data Privacy Notice */}
-      <div className="bg-amber-50 p-6 rounded-3xl border border-amber-200">
+      <motion.div
+        whileHover={{ scale: 1.01 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className="bg-amber-50 p-6 rounded-3xl border border-amber-200"
+      >
         <h4 className="font-bold text-amber-800 mb-2 flex items-center gap-2">
           <AlertTriangle size={20} className="text-amber-600" />
           Data Privacy & Security Notice
@@ -292,8 +309,8 @@ const Export = ({ token }) => {
           Exported files contain protected health information (PHI). Ensure compliance with HIPAA, GDPR, or applicable data protection regulations.
           Store files securely, encrypt when transmitting, and delete when no longer needed for clinical or research purposes.
         </p>
-      </div>
-    </div>
+      </motion.div>
+    </div >
   );
 };
 

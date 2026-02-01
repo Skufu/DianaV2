@@ -1,7 +1,0 @@
-
----
-
-<!-- SECTION: References -->
-
-**References**
-

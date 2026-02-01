@@ -28,9 +28,48 @@ BIOMARKER_RANGES = {
 }
 
 
-def classify_diabetes(hba1c):
+def classify_diabetes_self_reported(diq010, hba1c):
     """
-    Classify diabetes status based on HbA1c (per ADA guidelines).
+    Classify diabetes using self-reported diagnosis (DIQ010).
+    
+    DIQ010 Response Codes (NHANES Diabetes Questionnaire):
+      1 = Yes (doctor told them they have diabetes)
+      2 = No
+      3 = Borderline (prediabetes)
+    
+    For those who said "No" (DIQ010=2), we use HbA1c to distinguish
+    between Normal and undiagnosed Pre-diabetic, but this is secondary.
+    
+    Returns: 'Normal', 'Pre-diabetic', 'Diabetic', or None
+    """
+    if pd.isna(diq010):
+        return None  # Require self-report - don't impute
+    
+    diq010 = int(diq010)
+    
+    if diq010 == 1:
+        # Doctor diagnosed diabetes
+        return "Diabetic"
+    elif diq010 == 3:
+        # Borderline / prediabetes
+        return "Pre-diabetic"
+    elif diq010 == 2:
+        # Said "No" to diabetes diagnosis
+        # Use HbA1c to catch undiagnosed prediabetes
+        if pd.isna(hba1c):
+            return "Normal"
+        elif hba1c >= 5.7:
+            return "Pre-diabetic"  # Undiagnosed prediabetes
+        else:
+            return "Normal"
+    
+    return None
+
+
+def classify_diabetes_hba1c(hba1c):
+    """
+    LEGACY: Classify diabetes based on HbA1c (per ADA guidelines).
+    Used only for validation/comparison, NOT for primary labels.
     
     Normal: < 5.7%
     Pre-diabetic: 5.7 - 6.4%
@@ -195,20 +234,41 @@ def main():
     print("   [NOTE] Outliers flagged but not removed - preserving data integrity")
     
     # =========================================
-    # STEP 3: Add Diabetes Labels
+    # STEP 3: Add Diabetes Labels (Self-Reported)
     # =========================================
-    print("\n[LABEL] Adding diabetes_status (HbA1c-based)...")
-    df['diabetes_status'] = df['hba1c'].apply(classify_diabetes)
+    print("\n[LABEL] Adding diabetes_status (DIQ010 self-reported)...")
+    
+    if 'DIQ010' in df.columns:
+        # Use self-reported diagnosis (primary)
+        df['diabetes_status'] = df.apply(
+            lambda row: classify_diabetes_self_reported(
+                row.get('DIQ010'), row.get('hba1c')
+            ),
+            axis=1
+        )
+        
+        # Report DIQ010 distribution
+        diq_counts = df['DIQ010'].value_counts().to_dict()
+        print(f"   DIQ010 distribution: {diq_counts}")
+        print(f"   (1=Diabetic, 2=No, 3=Borderline)")
+        
+        # Add HbA1c-based status for validation comparison
+        df['hba1c_status'] = df['hba1c'].apply(classify_diabetes_hba1c)
+        
+        # Check agreement between self-reported and HbA1c
+        both_valid = df['diabetes_status'].notna() & df['hba1c_status'].notna()
+        if both_valid.sum() > 0:
+            agreement = (df.loc[both_valid, 'diabetes_status'] == df.loc[both_valid, 'hba1c_status']).sum()
+            total = both_valid.sum()
+            print(f"   Self-reported/HbA1c agreement: {agreement}/{total} ({agreement/total*100:.1f}%)")
+            print(f"   [NOTE] Lower agreement = less data leakage (good!)")
+    else:
+        # Fallback to HbA1c if DIQ010 not available
+        print("   [WARN] DIQ010 not found - falling back to HbA1c-based labels")
+        df['diabetes_status'] = df['hba1c'].apply(classify_diabetes_hba1c)
     
     # Add FBS-based status for validation
     df['fbs_status'] = df['fbs'].apply(classify_fbs)
-    
-    # Check agreement
-    both_valid = df['diabetes_status'].notna() & df['fbs_status'].notna()
-    if both_valid.sum() > 0:
-        agreement = (df.loc[both_valid, 'diabetes_status'] == df.loc[both_valid, 'fbs_status']).sum()
-        total = both_valid.sum()
-        print(f"   HbA1c/FBS agreement: {agreement}/{total} ({agreement/total*100:.1f}%)")
     
     # =========================================
     # STEP 4: Add Menopausal Status

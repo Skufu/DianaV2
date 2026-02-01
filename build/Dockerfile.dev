@@ -1,0 +1,32 @@
+# Backend Development Dockerfile with Air hot-reload
+FROM golang:1.24-alpine
+
+WORKDIR /app
+
+# Install Air for hot-reload
+RUN go install github.com/cosmtrek/air@latest
+
+# Install build dependencies
+RUN apk add --no-cache git curl
+
+# Enable modules
+ENV CGO_ENABLED=0 GO111MODULE=on
+
+# Pre-cache dependencies
+COPY backend/go.* ./backend/
+WORKDIR /app/backend
+RUN go mod download
+
+# Copy backend source
+WORKDIR /app
+COPY backend/ ./backend/
+
+# Copy Air config if it exists
+COPY .air.toml* ./
+
+WORKDIR /app/backend
+
+EXPOSE 8080
+
+# Default command uses Air for hot-reload
+CMD ["air", "-c", "../.air.toml"]

@@ -95,6 +95,10 @@ func ErrUnauthorized(c *gin.Context) {
 	errorResponse(c, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required")
 }
 
+func ErrInvalidCredentials(c *gin.Context) {
+	errorResponse(c, http.StatusUnauthorized, "INVALID_CREDENTIALS", "Invalid email or password")
+}
+
 func ErrForbidden(c *gin.Context) {
 	errorResponse(c, http.StatusForbidden, "FORBIDDEN", "You do not have permission to perform this action")
 }
