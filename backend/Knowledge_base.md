@@ -12,10 +12,12 @@ Go/Gin REST API for DIANA diabetes risk assessment. PostgreSQL with SQLC, JWT au
 ./
 ├── cmd/              # Entrypoints: server, migrate, seed
 ├── internal/
+│   ├── cache/         # Redis cache implementation
 │   ├── config/        # Environment loading
-│   ├── http/         # Gin handlers, middleware, router
+│   ├── http/         # Gin handlers, middleware, router, sse
 │   ├── ml/           # ML predictor client (HTTP + mock)
 │   ├── models/        # Domain types (types.go)
+│   ├── pdf/          # PDF report generator implementation
 │   ├── services/      # Business logic (PDF, notifications, validation)
 │   └── store/        # Data access (SQLC + postgres impl)
 ├── migrations/        # Goose SQL migrations
@@ -93,7 +95,7 @@ Go/Gin REST API for DIANA diabetes risk assessment. PostgreSQL with SQLC, JWT au
 - Biomarker validation in `internal/ml/validation.go`
 
 **PDF Reports:**
-- PDF generation in `internal/services/pdf_service.go`
+- PDF generation in `internal/services/pdf_export_service.go`
 - Uses `gopdf` library
 - Notified via queue (not implemented)
 
