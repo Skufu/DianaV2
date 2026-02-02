@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-01-28
-**Updated:** 2026-01-28
+**Updated:** 2026-02-02
 **Commit:** Current
 **Branch:** main
 
@@ -26,7 +26,7 @@ Multi-tier medical AI platform: diabetes risk prediction for menopausal women. G
 │   │   ├── api.js         # Centralized API layer
 │   │   └── utils/         # Device capabilities, validation
 │   └── e2e/            # Playwright E2E tests
-├── ml/                   # Python ML service (Flask)
+├── Ian_ML/                   # Python ML service (Flask)
 │   ├── predict.py         # Inference server
 │   ├── train.py           # K-Means clustering
 │   └── mlflow_config.py   # Experiment tracking
@@ -62,7 +62,7 @@ Comprehensive knowledge base documentation for all major directories:
 | DB queries | backend/internal/store/queries/*.sql | SQLC sources |
 | Generated code | backend/internal/store/sqlc/*.go | DO NOT EDIT (run sqlc generate) |
 | Domain models | backend/internal/models/types.go | Go structs for API |
-| ML prediction | ml/predict.py | Dual predictor (ADA baseline vs clinical metabolic) |
+| ML prediction | Ian_ML/predict.py | Dual predictor (ADA baseline vs clinical metabolic) |
 | Validation | backend/internal/ml/validation.go | Biomarker range checks |
 | Auth flow | backend/internal/http/handlers/auth.go | JWT + refresh tokens |
 | PDF export | backend/internal/services/pdf_export_service.go | gopdf library |
@@ -71,7 +71,7 @@ Comprehensive knowledge base documentation for all major directories:
 | User flows | frontend/src/components/user/ | Onboarding, Dashboard, Trends, Profile |
 | Charts | frontend/src/components/common/ | SHAPExplanation (Recharts integration) |
 | API wrapper | frontend/src/api.js | apiFetch/mlFetch, centralized endpoints |
-| ML training | ml/train.py, scripts/train/train_clusters.py | K-Means, CatBoost |
+| ML training | Ian_ML/train.py, scripts/train/train_clusters.py | K-Means, CatBoost |
 | Data processing | scripts/data/*.py | NHANES download, merge, imputation |
 | Thesis generation | scripts/thesis/*.py | Manuscript verification, vignettes, outputs |
 | CI/CD | .github/workflows/ci.yml | Multi-language tests, docker builds |
@@ -85,10 +85,10 @@ Comprehensive knowledge base documentation for all major directories:
 | Store | interface | backend/internal/store/store.go | All repositories | Central contract |
 | UserRepository | interface | backend/internal/store/postgres.go | handlers | User CRUD + trends |
 | AssessmentRepository | interface | backend/internal/store/postgres.go | handlers | Risk assessment CRUD |
-| Predict(a) | func | ml/predict.py | handlers | Inference endpoint |
-| ValidateInput(a) | func | ml/predict.py | internal/ml/validation.go | Safety check |
-| DianaPredictor | class | ml/server.py | Flask router | ADA model wrapper |
-| ClinicalPredictor | class | ml/server.py | Flask router | Metabolic model wrapper |
+| Predict(a) | func | Ian_ML/predict.py | handlers | Inference endpoint |
+| ValidateInput(a) | func | Ian_ML/predict.py | internal/ml/validation.go | Safety check |
+| DianaPredictor | class | Ian_ML/server.py | Flask router | ADA model wrapper |
+| ClinicalPredictor | class | Ian_ML/server.py | Flask router | Metabolic model wrapper |
 | apiFetch | func | frontend/src/api.js | All components | Backend API calls |
 | mlFetch | func | frontend/src/api.js | All components | ML server calls |
 | deviceCapabilities | func | frontend/src/utils/deviceCapabilities.js | App, Insights | Performance tiering |
@@ -192,7 +192,7 @@ npm run format:check
 make test-ml
 
 # Run specific test file (via pytest)
-cd ml && pytest predict.py -v
+cd Ian_ML && pytest predict.py -v
 
 # Train models
 make ml-train
