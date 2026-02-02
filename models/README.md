@@ -26,7 +26,7 @@ models/
 ├── random_forest.joblib          # Random Forest model
 ├── xgboost.joblib                # XGBoost model
 ├── logistic_regression.joblib    # Logistic Regression model
-├── kmeans_model.joblib           # K-Means clustering (K=3 or K=4)
+├── kmeans_model.joblib           # K-Means clustering (K=4)
 ├── scaler.joblib                 # StandardScaler for feature normalization
 ├── cluster_labels.json           # Cluster name mappings
 ├── cluster_profiles.csv          # Cluster centroid profiles
@@ -35,27 +35,47 @@ models/
 ├── k_optimization.png            # Elbow method plot
 ├── model_metrics.json            # Model performance metrics
 │
+├── binary/                       # Binary classification models (Diabetic vs Non-Diabetic)
+│   ├── best_model.joblib
+│   ├── logistic_regression.joblib
+│   ├── random_forest.joblib
+│   ├── scaler.joblib
+│   ├── xgboost.joblib
+│   ├── results/
+│   └── visualizations/
+│
 ├── clinical/                     # Clinical model variant (non-HbA1c)
 │   ├── best_model.joblib         # Clinical classifier
+│   ├── best_model_calibrated.joblib # Calibrated probability model
+│   ├── catboost.joblib           # CatBoost model
+│   ├── lightgbm.joblib           # LightGBM model
+│   ├── stacking_ensemble.joblib  # Stacking ensemble
+│   ├── voting_ensemble.joblib    # Voting ensemble
 │   ├── random_forest.joblib      # Clinical RF
 │   ├── xgboost.joblib            # Clinical XGB
 │   ├── logistic_regression.joblib
 │   ├── kmeans_model.joblib       # Clinical clustering
+│   ├── cluster_scaler.joblib     # Scaler for clustering
 │   ├── scaler.joblib             # Clinical scaler
 │   ├── results/                  # Clinical metrics
 │   └── visualizations/           # Clinical plots
 │
 ├── results/                      # Model performance data
+│   ├── best_model_report.json    # Detailed report of best model
+│   ├── cluster_analysis.json     # Clustering analysis results
+│   ├── information_gain_results.json # Feature importance analysis
 │   ├── model_comparison.csv      # Accuracy/AUC comparison
-│   ├── confusion_matrix.csv      # Classification results
-│   └── classification_report.txt # Detailed metrics
+│   └── weighting_ablation.csv    # Class weighting analysis
 │
 └── visualizations/               # Generated plots
     ├── roc_curve.png             # ROC-AUC curve
     ├── confusion_matrix.png      # Confusion matrix heatmap
-    ├── feature_importance.png    # Feature importance bar chart
+    ├── feature_importance_comparison.png # Comparison of feature importance
     ├── cluster_distribution.png  # Cluster counts
-    └── correlation_matrix.png    # Feature correlations
+    ├── cluster_heatmap.png       # Cluster feature heatmap
+    ├── cluster_scatter.png       # Cluster visualization
+    ├── information_gain_chart.png # Information gain plot
+    └── k_optimization.png        # Elbow method plot
 ```
 
 ---
@@ -67,10 +87,15 @@ models/
 - **Target**: Diabetes status (Normal/Pre-diabetic/Diabetic)
 - **Note**: High accuracy because HbA1c is diagnostic criterion
 
+### Binary Model (`binary/`)
+- **Features**: Same as ADA
+- **Target**: Binary Diabetes status (0=Normal/Pre-diabetic, 1=Diabetic)
+- **Note**: Simplified classification task
+
 ### Clinical Model (`clinical/`)
 - **Features**: `fbs`, `bmi`, `triglycerides`, `ldl`, `hdl`, `age`, `smoking_status`, `physical_activity`, `alcohol_use`
 - **Target**: Diabetes status
-- **Note**: Excludes HbA1c to avoid circular reasoning
+- **Note**: Excludes HbA1c to avoid circular reasoning. Includes advanced ensemble models (Stacking, Voting) and gradient boosting variants (CatBoost, LightGBM).
 
 ---
 
@@ -124,4 +149,4 @@ cluster = kmeans.predict(scaled)
 
 ## Search Keywords
 
-`model` `joblib` `sklearn` `XGBoost` `Random Forest` `Logistic Regression` `K-Means` `clustering` `scaler` `StandardScaler` `feature importance` `ROC curve` `confusion matrix` `clinical model` `ADA model` `diabetes prediction` `risk cluster` `SIRD` `SIDD` `MOD` `MARD`
+`model` `joblib` `sklearn` `XGBoost` `Random Forest` `Logistic Regression` `CatBoost` `LightGBM` `Ensemble` `K-Means` `clustering` `scaler` `StandardScaler` `feature importance` `ROC curve` `confusion matrix` `clinical model` `ADA model` `binary model` `diabetes prediction` `risk cluster` `SIRD` `SIDD` `MOD` `MARD`
