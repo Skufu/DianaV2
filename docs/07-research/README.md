@@ -14,6 +14,9 @@
 | [metrics.md](metrics.md) | Evaluation metrics | Accuracy, F1, AUC-ROC thresholds |
 | [ui_requirements.md](ui_requirements.md) | Application interface | Dashboard, Analytics, Visualization |
 | [codebase_alignment.md](codebase_alignment.md) | Paper ↔ Code mapping | What's implemented vs needed |
+| [paper-requirements.md](paper-requirements.md) | Complete paper reference | DIANA project overview, population, methods |
+| [paper_alignment_analysis.md](paper_alignment_analysis.md) | Implementation analysis | Ian_ML vs Neoron_ML alignment with requirements |
+| [manuscript-updates.md](manuscript-updates.md) | Manuscript revisions | Updated results, performance metrics, findings |
 
 ---
 
