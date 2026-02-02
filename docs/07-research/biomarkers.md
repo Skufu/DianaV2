@@ -37,7 +37,7 @@
 | Factor | Type | Values | NHANES Var |
 |--------|------|--------|------------|
 | **Smoking** | Binary | 0=No, 1=Yes | SMQ020 |
-| **Physical Activity** | Binary | 0=No, 1=Yes | PAQ710 |
+| **Physical Activity** | Binary | 0=No, 1=Yes | PAQ605, PAQ620, PAQ635, PAQ650, PAQ665 |
 | **Alcohol Use** | Binary | 0=No, 1=Yes | ALQ101 |
 
 > These are contextual features; not always available in hospital records.
@@ -48,9 +48,9 @@
 
 | Model Type | Features | TC Included? | File |
 |------------|----------|--------------|------|
-| **ADA Predictor** | HbA1c, FBS, BMI, TG, LDL, HDL, Age | ❌ No | `ml/predict.py` |
-| **Clinical Predictor** | BMI, TG, LDL, HDL, Age | ❌ No | `ml/predict.py` |
-| **K-Means Clustering** | BMI, TG, LDL, HDL, Age | ❌ No | `ml/clustering.py` |
+| **ADA Predictor** | HbA1c, FBS, BMI, TG, LDL, HDL, Age | ❌ No | `Ian_ML/predict.py` |
+| **Clinical Predictor** | BMI, TG, LDL, HDL, Age | ❌ No | `Ian_ML/predict.py` |
+| **K-Means Clustering** | BMI, TG, LDL, HDL, Age | ❌ No | `Ian_ML/clustering.py` |
 
 ---
 
