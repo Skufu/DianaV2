@@ -168,7 +168,7 @@ git commit -m "Add new_field to user schema"
 Some fields exist only in the backend layer and are not stored in the database:
 
 **Example: `Role` field**
-- Database: Has `is_admin` boolean (added in migration 0010)
+- Database: Has `is_admin` boolean (added in migration 0011)
 - Migration 0011: Removed `role` column, replaced with `is_admin`
 - Backend: Derives `Role` from `is_admin` at runtime for JWT compatibility
 - Comment in code: Documents this design decision
