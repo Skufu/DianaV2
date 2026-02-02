@@ -107,5 +107,5 @@
 - [x] Audit `docs/README.md` - verify documentation hub links are valid
 - [x] Audit `docs/AUTHENTICATION_AND_SECURITY.md` - verify auth/security documentation
 - [x] Remove any references to deprecated `ml/` directory (should be `Ian_ML/`)
-- [ ] Verify all internal doc links resolve correctly
+- [x] Verify all internal doc links resolve correctly
 - [ ] Final pass: ensure no broken paths or dead references
