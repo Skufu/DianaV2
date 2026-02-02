@@ -75,12 +75,6 @@
 ### 📁 05-planning/
 | Document | Description | Key Topics |
 |----------|-------------|------------|
-| [backend-plan.md](./05-planning/backend-plan.md) | Backend implementation plan | Gin, routes, SQLC |
-| [backend-plan-root.md](./05-planning/backend-plan-root.md) | Backend root plan | High-level design |
-| [frontend-plan.md](./05-planning/frontend-plan.md) | Frontend implementation plan | React components, state |
-| [frontend-plan-root.md](./05-planning/frontend-plan-root.md) | Frontend root plan | High-level design |
-| [admin-dashboard-plan.md](./05-planning/admin-dashboard-plan.md) | Admin dashboard plan | User management, audit |
-| [concerns.md](./05-planning/concerns.md) | Development concerns | Risks, decisions |
 | [backend-refactoring-prd.md](./05-planning/backend-refactoring-prd.md) | Refactoring PRD | Transactions, audit, errors |
 
 ### 📁 06-operations/
@@ -95,13 +89,13 @@
 |----------|-------------|------------|
 | [paper-requirements.md](./07-research/paper-requirements.md) | Thesis requirements | Manuscript, figures |
 | [manuscript-updates.md](./07-research/manuscript-updates.md) | Manuscript revisions | Model results, discussion |
-| [codebase-alignment.md](./07-research/codebase-alignment.md) | Code vs paper alignment | Feature mapping |
+| [codebase_alignment.md](./07-research/codebase_alignment.md) | Code vs paper alignment | Feature mapping |
 | [biomarkers.md](./07-research/biomarkers.md) | Biomarker details | Clinical ranges, validation |
-| [diabetes-subgroups.md](./07-research/diabetes-subgroups.md) | Subtype clustering | Ahlqvist categories |
+| [diabetes_subgroups.md](./07-research/diabetes_subgroups.md) | Subtype clustering | Ahlqvist categories |
 | [feature-selection.md](./07-research/feature-selection.md) | Feature engineering | Mutual information, IG |
 | [metrics.md](./07-research/metrics.md) | Model metrics | AUC, precision, recall |
-| [ml-algorithms.md](./07-research/ml-algorithms.md) | ML algorithms comparison | XGBoost, CatBoost, etc. |
-| [data-pipeline.md](./07-research/data-pipeline.md) | Data processing | NHANES, imputation |
+| [ml_algorithms.md](./07-research/ml_algorithms.md) | ML algorithms comparison | XGBoost, CatBoost, etc. |
+| [data_pipeline.md](./07-research/data_pipeline.md) | Data processing | NHANES, imputation |
 | [ui-requirements.md](./07-research/ui-requirements.md) | UI specifications | Paper figures alignment |
 | [README.md](./07-research/README.md) | Research RAG index | Paper documentation hub |
 
