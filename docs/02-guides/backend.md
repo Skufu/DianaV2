@@ -33,6 +33,14 @@ All routes are defined here:
 ```go
 api := r.Group("/api/v1")
 
+// Global middleware applied to all routes
+r.Use(middleware.Recovery())
+r.Use(middleware.RequestID())
+r.Use(middleware.Logger())
+r.Use(middleware.SecurityHeaders())
+r.Use(middleware.RateLimit(rateLimiter))
+r.Use(middleware.MaxBodySize(1 << 20))  // 1MB max
+
 // Public routes
 handlers.RegisterHealth(api)
 authHandler.Register(authGroup)  // /auth/login, /auth/register
@@ -41,9 +49,11 @@ authHandler.Register(authGroup)  // /auth/login, /auth/register
 protected := api.Group("")
 protected.Use(middleware.Auth(cfg.JWTSecret))
 
-patientHandler.Register(protected.Group("/patients"))
-assessmentHandler.Register(protected.Group("/patients"))
+usersHandler.Register(protected.Group("/users/me"))
+assessmentsHandler.Register(protected.Group("/users/me/assessments"))
+exportHandler.Register(protected.Group("/users/me/export"))
 insightsHandler.Register(protected.Group("/insights"))
+analyticsHandler.Register(protected.Group("/analytics"))
 ```
 
 ### 2. Handlers (`internal/http/handlers/`)
@@ -51,19 +61,31 @@ insightsHandler.Register(protected.Group("/insights"))
 Each handler follows this pattern:
 
 ```go
-type PatientsHandler struct {
+type UsersHandler struct {
     store store.Store
+    cache *cache.Cache
 }
 
-func (h *PatientsHandler) Register(g *gin.RouterGroup) {
-    g.GET("", h.list)
-    g.POST("", h.create)
-    g.GET("/:id", h.get)
+func NewUsersHandler(store store.Store, cache *cache.Cache) *UsersHandler {
+    return &UsersHandler{store: store, cache: cache}
 }
 
-func (h *PatientsHandler) list(c *gin.Context) {
-    userID := c.GetInt64("user_id")  // From JWT
-    patients, err := h.store.ListPatients(c, userID)
+func (h *UsersHandler) Register(rg *gin.RouterGroup) {
+    rg.GET("/profile", h.GetUserProfile)
+    rg.PUT("/profile", h.UpdateUserProfile)
+    rg.POST("/onboarding", h.CompleteOnboarding)
+}
+
+func (h *UsersHandler) GetUserProfile(c *gin.Context) {
+    claims, exists := c.Get("user")
+    if !exists {
+        ErrUnauthorized(c)
+        return
+    }
+    userClaims := claims.(middleware.UserClaims)
+    userID := userClaims.UserID
+    
+    user, err := h.store.Users().GetUserByID(c.Request.Context(), int32(userID))
     // ...
 }
 ```
@@ -74,13 +96,34 @@ Backend calls ML server via HTTP:
 
 ```go
 type HTTPPredictor struct {
-    baseURL string
     client  *http.Client
+    url     string
+    version string
+    apiKey  string
 }
 
-func (p *HTTPPredictor) Predict(input PredictionInput) (*PredictionResult, error) {
-    // POST to http://localhost:5000/predict?model_type=clinical
-    resp, err := p.client.Post(p.baseURL+"/predict?model_type=clinical", ...)
+func NewHTTPPredictor(url, version, apiKey string, timeout time.Duration) *HTTPPredictor {
+    return &HTTPPredictor{
+        client:  &http.Client{Timeout: timeout},
+        url:     url,
+        version: version,
+        apiKey:  apiKey,
+    }
+}
+
+func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (string, int, error) {
+    body, _ := json.Marshal(input)
+    mlURL := p.url + "?model_type=ada"
+    req, _ := http.NewRequestWithContext(ctx, http.MethodPost, mlURL, bytes.NewReader(body))
+    req.Header.Set("Content-Type", "application/json")
+    if p.apiKey != "" {
+        req.Header.Set("X-API-Key", p.apiKey)
+    }
+    if p.version != "" {
+        req.Header.Set("X-Model-Version", p.version)
+    }
+    resp, err := p.client.Do(req)
+    // ...
 }
 ```
 
@@ -104,9 +147,12 @@ SQLC generates type-safe Go code automatically.
 
 | Method | Path | Handler | Description |
 |--------|------|---------|-------------|
+| GET | /healthz | health | Health check |
+| GET | /livez | health | Liveness probe |
 | POST | /auth/register | authHandler | Create account |
 | POST | /auth/login | authHandler | Get JWT token |
 | POST | /auth/refresh | authHandler | Refresh token |
+| POST | /auth/logout | authHandler | Logout (invalidate token) |
 | GET | /users/me/profile | usersHandler | Get current user profile |
 | PUT | /users/me/profile | usersHandler | Update user profile |
 | POST | /users/me/onboarding | usersHandler | Complete onboarding flow |
@@ -116,24 +162,34 @@ SQLC generates type-safe Go code automatically.
 | DELETE | /users/me/account | usersHandler | Delete user account |
 | GET | /users/me/assessments | assessmentsHandler | List user assessments |
 | POST | /users/me/assessments | assessmentsHandler | Create assessment (calls ML) |
-| GET | /users/me/assessments/:id | assessmentsHandler | Get single assessment |
-| PUT | /users/me/assessments/:id | assessmentsHandler | Update assessment |
-| DELETE | /users/me/assessments/:id | assessmentsHandler | Delete assessment |
+| GET | /users/me/assessments/:assessmentID | assessmentsHandler | Get single assessment |
+| PUT | /users/me/assessments/:assessmentID | assessmentsHandler | Update assessment |
+| DELETE | /users/me/assessments/:assessmentID | assessmentsHandler | Delete assessment |
+| GET | /users/me/export/pdf | exportHandler | Export PDF health report |
 | GET | /insights/cluster-distribution | insightsHandler | Risk cluster data |
-| GET | /insights/cluster | insightsHandler | Cluster details |
+| GET | /insights/biomarker-trends | insightsHandler | Biomarker trends over time |
+| GET | /insights/cohort | cohortHandler | Cohort analysis stats |
 | GET | /analytics/summary | analyticsHandler | Dashboard stats |
-| GET | /export/csv | exportHandler | Export data |
+| GET | /clinics | clinicDashboardHandler | List user's clinics |
+| GET | /clinics/:id/dashboard | clinicDashboardHandler | Clinic-level dashboard stats |
 
 ### Admin Endpoints (Admin Role Required)
 
 | Method | Path | Handler | Description |
 |--------|------|---------|-------------|
+| GET | /admin/events/stream | authEventHandler | SSE stream for auth events |
+| GET | /admin/dashboard | adminDashboardHandler | System-wide stats |
+| GET | /admin/clinics | adminDashboardHandler | List all clinics |
+| GET | /admin/clinics/comparison | adminDashboardHandler | Clinic comparison |
 | GET | /admin/users | adminUsersHandler | List users |
 | POST | /admin/users | adminUsersHandler | Create user |
+| GET | /admin/users/:id | adminUsersHandler | Get user |
 | PUT | /admin/users/:id | adminUsersHandler | Update user |
 | DELETE | /admin/users/:id | adminUsersHandler | Deactivate user |
+| POST | /admin/users/:id/activate | adminUsersHandler | Activate user |
 | GET | /admin/audit | adminAuditHandler | Audit logs |
 | GET | /admin/models | adminModelsHandler | ML model history |
+| GET | /admin/models/active | adminModelsHandler | Get active model |
 
 Admin routes use `middleware.RoleRequired("admin")` for access control.
 
@@ -156,8 +212,9 @@ The backend includes comprehensive unit tests for core packages:
 |---------|-----------|----------|
 | `config/` | `config_test.go` | Environment loading, defaults |
 | `ml/` | `mock_test.go`, `validation_test.go` | Predictor, biomarker validation |
-| `middleware/` | `auth_test.go`, `ratelimit_test.go`, `rbac_test.go`, `security_test.go` | JWT, rate limiting, RBAC, security headers |
-| `handlers/` | `assessments_test.go`, `router_test.go` | HTTP handlers, validation |
+| `middleware/` | `auth_test.go`, `ratelimit_test.go`, `rbac_test.go`, `security_test.go`, `audit_test.go` | JWT, rate limiting, RBAC, security headers, audit logging |
+| `handlers/` | `assessments_test.go`, `router_test.go`, `users_test.go`, `auth_test.go`, `insights_test.go`, `analytics_test.go`, `export_test.go`, `cohort_test.go`, `clinic_dashboard_test.go`, `admin_users_test.go`, `admin_dashboard_test.go`, `admin_audit_test.go`, `admin_models_test.go`, `auth_events_test.go`, `health_test.go` | HTTP handlers, validation, API endpoints |
+| `handlers/` | `error_response_test.go`, `utils_test.go`, `analytics_load_test.go`, `p99_load_test.go`, `pool_exhaustion_test.go` | Error handling, utilities, load testing |
 
 ### Running Tests
 
