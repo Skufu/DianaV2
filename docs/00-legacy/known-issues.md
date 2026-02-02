@@ -1,7 +1,7 @@
 # Known Issues & Technical Debt
 
 > **Last Updated**: January 19, 2026  
-> **Review Source**: [code-review-analysis.md](../code-review-analysis.md)
+> **Review Source**: code-review-analysis.md (legacy, no longer available)
 
 This document tracks known issues, technical debt, and planned improvements identified during code review.
 
@@ -124,6 +124,6 @@ This document tracks known issues, technical debt, and planned improvements iden
 
 ## See Also
 
-- [Full Code Review Analysis](../code-review-analysis.md)
-- [Security Improvements](./SECURITY.md)
-- [Architecture Overview](./ARCHITECTURE.md)
+- Full Code Review Analysis (legacy, no longer available)
+- Security Improvements (see [docs/02-guides/security.md](../02-guides/security.md))
+- Architecture Overview (see [docs/01-architecture/detailed-architecture.md](../01-architecture/detailed-architecture.md))
