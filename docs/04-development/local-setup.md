@@ -41,7 +41,7 @@ docker-compose up --build
 |---------|-----|
 | Frontend | http://localhost |
 | Backend | http://localhost:8080/api/v1/healthz |
-| ML Server | http://localhost:5001/health |
+| ML Server | http://localhost:5000/health |
 
 Press `Ctrl+C` to stop.
 
@@ -93,7 +93,7 @@ POSTGRES_PASSWORD=diana
 POSTGRES_DB=diana
 
 JWT_SECRET=1BF4YI+OIjQZ3gfSWcM2oxD38YOfnSDeYgRTzJfaTnY=
-CORS_ORIGINS=http://localhost:3000,http://localhost:4000,http://localhost:5173
+CORS_ORIGINS=http://localhost:3000,http://localhost:4000
 MODEL_URL=http://localhost:5001/predict
 ML_PORT=5001
 MODEL_VERSION=v0-mock
@@ -113,8 +113,7 @@ DEMO_PASSWORD=demopassword123
 
 | Service | URL |
 |---------|-----|
-| Frontend (Vite) | http://localhost:5173 |
-| Frontend (Legacy) | http://localhost:4000 |
+| Frontend (Vite) | http://localhost:4000 |
 | Backend | http://localhost:8080/api/v1/healthz |
 | ML Server | http://localhost:5001/health |
 
@@ -170,12 +169,12 @@ git push origin main
 | Issue | Solution |
 |-------|----------|
 | Port already in use | Close terminals or: `taskkill //F //PID <PID>` |
-| CORS errors | Add frontend port to `CORS_ORIGINS` in `.env` (currently: http://localhost:5173) |
+| CORS errors | Add frontend port to `CORS_ORIGINS` in `.env` (currently: http://localhost:4000 for manual setup) |
 | `POSTGRES_PASSWORD is missing a value` error | Ensure `.env` file contains `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` variables for docker-compose |
 | DB connection error | Check PostgreSQL running and `DB_DSN` correct |
 | ML models not found | Run `bash scripts/dev/retrain-all.sh` |
-| ML server connection error | Ensure ML server is running on port 5001 (not 5000) |
-| Frontend Vite not loading | Run `cd frontend && npm run dev` (uses port 5173) |
+| ML server connection error | Docker: Ensure ML server on port 5000. Manual: Ensure ML server on port 5001 |
+| Frontend Vite not loading | Run `cd frontend && npm run dev` (uses port 4000) |
 
 ---
 
