@@ -94,7 +94,7 @@
 - [x] Audit `docs/07-research/paper_alignment_analysis.md` - verify alignment analysis
 - [x] Audit `docs/07-research/biomarkers.md` - verify biomarker documentation
 - [x] Audit `docs/07-research/diabetes_subgroups.md` - verify subgroup documentation
-- [ ] Audit `docs/07-research/feature_selection.md` - verify feature selection docs
+- [x] Audit `docs/07-research/feature_selection.md` - verify feature selection docs
 - [ ] Audit `docs/07-research/ml_algorithms.md` - verify ML algorithm documentation
 - [ ] Audit `docs/07-research/metrics.md` - verify metrics documentation
 - [ ] Audit `docs/07-research/data_pipeline.md` - verify data pipeline docs
