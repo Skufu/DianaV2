@@ -227,7 +227,7 @@ ALL_FEATURES = BASE_FEATURES + engineered_features  # 25 features
 
 **Documentation lists 22+ endpoints** in `docs/03-ml/integration.md`
 
-**All are implemented** in `ml/server.py`:
+**All are implemented** in `Ian_ML/server.py`:
 - ✅ `/health` (health check)
 - ✅ `/predict` (single prediction)
 - ✅ `/predict/batch` (batch predictions)
@@ -253,7 +253,7 @@ ALL_FEATURES = BASE_FEATURES + engineered_features  # 25 features
 
 **Documentation**: K=4 with Ahlqvist subtypes (SIRD, SIDD, MOD, MARD)
 
-**Code Implementation**: `ml/clustering.py`
+**Code Implementation**: `Ian_ML/clustering.py`
 - ✅ K=4 fixed for clinical alignment
 - ✅ Tests K=2 through K=6 for analysis
 - ✅ Ahlqvist label assignment logic correctly implemented
@@ -266,7 +266,7 @@ ALL_FEATURES = BASE_FEATURES + engineered_features  # 25 features
 - ADA Baseline (with HbA1c/FBS - circular, high AUC expected)
 - Clinical (without HbA1c/FBS - non-circular, realistic AUC ~0.67)
 
-**Code Implementation**: `ml/predict.py`
+**Code Implementation**: `Ian_ML/predict.py`
 - ✅ DianaPredictor (ADA baseline) - uses HbA1c
 - ✅ ClinicalPredictor (non-circular) - excludes HbA1c, uses BMI/TG/LDL/HDL/Age
 - ✅ Server supports `model_type` query parameter
@@ -276,7 +276,7 @@ ALL_FEATURES = BASE_FEATURES + engineered_features  # 25 features
 
 **Documentation**: Mutual Information (MI) for feature selection
 
-**Code Implementation**: `ml/train.py`
+**Code Implementation**: `Ian_ML/train.py`
 - ✅ `mutual_info_classif()` from sklearn used
 - ✅ Handles continuous features natively via k-NN estimation
 - ✅ No binning required (avoids information loss)
@@ -287,7 +287,7 @@ ALL_FEATURES = BASE_FEATURES + engineered_features  # 25 features
 
 **Documentation**: GridSearchCV, SMOTE, 5-fold CV, Leave-One-Cycle-Out validation
 
-**Code Implementation**: `ml/train.py`
+**Code Implementation**: `Ian_ML/train.py`
 - ✅ Grid search implemented for all models
 - ✅ SMOTE+Tomek for class imbalance (mentioned in rationale)
 - ✅ 5-fold stratified cross-validation
@@ -299,7 +299,7 @@ ALL_FEATURES = BASE_FEATURES + engineered_features  # 25 features
 
 **Documentation**: A/B testing framework, drift detection, MLflow tracking
 
-**Code Implementation**: `ml/server.py`
+**Code Implementation**: `Ian_ML/server.py`
 - ✅ A/B test CRUD endpoints implemented
 - ✅ Drift detection monitoring
 - ✅ Alert management system

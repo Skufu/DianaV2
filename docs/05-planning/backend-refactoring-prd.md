@@ -151,7 +151,7 @@ store.Users().UpdateLastLogin(...)    // Updates user (non-critical, silently fa
 |---------|-------|--------|-------|
 | PDF Export | `internal/services/pdf_export_service.go` | ❌ STUB | Disabled due to library version conflict; returns placeholder |
 | Notifications | `internal/services/notification_service.go` | ❌ STUB | Only `log.Printf()`; no DB/email integration |
-| Validation | `internal/services/validation_service.go` | ⚠️ DORMANT | Near-identical to `ml/validation.go`; unused in production |
+| Validation | `internal/services/validation_service.go` | ⚠️ DORMANT | Near-identical to `internal/ml/validation.go`; unused in production |
 
 **Risks**:
 - Users cannot download professional health reports (PDF export disabled)
@@ -193,7 +193,7 @@ Store assessment with cluster + risk_score
 
 **Issues Identified**:
 - ⚠️ **ML failures handled gracefully** (returns cluster="error", risk=0) but may mask real issues
-- ⚠️ **Validation redundancy** between `ml/validation.go` and `services/validation_service.go`
+- ⚠️ **Validation redundancy** between `internal/ml/validation.go` and `services/validation_service.go`
 
 ---
 
@@ -374,7 +374,7 @@ if err != nil {
 - [ ] Notification service writes to `notification_queue` table
 - [ ] Background worker processes notification queue
 - [ ] SMTP/SES integration for email delivery
-- [ ] Validation service redundancy removed (keep only `ml/validation.go`)
+- [ ] Validation service redundancy removed (keep only `internal/ml/validation.go`)
 
 ### Non-Functional Requirements
 
@@ -829,7 +829,7 @@ func main() {
 - [ ] File deleted
 - [ ] No references remain in codebase
 - [ ] Tests updated if they reference it
-- [ ] `ml/validation.go` confirmed as single source of truth
+- [ ] `internal/ml/validation.go` confirmed as single source of truth
 
 **Estimated Effort**: 1 hour
 
