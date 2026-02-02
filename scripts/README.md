@@ -9,6 +9,8 @@
 
 ```
 scripts/
+├── check-api-drift.sh    # API drift detection
+├── remove_bg.py          # Image utility
 ├── dev/                  # Development & deployment scripts
 ├── data/                 # Data download & processing
 ├── train/                # Model training
@@ -26,6 +28,8 @@ scripts/
 |------|----------|---------|
 | **Project Setup** | dev | `setup.sh` |
 | **Start All Services** | dev | `start-all.sh` |
+| **Tail Logs** | dev | `logs.sh` |
+| **Check API Drift** | root | `check-api-drift.sh` |
 | **Retrain ML Models** | dev | `retrain-all.sh` |
 | **Download NHANES Data** | data | `download_nhanes_multi.py` |
 | **Process NHANES Data** | data | `process_nhanes_multi.py` |
@@ -46,6 +50,15 @@ scripts/
 
 ---
 
+## Root Scripts
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `check-api-drift.sh` | Verify sync between frontend, backend, and database schema | `bash scripts/check-api-drift.sh` |
+| `remove_bg.py` | Remove black backgrounds from images (tool helper) | `python scripts/remove_bg.py <in> <out>` |
+
+---
+
 ## Development Scripts (`dev/`)
 
 | Script | Purpose | Usage |
@@ -53,6 +66,9 @@ scripts/
 | `setup.sh` | Install dependencies, create .env, run migrations | `bash scripts/dev/setup.sh` |
 | `start-all.sh` | Start backend + frontend + ML server | `bash scripts/dev/start-all.sh` |
 | `retrain-all.sh` | Full ML pipeline retrain (process → impute → train) | `bash scripts/dev/retrain-all.sh` |
+| `logs.sh` | Tail logs for all services | `bash scripts/dev/logs.sh` |
+
+> **Note**: Windows alternatives available: `start-all.bat` and `start-all.ps1`
 
 ---
 
@@ -122,6 +138,7 @@ scripts/
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `debug_data.py` | Debug data issues (e.g., missing 2021-2023 cycle) | `python scripts/util/debug_data.py` |
+| `remove_bg.py` | Remove black background from images (Utility) | `python scripts/remove_bg.py` |
 
 ---
 
