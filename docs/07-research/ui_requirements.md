@@ -94,12 +94,12 @@
 
 | Feature | Component | Status |
 |---------|-----------|--------|
-| Dashboard | `frontend/src/components/dashboard/Dashboard.jsx` | ✅ Implemented |
-| Patient History | `frontend/src/components/patients/Patients.jsx` | ✅ Implemented |
-| Analytics | `frontend/src/components/analytics/Analytics.jsx` | ✅ Implemented |
-| Assessment | `frontend/src/components/assessment/Assessment.jsx` | ✅ Implemented |
-| Risk Trends | `frontend/src/components/analytics/RiskTrends.jsx` | ✅ Implemented |
-| Export | - | ⚠️ Partial |
+| Dashboard | `frontend/src/components/user/Dashboard_user.jsx` | ✅ Implemented |
+| Patient History | `frontend/src/components/user/PersonalTrends.jsx` | ✅ Implemented |
+| Analytics | `frontend/src/components/insights/Insights.jsx` | ✅ Implemented |
+| Assessment | `frontend/src/components/user/AssessmentForm.jsx` | ✅ Implemented |
+| Risk Trends | `frontend/src/components/insights/` (various charts) | ✅ Implemented |
+| Export | `frontend/src/components/export/Export.jsx` | ✅ Implemented |
 
 ---
 

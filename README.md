@@ -163,7 +163,7 @@ bash scripts/dev/start-all.sh
 |---------|-----|
 | Frontend | http://localhost:4000 |
 | Backend | http://localhost:8080/api/v1/healthz |
-| ML Server | http://localhost:5000/health |
+| ML Server | http://localhost:5001/health |
 
 ---
 
@@ -244,7 +244,7 @@ ENV=dev
 DB_DSN=postgres://user:pass@localhost:5432/diana?sslmode=disable
 JWT_SECRET=your-secure-random-secret-min-32-chars  # REQUIRED for ALL environments
 CORS_ORIGINS=http://localhost:4000
-MODEL_URL=http://localhost:5000
+MODEL_URL=http://localhost:5001/predict
 ML_PORT=5001
 ML_API_KEY=your-secure-ml-api-key  # REQUIRED for all environments
 ```

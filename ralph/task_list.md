@@ -108,4 +108,5 @@
 - [x] Audit `docs/AUTHENTICATION_AND_SECURITY.md` - verify auth/security documentation
 - [x] Remove any references to deprecated `ml/` directory (should be `Ian_ML/`)
 - [x] Verify all internal doc links resolve correctly
-- [ ] Final pass: ensure no broken paths or dead references
+- [x] Final pass: ensure no broken paths or dead references
+
