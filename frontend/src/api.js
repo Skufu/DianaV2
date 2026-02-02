@@ -572,50 +572,50 @@ export const adminListUsersApi = async (params) => {
   return apiFetch(`/admin/users?${query}`);
 };
 
-export const fetchAdminDashboardApi = async token => {
+export const fetchAdminDashboardApi = async () => {
   return apiFetch('/admin/dashboard');
 };
 
-export const fetchClinicComparisonApi = async token => {
+export const fetchClinicComparisonApi = async () => {
   return apiFetch('/admin/clinics/comparison');
 };
 export const fetchAdminUsersApi = adminListUsersApi;
-export const fetchAdminClinicsApi = async token => {
+export const fetchAdminClinicsApi = async () => {
   return apiFetch('/admin/clinics');
 };
 export const fetchAuditLogsApi = async (params = {}) => {
   const query = new URLSearchParams(params);
   return apiFetch(`/admin/audit?${query}`);
 };
-export const fetchModelRunsApi = async (token, params = {}) => {
+export const fetchModelRunsApi = async (params = {}) => {
   const query = new URLSearchParams(params);
   return apiFetch(`/admin/models?${query}`);
 };
-export const fetchActiveModelApi = async token => {
+export const fetchActiveModelApi = async () => {
   return apiFetch('/admin/models/active');
 };
 
-export const createAdminUserApi = async (token, userData) => {
+export const createAdminUserApi = async (userData) => {
   return apiFetch('/admin/users', {
     method: 'POST',
     body: userData,
   });
 };
 
-export const updateAdminUserApi = async (token, userId, userData) => {
+export const updateAdminUserApi = async (userId, userData) => {
   return apiFetch(`/admin/users/${userId}`, {
     method: 'PUT',
     body: userData,
   });
 };
 
-export const deactivateAdminUserApi = async (token, userId) => {
+export const deactivateAdminUserApi = async (userId) => {
   return apiFetch(`/admin/users/${userId}`, {
     method: 'DELETE',
   });
 };
 
-export const activateAdminUserApi = async (token, userId) => {
+export const activateAdminUserApi = async (userId) => {
   return apiFetch(`/admin/users/${userId}/activate`, {
     method: 'POST',
   });
@@ -650,10 +650,10 @@ export const logoutApi = async refreshToken => {
   });
 };
 
-export const fetchClusterDistributionApi = async token => {
+export const fetchClusterDistributionApi = async () => {
   return apiFetch('/insights/cluster-distribution');
 };
 
-export const fetchTrendInsightsApi = async token => {
+export const fetchTrendInsightsApi = async () => {
   return apiFetch('/insights/biomarker-trends');
 };
