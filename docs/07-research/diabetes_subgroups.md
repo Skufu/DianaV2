@@ -57,7 +57,7 @@ The paper also mentions these labels in Table 4:
 ## Implementation in Codebase (Verified Results)
 
 ```python
-# scripts/train_clusters.py - assign_cluster_labels()
+# Ian_ML/clustering.py - assign_ahlqvist_labels()
 # Uses rank-based assignment:
 #   1. SIDD = Highest HbA1c
 #   2. SIRD = Highest metabolic risk (BMI + TG - HDL)
