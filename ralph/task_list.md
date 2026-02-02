@@ -30,10 +30,10 @@
     - [x] Sample first 20 lines and verify presence in `manuscript.md`
     - [x] Sample last 20 lines and verify presence in `manuscript.md`
     - [x] Final sign-off: Mark parent task complete
-- [ ] Audit `splitPaper/Transcript.md` - verify transcript accuracy
-    - [ ] Verify `splitPaper/Transcript.md` exists and check size
-    - [ ] Sample start/end to verify content looks like a transcript
-    - [ ] Final sign-off: Mark parent task complete
+- [x] Audit `splitPaper/Transcript.md` - verify transcript accuracy
+    - [x] Verify `splitPaper/Transcript.md` exists and check size
+    - [x] Sample start/end to verify content looks like a transcript
+    - [x] Final sign-off: Mark parent task complete
 
 ## Phase 3: Component READMEs
 
