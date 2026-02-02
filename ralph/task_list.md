@@ -91,7 +91,7 @@
 
 - [x] Audit `docs/07-research/README.md` - verify research docs index
 - [x] Audit `docs/07-research/paper-requirements.md` - verify paper requirements match manuscript
-- [ ] Audit `docs/07-research/paper_alignment_analysis.md` - verify alignment analysis
+- [x] Audit `docs/07-research/paper_alignment_analysis.md` - verify alignment analysis
 - [ ] Audit `docs/07-research/biomarkers.md` - verify biomarker documentation
 - [ ] Audit `docs/07-research/diabetes_subgroups.md` - verify subgroup documentation
 - [ ] Audit `docs/07-research/feature_selection.md` - verify feature selection docs
