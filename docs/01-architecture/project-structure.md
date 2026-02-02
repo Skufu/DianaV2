@@ -18,17 +18,20 @@ DIANA V2/
 │   │   ├── http/              # HTTP handlers and middleware
 │   │   │   ├── handlers/      # Request handlers
 │   │   │   │   ├── auth.go
+│   │   │   │   ├── auth_events.go
 │   │   │   │   ├── users.go
 │   │   │   │   ├── assessments.go
 │   │   │   │   ├── insights.go
 │   │   │   │   ├── cohort.go
+│   │   │   │   ├── analytics.go
 │   │   │   │   ├── export.go
 │   │   │   │   ├── health.go
 │   │   │   │   ├── clinic_dashboard.go
 │   │   │   │   ├── admin_dashboard.go
 │   │   │   │   ├── admin_users.go
 │   │   │   │   ├── admin_audit.go
-│   │   │   │   └── admin_models.go
+│   │   │   │   ├── admin_models.go
+│   │   │   │   └── utils.go
 │   │   │   ├── middleware/    # HTTP middleware
 │   │   │   │   ├── auth.go
 │   │   │   │   ├── rbac.go
@@ -62,7 +65,9 @@ DIANA V2/
 │   │   ├── 0007_update_cluster_names.sql
 │   │   ├── 0008_update_cluster_names.sql
 │   │   ├── 0009_add_clinics.sql
-│   │   └── 0010_admin_features.sql
+│   │   ├── 0010_admin_features.sql
+│   │   ├── 0011_refactor_users_to_menopausal.sql
+│   │   └── 0012_add_auth_events.sql
 │   ├── go.mod
 │   ├── go.sum
 │   └── sqlc.yaml              # SQLC configuration
@@ -70,16 +75,16 @@ DIANA V2/
 ├── frontend/                   # React application
 │   ├── src/
 │   │   ├── components/        # React components
+│   │   │   ├── 3d/            # 3D visualizations
 │   │   │   ├── admin/         # Admin dashboard
-│   │   │   ├── analytics/     # Analytics & cohort analysis
 │   │   │   ├── auth/          # Login
-│   │   │   ├── clinic/        # Clinic dashboard
+│   │   │   ├── backup/        # Backup components
 │   │   │   ├── common/        # Shared components
-│   │   │   ├── dashboard/     # Main dashboard
 │   │   │   ├── education/     # Educational content
 │   │   │   ├── export/        # Data export
+│   │   │   ├── insights/      # Insights components
 │   │   │   ├── layout/        # Layout components
-│   │   │   └── patients/      # Patient management
+│   │   │   └── user/          # User management
 │   │   ├── utils/             # Utility functions
 │   │   ├── App.jsx            # Main application
 │   │   ├── api.js             # API client
@@ -90,7 +95,7 @@ DIANA V2/
 │   ├── tailwind.config.cjs
 │   └── playwright.config.js
 │
-├── ml/                         # Machine Learning (Python)
+├── Ian_ML/                     # Machine Learning (Python)
 │   ├── server.py              # Flask API server
 │   ├── predict.py             # Prediction logic
 │   ├── train.py               # Model training
@@ -101,6 +106,12 @@ DIANA V2/
 │   ├── ab_testing.py          # A/B testing
 │   ├── drift_detection.py     # Drift monitoring
 │   ├── mlflow_config.py       # MLflow integration
+│   ├── predict_binary.py      # Binary prediction
+│   ├── train_binary.py        # Binary training
+│   ├── models/                # ML model artifacts
+│   │   ├── best_model.joblib
+│   │   ├── kmeans_model.joblib
+│   │   └── scaler.joblib
 │   └── requirements.txt       # Python dependencies
 │
 ├── models/                     # Trained ML model artifacts
@@ -120,18 +131,46 @@ DIANA V2/
 │   └── nhanes/                # NHANES data files
 │
 ├── scripts/                    # Shell/Python scripts
-│   ├── setup.sh               # Project setup
-│   ├── run-dev.sh             # Development runner
-│   ├── start-all.sh           # Start all services
-│   ├── start-ml.sh            # ML server starter
-│   ├── retrain-all.sh         # Full ML retraining
-│   ├── test-db.sh             # Database testing
-│   ├── process_nhanes_multi.py
-│   ├── feature_selection.py
-│   ├── train_enhanced.py
-│   ├── train_clusters.py
-│   ├── impute_missing_data.py
-│   └── generate_thesis_outputs.py
+│   ├── README.md
+│   ├── check-api-drift.sh     # API drift detection
+│   ├── data/                  # Data processing scripts
+│   │   ├── check_raw_datasets.py
+│   │   ├── download_lifestyle_data.py
+│   │   ├── download_nhanes_multi.py
+│   │   ├── impute_missing_data.py
+│   │   └── process_nhanes_multi.py
+│   ├── dev/                   # Development scripts
+│   │   ├── logs.sh
+│   │   ├── retrain-all.sh
+│   │   ├── setup.sh
+│   │   ├── start-all.bat
+│   │   ├── start-all.ps1
+│   │   └── start-all.sh
+│   ├── eval/                  # Evaluation scripts
+│   │   ├── ablation_study.py
+│   │   ├── calculate_confidence_intervals.py
+│   │   ├── calculate_metrics.py
+│   │   ├── calculate_per_class_metrics.py
+│   │   ├── evaluate_clusters.py
+│   │   ├── feature_selection.py
+│   │   └── weighting_ablation.py
+│   ├── legacy/                # Legacy scripts
+│   │   ├── download_nhanes.sh
+│   │   ├── download_nhanes_py.py
+│   │   ├── process_nhanes.py
+│   │   ├── remove_bg.py
+│   │   └── train_enhanced.py
+│   ├── thesis/                # Thesis generation scripts
+│   │   ├── generate_comparison_table.py
+│   │   ├── generate_executive_summary.py
+│   │   ├── generate_limitations.py
+│   │   ├── generate_thesis_outputs.py
+│   │   ├── generate_vignettes.py
+│   │   └── verify_manuscript.py
+│   ├── train/                 # Training scripts
+│   │   └── train_clusters.py
+│   └── util/                  # Utility scripts
+│       └── debug_data.py
 │
 ├── docs/                       # Documentation
 │   ├── 00-legacy/            # Legacy archived docs
@@ -148,8 +187,9 @@ DIANA V2/
 │   │   ├── admin.md
 │   │   └── security.md
 │   ├── 03-ml/                # ML-specific docs
-│   │   ├── integration.md
 │   │   ├── api-contract.md
+│   │   ├── AUDIT_REPORT.md
+│   │   ├── integration.md
 │   │   ├── methodology.md
 │   │   └── rationale.md
 │   ├── 04-development/        # Developer guides
@@ -170,24 +210,19 @@ DIANA V2/
 │   │   ├── deployment-internal.md
 │   │   └── logging-improvements.md
 │   ├── 07-research/           # Research/thesis docs
-│   │   ├── paper-requirements.md
-│   │   ├── manuscript-updates.md
-│   │   ├── codebase-alignment.md
+│   │   ├── README.md
 │   │   ├── biomarkers.md
-│   │   ├── diabetes-subgroups.md
-│   │   ├── feature-selection.md
+│   │   ├── codebase_alignment.md
+│   │   ├── data_pipeline.md
+│   │   ├── diabetes_subgroups.md
+│   │   ├── feature_selection.md
+│   │   ├── manuscript-updates.md
 │   │   ├── metrics.md
-│   │   ├── ml-algorithms.md
-│   │   ├── data-pipeline.md
-│   │   ├── ui-requirements.md
-│   │   └── README.md
-│   └── README.md
-│   ├── BACKEND.md
-│   ├── FRONTEND.md
-│   ├── DATABASE.md
-│   ├── ML_SYSTEM.md
-│   ├── ADMIN.md
-│   ├── SECURITY.md
+│   │   ├── ml_algorithms.md
+│   │   ├── paper_alignment_analysis.md
+│   │   ├── paper-requirements.md
+│   │   └── ui_requirements.md
+│   ├── AUTHENTICATION_AND_SECURITY.md
 │   └── README.md
 │
 ├── build/                      # Container configuration
@@ -216,8 +251,8 @@ DIANA V2/
 - **Database**: PostgreSQL with Goose migration management
 - **Queries**: SQLC for type-safe SQL query generation
 
-### 4. ML Layer (`ml/`)
-- **Prediction**: Two model types (ADA baseline, Clinical non-circular)
+### 4. ML Layer (`Ian_ML/`)
+- **Prediction**: Two model types (ADA baseline, Clinical non-circular, Binary)
 - **Clustering**: K-Means with Ahlqvist subtypes (SIRD/SIDD/MOD/MARD)
 - **Explainability**: SHAP-based feature explanations
 - **Infrastructure**: A/B testing, drift detection, MLflow integration
