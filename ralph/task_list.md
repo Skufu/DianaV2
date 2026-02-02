@@ -83,7 +83,7 @@
 
 ## Phase 8: Operations Documentation (`docs/06-operations/`)
 
-- [ ] Audit `docs/06-operations/deployment.md` - verify deployment instructions
+- [x] Audit `docs/06-operations/deployment.md` - verify deployment instructions
 - [ ] Audit `docs/06-operations/deployment-internal.md` - verify internal deployment docs
 - [ ] Audit `docs/06-operations/logging-improvements.md` - verify logging documentation
 
