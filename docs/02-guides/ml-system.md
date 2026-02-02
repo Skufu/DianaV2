@@ -9,7 +9,7 @@ DIANA uses machine learning to predict Type 2 Diabetes risk in postmenopausal wo
 ## Directory Structure
 
 ```
-ml/
+Ian_ML/
 ├── server.py             # Flask API server
 ├── predict.py            # DianaPredictor, ClinicalPredictor classes
 ├── train.py              # Model training
@@ -22,27 +22,15 @@ ml/
 └── mlflow_config.py      # MLflow experiment tracking
 
 scripts/
-├── feature_selection.py  # MI + IG analysis
-├── train_enhanced.py     # Combined training pipeline
-├── train_clusters.py     # Cluster training
-├── impute_missing_data.py # Data imputation
-├── generate_thesis_outputs.py  # All-in-one thesis output generator
-├── process_nhanes_multi.py     # NHANES data preprocessing
-└── retrain-all.sh        # Full retraining pipeline
+├── remove_bg.py           # Background removal utility
+└── check-api-drift.sh    # API drift monitoring script
 
 models/
-├── clinical/
-│   ├── best_model.joblib     # Best classifier (XGBoost)
-│   ├── scaler.joblib         # StandardScaler
-│   ├── kmeans_model.joblib   # K-Means (K=4)
-│   ├── cluster_labels.json   # SIRD/SIDD/MOD/MARD mapping
-│   ├── results/              # Metrics and reports
-│   └── visualizations/       # PNG plots
-├── best_model.joblib         # ADA baseline model
-├── scaler.joblib             # ADA baseline scaler
-├── kmeans_model.joblib       # ADA baseline K-Means
-└── results/
-    └── information_gain_results.json
+└── binary/                   # Binary model artifacts (created after training)
+    ├── results/              # Metrics and reports
+    └── visualizations/       # PNG plots
+
+Note: Model files (best_model.joblib, scaler.joblib, kmeans_model.joblib, cluster_labels.json) are created after running the training pipeline.
 ```
 
 ---
@@ -112,18 +100,24 @@ Flask API with these endpoints:
 | `/predict` | POST | Single prediction |
 | `/predict/batch` | POST | Multiple predictions |
 | `/predict/explain` | POST | Prediction with SHAP explanation |
-| `/analytics/metrics` | GET | Model metrics (both ADA and clinical) |
+| `/insights/metrics` | GET | Model metrics (both ADA and clinical) |
 | `/insights/metrics/clinical` | GET | Clinical model metrics only |
 | `/insights/clusters` | GET | Cluster analysis |
 | `/insights/information-gain` | GET | Feature importance |
 | `/insights/visualizations/<name>` | GET | PNG images |
 | `/ab-tests` | GET/POST | A/B testing management |
-| `/ab-tests/<id>/results` | GET | A/B test comparison |
+| `/ab-tests/<test_id>` | GET/PATCH/DELETE | A/B test details and management |
+| `/ab-tests/<test_id>/results` | GET | A/B test comparison |
 | `/monitoring/drift` | GET | Drift monitoring status |
 | `/monitoring/drift/check` | POST | Check for drift |
+| `/monitoring/drift/reference` | POST | Set reference data for drift detection |
 | `/monitoring/alerts` | GET | Drift alerts |
+| `/monitoring/alerts/<timestamp>/acknowledge` | POST | Acknowledge alert |
 | `/models` | GET | List model versions (MLflow) |
+| `/model/info` | GET | Current model information |
+| `/models/<name>/runs` | GET | List model runs |
 | `/models/<name>/<version>/promote` | POST | Promote model to production |
+| `/models/experiments` | GET | List MLflow experiments |
 
 ---
 
@@ -181,13 +175,13 @@ source venv/bin/activate && ./scripts/retrain-all.sh
 
 # Or run individual steps:
 ./venv/bin/python scripts/process_nhanes_multi.py
-./venv/bin/python ml/data_processing.py
+./venv/bin/python Ian_ML/data_processing.py
 ./venv/bin/python scripts/impute_missing_data.py
-./venv/bin/python ml/train.py
+./venv/bin/python Ian_ML/train.py
 ./venv/bin/python scripts/train_clusters.py
 
 # Start ML server
-./venv/bin/python ml/server.py
+./venv/bin/python Ian_ML/server.py
 ```
 
 > **See**: [rationale.md](../03-ml/rationale.md) for methodology justification
@@ -211,7 +205,7 @@ Based on Ahlqvist et al. diabetes subtype classification with DIANA NHANES resul
 
 ### SHAP Explanations
 ```python
-from ml.explainability import SHAPExplainer, format_for_clinician
+from Ian_ML.explainability import SHAPExplainer, format_for_clinician
 
 explainer = SHAPExplainer(model, model_type="tree")
 explanation = explainer.explain(features, feature_names)
@@ -219,7 +213,7 @@ explanation = explainer.explain(features, feature_names)
 
 ### A/B Testing
 ```python
-from ml.ab_testing import get_ab_manager
+from Ian_ML.ab_testing import get_ab_manager
 
 manager = get_ab_manager()
 test = manager.create_test(
@@ -232,7 +226,7 @@ test = manager.create_test(
 
 ### Drift Detection
 ```python
-from ml.drift_detection import get_drift_monitor
+from Ian_ML.drift_detection import get_drift_monitor
 
 monitor = get_drift_monitor()
 report = monitor.check_feature_drift(current_data)
@@ -242,7 +236,7 @@ if report.has_drift:
 
 ### MLflow Integration
 ```python
-from ml.mlflow_config import get_mlflow_manager
+from Ian_ML.mlflow_config import get_mlflow_manager
 
 manager = get_mlflow_manager()
 versions = manager.get_model_versions("diana-clinical")
