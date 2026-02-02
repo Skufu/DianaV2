@@ -131,6 +131,8 @@ backend/
 | GET | `/api/v1/livez` | `health.go` | Liveness probe |
 | POST | `/api/v1/auth/login` | `auth.go` | User login → JWT |
 | POST | `/api/v1/auth/register` | `auth.go` | Create account |
+| POST | `/api/v1/auth/refresh` | `auth.go` | Refresh access token |
+| POST | `/api/v1/auth/logout` | `auth.go` | Revoke refresh token |
 
 ### Protected (JWT Required)
 | Method | Path | Handler | Purpose |
@@ -147,17 +149,19 @@ backend/
 | GET | `/api/v1/users/me/assessments/:id` | `assessments.go` | Get single assessment |
 | PUT | `/api/v1/users/me/assessments/:id` | `assessments.go` | Update assessment |
 | DELETE | `/api/v1/users/me/assessments/:id` | `assessments.go` | Delete assessment |
+| GET | `/api/v1/users/me/export/pdf` | `export.go` | Export health report PDF |
 | GET | `/api/v1/analytics/summary` | `analytics.go` | Dashboard statistics |
 | GET | `/api/v1/analytics/cluster-distribution` | `analytics.go` | Risk cluster data |
 | GET | `/api/v1/insights/metrics` | `insights.go` | ML model metrics |
 | GET | `/api/v1/insights/cluster` | `insights.go` | Cluster distribution |
-| GET | `/api/v1/export/patients.csv` | `export.go` | Export patients CSV |
-| GET | `/api/v1/export/assessments.csv` | `export.go` | Export assessments CSV |
+| GET | `/api/v1/insights/cohort` | `cohort.go` | Cohort analysis (groupBy param) |
+| GET | `/api/v1/clinics` | `clinic_dashboard.go` | List user clinics |
+| GET | `/api/v1/clinics/:id/dashboard` | `clinic_dashboard.go` | Clinic dashboard stats |
 
 ### SSE Endpoints
 | Method | Path | Handler | Purpose |
 |--------|------|---------|---------|
-| GET | `/api/v1/auth/events` | `auth_events.go` | SSE auth event streaming (admin only) |
+| GET | `/api/v1/admin/events/stream` | `auth_events.go` | SSE auth event streaming (admin only) |
 
 ### Admin (JWT + Admin Role Required)
 | Method | Path | Handler | Purpose |
@@ -173,7 +177,7 @@ backend/
 ### Cohort Analysis (JWT Required)
 | Method | Path | Handler | Purpose |
 |--------|------|---------|---------|
-| GET | `/api/v1/cohort/:clinic_id` | `cohort.go` | Cohort analysis for clinic |
+| GET | `/api/v1/insights/cohort` | `cohort.go` | Cohort analysis with grouping |
 
 ---
 
@@ -619,6 +623,11 @@ go tool cover -html=coverage.out
 | `PORT` | No | Server port (default: 8080) |
 | `MODEL_URL` | No | ML server URL (default: mock) |
 | `CORS_ORIGINS` | No | Allowed origins |
+| `REDIS_ADDR` | No | Redis address (e.g. localhost:6379) |
+| `REDIS_PASSWORD` | No | Redis password |
+| `ML_API_KEY` | No | API Key for ML Service |
+| `MODEL_DATASET_HASH`| No | Hash of dataset used for training |
+| `CLINICAL_*` | No | Overrides for clinical thresholds |
 
 ---
 
