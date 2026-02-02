@@ -10,8 +10,8 @@
 ```
 data/
 └── nhanes/                       # NHANES dataset files
-    ├── raw/                      # Downloaded XPT files (if present)
-    └── *.XPT                     # NHANES data files in SAS Transport format
+    ├── processed/                # Processed CSV datasets (e.g., diana_training_data_multi.csv)
+    └── raw/                      # Downloaded XPT files (SAS Transport format)
 ```
 
 ---
@@ -23,13 +23,16 @@ data/
 | `GHB_*.XPT` | Glycohemoglobin (HbA1c) | `LBXGH` (HbA1c %) |
 | `GLU_*.XPT` | Fasting Glucose | `LBXGLU` (mg/dL) |
 | `BMX_*.XPT` | Body Measurements | `BMXBMI` (BMI) |
-| `TRIGLY_*.XPT` | Triglycerides | `LBXTR` (mg/dL) |
+| `TRIGLY_*.XPT` | Triglycerides & LDL | `LBXTR` (Triglycerides), `LBDLDL` (LDL) |
 | `HDL_*.XPT` | HDL Cholesterol | `LBDHDD` (mg/dL) |
-| `TCHOL_*.XPT` | Total Cholesterol/LDL | `LBXTC`, `LBDLDL` |
+| `TCHOL_*.XPT` | Total Cholesterol | `LBXTC` (mg/dL) |
+| `BPX_*.XPT` | Blood Pressure | `BPXSY1`, `BPXDI1` |
 | `DEMO_*.XPT` | Demographics | `RIDAGEYR` (age), `RIAGENDR` (sex) |
 | `SMQ_*.XPT` | Smoking Questionnaire | Smoking status |
 | `ALQ_*.XPT` | Alcohol Use | Alcohol consumption |
 | `PAQ_*.XPT` | Physical Activity | Activity level |
+| `RHQ_*.XPT` | Reproductive Health | `RHQ031` (Menopause status) |
+| `DIQ_*.XPT` | Diabetes Questionnaire | `DIQ010` (Self-reported) |
 
 ---
 
@@ -37,21 +40,28 @@ data/
 
 | Suffix | Years | Cycle |
 |--------|-------|-------|
+| `_F` | 2009-2010 | Cycle F |
+| `_G` | 2011-2012 | Cycle G |
 | `_H` | 2013-2014 | Cycle H |
 | `_I` | 2015-2016 | Cycle I |
 | `_J` | 2017-2018 | Cycle J |
-| `_K` | 2017-2020 | Pre-pandemic |
+| `_L` | 2021-2023 | Cycle L (Post-pandemic) |
+
+> **Note**: Cycle K (2019-2020) was suspended due to COVID-19.
 
 ---
 
 ## Processing Pipeline
 
-1. **Download**: `scripts/download_nhanes.sh` or `scripts/download_nhanes_multi.py`
-2. **Process**: `scripts/process_nhanes_multi.py` 
-   - Merges biomarker files
-   - Filters postmenopausal women (age >= 45, female)
+1. **Download**: 
+   - Python: `scripts/data/download_nhanes_multi.py`
+   - Bash (Legacy): `scripts/legacy/download_nhanes.sh`
+2. **Process**: `scripts/data/process_nhanes_multi.py`
+   - Merges biomarker files across multiple cycles (F-L)
+   - Filters postmenopausal women (age 45-60, female, no period in 12 mo)
    - Creates diabetes labels per ADA criteria
-3. **Output**: `data/nhanes/processed_nhanes_data.csv`
+   - Derives lifestyle features (smoking, alcohol, activity)
+3. **Output**: `data/nhanes/processed/diana_training_data_multi.csv`
 
 ---
 
@@ -64,7 +74,10 @@ data/
 | `bmi` | BMX_*.XPT | 15-60 | kg/m² |
 | `triglycerides` | TRIGLY_*.XPT | 30-1500 | mg/dL |
 | `hdl` | HDL_*.XPT | 20-150 | mg/dL |
-| `ldl` | TCHOL_*.XPT | 40-300 | mg/dL |
+| `ldl` | TRIGLY_*.XPT | 40-300 | mg/dL |
+| `total_cholesterol`| TCHOL_*.XPT | 100-400 | mg/dL |
+| `systolic` | BPX_*.XPT | 80-200 | mmHg |
+| `diastolic` | BPX_*.XPT | 40-120 | mmHg |
 | `age` | DEMO_*.XPT | 45-85 | years |
 
 ---
@@ -81,4 +94,4 @@ data/
 
 ## Search Keywords
 
-`NHANES` `CDC` `biomarkers` `HbA1c` `fasting glucose` `BMI` `triglycerides` `HDL` `LDL` `cholesterol` `demographics` `postmenopausal` `diabetes` `ADA criteria` `XPT` `SAS format` `training data` `processed data`
+`NHANES` `CDC` `biomarkers` `HbA1c` `fasting glucose` `BMI` `triglycerides` `HDL` `LDL` `cholesterol` `demographics` `postmenopausal` `diabetes` `ADA criteria` `XPT` `SAS format` `training data` `processed data` `blood pressure` `lifestyle`
