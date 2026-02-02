@@ -44,10 +44,7 @@ frontend/
 │       │   ├── UserManagement.jsx  # User CRUD operations
 │       │   ├── AuditLogViewer.jsx  # Audit log viewing
 │       │   ├── AuthEventLogViewer.jsx # Auth event streaming
-│       │   ├── ModelTraceability.jsx # ML model tracking
-│       │   └── AdminSidebar.jsx    # Admin navigation
-│       ├── dashboard/
-│       │   └── Dashboard_user.jsx # Main dashboard component
+│       │   └── ModelTraceability.jsx # ML model tracking
 │       ├── insights/
 │       │   ├── Insights.jsx     # Main insights container
 │       │   ├── InsightsHeader.jsx # Insights navigation
@@ -75,9 +72,12 @@ frontend/
 │       │   ├── PDFExport.jsx      # PDF export button
 │       │   ├── ErrorBoundary.jsx  # Error handling
 │       │   ├── ErrorFallback.jsx  # Error fallback UI
-│       │   └── CustomCursor.jsx   # Custom cursor effect
+│       │   ├── MockMLResultModal.jsx # Mock ML results
+│       │   ├── Skeleton.jsx       # Loading skeleton
+│       │   └── Toast.jsx          # Notification toast
 │       ├── layout/
 │       │   ├── Sidebar.jsx       # Main navigation sidebar
+│       │   ├── AdminSidebar.jsx  # Admin navigation sidebar
 │       │   ├── BiologicalNetwork.jsx # Animated background
 │       │   ├── MouseGlow.jsx     # Visual effect
 │       │   └── AdminLayout.jsx   # Admin layout wrapper
@@ -85,14 +85,14 @@ frontend/
 │       │   └── Export.jsx        # PDF export functionality
 │       ├── education/
 │       │   └── Education.jsx     # Educational content
-│       └── backup/
-│           ├── clinic/
-│           │   └── ClinicDashboard.jsx # Legacy clinic dashboard
-│           ├── dashboard/
-│           │   └── Dashboard.jsx # Legacy dashboard
-│           └── patients/
-│               ├── PatientHistory.jsx # Legacy patient history
-│               └── RiskTrendChart.jsx # Legacy risk trends
+│       ├── backup/
+│       │   ├── clinic/
+│       │   │   └── ClinicDashboard.jsx # Legacy clinic dashboard
+│       │   ├── dashboard/
+│       │   │   └── Dashboard.jsx # Legacy dashboard
+│       │   └── patients/
+│       │       ├── PatientHistory.jsx # Legacy patient history
+│       │       └── RiskTrendChart.jsx # Legacy risk trends
 │
 ├── e2e/                          # Playwright E2E tests
 │   ├── auth.spec.js             # Authentication tests
@@ -113,7 +113,6 @@ The following directories contain legacy components from the previous B2B (clini
 | Directory | Status | Description |
 |-----------|--------|-------------|
 | `components/backup/` | **Deprecated** | Legacy B2B clinician-facing components superseded by user-facing components in B2C architecture |
-| `components/dashboard/` | **Redundant** | Contains duplicate `Dashboard_user.jsx` - use `components/user/Dashboard_user.jsx` instead |
 
 **Note**: These directories are candidates for removal. Do not import or reference these components in new code. All active development should use components in `user/`, `admin/`, `auth/`, `insights/`, `export/`, `education/`, `common/`, and `layout/` directories.
 
@@ -129,7 +128,6 @@ The following directories contain legacy components from the previous B2B (clini
 | `Onboarding` | `components/user/Onboarding.jsx` | Multi-step user profile setup |
 | `AssessmentForm` | `components/user/AssessmentForm.jsx` | Biomarker input form |
 | `Dashboard_user` (user) | `components/user/Dashboard_user.jsx` | User overview, assessments |
-| `Dashboard_user` (main) | `components/dashboard/Dashboard_user.jsx` | Main dashboard component |
 | `UserProfile` | `components/user/UserProfile.jsx` | Profile management |
 | `PersonalTrends` | `components/user/PersonalTrends.jsx` | Assessment trend charts |
 | `Insights` | `components/insights/Insights.jsx` | ML visualizations, model metrics |
@@ -163,7 +161,9 @@ The following directories contain legacy components from the previous B2B (clini
 | `SHAPExplanation` | `components/common/SHAPExplanation.jsx` | Feature contributions |
 | `PDFExport` | `components/common/PDFExport.jsx` | PDF export button |
 | `ErrorBoundary` | `components/common/ErrorBoundary.jsx` | Error handling |
-| `CustomCursor` | `components/common/CustomCursor.jsx` | Custom cursor effect |
+| `MockMLResultModal` | `components/common/MockMLResultModal.jsx` | Mock ML results |
+| `Skeleton` | `components/common/Skeleton.jsx` | Loading skeleton |
+| `Toast` | `components/common/Toast.jsx` | Notification toast |
 
 ---
 
@@ -236,8 +236,10 @@ const ML_BASE = import.meta.env.VITE_ML_BASE || 'http://localhost:5000';
 Create `frontend/.env.local`:
 
 ```bash
-VITE_API_BASE=http://localhost:8080   # Go backend URL
-VITE_ML_BASE=http://localhost:5000    # Flask ML server URL
+VITE_API_BASE=http://localhost:8080/api/v1   # Go backend URL
+VITE_ML_BASE=http://localhost:5001    # Flask ML server URL
+VITE_ML_PORT=5001                     # ML Server Port
+VITE_ML_API_KEY=your-secure-ml-api-key # ML API Key
 ```
 
 ---
