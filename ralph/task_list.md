@@ -42,7 +42,7 @@
 - [x] Audit `backend/SSE_IMPLEMENTATION_SUMMARY.md` - verify SSE documentation
 - [x] Audit `frontend/README.md` - verify component structure, build commands, env vars
 - [x] Audit `frontend/ADMIN_MODULE_ENHANCEMENT_SUMMARY.md` - verify admin module docs
-- [ ] Audit `frontend/BACKEND_API_REQUIREMENTS_AUTH_EVENTS.md` - verify API requirements
+- [x] Audit `frontend/BACKEND_API_REQUIREMENTS_AUTH_EVENTS.md` - verify API requirements
 - [ ] Audit `Ian_ML/README.md` - verify ML endpoints, training pipeline, dependencies
 - [ ] Audit `Neoron_ML/README.md` - verify Neoron ML documentation status
 - [ ] Audit `scripts/README.md` - verify script list and descriptions

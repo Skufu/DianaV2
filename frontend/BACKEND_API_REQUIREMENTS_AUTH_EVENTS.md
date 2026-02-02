@@ -10,7 +10,7 @@ The frontend `AuthEventLogViewer.jsx` component uses Server-Sent Events (SSE) to
 
 ### 1. SSE Stream Endpoint
 
-**Endpoint**: `GET /api/v1/admin/auth/events/stream`
+**Endpoint**: `GET /api/v1/admin/events/stream`
 
 **Purpose**: Stream authentication events to admin users in real-time using Server-Sent Events.
 
@@ -91,11 +91,13 @@ data: {"message": "Authentication failed"}
 - Handle disconnections gracefully: Allow clients to reconnect
 - Rate limiting: Limit to 5 concurrent SSE connections per admin user
 
-### 2. Historical Auth Events (Optional but Recommended)
+### 2. Historical Auth Events (Future / Not Implemented)
 
-**Endpoint**: `GET /api/v1/admin/auth/events`
+**Endpoint**: `GET /api/v1/admin/auth/events` (Proposed)
 
 **Purpose**: Retrieve historical authentication events (for CSV export or initial load)
+
+> **Note**: This endpoint is currently **NOT IMPLEMENTED** in the backend. The frontend relies solely on real-time SSE events. Future implementation should follow this specification.
 
 **Authentication**: Requires valid JWT Bearer token
 
