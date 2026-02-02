@@ -97,7 +97,7 @@
 - [x] Audit `docs/07-research/feature_selection.md` - verify feature selection docs
 - [x] Audit `docs/07-research/ml_algorithms.md` - verify ML algorithm documentation
 - [x] Audit `docs/07-research/metrics.md` - verify metrics documentation
-- [ ] Audit `docs/07-research/data_pipeline.md` - verify data pipeline docs
+- [x] Audit `docs/07-research/data_pipeline.md` - verify data pipeline docs
 - [ ] Audit `docs/07-research/ui_requirements.md` - verify UI requirements
 - [ ] Audit `docs/07-research/codebase_alignment.md` - verify codebase alignment docs
 - [ ] Audit `docs/07-research/manuscript-updates.md` - verify manuscript update notes
