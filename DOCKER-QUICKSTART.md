@@ -90,7 +90,7 @@ This starts:
 Changes are automatically detected and services reload:
 - **Frontend**: Edit files in `frontend/src/` → Auto-reloads
 - **Backend**: Edit files in `backend/` → Air auto-rebuilds
-- **ML Server**: Edit files in `ml/` → Flask auto-reloads
+- **ML Server**: Edit files in `Ian_ML/` → Flask auto-reloads
 
 ### 3. View Logs
 
@@ -277,7 +277,7 @@ alias diana-logs='cd /path/to/DianaV2 && ./docker-start.sh logs'
 - Application README: `README.md`
 - Backend docs: `backend/README.md`
 - Frontend docs: `frontend/README.md`
-- ML docs: `ml/README.md`
+- ML docs: `Ian_ML/README.md`
 
 ## 🆘 Getting Help
 
