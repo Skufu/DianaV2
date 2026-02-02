@@ -32,7 +32,7 @@ DB_DSN=""
 ```bash
 # Remove or comment out DB_DSN
 # DB_DSN=""
-./run-dev.sh
+bash scripts/dev/start-all.sh
 ```
 
 **Option 2: Use local PostgreSQL**
@@ -59,8 +59,9 @@ echo 'DB_DSN="postgres://$(whoami)@localhost:5432/diana?sslmode=disable"' > .env
 # Test basic network connectivity
 ping ep-blue-king-a14l0x0l-pooler.ap-southeast-1.aws.neon.tech
 
-# Test database connection
-./test-db.sh
+# Test database connection (verify DB_DSN in .env)
+# Test health endpoint:
+curl http://localhost:8080/api/v1/healthz
 ```
 
 **Common fixes**:
@@ -110,16 +111,16 @@ VITE_API_BASE=http://localhost:8080/api/v1
 # Quick health check
 curl http://localhost:8080/api/v1/healthz
 
-# Test database connectivity
-./test-db.sh
+# Test database connectivity (verify DB_DSN in .env)
 
 # Clean start
 rm -rf frontend/node_modules
 cd frontend && npm install
-cd .. && ./run-dev.sh
+cd .. && bash scripts/dev/start-all.sh
 
 # Check logs
-go run ./cmd/server  # Run in foreground to see all logs
+# Logs are written to logs/ml-server.log, logs/backend.log, logs/frontend.log
+tail -f logs/*.log
 ```
 
 ## Mock Mode Development
@@ -127,7 +128,7 @@ go run ./cmd/server  # Run in foreground to see all logs
 The application can run without a database for frontend development:
 
 1. Set `DB_DSN=""` in `.env`
-2. Run `./run-dev.sh`
+2. Run `bash scripts/dev/start-all.sh`
 3. Use demo credentials: `demo@diana.app` / `demopassword123`
 4. All API calls will work with mock data
 
