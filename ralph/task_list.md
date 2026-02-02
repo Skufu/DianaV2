@@ -70,7 +70,7 @@
 
 - [x] Audit `docs/03-ml/api-contract.md` - verify request/response schemas match server.py
 - [x] Audit `docs/03-ml/methodology.md` - verify model descriptions match implementation
-- [ ] Audit `docs/03-ml/rationale.md` - verify thesis defense points are accurate
+- [x] Audit `docs/03-ml/rationale.md` - verify thesis defense points are accurate
 - [ ] Audit `docs/03-ml/integration.md` - verify ML integration documentation
 - [ ] Audit `docs/03-ml/AUDIT_REPORT.md` - verify audit report is current
 
