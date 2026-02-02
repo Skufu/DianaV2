@@ -92,11 +92,11 @@
 | [codebase_alignment.md](./07-research/codebase_alignment.md) | Code vs paper alignment | Feature mapping |
 | [biomarkers.md](./07-research/biomarkers.md) | Biomarker details | Clinical ranges, validation |
 | [diabetes_subgroups.md](./07-research/diabetes_subgroups.md) | Subtype clustering | Ahlqvist categories |
-| [feature-selection.md](./07-research/feature-selection.md) | Feature engineering | Mutual information, IG |
+| [feature_selection.md](./07-research/feature_selection.md) | Feature engineering | Mutual information, IG |
 | [metrics.md](./07-research/metrics.md) | Model metrics | AUC, precision, recall |
 | [ml_algorithms.md](./07-research/ml_algorithms.md) | ML algorithms comparison | XGBoost, CatBoost, etc. |
 | [data_pipeline.md](./07-research/data_pipeline.md) | Data processing | NHANES, imputation |
-| [ui-requirements.md](./07-research/ui-requirements.md) | UI specifications | Paper figures alignment |
+| [ui_requirements.md](./07-research/ui_requirements.md) | UI specifications | Paper figures alignment |
 | [README.md](./07-research/README.md) | Research RAG index | Paper documentation hub |
 
 ### 📁 00-legacy/
