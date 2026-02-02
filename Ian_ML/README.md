@@ -1,8 +1,8 @@
-# ML Module - DIANA Machine Learning Server
+# Ian_ML Module - DIANA Machine Learning Server
 
 > **Purpose**: Flask API server for diabetes risk prediction using trained ML models
-> **Framework**: Flask | **ML**: scikit-learn, XGBoost, CatBoost
-> **Port**: 5000
+> **Framework**: Flask | **ML**: scikit-learn, XGBoost, CatBoost, LightGBM
+> **Port**: 5000 (default)
 
 ---
 
@@ -21,7 +21,7 @@
 ## Directory Structure
 
 ```
-ml/
+Ian_ML/
 ├── server.py             # Flask API server (main entry)
 ├── predict.py            # DianaPredictor, ClinicalPredictor classes
 ├── train.py              # Train classification models
@@ -45,16 +45,19 @@ ml/
 | `/predict` | POST | Single prediction | Prediction + cluster |
 | `/predict/batch` | POST | Batch predictions | Array of predictions |
 | `/predict/explain` | POST | Prediction with SHAP | Prediction + explanation |
-| `/analytics/metrics` | GET | Model performance | AUC, accuracy, etc. |
-| `/analytics/metrics/clinical` | GET | Clinical model metrics | Clinical-only metrics |
-| `/analytics/clusters` | GET | Cluster distribution | Counts per cluster |
-| `/analytics/information-gain` | GET | Feature importance | IG scores |
-| `/analytics/visualizations/<name>` | GET | PNG images | Binary image |
+| `/insights/metrics` | GET | Model performance | AUC, accuracy, etc. |
+| `/insights/metrics/clinical` | GET | Clinical model metrics | Clinical-only metrics |
+| `/insights/clusters` | GET | Cluster distribution | Counts per cluster |
+| `/insights/information-gain` | GET | Feature importance | IG scores |
+| `/insights/visualizations/<name>` | GET | PNG images | Binary image |
 | `/ab-tests` | GET/POST | A/B testing | Test management |
 | `/ab-tests/<id>/results` | GET | A/B test results | Comparison data |
 | `/monitoring/drift` | GET | Drift status | Drift monitoring |
+| `/monitoring/drift/check` | POST | Check for drift | Drift report |
 | `/monitoring/alerts` | GET | Drift alerts | Alert list |
 | `/models` | GET | Model versions | MLflow versions |
+| `/models/<name>/runs` | GET | Model runs | Run history |
+| `/model/info` | GET | Current model info | Dataset size, features |
 
 ---
 
@@ -65,7 +68,7 @@ ml/
 class DianaPredictor:
     """ADA-based diabetes predictor using all biomarkers including HbA1c."""
     
-    FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+    FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl']
     
     def predict(self, features: dict) -> dict:
         """
@@ -101,10 +104,7 @@ POST /predict?model_type=clinical
     "triglycerides": 180.0,
     "ldl": 130.0,
     "hdl": 45.0,
-    "age": 58,
-    "smoking_status": 0,
-    "physical_activity": 1,
-    "alcohol_use": 0
+    "age": 58
 }
 ```
 
@@ -112,12 +112,14 @@ POST /predict?model_type=clinical
 
 ```json
 {
-    "prediction": "Pre-diabetic",
-    "probability": [0.15, 0.70, 0.15],
-    "cluster": "MOD",
-    "risk_score": 65,
+    "success": true,
     "model_type": "clinical",
-    "model_version": "v2.1"
+    "predicted_status": "Pre-diabetic",
+    "probability": 0.70,
+    "risk_cluster": "MOD",
+    "risk_score": 70,
+    "confidence": 0.70,
+    "model_info": { ... }
 }
 ```
 
@@ -127,7 +129,7 @@ POST /predict?model_type=clinical
 
 | Type | Query Param | Features | Use Case |
 |------|-------------|----------|----------|
-| ADA | `?model_type=ada` | 6 biomarkers (hba1c, fbs, bmi, tg, ldl, hdl) | Diagnostic confirmation |
+| ADA | `?model_type=ada` | 6 features (hba1c, fbs, bmi, tg, ldl, hdl) | Diagnostic confirmation |
 | Clinical | `?model_type=clinical` | 5 features (bmi, tg, ldl, hdl, age) | Screening without lab test |
 
 ---
@@ -135,7 +137,7 @@ POST /predict?model_type=clinical
 ## Training Pipeline
 
 ```bash
-cd ml
+cd Ian_ML
 
 # 1. Process NHANES data
 python data_processing.py
@@ -156,22 +158,32 @@ python server.py
 
 | Name | Endpoint | Description |
 |------|----------|-------------|
-| `roc_curve` | `/analytics/visualizations/roc_curve` | ROC-AUC curve |
-| `confusion_matrix` | `/analytics/visualizations/confusion_matrix` | Classification matrix |
-| `feature_importance` | `/analytics/visualizations/feature_importance` | Bar chart |
-| `cluster_distribution` | `/analytics/visualizations/cluster_distribution` | Cluster counts |
+| `roc_curve` | `/insights/visualizations/roc_curve` | ROC-AUC curve |
+| `confusion_matrix` | `/insights/visualizations/confusion_matrix` | Classification matrix |
+| `feature_importance` | `/insights/visualizations/feature_importance` | Bar chart |
+| `cluster_distribution` | `/insights/visualizations/cluster_distribution` | Cluster counts |
+| `cluster_heatmap` | `/insights/visualizations/cluster_heatmap` | Cluster centroids heatmap |
+| `cluster_scatter` | `/insights/visualizations/cluster_scatter` | PCA scatter plot |
+| `k_optimization` | `/insights/visualizations/k_optimization` | Elbow/Silhouette plots |
 
 ---
 
 ## Dependencies
 
 ```
-flask>=2.0.0
-numpy>=1.21.0
-pandas>=1.3.0
-scikit-learn>=1.0.0
-xgboost>=1.5.0
-joblib>=1.1.0
+pandas==2.2.0
+pyreadstat==1.2.7
+scikit-learn==1.4.0
+numpy==1.26.3
+joblib==1.3.2
+xgboost==2.0.3
+flask==3.0.1
+flask-cors==4.0.0
+imbalanced-learn==0.12.0
+mlflow==2.10.2
+shap==0.44.1
+scipy==1.12.0
+lightgbm==4.3.0
 ```
 
 ---
