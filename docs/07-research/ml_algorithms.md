@@ -10,9 +10,9 @@
 
 | Model | Library | Key Parameters |
 |-------|---------|----------------|
-| **Logistic Regression** | sklearn | `max_iter=1000`, `solver='lbfgs'` |
-| **Random Forest** | sklearn | `n_estimators=100`, `max_depth=10` |
-| **XGBoost** | xgboost | `n_estimators=100`, `max_depth=5` |
+| **Logistic Regression** | sklearn | `max_iter=1000`, `class_weight='balanced'` |
+| **Random Forest** | sklearn | `n_estimators=[200,300,500]`, `max_depth=[3,4,5,6]` |
+| **XGBoost** | xgboost | `n_estimators=[100,200,300]`, `max_depth=[2,3,4]` |
 
 ### Optional Models (considered)
 - **Support Vector Machine (SVM)** - if preliminary results indicate benefit
@@ -67,11 +67,10 @@
 
 | Component | File | Description |
 |-----------|------|-------------|
-| Training Pipeline | `scripts/train_enhanced.py` | Main training script |
-| Cluster Training | `scripts/train_clusters.py` | K-Means only |
-| Clinical Model | `ml/train.py` | Non-circular model training |
-| Prediction | `ml/predict.py` | Inference module |
-| K-Means | `ml/clustering.py` | Clustering module |
+| Clinical Model | `Ian_ML/train.py` | Non-circular model training |
+| Binary Model | `Ian_ML/train_binary.py` | Binary classification training |
+| Prediction | `Ian_ML/predict.py` | Inference module |
+| K-Means | `Ian_ML/clustering.py` | Clustering module |
 
 ---
 
