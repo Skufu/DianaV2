@@ -89,7 +89,7 @@
 
 ## Phase 9: Research Documentation (`docs/07-research/`)
 
-- [ ] Audit `docs/07-research/README.md` - verify research docs index
+- [x] Audit `docs/07-research/README.md` - verify research docs index
 - [ ] Audit `docs/07-research/paper-requirements.md` - verify paper requirements match manuscript
 - [ ] Audit `docs/07-research/paper_alignment_analysis.md` - verify alignment analysis
 - [ ] Audit `docs/07-research/biomarkers.md` - verify biomarker documentation
