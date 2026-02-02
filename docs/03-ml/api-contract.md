@@ -3,9 +3,9 @@
 This document specifies the HTTP contract between DianaV2 and the external ML inference service used to score patient assessments.
 
 ## Endpoint & Transport
-- Method/URL: `POST /predict` with optional query parameter `?model_type=ada` or `?model_type=clinical`
+- Method/URL: `POST /predict` with optional query parameter `?model_type=clinical` (default) or `?model_type=ada`
 - Timeout: `MODEL_TIMEOUT_MS` (ms) applies to the entire HTTP request.
-- Auth: none currently enforced by the backend; add if the model service requires it.
+- Auth: API key authentication via `X-API-Key` header (required in production when `ML_API_KEY` is set; skipped in development mode)
 
 ## Headers
 - `Content-Type: application/json`
@@ -13,7 +13,30 @@ This document specifies the HTTP contract between DianaV2 and the external ML in
 
 ## Request Schema (JSON)
 
-### ADA Model (Default) - 6 Required Fields
+### Clinical Model (Default) - 5 Required Fields
+
+The Clinical model (non-circular, no HbA1c/FBS) accepts these 5 fields:
+
+| Field | Type | Units / Notes | Required |
+| --- | --- | --- | --- |
+| bmi | number | kg/m² (Body mass index) | ✅ Yes |
+| triglycerides | integer | mg/dL | ✅ Yes |
+| ldl | integer | mg/dL (Low-density lipoprotein) | ✅ Yes |
+| hdl | integer | mg/dL (High-density lipoprotein) | ✅ Yes |
+| age | integer | years (optional in request, defaults to 54 if not provided) | No |
+
+Example request:
+```json
+{
+  "bmi": 29.4,
+  "triglycerides": 180,
+  "ldl": 132,
+  "hdl": 48,
+  "age": 55
+}
+```
+
+### ADA Model - 6 Required Fields
 
 The ADA model accepts these 6 biomarker fields:
 
@@ -38,34 +61,30 @@ Example request:
 }
 ```
 
-### Clinical Model - 5 Required Fields
-
-The Clinical model (non-circular, no HbA1c/FBS) accepts these 5 fields:
-
-| Field | Type | Units / Notes | Required |
-| --- | --- | --- | --- |
-| bmi | number | kg/m² (Body mass index) | ✅ Yes |
-| triglycerides | integer | mg/dL | ✅ Yes |
-| ldl | integer | mg/dL (Low-density lipoprotein) | ✅ Yes |
-| hdl | integer | mg/dL (High-density lipoprotein) | ✅ Yes |
-| age | integer | years | ✅ Yes |
-
-Example request:
-```json
-{
-  "bmi": 29.4,
-  "triglycerides": 180,
-  "ldl": 132,
-  "hdl": 48,
-  "age": 55
-}
-```
-
 ## Response Schema
 
 ### Success Response (HTTP 200)
 
 The API returns different response structures depending on the model type:
+
+#### Clinical Model Response (Default)
+```json
+{
+  "success": true,
+  "model_type": "clinical",
+  "predicted_status": "Pre-diabetic",
+  "risk_cluster": "Moderate Risk",
+  "probability": 0.58,
+  "risk_score": 58,
+  "confidence": 0.58,
+  "model_info": {
+    "classifier": "XGBoost",
+    "auc_roc": 0.6732,
+    "features_used": ["bmi", "triglycerides", "ldl", "hdl", "age"],
+    "note": "Non-circular model (no HbA1c/FBS in features)"
+  }
+}
+```
 
 #### ADA Model Response
 ```json
@@ -84,32 +103,13 @@ The API returns different response structures depending on the model type:
 }
 ```
 
-#### Clinical Model Response
-```json
-{
-  "success": true,
-  "model_type": "clinical",
-  "predicted_status": "Pre-diabetic",
-  "risk_cluster": "MODERATE",
-  "probability": 0.58,
-  "risk_score": 58,
-  "confidence": 0.58,
-  "model_info": {
-    "classifier": "XGBoost",
-    "auc_roc": 0.6732,
-    "features_used": ["bmi", "triglycerides", "ldl", "hdl", "age"],
-    "note": "Non-circular model (no HbA1c/FBS in features)"
-  }
-}
-```
-
 ### Response Field Descriptions
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the prediction was successful |
 | `medical_status` / `predicted_status` | string | Diabetes classification: "Normal", "Pre-diabetic", or "Diabetic" |
-| `risk_cluster` | string | Risk cluster assignment (e.g., "SIRD", "SIDD", "MOD", "MARD" or "HIGH", "MODERATE", "LOW") |
+| `risk_cluster` | string | Risk cluster assignment (e.g., "Low Risk", "Moderate Risk", "High Risk" for clinical model; "HIGH", "MODERATE", "LOW" or SIRD/SIDD/MOD/MARD variants for ADA model) |
 | `risk_level` | string | Simplified risk level: "HIGH", "MODERATE", or "LOW" (ADA model only) |
 | `risk_score` | integer | Risk score from 0-100 (derived from probability) |
 | `probability` | float | Diabetes probability (0.0 to 1.0) from classifier |
@@ -130,9 +130,16 @@ The API returns different response structures depending on the model type:
 - Prefer returning meaningful 4xx/5xx on validation/server errors; the backend will map any non-200 to the failure behavior described above.
 - Keep latency within `MODEL_TIMEOUT_MS`; otherwise the backend will time out and record the failure mapping.
 
-## Cluster Definitions (per Research Paper)
+## Cluster Definitions
 
-The model returns one of the following cluster assignments based on the research paper's diabetes subtype classification for menopausal women:
+### Clinical Model Cluster Labels
+The clinical model returns cluster labels based on risk level: "Low Risk", "Moderate Risk", or "High Risk" (as determined by K-means clustering on the training data).
+
+### ADA Model Cluster Labels
+The ADA model returns simplified risk levels: "HIGH", "MODERATE", or "LOW" (as determined by K-means clustering on the training data).
+
+### Research Paper Cluster Definitions (For Reference)
+The following diabetes subtype classifications from research papers describe theoretical cluster types, which map to the above risk level labels in the actual implementation:
 
 | Cluster | Full Name | Characteristics | Risk Level |
 |---------|-----------|-----------------|------------|
