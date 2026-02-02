@@ -38,7 +38,7 @@ This document tracks known issues, technical debt, and planned improvements iden
 ## High Priority Issues (P1) 🟠
 
 ### 5. ML Server Default Age Substitution
-- **Files**: `ml/server.py:63, 263, 325`
+- **Files**: `Ian_ML/server.py:63, 263, 325`
 - **Impact**: Prediction accuracy - wrong age used if field missing
 - **Issue**: Defaults to age 54 instead of returning validation error
 - **Status**: ⏳ Pending fix

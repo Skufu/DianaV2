@@ -211,7 +211,7 @@ The backend includes comprehensive unit tests for core packages:
 | Package | Test File | Coverage |
 |---------|-----------|----------|
 | `config/` | `config_test.go` | Environment loading, defaults |
-| `ml/` | `mock_test.go`, `validation_test.go` | Predictor, biomarker validation |
+| `internal/ml/` | `mock_test.go`, `validation_test.go` | Predictor, biomarker validation |
 | `middleware/` | `auth_test.go`, `ratelimit_test.go`, `rbac_test.go`, `security_test.go`, `audit_test.go` | JWT, rate limiting, RBAC, security headers, audit logging |
 | `handlers/` | `assessments_test.go`, `router_test.go`, `users_test.go`, `auth_test.go`, `insights_test.go`, `analytics_test.go`, `export_test.go`, `cohort_test.go`, `clinic_dashboard_test.go`, `admin_users_test.go`, `admin_dashboard_test.go`, `admin_audit_test.go`, `admin_models_test.go`, `auth_events_test.go`, `health_test.go` | HTTP handlers, validation, API endpoints |
 | `handlers/` | `error_response_test.go`, `utils_test.go`, `analytics_load_test.go`, `p99_load_test.go`, `pool_exhaustion_test.go` | Error handling, utilities, load testing |
