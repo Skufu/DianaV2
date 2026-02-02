@@ -4,7 +4,7 @@
 
 This document describes the machine learning methodology used in DIANA, aligned with the research paper requirements.
 
-> **For detailed RAG references, see [`paper_rag/`](paper_rag/README.md)**
+> **For detailed RAG references, see [`docs/07-research/`](../07-research/README.md)**
 
 ---
 
@@ -18,7 +18,7 @@ Due to Philippine hospital data collection challenges, we use NHANES (US Nationa
 
 ### Swap to Philippine Data
 When Philippine hospital records become available:
-1. Format data to match the same schema (see [paper_rag/biomarkers.md](paper_rag/biomarkers.md))
+1. Format data to match the same schema (see [docs/07-research/biomarkers.md](../07-research/biomarkers.md))
 2. Re-run `process_nhanes.py` equivalent 
 3. Re-run training scripts
 4. Update cluster profiles (patterns may differ between populations)
@@ -78,7 +78,7 @@ For panel defense, also compute Information Gain using clinical thresholds.
 | Model | Parameters | Purpose |
 |-------|------------|---------|
 | Logistic Regression | C=0.1, balanced weights | Interpretable baseline |
-| Random Forest | n_estimators=300, max_depth=6, min_samples_leaf=15 | Captures nonlinear relationships |
+| Random Forest | n_estimators=500, max_depth=6, min_samples_leaf=15 | Captures nonlinear relationships |
 | **XGBoost** ⭐ | n_estimators=300, max_depth=4, learning_rate=0.05, min_child_weight=5-10, reg_alpha=0.5-2.0, reg_lambda=2.0-10.0, subsample=0.6-0.8, colsample_bytree=0.6-0.8 | **Best performer (AUC 0.6732)** |
 
 **Note on XGBoost Hyperparameter Tuning**: The model uses an extensive grid search with 8 parameters (3×3×3×3×3×3×2×2 = 972 combinations tested). Grid search parameters include:
@@ -91,7 +91,7 @@ For panel defense, also compute Information Gain using clinical thresholds.
 - `subsample`: [0.6, 0.8] (row sampling)
 - `colsample_bytree`: [0.6, 0.8] (column sampling)
 | CatBoost | depth=5, iterations=300, l2_leaf_reg=5 | Handles categorical features natively |
-| LightGBM | num_leaves=31, n_estimators=300, reg_lambda=10 | Fast gradient boosting |
+| LightGBM | num_leaves=31, n_estimators=300, reg_lambda=5.0 | Fast gradient boosting |
 | Voting Ensemble | soft voting, weighted (LR+RF+XGB+LightGBM) | Combines base learners |
 | Stacking Ensemble | LR meta-learner on 4 base models | Learns optimal combination |
 
@@ -144,7 +144,7 @@ Clusters labeled using rank-based assignment for NHANES postmenopausal populatio
 | **MOD-like** | 370 (26.9%) | BMI=29.58, TG=176.37, HbA1c=5.80% | Moderate obesity, high TG |
 | **MARD-like** | 505 (36.7%) | BMI=25.74, HDL=72.98, HbA1c=5.51% | Healthiest profile |
 
-> **See**: [paper_rag/diabetes_subgroups.md](paper_rag/diabetes_subgroups.md)
+> **See**: [docs/07-research/diabetes_subgroups.md](../07-research/diabetes_subgroups.md)
 
 ---
 
@@ -218,17 +218,17 @@ source venv/bin/activate && ./scripts/retrain_all.sh
 # Individual steps:
 # 3. Process and Clean
 python scripts/process_nhanes_multi.py
-python ml/data_processing.py
+python Ian_ML/data_processing.py
 
 # 4. Impute
 python scripts/impute_missing_data.py
 
 # 5. Train and Cluster
-python ml/train.py
-python scripts/train_clusters.py
+python Ian_ML/train.py
+python scripts/train/train_clusters.py
 
 # 6. Start ML server
-python ml/server.py
+python Ian_ML/server.py
 ```
 
 ---
@@ -237,8 +237,8 @@ python ml/server.py
 
 | Topic | Document |
 |-------|----------|
-| All Details | [paper_rag/README.md](paper_rag/README.md) |
-| ML Algorithms | [paper_rag/ml_algorithms.md](paper_rag/ml_algorithms.md) |
-| Metrics | [paper_rag/metrics.md](paper_rag/metrics.md) |
-| Data Pipeline | [paper_rag/data_pipeline.md](paper_rag/data_pipeline.md) |
-| Code Alignment | [paper_rag/codebase_alignment.md](paper_rag/codebase_alignment.md) |
+| All Details | [docs/07-research/README.md](../07-research/README.md) |
+| ML Algorithms | [docs/07-research/ml_algorithms.md](../07-research/ml_algorithms.md) |
+| Metrics | [docs/07-research/metrics.md](../07-research/metrics.md) |
+| Data Pipeline | [docs/07-research/data_pipeline.md](../07-research/data_pipeline.md) |
+| Code Alignment | [docs/07-research/codebase_alignment.md](../07-research/codebase_alignment.md) |
