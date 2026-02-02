@@ -54,7 +54,7 @@
 
 - [x] Audit `docs/01-architecture/overview.md` - verify system diagram matches current stack
 - [x] Audit `docs/01-architecture/detailed-architecture.md` - verify component relationships
-- [ ] Audit `docs/01-architecture/layout.md` - verify layout documentation
+- [x] Audit `docs/01-architecture/layout.md` - verify layout documentation
 - [ ] Audit `docs/01-architecture/project-structure.md` - verify file structure is current
 
 ## Phase 5: Guide Documentation (`docs/02-guides/`)
