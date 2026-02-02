@@ -143,7 +143,7 @@ Ralph operates on the **DianaV2** project:
 | `backend/internal/http/handlers/` | REST API handlers |
 | `backend/internal/store/` | Database layer (SQLC) |
 | `frontend/src/components/` | React components |
-| `ml/` | Python ML service |
+| `Ian_ML/` | Python ML service |
 
 ### Important Patterns
 
