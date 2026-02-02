@@ -322,7 +322,11 @@ Specifically, this study aims to:
     algorithms such as regression analysis, decision trees, and neural networks. The model will
     identify patterns that enhance prediction accuracy. This data-driven approach enables a
     more personalized and precise risk evaluation offering healthcare professionals a tool for
-    early detection and targeted prevention compared to conventional methods
+    early detection and targeted prevention compared to conventional methods.
+    Furthermore, the methodology distinguishes between features used for clustering
+    (including HbA1c and FBS for accurate ground-truth labeling) and features used for
+    predictive screening (prioritizing non-invasive surrogates to prevent circular reasoning
+    and enable broader accessibility).
 **2. Cluster users based on biomarker, demographic, and lifestyle data, and develop a**
     **predictive modeling approach that determines their cluster membership while**
     **estimating their likelihood of Type 2 Diabetes risk using machine learning techniques**
@@ -473,9 +477,11 @@ This study has the following scope:
     biomarkers, the researchers will develop a predictive classification model
     employing machine learning algorithms to classify the current diabetes risk status
     of menopausal women_._ The study will explore models such as logistic regression,
-    random forest, or support vector machines to determine which approach yields the
+    random forest, and gradient boosting algorithms (XGBoost, CatBoost, LightGBM)
+    as well as ensemble methods (Voting, Stacking) to determine which approach yields the
     most accurate predictive performance. Model training and validation will be
-    performed using available biomarker datasets. Statistical evaluation methods such
+    performed using available biomarker datasets with techniques like SMOTE for class
+    imbalance handling. Statistical evaluation methods such
     as accuracy, sensitivity, specificity, and AUC (Area Under the Curve) will be
     applied to measure the model’s performance and reliability.
 - _Integration into a Web Application_ **:** The study will integrate the developed
