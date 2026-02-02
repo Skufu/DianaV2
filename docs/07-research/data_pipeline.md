@@ -30,15 +30,15 @@ NHANES XPT Files → Download → Process → Clean → Split → Train
 
 ### 1. Download NHANES Data
 ```bash
-python scripts/download_nhanes_multi.py
-python scripts/download_lifestyle_data.py
+python scripts/data/download_nhanes_multi.py
+python scripts/data/download_lifestyle_data.py
 ```
 
 **Output**: `data/nhanes/*.XPT`
 
 ### 2. Process and Merge
 ```bash
-python scripts/process_nhanes_multi.py
+python scripts/data/process_nhanes_multi.py
 ```
 
 **Output**: `data/nhanes/processed/diana_training_data_multi.csv`
@@ -47,10 +47,11 @@ python scripts/process_nhanes_multi.py
 
 | Function | Purpose |
 |----------|---------|
-| `load_and_merge_nhanes()` | Merge XPT files by SEQN |
-| `filter_postmenopausal()` | Women 45-60, RHQ031=2 |
-| `create_diabetes_labels()` | Apply ADA HbA1c thresholds |
-| `derive_lifestyle_features()` | Create smoking/activity vars |
+| `load_xpt()` | Load individual NHANES .XPT files |
+| `process_cycle()` | Process single NHANES cycle (merge all files) |
+| `derive_smoking_status()` | Create smoking status variable |
+| `derive_physical_activity()` | Create physical activity variable |
+| `derive_alcohol_use()` | Create alcohol use variable |
 
 ---
 
@@ -80,17 +81,18 @@ python scripts/process_nhanes_multi.py
 
 ## Label Generation
 
+**Note**: The pipeline saves raw data including HbA1c and self-reported diabetes (DIQ010). Diabetes labels are NOT derived in this script - they are created downstream in the ML training pipeline.
+
 ```python
-def create_diabetes_labels(df):
-    """Apply ADA HbA1c thresholds (PRIMARY)."""
-    conditions = [
-        df['hba1c'] < 5.7,      # Normal
-        df['hba1c'] < 6.5,      # Pre-diabetic
-        df['hba1c'] >= 6.5      # Diabetic
-    ]
-    labels = ['Normal', 'Pre-diabetic', 'Diabetic']
-    df['diabetes_status'] = np.select(conditions, labels)
-    return df
+# Output includes:
+# - hba1c: Laboratory HbA1c values (LBXGH)
+# - DIQ010: Self-reported diabetes diagnosis (0=No, 1=Yes)
+#
+# Diabetes status labels (Normal/Pre-diabetic/Diabetic) are derived
+# from HbA1c thresholds during model training:
+#   - Normal: hba1c < 5.7
+#   - Pre-diabetic: 5.7 <= hba1c < 6.5
+#   - Diabetic: hba1c >= 6.5
 ```
 
 ---
