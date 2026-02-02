@@ -45,7 +45,7 @@
 - [x] Audit `frontend/BACKEND_API_REQUIREMENTS_AUTH_EVENTS.md` - verify API requirements
 - [x] Audit `Ian_ML/README.md` - verify ML endpoints, training pipeline, dependencies
 - [x] Audit `Neoron_ML/README.md` - verify Neoron ML documentation status
-- [ ] Audit `scripts/README.md` - verify script list and descriptions
+- [x] Audit `scripts/README.md` - verify script list and descriptions
 - [ ] Audit `data/README.md` - verify NHANES data files and processing instructions
 - [ ] Audit `models/README.md` - verify model artifacts and versioning info
 - [ ] Audit `docker/README.md` - verify docker configuration docs
