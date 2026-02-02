@@ -242,7 +242,7 @@ CORS_ORIGINS=http://localhost,http://localhost:80,http://your-domain.com
 ├── frontend/
 │   ├── Dockerfile              # React frontend
 │   └── nginx.conf              # Nginx configuration
-├── ml/
+├── Ian_ML/
 │   └── Dockerfile              # Python ML server
 ├── models/                     # ML models (mounted as volume)
 └── docker/

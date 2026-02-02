@@ -36,6 +36,8 @@ SUMMARY_FILE="$RALPH_DIR/ralph_summary.txt"
 MAX_RETRIES=2
 MAX_RULES=10
 PAUSE_EVERY=10
+MODEL="zai-coding-plan/glm-4.7"
+MODEL_MANAGER="opencode/kimi-k2.5-free"
 TEMP_DIR="${TMPDIR:-$RALPH_DIR/tmp}"
 ARCHIVE_DIR="$RALPH_DIR/archive"
 
@@ -295,7 +297,7 @@ get_role() {
 # ─────────────────────────────────────────────────────────────────
 comprehension_check() {
     [ "$UNATTENDED" = true ] && return
-    opencode run "Read @$CONTEXT_PIN. Summarize: project purpose and tech stack in 2 sentences." 2>&1 | head -15
+    opencode run -m "$MODEL" "Read @$CONTEXT_PIN. Summarize: project purpose and tech stack in 2 sentences." 2>&1 | head -15
     read -p "AI understands correctly? (y/n): " c
     [[ "$c" != "y" ]] && exit 1
 }
@@ -381,7 +383,7 @@ for ((i=1; i<=ITERATIONS; i++)); do
             failure_context="Recent test failures: $(get_failure_summary)"
         fi
         
-        opencode run "$role
+        opencode run -m "$MODEL" "$role
 Read: @$CONTEXT_PIN, @$SYSTEM_RULES, @$PRD_FILE, @$TASK_FILE
 Complete this task: '$task_text'
 $failure_context
@@ -473,7 +475,7 @@ Do NOT just say DONE without editing the checkbox!" 2>&1 | tee "$TEMP_DIR/out.tx
             failure_info="AI did not mark task [x] complete. Check if fix was applied correctly."
         fi
         
-        opencode run "You are Ralph 2. Ralph 1 failed on: '$task_text'
+        opencode run -m "$MODEL_MANAGER" "You are Ralph 2. Ralph 1 failed on: '$task_text'
 $failure_info
 Read @$ERROR_LOG, @$TASK_FILE. Either break down the task into subtasks OR add a rule to @$SYSTEM_RULES. Do NOT code." 2>&1 || true
         
