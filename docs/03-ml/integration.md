@@ -12,20 +12,20 @@ This script will:
 2. Install all ML dependencies
 3. Download NHANES data (if not present)
 4. Train models (if not trained)
-5. Start the ML server on port 5000
+  5. Start the ML server on port 5001
 
 ## Manual Setup
 
 Set these environment variables for Go backend (in `.env`):
 ```bash
-MODEL_URL=http://localhost:5000
+MODEL_URL=http://localhost:5001
 MODEL_VERSION=v1.0
 MODEL_TIMEOUT_MS=5000
 ```
 
 Or add to your `.env`:
 ```
-MODEL_URL=http://localhost:5000/predict
+MODEL_URL=http://localhost:5001/predict
 MODEL_VERSION=1063
 MODEL_TIMEOUT_MS=5000
 ```
@@ -106,12 +106,12 @@ make ml
 
 **Terminal 2 - Go Backend:**
 ```bash
-MODEL_URL=http://localhost:5000 go run ./backend/cmd/server
+MODEL_URL=http://localhost:5001 go run ./backend/cmd/server
 ```
 
 **Terminal 2 - Go Backend:**
 ```bash
-MODEL_URL=http://localhost:5000 go run ./backend/cmd/server
+MODEL_URL=http://localhost:5001 go run ./backend/cmd/server
 ```
 
 ## Production Deployment

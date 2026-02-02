@@ -147,7 +147,7 @@ function App() {
 The Analytics component fetches from ML server:
 
 ```javascript
-const ML_BASE = import.meta.env.VITE_ML_BASE || 'http://localhost:5000';
+const ML_BASE = import.meta.env.VITE_ML_BASE || 'http://localhost:5001';
 
 // Fetch metrics
 const metricsRes = await fetch(`${ML_BASE}/insights/metrics`);
@@ -202,7 +202,7 @@ const disableHeavyEffects = shouldDisableHeavyEffects();
 ```bash
 # frontend/.env.local
 VITE_API_BASE=http://localhost:8080   # Go backend
-VITE_ML_BASE=http://localhost:5000    # Flask ML server
+VITE_ML_BASE=http://localhost:5001    # Flask ML server
 ```
 
 ---

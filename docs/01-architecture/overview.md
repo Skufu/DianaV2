@@ -29,7 +29,7 @@ DIANA V2 is a **three-tier web application** for diabetes risk prediction in pos
 
 ### 3. ML Server (Python + Flask)
 - **Location:** `Ian_ML/`
-- **Port:** 5000
+- **Port:** 5001
 - **Purpose:** Diabetes prediction, insights, visualizations
 - **Key Files:**
   - `server.py` — Flask API
@@ -48,7 +48,7 @@ DIANA V2 is a **three-tier web application** for diabetes risk prediction in pos
 ```
 ┌──────────┐   HTTP    ┌──────────┐   HTTP    ┌──────────┐
 │ Browser  │ ───────▶  │ Go API   │ ───────▶  │ ML Flask │
-│          │ ◀───────  │ :8080    │ ◀───────  │ :5000    │
+│          │ ◀───────  │ :8080    │ ◀───────  │ :5001    │
 └──────────┘   JSON    └────┬─────┘   JSON    └──────────┘
                             │
                             ▼ SQL
@@ -74,14 +74,14 @@ DIANA V2 is a **three-tier web application** for diabetes risk prediction in pos
 ```bash
 DATABASE_URL=postgres://...
 JWT_SECRET=...
-MODEL_URL=http://localhost:5000  # ML server
+MODEL_URL=http://localhost:5001  # ML server
 CORS_ORIGINS=http://localhost:4000
 ```
 
 ### Frontend (`frontend/.env.local`)
 ```bash
 VITE_API_BASE=http://localhost:8080
-VITE_ML_BASE=http://localhost:5000  # For direct ML calls
+VITE_ML_BASE=http://localhost:5001  # For direct ML calls
 ```
 
 ---
