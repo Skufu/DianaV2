@@ -14,7 +14,7 @@
 
 ## Phase 2: Main Manuscript
 
-- [ ] Audit `manuscript.md` - verify methodology matches `Ian_ML/` implementation
+- [x] Audit `manuscript.md` - verify methodology matches `Ian_ML/` implementation
 - [ ] Audit `splitPaper/Manuscript_part1.md` - verify consistency with main manuscript
 - [ ] Audit `splitPaper/manuscript_part2.md` - verify consistency with main manuscript
 - [ ] Audit `splitPaper/manuscript_part3.md` - verify consistency with main manuscript
