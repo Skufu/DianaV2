@@ -13,8 +13,8 @@ A full-stack health application designed for menopausal women to assess diabetes
 | `backend/` | Go/Gin REST API server | `cmd/server/main.go`, `internal/http/handlers/*.go` | [backend/README.md](./backend/README.md) |
 | `frontend/` | React/Vite web client | `src/App.jsx`, `src/api.js`, `src/components/` | [frontend/README.md](./frontend/README.md) |
 | `Ian_ML/` | Flask ML prediction server | `server.py`, `predict.py`, `train.py` | [Ian_ML/README.md](./Ian_ML/README.md) |
-| `scripts/` | Dev utilities & data processing | `setup.sh`, `run-dev.sh`, `process_nhanes_multi.py` | [scripts/README.md](./scripts/README.md) |
-| `docs/` | Documentation | `ARCHITECTURE.md`, `BACKEND.md`, `ML_SYSTEM.md` | [docs/README.md](./docs/README.md) |
+| `scripts/` | Dev utilities & data processing | `dev/setup.sh`, `dev/start-all.sh`, `data/process_nhanes_multi.py` | [scripts/README.md](./scripts/README.md) |
+| `docs/` | Documentation | `01-architecture/detailed-architecture.md`, `02-guides/backend.md`, `02-guides/ml-system.md` | [docs/README.md](./docs/README.md) |
 | `data/` | NHANES dataset files | `nhanes/*.XPT` | [data/README.md](./data/README.md) |
 | `models/` | Trained ML artifacts | `best_model.joblib`, `scaler.joblib` | [models/README.md](./models/README.md) |
 
@@ -56,7 +56,7 @@ A full-stack health application designed for menopausal women to assess diabetes
 |------|---------------|---------|
 | Main App | `frontend/src/App.jsx` | Routing, auth state |
 | API Layer | `frontend/src/api.js` | Fetch wrapper, token refresh |
-| Main Dashboard | `frontend/src/components/dashboard/Dashboard_user.jsx` | Main dashboard overview |
+| Main Dashboard | `frontend/src/components/user/Dashboard_user.jsx` | Main dashboard overview |
 | User Dashboard | `frontend/src/components/user/Dashboard_user.jsx` | User overview, assessments |
 | User Profile | `frontend/src/components/user/UserProfile.jsx` | Profile management |
 | Onboarding | `frontend/src/components/user/Onboarding.jsx` | Multi-step onboarding |
@@ -135,8 +135,8 @@ A full-stack health application designed for menopausal women to assess diabetes
 ```bash
 git clone <repository-url>
 cd DianaV2
-make setup     # or: bash scripts/setup.sh
-make run-dev   # or: bash scripts/run-dev.sh
+bash scripts/dev/setup.sh    # Installs dependencies
+bash scripts/dev/start-all.sh # Starts all services
 ```
 
 ### Manual Setup
@@ -149,13 +149,13 @@ cp env.example .env
 go mod download
 cd frontend && npm install && cd ..
 # ML Setup (creates venv and installs requirements)
-bash scripts/setup.sh
+bash scripts/dev/setup.sh
 
 # 3. Database
 make db_up
 
 # 4. Start
-make run-dev
+bash scripts/dev/start-all.sh
 ```
 
 ### Access Points
@@ -216,8 +216,8 @@ make run-dev
 
 ```bash
 # Development
-make setup      # Initial project setup
-make run-dev    # Start backend + frontend
+bash scripts/dev/setup.sh      # Initial project setup
+bash scripts/dev/start-all.sh  # Start backend + frontend + ML
 make dev        # Start backend only
 
 # Database

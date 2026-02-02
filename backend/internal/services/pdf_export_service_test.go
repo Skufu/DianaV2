@@ -1,6 +1,7 @@
 package services
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -8,8 +9,6 @@ import (
 )
 
 func TestPDFExportService_GenerateHealthReport(t *testing.T) {
-	t.Skip("PDF generation temporarily disabled due to gopdf library updates and font loading requirements")
-
 	service := NewPDFExportService()
 
 	now := time.Date(2026, time.January, 14, 10, 30, 0, 0, time.UTC)
@@ -46,6 +45,35 @@ func TestPDFExportService_GenerateHealthReport(t *testing.T) {
 	if len(result) == 0 {
 		t.Fatal("expected non-empty PDF data")
 	}
+}
+
+// TestPDFExportService_GenerateMockReport generates a sample PDF with mock data
+// Run with: go test -v -run TestPDFExportService_GenerateMockReport
+// The PDF will be saved to sample_report.pdf in the current directory
+func TestPDFExportService_GenerateMockReport(t *testing.T) {
+	service := NewPDFExportService()
+
+	// Use mock data for a realistic preview
+	user, assessments := GenerateMockData()
+
+	result, err := service.GenerateHealthReport(user, assessments)
+	if err != nil {
+		t.Fatalf("GenerateHealthReport() returned error: %v", err)
+	}
+
+	if len(result) == 0 {
+		t.Fatal("expected non-empty PDF data")
+	}
+
+	// Save to file for visual inspection
+	outputPath := "sample_report.pdf"
+	err = os.WriteFile(outputPath, result, 0644)
+	if err != nil {
+		t.Fatalf("failed to write sample PDF: %v", err)
+	}
+
+	t.Logf("✅ Sample PDF generated: %s (%d bytes)", outputPath, len(result))
+	t.Logf("Open this file to preview the report design")
 }
 
 func TestGetRiskLevel(t *testing.T) {
