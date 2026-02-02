@@ -20,11 +20,11 @@
     - [x] Sample first 20 lines of `splitPaper/Manuscript_part1.md` and verify presence in `manuscript.md`
     - [x] Sample last 20 lines of `splitPaper/Manuscript_part1.md` and verify presence in `manuscript.md`
     - [x] Final sign-off: Mark parent task complete
-- [ ] Audit `splitPaper/manuscript_part2.md` - verify consistency with main manuscript
-    - [ ] Verify `splitPaper/manuscript_part2.md` exists and check size
-    - [ ] Sample first 20 lines and verify presence in `manuscript.md`
-    - [ ] Sample last 20 lines and verify presence in `manuscript.md`
-    - [ ] Final sign-off: Mark parent task complete
+- [x] Audit `splitPaper/manuscript_part2.md` - verify consistency with main manuscript
+    - [x] Verify `splitPaper/manuscript_part2.md` exists and check size
+    - [x] Sample first 20 lines and verify presence in `manuscript.md`
+    - [x] Sample last 20 lines and verify presence in `manuscript.md`
+    - [x] Final sign-off: Mark parent task complete
 - [ ] Audit `splitPaper/manuscript_part3.md` - verify consistency with main manuscript
     - [ ] Verify `splitPaper/manuscript_part3.md` exists and check size
     - [ ] Sample first 20 lines and verify presence in `manuscript.md`

@@ -7,3 +7,8 @@
    - Sample start/end (first 20 lines, last 20 lines) to match expectations.
    - Use `grep` to verify presence of specific unique phrases (anchors).
    - If checks pass, consider consistency verified and mark task complete.
+4. **Atomic Task Completion**: When performing a multi-step audit:
+   - Perform ONE sub-verification (e.g., check file existence) using low-context tools (ls, grep, read with limit).
+   - IMMEDIATELY mark that specific subtask as [x] in the task list.
+   - Do NOT batch all verifications into one turn.
+   - Do NOT read full files >50KB. Use `read` with `limit` or `grep`.
