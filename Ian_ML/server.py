@@ -81,7 +81,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
-ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:8080,http://localhost:5173').split(',')
+ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:8080,http://localhost:4000').split(',')
 CORS(app, origins=ALLOWED_ORIGINS if os.environ.get('ENV') == 'production' else '*')
 
 
