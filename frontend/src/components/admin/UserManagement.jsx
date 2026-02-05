@@ -88,7 +88,7 @@ const UserManagement = ({ token }) => {
     setSubmitting(true);
 
     try {
-      await createAdminUserApi(token, formData);
+      await createAdminUserApi(formData);
       setSuccess('User created successfully');
       setShowCreateModal(false);
       setFormData({ email: '', password: '', role: 'user' });
@@ -107,7 +107,7 @@ const UserManagement = ({ token }) => {
     setSubmitting(true);
 
     try {
-      await updateAdminUserApi(token, selectedUser.id, {
+      await updateAdminUserApi(selectedUser.id, {
         email: formData.email,
         role: formData.role,
       });
@@ -127,7 +127,7 @@ const UserManagement = ({ token }) => {
     if (!confirm(`Deactivate user ${user.email}?`)) return;
 
     try {
-      await deactivateAdminUserApi(token, user.id);
+      await deactivateAdminUserApi(user.id);
       setSuccess('User deactivated');
       loadUsers();
       setTimeout(() => setSuccess(null), 3000);
@@ -138,7 +138,7 @@ const UserManagement = ({ token }) => {
 
   const handleActivate = async user => {
     try {
-      await activateAdminUserApi(token, user.id);
+      await activateAdminUserApi(user.id);
       setSuccess('User activated');
       loadUsers();
       setTimeout(() => setSuccess(null), 3000);

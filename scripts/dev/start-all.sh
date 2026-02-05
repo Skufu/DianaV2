@@ -162,32 +162,16 @@ echo -e "${GREEN}   ML Server running on port $ML_PORT (PID: $ML_PID)${NC}"
 # ============================================
 echo -e "\n${YELLOW}[2/3] Starting Go Backend...${NC}"
 kill_on_port $PORT
+
 cd backend || exit 1
+echo -e "${GREEN}   Using 'go run' for backend server...${NC}"
 
-# Check if air is available (skip on Windows - has PowerShell compatibility issues)
-USE_AIR=false
-if [ "$IS_WINDOWS" = false ]; then
-    if command -v air &> /dev/null; then
-        # Use air -v which just prints version without watching
-        if air -v > /dev/null 2>&1; then
-            USE_AIR=true
-        fi
-    fi
-fi
-
-if [ "$USE_AIR" = true ]; then
-    echo -e "${GREEN}   Using 'air' for live reloading...${NC}"
-    echo -e "${CYAN}   Config: .air.toml${NC}"
-    air > ../logs/backend.log 2>&1 &
+# On Windows, use the correct Go from PATH (avoid nohup which can break PATH)
+if [ "$IS_WINDOWS" = true ]; then
+    GO_BIN=$(which go)
+    "$GO_BIN" run ./cmd/server > ../logs/backend.log 2>&1 &
 else
-    echo -e "${YELLOW}   Using 'go run' (no live reloading on Windows)...${NC}"
-    # On Windows, use the correct Go from PATH (avoid nohup which can break PATH)
-    if [ "$IS_WINDOWS" = true ]; then
-        GO_BIN=$(which go)
-        "$GO_BIN" run ./cmd/server > ../logs/backend.log 2>&1 &
-    else
-        go run ./cmd/server > ../logs/backend.log 2>&1 &
-    fi
+    go run ./cmd/server > ../logs/backend.log 2>&1 &
 fi
 BACKEND_PID=$!
 cd ..
