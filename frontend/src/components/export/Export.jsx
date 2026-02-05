@@ -189,20 +189,6 @@ const Export = ({ token }) => {
           Download CSV files containing patient demographics, biomarkers, and assessment history
         </p>
 
-        <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 mb-6">
-          <div className="flex items-start gap-3">
-            <div className="text-amber-500 text-2xl">🚧</div>
-            <div>
-              <h4 className="font-bold text-amber-800 mb-1">CSV Export Coming Soon</h4>
-              <p className="text-sm text-amber-700">
-                CSV export functionality is currently under development. In the meantime, please use the PDF export feature below to download comprehensive insights reports.
-              </p>
-              <p className="text-xs text-diana-forest mt-2 font-medium">
-                Check back soon for CSV downloads with filtering support
-              </p>
-            </div>
-          </div>
-        </div>
 
         <div className="space-y-4 opacity-50">
           <div className="p-4 border-2 border-diana-sand rounded-xl">
@@ -295,21 +281,6 @@ const Export = ({ token }) => {
         </div>
       </motion.div>
 
-      {/* Data Privacy Notice */}
-      <motion.div
-        whileHover={{ scale: 1.01 }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        className="bg-amber-50 p-6 rounded-3xl border border-amber-200"
-      >
-        <h4 className="font-bold text-amber-800 mb-2 flex items-center gap-2">
-          <AlertTriangle size={20} className="text-amber-600" />
-          Data Privacy & Security Notice
-        </h4>
-        <p className="text-sm text-amber-700">
-          Exported files contain protected health information (PHI). Ensure compliance with HIPAA, GDPR, or applicable data protection regulations.
-          Store files securely, encrypt when transmitting, and delete when no longer needed for clinical or research purposes.
-        </p>
-      </motion.div>
     </div >
   );
 };

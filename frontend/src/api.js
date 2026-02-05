@@ -119,9 +119,17 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
 };
 
 const blobFetch = async (endpoint, options = {}) => {
+  const token = localStorage.getItem('diana_token');
+  const headers = {};
+
+  // Add Authorization header if token exists
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method: options.method || 'GET',
-    headers: {},
+    headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 

@@ -276,8 +276,6 @@ const Signup = ({ onSignup, onShowLogin }) => {
         {/* Footer & Trust */}
         <motion.div variants={fadeIn} className="mt-8 flex flex-col items-center gap-4">
           <div className="flex gap-4 text-xs text-slate-400 font-medium">
-            <span className="flex items-center gap-1.5"><Shield size={12} className="text-slate-400" /> HIPAA Compliant</span>
-            <span className="text-slate-300">•</span>
             <a href="#" className="hover:text-diana-forest-light transition-colors">Privacy</a>
             <span className="text-slate-300">•</span>
             <a href="#" className="hover:text-diana-forest-light transition-colors">Help</a>
