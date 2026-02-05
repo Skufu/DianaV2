@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log"
 	"strconv"
 	"sync"
@@ -189,7 +190,7 @@ func newReadCloser(data []byte) *readCloser {
 
 func (r *readCloser) Read(p []byte) (n int, err error) {
 	if r.offset >= len(r.data) {
-		return 0, nil
+		return 0, io.EOF // Return EOF when all data has been read
 	}
 	n = copy(p, r.data[r.offset:])
 	r.offset += n
