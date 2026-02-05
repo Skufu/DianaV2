@@ -193,19 +193,19 @@ const Login = ({ onLogin, onShowSignup, error: errorProp }) => {
                   className="w-full bg-white border border-slate-200 text-slate-900 font-semibold rounded-lg text-sm px-5 py-2.5 flex items-center justify-center gap-2 transition-all shadow-sm focus:outline-none"
                 >
                   <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="h-4 w-4" alt="Google Logo" />
-                  <span>Google Workspace</span>
+                  <span>Google</span>
                 </motion.button>
 
                 {/* Signup Link */}
                 <p className="mt-6 text-center text-sm text-slate-500">
                   Don&apos;t have an account?{' '}
-                  <motion.button 
+                  <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={onShowSignup} 
+                    onClick={onShowSignup}
                     className="font-medium text-diana-forest-light hover:text-diana-forest-light-dark hover:underline transition-all focus:outline-none"
                   >
-                    Request access
+                    Sign up
                   </motion.button>
                 </p>
               </motion.div>
@@ -216,8 +216,6 @@ const Login = ({ onLogin, onShowSignup, error: errorProp }) => {
         {/* Footer & Trust */}
         <motion.div variants={fadeIn} className="mt-8 flex flex-col items-center gap-4">
           <div className="flex gap-4 text-xs text-slate-400 font-medium">
-            <span className="flex items-center gap-1.5"><Shield size={12} className="text-slate-400" /> HIPAA Compliant</span>
-            <span className="text-slate-300">•</span>
             <a href="#" className="hover:text-diana-forest-light transition-colors">Privacy</a>
             <span className="text-slate-300">•</span>
             <a href="#" className="hover:text-diana-forest-light transition-colors">Help</a>
