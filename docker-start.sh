@@ -123,7 +123,7 @@ start_dev() {
     echo "  🚀 Diana V2 Development Server"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "  Frontend:   http://localhost:5173"
+    echo "  Frontend:   http://localhost:4000"
     echo "  Backend:    http://localhost:8080/api/v1/healthz"
     echo "  ML Server:  http://localhost:5000/health"
     echo "  PostgreSQL: localhost:5432"
@@ -222,8 +222,8 @@ show_status() {
         print_error "ML Server:  http://localhost:5000/health"
     fi
     
-    if curl -s http://localhost > /dev/null 2>&1 || curl -s http://localhost:5173 > /dev/null 2>&1; then
-        print_success "Frontend:   http://localhost or http://localhost:5173"
+    if curl -s http://localhost > /dev/null 2>&1 || curl -s http://localhost:4000 > /dev/null 2>&1; then
+        print_success "Frontend:   http://localhost or http://localhost:4000"
     else
         print_error "Frontend:   Not responding"
     fi

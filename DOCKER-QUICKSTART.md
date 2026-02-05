@@ -9,7 +9,7 @@ cd /path/to/DianaV2
 # 2. Start everything (development mode)
 ./docker-start.sh dev
 
-# 3. Open browser to http://localhost:5173
+# 3. Open browser to http://localhost:4000
 ```
 
 ## 📋 Prerequisites
@@ -66,7 +66,7 @@ docker-compose down
 
 | Service | Development | Production |
 |---------|-------------|------------|
-| Frontend | http://localhost:5173 | http://localhost |
+| Frontend | http://localhost:4000 | http://localhost |
 | Backend API | http://localhost:8080 | http://localhost:8080 |
 | ML Server | http://localhost:5000 | http://localhost:5000 |
 | PostgreSQL | localhost:5432 | (internal only) |
@@ -80,7 +80,7 @@ docker-compose down
 ```
 
 This starts:
-- Frontend on port 5173 (Vite dev server with hot reload)
+- Frontend on port 4000 (Vite dev server with hot reload)
 - Backend on port 8080 (Go with Air hot reload)
 - ML Server on port 5000 (Flask with auto-reload)
 - PostgreSQL on port 5432
@@ -186,7 +186,7 @@ curl http://localhost:8080/api/v1/healthz
 curl http://localhost:5000/health
 
 # Frontend
-curl http://localhost:5173  # or http://localhost for prod
+curl http://localhost:4000  # or http://localhost for prod
 ```
 
 ### Resource Usage
