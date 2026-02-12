@@ -35,14 +35,15 @@ func (r *pgUserRepo) FindByEmail(ctx context.Context, email string) (*models.Use
 		role = "admin"
 	}
 	return &models.User{
-		ID:           int64(row.ID),
-		Email:        row.Email,
-		PasswordHash: row.PasswordHash,
-		Role:         role,
-		IsAdmin:      row.IsAdmin,
-		IsActive:     row.IsActive,
-		CreatedAt:    row.CreatedAt.Time,
-		UpdatedAt:    row.UpdatedAt.Time,
+		ID:            int64(row.ID),
+		Email:         row.Email,
+		PasswordHash:  row.PasswordHash,
+		Role:          role,
+		IsAdmin:       row.IsAdmin,
+		IsActive:      row.IsActive,
+		AccountStatus: row.AccountStatus,
+		CreatedAt:     row.CreatedAt.Time,
+		UpdatedAt:     row.UpdatedAt.Time,
 	}, nil
 }
 
@@ -265,7 +266,7 @@ func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User
 	query := `
 		UPDATE users
 		SET email = COALESCE(NULLIF($2, ''), email),
-		    is_admin = COALESCE(NULLIF($3, ''), is_admin),
+		    is_admin = COALESCE($3, is_admin),
 		    updated_at = NOW()
 		WHERE id = $1
 		RETURNING id, email, password_hash, is_admin,
@@ -279,7 +280,10 @@ func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User
 	var createdAt, updatedAt pgtype.Timestamptz
 	var isAdmin bool
 
-	isAdminInput := user.Role == "admin"
+	var isAdminInput pgtype.Bool
+	if user.Role != "" {
+		isAdminInput = pgtype.Bool{Bool: user.Role == "admin", Valid: true}
+	}
 	err := r.pool.QueryRow(ctx, query, user.ID, user.Email, isAdminInput).Scan(
 		&u.ID, &u.Email, &u.PasswordHash, &isAdmin,
 		&isActive, &lastLoginAt, &createdBy, &createdAt, &updatedAt,

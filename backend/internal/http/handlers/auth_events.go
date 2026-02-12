@@ -54,6 +54,21 @@ func (h *AuthEventHandler) StreamAuthEvents(c *gin.Context) {
 		return
 	}
 
+	userIDFloat, ok := claims["user_id"].(float64)
+	if !ok {
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.String(http.StatusUnauthorized, "event: error\ndata: "+`{"message":"Authentication failed"}`+"\n\n")
+		return
+	}
+	user, err := h.store.Users().FindByID(c.Request.Context(), int32(userIDFloat))
+	if err != nil || user == nil || !user.IsActive || user.AccountStatus != "active" {
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.String(http.StatusForbidden, "event: error\ndata: "+`{"message":"Account inactive"}`+"\n\n")
+		return
+	}
+
 	role, ok := claims["role"].(string)
 	if !ok || role != "admin" {
 		c.Header("Content-Type", "text/event-stream")

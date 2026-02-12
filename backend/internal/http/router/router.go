@@ -96,7 +96,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// Protected routes (JWT authentication required)
 	// -------------------------------------------------------------------------
 	protected := api.Group("")
-	protected.Use(middleware.Auth(cfg.JWTSecret))
+	protected.Use(middleware.Auth(cfg.JWTSecret, st.Users()))
 
 	// User profile and self-service endpoints (/users/me/...)
 	userGroup := protected.Group("/users/me")

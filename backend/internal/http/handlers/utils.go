@@ -103,6 +103,10 @@ func ErrForbidden(c *gin.Context) {
 	errorResponse(c, http.StatusForbidden, "FORBIDDEN", "You do not have permission to perform this action")
 }
 
+func ErrAccountInactive(c *gin.Context) {
+	errorResponse(c, http.StatusForbidden, "ACCOUNT_INACTIVE", "Account is inactive")
+}
+
 func ErrNotFound(c *gin.Context, resource string) {
 	errorResponse(c, http.StatusNotFound, "NOT_FOUND", resource+" not found")
 }
