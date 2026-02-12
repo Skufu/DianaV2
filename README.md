@@ -131,32 +131,123 @@ A full-stack health application designed for menopausal women to assess diabetes
 
 ## Quick Start
 
-### Automated Setup (Recommended)
+### Prerequisites (Auto-Install Enabled!)
+The setup script **WILL ATTEMPT TO AUTO-INSTALL** missing tools. If you don't have them, the script will try to install them for you.
+
+**If auto-install fails, you'll get exact manual installation commands.**
+
+### Automated Setup (One Command - Does EVERYTHING)
+
+#### macOS / Linux
 ```bash
 git clone <repository-url>
 cd DianaV2
-bash scripts/dev/setup.sh    # Installs dependencies
+bash scripts/dev/setup.sh    # Sets up EVERYTHING (deps, DB, env)
 bash scripts/dev/start-all.sh # Starts all services
 ```
 
-### Manual Setup
-```bash
-# 1. Environment
-cp env.example .env
-# Edit .env with DB_DSN and JWT_SECRET
-
-# 2. Dependencies
-go mod download
-cd frontend && npm install && cd ..
-# ML Setup (creates venv and installs requirements)
+#### Windows (PowerShell / Git Bash)
+```powershell
+git clone <repository-url>
+cd DianaV2
+# Option 1: PowerShell
+powershell -ExecutionPolicy Bypass -File scripts/dev/setup.ps1
+# Option 2: Git Bash
 bash scripts/dev/setup.sh
 
-# 3. Database
-make db_up
-
-# 4. Start
+# Then start the application
 bash scripts/dev/start-all.sh
 ```
+
+**What the setup script does (literally everything):**
+
+**🔧 Tool Installation (with auto-attempt):**
+1. ✅ **ATTEMPTS AUTO-INSTALL** of missing Go, Node.js, Python
+2. ✅ Auto-installs Goose (database migration tool)
+3. ✅ Checks for Docker (optional, for PostgreSQL)
+
+**⚙️ Environment Setup:**
+4. ✅ Creates `.env` files with secure JWT secrets
+5. ✅ Copies environment config to backend/
+6. ✅ Creates frontend environment config
+
+**🗄️ Database Setup:**
+7. ✅ **AUTO-CREATES PostgreSQL database with Docker** (if available)
+8. ✅ Runs database migrations automatically
+
+**📦 Dependencies:**
+9. ✅ Downloads Go dependencies (`go mod download`)
+10. ✅ Installs frontend npm packages (`npm install`)
+11. ✅ Creates Python virtual environment
+12. ✅ Installs ML server dependencies
+
+**✅ Verification:**
+13. ✅ Creates `.setup-verification.txt` with full setup log
+14. ✅ Checks for ML models and warns if missing
+
+### Auto-Install Feature
+
+The setup script **aggressively tries to install missing tools** before giving up:
+
+**macOS/Linux:**
+- Tries `brew install` for macOS
+- Tries `apt-get`, `yum`, or `pacman` for Linux
+
+**Windows:**
+- Tries `winget install` (Windows Package Manager)
+- Tries `choco install` (Chocolatey)
+
+**If auto-install fails:**
+- The script will show **EXACT installation commands** for your OS
+- It creates `.setup-verification.txt` showing what was attempted
+- You can copy the commands and run them manually
+- Then just re-run the setup script
+
+**Example output when auto-install fails:**
+```
+╭────────────────────────────────────────────────────────────╮
+│  MISSING REQUIRED TOOLS - MANUAL INSTALLATION REQUIRED     │
+╰────────────────────────────────────────────────────────────╯
+
+The script attempted to auto-install but failed for:
+  ✗ Go
+  ✗ Node.js
+
+Manual Installation Instructions:
+  Go:
+    macOS:   brew install go
+    Linux:   sudo apt-get install golang-go
+    Windows: https://go.dev/doc/install
+
+After installing, re-run: bash scripts/dev/setup.sh
+```
+
+### Setup Verification
+After setup completes, verify everything worked:
+```bash
+# Check the verification file
+cat .setup-verification.txt
+
+# Should show:
+# - All tools installed ✓
+# - PostgreSQL running ✓
+# - Dependencies installed ✓
+# - Database migrated ✓
+```
+
+### Common Issues
+
+**"PostgreSQL not running" warning**
+- Install Docker Desktop and re-run setup
+- Or install PostgreSQL manually
+
+**"ML models not found"**
+- Train models: `bash scripts/dev/retrain-all.sh`
+- Or copy from teammate who has them
+
+**Permission denied on PowerShell**
+- Run PowerShell as Administrator
+- Or use: `powershell -ExecutionPolicy Bypass -File scripts/dev/setup.ps1`
 
 ### Access Points
 | Service | URL |

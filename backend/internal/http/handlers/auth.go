@@ -64,6 +64,14 @@ func (h *AuthHandler) login(c *gin.Context) {
 		ErrInvalidCredentials(c)
 		return
 	}
+	if !user.IsActive || user.AccountStatus != "active" {
+		log.Printf("[WARN] Login blocked for inactive user %s", req.Email)
+		if h.broker != nil {
+			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "account_inactive"})
+		}
+		ErrAccountInactive(c)
+		return
+	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		log.Printf("[WARN] Invalid password attempt for email %s", req.Email)
 		// Publish failed login event
@@ -275,6 +283,11 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 	if err != nil {
 		log.Printf("[ERROR] User not found during token refresh for user ID %d: %v", tokenRecord.UserID, err)
 		ErrNotFound(c, "user")
+		return
+	}
+	if !user.IsActive || user.AccountStatus != "active" {
+		log.Printf("[WARN] Token refresh blocked for inactive user ID %d", user.ID)
+		ErrAccountInactive(c)
 		return
 	}
 

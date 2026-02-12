@@ -1,11 +1,13 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/skufu/DianaV2/backend/internal/models"
 )
 
 // UserClaims represents the authenticated user's claims stored in the request context
@@ -53,7 +55,11 @@ func ValidateToken(tokenStr, jwtSecret string) (map[string]any, error) {
 	return claims, nil
 }
 
-func Auth(jwtSecret string) gin.HandlerFunc {
+type UserFinder interface {
+	FindByID(ctx context.Context, id int32) (*models.User, error)
+}
+
+func Auth(jwtSecret string, users UserFinder) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authz := c.GetHeader("Authorization")
 		if authz == "" || !strings.HasPrefix(authz, "Bearer ") {
@@ -109,9 +115,24 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 
+		userIDInt := int64(userID)
+		if users == nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "auth store not configured"})
+			return
+		}
+		user, err := users.FindByID(c.Request.Context(), int32(userIDInt))
+		if err != nil || user == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+			return
+		}
+		if !user.IsActive || user.AccountStatus != "active" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "account inactive"})
+			return
+		}
+
 		// Store user claims in context for handlers to use
 		c.Set("user", UserClaims{
-			UserID: int64(userID),
+			UserID: userIDInt,
 			Email:  sub,
 			Role:   role,
 		})

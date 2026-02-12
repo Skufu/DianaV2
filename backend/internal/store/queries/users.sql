@@ -1,13 +1,13 @@
 -- users.sql: SQLC queries for user management
 
 -- name: FindUserByEmail :one
-SELECT id, email, password_hash, is_admin, is_active, created_at, updated_at
+SELECT id, email, password_hash, is_admin, is_active, account_status, created_at, updated_at
 FROM users
 WHERE email = $1 AND account_status = 'active'
 LIMIT 1;
 
 -- name: FindUserByID :one
-SELECT id, email, password_hash, is_admin, is_active, created_at, updated_at,
+SELECT id, email, password_hash, is_admin, is_active, account_status, created_at, updated_at,
     first_name, last_name, date_of_birth, phone, address,
     menopause_status, menopause_type, years_menopause,
     hypertension, heart_disease, family_history_diabetes, smoking_status,
