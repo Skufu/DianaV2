@@ -236,7 +236,9 @@ def predict():
         model_type: "clinical" (default) or "ada"
 
     For clinical model (non-circular, recommended):
-        Required: bmi, triglycerides, ldl, hdl, age
+        Base features (7): bmi, triglycerides, ldl, hdl, age, systolic, diastolic
+        Lifestyle (optional): smoking, activity, alcohol
+        Engineered features computed automatically from base features
 
     For ADA baseline:
         Required: hba1c, fbs, bmi, triglycerides, ldl, hdl
@@ -256,12 +258,18 @@ def predict():
                     "error": "Clinical model not trained. Run train_models_v2.py first."
                 }), 503
             
+            # Extract all 7 base features + lifestyle data for 13-feature model
             patient_data = {
                 "bmi": data.get("bmi"),
                 "triglycerides": data.get("triglycerides"),
                 "ldl": data.get("ldl"),
                 "hdl": data.get("hdl"),
-                "age": data.get("age", 54)  # Default age if not provided
+                "age": data.get("age", 54),
+                "systolic": data.get("systolic", 120),
+                "diastolic": data.get("diastolic", 80),
+                "smoking_status": data.get("smoking", "Unknown"),
+                "physical_activity": data.get("activity", "Unknown"),
+                "alcohol_use": data.get("alcohol", "Unknown")
             }
             result = clin_predictor.predict(patient_data)
         else:
@@ -297,6 +305,10 @@ def predict_explain():
         model_type: "clinical" (default) or "ada"
         format: "full" (default) or "clinician" (simplified)
 
+    For clinical model (13 features):
+        Base features: bmi, triglycerides, ldl, hdl, age, systolic, diastolic
+        Lifestyle: smoking, activity, alcohol (optional)
+
     Returns prediction results with SHAP-based feature contributions.
     """
     global shap_explainer
@@ -318,12 +330,18 @@ def predict_explain():
             if clin_predictor is None:
                 return jsonify({"error": "Clinical model not available"}), 503
             
+            # Extract all 7 base features + lifestyle data for 13-feature model
             patient_data = {
                 "bmi": data.get("bmi"),
                 "triglycerides": data.get("triglycerides"),
                 "ldl": data.get("ldl"),
                 "hdl": data.get("hdl"),
-                "age": data.get("age", 54)
+                "age": data.get("age", 54),
+                "systolic": data.get("systolic", 120),
+                "diastolic": data.get("diastolic", 80),
+                "smoking_status": data.get("smoking", "Unknown"),
+                "physical_activity": data.get("activity", "Unknown"),
+                "alcohol_use": data.get("alcohol", "Unknown")
             }
             
             # Make prediction

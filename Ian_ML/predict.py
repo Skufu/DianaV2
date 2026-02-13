@@ -246,7 +246,13 @@ class DianaPredictor:
 # Uses only metabolic features: BMI, TG, LDL, HDL, Age
 # =============================================================================
 
-CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+# Base features required from user (engineered features computed from these)
+CLINICAL_BASE_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic']
+
+# Full feature set including engineered features
+CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic', 
+                     'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 
+                     'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score']
 CLINICAL_MODELS_DIR = Path(__file__).parent.parent / "models" / "clinical"
 CLINICAL_RESULTS_DIR = CLINICAL_MODELS_DIR / "results"
 
@@ -298,7 +304,8 @@ class ClinicalPredictor:
             self.metrics = {}
     
     def validate_input(self, data: Dict[str, float]) -> tuple[bool, list]:
-        missing = [f for f in CLINICAL_FEATURES if f not in data or data[f] is None]
+        # Only check for base features - engineered features are computed
+        missing = [f for f in CLINICAL_BASE_FEATURES if f not in data or data[f] is None]
         if missing:
             return False, missing
         
@@ -309,6 +316,8 @@ class ClinicalPredictor:
             'ldl': (10, 400),
             'hdl': (10, 150),
             'age': (18, 120),
+            'systolic': (70, 250),
+            'diastolic': (40, 150),
         }
         for feature, (min_val, max_val) in ranges.items():
             if feature in data and data[feature] is not None:
@@ -333,9 +342,53 @@ class ClinicalPredictor:
                 "error": f"Missing required features: {missing}"
             }
         
-        # Prepare feature vector
-        X = np.array([[data['bmi'], data['triglycerides'], data['ldl'], 
-                      data['hdl'], data['age']]])
+        # Compute engineered features if not provided
+        bmi = data['bmi']
+        tg = data['triglycerides']
+        ldl = data['ldl']
+        hdl = data['hdl']
+        age = data['age']
+        
+        # BMI category (WHO classification)
+        if bmi < 18.5:
+            bmi_category = 0
+        elif bmi < 25:
+            bmi_category = 1
+        elif bmi < 30:
+            bmi_category = 2
+        else:
+            bmi_category = 3
+        
+        # TG/HDL ratio (insulin resistance marker)
+        tg_hdl_ratio = tg / hdl if hdl > 0 else 0
+        
+        # Lifestyle features (default to 'Unknown'/moderate if not provided)
+        smoking_map = {'Never': 0, 'Former': 1, 'Current': 2, 'Unknown': 1}
+        smoking_encoded = smoking_map.get(data.get('smoking_status', 'Unknown'), 1)
+        
+        activity_map = {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Unknown': 1}
+        activity_encoded = activity_map.get(data.get('physical_activity', 'Unknown'), 1)
+        
+        alcohol_map = {'None': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3}
+        alcohol_encoded = alcohol_map.get(data.get('alcohol_use', 'Unknown'), 1)
+        
+        # Metabolic syndrome score (ATP III criteria count)
+        metabolic_score = 0
+        if tg > 150:
+            metabolic_score += 1
+        if hdl < 50:
+            metabolic_score += 1
+        if data.get('systolic', 0) >= 130:
+            metabolic_score += 1
+        if bmi >= 30:
+            metabolic_score += 1
+        
+        # Prepare feature vector (13 features)
+        X = np.array([[bmi, tg, ldl, hdl, age,
+                      data.get('systolic', 120), data.get('diastolic', 80),
+                      bmi_category, tg_hdl_ratio,
+                      smoking_encoded, activity_encoded, alcohol_encoded,
+                      metabolic_score]])
         
         # Scale
         X_scaled = self.scaler.transform(X)
