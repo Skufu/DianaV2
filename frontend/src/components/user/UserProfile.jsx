@@ -23,8 +23,10 @@ const UserProfile = ({ setActiveTab }) => {
       const displayData = { ...profileData };
       if (profileData.date_of_birth) {
         const birthDate = new Date(profileData.date_of_birth);
-        const currentYear = new Date().getFullYear();
-        displayData.age = currentYear - birthDate.getFullYear();
+        if (!isNaN(birthDate.getTime())) {
+          const currentYear = new Date().getFullYear();
+          displayData.age = currentYear - birthDate.getFullYear();
+        }
       }
       setFormData(displayData);
     }
@@ -52,8 +54,10 @@ const UserProfile = ({ setActiveTab }) => {
 
       if (formData.age) {
         const ageNum = parseInt(formData.age, 10);
-        const birthYear = new Date().getFullYear() - ageNum;
-        payload.date_of_birth = `${birthYear}-06-15`;
+        if (!isNaN(ageNum) && ageNum > 0 && ageNum < 150) {
+          const birthYear = new Date().getFullYear() - ageNum;
+          payload.date_of_birth = `${birthYear}-06-15`;
+        }
       }
 
       await updateProfileMutation.mutateAsync(payload);

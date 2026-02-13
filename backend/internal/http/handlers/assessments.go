@@ -255,8 +255,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	cluster, riskScore, err := h.predictor.Predict(c.Request.Context(), assessment)
 	if err != nil {
 		log.Printf("Failed to get ML prediction: %v", err)
-		// Return error to client instead of silently storing "error" cluster
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get prediction from ML service"})
+		ErrInternal(c, "Failed to get prediction from ML service")
 		return
 	}
 
@@ -274,7 +273,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	created, err := h.store.Assessments().Create(c.Request.Context(), assessment)
 	if err != nil {
 		log.Printf("Failed to create assessment: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create assessment"})
+		ErrInternal(c, "Failed to create assessment")
 		return
 	}
 
@@ -396,7 +395,7 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	cluster, riskScore, err := h.predictor.Predict(c.Request.Context(), *assessment)
 	if err != nil {
 		log.Printf("Failed to get ML prediction on update: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get prediction from ML service"})
+		ErrInternal(c, "Failed to get prediction from ML service")
 		return
 	}
 
@@ -407,7 +406,7 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	updated, err := h.store.Assessments().Update(c.Request.Context(), *assessment)
 	if err != nil {
 		log.Printf("Failed to update assessment: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update assessment"})
+		ErrInternal(c, "Failed to update assessment")
 		return
 	}
 
