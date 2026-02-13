@@ -1,10 +1,10 @@
 -- name: ListUsers :many
-SELECT id, email, is_admin, is_active, created_at, updated_at,
+SELECT id, email, role, is_admin, is_active, created_at, updated_at,
     first_name, last_name, account_status, onboarding_completed
 FROM users
 WHERE 
     ($1::text = '' OR email ILIKE '%' || $1 || '%')
-    AND ($2::text = '' OR is_admin = $2)
+    AND ($2::text = '' OR role = $2)
     AND ($3::boolean IS NULL OR is_active = $3)
 ORDER BY created_at DESC
 LIMIT $4 OFFSET $5;
@@ -14,22 +14,23 @@ SELECT COUNT(*)
 FROM users
 WHERE 
     ($1::text = '' OR email ILIKE '%' || $1 || '%')
-    AND ($2::text = '' OR is_admin = $2)
+    AND ($2::text = '' OR role = $2)
     AND ($3::boolean IS NULL OR is_active = $3);
 
 -- name: CreateUser :one
-INSERT INTO users (email, password_hash, is_admin, is_active, created_at, updated_at)
-VALUES ($1, $2, $3, true, NOW(), NOW())
-RETURNING id, email, password_hash, is_admin, is_active, last_login_at, created_by, created_at, updated_at;
+INSERT INTO users (email, password_hash, role, is_admin, is_active, created_at, updated_at)
+VALUES ($1, $2, $3, $4, true, NOW(), NOW())
+RETURNING id, email, password_hash, role, is_admin, is_active, last_login_at, created_by, created_at, updated_at;
 
 -- name: UpdateUserAdmin :one
 UPDATE users
 SET 
     email = COALESCE($1, email),
-    is_admin = COALESCE($2, is_admin),
+    role = COALESCE($2, role),
+    is_admin = COALESCE($3, is_admin),
     updated_at = NOW()
-WHERE id = $3
-RETURNING id, email, password_hash, is_admin, is_active, last_login_at, created_by, created_at, updated_at;
+WHERE id = $4
+RETURNING id, email, password_hash, role, is_admin, is_active, last_login_at, created_by, created_at, updated_at;
 
 -- name: DeactivateUser :exec
 UPDATE users

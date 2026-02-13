@@ -1,16 +1,28 @@
- version: "2"
- sql:
-   - engine: "postgresql"
-     schema: "migrations"
-     queries: "internal/store/queries"
-     gen:
-       go:
-         package: "sqlcgen"
-         out: "internal/store/sqlc"
-         sql_package: "pgx/v5"
-         emit_json_tags: true
-         emit_prepared_queries: false
-         emit_interface: false
-         overrides: []
-
-
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema:
+      - "migrations/0001_init.sql"
+      - "migrations/0002_add_family_history_and_phys_activity.sql"
+      - "migrations/0003_add_updated_at_and_indexes.sql"
+      - "migrations/0004_add_refresh_tokens.sql"
+      - "migrations/0005_add_patient_user_id.sql"
+      - "migrations/0006_add_mock_data.sql"
+      - "migrations/0007_update_cluster_names.sql"
+      - "migrations/0008_update_cluster_names.sql"
+      - "migrations/0009_add_clinics.sql"
+      - "migrations/0010_admin_features.sql"
+      - "migrations/0011_refactor_users_to_menopausal.sql"
+      - "migrations/0012_add_auth_events.sql"
+      - "migrations/0013_add_auth_tokens.sql"
+      - "migrations/0014_add_user_roles.sql"
+    queries: "internal/store/queries"
+    gen:
+      go:
+        package: "sqlcgen"
+        out: "internal/store/sqlc"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_prepared_queries: false
+        emit_interface: false
+        overrides: []

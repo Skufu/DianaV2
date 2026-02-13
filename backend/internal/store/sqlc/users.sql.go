@@ -13,7 +13,7 @@ import (
 
 const findUserByEmail = `-- name: FindUserByEmail :one
 
-SELECT id, email, password_hash, is_admin, is_active, account_status, created_at, updated_at
+SELECT id, email, password_hash, role, is_admin, is_active, account_status, created_at, updated_at
 FROM users
 WHERE email = $1 AND account_status = 'active'
 LIMIT 1
@@ -23,6 +23,7 @@ type FindUserByEmailRow struct {
 	ID            int32              `json:"id"`
 	Email         string             `json:"email"`
 	PasswordHash  string             `json:"password_hash"`
+	Role          string             `json:"role"`
 	IsAdmin       bool               `json:"is_admin"`
 	IsActive      bool               `json:"is_active"`
 	AccountStatus string             `json:"account_status"`
@@ -38,6 +39,7 @@ func (q *Queries) FindUserByEmail(ctx context.Context, email string) (FindUserBy
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
+		&i.Role,
 		&i.IsAdmin,
 		&i.IsActive,
 		&i.AccountStatus,
@@ -48,7 +50,7 @@ func (q *Queries) FindUserByEmail(ctx context.Context, email string) (FindUserBy
 }
 
 const findUserByID = `-- name: FindUserByID :one
-SELECT id, email, password_hash, is_admin, is_active, account_status, created_at, updated_at,
+SELECT id, email, password_hash, role, is_admin, is_active, account_status, created_at, updated_at,
     first_name, last_name, date_of_birth, phone, address,
     menopause_status, menopause_type, years_menopause,
     hypertension, heart_disease, family_history_diabetes, smoking_status,
@@ -64,6 +66,7 @@ type FindUserByIDRow struct {
 	ID                           int32              `json:"id"`
 	Email                        string             `json:"email"`
 	PasswordHash                 string             `json:"password_hash"`
+	Role                         string             `json:"role"`
 	IsAdmin                      bool               `json:"is_admin"`
 	IsActive                     bool               `json:"is_active"`
 	AccountStatus                string             `json:"account_status"`
@@ -101,6 +104,7 @@ func (q *Queries) FindUserByID(ctx context.Context, id int32) (FindUserByIDRow, 
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
+		&i.Role,
 		&i.IsAdmin,
 		&i.IsActive,
 		&i.AccountStatus,
@@ -180,7 +184,7 @@ func (q *Queries) GetUsersForNotification(ctx context.Context) ([]GetUsersForNot
 }
 
 const searchUsers = `-- name: SearchUsers :many
-SELECT id, email, first_name, last_name, created_at, is_active,
+SELECT id, email, role, first_name, last_name, created_at, is_active,
     onboarding_completed, account_status
 FROM users
 WHERE ($1::text IS NULL OR email ILIKE '%' || $1 || '%' OR first_name ILIKE '%' || $1 || '%' OR last_name ILIKE '%' || $1 || '%')
@@ -199,6 +203,7 @@ type SearchUsersParams struct {
 type SearchUsersRow struct {
 	ID                  int32              `json:"id"`
 	Email               string             `json:"email"`
+	Role                string             `json:"role"`
 	FirstName           pgtype.Text        `json:"first_name"`
 	LastName            pgtype.Text        `json:"last_name"`
 	CreatedAt           pgtype.Timestamptz `json:"created_at"`
@@ -224,6 +229,7 @@ func (q *Queries) SearchUsers(ctx context.Context, arg SearchUsersParams) ([]Sea
 		if err := rows.Scan(
 			&i.ID,
 			&i.Email,
+			&i.Role,
 			&i.FirstName,
 			&i.LastName,
 			&i.CreatedAt,

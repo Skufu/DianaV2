@@ -27,7 +27,7 @@ SELECT COUNT(*)
 FROM users
 WHERE 
     ($1::text = '' OR email ILIKE '%' || $1 || '%')
-    AND ($2::text = '' OR is_admin = $2)
+    AND ($2::text = '' OR role = $2)
     AND ($3::boolean IS NULL OR is_active = $3)
 `
 
@@ -45,14 +45,15 @@ func (q *Queries) CountUsers(ctx context.Context, arg CountUsersParams) (int64, 
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, password_hash, is_admin, is_active, created_at, updated_at)
-VALUES ($1, $2, $3, true, NOW(), NOW())
-RETURNING id, email, password_hash, is_admin, is_active, last_login_at, created_by, created_at, updated_at
+INSERT INTO users (email, password_hash, role, is_admin, is_active, created_at, updated_at)
+VALUES ($1, $2, $3, $4, true, NOW(), NOW())
+RETURNING id, email, password_hash, role, is_admin, is_active, last_login_at, created_by, created_at, updated_at
 `
 
 type CreateUserParams struct {
 	Email        string `json:"email"`
 	PasswordHash string `json:"password_hash"`
+	Role         string `json:"role"`
 	IsAdmin      bool   `json:"is_admin"`
 }
 
@@ -60,6 +61,7 @@ type CreateUserRow struct {
 	ID           int32              `json:"id"`
 	Email        string             `json:"email"`
 	PasswordHash string             `json:"password_hash"`
+	Role         string             `json:"role"`
 	IsAdmin      bool               `json:"is_admin"`
 	IsActive     bool               `json:"is_active"`
 	LastLoginAt  pgtype.Timestamptz `json:"last_login_at"`
@@ -69,12 +71,18 @@ type CreateUserRow struct {
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.PasswordHash, arg.IsAdmin)
+	row := q.db.QueryRow(ctx, createUser,
+		arg.Email,
+		arg.PasswordHash,
+		arg.Role,
+		arg.IsAdmin,
+	)
 	var i CreateUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
+		&i.Role,
 		&i.IsAdmin,
 		&i.IsActive,
 		&i.LastLoginAt,
@@ -97,12 +105,12 @@ func (q *Queries) DeactivateUser(ctx context.Context, id int32) error {
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, is_admin, is_active, created_at, updated_at,
+SELECT id, email, role, is_admin, is_active, created_at, updated_at,
     first_name, last_name, account_status, onboarding_completed
 FROM users
 WHERE 
     ($1::text = '' OR email ILIKE '%' || $1 || '%')
-    AND ($2::text = '' OR is_admin = $2)
+    AND ($2::text = '' OR role = $2)
     AND ($3::boolean IS NULL OR is_active = $3)
 ORDER BY created_at DESC
 LIMIT $4 OFFSET $5
@@ -119,6 +127,7 @@ type ListUsersParams struct {
 type ListUsersRow struct {
 	ID                  int32              `json:"id"`
 	Email               string             `json:"email"`
+	Role                string             `json:"role"`
 	IsAdmin             bool               `json:"is_admin"`
 	IsActive            bool               `json:"is_active"`
 	CreatedAt           pgtype.Timestamptz `json:"created_at"`
@@ -147,6 +156,7 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUse
 		if err := rows.Scan(
 			&i.ID,
 			&i.Email,
+			&i.Role,
 			&i.IsAdmin,
 			&i.IsActive,
 			&i.CreatedAt,
@@ -186,14 +196,16 @@ const updateUserAdmin = `-- name: UpdateUserAdmin :one
 UPDATE users
 SET 
     email = COALESCE($1, email),
-    is_admin = COALESCE($2, is_admin),
+    role = COALESCE($2, role),
+    is_admin = COALESCE($3, is_admin),
     updated_at = NOW()
-WHERE id = $3
-RETURNING id, email, password_hash, is_admin, is_active, last_login_at, created_by, created_at, updated_at
+WHERE id = $4
+RETURNING id, email, password_hash, role, is_admin, is_active, last_login_at, created_by, created_at, updated_at
 `
 
 type UpdateUserAdminParams struct {
 	Email   string `json:"email"`
+	Role    string `json:"role"`
 	IsAdmin bool   `json:"is_admin"`
 	ID      int32  `json:"id"`
 }
@@ -202,6 +214,7 @@ type UpdateUserAdminRow struct {
 	ID           int32              `json:"id"`
 	Email        string             `json:"email"`
 	PasswordHash string             `json:"password_hash"`
+	Role         string             `json:"role"`
 	IsAdmin      bool               `json:"is_admin"`
 	IsActive     bool               `json:"is_active"`
 	LastLoginAt  pgtype.Timestamptz `json:"last_login_at"`
@@ -211,12 +224,18 @@ type UpdateUserAdminRow struct {
 }
 
 func (q *Queries) UpdateUserAdmin(ctx context.Context, arg UpdateUserAdminParams) (UpdateUserAdminRow, error) {
-	row := q.db.QueryRow(ctx, updateUserAdmin, arg.Email, arg.IsAdmin, arg.ID)
+	row := q.db.QueryRow(ctx, updateUserAdmin,
+		arg.Email,
+		arg.Role,
+		arg.IsAdmin,
+		arg.ID,
+	)
 	var i UpdateUserAdminRow
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
+		&i.Role,
 		&i.IsAdmin,
 		&i.IsActive,
 		&i.LastLoginAt,
