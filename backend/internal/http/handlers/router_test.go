@@ -57,8 +57,8 @@ func seedTestUser(t *testing.T, pool *pgxpool.Pool, email, password string) {
 		t.Fatalf("hash err: %v", err)
 	}
 	_, err = pool.Exec(context.Background(), `
-		INSERT INTO users (email, password_hash, is_admin)
-		VALUES ($1,$2,false)
+		INSERT INTO users (email, password_hash, role, is_admin)
+		VALUES ($1,$2,'user',false)
 		ON CONFLICT (email) DO NOTHING`, email, string(hash))
 	if err != nil {
 		t.Fatalf("seed user err: %v", err)

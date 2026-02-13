@@ -113,8 +113,8 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		exportHandler.Register(userGroup.Group("/export"))
 	}
 
-	// Insights endpoints (user-scoped)
 	insightsGroup := protected.Group("/insights")
+	insightsGroup.Use(middleware.RoleRequired("admin", "doctor"))
 	{
 		insightsHandler := handlers.NewInsightsHandler(st, cache)
 		insightsHandler.Register(insightsGroup)

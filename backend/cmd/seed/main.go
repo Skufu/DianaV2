@@ -15,7 +15,7 @@ import (
 type SeedUser struct {
 	Email     string
 	Password  string
-	IsAdmin   bool
+	Role      string
 	FirstName string
 	LastName  string
 }
@@ -38,8 +38,9 @@ func main() {
 	defer pool.Close()
 
 	users := []SeedUser{
-		{Email: "admin@diana.app", Password: "admin123", IsAdmin: true},
-		{Email: "demo@diana.app", Password: "demopassword123", IsAdmin: false, FirstName: "Demo", LastName: "User"},
+		{Email: "admin@diana.app", Password: "admin123", Role: "admin"},
+		{Email: "doctor@diana.app", Password: "doctor123", Role: "doctor"},
+		{Email: "demo@diana.app", Password: "demopassword123", Role: "user", FirstName: "Demo", LastName: "User"},
 	}
 
 	for _, u := range users {
@@ -52,14 +53,10 @@ func main() {
 			lastName = u.LastName
 		}
 
-		if err := seedUser(ctx, pool, u.Email, u.Password, firstName, lastName, u.IsAdmin); err != nil {
+		if err := seedUser(ctx, pool, u.Email, u.Password, firstName, lastName, u.Role); err != nil {
 			log.Printf("failed to seed user %s: %v", u.Email, err)
 		} else {
-			role := "user"
-			if u.IsAdmin {
-				role = "admin"
-			}
-			log.Printf("Seeded user: %s (Role: %s)", u.Email, role)
+			log.Printf("Seeded user: %s (Role: %s)", u.Email, u.Role)
 		}
 	}
 
@@ -67,16 +64,16 @@ func main() {
 	fmt.Println("       DEMO CREDENTIALS")
 	fmt.Println("==================================")
 	for _, u := range users {
-		role := "User"
-		if u.IsAdmin {
-			role = "Admin"
+		role := u.Role
+		if role == "" {
+			role = "user"
 		}
 		fmt.Printf("Email: %-20s Password: %s Role: %s\n", u.Email, u.Password, role)
 	}
 	fmt.Println("==================================")
 }
 
-func seedUser(ctx context.Context, pool *pgxpool.Pool, email, password, firstName, lastName string, isAdmin bool) error {
+func seedUser(ctx context.Context, pool *pgxpool.Pool, email, password, firstName, lastName, role string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -91,11 +88,16 @@ func seedUser(ctx context.Context, pool *pgxpool.Pool, email, password, firstNam
 		return err
 	}
 
+	if role == "" {
+		role = "user"
+	}
+	isAdmin := role == "admin"
+
 	const insertQ = `
-		INSERT INTO users (email, password_hash, is_admin, is_active, account_status, onboarding_completed, first_name, last_name, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+		INSERT INTO users (email, password_hash, role, is_admin, is_active, account_status, onboarding_completed, first_name, last_name, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
 	`
 
-	_, err = pool.Exec(ctx, insertQ, email, string(hash), isAdmin)
+	_, err = pool.Exec(ctx, insertQ, email, string(hash), role, isAdmin, true, "active", false, firstName, lastName)
 	return err
 }
