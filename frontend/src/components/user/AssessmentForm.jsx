@@ -16,7 +16,6 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
     triglycerides: '',
     ldl: '',
     hdl: '',
-    age: '',
     systolic_bp: '',
     diastolic_bp: '',
     notes: ''
@@ -51,7 +50,6 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
       triglycerides: formData.triglycerides ? parseInt(formData.triglycerides) : null,
       ldl: formData.ldl ? parseInt(formData.ldl) : null,
       hdl: formData.hdl ? parseInt(formData.hdl) : null,
-      age: formData.age ? parseInt(formData.age) : null,
       systolic_bp: formData.systolic_bp ? parseInt(formData.systolic_bp) : null,
       diastolic_bp: formData.diastolic_bp ? parseInt(formData.diastolic_bp) : null,
       notes: formData.notes || null
@@ -78,7 +76,6 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
         triglycerides: '',
         ldl: '',
         hdl: '',
-        age: '',
         systolic_bp: '',
         diastolic_bp: '',
         notes: ''
@@ -209,29 +206,15 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
               </div>
             </motion.div>
 
-            {/* Age Field */}
             <motion.div
               whileHover={{ y: -2 }}
               transition={{ duration: 0.2 }}
+              className="flex items-center"
             >
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Age (years)
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Save size={18} />
-                </div>
-                <input
-                  type="number"
-                  name="age"
-                  step="1"
-                  min="45"
-                  max="80"
-                  value={formData.age}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="Enter age (45 - 80)"
-                />
+              <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg w-full">
+                <p className="text-xs text-blue-700">
+                  <strong>Age is already saved</strong> from your profile. No need to enter it again.
+                </p>
               </div>
             </motion.div>
           </div>
