@@ -79,6 +79,15 @@ type Clinic struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type EmailVerificationToken struct {
+	ID        int32              `json:"id"`
+	UserID    int32              `json:"user_id"`
+	TokenHash string             `json:"token_hash"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	UsedAt    pgtype.Timestamptz `json:"used_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type ModelRun struct {
 	ID           int32              `json:"id"`
 	ModelVersion string             `json:"model_version"`
@@ -99,6 +108,15 @@ type NotificationQueue struct {
 	Status           string             `json:"status"`
 	ErrorMessage     pgtype.Text        `json:"error_message"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+}
+
+type PasswordResetToken struct {
+	ID        int32              `json:"id"`
+	UserID    int32              `json:"user_id"`
+	TokenHash string             `json:"token_hash"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	UsedAt    pgtype.Timestamptz `json:"used_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type RefreshToken struct {
@@ -144,6 +162,9 @@ type User struct {
 	AccountStatus                string             `json:"account_status"`
 	DeletedAt                    pgtype.Timestamptz `json:"deleted_at"`
 	IsAdmin                      bool               `json:"is_admin"`
+	EmailVerified                bool               `json:"email_verified"`
+	EmailVerifiedAt              pgtype.Timestamptz `json:"email_verified_at"`
+	Role                         string             `json:"role"`
 }
 
 type UserClinic struct {

@@ -29,16 +29,11 @@ func (r *pgUserRepo) FindByEmail(ctx context.Context, email string) (*models.Use
 	if err != nil {
 		return nil, err
 	}
-	// Derive role from is_admin flag for JWT claims compatibility
-	role := "user"
-	if row.IsAdmin {
-		role = "admin"
-	}
 	return &models.User{
 		ID:            int64(row.ID),
 		Email:         row.Email,
 		PasswordHash:  row.PasswordHash,
-		Role:          role,
+		Role:          row.Role,
 		IsAdmin:       row.IsAdmin,
 		IsActive:      row.IsActive,
 		AccountStatus: row.AccountStatus,
@@ -54,10 +49,6 @@ func (r *pgUserRepo) FindByID(ctx context.Context, id int32) (*models.User, erro
 	row, err := r.q.FindUserByID(ctx, id)
 	if err != nil {
 		return nil, err
-	}
-	role := "user"
-	if row.IsAdmin {
-		role = "admin"
 	}
 
 	var dob *time.Time
@@ -105,7 +96,7 @@ func (r *pgUserRepo) FindByID(ctx context.Context, id int32) (*models.User, erro
 		ReminderEmail:                row.ReminderEmail,
 		LastAssessmentReminderSent:   lastAssessmentReminderSent,
 		OnboardingCompleted:          row.OnboardingCompleted,
-		Role:                         role,
+		Role:                         row.Role,
 		IsAdmin:                      row.IsAdmin,
 		IsActive:                     row.IsActive,
 		AccountStatus:                row.AccountStatus,
@@ -156,10 +147,9 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 	}
 
 	if params.Role != "" {
-		isAdmin := params.Role == "admin"
-		query += ` AND is_admin = $` + itoa(argNum)
-		countQuery += ` AND is_admin = $` + itoa(argNum)
-		args = append(args, isAdmin)
+		query += ` AND role = $` + itoa(argNum)
+		countQuery += ` AND role = $` + itoa(argNum)
+		args = append(args, params.Role)
 		argNum++
 	}
 
@@ -189,24 +179,22 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 	for rows.Next() {
 		var u models.User
 		var isActive bool
+		var role string
 		var isAdmin bool
 		var lastLoginAt pgtype.Timestamptz
 		var createdBy pgtype.Int4
 		var createdAt, updatedAt pgtype.Timestamptz
 
 		err := rows.Scan(
-			&u.ID, &u.Email, &u.PasswordHash, &isAdmin,
+			&u.ID, &u.Email, &u.PasswordHash, &role, &isAdmin,
 			&isActive, &lastLoginAt, &createdBy, &createdAt, &updatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
 		}
 		u.IsActive = isActive
-		if isAdmin {
-			u.Role = "admin"
-		} else {
-			u.Role = "user"
-		}
+		u.Role = role
+		u.IsAdmin = isAdmin
 		if lastLoginAt.Valid {
 			u.LastLoginAt = &lastLoginAt.Time
 		}
@@ -229,17 +217,26 @@ func (r *pgUserRepo) Create(ctx context.Context, user models.User) (*models.User
 
 	var id int64
 	var createdAt, updatedAt time.Time
+	var role string
 
 	query := `
-		INSERT INTO users (email, password_hash, is_admin, is_active, created_by, created_at, updated_at)
-		VALUES ($1, $2, $3, true, $4, NOW(), NOW())
-		RETURNING id, created_at, updated_at
+		INSERT INTO users (email, password_hash, role, is_admin, is_active, created_by, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, true, $5, NOW(), NOW())
+		RETURNING id, role, created_at, updated_at
 	`
 
-	isAdmin := user.Role == "admin"
+	role = user.Role
+	if role == "" {
+		role = "user"
+	}
+	isAdmin := role == "admin"
+	if user.IsAdmin {
+		isAdmin = true
+		role = "admin"
+	}
 	err := r.pool.QueryRow(ctx, query,
-		user.Email, user.PasswordHash, isAdmin, user.CreatedBy,
-	).Scan(&id, &createdAt, &updatedAt)
+		user.Email, user.PasswordHash, role, isAdmin, user.CreatedBy,
+	).Scan(&id, &role, &createdAt, &updatedAt)
 
 	if err != nil {
 		return nil, err
@@ -249,11 +246,7 @@ func (r *pgUserRepo) Create(ctx context.Context, user models.User) (*models.User
 	user.IsActive = true
 	user.CreatedAt = createdAt
 	user.UpdatedAt = updatedAt
-	if isAdmin {
-		user.Role = "admin"
-	} else {
-		user.Role = "user"
-	}
+	user.Role = role
 
 	return &user, nil
 }
@@ -266,10 +259,11 @@ func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User
 	query := `
 		UPDATE users
 		SET email = COALESCE(NULLIF($2, ''), email),
-		    is_admin = COALESCE($3, is_admin),
+		    role = COALESCE($3, role),
+		    is_admin = COALESCE($4, is_admin),
 		    updated_at = NOW()
 		WHERE id = $1
-		RETURNING id, email, password_hash, is_admin,
+		RETURNING id, email, password_hash, role, is_admin,
 		          COALESCE(is_active, true), last_login_at, created_by, created_at, updated_at
 	`
 
@@ -278,14 +272,17 @@ func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User
 	var lastLoginAt pgtype.Timestamptz
 	var createdBy pgtype.Int4
 	var createdAt, updatedAt pgtype.Timestamptz
+	var role string
 	var isAdmin bool
 
+	var roleInput pgtype.Text
 	var isAdminInput pgtype.Bool
 	if user.Role != "" {
+		roleInput = pgtype.Text{String: user.Role, Valid: true}
 		isAdminInput = pgtype.Bool{Bool: user.Role == "admin", Valid: true}
 	}
-	err := r.pool.QueryRow(ctx, query, user.ID, user.Email, isAdminInput).Scan(
-		&u.ID, &u.Email, &u.PasswordHash, &isAdmin,
+	err := r.pool.QueryRow(ctx, query, user.ID, user.Email, roleInput, isAdminInput).Scan(
+		&u.ID, &u.Email, &u.PasswordHash, &role, &isAdmin,
 		&isActive, &lastLoginAt, &createdBy, &createdAt, &updatedAt,
 	)
 	if err != nil {
@@ -293,11 +290,8 @@ func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User
 	}
 
 	u.IsActive = isActive
-	if isAdmin {
-		u.Role = "admin"
-	} else {
-		u.Role = "user"
-	}
+	u.Role = role
+	u.IsAdmin = isAdmin
 	if lastLoginAt.Valid {
 		u.LastLoginAt = &lastLoginAt.Time
 	}
