@@ -7,21 +7,31 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
 
   // Count-up animation for risk score
   useEffect(() => {
+    if (riskScore === displayScore) return;
+    
     const duration = 1000; // 1 second animation
     const steps = 60; // 60fps
-    const increment = (riskScore - displayScore) / steps;
-    let current = displayScore;
-
-    if (riskScore === displayScore) return;
+    const startScore = displayScore;
+    const increment = (riskScore - startScore) / steps;
+    let current = startScore;
+    let rafId = null;
 
     const animate = () => {
       current += increment;
-      setDisplayScore(Math.min(Math.round(current), riskScore));
-      if (current < riskScore) {
-        requestAnimationFrame(animate);
+      const nextScore = Math.min(Math.round(current), riskScore);
+      setDisplayScore(nextScore);
+      if (nextScore < riskScore) {
+        rafId = requestAnimationFrame(animate);
       }
     };
+    
     animate();
+    
+    return () => {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+    };
   }, [riskScore]);
 
   const getRiskColor = (level) => {

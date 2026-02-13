@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Activity, Save, AlertCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MockMLResultModal from '../common/MockMLResultModal';
@@ -26,6 +26,15 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createAssessment = useCreateAssessment();
+  const submitTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (submitTimeoutRef.current) {
+        clearTimeout(submitTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -55,8 +64,7 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
       notes: formData.notes || null
     };
 
-    // Simulate network delay for "Analyzing..." animation
-    setTimeout(() => {
+    submitTimeoutRef.current = setTimeout(() => {
       setSubmittedData(payload);
       setShowMockModal(true);
       setIsSubmitting(false);
