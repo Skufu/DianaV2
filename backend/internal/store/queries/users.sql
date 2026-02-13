@@ -1,13 +1,13 @@
 -- users.sql: SQLC queries for user management
 
 -- name: FindUserByEmail :one
-SELECT id, email, password_hash, is_admin, is_active, account_status, created_at, updated_at
+SELECT id, email, password_hash, role, is_admin, is_active, account_status, created_at, updated_at
 FROM users
 WHERE email = $1 AND account_status = 'active'
 LIMIT 1;
 
 -- name: FindUserByID :one
-SELECT id, email, password_hash, is_admin, is_active, account_status, created_at, updated_at,
+SELECT id, email, password_hash, role, is_admin, is_active, account_status, created_at, updated_at,
     first_name, last_name, date_of_birth, phone, address,
     menopause_status, menopause_type, years_menopause,
     hypertension, heart_disease, family_history_diabetes, smoking_status,
@@ -28,7 +28,7 @@ WHERE reminder_email = true
 ORDER BY last_assessment_reminder_sent ASC NULLS FIRST;
 
 -- name: SearchUsers :many
-SELECT id, email, first_name, last_name, created_at, is_active,
+SELECT id, email, role, first_name, last_name, created_at, is_active,
     onboarding_completed, account_status
 FROM users
 WHERE ($1::text IS NULL OR email ILIKE '%' || $1 || '%' OR first_name ILIKE '%' || $1 || '%' OR last_name ILIKE '%' || $1 || '%')

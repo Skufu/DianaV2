@@ -65,7 +65,7 @@ func (q *Queries) AdminClinicComparison(ctx context.Context) ([]AdminClinicCompa
 const adminSystemStats = `-- name: AdminSystemStats :one
 SELECT
     (SELECT COUNT(*) FROM users)::int AS total_users,
-    (SELECT COUNT(*) FROM users WHERE NOT is_admin)::int AS total_patients,
+    (SELECT COUNT(*) FROM users WHERE role = 'user')::int AS total_patients,
     (SELECT COUNT(*) FROM assessments)::int AS total_assessments,
     (SELECT COUNT(*) FROM clinics)::int AS total_clinics,
     COALESCE((SELECT AVG(risk_score) FROM assessments), 0)::float8 AS avg_risk_score,
