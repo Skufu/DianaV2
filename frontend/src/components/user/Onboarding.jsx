@@ -15,7 +15,7 @@ const Onboarding = ({ onComplete }) => {
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
-    date_of_birth: '',
+    age: '',
     menopause_status: '',
     years_menopause: '',
     hypertension: '',
@@ -44,10 +44,14 @@ const Onboarding = ({ onComplete }) => {
     }
     setError(null);
     try {
+      const ageNum = parseInt(formData.age, 10);
+      const birthYear = new Date().getFullYear() - ageNum;
+      const computedDateOfBirth = `${birthYear}-06-15`;
+
       const payload = {
         first_name: formData.first_name,
         last_name: formData.last_name,
-        date_of_birth: formData.date_of_birth,
+        date_of_birth: computedDateOfBirth,
         menopause_status: formData.menopause_status,
         years_menopause: parseInt(formData.years_menopause, 10) || 0,
         hypertension: formData.hypertension,
@@ -71,8 +75,13 @@ const Onboarding = ({ onComplete }) => {
   const validateStep = (stepNum) => {
     switch (stepNum) {
       case 1:
-        if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.date_of_birth) {
+        if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.age) {
           setError('Please fill in all required fields.');
+          return false;
+        }
+        const ageNum = parseInt(formData.age, 10);
+        if (isNaN(ageNum) || ageNum < 45 || ageNum > 80) {
+          setError('Age must be between 45 and 80 years.');
           return false;
         }
         break;
@@ -246,14 +255,18 @@ const Onboarding = ({ onComplete }) => {
                   </div>
 
                   <motion.div variants={fadeIn} className="group space-y-1.5">
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Date of Birth</label>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Age</label>
                     <input
-                      type="date"
-                      name="date_of_birth"
-                      value={formData.date_of_birth}
+                      type="number"
+                      name="age"
+                      min="45"
+                      max="80"
+                      value={formData.age}
                       onChange={handleInputChange}
                       className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm"
+                      placeholder="Enter your age (45-80)"
                     />
+                    <p className="text-[10px] text-slate-400">DIANA is designed for women aged 45-80</p>
                   </motion.div>
                 </motion.div>
               )}
@@ -270,27 +283,40 @@ const Onboarding = ({ onComplete }) => {
                         className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none cursor-pointer"
                       >
                         <option value="">Select status...</option>
-                        <option value="pre">Premenopausal</option>
-                        <option value="peri">Perimenopausal</option>
-                        <option value="post">Postmenopausal</option>
+                        <option value="pre">Premenopausal (not started)</option>
+                        <option value="peri">Perimenopausal (in transition)</option>
+                        <option value="post">Postmenopausal (completed)</option>
                         <option value="surgical">Surgical Menopause</option>
                       </select>
                       <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
                     </div>
+                    <p className="text-[10px] text-slate-400">This helps us understand your hormonal health stage</p>
                   </motion.div>
 
-                  <motion.div variants={fadeIn} className="group space-y-1.5">
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Years Since Menopause (approx.)</label>
-                    <input
-                      type="number"
-                      name="years_menopause"
-                      value={formData.years_menopause}
-                      onChange={handleInputChange}
-                      className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm"
-                      placeholder="0"
-                    />
-                    <p className="text-[10px] text-slate-400">Leave as 0 if not applicable</p>
-                  </motion.div>
+                  {(formData.menopause_status === 'post' || formData.menopause_status === 'surgical') && (
+                    <motion.div 
+                      variants={fadeIn} 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="group space-y-1.5"
+                    >
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        Years Since Menopause
+                      </label>
+                      <input
+                        type="number"
+                        name="years_menopause"
+                        min="0"
+                        max="40"
+                        value={formData.years_menopause}
+                        onChange={handleInputChange}
+                        className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm"
+                        placeholder="How many years?"
+                      />
+                      <p className="text-[10px] text-slate-400">Time since menopause affects diabetes risk factors</p>
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
 
