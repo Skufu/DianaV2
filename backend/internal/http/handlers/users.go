@@ -53,12 +53,7 @@ func (h *UsersHandler) GetUserProfile(c *gin.Context) {
 		return
 	}
 
-	// Fetch latest assessment
-	assessment, err := h.store.Users().GetLatestAssessmentByUser(c.Request.Context(), userClaims.UserID)
-	if err != nil {
-		h.store.Users().GetAssessmentCountByUser(c.Request.Context(), userClaims.UserID)
-	}
-
+	assessment, _ := h.store.Users().GetLatestAssessmentByUser(c.Request.Context(), userClaims.UserID)
 	count, _ := h.store.Users().GetAssessmentCountByUser(c.Request.Context(), userClaims.UserID)
 
 	profile := models.UserProfile{

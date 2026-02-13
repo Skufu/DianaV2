@@ -2,7 +2,7 @@
  * SHAP Explanation Component
  * Displays SHAP values for model interpretability
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { Brain, ChevronDown, ChevronUp, AlertCircle, Info } from 'lucide-react';
 
@@ -27,14 +27,26 @@ const SHAPExplanation = ({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [expanded, setExpanded] = useState(!compact);
+    const abortControllerRef = useRef(null);
 
     useEffect(() => {
         if (patientData && Object.keys(patientData).length > 0) {
             fetchExplanation();
         }
+        
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
     }, [patientData, modelType]);
 
     const fetchExplanation = async () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        
         setLoading(true);
         setError(null);
 
@@ -44,7 +56,8 @@ const SHAPExplanation = ({
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(patientData)
+                    body: JSON.stringify(patientData),
+                    signal: abortControllerRef.current.signal
                 }
             );
 
@@ -59,6 +72,7 @@ const SHAPExplanation = ({
 
             setExplanation(data);
         } catch (err) {
+            if (err.name === 'AbortError') return;
             setError(err.message);
         } finally {
             setLoading(false);
