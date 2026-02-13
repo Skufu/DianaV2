@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, X, AlertCircle, Info } from 'lucide-react';
 import { SPRING_TIGHT } from '../../utils/animations';
@@ -7,19 +7,30 @@ const ToastContext = createContext(null);
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
+  const timeoutRefs = useRef([]);
 
   const addToast = ({ type, message, duration = 5000 }) => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, type, message }]);
 
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setToasts(prev => prev.filter(toast => toast.id !== id));
+      timeoutRefs.current = timeoutRefs.current.filter(tid => tid !== timeoutId);
     }, duration);
+    
+    timeoutRefs.current.push(timeoutId);
   };
 
   const removeToast = (id) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
+
+  useEffect(() => {
+    return () => {
+      timeoutRefs.current.forEach(timeoutId => clearTimeout(timeoutId));
+      timeoutRefs.current = [];
+    };
+  }, []);
 
   return (
     <ToastContext.Provider value={{ toasts, addToast, removeToast }}>

@@ -72,14 +72,6 @@ const AuthEventLogViewer = ({ token }) => {
     eventSourceRef.current.onerror = err => {
       console.error('EventSource error:', err);
       setConnected(false);
-
-      // Attempt reconnection after 5 seconds
-      const timeoutId = setTimeout(() => {
-        if (!connected) {
-          connectEventSource();
-        }
-      }, 5000);
-      timeoutRef.current.push(timeoutId);
     };
 
     eventSourceRef.current.addEventListener('auth_event', e => {
@@ -87,10 +79,9 @@ const AuthEventLogViewer = ({ token }) => {
         const newEvent = JSON.parse(e.data);
         eventBufferRef.current.push(newEvent);
 
-        // Process buffer every 100ms to batch updates
         const timeoutId = setTimeout(() => {
           if (eventBufferRef.current.length > 0) {
-            setEvents(prev => [...eventBufferRef.current, ...prev].slice(0, 200)); // Keep last 200 events
+            setEvents(prev => [...eventBufferRef.current, ...prev].slice(0, 200));
             eventBufferRef.current = [];
           }
         }, 100);
@@ -113,11 +104,12 @@ const AuthEventLogViewer = ({ token }) => {
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
       timeoutRef.current.forEach(clearTimeout);
       timeoutRef.current = [];
     };
-  }, [token, connected]);
+  }, [token]);
 
   useEffect(() => {
     const cleanup = connectEventSource();

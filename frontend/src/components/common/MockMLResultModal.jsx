@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Activity, TrendingUp, AlertCircle, CheckCircle, Info, Brain, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const MockMLResultModal = ({ isOpen, onClose, formData, onConfirm }) => {
   const [showContent, setShowContent] = useState(false);
   const [mockResult, setMockResult] = useState(null);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -12,11 +13,16 @@ const MockMLResultModal = ({ isOpen, onClose, formData, onConfirm }) => {
       const result = generateMockResult(formData);
       setMockResult(result);
 
-      const timer = setTimeout(() => {
+      timerRef.current = setTimeout(() => {
         setShowContent(true);
       }, 800);
 
-      return () => clearTimeout(timer);
+      return () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+      };
     }
   }, [isOpen, formData]);
 

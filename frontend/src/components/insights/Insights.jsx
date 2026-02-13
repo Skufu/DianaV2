@@ -21,7 +21,6 @@ const Insights = ({ token, patients = [] }) => {
   const [allAssessments, setAllAssessments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const [mlMetrics, setMlMetrics] = useState(null);
   const [mlIG, setMlIG] = useState(null);
@@ -30,7 +29,7 @@ const Insights = ({ token, patients = [] }) => {
   const [mlError, setMlError] = useState(null);
 
   useEffect(() => {
-    if (!token || hasLoadedOnce) return;
+    if (!token) return;
     const load = async () => {
       setLoading(true);
       setError(null);
@@ -58,7 +57,6 @@ const Insights = ({ token, patients = [] }) => {
 
         setClusters(c || []);
         setTrends(t || []);
-        setHasLoadedOnce(true);
 
         if (patients && patients.length > 0) {
           const assessmentPromises = patients.map(p =>
@@ -76,7 +74,7 @@ const Insights = ({ token, patients = [] }) => {
       }
     };
     load();
-  }, [token, patients, hasLoadedOnce]);
+  }, [token, patients]);
 
   useEffect(() => {
     const loadML = async () => {
