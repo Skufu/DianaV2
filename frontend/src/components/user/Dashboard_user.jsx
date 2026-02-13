@@ -241,13 +241,13 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                   <span className="text-diana-text-secondary font-bold text-sm tracking-wide uppercase">Status</span>
                 </div>
                 <div className="text-xl font-bold text-diana-text-primary mt-1">
-                  {latestAssessment?.risk_score >= 67
-                    ? 'Action Needed'
-                    : latestAssessment?.risk_score >= 34
-                      ? 'Monitor Closely'
-                      : latestAssessment
-                        ? 'Optimal Range'
-                        : 'No Assessment'}
+                  {!latestAssessment
+                    ? 'No Assessment'
+                    : latestAssessment.risk_score >= 67
+                      ? 'Action Needed'
+                      : latestAssessment.risk_score >= 34
+                        ? 'Monitor Closely'
+                        : 'Optimal Range'}
                 </div>
               </div>
               <div className="text-sm text-diana-text-muted mt-2">
