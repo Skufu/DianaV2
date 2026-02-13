@@ -45,8 +45,10 @@ const Onboarding = ({ onComplete }) => {
     setError(null);
     try {
       const ageNum = parseInt(formData.age, 10);
-      const birthYear = new Date().getFullYear() - ageNum;
-      const computedDateOfBirth = `${birthYear}-06-15`;
+      const validAge = !isNaN(ageNum) && ageNum > 0 && ageNum < 150;
+      const computedDateOfBirth = validAge 
+        ? `${new Date().getFullYear() - ageNum}-06-15`
+        : null;
 
       const payload = {
         first_name: formData.first_name,
