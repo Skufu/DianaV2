@@ -18,10 +18,15 @@ const UserProfile = ({ setActiveTab }) => {
   const [formData, setFormData] = useState({});
   const [formError, setFormError] = useState(null);
 
-  // Sync form data with profile data from React Query
   useEffect(() => {
     if (profileData && Object.keys(profileData).length > 0) {
-      setFormData(profileData);
+      const displayData = { ...profileData };
+      if (profileData.date_of_birth) {
+        const birthDate = new Date(profileData.date_of_birth);
+        const currentYear = new Date().getFullYear();
+        displayData.age = currentYear - birthDate.getFullYear();
+      }
+      setFormData(displayData);
     }
   }, [profileData]);
 
@@ -45,9 +50,14 @@ const UserProfile = ({ setActiveTab }) => {
         family_history_diabetes: !!formData.family_history_diabetes,
       };
 
+      if (formData.age) {
+        const ageNum = parseInt(formData.age, 10);
+        const birthYear = new Date().getFullYear() - ageNum;
+        payload.date_of_birth = `${birthYear}-06-15`;
+      }
+
       await updateProfileMutation.mutateAsync(payload);
       setFormData(payload);
-      // Removed alert, prefer toast in real app, but for now just no throw
     } catch (err) {
       setFormError(err.message || 'Failed to update profile');
     }
@@ -161,7 +171,7 @@ const UserProfile = ({ setActiveTab }) => {
               { label: 'First Name', name: 'first_name', type: 'text' },
               { label: 'Last Name', name: 'last_name', type: 'text' },
               { label: 'Email Address', name: 'email', type: 'email' },
-              { label: 'Date of Birth', name: 'date_of_birth', type: 'date', valueTransform: (val) => val ? new Date(val).toISOString().split('T')[0] : '' },
+              { label: 'Age', name: 'age', type: 'number', min: 45, max: 80 },
               { label: 'Phone Number', name: 'phone', type: 'tel' },
             ].map((field) => (
               <div key={field.name}>
