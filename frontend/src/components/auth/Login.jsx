@@ -1,12 +1,12 @@
 import { useState, useMemo } from 'react';
-import { AlertCircle, Lock, Mail, Eye, EyeOff, Shield } from 'lucide-react';
+import { AlertCircle, Lock, Mail, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/logo-icon.png';
 import Button from '../common/Button';
 import { cardVariants, slideUp, fadeIn, getInputFocusVariants, useReducedMotion } from '../../utils/animations';
 import { LoginFormSkeleton } from '../common/Skeleton';
 
-const Login = ({ onLogin, onShowSignup, error: errorProp }) => {
+const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, error: errorProp }) => {
   const isReduced = useReducedMotion();
   const inputFocusVariants = useMemo(() => getInputFocusVariants(isReduced), [isReduced]);
   const [email, setEmail] = useState('');
@@ -38,7 +38,8 @@ const Login = ({ onLogin, onShowSignup, error: errorProp }) => {
     }
   };
 
-  const displayError = errorProp || error;
+  const displayError = errorProp?.message || errorProp || error;
+  const shouldShowVerify = errorProp?.code === 'EMAIL_NOT_VERIFIED' || errorProp?.message === 'Email not verified';
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 font-sans text-slate-900 selection:bg-diana-forest-light/20 selection:text-diana-forest-light">
@@ -144,7 +145,15 @@ const Login = ({ onLogin, onShowSignup, error: errorProp }) => {
                       />
                       <label htmlFor="remember-me" className="text-sm font-medium text-slate-600 cursor-pointer select-none">Remember me</label>
                     </div>
-                    <a href="#" className="text-sm font-medium text-slate-500 hover:text-slate-800 hover:underline transition-all">Forgot password?</a>
+                    <motion.button
+                      type="button"
+                      onClick={() => onShowForgotPassword?.(email)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="text-sm font-medium text-slate-500 hover:text-slate-800 hover:underline transition-all focus:outline-none"
+                    >
+                      Forgot password?
+                    </motion.button>
                   </div>
 
                   {/* Error Display */}
@@ -154,10 +163,23 @@ const Login = ({ onLogin, onShowSignup, error: errorProp }) => {
                         initial={{ opacity: 0, height: 0, scale: 0.95 }}
                         animate={{ opacity: 1, height: 'auto', scale: 1 }}
                         exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                        className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2" role="alert"
+                        className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg flex flex-col gap-2" role="alert"
                       >
-                        <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                        <span className="font-medium">{displayError}</span>
+                        <div className="flex items-start gap-2">
+                          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                          <span className="font-medium">{displayError}</span>
+                        </div>
+                        {shouldShowVerify && (
+                          <motion.button
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.98 }}
+                            type="button"
+                            onClick={() => onShowVerify?.(email)}
+                            className="text-left text-sm font-semibold text-diana-forest-light hover:text-diana-forest-light-dark hover:underline transition-all focus:outline-none"
+                          >
+                            Resend verification email
+                          </motion.button>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
