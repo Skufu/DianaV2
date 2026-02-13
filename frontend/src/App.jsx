@@ -1,12 +1,14 @@
-import { useEffect, useState, Suspense, lazy, useMemo, useCallback, memo } from 'react';
+import { useEffect, useState, Suspense, lazy, useCallback, memo } from 'react';
 import { useUserProfile, useLogin, useLogout } from './api';
 import { useQueryClient } from '@tanstack/react-query';
 import Sidebar from './components/layout/Sidebar';
 import AdminSidebar from './components/layout/AdminSidebar';
 import Login from './components/auth/Login';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
+import VerifyEmail from './components/auth/VerifyEmail';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import AssessmentForm from './components/user/AssessmentForm';
-import ToastContainer from './components/common/Toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { pageVariants, useReducedMotion, breathing } from './utils/animations';
 
@@ -15,7 +17,6 @@ const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
 const Dashboard_user = lazy(() => import('./components/user/Dashboard_user'));
 const UserProfile = lazy(() => import('./components/user/UserProfile'));
 const PersonalTrends = lazy(() => import('./components/user/PersonalTrends'));
-const Insights = lazy(() => import('./components/insights/Insights'));
 const Education = lazy(() => import('./components/education/Education'));
 const Export = lazy(() => import('./components/export/Export'));
 const Onboarding = lazy(() => import('./components/user/Onboarding'));
@@ -55,7 +56,9 @@ const App = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  const [showSignup, setShowSignup] = useState(false);
+  const [authView, setAuthView] = useState('login');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authToken, setAuthToken] = useState('');
   const [showAssessmentModal, setShowAssessmentModal] = useState(false);
 
   // React Query hooks - only fetch profile when authenticated
@@ -77,22 +80,47 @@ const App = () => {
       localStorage.setItem('diana_refresh_token', res.refresh_token);
 
       const role = res.user.role || 'user';
-      const userIsAdmin = role === 'admin';
+      const userIsStaff = role === 'admin' || role === 'doctor';
 
       setToken(res.access_token);
       setRefreshToken(res.refresh_token);
       setUserRole(role);
-      setIsAdmin(userIsAdmin);
+      setIsAdmin(userIsStaff);
       setUserId(res.user.id);
       setIsAuthenticated(true);
 
-      if (userIsAdmin) {
+      if (userIsStaff) {
         setActiveTab('admin');
+        if (role === 'doctor') {
+          setAdminView('insights');
+        }
       }
     } catch (err) {
-      setLoginError(err.message || 'Login failed');
+      setLoginError(err);
     }
-  }, [loginMutation, queryClient]);
+  }, [loginMutation]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const resetToken = params.get('reset_token');
+    const verifyToken = params.get('verify_token');
+    const email = params.get('email');
+
+    if (resetToken) {
+      setAuthView('reset');
+      setAuthToken(resetToken);
+      return;
+    }
+
+    if (verifyToken) {
+      setAuthView('verify');
+      setAuthToken(verifyToken);
+    }
+
+    if (email) {
+      setAuthEmail(email);
+    }
+  }, []);
 
   const handleLogout = useCallback(async () => {
     const currentRefreshToken = localStorage.getItem('diana_refresh_token');
@@ -120,9 +148,13 @@ const App = () => {
     if (!isAuthenticated) return;
 
     if (profile && !profileLoading && !profileError) {
-      setUserRole(profile.role || 'user');
-      setIsAdmin(profile.role === 'admin');
+      const role = profile.role || 'user';
+      setUserRole(role);
+      setIsAdmin(role === 'admin' || role === 'doctor');
       setUserId(profile.id);
+      if (role === 'doctor') {
+        setAdminView('insights');
+      }
       if (profile?.onboarding_completed === true) {
         setShowOnboarding(false);
       } else {
@@ -151,10 +183,6 @@ const App = () => {
     setShowAssessmentModal(true);
   }, []);
 
-  const handleAssessmentSubmit = useCallback((data) => {
-    // AssessmentForm now handles submission and mock modal
-    setShowAssessmentModal(false);
-  }, []);
 
   // Render content for regular users
   const renderUserContent = useCallback(() => {
@@ -169,8 +197,6 @@ const App = () => {
         return <UserProfile userId={userId} setActiveTab={setActiveTab} />;
       case 'trends':
         return <PersonalTrends userId={userId} onStartAssessment={handleStartAssessment} />;
-      case 'insights':
-        return <Insights />;
       case 'education':
         return <Education />;
       case 'export':
@@ -188,16 +214,27 @@ const App = () => {
   const handleSignupSuccess = useCallback((res) => {
     if (!res?.user) throw new Error('signup failed');
 
+    if (res.email_verification_required === true) {
+      setAuthEmail(res.user.email || '');
+      setAuthView('verify');
+      setIsAuthenticated(false);
+      return;
+    }
+
     // Store tokens in localStorage for API authentication
     localStorage.setItem('diana_token', res.access_token);
     localStorage.setItem('diana_refresh_token', res.refresh_token);
 
     setToken(res.access_token);
     setRefreshToken(res.refresh_token);
-    setUserRole(res.user.role || 'user');
-    setIsAdmin(res.user.role === 'admin');
+    const role = res.user.role || 'user';
+    setUserRole(role);
+    setIsAdmin(role === 'admin' || role === 'doctor');
     setUserId(res.user.id);
     setIsAuthenticated(true);
+    if (role === 'doctor') {
+      setAdminView('insights');
+    }
   }, []);
 
   return (
@@ -205,10 +242,41 @@ const App = () => {
       {!isAuthenticated ? (
         <motion.div key="auth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <Suspense fallback={<LoadingSkeleton />}>
-            {showSignup ? (
-              <Signup onSignup={handleSignupSuccess} onShowLogin={() => setShowSignup(false)} />
+            {authView === 'signup' ? (
+              <Signup
+                onSignup={handleSignupSuccess}
+                onShowLogin={() => setAuthView('login')}
+              />
+            ) : authView === 'forgot' ? (
+              <ForgotPassword
+                onShowLogin={() => setAuthView('login')}
+                initialEmail={authEmail}
+              />
+            ) : authView === 'reset' ? (
+              <ResetPassword
+                onShowLogin={() => setAuthView('login')}
+                initialToken={authToken}
+              />
+            ) : authView === 'verify' ? (
+              <VerifyEmail
+                onShowLogin={() => setAuthView('login')}
+                initialToken={authToken}
+                initialEmail={authEmail}
+              />
             ) : (
-              <Login onLogin={handleLogin} onShowSignup={() => setShowSignup(true)} error={loginError} />
+              <Login
+                onLogin={handleLogin}
+                onShowSignup={() => setAuthView('signup')}
+                onShowForgotPassword={(email) => {
+                  if (email) setAuthEmail(email);
+                  setAuthView('forgot');
+                }}
+                onShowVerify={(email) => {
+                  if (email) setAuthEmail(email);
+                  setAuthView('verify');
+                }}
+                error={loginError}
+              />
             )}
           </Suspense>
         </motion.div>
@@ -229,6 +297,7 @@ const App = () => {
                 onLogout={handleLogout}
                 isCollapsed={isSidebarCollapsed}
                 setIsCollapsed={setIsSidebarCollapsed}
+                userRole={userRole}
               />
             </motion.div>
           </AnimatePresence>
