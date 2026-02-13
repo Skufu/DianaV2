@@ -71,7 +71,7 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
     if (isRefreshing) {
       // Wait for ongoing refresh to complete
       return new Promise((resolve, reject) => {
-        subscribeTokenRefresh(async (newToken) => {
+        subscribeTokenRefresh(async () => {
           try {
             const result = await apiFetch(endpoint, options, true);
             resolve(result);
@@ -107,7 +107,11 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || error.error || 'Request failed');
+    const message = error.message || error.error || 'Request failed';
+    const requestError = new Error(message);
+    if (error.code) requestError.code = error.code;
+    if (error.status) requestError.status = error.status;
+    throw requestError;
   }
 
   // Handle empty responses (204 No Content or empty body)
@@ -176,6 +180,30 @@ export const getMLVisualizationUrl = name => `${ML_BASE}/insights/visualizations
 export const useLogin = () => {
   return useMutation({
     mutationFn: ({ email, password }) => loginApi(email, password),
+  });
+};
+
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: ({ email }) => forgotPasswordApi(email),
+  });
+};
+
+export const useResetPassword = () => {
+  return useMutation({
+    mutationFn: ({ token, password }) => resetPasswordApi(token, password),
+  });
+};
+
+export const useVerifyEmail = () => {
+  return useMutation({
+    mutationFn: ({ token }) => verifyEmailApi(token),
+  });
+};
+
+export const useResendVerification = () => {
+  return useMutation({
+    mutationFn: ({ email }) => resendVerificationApi(email),
   });
 };
 
@@ -648,6 +676,34 @@ export const loginApi = async (email, password) => {
   return apiFetch('/auth/login', {
     method: 'POST',
     body: { email, password },
+  });
+};
+
+export const forgotPasswordApi = async (email) => {
+  return apiFetch('/auth/forgot-password', {
+    method: 'POST',
+    body: { email },
+  });
+};
+
+export const resetPasswordApi = async (token, password) => {
+  return apiFetch('/auth/reset-password', {
+    method: 'POST',
+    body: { token, password },
+  });
+};
+
+export const verifyEmailApi = async (token) => {
+  return apiFetch('/auth/verify-email', {
+    method: 'POST',
+    body: { token },
+  });
+};
+
+export const resendVerificationApi = async (email) => {
+  return apiFetch('/auth/resend-verification', {
+    method: 'POST',
+    body: { email },
   });
 };
 

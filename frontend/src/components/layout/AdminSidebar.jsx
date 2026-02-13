@@ -1,18 +1,22 @@
 // AdminSidebar: Dedicated navigation for Admin module with Indigo accents
 import React from 'react';
-import { LayoutDashboard, Users, FileText, Shield, LogOut, Cpu, Wifi, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Shield, LogOut, Cpu, Wifi, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { navLabelVariants } from '../../utils/animations';
 
-const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsCollapsed }) => {
+const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsCollapsed, userRole }) => {
   const [hoveredView, setHoveredView] = React.useState(null);
-  const navItems = [
-    { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
-    { id: 'users', icon: Users, label: 'User Management' },
-    { id: 'audit', icon: FileText, label: 'Audit Logs' },
-    { id: 'auth-events', icon: Wifi, label: 'Auth Events' },
-    { id: 'models', icon: Cpu, label: 'Model Tracking' },
-  ];
+  const navItems = userRole === 'doctor'
+    ? [
+        { id: 'insights', icon: Activity, label: 'Insights' },
+      ]
+    : [
+        { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
+        { id: 'users', icon: Users, label: 'User Management' },
+        { id: 'audit', icon: FileText, label: 'Audit Logs' },
+        { id: 'auth-events', icon: Wifi, label: 'Auth Events' },
+        { id: 'models', icon: Cpu, label: 'Model Tracking' },
+      ];
 
   return (
     <motion.div

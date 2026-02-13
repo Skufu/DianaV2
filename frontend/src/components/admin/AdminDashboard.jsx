@@ -1,5 +1,6 @@
 // AdminDashboard: System administration with tabbed subviews
 import React, { useState, useMemo, lazy, Suspense } from 'react';
+import Insights from '../insights/Insights';
 import { useAdminDashboard, useClinicComparison } from '../../api';
 import { shouldDisableHeavyEffects } from '../../utils/deviceCapabilities';
 import {
@@ -46,11 +47,12 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
   const isReduced = useReducedMotion();
   // Animation enabled by default
 
-  const { data: dashboardData, isLoading, error } = useAdminDashboard({ enabled: !!token });
-  const { data: clinicsData } = useClinicComparison({ enabled: !!token });
+  const canViewAdminData = userRole === 'admin';
+  const { data: dashboardData, isLoading, error } = useAdminDashboard({ enabled: !!token && canViewAdminData });
+  const { data: clinicsData } = useClinicComparison({ enabled: !!token && canViewAdminData });
   const clinics = clinicsData ?? [];
 
-  if (userRole !== 'admin') {
+  if (userRole !== 'admin' && userRole !== 'doctor') {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -66,6 +68,9 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
   }
 
   const renderContent = () => {
+    if (userRole === 'doctor') {
+      return <Insights />;
+    }
     switch (activeView) {
       case 'users':
         return (
@@ -91,6 +96,8 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
             <AuthEventLogViewer token={token} />
           </Suspense>
         );
+      case 'insights':
+        return <Insights />;
       default:
         return renderOverview();
     }

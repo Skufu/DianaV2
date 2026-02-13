@@ -271,6 +271,7 @@ const UserManagement = ({ token }) => {
               <option value="">All Roles</option>
               <option value="user">User</option>
               <option value="admin">Admin</option>
+              <option value="doctor">Doctor</option>
             </select>
           </div>
           <div>
@@ -494,6 +495,7 @@ const UserManagement = ({ token }) => {
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
+                    <option value="doctor">Doctor</option>
                   </select>
                 </div>
 
@@ -596,6 +598,7 @@ const UserManagement = ({ token }) => {
                   >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
+                    <option value="doctor">Doctor</option>
                   </select>
                 </div>
 
