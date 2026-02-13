@@ -42,13 +42,13 @@ func (h *AdminUsersHandler) Register(rg *gin.RouterGroup, auditLogger *middlewar
 type CreateUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8"`
-	Role     string `json:"role" binding:"required,oneof=admin user"`
+	Role     string `json:"role" binding:"required,oneof=admin user doctor"`
 }
 
 // UpdateUserRequest defines the payload for updating a user
 type UpdateUserRequest struct {
 	Email string `json:"email" binding:"omitempty,email"`
-	Role  string `json:"role" binding:"omitempty,oneof=admin user"`
+	Role  string `json:"role" binding:"omitempty,oneof=admin user doctor"`
 }
 
 // listUsers returns a paginated list of users
@@ -135,6 +135,7 @@ func (h *AdminUsersHandler) createUser(c *gin.Context) {
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
 		Role:         req.Role,
+		IsAdmin:      req.Role == "admin",
 		CreatedBy:    &creatorID,
 	}
 
@@ -237,9 +238,10 @@ func (h *AdminUsersHandler) updateUser(c *gin.Context) {
 	}
 
 	user := models.User{
-		ID:    id,
-		Email: req.Email,
-		Role:  req.Role,
+		ID:      id,
+		Email:   req.Email,
+		Role:    req.Role,
+		IsAdmin: req.Role == "admin",
 	}
 
 	updatedUser, err := h.store.Users().Update(c.Request.Context(), user)
