@@ -15,6 +15,8 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
     hdl: '',
     systolic: '',
     diastolic: '',
+    smoking_status: 'Unknown',
+    physical_activity: 'Unknown',
     alcohol: 'Unknown',
     notes: ''
   });
@@ -43,6 +45,8 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
       hdl: '',
       systolic: '',
       diastolic: '',
+      smoking_status: 'Unknown',
+      physical_activity: 'Unknown',
       alcohol: 'Unknown',
       notes: ''
     });
@@ -81,6 +85,8 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
       hdl: parseInt(formData.hdl),
       systolic: parseInt(formData.systolic),
       diastolic: parseInt(formData.diastolic),
+      smoking_status: formData.smoking_status || 'Unknown',
+      physical_activity: formData.physical_activity || 'Unknown',
       alcohol: formData.alcohol || 'Unknown',
       notes: formData.notes || null
     };
@@ -264,7 +270,47 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
 
         <div>
           <h3 className="text-sm font-semibold text-gray-700 mb-3">Lifestyle</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <motion.div
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Smoking Status
+              </label>
+              <select
+                name="smoking_status"
+                value={formData.smoking_status}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+              >
+                <option value="Unknown">Unknown</option>
+                <option value="Never">Never smoked</option>
+                <option value="Former">Former smoker</option>
+                <option value="Current">Current smoker</option>
+              </select>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Physical Activity
+              </label>
+              <select
+                name="physical_activity"
+                value={formData.physical_activity}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+              >
+                <option value="Unknown">Unknown</option>
+                <option value="Sedentary">Sedentary (little/no exercise)</option>
+                <option value="Moderate">Moderate (1-3 days/week)</option>
+                <option value="Active">Active (4+ days/week)</option>
+              </select>
+            </motion.div>
+
             <motion.div
               whileHover={{ y: -2 }}
               transition={{ duration: 0.2 }}
