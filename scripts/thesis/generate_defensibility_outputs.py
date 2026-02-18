@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+"""
+Defensibility artifact verifier for clinical_v2.
+
+This script does NOT generate synthetic metrics. It only validates that
+evaluation artifacts produced by Ian_ML/training/train_v2.py are present and
+internally consistent.
+"""
+
+from __future__ import annotations
+
+import csv
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+MODELS_DIR = Path("models/clinical_v2")
+RESULTS_DIR = MODELS_DIR / "results"
+SUMMARY_PATH = RESULTS_DIR / "defensibility_validation_summary.json"
+
+REQUIRED_ARTIFACTS = [
+    "best_model_report.json",
+    "logo_fold_metrics.csv",
+    "decision_thresholds.json",
+    "calibration_report.json",
+    "class_metrics_ci.json",
+    "k_comparison.json",
+    "clustering_positioning.json",
+]
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def check_required_files() -> tuple[list[str], list[str]]:
+    found: list[str] = []
+    missing: list[str] = []
+    for filename in REQUIRED_ARTIFACTS:
+        p = RESULTS_DIR / filename
+        if p.exists():
+            found.append(filename)
+        else:
+            missing.append(filename)
+    return found, missing
+
+
+def check_logo_fold_metrics(path: Path) -> list[str]:
+    issues: list[str] = []
+    with path.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f)
+        fieldnames = set(reader.fieldnames or [])
+        required_cols = {"Fold", "Test_Cycle", "Model", "AUC_ROC"}
+        missing_cols = sorted(required_cols - fieldnames)
+        if missing_cols:
+            issues.append(f"logo_fold_metrics.csv missing columns: {missing_cols}")
+            return issues
+
+        rows = list(reader)
+        if len(rows) < 5:
+            issues.append(
+                f"logo_fold_metrics.csv has only {len(rows)} rows (expected >= 5 LOGO folds)"
+            )
+        cycles = {r.get("Test_Cycle", "").strip() for r in rows if r.get("Test_Cycle")}
+        if len(cycles) < 5:
+            issues.append(
+                f"logo_fold_metrics.csv has only {len(cycles)} unique holdout cycles (expected >= 5)"
+            )
+    return issues
+
+
+def check_threshold_consistency(report: dict[str, Any], thresholds: dict[str, Any]) -> list[str]:
+    issues: list[str] = []
+    report_thresholds = report.get("decision_thresholds", {})
+    for key in ("pre_diabetic", "diabetic"):
+        rep_v = report_thresholds.get(key)
+        file_v = thresholds.get(key)
+        if rep_v is None or file_v is None:
+            issues.append(f"Missing threshold '{key}' in report or decision_thresholds.json")
+            continue
+        if abs(float(rep_v) - float(file_v)) > 1e-12:
+            issues.append(
+                f"Threshold mismatch for {key}: report={rep_v} decision_thresholds.json={file_v}"
+            )
+    return issues
+
+
+def check_report_sanity(report: dict[str, Any]) -> list[str]:
+    issues: list[str] = []
+    validation_method = str(report.get("validation_method", ""))
+    if "Nested LOGO" not in validation_method:
+        issues.append("best_model_report.json validation_method does not declare Nested LOGO")
+
+    auc = report.get("metrics", {}).get("auc_roc")
+    if auc is None:
+        issues.append("best_model_report.json missing metrics.auc_roc")
+    else:
+        auc_val = float(auc)
+        if auc_val < 0.5 or auc_val > 1.0:
+            issues.append(f"best_model_report.json has invalid auc_roc={auc_val}")
+
+    n_features = report.get("n_features")
+    if n_features is None:
+        issues.append("best_model_report.json missing n_features")
+    elif int(n_features) <= 0:
+        issues.append(f"best_model_report.json has invalid n_features={n_features}")
+
+    return issues
+
+
+def check_clustering_consistency() -> list[str]:
+    issues: list[str] = []
+    k_report = load_json(RESULTS_DIR / "k_comparison.json")
+    positioning = load_json(RESULTS_DIR / "clustering_positioning.json")
+
+    optimal_k = int(k_report.get("silhouette_optimal_k", -1))
+    clinical_k = int(k_report.get("clinical_k", -1))
+    primary_k = int(positioning.get("primary_unsupervised", {}).get("k", -1))
+    exploratory_k = int(positioning.get("exploratory_clinical_mapping", {}).get("k", -1))
+
+    if optimal_k != -1 and primary_k != optimal_k:
+        issues.append(
+            f"clustering_positioning primary_unsupervised.k={primary_k} but k_comparison silhouette_optimal_k={optimal_k}"
+        )
+    if clinical_k != -1 and exploratory_k != clinical_k:
+        issues.append(
+            f"clustering_positioning exploratory_clinical_mapping.k={exploratory_k} but k_comparison clinical_k={clinical_k}"
+        )
+    return issues
+
+
+def main() -> int:
+    print("=" * 72)
+    print("CLINICAL V2 DEFENSIBILITY ARTIFACT VERIFIER")
+    print("=" * 72)
+    print("This check validates artifacts generated by train_v2.py.")
+    print("No synthetic metrics are produced by this script.")
+
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    found, missing = check_required_files()
+
+    issues: list[str] = []
+    checks: dict[str, Any] = {
+        "required_artifacts_found": found,
+        "required_artifacts_missing": missing,
+    }
+
+    if missing:
+        issues.append(
+            "Missing required artifacts. Run 'python Ian_ML/training/train_v2.py' to regenerate."
+        )
+    else:
+        report = load_json(RESULTS_DIR / "best_model_report.json")
+        thresholds = load_json(RESULTS_DIR / "decision_thresholds.json")
+
+        report_issues = check_report_sanity(report)
+        threshold_issues = check_threshold_consistency(report, thresholds)
+        logo_issues = check_logo_fold_metrics(RESULTS_DIR / "logo_fold_metrics.csv")
+        clustering_issues = check_clustering_consistency()
+
+        checks["report_sanity_issues"] = report_issues
+        checks["threshold_consistency_issues"] = threshold_issues
+        checks["logo_fold_metrics_issues"] = logo_issues
+        checks["clustering_consistency_issues"] = clustering_issues
+        checks["headline_metrics"] = {
+            "best_model": report.get("best_model"),
+            "auc_roc": report.get("metrics", {}).get("auc_roc"),
+            "validation_method": report.get("validation_method"),
+            "decision_thresholds": report.get("decision_thresholds"),
+        }
+
+        issues.extend(report_issues)
+        issues.extend(threshold_issues)
+        issues.extend(logo_issues)
+        issues.extend(clustering_issues)
+
+    status = "PASS" if not issues else "FAIL"
+    summary = {
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "status": status,
+        "checks": checks,
+        "issues": issues,
+        "note": (
+            "This verifier checks for scientific traceability of existing artifacts. "
+            "It does not compute new evaluation metrics."
+        ),
+    }
+
+    with SUMMARY_PATH.open("w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
+
+    print(f"\nStatus: {status}")
+    print(f"Summary: {SUMMARY_PATH}")
+    if issues:
+        print("\nIssues:")
+        for item in issues:
+            print(f"  - {item}")
+        return 1
+
+    print("\nAll required defensibility artifacts are present and consistent.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,5 +1,17 @@
 """
-DIANA Data Imputation Script
+DIANA Data Imputation Script (OPTIONAL - for exploration only)
+
+⚠️  WARNING: This script causes DATA LEAKAGE when used before LOGO cross-validation.
+    The train_v2.py pipeline uses SimpleImputer INSIDE the CV loop for leakage-safe
+    imputation. Only use this script for:
+    
+    1. Exploratory data analysis (EDA)
+    2. Creating a quick dataset for non-CV experiments
+    3. Debugging missing value patterns
+    
+    DO NOT use the output (diana_dataset_imputed.csv) for defensible model training.
+    Use diana_dataset_final.csv instead and let the pipeline handle imputation.
+
 Fills missing values to maximize usable training records.
 
 Strategies:

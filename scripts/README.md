@@ -9,8 +9,6 @@
 
 ```
 scripts/
-├── check-api-drift.sh    # API drift detection
-├── remove_bg.py          # Image utility
 ├── dev/                  # Development & deployment scripts
 ├── data/                 # Data download & processing
 ├── train/                # Model training
@@ -29,7 +27,7 @@ scripts/
 | **Project Setup** | dev | `setup.sh` |
 | **Start All Services** | dev | `start-all.sh` |
 | **Tail Logs** | dev | `logs.sh` |
-| **Check API Drift** | root | `check-api-drift.sh` |
+| **Check API Drift** | dev | `check-api-drift.sh` |
 | **Retrain ML Models** | dev | `retrain-all.sh` |
 | **Download NHANES Data** | data | `download_nhanes_multi.py` |
 | **Process NHANES Data** | data | `process_nhanes_multi.py` |
@@ -47,15 +45,6 @@ scripts/
 | **Comparison Table** | thesis | `generate_comparison_table.py` |
 | **Verify Manuscript** | thesis | `verify_manuscript.py` |
 | **Debug Data Issues** | util | `debug_data.py` |
-
----
-
-## Root Scripts
-
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `check-api-drift.sh` | Verify sync between frontend, backend, and database schema | `bash scripts/check-api-drift.sh` |
-| `remove_bg.py` | Remove black backgrounds from images (tool helper) | `python scripts/remove_bg.py <in> <out>` |
 
 ---
 
@@ -138,7 +127,7 @@ scripts/
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `debug_data.py` | Debug data issues (e.g., missing 2021-2023 cycle) | `python scripts/util/debug_data.py` |
-| `remove_bg.py` | Remove black background from images (Utility) | `python scripts/remove_bg.py` |
+| `remove_bg.py` | Remove black background from images (Utility) | `python scripts/util/remove_bg.py` |
 
 ---
 
@@ -151,7 +140,7 @@ scripts/
 | `download_nhanes.sh` | Deprecated (Python version exists) | `data/download_nhanes_multi.py` |
 | `download_nhanes_py.py` | Superseded by multi-cycle version | `data/download_nhanes_multi.py` |
 | `process_nhanes.py` | Superseded by multi-cycle version | `data/process_nhanes_multi.py` |
-| `train_enhanced.py` | Superseded by `Ian_ML/train.py` | `Ian_ML/train.py` |
+| `train_enhanced.py` | Superseded by `Ian_ML/training/train.py` | `Ian_ML/training/train.py` |
 | `remove_bg.py` | Unrelated to DIANA (image utility) | N/A |
 
 ## Missing Scripts (Referenced But Not Implemented)
@@ -198,13 +187,13 @@ python scripts/data/download_lifestyle_data.py
 python scripts/data/process_nhanes_multi.py
 
 # 3. Clean and label
-python Ian_ML/data_processing.py
+python Ian_ML/training/data_processing.py
 
 # 4. Impute missing values
 python scripts/data/impute_missing_data.py
 
 # 5. Train classifiers
-python Ian_ML/train.py
+python Ian_ML/training/train.py
 
 # 6. Train clustering
 python scripts/train/train_clusters.py

@@ -12,13 +12,21 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/http/sse"
+	"github.com/skufu/DianaV2/backend/internal/models"
 )
 
 func TestAuthEventHandler_StreamAuthEvents_MissingToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	cfg := config.Config{JWTSecret: "test-secret"}
 	broker := sse.NewBroker(1)
-	handler := NewAuthEventHandler(cfg, &fakeStoreAuth{}, broker)
+	fakeStore := &fakeStoreAuth{
+		userRepo: &fakeUserRepoAuth{
+			usersByID: map[int32]*models.User{
+				1: {ID: 1, Email: "admin@example.com", Role: "admin", IsActive: true, AccountStatus: "active"},
+			},
+		},
+	}
+	handler := NewAuthEventHandler(cfg, fakeStore, broker)
 
 	r := gin.New()
 	admin := r.Group("/admin")
@@ -41,7 +49,14 @@ func TestAuthEventHandler_StreamAuthEvents_InvalidToken(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	cfg := config.Config{JWTSecret: "test-secret"}
 	broker := sse.NewBroker(1)
-	handler := NewAuthEventHandler(cfg, &fakeStoreAuth{}, broker)
+	fakeStore := &fakeStoreAuth{
+		userRepo: &fakeUserRepoAuth{
+			usersByID: map[int32]*models.User{
+				1: {ID: 1, Email: "admin@example.com", Role: "admin", IsActive: true, AccountStatus: "active"},
+			},
+		},
+	}
+	handler := NewAuthEventHandler(cfg, fakeStore, broker)
 
 	r := gin.New()
 	admin := r.Group("/admin")
@@ -68,7 +83,14 @@ func TestAuthEventHandler_StreamAuthEvents_NonAdmin(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	cfg := config.Config{JWTSecret: "test-secret"}
 	broker := sse.NewBroker(1)
-	handler := NewAuthEventHandler(cfg, &fakeStoreAuth{}, broker)
+	fakeStore := &fakeStoreAuth{
+		userRepo: &fakeUserRepoAuth{
+			usersByID: map[int32]*models.User{
+				1: {ID: 1, Email: "clinician@example.com", Role: "clinician", IsActive: true, AccountStatus: "active"},
+			},
+		},
+	}
+	handler := NewAuthEventHandler(cfg, fakeStore, broker)
 
 	r := gin.New()
 	admin := r.Group("/admin")
@@ -96,7 +118,14 @@ func TestAuthEventHandler_StreamAuthEvents_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	cfg := config.Config{JWTSecret: "test-secret"}
 	broker := sse.NewBroker(1)
-	handler := NewAuthEventHandler(cfg, &fakeStoreAuth{}, broker)
+	fakeStore := &fakeStoreAuth{
+		userRepo: &fakeUserRepoAuth{
+			usersByID: map[int32]*models.User{
+				1: {ID: 1, Email: "admin@example.com", Role: "admin", IsActive: true, AccountStatus: "active"},
+			},
+		},
+	}
+	handler := NewAuthEventHandler(cfg, fakeStore, broker)
 
 	r := gin.New()
 	admin := r.Group("/admin")

@@ -304,7 +304,7 @@ DIANA V2/
 
 ## Development Workflow
 
-1. **Setup**: Run `scripts/setup.sh` for initial configuration
+1. **Setup**: Run `scripts/dev/setup.sh` for initial configuration
 2. **Development**: Use `scripts/run-dev.sh` for full-stack development
 3. **Testing**: `go test ./...` for backend, `npx playwright test` for E2E
 4. **Deployment**: Docker-based deployment with environment-specific configs

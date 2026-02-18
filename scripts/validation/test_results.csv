@@ -1,0 +1,4 @@
+patient_id,bmi,triglycerides,ldl,hdl,age,systolic,diastolic,smoking_status,physical_activity,alcohol_use,predicted_status,risk_score,risk_cluster,diabetes_probability,at_risk_probability,model_auc
+TEST_001_LOW,22.0,90.0,95.0,65.0,50,115,75,Never,Active,Light,Pre-diabetic,34,Low-Moderate Risk,0.052,0.345,0.6941170094787507
+TEST_002_MODERATE,27.0,160.0,125.0,50.0,55,128,82,Former,Moderate,Light,Pre-diabetic,55,Low-Moderate Risk,0.2,0.556,0.6941170094787507
+TEST_003_HIGH,35.0,300.0,160.0,35.0,60,150,95,Current,Sedentary,None,Diabetic,92,High Risk,0.572,0.927,0.6941170094787507

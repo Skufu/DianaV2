@@ -15,7 +15,7 @@ from pathlib import Path
 
 MODELS_DIR = Path("models")
 DATA_PATH = Path("data/nhanes/processed/clustered_data.csv")
-OUTPUT_DIR = Path("models/visualizations")
+OUTPUT_DIR = Path("models/legacy/visualizations")
 
 
 def plot_cluster_pca(df, features):

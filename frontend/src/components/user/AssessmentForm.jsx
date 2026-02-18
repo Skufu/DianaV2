@@ -1,28 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
 import { Activity, Save, AlertCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import MockMLResultModal from '../common/MockMLResultModal';
+import MLResultModal from '../common/MLResultModal';
 import Button from '../common/Button';
 import { useCreateAssessment } from '../../api';
-import { staggerContainer, fadeIn, slideUp, useInputFocusVariants, useReducedMotion, getFocusVariants } from '../../utils/animations';
+import { slideUp } from '../../utils/animations';
 
 const AssessmentForm = ({ onSubmit, onCancel }) => {
-  const isReduced = useReducedMotion();
-  const inputFocusVariants = useInputFocusVariants();
   const [formData, setFormData] = useState({
-    hba1c: '',
-    fbs: '',
+    age: '',
     bmi: '',
     triglycerides: '',
     ldl: '',
     hdl: '',
-    systolic_bp: '',
-    diastolic_bp: '',
+    systolic: '',
+    diastolic: '',
+    alcohol: 'Unknown',
     notes: ''
   });
   const [error, setError] = useState(null);
-  const [showMockModal, setShowMockModal] = useState(false);
-  const [submittedData, setSubmittedData] = useState(null);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [assessmentResult, setAssessmentResult] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createAssessment = useCreateAssessment();
@@ -36,6 +34,20 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
     };
   }, []);
 
+  const resetForm = () => {
+    setFormData({
+      age: '',
+      bmi: '',
+      triglycerides: '',
+      ldl: '',
+      hdl: '',
+      systolic: '',
+      diastolic: '',
+      alcohol: 'Unknown',
+      notes: ''
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -45,54 +57,49 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
     e.preventDefault();
     setError(null);
 
-    if (!formData.hba1c || !formData.fbs) {
-      setError('HbA1c and FBS are required fields');
+    const requiredFields = ['age', 'bmi', 'triglycerides', 'ldl', 'hdl', 'systolic', 'diastolic'];
+    const hasMissingRequired = requiredFields.some(field => !formData[field]);
+    if (hasMissingRequired) {
+      setError('Please complete all required fields for the clinical assessment.');
       return;
     }
 
     setIsSubmitting(true);
 
+    const age = parseInt(formData.age, 10);
+    if (!age || age < 45 || age > 60) {
+      setIsSubmitting(false);
+      setError('This application is designed for postmenopausal women aged 45-60 years. Please enter an age within this range.');
+      return;
+    }
+
     const payload = {
-      hba1c: parseFloat(formData.hba1c),
-      fbs: parseInt(formData.fbs),
-      bmi: formData.bmi ? parseFloat(formData.bmi) : null,
-      triglycerides: formData.triglycerides ? parseInt(formData.triglycerides) : null,
-      ldl: formData.ldl ? parseInt(formData.ldl) : null,
-      hdl: formData.hdl ? parseInt(formData.hdl) : null,
-      systolic_bp: formData.systolic_bp ? parseInt(formData.systolic_bp) : null,
-      diastolic_bp: formData.diastolic_bp ? parseInt(formData.diastolic_bp) : null,
+      age: age,
+      bmi: parseFloat(formData.bmi),
+      triglycerides: parseInt(formData.triglycerides),
+      ldl: parseInt(formData.ldl),
+      hdl: parseInt(formData.hdl),
+      systolic: parseInt(formData.systolic),
+      diastolic: parseInt(formData.diastolic),
+      alcohol: formData.alcohol || 'Unknown',
       notes: formData.notes || null
     };
 
-    submitTimeoutRef.current = setTimeout(() => {
-      setSubmittedData(payload);
-      setShowMockModal(true);
+    try {
+      const result = await createAssessment.mutateAsync(payload);
+      setAssessmentResult(result);
+      setShowResultModal(true);
+    } catch (err) {
+      setError(err.message || 'Failed to analyze assessment. Please try again.');
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
-  const handleConfirmSave = async () => {
-    if (!submittedData) return;
-
-    try {
-      await createAssessment.mutateAsync(submittedData);
-      setShowMockModal(false);
-      setFormData({
-        hba1c: '',
-        fbs: '',
-        bmi: '',
-        triglycerides: '',
-        ldl: '',
-        hdl: '',
-        systolic_bp: '',
-        diastolic_bp: '',
-        notes: ''
-      });
-      if (onSubmit) onSubmit(submittedData);
-    } catch (err) {
-      setError(err.message || 'Failed to save assessment');
-      setShowMockModal(false);
-    }
+  const handleConfirmSave = () => {
+    setShowResultModal(false);
+    resetForm();
+    if (onSubmit) onSubmit(assessmentResult);
   };
 
   return (
@@ -127,65 +134,6 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Primary Biomarkers Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* HbA1c Field */}
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                HbA1c (%) <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Save size={18} />
-                </div>
-                <input
-                  type="number"
-                  name="hba1c"
-                  step="0.1"
-                  min="4.0"
-                  max="15.0"
-                  value={formData.hba1c}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="Enter HbA1c (4.0 - 15.0%)"
-                  required
-                />
-              </div>
-              <p className="mt-1 text-xs text-slate-500">Normal: &lt;5.7% | Pre-diabetic: 5.7-6.4% | Diabetic: ≥6.5%</p>
-            </motion.div>
-
-            {/* FBS Field */}
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Fasting Blood Sugar (mg/dL) <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Save size={18} />
-                </div>
-                <input
-                  type="number"
-                  name="fbs"
-                  step="1"
-                  min="70"
-                  max="400"
-                  value={formData.fbs}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="Enter FBS (70 - 400 mg/dL)"
-                  required
-                />
-              </div>
-              <p className="mt-1 text-xs text-slate-500">Normal: &lt;100 | Pre-diabetic: 100-125 | Diabetic: ≥126</p>
-            </motion.div>
-          </div>
-
           {/* Body Metrics Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* BMI Field */}
@@ -194,7 +142,7 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
               transition={{ duration: 0.2 }}
             >
               <label className="block text-sm font-semibold text-gray-700 mb-1">
-                BMI (kg/m²)
+                BMI (kg/m²) <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -210,6 +158,7 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
                   onChange={handleChange}
                   className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
                   placeholder="Enter BMI (15.0 - 60.0)"
+                  required
                 />
               </div>
             </motion.div>
@@ -217,12 +166,26 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
             <motion.div
               whileHover={{ y: -2 }}
               transition={{ duration: 0.2 }}
-              className="flex items-center"
             >
-              <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg w-full">
-                <p className="text-xs text-blue-700">
-                  <strong>Age is already saved</strong> from your profile. No need to enter it again.
-                </p>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Age (years) <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Activity size={18} />
+                </div>
+                <input
+                  type="number"
+                  name="age"
+                  step="1"
+                  min="45"
+                  max="60"
+                  value={formData.age}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  placeholder="Age 45-60 (postmenopausal)"
+                  required
+                />
               </div>
             </motion.div>
           </div>
@@ -236,111 +199,141 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Triglycerides (mg/dL)
-                </label>
-                <input
-                  type="number"
-                  name="triglycerides"
-                  step="1"
-                  min="30"
-                  max="500"
-                  value={formData.triglycerides}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="30 - 500"
-                />
-              </motion.div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Triglycerides (mg/dL) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="triglycerides"
+                step="1"
+                min="30"
+                max="500"
+                value={formData.triglycerides}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                placeholder="30 - 500"
+                required
+              />
+            </motion.div>
 
               {/* LDL Field */}
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  LDL Cholesterol (mg/dL)
-                </label>
-                <input
-                  type="number"
-                  name="ldl"
-                  step="1"
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                LDL Cholesterol (mg/dL) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="ldl"
+                step="1"
                   min="30"
                   max="300"
-                  value={formData.ldl}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="30 - 300"
-                />
-              </motion.div>
+                value={formData.ldl}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                placeholder="30 - 300"
+                required
+              />
+            </motion.div>
 
               {/* HDL Field */}
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  HDL Cholesterol (mg/dL)
-                </label>
-                <input
-                  type="number"
-                  name="hdl"
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                HDL Cholesterol (mg/dL) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="hdl"
                   step="1"
                   min="20"
                   max="150"
-                  value={formData.hdl}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="20 - 150"
-                />
-              </motion.div>
-            </div>
+                value={formData.hdl}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                placeholder="20 - 150"
+                required
+              />
+            </motion.div>
           </div>
+        </div>
 
-          {/* Blood Pressure Section (Optional) */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Blood Pressure (Optional)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <motion.div
-                whileHover={{ y: -2 }}
-                transition={{ duration: 0.2 }}
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Lifestyle</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <motion.div
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Alcohol Use
+              </label>
+              <select
+                name="alcohol"
+                value={formData.alcohol}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
               >
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Systolic (mmHg)
-                </label>
-                <input
-                  type="number"
-                  name="systolic_bp"
-                  step="1"
-                  min="80"
-                  max="200"
-                  value={formData.systolic_bp}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="80 - 200"
-                />
-              </motion.div>
-
-              <motion.div
-                whileHover={{ y: -2 }}
-                transition={{ duration: 0.2 }}
-              >
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Diastolic (mmHg)
-                </label>
-                <input
-                  type="number"
-                  name="diastolic_bp"
-                  step="1"
-                  min="50"
-                  max="130"
-                  value={formData.diastolic_bp}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="50 - 130"
-                />
-              </motion.div>
-            </div>
+                <option value="Unknown">Unknown</option>
+                <option value="None">None</option>
+                <option value="Light">Light</option>
+                <option value="Moderate">Moderate</option>
+                <option value="Heavy">Heavy</option>
+              </select>
+            </motion.div>
           </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Blood Pressure</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <motion.div
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Systolic (mmHg) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="systolic"
+                step="1"
+                min="80"
+                max="200"
+                value={formData.systolic}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                placeholder="80 - 200"
+                required
+              />
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Diastolic (mmHg) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="diastolic"
+                step="1"
+                min="50"
+                max="130"
+                value={formData.diastolic}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                placeholder="50 - 130"
+                required
+              />
+            </motion.div>
+          </div>
+        </div>
 
           {/* Notes Field */}
           <div>
@@ -411,12 +404,12 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
         </form>
       </motion.div>
 
-      {/* Mock ML Result Modal */}
-      <MockMLResultModal
-        isOpen={showMockModal}
-        onClose={() => setShowMockModal(false)}
-        formData={submittedData || formData}
+      <MLResultModal
+        isOpen={showResultModal}
+        onClose={handleConfirmSave}
+        result={assessmentResult}
         onConfirm={handleConfirmSave}
+        isLoading={isSubmitting}
       />
     </>
   );

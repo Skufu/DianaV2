@@ -1,0 +1,4 @@
+patient_id,bmi,triglycerides,ldl,hdl,age,systolic,diastolic,smoking,activity,alcohol
+TEST_001_LOW,22.0,90,95,65,50,115,75,Never,Active,Light
+TEST_002_MODERATE,27.0,160,125,50,55,128,82,Former,Moderate,Light
+TEST_003_HIGH,35.0,300,160,35,60,150,95,Current,Sedentary,None

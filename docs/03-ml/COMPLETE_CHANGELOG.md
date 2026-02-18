@@ -132,31 +132,31 @@ This document provides a comprehensive record of all changes made to the DIANA M
 
 ### Core ML Files
 
-#### `Ian_ML/train.py` (Modified)
+#### `Ian_ML/training/train.py` (Modified)
 - Updated to use 13-feature set by default
 - Added `REDUCED_FEATURES` constant
 - Modified `engineer_features()` to support reduced mode
 - Updated all references from `ALL_FEATURES` to `FEATURES`
 - Added feature selection documentation
 
-#### `Ian_ML/train_v2.py` (Created)
+#### `Ian_ML/training/train_v2.py` (Created)
 - Simplified training script
 - Uses 13 features only
 - Faster execution (no grid search)
 - For quick testing and validation
 
-#### `Ian_ML/train_quick.py` (Created)
+#### `scripts/train/train_quick.py` (Created)
 - Ultra-fast training (no grid search)
 - Single CatBoost model
 - For rapid prototyping
 
-#### `Ian_ML/feature_selection_analysis.py` (Created)
+#### `Ian_ML/training/feature_selection_analysis.py` (Created)
 - Correlation analysis
 - LASSO regression
 - Recursive Feature Elimination
 - Generates comparison reports
 
-#### `Ian_ML/predict.py` (Modified)
+#### `Ian_ML/service/predict.py` (Modified)
 - Updated `CLINICAL_FEATURES` to 13 features
 - Added `CLINICAL_BASE_FEATURES` constant
 - Updated `validate_input()` to check base features only
@@ -194,7 +194,7 @@ This document provides a comprehensive record of all changes made to the DIANA M
 
 ### Test Files
 
-#### `test_predictor.py` (Created)
+#### `scripts/eval/test_predictor.py` (Created)
 - End-to-end predictor testing
 - Validates 13-feature prediction pipeline
 - Example usage code
@@ -273,7 +273,7 @@ Prediction + Risk Score
 
 ### Test Results
 ```bash
-$ python test_predictor.py
+$ python scripts/eval/test_predictor.py
 ✓ Prediction successful!
   Status: Pre-diabetic
   Risk Score: 52
@@ -398,7 +398,7 @@ A: "All removed features were either mathematically derived (adding no informati
 
 **Severity**: CRITICAL 🔴
 
-**Description**: The ML server (`Ian_ML/server.py`) was only extracting 5 features from requests instead of the required 7 base features. This meant predictions were being made with incomplete data.
+**Description**: The ML server (`Ian_ML/service/server.py`) was only extracting 5 features from requests instead of the required 7 base features. This meant predictions were being made with incomplete data.
 
 **Impact**:
 - Missing 2 of 7 base features (systolic, diastolic)
@@ -439,7 +439,7 @@ patient_data = {
 ```
 
 ### Files Modified
-- `Ian_ML/server.py` - Lines 259-265 and 329-335
+- `Ian_ML/service/server.py` - Lines 259-265 and 329-335
   - `/predict` endpoint
   - `/predict/explain` endpoint
 
@@ -464,18 +464,18 @@ Test results confirm the fix:
 ## 13. Appendix: File Inventory
 
 ### Modified Files
-1. `Ian_ML/train.py` - Main training script
-2. `Ian_ML/predict.py` - Prediction module
-3. `Ian_ML/server.py` - ML API server (CRITICAL BUG FIX)
+1. `Ian_ML/training/train.py` - Main training script
+2. `Ian_ML/service/predict.py` - Prediction module
+3. `Ian_ML/service/server.py` - ML API server (CRITICAL BUG FIX)
 4. `docs/03-ml/methodology.md` - Methodology documentation
 5. `docs/03-ml/rationale.md` - Rationale documentation
 
 ### Created Files
-1. `Ian_ML/train_v2.py` - Simplified training
-2. `Ian_ML/train_quick.py` - Fast training
-3. `Ian_ML/feature_selection_analysis.py` - Analysis tool
+1. `Ian_ML/training/train_v2.py` - Simplified training
+2. `scripts/train/train_quick.py` - Fast training
+3. `Ian_ML/training/feature_selection_analysis.py` - Analysis tool
 4. `docs/03-ml/feature-engineering-fix.md` - Summary document
-5. `test_predictor.py` - Test script
+5. `scripts/eval/test_predictor.py` - Test script
 
 ### Generated Artifacts
 1. `models/clinical/scaler.joblib` (13 features)

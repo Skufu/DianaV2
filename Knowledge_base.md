@@ -62,7 +62,7 @@ Comprehensive knowledge base documentation for all major directories:
 | DB queries | backend/internal/store/queries/*.sql | SQLC sources |
 | Generated code | backend/internal/store/sqlc/*.go | DO NOT EDIT (run sqlc generate) |
 | Domain models | backend/internal/models/types.go | Go structs for API |
-| ML prediction | Ian_ML/predict.py | Dual predictor (ADA baseline vs clinical metabolic) |
+| ML prediction | Ian_ML/service/predict.py | Dual predictor (ADA baseline vs clinical metabolic) |
 | Validation | backend/internal/ml/validation.go | Biomarker range checks |
 | Auth flow | backend/internal/http/handlers/auth.go | JWT + refresh tokens |
 | PDF export | backend/internal/services/pdf_export_service.go | gopdf library |
@@ -71,7 +71,7 @@ Comprehensive knowledge base documentation for all major directories:
 | User flows | frontend/src/components/user/ | Onboarding, Dashboard, Trends, Profile |
 | Charts | frontend/src/components/common/ | SHAPExplanation (Recharts integration) |
 | API wrapper | frontend/src/api.js | apiFetch/mlFetch, centralized endpoints |
-| ML training | Ian_ML/train.py, scripts/train/train_clusters.py | K-Means, CatBoost |
+| ML training | Ian_ML/training/train.py, scripts/train/train_clusters.py | K-Means, CatBoost |
 | Data processing | scripts/data/*.py | NHANES download, merge, imputation |
 | Thesis generation | scripts/thesis/*.py | Manuscript verification, vignettes, outputs |
 | CI/CD | .github/workflows/ci.yml | Multi-language tests, docker builds |
@@ -85,10 +85,10 @@ Comprehensive knowledge base documentation for all major directories:
 | Store | interface | backend/internal/store/store.go | All repositories | Central contract |
 | UserRepository | interface | backend/internal/store/postgres.go | handlers | User CRUD + trends |
 | AssessmentRepository | interface | backend/internal/store/postgres.go | handlers | Risk assessment CRUD |
-| Predict(a) | func | Ian_ML/predict.py | handlers | Inference endpoint |
-| ValidateInput(a) | func | Ian_ML/predict.py | internal/ml/validation.go | Safety check |
-| DianaPredictor | class | Ian_ML/server.py | Flask router | ADA model wrapper |
-| ClinicalPredictor | class | Ian_ML/server.py | Flask router | Metabolic model wrapper |
+| Predict(a) | func | Ian_ML/service/predict.py | handlers | Inference endpoint |
+| ValidateInput(a) | func | Ian_ML/service/predict.py | internal/ml/validation.go | Safety check |
+| DianaPredictor | class | Ian_ML/service/server.py | Flask router | ADA model wrapper |
+| ClinicalPredictor | class | Ian_ML/service/server.py | Flask router | Metabolic model wrapper |
 | apiFetch | func | frontend/src/api.js | All components | Backend API calls |
 | mlFetch | func | frontend/src/api.js | All components | ML server calls |
 | deviceCapabilities | func | frontend/src/utils/deviceCapabilities.js | App, Insights | Performance tiering |
@@ -125,7 +125,7 @@ Comprehensive knowledge base documentation for all major directories:
 ### Database
 - **Migrations**: Use Goose (`go run ./cmd/migrate`). Format: `-- +goose Up` / `-- +goose Down`.
 - **Schema Evolution**: Patients table dropped (v0011). Users now own their health data.
-- **SQLC Sync**: CI runs `sqlc generate` to check drift. Local: `bash scripts/check-api-drift.sh`.
+- **SQLC Sync**: CI runs `sqlc generate` to check drift. Local: `bash scripts/dev/check-api-drift.sh`.
 
 ## ANTI-PATTERNS (THIS PROJECT)
 

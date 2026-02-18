@@ -169,6 +169,10 @@ func CaptureRequestBody() gin.HandlerFunc {
 			}
 			redactSensitiveFields(bodyMap, sensitiveFields)
 
+			for _, field := range sensitiveFields {
+				delete(bodyMap, field)
+			}
+
 			c.Set("audit_body", bodyMap)
 		}
 
