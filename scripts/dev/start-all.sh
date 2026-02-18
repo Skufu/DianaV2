@@ -86,7 +86,7 @@ if not kmeans_path.exists() or not cluster_scaler_path.exists():
 kmeans = joblib.load(kmeans_path)
 cluster_scaler = joblib.load(cluster_scaler_path)
 
-expected = 13
+expected = 5  # CLUSTER_FEATURES: bmi, triglycerides, ldl, hdl, age
 if getattr(kmeans, "n_features_in_", None) != expected:
     sys.exit(1)
 if getattr(cluster_scaler, "n_features_in_", None) != expected:
