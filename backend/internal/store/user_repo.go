@@ -129,9 +129,10 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 	offset := (page - 1) * pageSize
 
 	query := `
-		SELECT id, email, password_hash, is_admin,
+		SELECT id, email, password_hash, role, is_admin,
 		       COALESCE(is_active, true) as is_active,
-		       last_login_at, created_by, created_at, updated_at
+		       last_login_at, created_by, created_at, updated_at,
+		       account_status, onboarding_completed
 		FROM users
 		WHERE 1=1
 	`
@@ -184,10 +185,13 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 		var lastLoginAt pgtype.Timestamptz
 		var createdBy pgtype.Int4
 		var createdAt, updatedAt pgtype.Timestamptz
+		var accountStatus string
+		var onboardingCompleted bool
 
 		err := rows.Scan(
 			&u.ID, &u.Email, &u.PasswordHash, &role, &isAdmin,
 			&isActive, &lastLoginAt, &createdBy, &createdAt, &updatedAt,
+			&accountStatus, &onboardingCompleted,
 		)
 		if err != nil {
 			return nil, 0, err
@@ -195,6 +199,8 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 		u.IsActive = isActive
 		u.Role = role
 		u.IsAdmin = isAdmin
+		u.AccountStatus = accountStatus
+		u.OnboardingCompleted = onboardingCompleted
 		if lastLoginAt.Valid {
 			u.LastLoginAt = &lastLoginAt.Time
 		}

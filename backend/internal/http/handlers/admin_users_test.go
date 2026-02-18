@@ -280,7 +280,7 @@ func TestAdminGetUsers_NoPasswordHashExposed(t *testing.T) {
 		reqBody := CreateUserRequest{
 			Email:    "newuser@example.com",
 			Password: "password123",
-			Role:     "clinician",
+			Role:     "user",
 		}
 		reqBytes, _ := json.Marshal(reqBody)
 		req, _ := http.NewRequest("POST", "/admin/users", bytes.NewReader(reqBytes))

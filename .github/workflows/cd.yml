@@ -66,8 +66,8 @@ jobs:
       - name: Build and push ML
         uses: docker/build-push-action@v5
         with:
-          context: ./ml
-          file: ml/Dockerfile
+          context: ./Ian_ML
+          file: Ian_ML/Dockerfile
           push: true
           tags: ${{ steps.meta-ml.outputs.tags }}
           labels: ${{ steps.meta-ml.outputs.labels }}

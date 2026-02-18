@@ -27,7 +27,7 @@ def calculate_auc_ci(n_iterations=1000, random_seed=42):
     # For now, let's use the actual AUC 0.6814 as the mean and provide the BOOTSTRAP LOGIC
     # for use in the next training run. 
     
-    print("\n[INSTRUCTIONS] Add this code to the bottom of ml/train.py to get the CI automatically:")
+    print("\n[INSTRUCTIONS] Add this code to the bottom of Ian_ML/training/train.py to get the CI automatically:")
     print("-" * 60)
     print("""
 def get_auc_ci(model, X_test, y_test, n_bootstraps=1000):

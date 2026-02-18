@@ -72,6 +72,8 @@ func (r *pgAssessmentRepo) Create(ctx context.Context, a models.Assessment) (*mo
 		ModelVersion:     textToPg(a.ModelVersion),
 		DatasetHash:      textToPg(a.DatasetHash),
 		ValidationStatus: textToPg(a.ValidationStatus),
+		IsSelfReported:   boolToPg(a.IsSelfReported),
+		Source:           textToPg(a.Source),
 	})
 	if err != nil {
 		return nil, err

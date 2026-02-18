@@ -51,7 +51,7 @@ func TestParsePagination(t *testing.T) {
 			name:     "max page size limit",
 			query:    "?page_size=150",
 			wantPage: 1,
-			wantSize: 20,
+			wantSize: 100,
 			wantOff:  0,
 		},
 		{

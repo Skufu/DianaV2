@@ -13,14 +13,6 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
   const { data: trends, isLoading } = useTrends(selectedMonths);
 
   const MOCK_DATA = {
-    biomarkerHistory: [
-      { date: '2025-08-15', hba1c: 6.8, fbs: 112, bmi: 24.5 },
-      { date: '2025-09-12', hba1c: 6.7, fbs: 108, bmi: 24.4 },
-      { date: '2025-10-10', hba1c: 6.5, fbs: 104, bmi: 24.2 },
-      { date: '2025-11-05', hba1c: 6.3, fbs: 98, bmi: 24.1 },
-      { date: '2025-12-01', hba1c: 6.2, fbs: 96, bmi: 23.9 },
-      { date: '2026-01-15', hba1c: 6.1, fbs: 95, bmi: 23.8 },
-    ],
     clusterHistory: [
       { date: '2025-08-15', cluster: 'SIDD', riskScore: 78 },
       { date: '2025-10-10', cluster: 'MOD', riskScore: 52 },
@@ -29,7 +21,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
     riskLevels: { low: 1, medium: 2, high: 1 }
   };
 
-  const hasAssessmentData = trends?.biomarkerHistory && trends.biomarkerHistory.length > 0;
+  const hasAssessmentData = trends?.clusterHistory && trends.clusterHistory.length > 0;
   const isDemoMode = !hasAssessmentData && !isLoading;
   const activeTrends = isDemoMode ? MOCK_DATA : (trends || {});
   const getTimeOptions = (hasData) => {
@@ -112,83 +104,6 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
                 {option.label}
               </motion.button>
             ))}
-          </div>
-        </motion.div>
-      )}
-
-      {(activeTrends.biomarkerHistory && activeTrends.biomarkerHistory.length > 0) && (
-        <motion.div variants={cardVariants} whileHover="hover" className="glass-card p-6 bg-white">
-          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">HbA1c Over Time</h2>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={activeTrends.biomarkerHistory}>
-                <defs>
-                  <linearGradient id="colorHba1c" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0B215E" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0B215E" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" stroke="#64748b" tick={{ fill: '#64748b' }} />
-                <YAxis stroke="#64748b" tick={{ fill: '#64748b' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                    color: '#0f172a'
-                  }}
-                  itemStyle={{ color: '#0B215E' }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="hba1c"
-                  stroke="#0B215E"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorHba1c)"
-                  isAnimationActive={!shouldDisableHeavyEffects()}
-                  animationDuration={2000}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-      )}
-
-      {trends?.biomarkerHistory && trends.biomarkerHistory.length > 0 && (
-        <motion.div variants={cardVariants} whileHover="hover" className="glass-card p-6 bg-white">
-          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">Fasting Blood Sugar</h2>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={activeTrends.biomarkerHistory}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="date" stroke="#64748b" tick={{ fill: '#64748b' }} />
-                <YAxis stroke="#64748b" tick={{ fill: '#64748b' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                    color: '#0f172a'
-                  }}
-                />
-                <Legend iconType="circle" />
-                <Line
-                  type="monotone"
-                  dataKey="fbs"
-                  name="FBS (mg/dL)"
-                  stroke="#06b6d4"
-                  strokeWidth={3}
-                  dot={{ fill: '#06b6d4', strokeWidth: 2, r: 4, stroke: '#fff' }}
-                  activeDot={{ r: 6, strokeWidth: 0 }}
-                  isAnimationActive={!shouldDisableHeavyEffects()}
-                  animationDuration={2000}
-                />
-              </LineChart>
-            </ResponsiveContainer>
           </div>
         </motion.div>
       )}
@@ -282,7 +197,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
         </motion.div>
       )}
 
-      {!isDemoMode && (!activeTrends || (activeTrends.biomarkerHistory?.length === 0 && !activeTrends.riskLevels)) && (
+      {!isDemoMode && (!activeTrends || (activeTrends.clusterHistory?.length === 0 && !activeTrends.riskLevels)) && (
         <motion.div variants={fadeIn} className="glass-card p-12 text-center bg-white">
           <div className="w-20 h-20 rounded-full bg-diana-stone flex items-center justify-center mx-auto mb-6">
             <TrendingUp size={40} className="text-diana-text-muted" />

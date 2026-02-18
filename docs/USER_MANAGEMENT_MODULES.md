@@ -746,7 +746,7 @@ type UpdateProfileRequest struct {
 
 **ML Server Rate Limiting:**
 ```python
-# Ian_ML/server.py
+# Ian_ML/service/server.py
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 

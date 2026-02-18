@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-02-01T23:44:20.864217",
+  "timestamp": "2026-02-18T15:01:17.864418",
   "random_seed": 42,
   "split_method": "LeaveOneGroupOut (NHANES cycles)",
   "test_cycle": "2009-2010",
@@ -7,13 +7,13 @@
   "test_samples": 222,
   "train_class_distribution": {
     "Normal": 537,
-    "Pre-diabetic": 416,
-    "Diabetic": 201
+    "Pre-diabetic": 381,
+    "Diabetic": 236
   },
   "test_class_distribution": {
     "Normal": 105,
-    "Pre-diabetic": 85,
-    "Diabetic": 32
+    "Pre-diabetic": 76,
+    "Diabetic": 41
   },
   "train_indices_hash": "affa79c3",
   "test_indices_hash": "f28feeb4",

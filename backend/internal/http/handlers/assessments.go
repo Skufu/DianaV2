@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/cache"
@@ -83,6 +84,14 @@ func calculateRiskLevel(score int) string {
 	} else {
 		return "high"
 	}
+}
+
+func ageFromDOB(dob time.Time, now time.Time) int {
+	age := now.Year() - dob.Year()
+	if now.Month() < dob.Month() || (now.Month() == dob.Month() && now.Day() < dob.Day()) {
+		age--
+	}
+	return age
 }
 
 func validationStatus(a models.Assessment) string {
@@ -178,14 +187,8 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Validate that at least required biomarkers are provided
-	if req.FBS == nil && req.HbA1c == nil {
-		ErrBadRequest(c, "At least FBS or HbA1c must be provided")
-		return
-	}
-
-	if req.HbA1c != nil && *req.HbA1c > 15.0 {
-		ErrBadRequest(c, "HbA1c must be less than or equal to 15.0")
+	if req.BMI == nil || req.Triglycerides == nil || req.LDL == nil || req.HDL == nil || req.Systolic == nil || req.Diastolic == nil {
+		ErrBadRequest(c, "BMI, triglycerides, LDL, HDL, systolic, and diastolic are required")
 		return
 	}
 
@@ -229,6 +232,23 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 
+	age := coalesceInt(req.Age, 0)
+	if age <= 0 {
+		user, userErr := h.store.Users().FindByID(c.Request.Context(), int32(userID))
+		if userErr != nil {
+			log.Printf("[ERROR] Failed to resolve user age for assessment: %v", userErr)
+			ErrInternal(c, "Failed to resolve age for prediction")
+			return
+		}
+		if user != nil && user.DateOfBirth != nil {
+			age = ageFromDOB(*user.DateOfBirth, time.Now().UTC())
+		}
+	}
+	if age < 45 || age > 60 {
+		ErrBadRequest(c, "Age must be between 45-60 years for postmenopausal women. This application is designed for this specific population.")
+		return
+	}
+
 	// Add user_id to assessment
 	assessment := models.Assessment{
 		UserID:         userID,
@@ -240,7 +260,9 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		Triglycerides:  coalesceInt(req.Triglycerides, 0),
 		Systolic:       coalesceInt(req.Systolic, 0),
 		Diastolic:      coalesceInt(req.Diastolic, 0),
+		Age:            age,
 		Activity:       req.Activity,
+		Alcohol:        req.Alcohol,
 		HistoryFlag:    req.HistoryFlag,
 		Smoking:        req.Smoking,
 		Hypertension:   req.Hypertension,
@@ -248,6 +270,9 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		BMI:            coalesceFloat64(req.BMI, 0),
 		IsSelfReported: true,
 		Source:         "manual",
+	}
+	if assessment.Alcohol == "" {
+		assessment.Alcohol = "Unknown"
 	}
 
 	// Get prediction from ML server
@@ -383,12 +408,33 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	assessment.Systolic = coalesceInt(req.Systolic, assessment.Systolic)
 	assessment.Diastolic = coalesceInt(req.Diastolic, assessment.Diastolic)
 	assessment.Activity = req.Activity
+	assessment.Alcohol = req.Alcohol
 	assessment.HistoryFlag = req.HistoryFlag
 	assessment.Smoking = req.Smoking
 	assessment.Hypertension = req.Hypertension
 	assessment.HeartDisease = req.HeartDisease
 	assessment.BMI = coalesceFloat64(req.BMI, assessment.BMI)
 	assessment.Notes = req.Notes
+	assessment.Age = coalesceInt(req.Age, assessment.Age)
+
+	if assessment.Age <= 0 {
+		user, userErr := h.store.Users().FindByID(c.Request.Context(), int32(userID))
+		if userErr != nil {
+			log.Printf("[ERROR] Failed to resolve user age for assessment update: %v", userErr)
+			ErrInternal(c, "Failed to resolve age for prediction")
+			return
+		}
+		if user != nil && user.DateOfBirth != nil {
+			assessment.Age = ageFromDOB(*user.DateOfBirth, time.Now().UTC())
+		}
+	}
+	if assessment.Age < 45 || assessment.Age > 60 {
+		ErrBadRequest(c, "Age must be between 45-60 years for postmenopausal women. This application is designed for this specific population.")
+		return
+	}
+	if assessment.Alcohol == "" {
+		assessment.Alcohol = "Unknown"
+	}
 
 	// Re-predict with updated values
 	// Pass request context for cancellation support

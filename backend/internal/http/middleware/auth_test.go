@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -8,10 +9,37 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/skufu/DianaV2/backend/internal/models"
 )
 
 func init() {
 	gin.SetMode(gin.TestMode)
+}
+
+// mockUserFinder implements UserFinder for testing
+type mockUserFinder struct {
+	users map[int32]*models.User
+}
+
+func (m *mockUserFinder) FindByID(ctx context.Context, id int32) (*models.User, error) {
+	if m.users == nil {
+		return nil, nil
+	}
+	user, ok := m.users[id]
+	if !ok {
+		return nil, nil
+	}
+	return user, nil
+}
+
+// newMockUserFinder creates a mock UserFinder with a test user
+func newMockUserFinder() UserFinder {
+	return &mockUserFinder{
+		users: map[int32]*models.User{
+			123: {ID: 123, Email: "test@example.com", Role: "clinician", IsActive: true, AccountStatus: "active"},
+			1:   {ID: 1, Email: "user1@example.com", Role: "clinician", IsActive: true, AccountStatus: "active"},
+		},
+	}
 }
 
 func TestAuth_ValidToken(t *testing.T) {
@@ -28,7 +56,7 @@ func TestAuth_ValidToken(t *testing.T) {
 	signedToken, _ := token.SignedString([]byte(secret))
 
 	r := gin.New()
-	r.Use(Auth(secret))
+	r.Use(Auth(secret, newMockUserFinder()))
 	r.GET("/test", func(c *gin.Context) {
 		user, exists := c.Get("user")
 		if !exists {
@@ -56,7 +84,7 @@ func TestAuth_ValidToken(t *testing.T) {
 
 func TestAuth_MissingToken(t *testing.T) {
 	r := gin.New()
-	r.Use(Auth("secret"))
+	r.Use(Auth("secret", nil))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
@@ -72,7 +100,7 @@ func TestAuth_MissingToken(t *testing.T) {
 
 func TestAuth_InvalidToken(t *testing.T) {
 	r := gin.New()
-	r.Use(Auth("secret"))
+	r.Use(Auth("secret", newMockUserFinder()))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
@@ -101,7 +129,7 @@ func TestAuth_WrongSecret(t *testing.T) {
 
 	// Verify with different secret
 	r := gin.New()
-	r.Use(Auth("secret2"))
+	r.Use(Auth("secret2", newMockUserFinder()))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
@@ -130,7 +158,7 @@ func TestAuth_ExpiredToken(t *testing.T) {
 	signedToken, _ := token.SignedString([]byte(secret))
 
 	r := gin.New()
-	r.Use(Auth(secret))
+	r.Use(Auth(secret, newMockUserFinder()))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
@@ -207,7 +235,7 @@ func TestAuth_MissingClaims(t *testing.T) {
 			signedToken, _ := token.SignedString([]byte(secret))
 
 			r := gin.New()
-			r.Use(Auth(secret))
+			r.Use(Auth(secret, newMockUserFinder()))
 			r.GET("/test", func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"status": "ok"})
 			})
@@ -227,7 +255,7 @@ func TestAuth_MissingClaims(t *testing.T) {
 
 func TestAuth_MalformedBearer(t *testing.T) {
 	r := gin.New()
-	r.Use(Auth("secret"))
+	r.Use(Auth("secret", nil))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})

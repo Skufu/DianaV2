@@ -21,8 +21,9 @@ type HTTPPredictor struct {
 }
 
 type predictResp struct {
-	Cluster   string `json:"risk_cluster"`
-	RiskScore int    `json:"risk_score"`
+	RiskCluster      string `json:"risk_cluster"`
+	MetabolicSubtype string `json:"metabolic_subtype"`
+	RiskScore        int    `json:"risk_score"`
 }
 
 func NewHTTPPredictor(url, version, apiKey string, timeout time.Duration) *HTTPPredictor {
@@ -36,8 +37,12 @@ func NewHTTPPredictor(url, version, apiKey string, timeout time.Duration) *HTTPP
 
 func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (string, int, error) {
 	if p.url == "" {
-		log.Printf("[ML] URL not configured, using mock prediction")
-		return p.mockPredict(input)
+		return "error", 0, fmt.Errorf("ml url is not configured")
+	}
+
+	if input.BMI <= 0 || input.Triglycerides <= 0 || input.LDL <= 0 || input.HDL <= 0 ||
+		input.Systolic <= 0 || input.Diastolic <= 0 || input.Age < 18 || input.Age > 120 {
+		return "error", 0, fmt.Errorf("invalid clinical payload for ML prediction")
 	}
 
 	body, err := json.Marshal(input)
@@ -46,7 +51,7 @@ func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (s
 		return "error", 0, fmt.Errorf("failed to marshal input: %w", err)
 	}
 
-	mlURL := p.url + "?model_type=ada"
+	mlURL := p.url + "?model_type=clinical"
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, mlURL, bytes.NewReader(body))
 	if err != nil {
 		log.Printf("[ML] Failed to create request: %v", err)
@@ -62,38 +67,31 @@ func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (s
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		log.Printf("[ML] Request failed: %v, falling back to mock prediction", err)
-		return p.mockPredict(input)
+		log.Printf("[ML] Request failed: %v", err)
+		return "error", 0, fmt.Errorf("ml request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		log.Printf("[ML] Non-OK status %d: %s, falling back to mock prediction", resp.StatusCode, string(respBody))
-		return p.mockPredict(input)
+		log.Printf("[ML] Non-OK status %d: %s", resp.StatusCode, string(respBody))
+		return "error", 0, fmt.Errorf("ml server returned status %d", resp.StatusCode)
 	}
 
 	var out predictResp
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		log.Printf("[ML] Failed to decode response: %v, falling back to mock prediction", err)
-		return p.mockPredict(input)
+		log.Printf("[ML] Failed to decode response: %v", err)
+		return "error", 0, fmt.Errorf("failed to decode ml response: %w", err)
 	}
-	if out.Cluster == "" {
-		log.Printf("[ML] Empty cluster in response, falling back to mock prediction")
-		return p.mockPredict(input)
-	}
-	return out.Cluster, out.RiskScore, nil
-}
 
-func (p *HTTPPredictor) mockPredict(input models.Assessment) (string, int, error) {
-	switch {
-	case input.BMI > 30 && input.HbA1c > 6.0:
-		return "SIRD", 85, nil
-	case input.HbA1c > 6.5 && input.BMI < 27:
-		return "SIDD", 92, nil
-	case input.BMI > 30:
-		return "MOD", 65, nil
-	default:
-		return "MARD", 35, nil
+	// Prefer metabolic subtype (SIDD/SIRD/MOD/MARD) over risk cluster for frontend compatibility
+	cluster := out.MetabolicSubtype
+	if cluster == "" {
+		cluster = out.RiskCluster
 	}
+	if cluster == "" {
+		log.Printf("[ML] Empty cluster in response")
+		return "error", 0, fmt.Errorf("ml response missing risk cluster")
+	}
+	return cluster, out.RiskScore, nil
 }

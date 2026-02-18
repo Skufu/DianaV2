@@ -1,5 +1,5 @@
 import { useEffect, useState, Suspense, lazy, useCallback, memo } from 'react';
-import { useUserProfile, useLogin, useLogout } from './api';
+import { useUserProfile, useLogin, useLogout, useAssessments } from './api';
 import { useQueryClient } from '@tanstack/react-query';
 import Sidebar from './components/layout/Sidebar';
 import AdminSidebar from './components/layout/AdminSidebar';
@@ -64,6 +64,7 @@ const App = () => {
   // React Query hooks - only fetch profile when authenticated
   const queryClient = useQueryClient();
   const { data: profile, isLoading: profileLoading, error: profileError } = useUserProfile(isAuthenticated);
+  const { data: assessments } = useAssessments(isAuthenticated);
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
 
@@ -123,16 +124,12 @@ const App = () => {
   }, []);
 
   const handleLogout = useCallback(async () => {
-    const currentRefreshToken = localStorage.getItem('diana_refresh_token');
-
-    try {
-      await logoutMutation.mutateAsync(currentRefreshToken);
-    } catch (err) {
-      console.error('Logout API error:', err);
-    }
-
     localStorage.removeItem('diana_token');
     localStorage.removeItem('diana_refresh_token');
+
+    queryClient.cancelQueries({ queryKey: ['user'] });
+    queryClient.cancelQueries({ queryKey: ['assessments'] });
+    queryClient.clear();
 
     setIsAuthenticated(false);
     setToken(null);
@@ -140,7 +137,13 @@ const App = () => {
     setUserRole(null);
     setIsAdmin(false);
     setUserId(null);
-  }, [logoutMutation]);
+
+    logoutMutation.mutate(null, {
+      onError: (err) => {
+        console.error('Logout API error:', err);
+      }
+    });
+  }, [logoutMutation, queryClient]);
 
   // Sync auth state with profile data from React Query
   useEffect(() => {
@@ -155,10 +158,10 @@ const App = () => {
       if (role === 'doctor') {
         setAdminView('insights');
       }
-      if (profile?.onboarding_completed === true) {
+      const hasAssessments = assessments && assessments.length > 0;
+      if (profile?.onboarding_completed === true || hasAssessments) {
         setShowOnboarding(false);
       } else {
-        // Show onboarding if not explicitly completed
         setShowOnboarding(true);
       }
     } else if (profileError) {
@@ -175,7 +178,7 @@ const App = () => {
         setUserId(null);
       }
     }
-  }, [profile, profileLoading, profileError, isAuthenticated]);
+  }, [profile, profileLoading, profileError, isAuthenticated, assessments]);
 
 
 
@@ -204,7 +207,7 @@ const App = () => {
       default:
         return <Dashboard_user userId={userId} />;
     }
-  }, [userId, activeTab, showOnboarding]);
+  }, [userId, activeTab, showOnboarding, handleStartAssessment, token]);
 
   // Render content for admin users
   const renderAdminContent = useCallback(() => {

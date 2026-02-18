@@ -1,0 +1,408 @@
+{
+  "model_type": "clinical_v2_reduced_features",
+  "features": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age",
+    "systolic",
+    "diastolic",
+    "bmi_category",
+    "tg_hdl_ratio",
+    "smoking_encoded",
+    "activity_encoded",
+    "alcohol_encoded",
+    "metabolic_syndrome_score"
+  ],
+  "n_features": 13,
+  "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
+  "preprocessing": {
+    "imputation": "SimpleImputer(strategy=median) inside CV pipeline",
+    "scaling": "StandardScaler inside CV pipeline"
+  },
+  "best_model": "Logistic Regression",
+  "calibrated_for_serving": true,
+  "decision_thresholds": {
+    "pre_diabetic": 0.25,
+    "diabetic": 0.35,
+    "objective": "Optimize recall on Pre-diabetic/Diabetic classes"
+  },
+  "metrics": {
+    "accuracy": 0.39244186046511625,
+    "precision": 0.5474033542568008,
+    "recall": 0.39244186046511625,
+    "f1_score": 0.3573592561260641,
+    "macro_f1": 0.3861020123639148,
+    "auc_roc": 0.6963716833048798,
+    "brier_score": 0.19424743719522972,
+    "train_accuracy": 0.5603197674418605,
+    "overfit_gap": 0.16787790697674426
+  },
+  "class_level_metrics": {
+    "recall_by_class": {
+      "Normal": 0.1573208722741433,
+      "Pre-diabetic": 0.5295404814004376,
+      "Diabetic": 0.7111913357400722
+    },
+    "precision_by_class": {
+      "Normal": 0.7709923664122137,
+      "Pre-diabetic": 0.3472022955523673,
+      "Diabetic": 0.3594890510948905
+    },
+    "f1_by_class": {
+      "Normal": 0.2613195342820181,
+      "Pre-diabetic": 0.4194107452339688,
+      "Diabetic": 0.4775757575757576
+    },
+    "confidence_intervals_95": {
+      "macro_f1": {
+        "value": 0.3861020123639148,
+        "ci95": {
+          "lower": 0.36137439589914794,
+          "upper": 0.41105771926744095
+        }
+      },
+      "recall_by_class": {
+        "Normal": {
+          "value": 0.1573208722741433,
+          "ci95": {
+            "lower": 0.13101058651273675,
+            "upper": 0.1857866822311323
+          }
+        },
+        "Pre-diabetic": {
+          "value": 0.5295404814004376,
+          "ci95": {
+            "lower": 0.4842324507765684,
+            "upper": 0.5747406677486668
+          }
+        },
+        "Diabetic": {
+          "value": 0.7111913357400722,
+          "ci95": {
+            "lower": 0.6581721396474248,
+            "upper": 0.7615826344474032
+          }
+        }
+      }
+    }
+  },
+  "clinical_utility": {
+    "target_condition": "At-risk (Pre-diabetic or Diabetic)",
+    "recommended_operating_point": {
+      "strategy": "at_risk_probability_0.50",
+      "threshold": 0.5,
+      "sensitivity": 0.8678474114441417,
+      "specificity": 0.40654205607476634,
+      "ppv": 0.6257367387033399,
+      "npv": 0.729050279329609,
+      "accuracy": 0.6526162790697675,
+      "f1": 0.7271689497716894,
+      "prevalence": 0.5334302325581395,
+      "tp": 637,
+      "fp": 381,
+      "tn": 261,
+      "fn": 97,
+      "selection_score": 0.7150586721850661
+    },
+    "decision_curve_best_net_benefit": {
+      "threshold_probability": 0.05,
+      "net_benefit_model": 0.5088739290085679,
+      "net_benefit_treat_all": 0.5088739290085679,
+      "net_benefit_treat_none": 0.0
+    },
+    "operating_points": [
+      {
+        "strategy": "multiclass_argmax",
+        "threshold": NaN,
+        "sensitivity": 0.7397820163487738,
+        "specificity": 0.5919003115264797,
+        "ppv": 0.6745341614906832,
+        "npv": 0.6654991243432574,
+        "accuracy": 0.6707848837209303,
+        "f1": 0.7056530214424951,
+        "prevalence": 0.5334302325581395,
+        "tp": 543,
+        "fp": 262,
+        "tn": 380,
+        "fn": 191
+      },
+      {
+        "strategy": "multiclass_tuned_thresholds",
+        "threshold": NaN,
+        "sensitivity": 0.9591280653950953,
+        "specificity": 0.1573208722741433,
+        "ppv": 0.5654618473895582,
+        "npv": 0.7709923664122137,
+        "accuracy": 0.5850290697674418,
+        "f1": 0.7114704396159677,
+        "prevalence": 0.5334302325581395,
+        "tp": 704,
+        "fp": 541,
+        "tn": 101,
+        "fn": 30
+      },
+      {
+        "strategy": "at_risk_probability_0.20",
+        "threshold": 0.2,
+        "sensitivity": 0.9945504087193461,
+        "specificity": 0.03894080996884735,
+        "ppv": 0.5419450631031922,
+        "npv": 0.8620689655172413,
+        "accuracy": 0.5486918604651163,
+        "f1": 0.7015857760691975,
+        "prevalence": 0.5334302325581395,
+        "tp": 730,
+        "fp": 617,
+        "tn": 25,
+        "fn": 4
+      },
+      {
+        "strategy": "at_risk_probability_0.30",
+        "threshold": 0.3,
+        "sensitivity": 0.9768392370572208,
+        "specificity": 0.1277258566978193,
+        "ppv": 0.5614722004698512,
+        "npv": 0.8282828282828283,
+        "accuracy": 0.5806686046511628,
+        "f1": 0.713078070611636,
+        "prevalence": 0.5334302325581395,
+        "tp": 717,
+        "fp": 560,
+        "tn": 82,
+        "fn": 17
+      },
+      {
+        "strategy": "at_risk_probability_0.40",
+        "threshold": 0.4,
+        "sensitivity": 0.9386920980926431,
+        "specificity": 0.2601246105919003,
+        "ppv": 0.5919243986254296,
+        "npv": 0.7877358490566038,
+        "accuracy": 0.622093023255814,
+        "f1": 0.726027397260274,
+        "prevalence": 0.5334302325581395,
+        "tp": 689,
+        "fp": 475,
+        "tn": 167,
+        "fn": 45
+      },
+      {
+        "strategy": "at_risk_probability_0.50",
+        "threshold": 0.5,
+        "sensitivity": 0.8678474114441417,
+        "specificity": 0.40654205607476634,
+        "ppv": 0.6257367387033399,
+        "npv": 0.729050279329609,
+        "accuracy": 0.6526162790697675,
+        "f1": 0.7271689497716894,
+        "prevalence": 0.5334302325581395,
+        "tp": 637,
+        "fp": 381,
+        "tn": 261,
+        "fn": 97
+      },
+      {
+        "strategy": "at_risk_probability_0.60",
+        "threshold": 0.6,
+        "sensitivity": 0.7506811989100818,
+        "specificity": 0.5825545171339563,
+        "ppv": 0.6727716727716728,
+        "npv": 0.6714542190305206,
+        "accuracy": 0.6722383720930233,
+        "f1": 0.7095943335479716,
+        "prevalence": 0.5334302325581395,
+        "tp": 551,
+        "fp": 268,
+        "tn": 374,
+        "fn": 183
+      }
+    ]
+  },
+  "ablation_bundle": {
+    "thresholding_default_vs_tuned": {
+      "summary": {
+        "delta_macro_f1": -0.10743577572201557,
+        "delta_recall_pre_diabetic": 0.2013129102844639,
+        "delta_recall_diabetic": 0.07581227436823101,
+        "delta_at_risk_sensitivity": 0.2193460490463215,
+        "delta_at_risk_specificity": -0.43457943925233644
+      },
+      "rows": [
+        {
+          "strategy": "multiclass_argmax",
+          "macro_f1": 0.49353778808593035,
+          "auc_roc_weighted_ovr": 0.6963716833048798,
+          "recall_pre_diabetic": 0.3282275711159737,
+          "recall_diabetic": 0.6353790613718412,
+          "at_risk_sensitivity": 0.7397820163487738,
+          "at_risk_specificity": 0.5919003115264797,
+          "at_risk_ppv": 0.6745341614906832,
+          "at_risk_npv": 0.6654991243432574
+        },
+        {
+          "strategy": "multiclass_tuned_thresholds",
+          "macro_f1": 0.3861020123639148,
+          "auc_roc_weighted_ovr": 0.6963716833048798,
+          "recall_pre_diabetic": 0.5295404814004376,
+          "recall_diabetic": 0.7111913357400722,
+          "at_risk_sensitivity": 0.9591280653950953,
+          "at_risk_specificity": 0.1573208722741433,
+          "at_risk_ppv": 0.5654618473895582,
+          "at_risk_npv": 0.7709923664122137
+        }
+      ]
+    },
+    "best_vs_logistic_matched_sensitivity": {
+      "summary": {
+        "available": false,
+        "reason": "Best model is already Logistic Regression."
+      },
+      "rows": []
+    }
+  },
+  "outer_fold_confidence_intervals": {
+    "AUC_ROC": {
+      "mean": 0.700854546462565,
+      "ci95": {
+        "lower": 0.6751750559229042,
+        "upper": 0.7185129517145443
+      }
+    },
+    "Macro_F1": {
+      "mean": 0.3859024380004487,
+      "ci95": {
+        "lower": 0.33391146925817605,
+        "upper": 0.41592351190691706
+      }
+    },
+    "Recall_PreDiabetic": {
+      "mean": 0.5285244869499691,
+      "ci95": {
+        "lower": 0.43609363081617086,
+        "upper": 0.6380270963604296
+      }
+    },
+    "Recall_Diabetic": {
+      "mean": 0.7152261153595267,
+      "ci95": {
+        "lower": 0.5366048593350383,
+        "upper": 0.8517441860465116
+      }
+    },
+    "Accuracy": {
+      "mean": 0.3946355376413267,
+      "ci95": {
+        "lower": 0.3381087727785841,
+        "upper": 0.41945683147065355
+      }
+    }
+  },
+  "calibration": {
+    "overall_brier": 0.19424743719522972,
+    "per_class": {
+      "Normal": {
+        "brier": 0.21901868448877534,
+        "ece": 0.10497092963487527
+      },
+      "Pre-diabetic": {
+        "brier": 0.21742400937478767,
+        "ece": 0.02215131686614643
+      },
+      "Diabetic": {
+        "brier": 0.14629961772212605,
+        "ece": 0.09728368335642386
+      }
+    }
+  },
+  "clustering_defensibility": {
+    "k_metrics": [
+      {
+        "k": 2,
+        "silhouette": 0.16174968094781708,
+        "calinski_harabasz": 278.1908504240287,
+        "davies_bouldin": 2.078062912313917
+      },
+      {
+        "k": 4,
+        "silhouette": 0.1626865947627065,
+        "calinski_harabasz": 207.89695838005946,
+        "davies_bouldin": 1.8162906288029432
+      }
+    ],
+    "silhouette_optimal_k": 4,
+    "clinical_k": 4
+  },
+  "clustering_positioning": {
+    "primary_unsupervised": {
+      "k": 4,
+      "basis": "Best unsupervised compactness/separation (silhouette)."
+    },
+    "exploratory_clinical_mapping": {
+      "k": 4,
+      "basis": "Clinically interpretable risk stratification aligned to 4 groups."
+    },
+    "recommended_thesis_wording": "Use K=2 as primary unsupervised finding; present K=4 as exploratory clinical mapping for interpretability."
+  },
+  "cluster_analysis": {
+    "method": "kmeans_k4_on_scaled_clinical_features",
+    "cluster_labels": {
+      "3": {
+        "label": "High Risk",
+        "risk_level": "HIGH",
+        "diabetic_rate": 0.40217391304347827,
+        "pre_diabetic_rate": 0.3695652173913043,
+        "risk_score": 0.5869565217391304,
+        "size": 184
+      },
+      "1": {
+        "label": "Moderate Risk",
+        "risk_level": "MODERATE",
+        "diabetic_rate": 0.2554347826086957,
+        "pre_diabetic_rate": 0.38405797101449274,
+        "risk_score": 0.447463768115942,
+        "size": 552
+      },
+      "2": {
+        "label": "Low-Moderate Risk",
+        "risk_level": "LOW_MODERATE",
+        "diabetic_rate": 0.09981515711645102,
+        "pre_diabetic_rate": 0.2902033271719039,
+        "risk_score": 0.24491682070240295,
+        "size": 541
+      },
+      "0": {
+        "label": "Low Risk",
+        "risk_level": "LOW",
+        "diabetic_rate": 0.08080808080808081,
+        "pre_diabetic_rate": 0.20202020202020202,
+        "risk_score": 0.18181818181818182,
+        "size": 99
+      }
+    },
+    "cluster_sizes": {
+      "Low Risk": 99,
+      "Moderate Risk": 552,
+      "Low-Moderate Risk": 541,
+      "High Risk": 184
+    }
+  },
+  "confusion_matrix": [
+    [
+      101,
+      383,
+      158
+    ],
+    [
+      22,
+      242,
+      193
+    ],
+    [
+      8,
+      72,
+      197
+    ]
+  ]
+}

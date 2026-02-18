@@ -197,16 +197,16 @@
 ### ML (Python)
 | Purpose | File |
 |---------|------|
-| Flask server | `Ian_ML/server.py` |
-| Predictors | `Ian_ML/predict.py` |
-| Model training | `Ian_ML/train.py` |
-| Clustering | `Ian_ML/clustering.py` |
-| Data Processing | `Ian_ML/data_processing.py` |
-| Explainability | `Ian_ML/explainability.py` |
-| Explainer | `Ian_ML/explainer.py` |
-| A/B Testing | `Ian_ML/ab_testing.py` |
-| Drift Detection | `Ian_ML/drift_detection.py` |
-| MLflow Config | `Ian_ML/mlflow_config.py` |
+| Flask server | `Ian_ML/service/server.py` |
+| Predictors | `Ian_ML/service/predict.py` |
+| Model training | `Ian_ML/training/train.py` |
+| Clustering | `Ian_ML/training/clustering.py` |
+| Data Processing | `Ian_ML/training/data_processing.py` |
+| Explainability | `Ian_ML/service/explainability.py` |
+| Explainer | `Ian_ML/service/explainer.py` |
+| A/B Testing | `Ian_ML/service/ab_testing.py` |
+| Drift Detection | `Ian_ML/service/drift_detection.py` |
+| MLflow Config | `Ian_ML/service/mlflow_config.py` |
 
 ---
 

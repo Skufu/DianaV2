@@ -18,9 +18,9 @@ import json
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-DATA_PATH = Path("data/nhanes/processed/diana_dataset_imputed.csv")
-MODELS_DIR = Path("models/clinical")  # Save alongside clinical models
-VIZ_DIR = Path("models/clinical/visualizations")
+DATA_PATH = Path("data/nhanes/processed/diana_dataset_final.csv")
+MODELS_DIR = Path("models/clinical_v2")  # Save to clinical_v2
+VIZ_DIR = Path("models/clinical_v2/visualizations")
 
 # Features for clustering (per paper - Ahlqvist methodology)
 # Added age for MARD subtype identification
@@ -194,7 +194,7 @@ def train_clusters():
         print(f"   Cluster {cid}: {info['label']} - {info['description']}")
     
     # Save artifacts
-    joblib.dump(scaler, MODELS_DIR / "scaler.joblib")
+    joblib.dump(scaler, MODELS_DIR / "cluster_scaler.joblib")
     joblib.dump(kmeans, MODELS_DIR / "kmeans_model.joblib")
     
     with open(MODELS_DIR / "cluster_labels.json", 'w') as f:
@@ -211,7 +211,7 @@ def train_clusters():
     df_out.to_csv("data/nhanes/processed/clustered_data.csv", index=False)
     
     print("\n[SUCCESS] Training complete! Artifacts saved to models/")
-    print(f"   - scaler.joblib")
+    print(f"   - cluster_scaler.joblib")
     print(f"   - kmeans_model.joblib")
     print(f"   - cluster_labels.json")
     print(f"   - cluster_profiles.csv")
