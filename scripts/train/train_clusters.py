@@ -3,9 +3,13 @@ DIANA K-Means Clustering Training Script
 Implements clustering per paper methodology:
 - Z-score standardization
 - K optimization via elbow + silhouette
-- Cluster profiling and labeling
+- Cluster profiling and labeling (Ahlqvist-like subtypes + risk levels)
 
-Usage: python scripts/train_clusters.py
+Note: Clusters use only non-circular clinical biomarkers (no HbA1c/FBS)
+to be consistent with the ClinicalPredictor. Ahlqvist subtype assignment
+uses proxy metrics since HbA1c is not available.
+
+Usage: python scripts/train/train_clusters.py
 """
 
 import pandas as pd
@@ -22,9 +26,9 @@ DATA_PATH = Path("data/nhanes/processed/diana_dataset_final.csv")
 MODELS_DIR = Path("models/clinical_v2")  # Save to clinical_v2
 VIZ_DIR = Path("models/clinical_v2/visualizations")
 
-# Features for clustering (per paper - Ahlqvist methodology)
-# Added age for MARD subtype identification
-CLUSTER_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+# Features for clustering — non-circular clinical biomarkers only
+# No HbA1c/FBS to avoid circular reasoning with diabetes diagnosis
+CLUSTER_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
 
 
 def find_optimal_k(X_scaled, k_range=range(2, 7)):
@@ -71,7 +75,7 @@ def plot_optimization(results_df, output_path):
 def profile_clusters(df, labels, features):
     """
     Profile each cluster by mean biomarker values.
-    Used for manual labeling as SIDD/SIRD/MOD/MARD-like.
+    Used for Ahlqvist-like subtype assignment.
     """
     df_clustered = df.copy()
     df_clustered['cluster'] = labels
@@ -87,58 +91,125 @@ def profile_clusters(df, labels, features):
 
 def assign_cluster_labels(profiles):
     """
-    Assign SIDD/SIRD/MOD/MARD-like labels based on profile characteristics.
-    Uses ranking to ensure correct relative assignment based on Ahlqvist criteria.
+    Assign Ahlqvist-like subtype labels AND risk levels based on profile characteristics.
+    Uses proxy metrics since HbA1c/FBS are excluded from clustering.
     
-    Logic:
-    1. SIDD: Highest HbA1c (Severe Insulin-Deficient)
-    2. SIRD: Highest metabolic risk proxy (BMI + TG - HDL) among remaining
+    Subtype assignment strategy (without HbA1c):
+    1. SIRD: Highest insulin resistance proxy (BMI + TG/50 - HDL/10)
+       → Severe Insulin-Resistant Diabetes
+    2. SIDD: Highest TG/HDL ratio among remaining (metabolic derangement proxy)
+       → Severe Insulin-Deficient Diabetes  
     3. MOD:  Highest BMI among remaining (Mild Obesity-Related)
-    4. MARD: Remaining (Mild Age-Related)
+    4. MARD: Remaining cluster (typically oldest, mildest — Mild Age-Related)
+    
+    Risk level mapping:
+    - SIRD → HIGH (severe metabolic dysfunction)
+    - SIDD → HIGH (severe metabolic derangement)
+    - MOD  → MODERATE (obesity-driven, manageable)
+    - MARD → LOW (mild, age-related)
+    
+    Note: Without HbA1c, SIDD identification is approximate. We use TG/HDL ratio
+    as a proxy for metabolic derangement rather than insulin deficiency directly.
     """
     available_ids = list(profiles.index)
     labels = {}
     
-    # 1. SIDD: Highest HbA1c
-    sidd_id = profiles.loc[available_ids, 'hba1c'].idxmax()
-    labels[int(sidd_id)] = {
-        "label": "SIDD-like",
-        "description": "Severe Insulin-Deficient Diabetes pattern (Highest HbA1c)"
-    }
-    available_ids.remove(sidd_id)
-    
-    # 2. SIRD: Highest Metabolic Risk proxy (BMI + TG - HDL)
-    # Using standardized values implicitly or relative rank here
-    risk_scores = {}
+    # 1. SIRD: Highest insulin resistance composite score
+    #    BMI (obesity) + TG/50 (dyslipidemia) - HDL/10 (protective factor inverted)
+    ir_scores = {}
     for cid in available_ids:
         p = profiles.loc[cid]
-        # SIRD is characterized by insulin resistance: high BMI, high TG, low HDL
-        # We rank by a simple composite score for detection
-        risk_scores[cid] = p['bmi'] + (p['triglycerides'] / 50) - (p['hdl'] / 10)
+        ir_scores[cid] = p['bmi'] + (p['triglycerides'] / 50) - (p['hdl'] / 10)
     
-    sird_id = max(risk_scores, key=risk_scores.get)
-    labels[int(sird_id)] = {
-        "label": "SIRD-like",
-        "description": "Severe Insulin-Resistant Diabetes pattern (Highest Metabolic Risk)"
+    sird_id = max(ir_scores, key=ir_scores.get)
+    labels[str(int(sird_id))] = {
+        "label": "SIRD",
+        "subtype": "SIRD",
+        "subtype_full": "Severe Insulin-Resistant Diabetes",
+        "risk_level": "HIGH",
+        "risk_label": "High Risk",
+        "description": "High BMI, high triglycerides, low HDL — insulin resistance pattern",
+        "treatment_focus": "Weight management, insulin sensitizers (metformin), cardiovascular monitoring"
     }
     available_ids.remove(sird_id)
     
-    # 3. MOD: Highest BMI remaining
+    # 2. SIDD: Highest TG/HDL ratio among remaining (metabolic derangement proxy)
+    #    Without HbA1c, we use TG/HDL as a proxy for metabolic dysfunction
+    tg_hdl_scores = {}
+    for cid in available_ids:
+        p = profiles.loc[cid]
+        tg_hdl_scores[cid] = p['triglycerides'] / max(p['hdl'], 1)
+    
+    sidd_id = max(tg_hdl_scores, key=tg_hdl_scores.get)
+    labels[str(int(sidd_id))] = {
+        "label": "SIDD",
+        "subtype": "SIDD",
+        "subtype_full": "Severe Insulin-Deficient Diabetes",
+        "risk_level": "HIGH",
+        "risk_label": "High Risk",
+        "description": "High TG/HDL ratio — metabolic derangement pattern (proxy for insulin deficiency)",
+        "treatment_focus": "Blood glucose monitoring, consider insulin therapy, monitor for complications"
+    }
+    available_ids.remove(sidd_id)
+    
+    # 3. MOD: Highest BMI among remaining
     mod_id = profiles.loc[available_ids, 'bmi'].idxmax()
-    labels[int(mod_id)] = {
-        "label": "MOD-like",
-        "description": "Mild Obesity-Related Diabetes pattern (High BMI)"
+    labels[str(int(mod_id))] = {
+        "label": "MOD",
+        "subtype": "MOD",
+        "subtype_full": "Mild Obesity-Related Diabetes",
+        "risk_level": "MODERATE",
+        "risk_label": "Moderate Risk",
+        "description": "Elevated BMI with moderate metabolic markers — obesity-driven pattern",
+        "treatment_focus": "Weight loss (5-10%), healthy eating, moderate exercise, lipid monitoring"
     }
     available_ids.remove(mod_id)
     
-    # 4. MARD: The last one (typically lowest risk)
+    # 4. MARD: The remaining cluster (typically oldest, mildest values)
     mard_id = available_ids[0]
-    labels[int(mard_id)] = {
-        "label": "MARD-like",
-        "description": "Mild Age-Related Diabetes pattern (Lowest overall risk)"
+    labels[str(int(mard_id))] = {
+        "label": "MARD",
+        "subtype": "MARD",
+        "subtype_full": "Mild Age-Related Diabetes",
+        "risk_level": "LOW",
+        "risk_label": "Low Risk",
+        "description": "Older age with mild metabolic values — age-related pattern",
+        "treatment_focus": "Regular health checkups, lifestyle management, cardiovascular screening"
     }
     
     return labels
+
+
+def compute_cluster_statistics(df, labels_array, cluster_labels, features):
+    """Compute additional statistics per cluster for the analysis report."""
+    df_work = df.copy()
+    df_work['cluster'] = labels_array
+    
+    stats = {}
+    for cluster_id_str, label_info in cluster_labels.items():
+        cluster_id = int(cluster_id_str)
+        mask = df_work['cluster'] == cluster_id
+        cluster_df = df_work[mask]
+        
+        # Compute diabetic/pre-diabetic rates if diabetes_label exists
+        diabetic_rate = 0.0
+        pre_diabetic_rate = 0.0
+        if 'diabetes_label' in cluster_df.columns:
+            label_counts = cluster_df['diabetes_label'].value_counts(normalize=True)
+            diabetic_rate = float(label_counts.get(2, label_counts.get('Diabetic', 0)))
+            pre_diabetic_rate = float(label_counts.get(1, label_counts.get('Pre-diabetic', 0)))
+        
+        risk_score = diabetic_rate + (0.5 * pre_diabetic_rate)
+        
+        stats[cluster_id_str] = {
+            **label_info,
+            "size": int(mask.sum()),
+            "diabetic_rate": round(diabetic_rate, 4),
+            "pre_diabetic_rate": round(pre_diabetic_rate, 4),
+            "risk_score": round(risk_score, 4),
+        }
+    
+    return stats
 
 
 def train_clusters():
@@ -154,6 +225,7 @@ def train_clusters():
     # Select features and drop rows with missing values
     X = df[CLUSTER_FEATURES].dropna()
     print(f"   Complete records for clustering: {len(X)}")
+    print(f"   Features: {CLUSTER_FEATURES}")
     
     if len(X) < 50:
         print("[ERROR] Insufficient data for clustering (need 50+ records)")
@@ -187,18 +259,22 @@ def train_clusters():
     # Profile clusters
     profiles = profile_clusters(df.loc[X.index], labels, CLUSTER_FEATURES)
     
-    # Assign labels
+    # Assign Ahlqvist-like labels with both subtype and risk level
     cluster_labels = assign_cluster_labels(profiles)
     print("\n[INFO] Cluster Labels:")
     for cid, info in cluster_labels.items():
-        print(f"   Cluster {cid}: {info['label']} - {info['description']}")
+        print(f"   Cluster {cid}: {info['label']} ({info['risk_label']}) - {info['description']}")
+    
+    # Compute additional statistics
+    cluster_stats = compute_cluster_statistics(df.loc[X.index], labels, cluster_labels, CLUSTER_FEATURES)
     
     # Save artifacts
     joblib.dump(scaler, MODELS_DIR / "cluster_scaler.joblib")
     joblib.dump(kmeans, MODELS_DIR / "kmeans_model.joblib")
     
+    # Save cluster labels (with both subtype and risk level schemas)
     with open(MODELS_DIR / "cluster_labels.json", 'w') as f:
-        json.dump(cluster_labels, f, indent=2)
+        json.dump(cluster_stats, f, indent=2)
     
     profiles.to_csv(MODELS_DIR / "cluster_profiles.csv")
     
@@ -206,17 +282,21 @@ def train_clusters():
     df_out = df.loc[X.index].copy()
     df_out['cluster'] = labels
     df_out['cluster_label'] = df_out['cluster'].map(
-        lambda x: cluster_labels[x]['label']
+        lambda x: cluster_labels[str(x)]['label']
+    )
+    df_out['risk_level'] = df_out['cluster'].map(
+        lambda x: cluster_labels[str(x)]['risk_level']
     )
     df_out.to_csv("data/nhanes/processed/clustered_data.csv", index=False)
     
-    print("\n[SUCCESS] Training complete! Artifacts saved to models/")
-    print(f"   - cluster_scaler.joblib")
-    print(f"   - kmeans_model.joblib")
-    print(f"   - cluster_labels.json")
+    print("\n[SUCCESS] Training complete! Artifacts saved to models/clinical_v2/")
+    print(f"   - cluster_scaler.joblib (fitted on {len(CLUSTER_FEATURES)} features: {CLUSTER_FEATURES})")
+    print(f"   - kmeans_model.joblib (K={best_k})")
+    print(f"   - cluster_labels.json (with subtypes + risk levels)")
     print(f"   - cluster_profiles.csv")
     print(f"   - k_optimization.png")
 
 
 if __name__ == "__main__":
     train_clusters()
+
