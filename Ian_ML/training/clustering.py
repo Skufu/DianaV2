@@ -29,12 +29,13 @@ MODELS_DIR = CLINICAL_MODELS_DIR
 RESULTS_DIR = MODELS_DIR / "results"
 VIZ_DIR = MODELS_DIR / "visualizations"
 
-# All features for clustering (including diagnostic for subtype profiling)
-ALL_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age']
-# Clinical features only (non-circular)
+# All features for clustering — non-circular clinical biomarkers only
+# No HbA1c/FBS to avoid circular reasoning with diabetes diagnosis
+ALL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+# Clinical features only (same as ALL_FEATURES since HbA1c/FBS removed)
 CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
 
-# Ahlqvist et al. T2DM Subtype definitions
+# Ahlqvist et al. T2DM Subtype definitions (adapted for non-circular features)
 AHLQVIST_SUBTYPES = {
     'SIRD': {
         'full_name': 'Severe Insulin-Resistant Diabetes',
@@ -44,13 +45,13 @@ AHLQVIST_SUBTYPES = {
     },
     'SIDD': {
         'full_name': 'Severe Insulin-Deficient Diabetes',
-        'characteristics': 'Highest HbA1c, lower BMI, younger onset',
+        'characteristics': 'High TG/HDL ratio — metabolic derangement (proxy for insulin deficiency)',
         'clinical_implication': 'May need early insulin therapy',
         'risk_level': 'HIGH'
     },
     'MOD': {
         'full_name': 'Mild Obesity-Related Diabetes',
-        'characteristics': 'High BMI (>30), moderate HbA1c elevation',
+        'characteristics': 'High BMI (>30), moderate metabolic markers',
         'clinical_implication': 'Weight management primary intervention',
         'risk_level': 'MODERATE'
     },
@@ -88,55 +89,48 @@ def analyze_k_range(X_scaled, k_range=(2, 7)):
 def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     """
     Assign Ahlqvist subtype labels to clusters based on centroid characteristics.
-    Uses ranking to ensure correct relative assignment (e.g. Highest HbA1c -> SIDD).
+    Uses proxy metrics since HbA1c/FBS are excluded from clustering features.
     
-    Logic based on Ahlqvist et al (2018):
-    1. SIDD (Severe Insulin-Deficient): Highest HbA1c / FBS
-    2. SIRD (Severe Insulin-Resistant): Highest BMI / TG (of remaining)
-    3. MOD (Mild Obesity-Related): Highest BMI (of remaining)
+    Assignment strategy (without HbA1c):
+    1. SIRD (Severe Insulin-Resistant): Highest insulin resistance composite
+       (BMI + TG/50 - HDL/10)
+    2. SIDD (Severe Insulin-Deficient): Highest TG/HDL ratio among remaining
+       (metabolic derangement proxy)
+    3. MOD (Mild Obesity-Related): Highest BMI of remaining
     4. MARD (Mild Age-Related): Remaining (typically lowest metabolic risk)
     """
     centers_df = pd.DataFrame(cluster_centers, columns=feature_names)
     available_clusters = list(range(k))
     final_labels = {}
     
-    # 1. Identify SIDD: Highest HbA1c (primary def: insulin deficiency -> hyperglycemia)
-    # If HbA1c missing, use FBS
-    glucose_metric = 'hba1c' if 'hba1c' in centers_df.columns else 'fbs'
-    if glucose_metric in centers_df.columns:
-        sidd_id = centers_df.loc[available_clusters, glucose_metric].idxmax()
-        final_labels[sidd_id] = 'SIDD'
-        available_clusters.remove(sidd_id)
-    else:
-        # Fallback if no glucose metrics (unlikely in this dataset)
-        print("[WARN] No glucose metrics found for SIDD identification!")
-    
-    # If we have run out of clusters (shouldn't happen with k=4), stop
-    if not available_clusters:
-        return final_labels
-        
-    # 2. Identify SIRD: Highest Insulin Resistance markers (TG, BMI, Low HDL)
-    # Using simple proxy: BMI + TG - HDL (standardized)
-    # Note: SIRD has HIGHEST residency/BMI usually, but SIDD is distinct by glucose.
-    # SIRD vs MOD: SIRD has higher metabolic derangement than just obesity.
-    
-    # We score the remaining for SIRD characteristics
-    sird_scores = {}
+    # 1. Identify SIRD: Highest insulin resistance composite score
+    ir_scores = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
-        # High BMI + High TG - High HDL
-        score = c.get('bmi', 0) + c.get('triglycerides', 0) - c.get('hdl', 0)
-        sird_scores[cid] = score
-        
-    sird_id = max(sird_scores, key=sird_scores.get)
+        ir_scores[cid] = c.get('bmi', 0) + (c.get('triglycerides', 0) / 50) - (c.get('hdl', 0) / 10)
+    
+    sird_id = max(ir_scores, key=ir_scores.get)
     final_labels[sird_id] = 'SIRD'
     available_clusters.remove(sird_id)
     
     if not available_clusters:
         return final_labels
+    
+    # 2. Identify SIDD: Highest TG/HDL ratio among remaining
+    # Without HbA1c, we use TG/HDL as proxy for metabolic derangement
+    tg_hdl_scores = {}
+    for cid in available_clusters:
+        c = centers_df.iloc[cid]
+        tg_hdl_scores[cid] = c.get('triglycerides', 0) / max(c.get('hdl', 1), 0.01)
+    
+    sidd_id = max(tg_hdl_scores, key=tg_hdl_scores.get)
+    final_labels[sidd_id] = 'SIDD'
+    available_clusters.remove(sidd_id)
+    
+    if not available_clusters:
+        return final_labels
 
     # 3. Identify MOD: Highest BMI of the remaining
-    # MOD is "Mild Obesity-Related", so it's obese but less metabolic derangement than SIRD
     mod_scores = {}
     for cid in available_clusters:
         mod_scores[cid] = centers_df.iloc[cid].get('bmi', 0)
@@ -149,7 +143,6 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
         return final_labels
 
     # 4. Identify MARD: The last one
-    # Typically lowest BMI/risk, mostly driven by Age
     mard_id = available_clusters[0]
     final_labels[mard_id] = 'MARD'
     
@@ -392,7 +385,7 @@ def main(k=4):
         print(f"      Count: {profile['count']} ({profile['percentage']}%)")
         print(f"      Risk: {profile['info'].get('risk_level', 'UNKNOWN')}")
         print(f"      Means: BMI={profile['means'].get('bmi', 'N/A')}, "
-              f"HbA1c={profile['means'].get('hba1c', 'N/A')}, "
+              f"HDL={profile['means'].get('hdl', 'N/A')}, "
               f"TG={profile['means'].get('triglycerides', 'N/A')}")
     
     # =============================================

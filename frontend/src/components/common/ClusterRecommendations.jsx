@@ -4,7 +4,7 @@ const ClusterRecommendations = ({ cluster }) => {
   const recommendations = {
     'SIRD': {
       title: 'Severe Insulin-Resistant Diabetes',
-      description: 'Characterized by high BMI and normal HbA1c levels.',
+      description: 'High BMI, high triglycerides, low HDL — insulin resistance pattern.',
       color: 'bg-purple-100 text-purple-800 border-purple-200',
       icon: '⚠️',
       focus: [
@@ -17,7 +17,7 @@ const ClusterRecommendations = ({ cluster }) => {
     },
     'SIDD': {
       title: 'Severe Insulin-Deficient Diabetes',
-      description: 'Characterized by high HbA1c and low BMI levels.',
+      description: 'High TG/HDL ratio — metabolic derangement pattern.',
       color: 'bg-red-100 text-red-800 border-red-200',
       icon: '🩸',
       focus: [
@@ -31,7 +31,7 @@ const ClusterRecommendations = ({ cluster }) => {
     },
     'MOD': {
       title: 'Mild Obesity-Related Diabetes',
-      description: 'Characterized by mildly elevated BMI and HbA1c.',
+      description: 'Elevated BMI with moderate metabolic markers — obesity-driven pattern.',
       color: 'bg-orange-100 text-orange-800 border-orange-200',
       icon: '🔶',
       focus: [
@@ -44,7 +44,7 @@ const ClusterRecommendations = ({ cluster }) => {
     },
     'MARD': {
       title: 'Mild Age-Related Diabetes',
-      description: 'Characterized by older age and normal BMI with mild HbA1c elevation.',
+      description: 'Older age with mild metabolic values — age-related pattern.',
       color: 'bg-green-100 text-green-800 border-green-200',
       icon: '✅',
       focus: [
@@ -73,7 +73,7 @@ const ClusterRecommendations = ({ cluster }) => {
           <p className="text-sm text-gray-600 mb-3">
             {clusterInfo.description}
           </p>
-          
+
           <div className="space-y-2">
             <h4 className="text-sm font-semibold text-gray-700">Focus Areas:</h4>
             <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">

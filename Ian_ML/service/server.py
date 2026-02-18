@@ -721,18 +721,21 @@ def predict_batch():
     """
     Predict for multiple patients.
 
-    Request body:
-    {
-        "patients": [
-            {"hba1c": 6.5, "fbs": 126, ...},
-            {"hba1c": 5.8, "fbs": 100, ...}
-        ]
-    }
+    Query params:
+        model_type: "clinical" (default) or "ada"
+
+    For clinical model:
+        Each patient needs: bmi, triglycerides, ldl, hdl, age
+        Optional: systolic, diastolic, smoking, activity, alcohol
+
+    For ADA baseline:
+        Each patient needs: hba1c, fbs, bmi, triglycerides, ldl, hdl
 
     Maximum batch size is 1000 patients per request.
     """
     try:
         data = request.get_json()
+        model_type = request.args.get('model_type', 'clinical')
 
         if not data or "patients" not in data:
             return jsonify({"error": "No patients provided"}), 400
@@ -745,7 +748,31 @@ def predict_batch():
                 "error": f"Batch size exceeds maximum of {MAX_BATCH_SIZE} patients"
             }), 400
 
-        results = get_predictor().predict_batch(patients)
+        if model_type == 'clinical':
+            clin_predictor = get_clinical_predictor()
+            if clin_predictor is None:
+                return jsonify({
+                    "error": "Clinical model not trained. Run Ian_ML/training/train_v2.py first."
+                }), 503
+
+            results = []
+            for patient in patients:
+                patient_data = {
+                    "bmi": patient.get("bmi"),
+                    "triglycerides": patient.get("triglycerides"),
+                    "ldl": patient.get("ldl"),
+                    "hdl": patient.get("hdl"),
+                    "age": patient.get("age", 54),
+                    "systolic": patient.get("systolic", 120),
+                    "diastolic": patient.get("diastolic", 80),
+                    "smoking_status": patient.get("smoking", "Unknown"),
+                    "physical_activity": patient.get("activity", "Unknown"),
+                    "alcohol_use": patient.get("alcohol", "Unknown")
+                }
+                results.append(clin_predictor.predict(patient_data))
+        else:
+            # ADA baseline model
+            results = get_predictor().predict_batch(patients)
         
         return jsonify({
             "predictions": [
@@ -753,7 +780,7 @@ def predict_batch():
                     "cluster": r.get("risk_cluster", r.get("cluster_label")),
                     "risk_score": r.get("risk_score"),
                     "risk_level": r.get("risk_level", r.get("predicted_status", r.get("medical_status")))
-                } if r["success"] else {"error": r["error"]}
+                } if r.get("success") else {"error": r.get("error", "Prediction failed")}
                 for r in results
             ]
         })
