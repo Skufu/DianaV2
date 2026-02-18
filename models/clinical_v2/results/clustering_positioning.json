@@ -1,20 +1,11 @@
 {
   "primary_unsupervised": {
     "k": 4,
-    "basis": "Best unsupervised compactness/separation by silhouette (0.162687).",
-    "recommendation": "Present as primary clustering finding"
+    "basis": "Best unsupervised compactness/separation (silhouette)."
   },
   "exploratory_clinical_mapping": {
     "k": 4,
-    "basis": "Clinically interpretable risk stratification aligned to 4 groups.",
-    "recommendation": "Present as exploratory clinical mapping for interpretability"
+    "basis": "Clinically interpretable risk stratification aligned to 4 groups."
   },
-  "recommended_thesis_wording": "Primary finding: K=4 by silhouette optimization. Exploratory analysis: K=4 mapping for clinical interpretability.",
-  "silhouette_comparison": {
-    "optimal_k": 4,
-    "optimal_k_silhouette": 0.1626865947627065,
-    "clinical_k": 4,
-    "clinical_k_silhouette": 0.1626865947627065,
-    "delta_optimal_minus_clinical": 0.0
-  }
+  "recommended_thesis_wording": "Use K=4 as both the primary unsupervised finding and the clinically interpretable mapping."
 }

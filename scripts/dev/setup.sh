@@ -540,13 +540,13 @@ print_step "Checking ML Models"
 cd "$ROOT_DIR"
 
 MODELS_FOUND=false
-if [ -f "models/clinical/random_forest.joblib" ] || [ -f "models/clinical/xgboost.joblib" ] || [ -f "models/clinical/best_model.joblib" ]; then
+if [ -f "models/clinical_v2/best_model.joblib" ] || [ -f "models/clinical_v2/xgboost.joblib" ] || [ -f "models/clinical_v2/random_forest.joblib" ]; then
     MODELS_FOUND=true
     print_success "ML models found"
 else
     print_warning "ML models not found. You need to train them or copy from shared location:"
     print_info "Option 1: Train models: bash scripts/dev/retrain-all.sh"
-    print_info "Option 2: Copy from shared drive if someone has trained them"
+    print_info "Option 2: Copy from shared drive if someone has trained them (put in models/clinical_v2/)"
 fi
 
 # ─────────────────────────────────────────────────────────────
@@ -617,7 +617,7 @@ if [ "$MODELS_FOUND" = false ]; then
     echo -e "  ${YELLOW}1. Train ML models (REQUIRED before starting):${NC}"
     echo -e "     ${CYAN}bash scripts/dev/retrain-all.sh${NC}"
     echo ""
-    echo "     OR copy models from shared location to models/clinical/"
+    echo "     OR copy models from shared location to models/clinical_v2/"
     echo ""
     echo -e "  ${BOLD}2. Start the application:${NC}"
 else

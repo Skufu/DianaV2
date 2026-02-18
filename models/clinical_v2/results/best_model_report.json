@@ -26,7 +26,24 @@
   "decision_thresholds": {
     "pre_diabetic": 0.25,
     "diabetic": 0.35,
-    "objective": "Optimize recall on Pre-diabetic/Diabetic classes"
+    "objective": "Optimize recall on Pre-diabetic/Diabetic classes",
+    "screening_behavior": {
+      "description": "This model is designed for SCREENING (case-finding), not diagnosis",
+      "clinical_rationale": "For screening, we prioritize sensitivity over specificity. A false positive (healthy labeled at-risk) is less harmful than a false negative (missed diabetic). Patients flagged as at-risk will receive follow-up diagnostic testing.",
+      "expected_class_recall": {
+        "Diabetic": "High (~75%+) - Must catch most diabetics",
+        "Pre-diabetic": "Moderate (~40-50%) - Catch about half for early intervention",
+        "Normal": "Low (~10-20%) - Acceptable over-flagging in screening context"
+      },
+      "threshold_strategy": "Apply lower probability thresholds for at-risk classes, forcing predictions toward Pre-diabetic/Diabetic when probability exceeds threshold",
+      "selection_score_weights": {
+        "Diabetic_recall": "45%",
+        "Pre_diabetic_recall": "30%",
+        "AUC_ROC": "20%",
+        "Macro_F1": "5%",
+        "Normal_recall": "0% (intentionally not weighted)"
+      }
+    }
   },
   "metrics": {
     "accuracy": 0.39244186046511625,
@@ -343,7 +360,7 @@
       "k": 4,
       "basis": "Clinically interpretable risk stratification aligned to 4 groups."
     },
-    "recommended_thesis_wording": "Use K=2 as primary unsupervised finding; present K=4 as exploratory clinical mapping for interpretability."
+    "recommended_thesis_wording": "Use K=4 as both the primary unsupervised finding and the clinically interpretable mapping."
   },
   "cluster_analysis": {
     "method": "kmeans_k4_on_scaled_clinical_features",

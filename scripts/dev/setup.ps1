@@ -561,15 +561,15 @@ Write-Step "Checking ML Models"
 Set-Location $PROJECT_DIR
 
 $MODELS_FOUND = $false
-if ((Test-Path "models\clinical\random_forest.joblib") -or 
-    (Test-Path "models\clinical\xgboost.joblib") -or 
-    (Test-Path "models\clinical\best_model.joblib")) {
+if ((Test-Path "models\clinical_v2\random_forest.joblib") -or 
+    (Test-Path "models\clinical_v2\xgboost.joblib") -or 
+    (Test-Path "models\clinical_v2\best_model.joblib")) {
     $MODELS_FOUND = $true
     Write-Success "ML models found"
 } else {
     Write-Warning "ML models not found. You need to train them or copy from shared location:"
     Write-Info "Option 1: Train models: bash scripts\dev\retrain-all.sh"
-    Write-Info "Option 2: Copy from shared drive if someone has trained them"
+    Write-Info "Option 2: Copy from shared drive if someone has trained them (put in models/clinical_v2/)"
 }
 
 # ─────────────────────────────────────────────────────────────
@@ -645,7 +645,7 @@ if (-not $MODELS_FOUND) {
     Write-Host "  1. Train ML models (REQUIRED before starting):" -ForegroundColor Yellow
     Write-Host "     bash scripts/dev/retrain-all.sh" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "     OR copy models from shared location to models/clinical/"
+    Write-Host "     OR copy models from shared location to models/clinical_v2/"
     Write-Host ""
     Write-Host "  2. Start the application:"
 } else {

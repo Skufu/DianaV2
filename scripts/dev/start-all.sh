@@ -65,8 +65,8 @@ kill_on_port() {
     fi
 }
 
-# Check if ML models exist
-if [ ! -f "models/clinical/random_forest.joblib" ] && [ ! -f "models/clinical/xgboost.joblib" ] && [ ! -f "models/clinical/best_model.joblib" ]; then
+# Check if ML models exist (clinical_v2 is the current model version)
+if [ ! -f "models/clinical_v2/best_model.joblib" ] && [ ! -f "models/clinical_v2/imputer.joblib" ] && [ ! -f "models/clinical_v2/scaler.joblib" ]; then
     echo -e "${RED}ML models not found. Run 'bash scripts/dev/retrain-all.sh' first.${NC}"
     exit 1
 fi

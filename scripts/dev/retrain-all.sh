@@ -74,14 +74,6 @@ else
     MISSING_DEPS="$MISSING_DEPS lightgbm"
 fi
 
-# Check for CatBoost
-if python -c "import catboost" 2>/dev/null; then
-    echo -e "${GREEN}  ✓ CatBoost available${NC}"
-else
-    echo -e "${YELLOW}  ⚠ CatBoost not installed${NC}"
-    MISSING_DEPS="$MISSING_DEPS catboost"
-fi
-
 # Check for imbalanced-learn (SMOTE)
 if python -c "import imblearn" 2>/dev/null; then
     echo -e "${GREEN}  ✓ imbalanced-learn (SMOTE) available${NC}"

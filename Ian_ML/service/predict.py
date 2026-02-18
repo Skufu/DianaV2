@@ -328,6 +328,15 @@ class ClinicalPredictor:
         kmeans_path = self.models_dir / "kmeans_model.joblib"
         if kmeans_path.exists():
             self.kmeans = safe_load_model(kmeans_path)
+            expected_features = getattr(self.kmeans, "n_features_in_", None)
+            if expected_features is not None and expected_features != len(self.features):
+                logger.warning(
+                    "KMeans feature mismatch: model expects %d features, but ClinicalPredictor uses %d. "
+                    "Disabling clustering.",
+                    expected_features,
+                    len(self.features),
+                )
+                self.kmeans = None
         else:
             self.kmeans = None
         
@@ -470,6 +479,16 @@ class ClinicalPredictor:
         
         # Get risk cluster info if kmeans is available
         if self.kmeans is not None:
+            expected_features = getattr(self.kmeans, "n_features_in_", X_scaled.shape[1])
+            if expected_features != X_scaled.shape[1]:
+                logger.warning(
+                    "Skipping KMeans clustering due to feature mismatch: expected %d, got %d.",
+                    expected_features,
+                    X_scaled.shape[1],
+                )
+                self.kmeans = None
+
+        if self.kmeans is not None:
             cluster_id = int(self.kmeans.predict(X_scaled)[0])
             cluster_info = self._get_cluster_info(cluster_id)
             risk_cluster = cluster_info.get("label", f"Cluster-{cluster_id}")
@@ -587,4 +606,3 @@ if __name__ == "__main__":
         print(f"  Features Used: {clinical_result.get('model_info', {}).get('features_used')}")
     except FileNotFoundError as e:
         print(f"  [NOT TRAINED] {e}")
-
