@@ -136,10 +136,7 @@ def engineer_features_reduced(df: pd.DataFrame) -> pd.DataFrame:
     df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
     return df
     
-    # 8. BMI-triglycerides interaction (metabolic syndrome clustering)
-    df["bmi_trig_interaction"] = df["bmi"] * df["triglycerides"]
-    
-    return df
+
 
 
 def get_inner_cv(groups: np.ndarray) -> GroupKFold:
