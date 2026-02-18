@@ -22,8 +22,8 @@ from Ian_ML.common.paths import MODELS_ROOT
 
 logger = logging.getLogger(__name__)
 
-MODELS_DIR = MODELS_ROOT / "legacy" / "artifacts"
-RESULTS_DIR = MODELS_ROOT / "legacy" / "results"
+MODELS_DIR = MODELS_ROOT / "clinical_v2"
+RESULTS_DIR = MODELS_ROOT / "clinical_v2" / "results"
 MODEL_HASHES_FILE = MODELS_DIR / "model_hashes.json"
 
 
@@ -71,9 +71,16 @@ def _validate_clinical_v2_dir(path: Path) -> Path:
 
     return path
 
-# Features expected by the model
-REQUIRED_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl']
-ALL_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+# Features expected by the model (clinical_v2 - no hba1c/fbs to avoid circular reasoning)
+REQUIRED_FEATURES = [
+    'bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic',
+    'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded',
+    'alcohol_encoded', 'metabolic_syndrome_score'
+]
+
+# Raw input features (before engineering)
+RAW_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic',
+                'smoking_status', 'physical_activity', 'alcohol_use']
 
 
 def compute_file_hash(filepath: Path) -> str:
@@ -191,12 +198,13 @@ class DianaPredictor:
         
         errors = []
         ranges = {
-            'hba1c': (2.0, 20.0),
-            'fbs': (20, 600),
             'bmi': (10, 80),
             'triglycerides': (20, 1500),
             'ldl': (10, 400),
             'hdl': (10, 150),
+            'age': (18, 100),
+            'systolic': (70, 250),
+            'diastolic': (40, 150),
         }
         for feature, (min_val, max_val) in ranges.items():
             if feature in data and data[feature] is not None:
@@ -208,17 +216,48 @@ class DianaPredictor:
             return False, errors
         return True, []
     
+    def _engineer_features(self, data: Dict[str, float]) -> pd.DataFrame:
+        """Engineer features from raw input to match model expectations."""
+        df = pd.DataFrame([data])
+        
+        df["bmi_category"] = pd.cut(
+            df["bmi"], bins=[0, 18.5, 25, 30, 100], labels=[0, 1, 2, 3]
+        ).astype(float)
+        
+        df["tg_hdl_ratio"] = df["triglycerides"] / df["hdl"].replace(0, np.nan)
+        
+        smoking_map = {"Never": 0, "Former": 1, "Current": 2, "Unknown": 1}
+        if "smoking_status" in df.columns:
+            df["smoking_encoded"] = df["smoking_status"].map(smoking_map).fillna(1)
+        
+        activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2, "Unknown": 1}
+        if "physical_activity" in df.columns:
+            df["activity_encoded"] = df["physical_activity"].map(activity_map).fillna(1)
+        
+        alcohol_map = {"None": 0, "Light": 1, "Moderate": 2, "Heavy": 3}
+        if "alcohol_use" in df.columns:
+            df["alcohol_encoded"] = df["alcohol_use"].map(alcohol_map).fillna(1)
+        
+        metabolic_criteria = pd.DataFrame({
+            "high_tg": df["triglycerides"] > 150,
+            "low_hdl": df["hdl"] < 50,
+            "high_bp": df["systolic"] >= 130,
+            "high_bmi": df["bmi"] >= 30,
+        })
+        df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
+        
+        return df[REQUIRED_FEATURES]
+    
     def predict(self, data: Dict[str, float]) -> Dict[str, Any]:
         """
         Predict diabetes risk for a patient.
         
         Returns:
             Dictionary with:
-            - medical_status: Normal/Pre-diabetic/Diabetic (from HbA1c)
+            - medical_status: Normal/Pre-diabetic/Diabetic (based on model prediction)
             - risk_cluster: Low/Moderate/High Risk (from K-means)
             - probability: Diabetes probability (from classifier)
         """
-        # Validate
         valid, missing = self.validate_input(data)
         if not valid:
             return {
@@ -226,27 +265,18 @@ class DianaPredictor:
                 "error": f"Missing required features: {missing}"
             }
         
-        # Get medical status from HbA1c
-        medical_status = get_medical_status(data['hba1c'])
-        
-        # Prepare features for models
-        X = pd.DataFrame([[data['hba1c'], data['fbs'], data['bmi'], 
-                          data['triglycerides'], data['ldl'], data['hdl']]],
-                         columns=REQUIRED_FEATURES)
+        X = self._engineer_features(data)
         X_scaled = self.scaler.transform(X)
         
-        # Get risk cluster from K-means
         cluster_id = int(self.kmeans.predict(X_scaled)[0])
         
-        # Map cluster ID to label and risk level
         cluster_info = self.cluster_labels.get(str(cluster_id), {})
         cluster_label = cluster_info.get("label", f"Cluster-{cluster_id}")
         risk_level = cluster_info.get("risk_level", "UNKNOWN")
         
-        # Get diabetes probability from classifier (0-100%)
         try:
             proba = self.classifier.predict_proba(X_scaled)[0]
-            diabetes_prob = float(proba[0]) if len(proba) == 2 else float(max(proba))
+            diabetes_prob = float(proba[2]) if len(proba) == 3 else float(max(proba))
             risk_score = int(diabetes_prob * 100)
             confidence = round(max(proba), 3)
         except (ValueError, IndexError, AttributeError) as e:
@@ -255,6 +285,13 @@ class DianaPredictor:
             diabetes_prob = 0.5
             risk_score = 50
             confidence = 0.5
+        
+        if diabetes_prob < 0.33:
+            medical_status = "Normal"
+        elif diabetes_prob < 0.66:
+            medical_status = "Pre-diabetic"
+        else:
+            medical_status = "Diabetic"
         
         return {
             "success": True,
@@ -299,10 +336,15 @@ class DianaPredictor:
 # Base features required from user (engineered features computed from these)
 CLINICAL_BASE_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic']
 
-# Full feature set including engineered features
+# Full feature set including engineered features (13 features for classifier)
 CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic', 
                      'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 
                      'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score']
+
+# Features used for KMeans clustering (5 base clinical biomarkers)
+# Must match train_clusters.py CLUSTER_FEATURES exactly
+CLUSTER_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+
 CLINICAL_MODELS_DIR = resolve_clinical_models_dir()
 CLINICAL_RESULTS_DIR = CLINICAL_MODELS_DIR / "results"
 
@@ -331,18 +373,21 @@ class ClinicalPredictor:
         imputer_path = self.models_dir / "imputer.joblib"
         self.imputer = safe_load_model(imputer_path) if imputer_path.exists() else None
 
+        # Cluster scaler is fitted on CLUSTER_FEATURES (5 features), not CLINICAL_FEATURES (13)
+        self.cluster_features = CLUSTER_FEATURES
         self.cluster_scaler = None
         cluster_scaler_path = self.models_dir / "cluster_scaler.joblib"
         if cluster_scaler_path.exists():
             cluster_scaler = safe_load_model(cluster_scaler_path)
             expected_features = getattr(cluster_scaler, "n_features_in_", None)
-            if expected_features == len(self.features):
+            if expected_features == len(self.cluster_features):
                 self.cluster_scaler = cluster_scaler
             else:
                 logger.warning(
-                    "Cluster scaler feature mismatch: expected %s features, got %d. Ignoring cluster scaler.",
+                    "Cluster scaler feature mismatch: expects %s features, got %d cluster features. "
+                    "Clustering will be disabled.",
                     expected_features,
-                    len(self.features),
+                    len(self.cluster_features),
                 )
         
         self.classifier = safe_load_model(self.models_dir / "best_model.joblib")
@@ -360,25 +405,34 @@ class ClinicalPredictor:
             except Exception:
                 logger.warning("Failed to parse clinical features.json; using defaults")
         
+        # KMeans model is fitted on CLUSTER_FEATURES (5 features)
         kmeans_path = self.models_dir / "kmeans_model.joblib"
         if kmeans_path.exists():
             self.kmeans = safe_load_model(kmeans_path)
             expected_features = getattr(self.kmeans, "n_features_in_", None)
-            if expected_features is not None and expected_features != len(self.features):
+            if expected_features is not None and expected_features != len(self.cluster_features):
                 logger.warning(
-                    "KMeans feature mismatch: model expects %d features, but ClinicalPredictor uses %d. "
+                    "KMeans feature mismatch: model expects %d features, but cluster features has %d. "
                     "Disabling clustering.",
                     expected_features,
-                    len(self.features),
+                    len(self.cluster_features),
                 )
                 self.kmeans = None
         else:
             self.kmeans = None
         
-        # Load cluster analysis
-        cluster_path = self.results_dir / "cluster_analysis.json"
-        if cluster_path.exists():
-            with open(cluster_path) as f:
+        # Load cluster labels (with both Ahlqvist subtypes and risk levels)
+        cluster_labels_path = self.models_dir / "cluster_labels.json"
+        if cluster_labels_path.exists():
+            with open(cluster_labels_path) as f:
+                self.cluster_labels = json.load(f)
+        else:
+            self.cluster_labels = {}
+        
+        # Also load cluster_analysis for backward compat if it exists
+        cluster_analysis_path = self.results_dir / "cluster_analysis.json"
+        if cluster_analysis_path.exists():
+            with open(cluster_analysis_path) as f:
                 self.cluster_analysis = json.load(f)
         else:
             self.cluster_analysis = {}
@@ -438,6 +492,10 @@ class ClinicalPredictor:
                           smoking_encoded, activity_encoded, alcohol_encoded,
                           metabolic_score]], dtype=float)
 
+    def _build_cluster_vector(self, data: Dict[str, float]) -> np.ndarray:
+        """Build the 5-feature cluster vector matching CLUSTER_FEATURES order."""
+        return np.array([[data.get(f, 0) for f in self.cluster_features]], dtype=float)
+
     def _transform_features(self, X: np.ndarray) -> np.ndarray:
         """Apply optional imputation and scaling in serving order."""
         X_work = self.imputer.transform(X) if self.imputer is not None else X
@@ -482,15 +540,18 @@ class ClinicalPredictor:
                 "error": f"Missing required features: {missing}"
             }
         
-        # Prepare model feature vector in training order.
+        # Prepare model feature vector in training order (13 features for classifier).
         X = self._build_feature_vector(data)
 
         X_imputed = self.imputer.transform(X) if self.imputer is not None else X
         X_scaled = self.scaler.transform(X_imputed)
+        
+        # Build separate cluster feature vector (5 features for KMeans)
+        X_cluster = self._build_cluster_vector(data)
         X_cluster_scaled = (
-            self.cluster_scaler.transform(X_imputed)
+            self.cluster_scaler.transform(X_cluster)
             if self.cluster_scaler is not None
-            else X_scaled
+            else X_cluster  # Fallback: unscaled (KMeans will be less accurate)
         )
         
         # Get prediction probabilities
@@ -519,39 +580,48 @@ class ClinicalPredictor:
         
         # Get risk cluster info if kmeans is available
         if self.kmeans is not None:
-            expected_features = getattr(self.kmeans, "n_features_in_", X_cluster_scaled.shape[1])
-            if expected_features != X_cluster_scaled.shape[1]:
-                logger.warning(
-                    "Skipping KMeans clustering due to feature mismatch: expected %d, got %d.",
-                    expected_features,
-                    X_cluster_scaled.shape[1],
-                )
-                self.kmeans = None
-
-        if self.kmeans is not None:
-            cluster_id = int(self.kmeans.predict(X_cluster_scaled)[0])
-            cluster_info = self._get_cluster_info(cluster_id)
-            risk_cluster = cluster_info.get("label", f"Cluster-{cluster_id}")
-            metabolic_subtype = cluster_info.get("metabolic_subtype", "N/A")
-            metabolic_subtype_full = cluster_info.get("metabolic_subtype_full", "N/A")
-            cluster_characteristics = cluster_info.get("characteristics", "")
-            treatment_focus = cluster_info.get("treatment_focus", "")
+            try:
+                cluster_id = int(self.kmeans.predict(X_cluster_scaled)[0])
+                cluster_info = self._get_cluster_info(cluster_id)
+                risk_cluster = cluster_info.get("label", f"Cluster-{cluster_id}")
+                risk_level = cluster_info.get("risk_level", "UNKNOWN")
+                risk_label = cluster_info.get("risk_label", risk_cluster)
+                metabolic_subtype = cluster_info.get("subtype", risk_cluster)
+                metabolic_subtype_full = cluster_info.get("subtype_full", "N/A")
+                cluster_description = cluster_info.get("description", "")
+                treatment_focus = cluster_info.get("treatment_focus", "")
+            except Exception as e:
+                logger.warning("KMeans prediction failed: %s", e)
+                risk_cluster = "N/A"
+                risk_level = "UNKNOWN"
+                risk_label = "N/A"
+                metabolic_subtype = "N/A"
+                metabolic_subtype_full = "N/A"
+                cluster_description = ""
+                treatment_focus = ""
         else:
             risk_cluster = "N/A"
+            risk_level = "UNKNOWN"
+            risk_label = "N/A"
             metabolic_subtype = "N/A"
             metabolic_subtype_full = "N/A"
-            cluster_characteristics = ""
+            cluster_description = ""
             treatment_focus = ""
         
         return {
             "success": True,
             "model_type": "clinical",
             "predicted_status": predicted_status,
+            # Ahlqvist subtype schema
             "risk_cluster": risk_cluster,
             "metabolic_subtype": metabolic_subtype,
             "metabolic_subtype_full": metabolic_subtype_full,
-            "cluster_characteristics": cluster_characteristics,
+            # Risk level schema
+            "risk_level": risk_level,
+            "risk_label": risk_label,
+            "cluster_description": cluster_description,
             "treatment_focus": treatment_focus,
+            # Probabilities and scores
             "probability": float(round(diabetes_prob, 3)),
             "at_risk_probability": float(round(at_risk_prob, 3)),
             "risk_score": int(risk_score),
@@ -560,22 +630,32 @@ class ClinicalPredictor:
                 "classifier": self.metrics.get("best_model", "Unknown"),
                 "auc_roc": float(self.metrics.get("metrics", {}).get("auc_roc", 0)),
                 "features_used": self.features,
+                "cluster_features": self.cluster_features,
                 "decision_thresholds": self.decision_thresholds,
                 "note": "Non-circular model (no HbA1c/FBS in features)"
             }
         }
     
     def _get_cluster_info(self, cluster_id: int) -> Dict[str, str]:
-        """Get full cluster info including risk level and metabolic subtype."""
-        cluster_labels = self.cluster_analysis.get("cluster_labels", {})
-        if str(cluster_id) in cluster_labels:
-            return cluster_labels[str(cluster_id)]
-        return {"label": f"Cluster-{cluster_id}"}
+        """Get full cluster info including subtype and risk level.
+        
+        Reads from cluster_labels.json which contains both schemas:
+        - Ahlqvist subtype: label, subtype, subtype_full
+        - Risk level: risk_level, risk_label
+        """
+        # Primary source: cluster_labels.json (loaded as self.cluster_labels)
+        if str(cluster_id) in self.cluster_labels:
+            return self.cluster_labels[str(cluster_id)]
+        # Fallback: cluster_analysis.json (backward compat)
+        cluster_analysis_labels = self.cluster_analysis.get("cluster_labels", {})
+        if str(cluster_id) in cluster_analysis_labels:
+            return cluster_analysis_labels[str(cluster_id)]
+        return {"label": f"Cluster-{cluster_id}", "risk_level": "UNKNOWN"}
     
     def _get_risk_label(self, cluster_id: int) -> str:
         """Map cluster ID to risk label."""
         cluster_info = self._get_cluster_info(cluster_id)
-        return cluster_info.get("label", f"Cluster-{cluster_id}")
+        return cluster_info.get("risk_label", cluster_info.get("label", f"Cluster-{cluster_id}"))
     
     def predict_batch(self, patients: list[Dict[str, float]]) -> list[Dict[str, Any]]:
         """Predict for multiple patients."""
