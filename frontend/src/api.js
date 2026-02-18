@@ -18,7 +18,9 @@ const subscribeTokenRefresh = (callback) => {
 
 // Notify all subscribers that refresh completed
 const onTokenRefreshed = (newToken) => {
-  refreshSubscribers.forEach(callback => callback(newToken));
+  refreshSubscribers.forEach((callback) => {
+    callback(newToken);
+  });
   refreshSubscribers = [];
 };
 
@@ -277,11 +279,12 @@ export const useUpdateConsentSettings = () => {
 // ASSESSMENT HOOKS
 // ============================================================================
 
-export const useAssessments = () => {
+export const useAssessments = (enabled = true) => {
   return useQuery({
     queryKey: ['assessments'],
     queryFn: getAssessmentsApi,
     retry: 1,
+    enabled,
   });
 };
 

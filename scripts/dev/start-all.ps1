@@ -65,9 +65,9 @@ try {
 } catch {}
 
 # Check ML models
-if (-not (Test-Path "models/clinical/random_forest.joblib") -and 
-    -not (Test-Path "models/clinical/xgboost.joblib") -and 
-    -not (Test-Path "models/clinical/best_model.joblib")) {
+if (-not (Test-Path "models/clinical_v2/random_forest.joblib") -and 
+    -not (Test-Path "models/clinical_v2/xgboost.joblib") -and 
+    -not (Test-Path "models/clinical_v2/best_model.joblib")) {
     Write-Red "ML models not found. Run 'bash scripts/dev/retrain-all.sh' first."
     exit 1
 }

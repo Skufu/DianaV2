@@ -58,29 +58,9 @@ from Ian_ML.common.paths import CLINICAL_V2_MODELS_DIR, NHANES_PROCESSED_ROOT
 
 warnings.filterwarnings("ignore")
 
-try:
-    from xgboost import XGBClassifier
-
-    HAS_XGBOOST = True
-except Exception as exc:
-    HAS_XGBOOST = False
-    print(f"[WARN] XGBoost not available: {exc}")
-
-try:
-    from catboost import CatBoostClassifier
-
-    HAS_CATBOOST = True
-except Exception:
-    HAS_CATBOOST = False
-    print("[WARN] CatBoost not installed.")
-
-try:
-    from lightgbm import LGBMClassifier
-
-    HAS_LIGHTGBM = True
-except Exception:
-    HAS_LIGHTGBM = False
-    print("[WARN] LightGBM not installed.")
+HAS_XGBOOST = False  # Disabled: overkill for small dataset
+HAS_CATBOOST = False  # Disabled: overkill for small dataset
+HAS_LIGHTGBM = False  # Disabled: overkill for small dataset
 
 
 # Use non-imputed file for leakage-safe imputation inside CV pipeline
@@ -192,52 +172,6 @@ def build_model_registry() -> dict:
             },
         },
     }
-
-    if HAS_XGBOOST:
-        registry["XGBoost"] = {
-            "estimator": XGBClassifier(
-                objective="multi:softprob",
-                eval_metric="mlogloss",
-                random_state=42,
-            ),
-            "param_grid": {
-                "model__n_estimators": [200],
-                "model__max_depth": [3, 4],
-                "model__learning_rate": [0.03, 0.05],
-                "model__min_child_weight": [5, 8],
-                "model__reg_lambda": [2.0, 5.0],
-                "model__subsample": [0.8],
-                "model__colsample_bytree": [0.8],
-            },
-        }
-
-    if HAS_CATBOOST:
-        registry["CatBoost"] = {
-            "estimator": CatBoostClassifier(
-                random_state=42,
-                verbose=0,
-            ),
-            "param_grid": {
-                "model__depth": [4, 6],
-                "model__learning_rate": [0.03, 0.05],
-                "model__iterations": [250, 400],
-                "model__l2_leaf_reg": [3, 5],
-            },
-        }
-
-    if HAS_LIGHTGBM:
-        registry["LightGBM"] = {
-            "estimator": LGBMClassifier(
-                class_weight="balanced", random_state=42, verbose=-1
-            ),
-            "param_grid": {
-                "model__n_estimators": [250, 400],
-                "model__learning_rate": [0.03, 0.05],
-                "model__num_leaves": [20, 31],
-                "model__min_child_samples": [30, 50],
-                "model__reg_lambda": [3.0, 6.0],
-            },
-        }
 
     return registry
 
