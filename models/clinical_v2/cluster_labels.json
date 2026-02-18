@@ -1,18 +1,34 @@
 {
   "3": {
-    "label": "SIDD-like",
-    "description": "Severe Insulin-Deficient Diabetes pattern (Highest HbA1c)"
-  },
-  "0": {
-    "label": "SIRD-like",
-    "description": "Severe Insulin-Resistant Diabetes pattern (Highest Metabolic Risk)"
+    "label": "High Risk",
+    "risk_level": "HIGH",
+    "diabetic_rate": 0.40217391304347827,
+    "pre_diabetic_rate": 0.3695652173913043,
+    "risk_score": 0.5869565217391304,
+    "size": 184
   },
   "1": {
-    "label": "MOD-like",
-    "description": "Mild Obesity-Related Diabetes pattern (High BMI)"
+    "label": "Moderate Risk",
+    "risk_level": "MODERATE",
+    "diabetic_rate": 0.2554347826086957,
+    "pre_diabetic_rate": 0.38405797101449274,
+    "risk_score": 0.447463768115942,
+    "size": 552
   },
   "2": {
-    "label": "MARD-like",
-    "description": "Mild Age-Related Diabetes pattern (Lowest overall risk)"
+    "label": "Low-Moderate Risk",
+    "risk_level": "LOW_MODERATE",
+    "diabetic_rate": 0.09981515711645102,
+    "pre_diabetic_rate": 0.2902033271719039,
+    "risk_score": 0.24491682070240295,
+    "size": 541
+  },
+  "0": {
+    "label": "Low Risk",
+    "risk_level": "LOW",
+    "diabetic_rate": 0.08080808080808081,
+    "pre_diabetic_rate": 0.20202020202020202,
+    "risk_score": 0.18181818181818182,
+    "size": 99
   }
 }

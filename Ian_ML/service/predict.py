@@ -33,22 +33,43 @@ def resolve_clinical_models_dir(explicit_dir: Optional[Path] = None) -> Path:
     Priority:
       1) explicit_dir argument
       2) CLINICAL_MODELS_DIR environment override
-      3) models/clinical_v2 if present
-      4) models/clinical fallback
+      3) models/clinical_v2 (required)
     """
     if explicit_dir is not None:
-        return explicit_dir
+        explicit_dir = Path(explicit_dir)
+        return _validate_clinical_v2_dir(explicit_dir)
 
     env_override = os.environ.get("CLINICAL_MODELS_DIR")
     if env_override:
-        return Path(env_override)
+        return _validate_clinical_v2_dir(Path(env_override))
 
-    base = MODELS_ROOT
-    candidates = [base / "clinical_v2", base / "clinical"]
-    for candidate in candidates:
-        if (candidate / "best_model.joblib").exists():
-            return candidate
-    return candidates[0]
+    candidate = MODELS_ROOT / "clinical_v2"
+    return _validate_clinical_v2_dir(candidate)
+
+
+def _validate_clinical_v2_dir(path: Path) -> Path:
+    """Ensure clinical_v2 artifacts are present and consistent."""
+    model_path = path / "best_model.joblib"
+    if not model_path.exists():
+        raise FileNotFoundError(
+            f"Clinical v2 model not found at {model_path}. clinical/ is deprecated."
+        )
+
+    features_path = path / "features.json"
+    if not features_path.exists():
+        raise FileNotFoundError(
+            f"Clinical v2 feature manifest not found at {features_path}."
+        )
+
+    with open(features_path) as f:
+        features_manifest = json.load(f)
+    n_features = features_manifest.get("n_features")
+    if n_features != 13:
+        raise ValueError(
+            f"Clinical v2 requires 13 features, found {n_features} in {features_path}."
+        )
+
+    return path
 
 # Features expected by the model
 REQUIRED_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl']
@@ -309,6 +330,20 @@ class ClinicalPredictor:
         self.scaler = safe_load_model(self.models_dir / "scaler.joblib")
         imputer_path = self.models_dir / "imputer.joblib"
         self.imputer = safe_load_model(imputer_path) if imputer_path.exists() else None
+
+        self.cluster_scaler = None
+        cluster_scaler_path = self.models_dir / "cluster_scaler.joblib"
+        if cluster_scaler_path.exists():
+            cluster_scaler = safe_load_model(cluster_scaler_path)
+            expected_features = getattr(cluster_scaler, "n_features_in_", None)
+            if expected_features == len(self.features):
+                self.cluster_scaler = cluster_scaler
+            else:
+                logger.warning(
+                    "Cluster scaler feature mismatch: expected %s features, got %d. Ignoring cluster scaler.",
+                    expected_features,
+                    len(self.features),
+                )
         
         self.classifier = safe_load_model(self.models_dir / "best_model.joblib")
         # Backward compatibility for callers expecting `.model`.
@@ -449,9 +484,14 @@ class ClinicalPredictor:
         
         # Prepare model feature vector in training order.
         X = self._build_feature_vector(data)
-        
-        # Transform with training-time preprocessing stack.
-        X_scaled = self._transform_features(X)
+
+        X_imputed = self.imputer.transform(X) if self.imputer is not None else X
+        X_scaled = self.scaler.transform(X_imputed)
+        X_cluster_scaled = (
+            self.cluster_scaler.transform(X_imputed)
+            if self.cluster_scaler is not None
+            else X_scaled
+        )
         
         # Get prediction probabilities
         try:
@@ -479,17 +519,17 @@ class ClinicalPredictor:
         
         # Get risk cluster info if kmeans is available
         if self.kmeans is not None:
-            expected_features = getattr(self.kmeans, "n_features_in_", X_scaled.shape[1])
-            if expected_features != X_scaled.shape[1]:
+            expected_features = getattr(self.kmeans, "n_features_in_", X_cluster_scaled.shape[1])
+            if expected_features != X_cluster_scaled.shape[1]:
                 logger.warning(
                     "Skipping KMeans clustering due to feature mismatch: expected %d, got %d.",
                     expected_features,
-                    X_scaled.shape[1],
+                    X_cluster_scaled.shape[1],
                 )
                 self.kmeans = None
 
         if self.kmeans is not None:
-            cluster_id = int(self.kmeans.predict(X_scaled)[0])
+            cluster_id = int(self.kmeans.predict(X_cluster_scaled)[0])
             cluster_info = self._get_cluster_info(cluster_id)
             risk_cluster = cluster_info.get("label", f"Cluster-{cluster_id}")
             metabolic_subtype = cluster_info.get("metabolic_subtype", "N/A")

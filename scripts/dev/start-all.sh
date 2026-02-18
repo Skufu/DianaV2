@@ -71,6 +71,32 @@ if [ ! -f "models/clinical_v2/best_model.joblib" ] && [ ! -f "models/clinical_v2
     exit 1
 fi
 
+if ! "$PYTHON" - <<'PY'
+import sys
+from pathlib import Path
+import joblib
+
+models_dir = Path("models/clinical_v2")
+kmeans_path = models_dir / "kmeans_model.joblib"
+cluster_scaler_path = models_dir / "cluster_scaler.joblib"
+
+if not kmeans_path.exists() or not cluster_scaler_path.exists():
+    sys.exit(1)
+
+kmeans = joblib.load(kmeans_path)
+cluster_scaler = joblib.load(cluster_scaler_path)
+
+expected = 13
+if getattr(kmeans, "n_features_in_", None) != expected:
+    sys.exit(1)
+if getattr(cluster_scaler, "n_features_in_", None) != expected:
+    sys.exit(1)
+PY
+then
+    echo -e "${YELLOW}Clinical v2 clustering artifacts out of date. Retraining...${NC}"
+    "$PYTHON" "scripts/train/retrain_clinical_v2_kmeans.py" || exit 1
+fi
+
 # Load environment
 if [ -f ".env" ]; then
     set -a
