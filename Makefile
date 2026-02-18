@@ -57,7 +57,7 @@ tidy:
 # Convenience targets for helper scripts
 
 setup:
-	./scripts/setup.sh
+	./scripts/dev/setup.sh
 
 run-dev:
 	./scripts/run-dev.sh
@@ -70,11 +70,11 @@ debug-neon:
 
 # ML targets
 ml:
-	$(PYTHON) Ian_ML/server.py
+	$(PYTHON) Ian_ML/service/server.py
 
 ml-train:
-	$(PYTHON) Ian_ML/train.py
+	$(PYTHON) Ian_ML/training/train.py
 
 # Start all services (ML + Backend + Frontend)
 start-all:
-	bash scripts/start-all.sh
+	bash scripts/dev/start-all.sh

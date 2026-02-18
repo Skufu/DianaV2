@@ -12,6 +12,20 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/models"
 )
 
+func validAssessmentInput() models.Assessment {
+	return models.Assessment{
+		HbA1c:         5.8,
+		FBS:           100,
+		LDL:           120,
+		HDL:           50,
+		Triglycerides: 150,
+		Systolic:      120,
+		Diastolic:     80,
+		BMI:           25.0,
+		Age:           55,
+	}
+}
+
 func TestNewHTTPPredictor(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -54,15 +68,15 @@ func TestNewHTTPPredictor(t *testing.T) {
 
 func TestHTTPPredictor_Predict_EmptyURL(t *testing.T) {
 	p := NewHTTPPredictor("", "v1", "", 5*time.Second)
-	input := models.Assessment{HbA1c: 6.5}
+	input := validAssessmentInput()
 
 	cluster, score, err := p.Predict(context.Background(), input)
 
-	if err != nil {
-		t.Errorf("Predict() returned unexpected error: %v", err)
+	if err == nil {
+		t.Errorf("Predict() expected error when URL is empty")
 	}
-	if cluster != "unknown" {
-		t.Errorf("Predict() cluster = %q, want 'unknown'", cluster)
+	if cluster != "error" {
+		t.Errorf("Predict() cluster = %q, want 'error'", cluster)
 	}
 	if score != 0 {
 		t.Errorf("Predict() score = %d, want 0", score)
@@ -77,8 +91,8 @@ func TestHTTPPredictor_Predict_Success(t *testing.T) {
 		if r.URL.Path != "/predict" {
 			t.Errorf("Expected path /predict, got %s", r.URL.Path)
 		}
-		if r.URL.Query().Get("model_type") != "ada" {
-			t.Errorf("Expected model_type=ada query param")
+		if r.URL.Query().Get("model_type") != "clinical" {
+			t.Errorf("Expected model_type=clinical query param")
 		}
 		if r.Header.Get("Content-Type") != "application/json" {
 			t.Errorf("Expected Content-Type application/json")
@@ -98,14 +112,13 @@ func TestHTTPPredictor_Predict_Success(t *testing.T) {
 	defer server.Close()
 
 	p := NewHTTPPredictor(server.URL+"/predict", "v1.0.0", "", 5*time.Second)
-	input := models.Assessment{
-		HbA1c:       6.5,
-		FBS:         120,
-		Cholesterol: 220,
-		Systolic:    140,
-		Diastolic:   90,
-		BMI:         28.5,
-	}
+	input := validAssessmentInput()
+	input.HbA1c = 6.5
+	input.FBS = 120
+	input.Cholesterol = 220
+	input.Systolic = 140
+	input.Diastolic = 90
+	input.BMI = 28.5
 
 	cluster, score, err := p.Predict(context.Background(), input)
 
@@ -135,7 +148,8 @@ func TestHTTPPredictor_Predict_WithVersionHeader(t *testing.T) {
 	defer server.Close()
 
 	p := NewHTTPPredictor(server.URL+"/predict", "v2.1.0", "", 5*time.Second)
-	input := models.Assessment{HbA1c: 7.0}
+	input := validAssessmentInput()
+	input.HbA1c = 7.0
 
 	cluster, score, err := p.Predict(context.Background(), input)
 
@@ -152,12 +166,12 @@ func TestHTTPPredictor_Predict_WithVersionHeader(t *testing.T) {
 
 func TestHTTPPredictor_Predict_NetworkError(t *testing.T) {
 	p := NewHTTPPredictor("http://invalid-host-that-does-not-exist-12345.com/predict", "v1", "", 1*time.Millisecond)
-	input := models.Assessment{HbA1c: 6.5}
+	input := validAssessmentInput()
 
 	cluster, score, err := p.Predict(context.Background(), input)
 
 	if err == nil {
-		t.Errorf("Predict() on network error should return error, got nil")
+		t.Errorf("Predict() should return error on network failure")
 	}
 	if cluster != "error" {
 		t.Errorf("Predict() cluster on network error = %q, want 'error'", cluster)
@@ -175,12 +189,12 @@ func TestHTTPPredictor_Predict_NonOKResponse(t *testing.T) {
 	defer server.Close()
 
 	p := NewHTTPPredictor(server.URL+"/predict", "v1", "", 5*time.Second)
-	input := models.Assessment{HbA1c: 6.5}
+	input := validAssessmentInput()
 
 	cluster, score, err := p.Predict(context.Background(), input)
 
 	if err == nil {
-		t.Errorf("Predict() on 500 response should return error, got nil")
+		t.Errorf("Predict() should return error on 500 response")
 	}
 	if cluster != "error" {
 		t.Errorf("Predict() cluster on 500 response = %q, want 'error'", cluster)
@@ -198,12 +212,12 @@ func TestHTTPPredictor_Predict_InvalidJSONResponse(t *testing.T) {
 	defer server.Close()
 
 	p := NewHTTPPredictor(server.URL+"/predict", "v1", "", 5*time.Second)
-	input := models.Assessment{HbA1c: 6.5}
+	input := validAssessmentInput()
 
 	cluster, score, err := p.Predict(context.Background(), input)
 
 	if err == nil {
-		t.Errorf("Predict() on invalid JSON should return error, got nil")
+		t.Errorf("Predict() should return error on invalid JSON response")
 	}
 	if cluster != "error" {
 		t.Errorf("Predict() cluster on invalid JSON = %q, want 'error'", cluster)
@@ -224,12 +238,12 @@ func TestHTTPPredictor_Predict_EmptyClusterResponse(t *testing.T) {
 	defer server.Close()
 
 	p := NewHTTPPredictor(server.URL+"/predict", "v1", "", 5*time.Second)
-	input := models.Assessment{HbA1c: 6.5}
+	input := validAssessmentInput()
 
 	cluster, score, err := p.Predict(context.Background(), input)
 
 	if err == nil {
-		t.Errorf("Predict() with empty cluster should return error, got nil")
+		t.Errorf("Predict() should return error on empty risk cluster")
 	}
 	if cluster != "error" {
 		t.Errorf("Predict() cluster with empty cluster = %q, want 'error'", cluster)
@@ -252,12 +266,12 @@ func TestHTTPPredictor_Predict_Timeout(t *testing.T) {
 	defer server.Close()
 
 	p := NewHTTPPredictor(server.URL+"/predict", "v1", "", 10*time.Millisecond)
-	input := models.Assessment{HbA1c: 6.5}
+	input := validAssessmentInput()
 
 	cluster, score, err := p.Predict(context.Background(), input)
 
 	if err == nil {
-		t.Errorf("Predict() on timeout should return error, got nil")
+		t.Errorf("Predict() should return error on timeout")
 	}
 	if cluster != "error" {
 		t.Errorf("Predict() cluster on timeout = %q, want 'error'", cluster)
@@ -290,6 +304,7 @@ func TestHTTPPredictor_Predict_MarshaledInput(t *testing.T) {
 		Systolic:      120,
 		Diastolic:     80,
 		BMI:           24.5,
+		Age:           56,
 	}
 
 	cluster, score, err := p.Predict(context.Background(), input)
@@ -312,8 +327,8 @@ func TestHTTPPredictor_Predict_MarshaledInput(t *testing.T) {
 	if err := json.Unmarshal(receivedJSON, &decoded); err != nil {
 		t.Errorf("Failed to unmarshal sent JSON: %v", err)
 	}
-	if decoded.HbA1c != input.HbA1c {
-		t.Errorf("Sent HbA1c = %f, want %f", decoded.HbA1c, input.HbA1c)
+	if decoded.BMI != input.BMI {
+		t.Errorf("Sent BMI = %f, want %f", decoded.BMI, input.BMI)
 	}
 }
 
@@ -329,7 +344,8 @@ func TestHTTPPredictor_Predict_AllClusters(t *testing.T) {
 		}))
 
 		p := NewHTTPPredictor(server.URL+"/predict", "v1", "", 5*time.Second)
-		input := models.Assessment{HbA1c: 6.5}
+		input := validAssessmentInput()
+		input.HbA1c = 6.5
 
 		receivedCluster, _, err := p.Predict(context.Background(), input)
 
@@ -344,7 +360,7 @@ func TestHTTPPredictor_Predict_AllClusters(t *testing.T) {
 	}
 }
 
-func TestHTTPPredictor_Predict_NilBiomarkerFields(t *testing.T) {
+func TestHTTPPredictor_Predict_InvalidClinicalPayload(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -361,14 +377,14 @@ func TestHTTPPredictor_Predict_NilBiomarkerFields(t *testing.T) {
 
 	cluster, score, err := p.Predict(context.Background(), input)
 
-	if err != nil {
-		t.Errorf("Predict() returned unexpected error: %v", err)
+	if err == nil {
+		t.Errorf("Predict() should return error for invalid clinical payload")
 	}
-	if cluster != "SIRD" {
-		t.Errorf("Predict() with partial input = %q, want 'SIRD'", cluster)
+	if cluster != "error" {
+		t.Errorf("Predict() with partial input = %q, want 'error'", cluster)
 	}
-	if score != 50 {
-		t.Errorf("Predict() with partial input = %d, want 50", score)
+	if score != 0 {
+		t.Errorf("Predict() with partial input = %d, want 0", score)
 	}
 }
 
@@ -391,7 +407,8 @@ func TestHTTPPredictor_Predict_RequestConstruction(t *testing.T) {
 	defer server.Close()
 
 	p := NewHTTPPredictor(server.URL+"/predict", "v1.5.0", "", 5*time.Second)
-	input := models.Assessment{HbA1c: 6.8}
+	input := validAssessmentInput()
+	input.HbA1c = 6.8
 
 	_, _, err := p.Predict(context.Background(), input)
 	if err != nil {
@@ -404,7 +421,7 @@ func TestHTTPPredictor_Predict_RequestConstruction(t *testing.T) {
 	if receivedContentType != "application/json" {
 		t.Errorf("Expected Content-Type application/json, got %s", receivedContentType)
 	}
-	if receivedURL != "/predict?model_type=ada" {
+	if receivedURL != "/predict?model_type=clinical" {
 		t.Errorf("Expected URL with query param, got %s", receivedURL)
 	}
 }

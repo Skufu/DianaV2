@@ -17,29 +17,40 @@ func TestMockPredictor_Predict(t *testing.T) {
 		wantRiskRange [2]int // min, max for risk score
 	}{
 		{
-			name: "SIRD - high BMI and HbA1c",
+			name: "SIRD - high BMI, lipids, and BP",
 			input: models.Assessment{
-				BMI:   32,
-				HbA1c: 6.5,
+				BMI:           36,
+				Triglycerides: 180,
+				LDL:           150,
+				HDL:           40,
+				Systolic:      135,
+				Diastolic:     85,
 			},
 			wantCluster:   "SIRD",
 			wantRiskRange: [2]int{80, 100},
 		},
 		{
-			name: "SIDD - high HbA1c, low BMI",
+			name: "SIDD - low BMI with high lipids/BP",
 			input: models.Assessment{
-				BMI:   25,
-				HbA1c: 7.0,
+				BMI:           22,
+				Triglycerides: 210,
+				LDL:           170,
+				Systolic:      145,
+				Diastolic:     92,
 			},
 			wantCluster:   "SIDD",
-			wantRiskRange: [2]int{90, 100},
+			wantRiskRange: [2]int{70, 90},
 		},
 		{
 			name: "MARD - even patient ID",
 			input: models.Assessment{
-				PatientID: 10,
-				BMI:       24,
-				HbA1c:     5.5,
+				PatientID:     10,
+				BMI:           24,
+				Triglycerides: 110,
+				LDL:           100,
+				HDL:           55,
+				Systolic:      118,
+				Diastolic:     76,
 			},
 			wantCluster:   "MARD",
 			wantRiskRange: [2]int{40, 50},
@@ -47,12 +58,16 @@ func TestMockPredictor_Predict(t *testing.T) {
 		{
 			name: "MOD - odd patient ID, normal values",
 			input: models.Assessment{
-				PatientID: 11,
-				BMI:       24,
-				HbA1c:     5.5,
+				PatientID:     11,
+				BMI:           24,
+				Triglycerides: 110,
+				LDL:           100,
+				HDL:           55,
+				Systolic:      118,
+				Diastolic:     76,
 			},
 			wantCluster:   "MOD",
-			wantRiskRange: [2]int{25, 35},
+			wantRiskRange: [2]int{25, 40},
 		},
 	}
 

@@ -13,7 +13,7 @@ import { ADMIN_USER, waitForNetworkIdle } from '../fixtures/test-data';
  * - Database must be accessible
  *
  * Demo Credentials:
- * - User: demo@diana.app / demo123
+ * - User: demo@diana.app / demopassword123
  * - Admin: admin@diana.app / admin123
  */
 
@@ -25,7 +25,7 @@ test.describe('Integration: Real Authentication', () => {
 
   test('should login successfully with demo user credentials', async ({ page }) => {
     await page.fill('input[type="email"]', 'demo@diana.app');
-    await page.fill('input[type="password"]', 'demo123');
+    await page.fill('input[type="password"]', 'demopassword123');
 
     await page.click('button:has-text("Sign In")');
 
@@ -80,7 +80,7 @@ test.describe('Integration: Real Authentication', () => {
 
   test('should logout successfully and clear tokens', async ({ page }) => {
     await page.fill('input[type="email"]', 'demo@diana.app');
-    await page.fill('input[type="password"]', 'demo123');
+    await page.fill('input[type="password"]', 'demopassword123');
     await page.click('button:has-text("Sign In")');
     await waitForNetworkIdle(page);
 
@@ -105,7 +105,7 @@ test.describe('Integration: Real Authentication', () => {
 
   test('should persist session after page reload', async ({ page }) => {
     await page.fill('input[type="email"]', 'demo@diana.app');
-    await page.fill('input[type="password"]', 'demo123');
+    await page.fill('input[type="password"]', 'demopassword123');
     await page.click('button:has-text("Sign In")');
     await waitForNetworkIdle(page);
 
@@ -119,7 +119,7 @@ test.describe('Integration: Real Authentication', () => {
 
   test('should redirect to login after token expires', async ({ page }) => {
     await page.fill('input[type="email"]', 'demo@diana.app');
-    await page.fill('input[type="password"]', 'demo123');
+    await page.fill('input[type="password"]', 'demopassword123');
     await page.click('button:has-text("Sign In")');
     await waitForNetworkIdle(page);
 

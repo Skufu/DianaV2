@@ -136,9 +136,7 @@ const UserProfile = ({ setActiveTab }) => {
             className="overflow-hidden"
           >
             <AssessmentForm
-              onSubmit={() => {
-                setShowAssessmentForm(false);
-              }}
+              onSubmit={() => setShowAssessmentForm(false)}
               onCancel={() => setShowAssessmentForm(false)}
             />
           </motion.div>

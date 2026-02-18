@@ -196,10 +196,10 @@ All random operations use `random_state=42` for reproducibility.
 ### Model Artifacts Location
 | Artifact | Path |
 |----------|------|
-| StandardScaler | `models/scaler.joblib` |
-| K-Means Model | `models/kmeans_model.joblib` |
-| Cluster Labels | `models/cluster_labels.json` |
-| Cluster Profiles | `models/cluster_profiles.csv` |
+| StandardScaler | `models/legacy/artifacts/scaler.joblib` |
+| K-Means Model | `models/legacy/artifacts/kmeans_model.joblib` |
+| Cluster Labels | `models/legacy/artifacts/cluster_labels.json` |
+| Cluster Profiles | `models/legacy/results/cluster_profiles.csv` |
 | Clinical Models | `models/clinical/*.joblib` |
 | Results | `models/clinical/results/` |
 | Visualizations | `models/clinical/visualizations/` |
@@ -218,17 +218,17 @@ source venv/bin/activate && ./scripts/retrain_all.sh
 # Individual steps:
 # 3. Process and Clean
 python scripts/process_nhanes_multi.py
-python Ian_ML/data_processing.py
+python Ian_ML/training/data_processing.py
 
 # 4. Impute
 python scripts/impute_missing_data.py
 
 # 5. Train and Cluster
-python Ian_ML/train.py
+python Ian_ML/training/train.py
 python scripts/train/train_clusters.py
 
 # 6. Start ML server
-python Ian_ML/server.py
+python Ian_ML/service/server.py
 ```
 
 ---

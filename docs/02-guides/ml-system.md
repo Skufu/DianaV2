@@ -157,7 +157,7 @@ This dual-output architecture enables clinicians to understand:
 ## Training & Execution
 
 > [!IMPORTANT]
-> Modern systems (macOS/Linux) require a virtual environment. Run `scripts/setup.sh` first to create it.
+> Modern systems (macOS/Linux) require a virtual environment. Run `scripts/dev/setup.sh` first to create it.
 
 ### Using Makefile (Recommended)
 ```bash
@@ -171,17 +171,17 @@ make ml
 ### Manual execution (via venv)
 ```bash
 # Full pipeline (recommended - processes data, imputes, trains, clusters)
-source venv/bin/activate && ./scripts/retrain-all.sh
+source venv/bin/activate && ./scripts/dev/retrain-all.sh
 
 # Or run individual steps:
 ./venv/bin/python scripts/process_nhanes_multi.py
-./venv/bin/python Ian_ML/data_processing.py
+./venv/bin/python Ian_ML/training/data_processing.py
 ./venv/bin/python scripts/impute_missing_data.py
-./venv/bin/python Ian_ML/train.py
+./venv/bin/python Ian_ML/training/train.py
 ./venv/bin/python scripts/train_clusters.py
 
 # Start ML server
-./venv/bin/python Ian_ML/server.py
+./venv/bin/python Ian_ML/service/server.py
 ```
 
 > **See**: [rationale.md](../03-ml/rationale.md) for methodology justification
@@ -205,7 +205,7 @@ Based on Ahlqvist et al. diabetes subtype classification with DIANA NHANES resul
 
 ### SHAP Explanations
 ```python
-from Ian_ML.explainability import SHAPExplainer, format_for_clinician
+from Ian_ML.service.explainability import SHAPExplainer, format_for_clinician
 
 explainer = SHAPExplainer(model, model_type="tree")
 explanation = explainer.explain(features, feature_names)
@@ -213,7 +213,7 @@ explanation = explainer.explain(features, feature_names)
 
 ### A/B Testing
 ```python
-from Ian_ML.ab_testing import get_ab_manager
+from Ian_ML.service.ab_testing import get_ab_manager
 
 manager = get_ab_manager()
 test = manager.create_test(
@@ -226,7 +226,7 @@ test = manager.create_test(
 
 ### Drift Detection
 ```python
-from Ian_ML.drift_detection import get_drift_monitor
+from Ian_ML.service.drift_detection import get_drift_monitor
 
 monitor = get_drift_monitor()
 report = monitor.check_feature_drift(current_data)
@@ -236,7 +236,7 @@ if report.has_drift:
 
 ### MLflow Integration
 ```python
-from Ian_ML.mlflow_config import get_mlflow_manager
+from Ian_ML.service.mlflow_config import get_mlflow_manager
 
 manager = get_mlflow_manager()
 versions = manager.get_model_versions("diana-clinical")

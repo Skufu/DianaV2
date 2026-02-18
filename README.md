@@ -100,16 +100,16 @@ A full-stack health application designed for menopausal women to assess diabetes
 ### ML (Python)
 | File | Absolute Path | Purpose |
 |------|---------------|---------|
-| Flask Server | `Ian_ML/server.py` | API endpoints |
-| Predictors | `Ian_ML/predict.py` | DianaPredictor, ClinicalPredictor |
-| Training | `Ian_ML/train.py` | Clinical model training |
-| Clustering | `Ian_ML/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
-| Data Processing | `Ian_ML/data_processing.py` | NHANES data pipeline |
-| Explainability | `Ian_ML/explainability.py` | SHAP explanations |
-| Explainer | `Ian_ML/explainer.py` | Explainer utilities |
-| A/B Testing | `Ian_ML/ab_testing.py` | A/B testing infrastructure |
-| Drift Detection | `Ian_ML/drift_detection.py` | Model drift monitoring |
-| MLflow Config | `Ian_ML/mlflow_config.py` | MLflow experiment tracking |
+| Flask Server | `Ian_ML/service/server.py` | API endpoints |
+| Predictors | `Ian_ML/service/predict.py` | DianaPredictor, ClinicalPredictor |
+| Training | `Ian_ML/training/train.py` | Clinical model training |
+| Clustering | `Ian_ML/training/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
+| Data Processing | `Ian_ML/training/data_processing.py` | NHANES data pipeline |
+| Explainability | `Ian_ML/service/explainability.py` | SHAP explanations |
+| Explainer | `Ian_ML/service/explainer.py` | Explainer utilities |
+| A/B Testing | `Ian_ML/service/ab_testing.py` | A/B testing infrastructure |
+| Drift Detection | `Ian_ML/service/drift_detection.py` | Model drift monitoring |
+| MLflow Config | `Ian_ML/service/mlflow_config.py` | MLflow experiment tracking |
 | Data Pipeline Script | `scripts/data/process_nhanes_multi.py` | NHANES download and processing |
 | Feature Selection | `scripts/data/feature_selection.py` | Mutual Information + IG analysis |
 | Cluster Training | `scripts/train/train_clusters.py` | K-Means, CatBoost |
@@ -357,7 +357,7 @@ VITE_ML_API_KEY=your-secure-ml-api-key  # Must match ML_API_KEY
 
 | Role | Email | Password |
 |------|-------|----------|
-| Demo (User) | demo@diana.app | demo123 |
+| Demo (User) | demo@diana.app | demopassword123 |
 | Admin | admin@diana.app | admin123 |
 
 ---

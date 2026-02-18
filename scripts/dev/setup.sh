@@ -23,7 +23,12 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if command -v git >/dev/null 2>&1 && git -C "$SCRIPT_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+    ROOT_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+else
+    ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+fi
 AUTO_INSTALL_ATTEMPTS=()
 AUTO_INSTALL_FAILED=()
 
@@ -589,7 +594,7 @@ Next Steps:
 3. Access: http://localhost:4000
 
 Demo Credentials:
-- User: demo@diana.app / demo123
+- User: demo@diana.app / demopassword123
 - Admin: admin@diana.app / admin123
 EOF
 
@@ -627,7 +632,7 @@ echo -e "     Backend:    ${CYAN}http://localhost:8080/api/v1/healthz${NC}"
 echo -e "     ML Server:  ${CYAN}http://localhost:5001/health${NC}"
 echo ""
 echo -e "  ${BOLD}Demo Credentials:${NC}"
-echo -e "     User:   ${YELLOW}demo@diana.app / demo123${NC}"
+echo -e "     User:   ${YELLOW}demo@diana.app / demopassword123${NC}"
 echo -e "     Admin:  ${YELLOW}admin@diana.app / admin123${NC}"
 echo ""
 

@@ -16,10 +16,10 @@ from pathlib import Path
 
 
 def load_models():
-    scaler = joblib.load('models/scaler.joblib')
-    classifier = joblib.load('models/random_forest.joblib')
-    kmeans = joblib.load('models/kmeans_model.joblib')
-    with open('models/cluster_labels.json') as f:
+    scaler = joblib.load('models/legacy/artifacts/scaler.joblib')
+    classifier = joblib.load('models/legacy/artifacts/random_forest.joblib')
+    kmeans = joblib.load('models/legacy/artifacts/kmeans_model.joblib')
+    with open('models/legacy/artifacts/cluster_labels.json') as f:
         cluster_labels = json.load(f)
     return scaler, classifier, kmeans, cluster_labels
 
@@ -158,8 +158,8 @@ THESIS DEFENSE SCRIPT:
 ''')
     
     results_df = pd.DataFrame(results)
-    results_df.to_csv('models/results/weighting_ablation.csv', index=False)
-    print('Results saved to: models/results/weighting_ablation.csv')
+    results_df.to_csv('models/legacy/results/weighting_ablation.csv', index=False)
+    print('Results saved to: models/legacy/results/weighting_ablation.csv')
     
     return results
 

@@ -75,25 +75,25 @@ const MockMLResultModal = ({ isOpen, onClose, formData, onConfirm }) => {
     const clusters = {
       'SIDD': {
         fullName: 'Severe Insulin-Deficient Diabetes',
-        desc: 'Early onset, low BMI, poor metabolic control',
+        desc: 'Lower BMI with elevated metabolic strain markers',
         color: 'bg-red-100 text-red-800 border-red-200',
         icon: '🔴'
       },
       'SIRD': {
         fullName: 'Severe Insulin-Resistant Diabetes',
-        desc: 'High insulin resistance, elevated kidney disease risk',
+        desc: 'High BMI with elevated lipids and blood pressure',
         color: 'bg-amber-100 text-amber-800 border-amber-200',
         icon: '🟠'
       },
       'MOD': {
         fullName: 'Mild Obesity-Related Diabetes',
-        desc: 'High BMI but relatively stable metabolic state',
+        desc: 'High BMI with moderately elevated lipid markers',
         color: 'bg-blue-100 text-blue-800 border-blue-200',
         icon: '🔵'
       },
       'MARD': {
         fullName: 'Mild Age-Related Diabetes',
-        desc: 'Older onset, mild metabolic disturbances',
+        desc: 'Lower BMI with healthier lipid and blood pressure profile',
         color: 'bg-green-100 text-green-800 border-green-200',
         icon: '🟢'
       }
@@ -217,7 +217,7 @@ const MockMLResultModal = ({ isOpen, onClose, formData, onConfirm }) => {
                         </div>
 
                         <p className="text-sm text-diana-text-secondary">
-                          Based on your HbA1c ({formData.hba1c}%), FBS ({formData.fbs} mg/dL), and other biomarkers
+                          Based on your BMI, lipid profile, and blood pressure readings
                         </p>
                       </motion.div>
 
@@ -360,44 +360,47 @@ const MockMLResultModal = ({ isOpen, onClose, formData, onConfirm }) => {
 };
 
 const generateMockResult = (formData) => {
-  const hba1c = parseFloat(formData.hba1c) || 5.7;
-  const fbs = parseInt(formData.fbs) || 95;
   const bmi = parseFloat(formData.bmi) || 25;
   const triglycerides = parseInt(formData.triglycerides) || 150;
   const hdl = parseInt(formData.hdl) || 50;
-  const ldl = parseInt(formData.ldl) || 100;
+  const ldl = parseInt(formData.ldl) || 110;
+  const systolic = parseInt(formData.systolic) || 120;
+  const diastolic = parseInt(formData.diastolic) || 80;
 
   let riskScore = 0;
   let riskLevel = 'low';
   let cluster = 'MARD';
 
-  // HbA1c contribution (primary classifier per ADA)
-  if (hba1c >= 6.5) {
-    riskScore += 35;
-  } else if (hba1c >= 5.7) {
+  if (bmi >= 35) {
     riskScore += 20;
-  }
-
-  // FBS contribution
-  if (fbs >= 126) {
-    riskScore += 30;
-  } else if (fbs >= 100) {
-    riskScore += 15;
-  }
-
-  // BMI contribution
-  if (bmi >= 30) {
-    riskScore += 15;
+  } else if (bmi >= 30) {
+    riskScore += 14;
   } else if (bmi >= 25) {
     riskScore += 8;
   }
 
-  // Lipid profile contribution
   if (triglycerides >= 200) {
-    riskScore += 5;
+    riskScore += 8;
+  } else if (triglycerides >= 150) {
+    riskScore += 4;
   }
+
   if (hdl < 40) {
-    riskScore += 5;
+    riskScore += 8;
+  } else if (hdl < 50) {
+    riskScore += 4;
+  }
+
+  if (ldl >= 160) {
+    riskScore += 6;
+  } else if (ldl >= 130) {
+    riskScore += 3;
+  }
+
+  if (systolic >= 140 || diastolic >= 90) {
+    riskScore += 10;
+  } else if (systolic >= 130 || diastolic >= 80) {
+    riskScore += 6;
   }
 
   riskScore += Math.floor(Math.random() * 10) - 5;
@@ -411,14 +414,9 @@ const generateMockResult = (formData) => {
     riskLevel = 'low';
   }
 
-  // Cluster assignment based on Ahlqvist classification characteristics
-  // SIDD: High HbA1c, low BMI (severe insulin-deficient)
-  // SIRD: High BMI, high TG, low HDL (severe insulin-resistant)
-  // MOD: High BMI, moderate metabolic (mild obesity-related)
-  // MARD: Low BMI, healthiest profile (mild age-related)
-  if (hba1c > 7.0 && bmi < 25) {
+  if (bmi < 25 && (triglycerides >= 200 || ldl >= 160 || systolic >= 140 || diastolic >= 90)) {
     cluster = 'SIDD';
-  } else if (bmi >= 35 && triglycerides > 150 && hdl < 50) {
+  } else if (bmi >= 35 && (triglycerides > 150 || hdl < 45) && (systolic >= 130 || diastolic >= 80)) {
     cluster = 'SIRD';
   } else if (bmi >= 30) {
     cluster = 'MOD';
@@ -427,14 +425,6 @@ const generateMockResult = (formData) => {
   }
 
   const factors = [];
-
-  if (hba1c > 6.0) {
-    factors.push({ name: `HbA1c Level (${hba1c}%)`, impact: hba1c > 7.0 ? 'high' : 'medium' });
-  }
-
-  if (fbs > 100) {
-    factors.push({ name: `Fasting Blood Sugar (${fbs} mg/dL)`, impact: fbs > 126 ? 'high' : 'medium' });
-  }
 
   if (bmi > 25) {
     factors.push({ name: `BMI (${bmi} kg/m²)`, impact: bmi > 30 ? 'medium' : 'low' });
@@ -446,6 +436,17 @@ const generateMockResult = (formData) => {
 
   if (hdl < 50) {
     factors.push({ name: `HDL Cholesterol (${hdl} mg/dL)`, impact: hdl < 40 ? 'medium' : 'low' });
+  }
+
+  if (ldl >= 130) {
+    factors.push({ name: `LDL Cholesterol (${ldl} mg/dL)`, impact: ldl >= 160 ? 'medium' : 'low' });
+  }
+
+  if (systolic >= 130 || diastolic >= 80) {
+    factors.push({
+      name: `Blood Pressure (${systolic}/${diastolic} mmHg)`,
+      impact: systolic >= 140 || diastolic >= 90 ? 'high' : 'medium'
+    });
   }
 
   if (factors.length === 0) {

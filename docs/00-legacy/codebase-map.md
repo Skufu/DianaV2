@@ -10,7 +10,7 @@
 DianaV2/
 ├── backend/          # Go REST API (Gin framework)
 ├── frontend/         # React SPA (Vite + Tailwind)
-├── ml/               # Python ML server (Flask)
+├── Ian_ML/             # Python ML server (Flask)
 ├── models/           # Trained ML artifacts
 ├── data/             # NHANES dataset files
 ├── scripts/          # Utilities & data processing
@@ -409,7 +409,7 @@ VITE_ML_BASE=http://localhost:5000
 | Add API endpoint | `router/router.go` → `handlers/*.go` |
 | Add database query | `store/queries/*.sql` → run `make sqlc` |
 | Add frontend page | `App.jsx` → `components/*/` |
-| Modify ML prediction | `Ian_ML/predict.py` |
+| Modify ML prediction | `Ian_ML/service/predict.py` |
 | Add migration | `migrations/*.sql` → run `make db_up` |
 | Update auth logic | `middleware/auth.go`, `handlers/auth.go` |
 | Add admin feature | `handlers/admin_*.go`, `components/admin/` |

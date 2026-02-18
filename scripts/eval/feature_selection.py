@@ -26,8 +26,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 
 DATA_PATH = Path("data/nhanes/processed/diana_dataset_final.csv")
-OUTPUT_DIR = Path("models/results")
-VIZ_DIR = Path("models/visualizations")
+OUTPUT_DIR = Path("models/legacy/results")
+VIZ_DIR = Path("models/legacy/visualizations")
 
 # Features to analyze - biomarkers and lifestyle factors
 BIOMARKER_FEATURES = ['fbs', 'bmi', 'triglycerides', 'ldl', 'hdl', 'age']

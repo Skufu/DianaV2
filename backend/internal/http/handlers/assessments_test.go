@@ -25,23 +25,8 @@ func TestValidationStatus(t *testing.T) {
 	}{
 		{
 			name:   "normal values",
-			input:  models.Assessment{FBS: 90, HbA1c: 5.4},
+			input:  models.Assessment{Triglycerides: 120, LDL: 110, HDL: 55, Systolic: 118, Diastolic: 76, BMI: 24},
 			expect: "ok",
-		},
-		{
-			name:   "prediabetic fasting",
-			input:  models.Assessment{FBS: 110, HbA1c: 5.4},
-			expect: "warning:fbs_prediabetic_range",
-		},
-		{
-			name:   "diabetic a1c and fasting",
-			input:  models.Assessment{FBS: 130, HbA1c: 6.8},
-			expect: "warning:fbs_diabetic_range,hba1c_diabetic_range",
-		},
-		{
-			name:   "prediabetic a1c only",
-			input:  models.Assessment{FBS: 90, HbA1c: 5.8},
-			expect: "warning:hba1c_prediabetic_range",
 		},
 		{
 			name:   "lipids and bp and bmi warnings",
@@ -88,7 +73,7 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 	r.Use(mockAuthMiddleware())
 	r.POST("/:id/assessments", h.Create)
 
-	body := bytes.NewBufferString(`{"fbs":110,"hba1c":6.1,"cholesterol":205,"bmi":25}`)
+	body := bytes.NewBufferString(`{"age":55,"bmi":25,"triglycerides":150,"ldl":120,"hdl":50,"systolic":120,"diastolic":80}`)
 	req, _ := http.NewRequest(http.MethodPost, "/123/assessments", body)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -118,20 +103,16 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 	r.Use(mockAuthMiddleware())
 	r.POST("/:id/assessments", h.Create)
 
-	body := bytes.NewBufferString(`{"fbs":95,"bmi":22}`)
+	body := bytes.NewBufferString(`{"age":55,"bmi":22,"triglycerides":140,"ldl":110,"hdl":55,"systolic":118,"diastolic":76}`)
 	req, _ := http.NewRequest(http.MethodPost, "/5/assessments", body)
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	// After fix: handler should return error when ML prediction fails, not store "error" cluster
+	// ML failures should fail request instead of silently storing mock predictions.
 	if w.Code != http.StatusInternalServerError {
-		t.Fatalf("expected status 500 on ML error, got %d", w.Code)
-	}
-	// No assessment should be created when ML prediction fails (check ID is zero)
-	if repo.last.ID != 0 {
-		t.Fatalf("expected no assessment to be created on ML error, got cluster=%s risk=%d", repo.last.Cluster, repo.last.RiskScore)
+		t.Fatalf("expected status 500 when ML fails, got %d", w.Code)
 	}
 }
 

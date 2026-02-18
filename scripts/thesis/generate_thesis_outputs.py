@@ -83,14 +83,14 @@ def collect_outputs():
     # Check for expected outputs
     expected = [
         # Results
-        ("models/results/information_gain_results.json", "json_files"),
+        ("models/legacy/results/information_gain_results.json", "json_files"),
         ("models/clinical/results/cluster_analysis.json", "json_files"),
         ("models/clinical/results/best_model_report.json", "json_files"),
         ("models/clinical/results/model_comparison.csv", "csv_files"),
         ("models/clinical/results/cluster_profiles.csv", "csv_files"),
         # Visualizations
-        ("models/visualizations/information_gain_chart.png", "visualizations"),
-        ("models/visualizations/feature_importance_comparison.png", "visualizations"),
+        ("models/legacy/visualizations/information_gain_chart.png", "visualizations"),
+        ("models/legacy/visualizations/feature_importance_comparison.png", "visualizations"),
         ("models/clinical/visualizations/roc_curve.png", "visualizations"),
         ("models/clinical/visualizations/confusion_matrix.png", "visualizations"),
         ("models/clinical/visualizations/cluster_heatmap.png", "visualizations"),

@@ -3,7 +3,11 @@
 # Starts: ML Server, Go Backend, Frontend
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+if command -v git >/dev/null 2>&1 && git -C "$SCRIPT_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+    PROJECT_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+else
+    PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+fi
 cd "$PROJECT_DIR" || exit 1
 
 # Colors
@@ -120,11 +124,11 @@ echo -e "${CYAN}   Port: $ML_PORT${NC}"
 # Convert to Windows path if needed
 if [ "$IS_WINDOWS" = true ]; then
     # Use absolute path
-    ML_SCRIPT="$PROJECT_DIR/Ian_ML/server.py"
+    ML_SCRIPT="$PROJECT_DIR/Ian_ML/service/server.py"
     # Convert /c/Users/... to C:/Users/... format for Python
     ML_SCRIPT=$(echo "$ML_SCRIPT" | sed 's|^/\([a-zA-Z]\)/|\1:/|')
 else
-    ML_SCRIPT="Ian_ML/server.py"
+    ML_SCRIPT="Ian_ML/service/server.py"
 fi
 
 # Start ML server in background

@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -31,7 +33,9 @@ func TestRequestID(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			middleware := RequestID()
-			c, _ := gin.CreateTestContext(nil)
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Request = httptest.NewRequest("GET", "/", nil)
 
 			if tc.headerValue != "" {
 				c.Request.Header.Set("X-Request-ID", tc.headerValue)
@@ -96,16 +100,20 @@ func TestGetLogEventForStatus(t *testing.T) {
 				t.Fatal("expected non-nil event")
 			}
 
-			expectedLevel := "info"
-			if tc.status >= 400 && tc.status < 500 {
-				expectedLevel = "warn"
-			} else if tc.status >= 500 {
-				expectedLevel = "error"
-			}
-
 			message := getLogMessage(tc.status, 0)
-			if message != "HTTP "+expectedLevel+" request completed" {
-				t.Errorf("unexpected log message: %q", message)
+			switch {
+			case tc.status >= 500:
+				if message != "HTTP server error" {
+					t.Errorf("unexpected log message: %q", message)
+				}
+			case tc.status >= 400:
+				if message != "HTTP client error" {
+					t.Errorf("unexpected log message: %q", message)
+				}
+			default:
+				if message != "HTTP request completed" {
+					t.Errorf("unexpected log message: %q", message)
+				}
 			}
 		})
 	}
@@ -135,10 +143,19 @@ func TestGetLogMessage(t *testing.T) {
 }
 
 func TestGetVersion(t *testing.T) {
-	version := getVersion()
+	old := os.Getenv("APP_VERSION")
+	os.Setenv("APP_VERSION", "1.2.3")
+	defer func() {
+		if old == "" {
+			os.Unsetenv("APP_VERSION")
+			return
+		}
+		os.Setenv("APP_VERSION", old)
+	}()
 
-	if version == "dev" || version == "" {
-		t.Errorf("expected non-default version, got %q", version)
+	version := getVersion()
+	if version != "1.2.3" {
+		t.Errorf("expected APP_VERSION override, got %q", version)
 	}
 }
 

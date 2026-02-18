@@ -79,11 +79,17 @@ func (m *mockAssessmentRepo) Delete(ctx context.Context, id int32) error {
 }
 
 func (m *mockAssessmentRepo) ClusterCounts(ctx context.Context) ([]models.ClusterInsights, error) {
-	return nil, nil
+	if m.clusterCountsErr != nil {
+		return nil, m.clusterCountsErr
+	}
+	return *m.clusterCounts, nil
 }
 
 func (m *mockAssessmentRepo) TrendAverages(ctx context.Context) ([]models.TrendPoint, error) {
-	return nil, nil
+	if m.trendAveragesErr != nil {
+		return nil, m.trendAveragesErr
+	}
+	return *m.trendAverages, nil
 }
 
 func (m *mockAssessmentRepo) ListAllLimited(ctx context.Context, limit int) ([]models.Assessment, error) {
@@ -268,8 +274,6 @@ func TestInsightsHandler_ResponseStructure(t *testing.T) {
 
 		for _, trend := range response {
 			assert.NotEmpty(t, trend.Label)
-			assert.GreaterOrEqual(t, trend.HbA1c, 0.0)
-			assert.GreaterOrEqual(t, trend.FBS, 0.0)
 		}
 	})
 }

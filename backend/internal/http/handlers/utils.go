@@ -50,8 +50,11 @@ func ParsePagination(c *gin.Context) PaginationParams {
 		}
 	}
 	if ps := c.Query("page_size"); ps != "" {
-		if parsed, err := strconv.Atoi(ps); err == nil && parsed > 0 && parsed <= 100 {
+		if parsed, err := strconv.Atoi(ps); err == nil && parsed > 0 {
 			pageSize = parsed
+			if pageSize > 100 {
+				pageSize = 100
+			}
 		}
 	}
 

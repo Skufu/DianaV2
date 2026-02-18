@@ -199,10 +199,12 @@ func TestAuthHandler_Login_Success(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	userID := int32(1)
 	user := models.User{
-		ID:           int64(userID),
-		Email:        "test@example.com",
-		PasswordHash: string(hashedPassword),
-		Role:         "clinician",
+		ID:            int64(userID),
+		Email:         "test@example.com",
+		PasswordHash:  string(hashedPassword),
+		Role:          "clinician",
+		IsActive:      true,
+		AccountStatus: "active",
 	}
 
 	fakeStoreAuth := &fakeStoreAuth{
@@ -298,9 +300,11 @@ func TestAuthHandler_Login_InvalidCredentials(t *testing.T) {
 			setup: &fakeUserRepoAuth{
 				usersByEmail: map[string]*models.User{
 					"test@example.com": {
-						ID:           1,
-						Email:        "test@example.com",
-						PasswordHash: hashedPassword("password123"),
+						ID:            1,
+						Email:         "test@example.com",
+						PasswordHash:  hashedPassword("password123"),
+						IsActive:      true,
+						AccountStatus: "active",
 					},
 				},
 			},
@@ -378,9 +382,11 @@ func TestAuthHandler_Refresh_Success(t *testing.T) {
 
 	userID := int32(1)
 	user := models.User{
-		ID:    int64(userID),
-		Email: "test@example.com",
-		Role:  "clinician",
+		ID:            int64(userID),
+		Email:         "test@example.com",
+		Role:          "clinician",
+		IsActive:      true,
+		AccountStatus: "active",
 	}
 
 	refreshTokenHash := hashTokenForTest("valid-refresh-token")
@@ -606,10 +612,12 @@ func TestAuthHandler_JWTTokenGeneration(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	userID := int32(1)
 	user := models.User{
-		ID:           int64(userID),
-		Email:        "test@example.com",
-		PasswordHash: string(hashedPassword),
-		Role:         "clinician",
+		ID:            int64(userID),
+		Email:         "test@example.com",
+		PasswordHash:  string(hashedPassword),
+		Role:          "clinician",
+		IsActive:      true,
+		AccountStatus: "active",
 	}
 
 	fakeStoreAuth := &fakeStoreAuth{

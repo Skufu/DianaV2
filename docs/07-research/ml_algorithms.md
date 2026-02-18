@@ -67,10 +67,10 @@
 
 | Component | File | Description |
 |-----------|------|-------------|
-| Clinical Model | `Ian_ML/train.py` | Non-circular model training |
-| Binary Model | `Ian_ML/train_binary.py` | Binary classification training |
-| Prediction | `Ian_ML/predict.py` | Inference module |
-| K-Means | `Ian_ML/clustering.py` | Clustering module |
+| Clinical Model | `Ian_ML/training/train.py` | Non-circular model training |
+| Binary Model | `Ian_ML/training/train_binary.py` | Binary classification training |
+| Prediction | `Ian_ML/service/predict.py` | Inference module |
+| K-Means | `Ian_ML/training/clustering.py` | Clustering module |
 
 ---
 

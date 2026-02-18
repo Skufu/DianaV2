@@ -10,11 +10,11 @@
 
 | Topic | File Location |
 |-------|---------------|
-| Flask API Server | `server.py` |
-| Prediction Logic | `predict.py` |
-| Model Training | `train.py` |
-| K-Means Clustering | `clustering.py` |
-| Data Processing | `data_processing.py` |
+| Flask API Server | `service/server.py` |
+| Prediction Logic | `service/predict.py` |
+| Model Training | `training/train.py` |
+| K-Means Clustering | `training/clustering.py` |
+| Data Processing | `training/data_processing.py` |
 
 ---
 
@@ -22,16 +22,18 @@
 
 ```
 Ian_ML/
-├── server.py             # Flask API server (main entry)
-├── predict.py            # DianaPredictor, ClinicalPredictor classes
-├── train.py              # Train classification models
-├── clustering.py         # K-Means cluster training
-├── data_processing.py    # Prepare NHANES data for training
-├── explainability.py     # SHAP explanations
-├── explainer.py          # Explainer utilities
-├── ab_testing.py         # A/B testing infrastructure
-├── drift_detection.py    # Model drift monitoring
-├── mlflow_config.py      # MLflow experiment tracking
+├── service/              # Runtime API/inference modules
+│   ├── server.py         # Flask API server (main entry)
+│   ├── predict.py        # DianaPredictor, ClinicalPredictor classes
+│   ├── explainability.py # SHAP explanations
+│   └── ...
+├── training/             # Training/data prep modules
+│   ├── train.py          # Train classification models
+│   ├── train_v2.py       # Defensible LOGO/nested-CV training
+│   ├── clustering.py     # K-Means cluster training
+│   └── data_processing.py# Prepare NHANES data for training
+├── tests/                # ML test suites
+├── common/               # Shared path helpers
 └── requirements.txt      # Python dependencies
 ```
 
@@ -63,7 +65,7 @@ Ian_ML/
 
 ## Key Classes
 
-### DianaPredictor (`predict.py`)
+### DianaPredictor (`service/predict.py`)
 ```python
 class DianaPredictor:
     """ADA-based diabetes predictor using all biomarkers including HbA1c."""
@@ -84,7 +86,7 @@ class DianaPredictor:
         """
 ```
 
-### ClinicalPredictor (`predict.py`)
+### ClinicalPredictor (`service/predict.py`)
 ```python
 class ClinicalPredictor:
     """Non-circular predictor excluding HbA1c and FBS from features."""
@@ -140,16 +142,16 @@ POST /predict?model_type=clinical
 cd Ian_ML
 
 # 1. Process NHANES data
-python data_processing.py
+python training/data_processing.py
 
 # 2. Train classifiers (RF, XGB, LR)
-python train.py
+python training/train.py
 
 # 3. Train K-Means clustering
-python clustering.py
+python training/clustering.py
 
 # 4. Start server
-python server.py
+python service/server.py
 ```
 
 ---
@@ -195,7 +197,7 @@ lightgbm==4.3.0
 pip install -r requirements.txt
 
 # Start server (development)
-python server.py
+python service/server.py
 
 # Server runs on http://localhost:5000
 ```

@@ -82,7 +82,9 @@ type Assessment struct {
 	Triglycerides int     `json:"triglycerides,omitempty"`
 	Systolic      int     `json:"systolic,omitempty"`
 	Diastolic     int     `json:"diastolic,omitempty"`
+	Age           int     `json:"age,omitempty"`
 	Activity      string  `json:"activity,omitempty"`
+	Alcohol       string  `json:"alcohol,omitempty"`
 	HistoryFlag   bool    `json:"history_flag,omitempty"`
 	Smoking       string  `json:"smoking,omitempty"`
 	Hypertension  string  `json:"hypertension,omitempty"`
@@ -213,7 +215,9 @@ type UpdateAssessmentRequest struct {
 	Triglycerides *int     `json:"triglycerides" binding:"omitempty,min=0,max=2000"`
 	Systolic      *int     `json:"systolic" binding:"omitempty,min=50,max=300"`
 	Diastolic     *int     `json:"diastolic" binding:"omitempty,min=30,max=200"`
+	Age           *int     `json:"age" binding:"omitempty,min=18,max=120"`
 	Activity      string   `json:"activity" binding:"omitempty,max=50"`
+	Alcohol       string   `json:"alcohol" binding:"omitempty,max=50"`
 	HistoryFlag   bool     `json:"history_flag"`
 	Smoking       string   `json:"smoking" binding:"omitempty,max=50"`
 	Hypertension  string   `json:"hypertension" binding:"omitempty,max=50"`

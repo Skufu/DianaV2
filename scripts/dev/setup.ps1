@@ -621,7 +621,7 @@ Next Steps:
 3. Access: http://localhost:4000
 
 Demo Credentials:
-- User: demo@diana.app / demo123
+- User: demo@diana.app / demopassword123
 - Admin: admin@diana.app / admin123
 "@
 
@@ -660,7 +660,7 @@ Write-Host "     Backend:    http://localhost:8080/api/v1/healthz" -ForegroundCo
 Write-Host "     ML Server:  http://localhost:5001/health" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Demo Credentials:"
-Write-Host "     User:   demo@diana.app / demo123" -ForegroundColor Yellow
+Write-Host "     User:   demo@diana.app / demopassword123" -ForegroundColor Yellow
 Write-Host "     Admin:  admin@diana.app / admin123" -ForegroundColor Yellow
 Write-Host ""
 

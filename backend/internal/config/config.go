@@ -48,14 +48,22 @@ type Config struct {
 }
 
 func Load() Config {
+	env := getEnv("ENV", "dev")
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
-		log.Fatalf("FATAL: JWT_SECRET environment variable is required. Cannot start without it. Set JWT_SECRET to a secure random string (min 32 characters).")
+		switch env {
+		case "local":
+			jwtSecret = "dev-secret-change-in-production"
+		case "test":
+			jwtSecret = "test-secret"
+		default:
+			log.Fatalf("FATAL: JWT_SECRET environment variable is required. Cannot start without it. Set JWT_SECRET to a secure random string (min 32 characters).")
+		}
 	}
 
 	cfg := Config{
 		Port:           getEnv("PORT", "8080"),
-		Env:            getEnv("ENV", "dev"),
+		Env:            env,
 		DBDSN:          getEnv("DB_DSN", ""),
 		JWTSecret:      jwtSecret,
 		ModelURL:       getEnv("MODEL_URL", ""),

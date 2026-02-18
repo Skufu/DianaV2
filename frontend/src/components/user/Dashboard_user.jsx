@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Activity, TrendingUp, AlertCircle, Plus, Download, RefreshCw, User as UserIcon, Calendar } from 'lucide-react';
+import { Activity, TrendingUp, AlertCircle, Plus, Download, RefreshCw, User as UserIcon, Calendar, Eye } from 'lucide-react';
 import RiskIndicator from '../common/RiskIndicator';
+import MLResultModal from '../common/MLResultModal';
 import { useAssessments } from '../../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
@@ -11,6 +12,8 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
   const isReduced = useReducedMotion();
   const queryClient = useQueryClient();
   const { data: rawAssessments, isLoading, error, refetch } = useAssessments();
+  const [selectedAssessment, setSelectedAssessment] = useState(null);
+  const [showAssessmentModal, setShowAssessmentModal] = useState(false);
 
   // Ensure assessments is always an array (API may return null)
   const assessments = rawAssessments ?? [];
@@ -57,7 +60,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
       'MARD': {
         title: "Healthy Aging",
         text: "Focus on metabolic health and preventing frailty. distinct nutritional needs may apply.",
-        icon: Calendar, // 需要 import Calendar? It's not imported yet, let's stick to generic or check imports
+        icon: Calendar,
         color: "text-indigo-600 bg-indigo-50 border-indigo-100"
       }
     };
@@ -70,6 +73,16 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
       color: "text-diana-forest bg-diana-forest/5 border-diana-forest/10"
     };
   }, [latestAssessment]);
+
+  const handleViewAssessment = (assessment) => {
+    setSelectedAssessment(assessment);
+    setShowAssessmentModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowAssessmentModal(false);
+    setSelectedAssessment(null);
+  };
 
 
   return (
@@ -134,17 +147,17 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
           <motion.div variants={slideUp} className="glass-card p-6 bg-white h-full">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-diana-text-primary">Recent Activity</h3>
-              <button onClick={() => setActiveTab('trends')} className="text-xs font-bold text-diana-forest hover:underline">View All</button>
+              <button type="button" onClick={() => setActiveTab('trends')} className="text-xs font-bold text-diana-forest hover:underline">View All</button>
             </div>
             <div className="space-y-4">
-              {assessments.slice(0, 3).map((assessment, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+              {assessments.slice(0, 3).map((assessment) => (
+                <div key={assessment.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
                   <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold text-xs">
                     {assessment.risk_score}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-sm text-diana-text-primary truncate">Assessment Logged</div>
-                    <div className="text-xs text-diana-text-secondary">{new Date(assessment.date).toLocaleDateString()}</div>
+                    <div className="text-xs text-diana-text-secondary">{assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : 'Just now'}</div>
                   </div>
                 </div>
               ))}
@@ -225,7 +238,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
               </div>
               {latestAssessment ? (
                 <div className="mt-1">
-                  <RiskIndicator riskScore={latestAssessment.risk_score || 0} />
+                  <RiskIndicator riskScore={latestAssessment.risk_score || 0} riskLevel={latestAssessment.risk_level} cluster={latestAssessment.cluster} />
                 </div>
               ) : (
                 <div className="text-diana-text-muted text-sm italic">No data yet</div>
@@ -336,36 +349,175 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                 <h2 className="text-2xl font-serif font-bold text-diana-text-primary">Latest Clinical Markers</h2>
                 <span className="text-xs font-bold uppercase tracking-wider text-diana-text-muted bg-diana-stone px-3 py-1 rounded-full">Recent</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
                 <div>
-                  <div className="text-xs font-bold text-diana-text-secondary uppercase tracking-wider mb-2">HbA1c</div>
+                  <div className="text-xs font-bold text-diana-text-secondary uppercase tracking-wider mb-2">BMI</div>
                   <div className="text-3xl font-bold text-diana-text-primary">
-                    {latestAssessment.hba1c}<span className="text-lg text-diana-text-muted ml-0.5">%</span>
+                    {latestAssessment.bmi ? (
+                      <>
+                        {latestAssessment.bmi}
+                        <span className="text-lg text-diana-text-muted ml-0.5">kg/m²</span>
+                      </>
+                    ) : (
+                      <span className="text-lg text-diana-text-muted">N/A</span>
+                    )}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-diana-text-secondary uppercase tracking-wider mb-2">FBS</div>
+                  <div className="text-xs font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Triglycerides</div>
                   <div className="text-3xl font-bold text-diana-text-primary">
-                    {latestAssessment.fbs} <span className="text-lg text-diana-text-muted ml-0.5">mg/dL</span>
+                    {latestAssessment.triglycerides ? (
+                      <>
+                        {latestAssessment.triglycerides}
+                        <span className="text-lg text-diana-text-muted ml-0.5">mg/dL</span>
+                      </>
+                    ) : (
+                      <span className="text-lg text-diana-text-muted">N/A</span>
+                    )}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Cholesterol</div>
+                  <div className="text-xs font-bold text-diana-text-secondary uppercase tracking-wider mb-2">LDL</div>
                   <div className="text-3xl font-bold text-diana-text-primary">
-                    {latestAssessment.cholesterol} <span className="text-lg text-diana-text-muted ml-0.5">mg/dL</span>
+                    {latestAssessment.ldl ? (
+                      <>
+                        {latestAssessment.ldl}
+                        <span className="text-lg text-diana-text-muted ml-0.5">mg/dL</span>
+                      </>
+                    ) : (
+                      <span className="text-lg text-diana-text-muted">N/A</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-diana-text-secondary uppercase tracking-wider mb-2">HDL</div>
+                  <div className="text-3xl font-bold text-diana-text-primary">
+                    {latestAssessment.hdl ? (
+                      <>
+                        {latestAssessment.hdl}
+                        <span className="text-lg text-diana-text-muted ml-0.5">mg/dL</span>
+                      </>
+                    ) : (
+                      <span className="text-lg text-diana-text-muted">N/A</span>
+                    )}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Cluster</div>
-                  <div className="text-2xl font-bold text-diana-forest bg-diana-stone px-3 py-1 rounded-lg inline-block">
+                  <div className="text-xl font-bold text-diana-forest bg-diana-stone px-3 py-1 rounded-lg inline-block">
                     {latestAssessment.cluster || 'Pending'}
                   </div>
                 </div>
               </div>
             </motion.div>
           )}
+
+          {assessments.length > 0 && (
+            <motion.div variants={slideUp} className="glass-card p-8 bg-white/90">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-serif font-bold text-diana-text-primary">Past Results</h2>
+                <span className="text-xs font-bold uppercase tracking-wider text-diana-text-muted bg-diana-stone px-3 py-1 rounded-full">
+                  {assessments.length} Assessment{assessments.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-diana-stone">
+                      <th className="text-left py-3 px-4 text-xs font-bold text-diana-text-secondary uppercase tracking-wider">Date</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-diana-text-secondary uppercase tracking-wider">Risk Score</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-diana-text-secondary uppercase tracking-wider">Level</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-diana-text-secondary uppercase tracking-wider">Cluster</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-diana-text-secondary uppercase tracking-wider">BMI</th>
+                      <th className="text-left py-3 px-4 text-xs font-bold text-diana-text-secondary uppercase tracking-wider">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {assessments.slice(0, 10).map((assessment) => (
+                      <motion.tr
+                        key={assessment.id}
+                        whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.8)' }}
+                        className="border-b border-diana-stone/50 last:border-0 cursor-pointer"
+                        onClick={() => handleViewAssessment(assessment)}
+                      >
+                        <td className="py-4 px-4 text-sm text-diana-text-primary">
+                          {assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-50 text-blue-600 font-bold text-sm">
+                            {assessment.risk_score || 0}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                            assessment.risk_level === 'low'
+                              ? 'bg-green-100 text-green-700'
+                              : assessment.risk_level === 'medium'
+                              ? 'bg-amber-100 text-amber-700'
+                              : assessment.risk_level === 'high'
+                              ? 'bg-rose-100 text-rose-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {assessment.risk_level || 'Unknown'}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 text-sm text-diana-text-primary">
+                          {assessment.cluster || 'N/A'}
+                        </td>
+                        <td className="py-4 px-4 text-sm text-diana-text-primary">
+                          {assessment.bmi ? `${assessment.bmi} kg/m²` : 'N/A'}
+                        </td>
+                        <td className="py-4 px-4">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewAssessment(assessment);
+                            }}
+                            className="p-2 rounded-lg bg-diana-forest/10 text-diana-forest hover:bg-diana-forest hover:text-white transition-colors"
+                            title="View details"
+                          >
+                            <Eye size={18} />
+                          </motion.button>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {assessments.length > 10 && (
+                <div className="mt-4 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('trends')}
+                    className="text-sm font-bold text-diana-forest hover:underline"
+                  >
+                    View all {assessments.length} assessments →
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
         </>
       )}
+
+      <MLResultModal
+        isOpen={showAssessmentModal}
+        onClose={handleCloseModal}
+        result={selectedAssessment ? {
+          risk_score: selectedAssessment.risk_score,
+          risk_level: selectedAssessment.risk_level,
+          predicted_status: selectedAssessment.predicted_status,
+          cluster: selectedAssessment.cluster,
+          model_version: selectedAssessment.model_version,
+          fbs: selectedAssessment.fbs,
+          hba1c: selectedAssessment.hba1c,
+          success: true
+        } : null}
+        onConfirm={handleCloseModal}
+        isLoading={false}
+      />
     </motion.div>
   );
 };
