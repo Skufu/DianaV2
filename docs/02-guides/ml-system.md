@@ -177,7 +177,7 @@ source venv/bin/activate && ./scripts/dev/retrain-all.sh
 ./venv/bin/python scripts/process_nhanes_multi.py
 ./venv/bin/python Ian_ML/training/data_processing.py
 ./venv/bin/python scripts/impute_missing_data.py
-./venv/bin/python Ian_ML/training/train.py
+./venv/bin/python Ian_ML/training/train_v2.py
 ./venv/bin/python scripts/train_clusters.py
 
 # Start ML server

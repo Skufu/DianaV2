@@ -1,38 +1,34 @@
 {
-  "2": {
-    "label": "SIRD",
-    "subtype": "SIRD",
-    "subtype_full": "Severe Insulin-Resistant Diabetes",
+  "3": {
+    "label": "High Risk",
     "risk_level": "HIGH",
-    "risk_label": "High Risk",
-    "description": "High BMI, high triglycerides, low HDL \u2014 insulin resistance pattern",
-    "treatment_focus": "Weight management, insulin sensitizers (metformin), cardiovascular monitoring"
+    "diabetic_rate": 0.40217391304347827,
+    "pre_diabetic_rate": 0.3695652173913043,
+    "risk_score": 0.5869565217391304,
+    "size": 184
   },
   "1": {
-    "label": "SIDD",
-    "subtype": "SIDD",
-    "subtype_full": "Severe Insulin-Deficient Diabetes",
-    "risk_level": "HIGH",
-    "risk_label": "High Risk",
-    "description": "High TG/HDL ratio \u2014 metabolic derangement pattern",
-    "treatment_focus": "Blood glucose monitoring, consider insulin therapy, monitor for complications"
+    "label": "Moderate Risk",
+    "risk_level": "MODERATE",
+    "diabetic_rate": 0.2554347826086957,
+    "pre_diabetic_rate": 0.38405797101449274,
+    "risk_score": 0.447463768115942,
+    "size": 552
+  },
+  "2": {
+    "label": "Low-Moderate Risk",
+    "risk_level": "LOW_MODERATE",
+    "diabetic_rate": 0.09981515711645102,
+    "pre_diabetic_rate": 0.2902033271719039,
+    "risk_score": 0.24491682070240295,
+    "size": 541
   },
   "0": {
-    "label": "MOD",
-    "subtype": "MOD",
-    "subtype_full": "Mild Obesity-Related Diabetes",
-    "risk_level": "MODERATE",
-    "risk_label": "Moderate Risk",
-    "description": "Elevated BMI with moderate metabolic markers \u2014 obesity-driven pattern",
-    "treatment_focus": "Weight loss (5-10%), healthy eating, moderate exercise, lipid monitoring"
-  },
-  "3": {
-    "label": "MARD",
-    "subtype": "MARD",
-    "subtype_full": "Mild Age-Related Diabetes",
+    "label": "Low Risk",
     "risk_level": "LOW",
-    "risk_label": "Low Risk",
-    "description": "Older age with mild metabolic values \u2014 age-related pattern",
-    "treatment_focus": "Regular health checkups, lifestyle management, cardiovascular screening"
+    "diabetic_rate": 0.08080808080808081,
+    "pre_diabetic_rate": 0.20202020202020202,
+    "risk_score": 0.18181818181818182,
+    "size": 99
   }
 }

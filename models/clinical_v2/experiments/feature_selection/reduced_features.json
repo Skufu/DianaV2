@@ -1,0 +1,35 @@
+{
+  "original_features": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age",
+    "systolic",
+    "diastolic",
+    "bmi_category",
+    "tg_hdl_ratio",
+    "smoking_encoded",
+    "activity_encoded",
+    "alcohol_encoded",
+    "metabolic_syndrome_score"
+  ],
+  "n_original": 13,
+  "reduced_features": [
+    "bmi",
+    "metabolic_syndrome_score",
+    "bmi_category",
+    "smoking_encoded",
+    "alcohol_encoded",
+    "systolic",
+    "triglycerides",
+    "tg_hdl_ratio",
+    "age",
+    "hdl",
+    "diastolic",
+    "activity_encoded",
+    "ldl"
+  ],
+  "n_reduced": 13,
+  "reduction_ratio": 1.0
+}
