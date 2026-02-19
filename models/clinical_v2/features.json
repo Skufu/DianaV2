@@ -12,8 +12,11 @@
     "smoking_encoded",
     "activity_encoded",
     "alcohol_encoded",
-    "metabolic_syndrome_score"
+    "metabolic_syndrome_score",
+    "waist_circumference",
+    "family_history_diabetes",
+    "race_encoded"
   ],
-  "n_features": 13,
+  "n_features": 16,
   "note": "Defensible v2 feature contract (13 reduced features)"
 }

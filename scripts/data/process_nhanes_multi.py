@@ -7,6 +7,7 @@ Usage: python scripts/process_nhanes_multi.py
 """
 
 import pandas as pd
+import numpy as np
 import pyreadstat
 from pathlib import Path
 import sys
@@ -165,6 +166,47 @@ def derive_alcohol_use(df: pd.DataFrame) -> pd.Series:
     return df.apply(classify, axis=1)
 
 
+def derive_race_ethnicity(demo: pd.DataFrame, suffix: str) -> pd.Series:
+    """
+    Harmonize race/ethnicity across NHANES cycles.
+    
+    RIDRETH1 (2009-2010, suffix F): 5 categories
+      1=Mexican American, 2=Other Hispanic, 3=Non-Hispanic White,
+      4=Non-Hispanic Black, 5=Other Race (incl. Asian)
+    
+    RIDRETH3 (2011+ onward): 7 categories
+      1=Mexican American, 2=Other Hispanic, 3=Non-Hispanic White,
+      4=Non-Hispanic Black, 6=Non-Hispanic Asian, 7=Other/Multi
+    
+    Unified output: 1=Mexican American, 2=Other Hispanic, 3=NH White,
+      4=NH Black, 5=NH Asian, 6=Other/Multi
+    """
+    if 'RIDRETH3' in demo.columns:
+        # 2011+ cycles: remap 6->5 (Asian), 7->6 (Other)
+        remap = {1: 1, 2: 2, 3: 3, 4: 4, 6: 5, 7: 6}
+        return demo['RIDRETH3'].map(remap)
+    elif 'RIDRETH1' in demo.columns:
+        # 2009-2010: category 5 = Other (includes Asian, can't separate)
+        remap = {1: 1, 2: 2, 3: 3, 4: 4, 5: 6}  # Other/Multi
+        return demo['RIDRETH1'].map(remap)
+    return pd.Series([np.nan] * len(demo))
+
+
+def derive_family_history_diabetes(mcq: pd.DataFrame) -> pd.Series:
+    """
+    Derive binary family history of diabetes from MCQ300C.
+    
+    MCQ300C: Close relative had diabetes?
+      1 = Yes, 2 = No, 7 = Refused, 9 = Don't know
+    
+    Returns: 1 (yes), 0 (no/unknown)
+    Note: MCQ300C was dropped in 2021-2023 cycle.
+    """
+    if 'MCQ300C' not in mcq.columns:
+        return pd.Series([np.nan] * len(mcq))
+    return (mcq['MCQ300C'] == 1).astype(float).where(mcq['MCQ300C'].notna())
+
+
 def process_cycle(suffix: str, year: str) -> pd.DataFrame:
     """Process a single NHANES cycle."""
     print(f"\n[CYCLE] {year} (suffix _{suffix})")
@@ -191,11 +233,23 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
     # Load diabetes questionnaire (self-reported diagnosis)
     diq = load_xpt(f"DIQ_{suffix}")
     
+    # Load new enrichment files
+    mcq = load_xpt(f"MCQ_{suffix}")    # Medical conditions (family history)
+    ins = load_xpt(f"INS_{suffix}")    # Fasting insulin
+    hscrp = load_xpt(f"HSCRP_{suffix}")  # C-reactive protein
+    
     if demo.empty:
         return pd.DataFrame()
     
-    # Start with demographics
-    df = demo[['SEQN', 'RIDAGEYR', 'RIAGENDR']].copy()
+    # Start with demographics (include race/ethnicity variable)
+    demo_cols = ['SEQN', 'RIDAGEYR', 'RIAGENDR']
+    df = demo[demo_cols].copy()
+    
+    # Derive unified race/ethnicity from RIDRETH1 or RIDRETH3
+    df['race_ethnicity'] = derive_race_ethnicity(demo, suffix)
+    race_available = df['race_ethnicity'].notna().sum()
+    if race_available > 0:
+        print(f"  Race/ethnicity available: {race_available} records")
     
     # Merge biomarkers - handle column name variations
     if not ghb.empty and 'LBXGH' in ghb.columns:
@@ -223,8 +277,17 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
         if len(tg_cols) > 1:
             df = df.merge(trigly[tg_cols], on='SEQN', how='left')
     
-    if not bmx.empty and 'BMXBMI' in bmx.columns:
-        df = df.merge(bmx[['SEQN', 'BMXBMI']], on='SEQN', how='left')
+    # BMI and waist circumference (both from BMX file)
+    if not bmx.empty:
+        bmx_cols = ['SEQN']
+        if 'BMXBMI' in bmx.columns:
+            bmx_cols.append('BMXBMI')
+        if 'BMXWAIST' in bmx.columns:
+            bmx_cols.append('BMXWAIST')
+        if len(bmx_cols) > 1:
+            df = df.merge(bmx[bmx_cols], on='SEQN', how='left')
+            if 'BMXWAIST' in df.columns:
+                print(f"  Waist circumference available: {df['BMXWAIST'].notna().sum()} records")
     
     # BP columns: BPXSY1/BPXDI1 or BPXOSY1/BPXODI1
     if not bpx.empty:
@@ -267,6 +330,28 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
     if not diq.empty and 'DIQ010' in diq.columns:
         df = df.merge(diq[['SEQN', 'DIQ010']], on='SEQN', how='left')
         print(f"  DIQ010 available: {df['DIQ010'].notna().sum()} records")
+    
+    # Merge MCQ300C (family history of diabetes)
+    if not mcq.empty:
+        fh = derive_family_history_diabetes(mcq)
+        mcq_merge = mcq[['SEQN']].copy()
+        mcq_merge['family_history_diabetes'] = fh.values
+        df = df.merge(mcq_merge, on='SEQN', how='left')
+        fh_available = df['family_history_diabetes'].notna().sum()
+        print(f"  Family history diabetes available: {fh_available} records")
+    else:
+        df['family_history_diabetes'] = np.nan
+        print(f"  Family history diabetes: NOT AVAILABLE for {year}")
+    
+    # Merge LBXIN (fasting insulin)
+    if not ins.empty and 'LBXIN' in ins.columns:
+        df = df.merge(ins[['SEQN', 'LBXIN']], on='SEQN', how='left')
+        print(f"  Fasting insulin available: {df['LBXIN'].notna().sum()} records")
+    
+    # Merge LBXCRP (C-reactive protein)
+    if not hscrp.empty and 'LBXCRP' in hscrp.columns:
+        df = df.merge(hscrp[['SEQN', 'LBXCRP']], on='SEQN', how='left')
+        print(f"  CRP available: {df['LBXCRP'].notna().sum()} records")
     
     df['cycle'] = year
     print(f"  Raw records: {len(df)}")
@@ -336,14 +421,19 @@ def main():
         'LBXTR': 'triglycerides',
         'LBDLDL': 'ldl',
         'BMXBMI': 'bmi',
+        'BMXWAIST': 'waist_circumference',
         'BPXSY1': 'systolic',
-        'BPXDI1': 'diastolic'
+        'BPXDI1': 'diastolic',
+        'LBXIN': 'fasting_insulin',
+        'LBXCRP': 'crp',
     }
     df = df.rename(columns={k: v for k, v in rename_map.items() if k in df.columns})
     
-    # Select final columns (including lifestyle and self-reported diabetes)
+    # Select final columns (including lifestyle, enrichment features, and self-reported diabetes)
     final_cols = ['SEQN', 'age', 'hba1c', 'fbs', 'bmi', 'total_cholesterol', 
                   'ldl', 'hdl', 'triglycerides', 'systolic', 'diastolic',
+                  'waist_circumference', 'fasting_insulin', 'crp',
+                  'family_history_diabetes', 'race_ethnicity',
                   'smoking_status', 'physical_activity', 'alcohol_use', 
                   'DIQ010', 'cycle']  # DIQ010 = self-reported diabetes
     df = df[[c for c in final_cols if c in df.columns]]
@@ -363,6 +453,14 @@ def main():
     print(f"  Smoking: {df['smoking_status'].value_counts().to_dict()}")
     print(f"  Physical Activity: {df['physical_activity'].value_counts().to_dict()}")
     print(f"  Alcohol: {df['alcohol_use'].value_counts().to_dict()}")
+    
+    print(f"\n[STATS] Enrichment features:")
+    for col in ['waist_circumference', 'fasting_insulin', 'crp', 'family_history_diabetes', 'race_ethnicity']:
+        if col in df.columns:
+            n_avail = df[col].notna().sum()
+            print(f"  {col}: {n_avail}/{len(df)} available ({n_avail/len(df)*100:.1f}%)")
+        else:
+            print(f"  {col}: NOT IN DATASET")
 
 
 if __name__ == "__main__":

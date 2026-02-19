@@ -1,34 +1,54 @@
 {
-  "3": {
-    "label": "High Risk",
+  "2": {
+    "label": "SIRD",
+    "subtype": "SIRD",
+    "subtype_full": "Severe Insulin-Resistant Diabetes",
     "risk_level": "HIGH",
-    "diabetic_rate": 0.40217391304347827,
-    "pre_diabetic_rate": 0.3695652173913043,
-    "risk_score": 0.5869565217391304,
-    "size": 184
+    "risk_label": "High Risk",
+    "description": "High BMI, high triglycerides, low HDL \u2014 insulin resistance pattern",
+    "treatment_focus": "Weight management, insulin sensitizers (metformin), cardiovascular monitoring",
+    "size": 213,
+    "diabetic_rate": 0.4038,
+    "pre_diabetic_rate": 0.3709,
+    "risk_score": 0.5892
   },
   "1": {
-    "label": "Moderate Risk",
-    "risk_level": "MODERATE",
-    "diabetic_rate": 0.2554347826086957,
-    "pre_diabetic_rate": 0.38405797101449274,
-    "risk_score": 0.447463768115942,
-    "size": 552
-  },
-  "2": {
-    "label": "Low-Moderate Risk",
-    "risk_level": "LOW_MODERATE",
-    "diabetic_rate": 0.09981515711645102,
-    "pre_diabetic_rate": 0.2902033271719039,
-    "risk_score": 0.24491682070240295,
-    "size": 541
+    "label": "SIDD",
+    "subtype": "SIDD",
+    "subtype_full": "Severe Insulin-Deficient Diabetes",
+    "risk_level": "HIGH",
+    "risk_label": "High Risk",
+    "description": "High TG/HDL ratio \u2014 metabolic derangement pattern (proxy for insulin deficiency)",
+    "treatment_focus": "Blood glucose monitoring, consider insulin therapy, monitor for complications",
+    "size": 274,
+    "diabetic_rate": 0.2372,
+    "pre_diabetic_rate": 0.4197,
+    "risk_score": 0.4471
   },
   "0": {
-    "label": "Low Risk",
+    "label": "MOD",
+    "subtype": "MOD",
+    "subtype_full": "Mild Obesity-Related Diabetes",
+    "risk_level": "MODERATE",
+    "risk_label": "Moderate Risk",
+    "description": "Elevated BMI with moderate metabolic markers \u2014 obesity-driven pattern",
+    "treatment_focus": "Weight loss (5-10%), healthy eating, moderate exercise, lipid monitoring",
+    "size": 234,
+    "diabetic_rate": 0.141,
+    "pre_diabetic_rate": 0.3419,
+    "risk_score": 0.312
+  },
+  "3": {
+    "label": "MARD",
+    "subtype": "MARD",
+    "subtype_full": "Mild Age-Related Diabetes",
     "risk_level": "LOW",
-    "diabetic_rate": 0.08080808080808081,
-    "pre_diabetic_rate": 0.20202020202020202,
-    "risk_score": 0.18181818181818182,
-    "size": 99
+    "risk_label": "Low Risk",
+    "description": "Older age with mild metabolic values \u2014 age-related pattern",
+    "treatment_focus": "Regular health checkups, lifestyle management, cardiovascular screening",
+    "size": 342,
+    "diabetic_rate": 0.0848,
+    "pre_diabetic_rate": 0.2953,
+    "risk_score": 0.2325
   }
 }

@@ -22,13 +22,16 @@ OUTPUT_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
 
 # Biomarkers to check for outliers (clinical ranges)
 BIOMARKER_RANGES = {
-    'bmi': (15.0, 60.0),           # Extreme but possible BMI range
-    'triglycerides': (20.0, 800.0), # mg/dL
-    'ldl': (20.0, 300.0),           # mg/dL
-    'hdl': (10.0, 120.0),           # mg/dL
-    'hba1c': (3.5, 15.0),           # %
-    'fbs': (50.0, 400.0),           # mg/dL
-    'age': (18, 100),               # years
+    'bmi': (15.0, 60.0),               # Extreme but possible BMI range
+    'triglycerides': (20.0, 800.0),     # mg/dL
+    'ldl': (20.0, 300.0),              # mg/dL
+    'hdl': (10.0, 120.0),              # mg/dL
+    'hba1c': (3.5, 15.0),              # %
+    'fbs': (50.0, 400.0),              # mg/dL
+    'age': (18, 100),                  # years
+    'waist_circumference': (50.0, 180.0),  # cm
+    'fasting_insulin': (1.0, 300.0),       # µU/mL
+    'crp': (0.01, 30.0),                   # mg/dL
 }
 
 
@@ -316,7 +319,9 @@ def main():
         'SEQN', 'age', 'hba1c', 'fbs', 'bmi',
         'total_cholesterol', 'ldl', 'hdl', 'triglycerides',
         'systolic', 'diastolic',
-        'smoking_status', 'physical_activity', 'alcohol_use',  # Lifestyle features
+        'waist_circumference', 'fasting_insulin', 'crp',       # Enrichment biomarkers
+        'family_history_diabetes', 'race_ethnicity',            # Enrichment categorical
+        'smoking_status', 'physical_activity', 'alcohol_use',   # Lifestyle features
         'cycle',
         'diabetes_status', 'diabetes_label', 'menopausal_status',
         'has_outlier'  # Keep outlier flag for analysis
