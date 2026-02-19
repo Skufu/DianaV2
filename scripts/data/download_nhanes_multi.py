@@ -29,19 +29,22 @@ CYCLES = [
 
 # Core files needed for DIANA
 FILE_BASES = [
-    "DEMO",    # Demographics
+    "DEMO",    # Demographics (includes RIDRETH1/RIDRETH3 race/ethnicity)
     "GHB",     # Glycohemoglobin (HbA1c)
     "GLU",     # Fasting Glucose
     "TCHOL",   # Total Cholesterol
     "HDL",     # HDL Cholesterol
     "TRIGLY",  # Triglycerides & LDL
-    "BMX",     # Body Measures (BMI)
+    "BMX",     # Body Measures (BMI, waist circumference BMXWAIST)
     "BPX",     # Blood Pressure
     "RHQ",     # Reproductive Health (menopause)
     "SMQ",     # Smoking questionnaire
     "PAQ",     # Physical activity questionnaire
     "ALQ",     # Alcohol use questionnaire
     "DIQ",     # Diabetes questionnaire (self-reported diagnosis)
+    "MCQ",     # Medical Conditions (family history diabetes MCQ300C)
+    "INS",     # Insulin (fasting subsample, LBXIN)
+    "HSCRP",   # High-sensitivity CRP (LBXCRP)
 ]
 
 

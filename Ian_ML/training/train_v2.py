@@ -76,8 +76,9 @@ AT_RISK_CLASSES = [1, 2]
 N_JOBS = int(os.environ.get("ML_N_JOBS", "1"))
 BOOTSTRAP_SAMPLES = int(os.environ.get("ML_BOOTSTRAP_SAMPLES", "1000"))
 
-# Original 13-feature reduced set
+# 16-feature enriched set (v2.1 enrichment - crp removed due to data availability)
 REDUCED_FEATURES = [
+    # Original metabolic biomarkers (7)
     "bmi",
     "triglycerides",
     "ldl",
@@ -85,12 +86,17 @@ REDUCED_FEATURES = [
     "age",
     "systolic",
     "diastolic",
+    # Derived features (6)
     "bmi_category",
     "tg_hdl_ratio",
     "smoking_encoded",
     "activity_encoded",
     "alcohol_encoded",
     "metabolic_syndrome_score",
+    # Enrichment features (3) - crp removed (data not available for all cycles)
+    "waist_circumference",
+    "family_history_diabetes",
+    "race_encoded",
 ]
 
 
@@ -129,11 +135,23 @@ def engineer_features_reduced(df: pd.DataFrame) -> pd.DataFrame:
         {
             "high_tg": df["triglycerides"] > 150,
             "low_hdl": df["hdl"] < 50,
-            "high_bp": df["systolic"] >= 130,
+            "high_bp": df["systolic"] >= 130 if "systolic" in df.columns else False,
             "high_bmi": df["bmi"] >= 30,
+            "high_waist": df["waist_circumference"] >= 80 if "waist_circumference" in df.columns else False,
         }
     )
     df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
+
+    # Enrichment: race encoding (ordinal)
+    if "race_ethnicity" in df.columns:
+        df["race_encoded"] = df["race_ethnicity"].fillna(0).astype(float)
+    else:
+        df["race_encoded"] = 0.0
+
+    # Pass through enrichment features (already in processed data)
+    # waist_circumference, family_history_diabetes, crp are used as-is
+    # family_history_diabetes: NaN for 2021-2023 cycle (dropped), imputer handles it
+
     return df
     
 

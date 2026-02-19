@@ -13,9 +13,12 @@
     "smoking_encoded",
     "activity_encoded",
     "alcohol_encoded",
-    "metabolic_syndrome_score"
+    "metabolic_syndrome_score",
+    "waist_circumference",
+    "family_history_diabetes",
+    "race_encoded"
   ],
-  "n_features": 13,
+  "n_features": 16,
   "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
   "preprocessing": {
     "imputation": "SimpleImputer(strategy=median) inside CV pipeline",
@@ -25,7 +28,7 @@
   "calibrated_for_serving": true,
   "decision_thresholds": {
     "pre_diabetic": 0.25,
-    "diabetic": 0.35,
+    "diabetic": 0.25,
     "objective": "Optimize recall on Pre-diabetic/Diabetic classes",
     "screening_behavior": {
       "description": "This model is designed for SCREENING (case-finding), not diagnosis",
@@ -46,60 +49,60 @@
     }
   },
   "metrics": {
-    "accuracy": 0.39244186046511625,
-    "precision": 0.5474033542568008,
-    "recall": 0.39244186046511625,
-    "f1_score": 0.3573592561260641,
-    "macro_f1": 0.3861020123639148,
-    "auc_roc": 0.6963716833048798,
-    "brier_score": 0.19424743719522972,
-    "train_accuracy": 0.5603197674418605,
-    "overfit_gap": 0.16787790697674426
+    "accuracy": 0.39026162790697677,
+    "precision": 0.5381742436945188,
+    "recall": 0.39026162790697677,
+    "f1_score": 0.3660758632934496,
+    "macro_f1": 0.3863024758932451,
+    "auc_roc": 0.6978736276890356,
+    "brier_score": 0.19535174550116632,
+    "train_accuracy": 0.5450581395348837,
+    "overfit_gap": 0.15479651162790692
   },
   "class_level_metrics": {
     "recall_by_class": {
-      "Normal": 0.1573208722741433,
-      "Pre-diabetic": 0.5295404814004376,
-      "Diabetic": 0.7111913357400722
+      "Normal": 0.19626168224299065,
+      "Pre-diabetic": 0.4135667396061269,
+      "Diabetic": 0.8014440433212996
     },
     "precision_by_class": {
-      "Normal": 0.7709923664122137,
-      "Pre-diabetic": 0.3472022955523673,
-      "Diabetic": 0.3594890510948905
+      "Normal": 0.7590361445783133,
+      "Pre-diabetic": 0.3559322033898305,
+      "Diabetic": 0.3269513991163476
     },
     "f1_by_class": {
-      "Normal": 0.2613195342820181,
-      "Pre-diabetic": 0.4194107452339688,
-      "Diabetic": 0.4775757575757576
+      "Normal": 0.3118811881188119,
+      "Pre-diabetic": 0.3825910931174089,
+      "Diabetic": 0.46443514644351463
     },
     "confidence_intervals_95": {
       "macro_f1": {
-        "value": 0.3861020123639148,
+        "value": 0.3863024758932451,
         "ci95": {
-          "lower": 0.36137439589914794,
-          "upper": 0.41105771926744095
+          "lower": 0.3612120683613559,
+          "upper": 0.41129358775542557
         }
       },
       "recall_by_class": {
         "Normal": {
-          "value": 0.1573208722741433,
+          "value": 0.19626168224299065,
           "ci95": {
-            "lower": 0.13101058651273675,
-            "upper": 0.1857866822311323
+            "lower": 0.16558974655682654,
+            "upper": 0.22776194852941176
           }
         },
         "Pre-diabetic": {
-          "value": 0.5295404814004376,
+          "value": 0.4135667396061269,
           "ci95": {
-            "lower": 0.4842324507765684,
-            "upper": 0.5747406677486668
+            "lower": 0.3671692886190726,
+            "upper": 0.45516056328836596
           }
         },
         "Diabetic": {
-          "value": 0.7111913357400722,
+          "value": 0.8014440433212996,
           "ci95": {
-            "lower": 0.6581721396474248,
-            "upper": 0.7615826344474032
+            "lower": 0.7536751385336743,
+            "upper": 0.8479147303196733
           }
         }
       }
@@ -110,18 +113,18 @@
     "recommended_operating_point": {
       "strategy": "at_risk_probability_0.50",
       "threshold": 0.5,
-      "sensitivity": 0.8678474114441417,
-      "specificity": 0.40654205607476634,
-      "ppv": 0.6257367387033399,
-      "npv": 0.729050279329609,
+      "sensitivity": 0.8760217983651226,
+      "specificity": 0.397196261682243,
+      "ppv": 0.6242718446601941,
+      "npv": 0.7369942196531792,
       "accuracy": 0.6526162790697675,
-      "f1": 0.7271689497716894,
+      "f1": 0.7290249433106576,
       "prevalence": 0.5334302325581395,
-      "tp": 637,
-      "fp": 381,
-      "tn": 261,
-      "fn": 97,
-      "selection_score": 0.7150586721850661
+      "tp": 643,
+      "fp": 387,
+      "tn": 255,
+      "fn": 91,
+      "selection_score": 0.7173192026023145
     },
     "decision_curve_best_net_benefit": {
       "threshold_probability": 0.05,
@@ -133,141 +136,141 @@
       {
         "strategy": "multiclass_argmax",
         "threshold": NaN,
-        "sensitivity": 0.7397820163487738,
-        "specificity": 0.5919003115264797,
-        "ppv": 0.6745341614906832,
-        "npv": 0.6654991243432574,
-        "accuracy": 0.6707848837209303,
-        "f1": 0.7056530214424951,
+        "sensitivity": 0.7697547683923706,
+        "specificity": 0.5607476635514018,
+        "ppv": 0.667060212514758,
+        "npv": 0.6805293005671077,
+        "accuracy": 0.6722383720930233,
+        "f1": 0.7147375079063883,
         "prevalence": 0.5334302325581395,
-        "tp": 543,
-        "fp": 262,
-        "tn": 380,
-        "fn": 191
+        "tp": 565,
+        "fp": 282,
+        "tn": 360,
+        "fn": 169
       },
       {
         "strategy": "multiclass_tuned_thresholds",
         "threshold": NaN,
-        "sensitivity": 0.9591280653950953,
-        "specificity": 0.1573208722741433,
-        "ppv": 0.5654618473895582,
-        "npv": 0.7709923664122137,
-        "accuracy": 0.5850290697674418,
-        "f1": 0.7114704396159677,
+        "sensitivity": 0.9455040871934605,
+        "specificity": 0.19626168224299065,
+        "ppv": 0.5735537190082645,
+        "npv": 0.7590361445783133,
+        "accuracy": 0.5959302325581395,
+        "f1": 0.7139917695473251,
         "prevalence": 0.5334302325581395,
-        "tp": 704,
-        "fp": 541,
-        "tn": 101,
-        "fn": 30
+        "tp": 694,
+        "fp": 516,
+        "tn": 126,
+        "fn": 40
       },
       {
         "strategy": "at_risk_probability_0.20",
         "threshold": 0.2,
-        "sensitivity": 0.9945504087193461,
-        "specificity": 0.03894080996884735,
-        "ppv": 0.5419450631031922,
-        "npv": 0.8620689655172413,
-        "accuracy": 0.5486918604651163,
-        "f1": 0.7015857760691975,
+        "sensitivity": 0.9931880108991825,
+        "specificity": 0.045171339563862926,
+        "ppv": 0.5432190760059612,
+        "npv": 0.8529411764705882,
+        "accuracy": 0.5508720930232558,
+        "f1": 0.7023121387283237,
         "prevalence": 0.5334302325581395,
-        "tp": 730,
-        "fp": 617,
-        "tn": 25,
-        "fn": 4
+        "tp": 729,
+        "fp": 613,
+        "tn": 29,
+        "fn": 5
       },
       {
         "strategy": "at_risk_probability_0.30",
         "threshold": 0.3,
         "sensitivity": 0.9768392370572208,
-        "specificity": 0.1277258566978193,
-        "ppv": 0.5614722004698512,
-        "npv": 0.8282828282828283,
-        "accuracy": 0.5806686046511628,
-        "f1": 0.713078070611636,
+        "specificity": 0.1292834890965732,
+        "ppv": 0.5619122257053292,
+        "npv": 0.83,
+        "accuracy": 0.5813953488372093,
+        "f1": 0.7134328358208956,
         "prevalence": 0.5334302325581395,
         "tp": 717,
-        "fp": 560,
-        "tn": 82,
+        "fp": 559,
+        "tn": 83,
         "fn": 17
       },
       {
         "strategy": "at_risk_probability_0.40",
         "threshold": 0.4,
-        "sensitivity": 0.9386920980926431,
-        "specificity": 0.2601246105919003,
-        "ppv": 0.5919243986254296,
-        "npv": 0.7877358490566038,
-        "accuracy": 0.622093023255814,
-        "f1": 0.726027397260274,
+        "sensitivity": 0.944141689373297,
+        "specificity": 0.2507788161993769,
+        "ppv": 0.590289608177172,
+        "npv": 0.7970297029702971,
+        "accuracy": 0.6206395348837209,
+        "f1": 0.7264150943396226,
         "prevalence": 0.5334302325581395,
-        "tp": 689,
-        "fp": 475,
-        "tn": 167,
-        "fn": 45
+        "tp": 693,
+        "fp": 481,
+        "tn": 161,
+        "fn": 41
       },
       {
         "strategy": "at_risk_probability_0.50",
         "threshold": 0.5,
-        "sensitivity": 0.8678474114441417,
-        "specificity": 0.40654205607476634,
-        "ppv": 0.6257367387033399,
-        "npv": 0.729050279329609,
+        "sensitivity": 0.8760217983651226,
+        "specificity": 0.397196261682243,
+        "ppv": 0.6242718446601941,
+        "npv": 0.7369942196531792,
         "accuracy": 0.6526162790697675,
-        "f1": 0.7271689497716894,
+        "f1": 0.7290249433106576,
         "prevalence": 0.5334302325581395,
-        "tp": 637,
-        "fp": 381,
-        "tn": 261,
-        "fn": 97
+        "tp": 643,
+        "fp": 387,
+        "tn": 255,
+        "fn": 91
       },
       {
         "strategy": "at_risk_probability_0.60",
         "threshold": 0.6,
-        "sensitivity": 0.7506811989100818,
-        "specificity": 0.5825545171339563,
-        "ppv": 0.6727716727716728,
-        "npv": 0.6714542190305206,
-        "accuracy": 0.6722383720930233,
-        "f1": 0.7095943335479716,
+        "sensitivity": 0.7588555858310627,
+        "specificity": 0.5716510903426791,
+        "ppv": 0.6694711538461539,
+        "npv": 0.6746323529411765,
+        "accuracy": 0.6715116279069767,
+        "f1": 0.7113665389527458,
         "prevalence": 0.5334302325581395,
-        "tp": 551,
-        "fp": 268,
-        "tn": 374,
-        "fn": 183
+        "tp": 557,
+        "fp": 275,
+        "tn": 367,
+        "fn": 177
       }
     ]
   },
   "ablation_bundle": {
     "thresholding_default_vs_tuned": {
       "summary": {
-        "delta_macro_f1": -0.10743577572201557,
-        "delta_recall_pre_diabetic": 0.2013129102844639,
-        "delta_recall_diabetic": 0.07581227436823101,
-        "delta_at_risk_sensitivity": 0.2193460490463215,
-        "delta_at_risk_specificity": -0.43457943925233644
+        "delta_macro_f1": -0.10503470008009053,
+        "delta_recall_pre_diabetic": 0.048140043763676144,
+        "delta_recall_diabetic": 0.18772563176895307,
+        "delta_at_risk_sensitivity": 0.1757493188010899,
+        "delta_at_risk_specificity": -0.36448598130841114
       },
       "rows": [
         {
           "strategy": "multiclass_argmax",
-          "macro_f1": 0.49353778808593035,
-          "auc_roc_weighted_ovr": 0.6963716833048798,
-          "recall_pre_diabetic": 0.3282275711159737,
-          "recall_diabetic": 0.6353790613718412,
-          "at_risk_sensitivity": 0.7397820163487738,
-          "at_risk_specificity": 0.5919003115264797,
-          "at_risk_ppv": 0.6745341614906832,
-          "at_risk_npv": 0.6654991243432574
+          "macro_f1": 0.49133717597333565,
+          "auc_roc_weighted_ovr": 0.6978736276890356,
+          "recall_pre_diabetic": 0.36542669584245074,
+          "recall_diabetic": 0.6137184115523465,
+          "at_risk_sensitivity": 0.7697547683923706,
+          "at_risk_specificity": 0.5607476635514018,
+          "at_risk_ppv": 0.667060212514758,
+          "at_risk_npv": 0.6805293005671077
         },
         {
           "strategy": "multiclass_tuned_thresholds",
-          "macro_f1": 0.3861020123639148,
-          "auc_roc_weighted_ovr": 0.6963716833048798,
-          "recall_pre_diabetic": 0.5295404814004376,
-          "recall_diabetic": 0.7111913357400722,
-          "at_risk_sensitivity": 0.9591280653950953,
-          "at_risk_specificity": 0.1573208722741433,
-          "at_risk_ppv": 0.5654618473895582,
-          "at_risk_npv": 0.7709923664122137
+          "macro_f1": 0.3863024758932451,
+          "auc_roc_weighted_ovr": 0.6978736276890356,
+          "recall_pre_diabetic": 0.4135667396061269,
+          "recall_diabetic": 0.8014440433212996,
+          "at_risk_sensitivity": 0.9455040871934605,
+          "at_risk_specificity": 0.19626168224299065,
+          "at_risk_ppv": 0.5735537190082645,
+          "at_risk_npv": 0.7590361445783133
         }
       ]
     },
@@ -281,55 +284,55 @@
   },
   "outer_fold_confidence_intervals": {
     "AUC_ROC": {
-      "mean": 0.700854546462565,
+      "mean": 0.701205430361751,
       "ci95": {
-        "lower": 0.6751750559229042,
-        "upper": 0.7185129517145443
+        "lower": 0.6860490029922957,
+        "upper": 0.7231607918720342
       }
     },
     "Macro_F1": {
-      "mean": 0.3859024380004487,
+      "mean": 0.3857926379195032,
       "ci95": {
-        "lower": 0.33391146925817605,
-        "upper": 0.41592351190691706
+        "lower": 0.27184259365686797,
+        "upper": 0.47526372743511835
       }
     },
     "Recall_PreDiabetic": {
-      "mean": 0.5285244869499691,
+      "mean": 0.41207759869654037,
       "ci95": {
-        "lower": 0.43609363081617086,
-        "upper": 0.6380270963604296
+        "lower": 0.15258215962441313,
+        "upper": 0.5643704121964991
       }
     },
     "Recall_Diabetic": {
-      "mean": 0.7152261153595267,
+      "mean": 0.8025233870752274,
       "ci95": {
-        "lower": 0.5366048593350383,
-        "upper": 0.8517441860465116
+        "lower": 0.7232052578361982,
+        "upper": 0.9013362740010379
       }
     },
     "Accuracy": {
-      "mean": 0.3946355376413267,
+      "mean": 0.3938997152211318,
       "ci95": {
-        "lower": 0.3381087727785841,
-        "upper": 0.41945683147065355
+        "lower": 0.29304749233994515,
+        "upper": 0.4729092328278323
       }
     }
   },
   "calibration": {
-    "overall_brier": 0.19424743719522972,
+    "overall_brier": 0.19535174550116632,
     "per_class": {
       "Normal": {
-        "brier": 0.21901868448877534,
-        "ece": 0.10497092963487527
+        "brier": 0.22197280623094795,
+        "ece": 0.11365145112258697
       },
       "Pre-diabetic": {
-        "brier": 0.21742400937478767,
-        "ece": 0.02215131686614643
+        "brier": 0.21783092052418446,
+        "ece": 0.03415640995505113
       },
       "Diabetic": {
-        "brier": 0.14629961772212605,
-        "ece": 0.09728368335642386
+        "brier": 0.1462515097483666,
+        "ece": 0.10251452028920773
       }
     }
   },
@@ -337,59 +340,59 @@
     "k_metrics": [
       {
         "k": 2,
-        "silhouette": 0.16174968094781708,
-        "calinski_harabasz": 278.1908504240287,
-        "davies_bouldin": 2.078062912313917
+        "silhouette": 0.1569550981832645,
+        "calinski_harabasz": 278.64591557560806,
+        "davies_bouldin": 2.11215996261417
       },
       {
         "k": 4,
-        "silhouette": 0.1626865947627065,
-        "calinski_harabasz": 207.89695838005946,
-        "davies_bouldin": 1.8162906288029432
+        "silhouette": 0.15094748657141702,
+        "calinski_harabasz": 182.63113508778346,
+        "davies_bouldin": 1.9595374779520598
       }
     ],
-    "silhouette_optimal_k": 4,
+    "silhouette_optimal_k": 2,
     "clinical_k": 4
   },
   "clustering_positioning": {
     "primary_unsupervised": {
-      "k": 4,
+      "k": 2,
       "basis": "Best unsupervised compactness/separation (silhouette)."
     },
     "exploratory_clinical_mapping": {
       "k": 4,
       "basis": "Clinically interpretable risk stratification aligned to 4 groups."
     },
-    "recommended_thesis_wording": "Use K=4 as both the primary unsupervised finding and the clinically interpretable mapping."
+    "recommended_thesis_wording": "Use K=2 as the primary unsupervised finding; present K=4 as exploratory clinical mapping for interpretability."
   },
   "cluster_analysis": {
     "method": "kmeans_k4_on_scaled_clinical_features",
     "cluster_labels": {
-      "3": {
+      "2": {
         "label": "High Risk",
         "risk_level": "HIGH",
-        "diabetic_rate": 0.40217391304347827,
-        "pre_diabetic_rate": 0.3695652173913043,
-        "risk_score": 0.5869565217391304,
-        "size": 184
-      },
-      "1": {
-        "label": "Moderate Risk",
-        "risk_level": "MODERATE",
-        "diabetic_rate": 0.2554347826086957,
-        "pre_diabetic_rate": 0.38405797101449274,
-        "risk_score": 0.447463768115942,
-        "size": 552
-      },
-      "2": {
-        "label": "Low-Moderate Risk",
-        "risk_level": "LOW_MODERATE",
-        "diabetic_rate": 0.09981515711645102,
-        "pre_diabetic_rate": 0.2902033271719039,
-        "risk_score": 0.24491682070240295,
-        "size": 541
+        "diabetic_rate": 0.38341968911917096,
+        "pre_diabetic_rate": 0.37823834196891193,
+        "risk_score": 0.572538860103627,
+        "size": 193
       },
       "0": {
+        "label": "Moderate Risk",
+        "risk_level": "MODERATE",
+        "diabetic_rate": 0.2640449438202247,
+        "pre_diabetic_rate": 0.3801498127340824,
+        "risk_score": 0.45411985018726586,
+        "size": 534
+      },
+      "3": {
+        "label": "Low-Moderate Risk",
+        "risk_level": "LOW_MODERATE",
+        "diabetic_rate": 0.09818181818181818,
+        "pre_diabetic_rate": 0.2927272727272727,
+        "risk_score": 0.24454545454545454,
+        "size": 550
+      },
+      "1": {
         "label": "Low Risk",
         "risk_level": "LOW",
         "diabetic_rate": 0.08080808080808081,
@@ -399,27 +402,27 @@
       }
     },
     "cluster_sizes": {
+      "Moderate Risk": 534,
       "Low Risk": 99,
-      "Moderate Risk": 552,
-      "Low-Moderate Risk": 541,
-      "High Risk": 184
+      "High Risk": 193,
+      "Low-Moderate Risk": 550
     }
   },
   "confusion_matrix": [
     [
-      101,
-      383,
-      158
+      126,
+      294,
+      222
     ],
     [
-      22,
-      242,
-      193
+      33,
+      189,
+      235
     ],
     [
-      8,
-      72,
-      197
+      7,
+      48,
+      222
     ]
   ]
 }

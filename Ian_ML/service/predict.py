@@ -64,9 +64,9 @@ def _validate_clinical_v2_dir(path: Path) -> Path:
     with open(features_path) as f:
         features_manifest = json.load(f)
     n_features = features_manifest.get("n_features")
-    if n_features != 13:
+    if n_features not in (13, 16, 17):
         raise ValueError(
-            f"Clinical v2 requires 13 features, found {n_features} in {features_path}."
+            f"Clinical v2 requires 13, 16, or 17 features, found {n_features} in {features_path}."
         )
 
     return path
@@ -75,12 +75,14 @@ def _validate_clinical_v2_dir(path: Path) -> Path:
 REQUIRED_FEATURES = [
     'bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic',
     'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded',
-    'alcohol_encoded', 'metabolic_syndrome_score'
+    'alcohol_encoded', 'metabolic_syndrome_score',
+    'waist_circumference', 'family_history_diabetes', 'race_encoded'
 ]
 
 # Raw input features (before engineering)
 RAW_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic',
-                'smoking_status', 'physical_activity', 'alcohol_use']
+                'smoking_status', 'physical_activity', 'alcohol_use',
+                'waist_circumference', 'family_history_diabetes', 'race_ethnicity']
 
 
 def compute_file_hash(filepath: Path) -> str:
@@ -336,10 +338,14 @@ class DianaPredictor:
 # Base features required from user (engineered features computed from these)
 CLINICAL_BASE_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic']
 
-# Full feature set including engineered features (13 features for classifier)
-CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic', 
-                     'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 
-                     'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score']
+# Optional enrichment features (model works without them via imputation)
+CLINICAL_ENRICHMENT_FEATURES = ['waist_circumference', 'family_history_diabetes', 'race_ethnicity']
+
+# Full feature set including engineered features (16 features for classifier)
+CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic',
+                     'bmi_category', 'tg_hdl_ratio', 'smoking_encoded',
+                     'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score',
+                     'waist_circumference', 'family_history_diabetes', 'race_encoded']
 
 # Features used for KMeans clustering (5 base clinical biomarkers)
 # Must match train_clusters.py CLUSTER_FEATURES exactly
@@ -485,12 +491,25 @@ class ClinicalPredictor:
             metabolic_score += 1
         if bmi >= 30:
             metabolic_score += 1
+        waist = data.get('waist_circumference', 0) or 0
+        if waist >= 80:
+            metabolic_score += 1
+
+        # Race encoding
+        race_map = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6}
+        race_raw = data.get('race_ethnicity', 0) or 0
+        race_encoded = race_map.get(int(race_raw), 0) if race_raw else 0
+
+        # Enrichment features with safe defaults
+        family_history = data.get('family_history_diabetes', 0) or 0
+        crp = data.get('crp', 0) or 0
 
         return np.array([[bmi, tg, ldl, hdl, age,
                           data.get('systolic', 120), data.get('diastolic', 80),
                           bmi_category, tg_hdl_ratio,
                           smoking_encoded, activity_encoded, alcohol_encoded,
-                          metabolic_score]], dtype=float)
+                          metabolic_score,
+                          waist, family_history, race_encoded, crp]], dtype=float)
 
     def _build_cluster_vector(self, data: Dict[str, float]) -> np.ndarray:
         """Build the 5-feature cluster vector matching CLUSTER_FEATURES order."""
