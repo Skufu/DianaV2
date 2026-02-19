@@ -1,3 +1,5 @@
+# STALE PAPER REQUIREMENTS - DO NOT USE. JUST FOR REFERENCE
+
 # DIANA Paper Requirements - Complete Reference
 
 ## Project Overview

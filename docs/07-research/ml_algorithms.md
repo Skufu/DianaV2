@@ -67,7 +67,8 @@
 
 | Component | File | Description |
 |-----------|------|-------------|
-| Clinical Model | `Ian_ML/training/train.py` | Non-circular model training |
+| Clinical Model | `Ian_ML/training/train_v2.py` | Defensible nested CV training |
+| Clinical Model Legacy | `Ian_ML/training/train_legacy.py` | Archived v1 (non-defensible) |
 | Binary Model | `Ian_ML/training/train_binary.py` | Binary classification training |
 | Prediction | `Ian_ML/service/predict.py` | Inference module |
 | K-Means | `Ian_ML/training/clustering.py` | Clustering module |

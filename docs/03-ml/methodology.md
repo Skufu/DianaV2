@@ -224,7 +224,7 @@ python Ian_ML/training/data_processing.py
 python scripts/impute_missing_data.py
 
 # 5. Train and Cluster
-python Ian_ML/training/train.py
+python Ian_ML/training/train_v2.py
 python scripts/train/train_clusters.py
 
 # 6. Start ML server

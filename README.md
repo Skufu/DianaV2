@@ -102,7 +102,8 @@ A full-stack health application designed for menopausal women to assess diabetes
 |------|---------------|---------|
 | Flask Server | `Ian_ML/service/server.py` | API endpoints |
 | Predictors | `Ian_ML/service/predict.py` | DianaPredictor, ClinicalPredictor |
-| Training | `Ian_ML/training/train.py` | Clinical model training |
+| Training | `Ian_ML/training/train_v2.py` | Clinical model training (defensible) |
+| Training Legacy | `Ian_ML/training/train_legacy.py` | Archived v1 training (non-defensible) |
 | Clustering | `Ian_ML/training/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
 | Data Processing | `Ian_ML/training/data_processing.py` | NHANES data pipeline |
 | Explainability | `Ian_ML/service/explainability.py` | SHAP explanations |

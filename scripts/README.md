@@ -140,7 +140,7 @@ scripts/
 | `download_nhanes.sh` | Deprecated (Python version exists) | `data/download_nhanes_multi.py` |
 | `download_nhanes_py.py` | Superseded by multi-cycle version | `data/download_nhanes_multi.py` |
 | `process_nhanes.py` | Superseded by multi-cycle version | `data/process_nhanes_multi.py` |
-| `train_enhanced.py` | Superseded by `Ian_ML/training/train.py` | `Ian_ML/training/train.py` |
+| `train_enhanced.py` | Superseded by `Ian_ML/training/train_v2.py` | `Ian_ML/training/train_v2.py` |
 | `remove_bg.py` | Unrelated to DIANA (image utility) | N/A |
 
 ## Missing Scripts (Referenced But Not Implemented)

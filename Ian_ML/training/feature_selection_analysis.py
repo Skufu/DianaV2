@@ -19,24 +19,25 @@ from sklearn.linear_model import LassoCV, LogisticRegression
 from sklearn.feature_selection import RFECV, mutual_info_classif
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from Ian_ML.common.paths import CLINICAL_MODELS_DIR, NHANES_PROCESSED_ROOT
 import warnings
 warnings.filterwarnings('ignore')
 
 # Load training data
-DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_imputed.csv"
+DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
 
 def load_and_engineer_features():
     """Load data and apply same feature engineering as train.py"""
     df = pd.read_csv(DATA_PATH)
     
-    # Base features from train.py
-    BIOMARKER_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
-    BP_FEATURES = ['systolic', 'diastolic']
-    LIFESTYLE_FEATURES = ['smoking_status', 'physical_activity', 'alcohol_use']
-    BASE_FEATURES = BIOMARKER_FEATURES + BP_FEATURES
+    # Base features from train_v2.py (13-feature set)
+    # Reusing the existing REDUCED_FEATURES list logic manually here
+    # 13 features: bmi, triglycerides, ldl, hdl, age, systolic, diastolic, 
+    # bmi_category, tg_hdl_ratio, smoking_encoded, activity_encoded, alcohol_encoded, metabolic_syndrome_score
     
-    # Apply feature engineering (simplified version from train.py)
+    # Apply feature engineering (matches train_v2.py)
     df = df.copy()
     
     # BMI category
@@ -44,17 +45,6 @@ def load_and_engineer_features():
     
     # Lipid ratios
     df['tg_hdl_ratio'] = df['triglycerides'] / df['hdl'].replace(0, np.nan)
-    df['ldl_hdl_ratio'] = df['ldl'] / df['hdl'].replace(0, np.nan)
-    df['cholesterol_hdl_ratio'] = df['ldl'] / df['hdl'].replace(0, np.nan)
-    df['tg_hdl_ratio_sq'] = df['tg_hdl_ratio'] ** 2
-    
-    # VLDL and Non-HDL
-    df['vldl'] = df['triglycerides'] / 5
-    df['non_hdl'] = df['ldl'] + df['vldl']
-    
-    # BP categories
-    if 'systolic' in df.columns and 'diastolic' in df.columns:
-        df['hypertension'] = ((df['systolic'] >= 140) | (df['diastolic'] >= 90)).astype(float)
     
     # Metabolic syndrome score
     metabolic_criteria = pd.DataFrame({
@@ -78,41 +68,39 @@ def load_and_engineer_features():
     if 'alcohol_use' in df.columns:
         df['alcohol_encoded'] = df['alcohol_use'].map(alcohol_map)
     
-    # Age group
-    df['age_group'] = pd.cut(df['age'], bins=[0, 50, 55, 60, 100], labels=[0, 1, 2, 3]).astype(float)
-    
-    # Polynomial and interaction features
-    df['bmi_squared'] = df['bmi'] ** 2
-    df['age_bmi_interaction'] = df['age'] * df['bmi']
-    df['tg_log'] = np.log1p(df['triglycerides'])
-    
-    # Metabolic risk
-    if 'tg_hdl_ratio' in df.columns and 'hypertension' in df.columns:
-        high_tg_hdl = (df['tg_hdl_ratio'] > 3.5).astype(float)
-        obese = (df['bmi'] >= 30).astype(float)
-        df['metabolic_risk'] = high_tg_hdl + df['hypertension'] + obese
-    
-    # Combine all features
-    engineered = [
-        'bmi_category', 'tg_hdl_ratio', 'ldl_hdl_ratio', 'age_group',
-        'hypertension', 'smoking_encoded', 'activity_encoded', 'alcohol_encoded',
-        'metabolic_risk', 'vldl', 'non_hdl', 'cholesterol_hdl_ratio', 'tg_hdl_ratio_sq',
-        'metabolic_syndrome_score', 'bmi_squared', 'age_bmi_interaction', 'tg_log'
+    # Define the 13 features from V2 baseline
+    reduced_features = [
+        "bmi",
+        "triglycerides",
+        "ldl",
+        "hdl",
+        "age",
+        "systolic",
+        "diastolic",
+        "bmi_category",
+        "tg_hdl_ratio",
+        "smoking_encoded",
+        "activity_encoded",
+        "alcohol_encoded",
+        "metabolic_syndrome_score",
     ]
     
-    all_features = BASE_FEATURES + [f for f in engineered if f in df.columns]
+    # Clean data (minimal dropna for target only)
+    df_clean = df.dropna(subset=['diabetes_label'])
     
-    # Clean data
-    df_clean = df.dropna(subset=all_features + ['diabetes_label'])
+    # Handle missing features with imputation (consistent with Pipeline)
+    from sklearn.impute import SimpleImputer
+    imputer = SimpleImputer(strategy='median')
+    X_raw = df_clean[reduced_features]
+    X_imputed = pd.DataFrame(imputer.fit_transform(X_raw), columns=reduced_features)
     
-    X = df_clean[all_features]
     y = df_clean['diabetes_label'].values.astype(int)
     
-    print(f"Dataset: {len(X)} samples, {len(all_features)} features")
-    print(f"Features: {all_features}")
+    print(f"Dataset: {len(X_imputed)} samples, {len(reduced_features)} features")
+    print(f"Features: {reduced_features}")
     print(f"\nClass distribution: {dict(zip(['Normal', 'Pre-diabetic', 'Diabetic'], np.bincount(y)))}")
     
-    return X, y, all_features
+    return X_imputed, y, reduced_features
 
 
 def analyze_correlations(X, feature_names, threshold=0.9):
@@ -343,7 +331,8 @@ def main():
     )
     
     # Save results
-    output_dir = CLINICAL_MODELS_DIR / "results"
+    from Ian_ML.common.paths import CLINICAL_V2_MODELS_DIR
+    output_dir = CLINICAL_V2_MODELS_DIR / "experiments" / "feature_selection"
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Save feature rankings

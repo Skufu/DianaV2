@@ -71,7 +71,7 @@ Comprehensive knowledge base documentation for all major directories:
 | User flows | frontend/src/components/user/ | Onboarding, Dashboard, Trends, Profile |
 | Charts | frontend/src/components/common/ | SHAPExplanation (Recharts integration) |
 | API wrapper | frontend/src/api.js | apiFetch/mlFetch, centralized endpoints |
-| ML training | Ian_ML/training/train.py, scripts/train/train_clusters.py | K-Means, CatBoost |
+| ML training | Ian_ML/training/train_v2.py, scripts/train/train_clusters.py | Defensible nested CV, K-Means |
 | Data processing | scripts/data/*.py | NHANES download, merge, imputation |
 | Thesis generation | scripts/thesis/*.py | Manuscript verification, vignettes, outputs |
 | CI/CD | .github/workflows/ci.yml | Multi-language tests, docker builds |
