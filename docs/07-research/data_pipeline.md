@@ -34,14 +34,16 @@ python scripts/data/download_nhanes_multi.py
 python scripts/data/download_lifestyle_data.py
 ```
 
-**Output**: `data/nhanes/*.XPT`
+**Output**: `data/nhanes/raw/*.XPT`
 
 ### 2. Process and Merge
 ```bash
 python scripts/data/process_nhanes_multi.py
+python scripts/data/impute_missing_data.py
 ```
 
 **Output**: `data/nhanes/processed/diana_training_data_multi.csv`
+**Cleaned Output**: `data/nhanes/processed/diana_dataset_imputed.csv`
 
 ### 3. Key Processing Functions
 
@@ -52,6 +54,8 @@ python scripts/data/process_nhanes_multi.py
 | `derive_smoking_status()` | Create smoking status variable |
 | `derive_physical_activity()` | Create physical activity variable |
 | `derive_alcohol_use()` | Create alcohol use variable |
+| `derive_race_ethnicity()` | Harmonize race/ethnicity across NHANES cycles |
+| `derive_family_history_diabetes()` | Create binary family history of diabetes |
 
 ---
 
@@ -97,16 +101,34 @@ python scripts/data/process_nhanes_multi.py
 
 ---
 
+## Enrichment Features
+
+The pipeline includes additional biomarkers beyond core diabetes indicators:
+
+| Feature | Source Variable | Description |
+|---------|---------------|-------------|
+| Waist Circumference | BMXWAIST | Central adiposity measure |
+| Fasting Insulin | LBXIN | Fasting serum insulin |
+| C-Reactive Protein | LBXCRP | Inflammation marker |
+| Family History Diabetes | MCQ300C | Binary (1=Yes, 0=No) |
+| Race/Ethnicity | RIDRETH1/RIDRETH3 | Harmonized 6-category |
+
+**Note**: Family history (MCQ300C) was dropped in 2021-2023 cycle.
+
+---
+
 ## File Locations
 
 | Stage | Path |
 |-------|------|
-| Raw NHANES | `data/nhanes/*.XPT` |
+| Raw NHANES | `data/nhanes/raw/*.XPT` |
 | Processed | `data/nhanes/processed/diana_training_data_multi.csv` |
-| Trained Models | `models/*.joblib` |
-| Clinical Models | `models/clinical/*.joblib` |
-| Visualizations | `models/clinical/visualizations/` |
-| Results | `models/clinical/results/` |
+| Cleaned/Imputed | `data/nhanes/processed/diana_dataset_imputed.csv` |
+| Clustered | `data/nhanes/processed/diana_clustered_final.csv` |
+| Trained Models | `models/clinical_v2/*.joblib` |
+| Clinical Models | `models/clinical_v2/*.joblib` |
+| Visualizations | `models/clinical_v2/visualizations/` |
+| Results | `models/clinical_v2/results/` |
 
 ---
 

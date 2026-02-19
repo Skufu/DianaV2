@@ -25,10 +25,25 @@ def create_test_df(**kwargs):
         'diastolic': 80.0,
         'smoking_status': 'Never',
         'physical_activity': 'Moderate',
-        'alcohol_use': 'Light'
+        'alcohol_use': 'Light',
+        # Enrichment features
+        'waist_circumference': 85.0,
+        'family_history_diabetes': 0.0,
+        'race_ethnicity': 3.0,   # NH White
+        'crp': 0.5,
     }
     defaults.update(kwargs)
-    return pd.DataFrame([defaults])
+    # Determine length from any list-valued override
+    n = 1
+    for v in defaults.values():
+        if isinstance(v, list):
+            n = len(v)
+            break
+    # Broadcast scalars to match list length
+    for k, v in defaults.items():
+        if not isinstance(v, list):
+            defaults[k] = [v] * n
+    return pd.DataFrame(defaults)
 
 
 def test_bmi_categorization_underweight():
@@ -40,31 +55,31 @@ def test_bmi_categorization_underweight():
 
 
 def test_bmi_categorization_normal():
-    """Test 18.5 <= BMI < 25 returns 1 (Normal)."""
-    df = create_test_df(bmi=[18.5, 20.0, 24.9])
+    """Test 18.5 < BMI <= 25 returns 1 (Normal). Note: pd.cut uses left-exclusive bins."""
+    df = create_test_df(bmi=[19.0, 20.0, 24.9])
     result = engineer_features_reduced(df)
     
     assert all(result['bmi_category'] == 1), "All normal BMIs should be category 1"
 
 
 def test_bmi_categorization_overweight():
-    """Test 25 <= BMI < 30 returns 2 (Overweight)."""
-    df = create_test_df(bmi=[25.0, 27.0, 29.9])
+    """Test 25 < BMI <= 30 returns 2 (Overweight). Note: pd.cut uses left-exclusive bins."""
+    df = create_test_df(bmi=[25.1, 27.0, 29.9])
     result = engineer_features_reduced(df)
     
     assert all(result['bmi_category'] == 2), "All overweight BMIs should be category 2"
 
 
 def test_bmi_categorization_obese():
-    """Test BMI >= 30 returns 3 (Obese)."""
-    df = create_test_df(bmi=[30.0, 35.0, 40.0])
+    """Test BMI > 30 returns 3 (Obese). Note: pd.cut uses left-exclusive bins."""
+    df = create_test_df(bmi=[30.1, 35.0, 40.0])
     result = engineer_features_reduced(df)
     
     assert all(result['bmi_category'] == 3), "All obese BMIs should be category 3"
 
 
 def test_bmi_categorization_boundary():
-    """Test BMI category boundaries."""
+    """Test BMI category boundaries (pd.cut uses left-exclusive intervals)."""
     df = pd.DataFrame({
         'bmi': [18.49, 18.5, 24.99, 25.0, 29.99, 30.0],
         'triglycerides': [150.0] * 6,
@@ -72,7 +87,9 @@ def test_bmi_categorization_boundary():
     })
     result = engineer_features_reduced(df)
     
-    expected = [0, 1, 1, 2, 2, 3]
+    # pd.cut bins=[0, 18.5, 25, 30, 100] -> (0,18.5]=0, (18.5,25]=1, (25,30]=2, (30,100]=3
+    # 18.5 falls in (0, 18.5] = 0; 25.0 falls in (18.5, 25] = 1; 30.0 falls in (25, 30] = 2
+    expected = [0.0, 0.0, 1.0, 1.0, 2.0, 2.0]
     assert list(result['bmi_category']) == expected, \
         f"Boundary values incorrect: {list(result['bmi_category'])} vs {expected}"
 
@@ -104,18 +121,37 @@ def test_tg_hdl_ratio_zero_hdl():
 
 
 def test_metabolic_syndrome_scoring():
-    """Test metabolic syndrome score calculation (ATP III criteria)."""
+    """Test metabolic syndrome score calculation (ATP III + IDF waist criteria)."""
     df = pd.DataFrame({
         'triglycerides': [160.0, 140.0, 200.0, 40.0],
         'hdl': [45.0, 55.0, 30.0, 60.0],
         'systolic': [135.0, 125.0, 140.0, 120.0],
-        'bmi': [32.0, 28.0, 30.0, 29.0]
+        'bmi': [32.0, 28.0, 30.0, 29.0],
+        'waist_circumference': [90.0, 70.0, 95.0, 75.0],  # >=80 adds 1
     })
     result = engineer_features_reduced(df)
     
-    expected_scores = [3, 0, 3, 0]
+    # high_tg, low_hdl, high_bp, high_bmi, high_waist
+    # Row 0: 1+1+1+1+1=5, Row 1: 0+0+0+0+0=0, Row 2: 1+1+1+1+1=5, Row 3: 0+0+0+0+0=0
+    expected_scores = [5, 0, 5, 0]
     assert list(result['metabolic_syndrome_score']) == expected_scores, \
         f"Metabolic syndrome scores incorrect: {list(result['metabolic_syndrome_score'])} vs {expected_scores}"
+
+
+def test_metabolic_syndrome_without_waist():
+    """Test metabolic syndrome score without waist_circumference column."""
+    df = pd.DataFrame({
+        'triglycerides': [160.0],
+        'hdl': [45.0],
+        'systolic': [135.0],
+        'bmi': [32.0],
+    })
+    result = engineer_features_reduced(df)
+    
+    # Without waist: high_tg + low_hdl + high_bp + high_bmi = 4 max
+    expected = [4]
+    assert list(result['metabolic_syndrome_score']) == expected, \
+        f"Score without waist incorrect: {list(result['metabolic_syndrome_score'])} vs {expected}"
 
 
 def test_smoking_encoding():
@@ -163,6 +199,34 @@ def test_alcohol_use_encoding():
         f"Alcohol encoding incorrect: {list(result['alcohol_encoded'])} vs {expected}"
 
 
+def test_race_encoding():
+    """Test race/ethnicity encoding from unified categories."""
+    df = pd.DataFrame({
+        'race_ethnicity': [1.0, 3.0, 4.0, 5.0, np.nan],
+        'bmi': [25.0] * 5,
+        'triglycerides': [150.0] * 5,
+        'hdl': [50.0] * 5,
+    })
+    result = engineer_features_reduced(df)
+    
+    expected = [1.0, 3.0, 4.0, 5.0, 0.0]  # NaN -> 0
+    assert list(result['race_encoded']) == expected, \
+        f"Race encoding incorrect: {list(result['race_encoded'])} vs {expected}"
+
+
+def test_race_encoding_missing_column():
+    """Test race encoding when race_ethnicity column is absent."""
+    df = pd.DataFrame({
+        'bmi': [25.0],
+        'triglycerides': [150.0],
+        'hdl': [50.0],
+    })
+    result = engineer_features_reduced(df)
+    
+    assert list(result['race_encoded']) == [0.0], \
+        "Missing race_ethnicity column should default to 0.0"
+
+
 def test_feature_engineering_consistency():
     """Test that all derived features are created consistently."""
     df = pd.DataFrame({
@@ -175,15 +239,19 @@ def test_feature_engineering_consistency():
         'diastolic': [85.0, 92.0],
         'smoking_status': ['Former', 'Current'],
         'physical_activity': ['Moderate', 'Sedentary'],
-        'alcohol_use': ['Light', 'None']
+        'alcohol_use': ['Light', 'None'],
+        'waist_circumference': [85.0, 95.0],
+        'family_history_diabetes': [0.0, 1.0],
+        'race_ethnicity': [3.0, 4.0],
+        'crp': [0.5, 2.0],
     })
     result = engineer_features_reduced(df)
     
-    # Verify all expected features are present (v2 reduced set)
+    # Verify all expected derived features are present
     expected_features = [
         'bmi_category', 'tg_hdl_ratio',
         'smoking_encoded', 'activity_encoded', 'alcohol_encoded',
-        'metabolic_syndrome_score'
+        'metabolic_syndrome_score', 'race_encoded',
     ]
     
     for feature in expected_features:
@@ -194,17 +262,21 @@ def test_feature_engineering_consistency():
 
 
 def test_v2_reduced_features_list():
-    """Test that v2 uses the 13-feature reduced set."""
+    """Test that v2 uses the 16-feature enriched set."""
     from train_v2 import REDUCED_FEATURES
     
-    assert len(REDUCED_FEATURES) == 13, f"Expected 13 features, got {len(REDUCED_FEATURES)}"
+    assert len(REDUCED_FEATURES) == 16, f"Expected 16 features, got {len(REDUCED_FEATURES)}"
     
     expected_features = [
+        # Original
         "bmi", "triglycerides", "ldl", "hdl", "age",
         "systolic", "diastolic",
         "bmi_category", "tg_hdl_ratio",
         "smoking_encoded", "activity_encoded", "alcohol_encoded",
         "metabolic_syndrome_score",
+        # Enrichment
+        "waist_circumference", "family_history_diabetes",
+        "race_encoded", "crp",
     ]
     
     for feat in expected_features:
