@@ -307,19 +307,19 @@ const App = () => {
 
           <main className={`relative z-10 flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'ml-20' : 'ml-20 lg:ml-72'} p-6 lg:p-8`}>
             <ErrorBoundary section={adminView}>
-              <Suspense fallback={<LoadingSkeleton />}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={adminView}
-                    variants={pageVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                  >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={adminView}
+                  variants={pageVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                >
+                  <Suspense fallback={<LoadingSkeleton />}>
                     {renderAdminContent()}
-                  </motion.div>
-                </AnimatePresence>
-              </Suspense>
+                  </Suspense>
+                </motion.div>
+              </AnimatePresence>
             </ErrorBoundary>
           </main>
         </motion.div>
@@ -355,19 +355,19 @@ const App = () => {
             className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? (isSidebarCollapsed ? 'ml-20' : 'ml-20 lg:ml-72') + ' p-6 lg:p-8' : ''}`}
           >
             <ErrorBoundary section={activeTab}>
-              <Suspense fallback={<LoadingSkeleton />}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    variants={pageVariants}
-                    initial="initial"
-                    animate="animate"
-                    exit="exit"
-                  >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  variants={pageVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                >
+                  <Suspense fallback={<LoadingSkeleton />}>
                     {renderUserContent()}
-                  </motion.div>
-                </AnimatePresence>
-              </Suspense>
+                  </Suspense>
+                </motion.div>
+              </AnimatePresence>
             </ErrorBoundary>
           </main>
 
@@ -385,6 +385,7 @@ const App = () => {
                   className="relative z-10 w-full max-w-2xl"
                 >
                   <AssessmentForm
+                    initialData={profile}
                     onSubmit={() => {
                       setShowAssessmentModal(false);
                       // Refresh data by invalidating queries

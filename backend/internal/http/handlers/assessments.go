@@ -277,18 +277,23 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 
 	// Get prediction from ML server
 	// Pass request context for cancellation support
-	cluster, riskScore, err := h.predictor.Predict(c.Request.Context(), assessment)
+	prediction, err := h.predictor.Predict(c.Request.Context(), assessment)
 	if err != nil {
 		log.Printf("Failed to get ML prediction: %v", err)
 		ErrInternal(c, "Failed to get prediction from ML service")
 		return
 	}
 
-	assessment.Cluster = cluster
-	assessment.RiskScore = riskScore
+	assessment.Cluster = prediction.Cluster
+	assessment.RiskScore = prediction.RiskScore
+	assessment.PredictedStatus = prediction.PredictedStatus
+	assessment.RiskLabel = prediction.RiskLabel
+	assessment.ClusterDescription = prediction.ClusterDescription
+	assessment.TreatmentFocus = prediction.TreatmentFocus
+	assessment.AtRiskProbability = prediction.AtRiskProbability
 
 	// Add risk level
-	assessment.RiskLevel = calculateRiskLevel(riskScore)
+	assessment.RiskLevel = calculateRiskLevel(assessment.RiskScore)
 
 	// Validate biomarker ranges before ML prediction (clinical safety)
 	validationResult := ml.ValidateBiomarkers(assessment, h.thresholds)
@@ -438,16 +443,21 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 
 	// Re-predict with updated values
 	// Pass request context for cancellation support
-	cluster, riskScore, err := h.predictor.Predict(c.Request.Context(), *assessment)
+	prediction, err := h.predictor.Predict(c.Request.Context(), *assessment)
 	if err != nil {
 		log.Printf("Failed to get ML prediction on update: %v", err)
 		ErrInternal(c, "Failed to get prediction from ML service")
 		return
 	}
 
-	assessment.Cluster = cluster
-	assessment.RiskScore = riskScore
-	assessment.RiskLevel = calculateRiskLevel(riskScore)
+	assessment.Cluster = prediction.Cluster
+	assessment.RiskScore = prediction.RiskScore
+	assessment.PredictedStatus = prediction.PredictedStatus
+	assessment.RiskLabel = prediction.RiskLabel
+	assessment.ClusterDescription = prediction.ClusterDescription
+	assessment.TreatmentFocus = prediction.TreatmentFocus
+	assessment.AtRiskProbability = prediction.AtRiskProbability
+	assessment.RiskLevel = calculateRiskLevel(assessment.RiskScore)
 
 	updated, err := h.store.Assessments().Update(c.Request.Context(), *assessment)
 	if err != nil {

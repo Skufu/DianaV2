@@ -72,7 +72,7 @@ frontend/
 │       │   ├── PDFExport.jsx      # PDF export button
 │       │   ├── ErrorBoundary.jsx  # Error handling
 │       │   ├── ErrorFallback.jsx  # Error fallback UI
-│       │   ├── MockMLResultModal.jsx # Mock ML results
+│       │   ├── MLResultModal.jsx     # ML results modal
 │       │   ├── Skeleton.jsx       # Loading skeleton
 │       │   └── Toast.jsx          # Notification toast
 │       ├── layout/
@@ -161,7 +161,7 @@ The following directories contain legacy components from the previous B2B (clini
 | `SHAPExplanation` | `components/common/SHAPExplanation.jsx` | Feature contributions |
 | `PDFExport` | `components/common/PDFExport.jsx` | PDF export button |
 | `ErrorBoundary` | `components/common/ErrorBoundary.jsx` | Error handling |
-| `MockMLResultModal` | `components/common/MockMLResultModal.jsx` | Mock ML results |
+| `MLResultModal` | `components/common/MLResultModal.jsx` | ML results modal |
 | `Skeleton` | `components/common/Skeleton.jsx` | Loading skeleton |
 | `Toast` | `components/common/Toast.jsx` | Notification toast |
 

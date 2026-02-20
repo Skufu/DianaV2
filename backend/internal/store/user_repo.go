@@ -87,6 +87,8 @@ func (r *pgUserRepo) FindByID(ctx context.Context, id int32) (*models.User, erro
 		HeartDisease:                 textVal(row.HeartDisease),
 		FamilyHistoryDiabetes:        row.FamilyHistoryDiabetes,
 		SmokingStatus:                textVal(row.SmokingStatus),
+		PhysicalActivity:             textVal(row.PhysicalActivity),
+		Alcohol:                      textVal(row.Alcohol),
 		ConsentPersonalData:          row.ConsentPersonalData,
 		ConsentResearchParticipation: row.ConsentResearchParticipation,
 		ConsentEmailUpdates:          row.ConsentEmailUpdates,
@@ -335,6 +337,8 @@ func (r *pgUserRepo) UpdateUser(ctx context.Context, user models.User) (*models.
 		HeartDisease:              pgtype.Text{String: user.HeartDisease, Valid: user.HeartDisease != ""},
 		FamilyHistoryDiabetes:     user.FamilyHistoryDiabetes,
 		SmokingStatus:             pgtype.Text{String: user.SmokingStatus, Valid: user.SmokingStatus != ""},
+		PhysicalActivity:          pgtype.Text{String: user.PhysicalActivity, Valid: user.PhysicalActivity != ""},
+		Alcohol:                   pgtype.Text{String: user.Alcohol, Valid: user.Alcohol != ""},
 		AssessmentFrequencyMonths: int32(user.AssessmentFrequencyMonths),
 		ReminderEmail:             user.ReminderEmail,
 	})
@@ -429,32 +433,37 @@ func (r *pgUserRepo) GetLatestAssessmentByUser(ctx context.Context, userID int64
 	}
 
 	return &models.Assessment{
-		ID:               int64(row.ID),
-		UserID:           int64(intVal(row.UserID)),
-		FBS:              numericVal(row.Fbs),
-		HbA1c:            numericVal(row.Hba1c),
-		Cholesterol:      intVal(row.Cholesterol),
-		LDL:              intVal(row.Ldl),
-		HDL:              intVal(row.Hdl),
-		Triglycerides:    intVal(row.Triglycerides),
-		Systolic:         intVal(row.Systolic),
-		Diastolic:        intVal(row.Diastolic),
-		Activity:         stringVal(row.Activity),
-		HistoryFlag:      boolVal(row.HistoryFlag),
-		Smoking:          stringVal(row.Smoking),
-		Hypertension:     stringVal(row.Hypertension),
-		HeartDisease:     stringVal(row.HeartDisease),
-		BMI:              numericVal(row.Bmi),
-		Cluster:          stringVal(row.Cluster),
-		RiskScore:        intVal(row.RiskScore),
-		ModelVersion:     stringVal(row.ModelVersion),
-		DatasetHash:      stringVal(row.DatasetHash),
-		ValidationStatus: stringVal(row.ValidationStatus),
-		IsSelfReported:   row.IsSelfReported,
-		Source:           row.Source,
-		Notes:            stringVal(row.Notes),
-		CreatedAt:        row.CreatedAt.Time,
-		UpdatedAt:        row.UpdatedAt.Time,
+		ID:                 int64(row.ID),
+		UserID:             int64(intVal(row.UserID)),
+		FBS:                numericVal(row.Fbs),
+		HbA1c:              numericVal(row.Hba1c),
+		Cholesterol:        intVal(row.Cholesterol),
+		LDL:                intVal(row.Ldl),
+		HDL:                intVal(row.Hdl),
+		Triglycerides:      intVal(row.Triglycerides),
+		Systolic:           intVal(row.Systolic),
+		Diastolic:          intVal(row.Diastolic),
+		Activity:           stringVal(row.Activity),
+		HistoryFlag:        boolVal(row.HistoryFlag),
+		Smoking:            stringVal(row.Smoking),
+		Hypertension:       stringVal(row.Hypertension),
+		HeartDisease:       stringVal(row.HeartDisease),
+		BMI:                numericVal(row.Bmi),
+		Cluster:            stringVal(row.Cluster),
+		RiskScore:          intVal(row.RiskScore),
+		PredictedStatus:    stringVal(row.PredictedStatus),
+		RiskLabel:          stringVal(row.RiskLabel),
+		ClusterDescription: stringVal(row.ClusterDescription),
+		TreatmentFocus:     stringVal(row.TreatmentFocus),
+		AtRiskProbability:  floatVal(row.AtRiskProbability),
+		ModelVersion:       stringVal(row.ModelVersion),
+		DatasetHash:        stringVal(row.DatasetHash),
+		ValidationStatus:   stringVal(row.ValidationStatus),
+		IsSelfReported:     row.IsSelfReported,
+		Source:             row.Source,
+		Notes:              stringVal(row.Notes),
+		CreatedAt:          row.CreatedAt.Time,
+		UpdatedAt:          row.UpdatedAt.Time,
 	}, nil
 }
 
@@ -490,6 +499,7 @@ func (r *pgUserRepo) GetUserTrends(ctx context.Context, userID int64, months int
 		TriglyceridesValues: []int{},
 		FBSValues:           []float64{},
 		RiskScores:          []string{},
+		Clusters:            []string{},
 	}
 
 	for _, row := range rows {
@@ -500,6 +510,12 @@ func (r *pgUserRepo) GetUserTrends(ctx context.Context, userID int64, months int
 		data.TriglyceridesValues = append(data.TriglyceridesValues, intVal(row.Triglycerides))
 		data.LDLValues = append(data.LDLValues, intVal(row.Ldl))
 		data.HDLValues = append(data.HDLValues, intVal(row.Hdl))
+		
+		clusterStr := ""
+		if row.Cluster.Valid {
+			clusterStr = row.Cluster.String
+		}
+		data.Clusters = append(data.Clusters, clusterStr)
 
 		rs := intVal(row.RiskScore)
 		level := "high"

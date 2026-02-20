@@ -16,6 +16,8 @@ sql:
       - "migrations/0012_add_auth_events.sql"
       - "migrations/0013_add_auth_tokens.sql"
       - "migrations/0014_add_user_roles.sql"
+      - "migrations/0015_add_assessment_ml_metadata.sql"
+      - "migrations/0016_add_user_lifestyle.sql"
     queries: "internal/store/queries"
     gen:
       go:

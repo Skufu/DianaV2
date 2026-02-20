@@ -136,6 +136,7 @@ const UserProfile = ({ setActiveTab }) => {
             className="overflow-hidden"
           >
             <AssessmentForm
+              initialData={profileData}
               onSubmit={() => setShowAssessmentForm(false)}
               onCancel={() => setShowAssessmentForm(false)}
             />
@@ -172,9 +173,7 @@ const UserProfile = ({ setActiveTab }) => {
             {[
               { label: 'First Name', name: 'first_name', type: 'text' },
               { label: 'Last Name', name: 'last_name', type: 'text' },
-              { label: 'Email Address', name: 'email', type: 'email' },
               { label: 'Age', name: 'age', type: 'number', min: 45, max: 80 },
-              { label: 'Phone Number', name: 'phone', type: 'tel' },
             ].map((field) => (
               <div key={field.name}>
                 <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">{field.label}</label>
@@ -185,23 +184,20 @@ const UserProfile = ({ setActiveTab }) => {
                   name={field.name}
                   value={field.valueTransform ? field.valueTransform(formData[field.name]) : (formData[field.name] || '')}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none transition-all"
+                  className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest transition-all"
                 />
               </div>
             ))}
-          </div>
-
-          <div className="mt-6">
-            <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Address</label>
-            <motion.textarea
-              whileFocus="focus"
-              variants={inputFocusVariants}
-              name="address"
-              value={formData.address || ''}
-              onChange={handleChange}
-              rows="3"
-              className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none transition-all"
-            />
+            <div>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Email Address</label>
+              <input
+                type="email"
+                readOnly
+                value={formData.email || ''}
+                className="w-full px-4 py-3 bg-diana-stone/30 border border-diana-sand/50 rounded-xl text-diana-text-secondary cursor-not-allowed"
+                title="Email addresses cannot be changed after registration"
+              />
+            </div>
           </div>
         </motion.div>
 
@@ -258,8 +254,54 @@ const UserProfile = ({ setActiveTab }) => {
                 name="years_menopause"
                 value={formData.years_menopause || ''}
                 onChange={handleChange}
-                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none transition-all"
+                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest transition-all"
               />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          variants={fadeIn}
+          whileHover={{ scale: 1.02 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="glass-card p-8 bg-white"
+        >
+          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
+            <div className="w-6 h-6 rounded-full bg-diana-sage/20 flex items-center justify-center">🏃‍♀️</div>
+            Lifestyle Habits
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Physical Activity Level</label>
+              <select
+                name="physical_activity"
+                value={formData.physical_activity || ''}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all"
+              >
+                <option value="">Select activity level</option>
+                <option value="sedentary">Sedentary (Little to no exercise)</option>
+                <option value="light">Lightly Active (1-3 days/week)</option>
+                <option value="moderate">Moderately Active (3-5 days/week)</option>
+                <option value="active">Very Active (6-7 days/week)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Alcohol Consumption</label>
+              <select
+                name="alcohol"
+                value={formData.alcohol || ''}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all"
+              >
+                <option value="">Select frequency</option>
+                <option value="never">Never or rarely</option>
+                <option value="occasional">Occasionally (1-2 drinks/week)</option>
+                <option value="moderate">Moderately (3-6 drinks/week)</option>
+                <option value="heavy">Regularly (7+ drinks/week)</option>
+              </select>
             </div>
           </div>
         </motion.div>

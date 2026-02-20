@@ -3,7 +3,7 @@ import { TrendingUp, Calendar, Activity, Plus } from 'lucide-react';
 import { useTrends } from '../../api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from 'recharts';
 import { motion } from 'framer-motion';
-import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
+import { fadeIn, slideUp, useReducedMotion } from '../../utils/animations';
 import { shouldDisableHeavyEffects } from '../../utils/deviceCapabilities';
 
 const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
@@ -22,8 +22,8 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
   };
 
   const hasAssessmentData = trends?.clusterHistory && trends.clusterHistory.length > 0;
-  const isDemoMode = !hasAssessmentData && !isLoading;
-  const activeTrends = isDemoMode ? MOCK_DATA : (trends || {});
+  const isSampleMode = !hasAssessmentData && !isLoading;
+  const activeTrends = isSampleMode ? MOCK_DATA : (trends || {});
   const getTimeOptions = (hasData) => {
     const baseOptions = [
       { value: 1, label: '1 Month' },
@@ -45,7 +45,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
     return baseOptions;
   };
 
-  const timeOptions = getTimeOptions(hasAssessmentData || isDemoMode);
+  const timeOptions = getTimeOptions(hasAssessmentData || isSampleMode);
 
   const handleLogAssessment = () => {
     if (onStartAssessment) {
@@ -54,25 +54,34 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
   };
 
   if (isLoading) {
-    return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 text-slate-400">Loading trends...</motion.div>;
+    return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 text-diana-text-muted">Loading your trends...</motion.div>;
   }
 
+  // Use simple non-staggered variants for instant mounting 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { duration: 0.3 }
+    }
+  };
+
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
-      <motion.div variants={slideUp} className="bg-gradient-to-r from-diana-forest to-diana-forest-light rounded-3xl p-8 md:p-10 text-white shadow-xl relative overflow-hidden">
+    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
+      <motion.div variants={fadeIn} className="bg-gradient-to-br from-diana-forest to-[#1A365D] rounded-3xl p-8 md:p-10 text-white shadow-xl relative overflow-hidden">
         <div className="relative z-10">
           <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3">Health Trends</h1>
           <p className="text-blue-100 text-lg max-w-xl leading-relaxed">
             Track your health metrics over time and visualize your progress
           </p>
-          {isDemoMode && (
+          {isSampleMode && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full border border-white/30"
             >
               <Activity size={12} className="text-blue-100" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-50">Demonstration Mode</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-50">Sample View</span>
             </motion.div>
           )}
         </div>
@@ -80,11 +89,11 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
         <div className="absolute bottom-0 right-20 w-40 h-40 bg-blue-400/20 rounded-full blur-2xl -mb-10 pointer-events-none" />
       </motion.div>
 
-      {(hasAssessmentData || isDemoMode) && (
+      {(hasAssessmentData || isSampleMode) && (
         <motion.div variants={fadeIn} className="flex justify-between items-center">
           <div>
             <p className="text-diana-text-secondary">
-              {isDemoMode ? 'Showing example health data' : 'Select time range to view your data'}
+              {isSampleMode ? 'Showing example health data' : 'Select time range to view your data'}
             </p>
           </div>
           <div className="flex gap-2">
@@ -95,11 +104,11 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
                 whileTap={{ scale: isReduced ? 1 : 0.95 }}
                 whileFocus={{ scale: isReduced ? 1 : 1.05, boxShadow: "0px 0px 0px 2px #10B981" }}
                 onClick={() => setSelectedMonths(option.value)}
-                disabled={isDemoMode}
+                disabled={isSampleMode}
                 className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${selectedMonths === option.value
                   ? 'bg-diana-forest text-white shadow-diana-forest/30'
                   : 'bg-white text-diana-text-secondary hover:bg-slate-50 border border-slate-200'
-                  } ${isDemoMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${isSampleMode ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {option.label}
               </motion.button>
@@ -109,29 +118,90 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
       )}
 
       {activeTrends.clusterHistory && activeTrends.clusterHistory.length > 0 && (
-        <motion.div variants={cardVariants} whileHover="hover" className="glass-card p-6 bg-white">
-          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">Risk Evolution</h2>
-          <div className="space-y-4">
-            {activeTrends.clusterHistory.map((entry) => (
+        <motion.div variants={fadeIn} className="glass-card p-6 md:p-8 bg-white shadow-sm border border-slate-100">
+          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">Risk Score History</h2>
+
+          {/* Chart Area */}
+          <div className="h-[300px] w-full mb-8">
+            <ResponsiveContainer width="100%" height="100%">
+              {activeTrends.clusterHistory.length > 1 ? (
+                <AreaChart data={activeTrends.clusterHistory.slice().reverse()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748B', fontSize: 12 }}
+                    dy={10}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#64748B', fontSize: 12 }}
+                    domain={[0, 100]}
+                  />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
+                    labelFormatter={(val) => new Date(val).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                    formatter={(value) => [`${value} / 100`, 'Risk Score']}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="riskScore"
+                    stroke="#10B981"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorRisk)"
+                    activeDot={{ r: 6, strokeWidth: 0, fill: '#059669' }}
+                  />
+                </AreaChart>
+              ) : (
+                <div className="h-full flex items-center justify-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <p className="text-slate-500 font-medium text-center">Log one more assessment to see your chart trend!</p>
+                </div>
+              )}
+            </ResponsiveContainer>
+          </div>
+
+          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">Previous Assessments</h2>
+          <div className="space-y-3">
+            {activeTrends.clusterHistory.map((entry, index) => (
               <motion.div
-                whileHover={{ scale: isReduced ? 1 : 1.01 }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.3 }}
+                whileHover={{ scale: isReduced ? 1 : 1.01, x: isReduced ? 0 : 4 }}
+                whileTap={{ scale: isReduced ? 1 : 0.98 }}
                 key={`${entry.date}-${entry.cluster}`}
-                className="flex items-center justify-between p-4 bg-diana-stone/30 rounded-xl border border-diana-stone/50 hover:bg-diana-stone/60 transition-colors"
+                className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group"
               >
                 <div className="flex items-center gap-4">
-                  <div className="p-2 bg-white rounded-lg shadow-sm text-diana-text-secondary">
+                  <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 text-diana-forest group-hover:bg-diana-forest group-hover:text-white transition-colors">
                     <Calendar size={18} />
                   </div>
-                  <span className="text-diana-text-primary font-bold">{entry.date}</span>
+                  <div>
+                    <span className="text-diana-text-primary font-bold block">{new Date(entry.date).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                    <span className="text-slate-500 text-sm mt-0.5 block">{entry.cluster} Profile</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <span className="text-diana-text-secondary text-sm font-medium">{entry.cluster}</span>
+                <div className="flex items-center gap-4">
+                  <div className="text-right hidden sm:block">
+                    <span className="text-slate-500 text-xs uppercase tracking-wider font-bold block">Score</span>
+                    <span className="text-diana-text-primary font-bold text-lg">{entry.riskScore}</span>
+                  </div>
                   <div
-                    className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${entry.riskScore < 30
-                      ? 'bg-green-100 text-green-700'
+                    className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${entry.riskScore < 30
+                      ? 'bg-emerald-100 text-emerald-800'
                       : entry.riskScore < 70
-                        ? 'bg-amber-100 text-amber-700'
-                        : 'bg-rose-100 text-rose-700'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-rose-100 text-rose-800'
                       }`}
                   >
                     {entry.riskScore < 30
@@ -148,42 +218,45 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
       )}
 
       {activeTrends.riskLevels && (
-        <motion.div variants={cardVariants} whileHover="hover" className="glass-card p-6 bg-white">
-          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">Risk Distribution</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div whileHover={{ scale: isReduced ? 1 : 1.05 }} className="text-center p-6 bg-green-50 rounded-2xl border border-green-100">
-              <Activity size={32} className="mx-auto text-green-500 mb-3" />
-              <div className="text-4xl font-serif font-bold text-green-700 mb-1">
+        <motion.div variants={fadeIn} className="glass-card p-6 md:p-8 bg-white shadow-sm border border-slate-100 flex flex-col items-center text-center md:items-start md:text-left">
+          <h2 className="text-2xl font-serif font-bold text-diana-text-primary mb-2">Your Health Snapshot</h2>
+          <p className="text-slate-500 mb-8 max-w-2xl">
+            A quick summary of your past assessments. The goal is to keep your numbers in the green "Healthy Baseline" zone by maintaining steady habits.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 w-full">
+            <motion.div whileHover={{ scale: isReduced ? 1 : 1.02 }} className="text-center p-6 bg-emerald-50 rounded-2xl border border-emerald-100/50">
+              <Activity size={28} className="mx-auto text-emerald-500 mb-3" />
+              <div className="text-4xl font-serif font-bold text-emerald-700 mb-1">
                 {activeTrends.riskLevels?.low || 0}
               </div>
-              <p className="text-sm font-bold text-green-800 uppercase tracking-wide">Low Risk</p>
-              <p className="text-xs text-green-600 mt-1">Score: 0-29</p>
+              <p className="text-sm font-bold text-emerald-800 uppercase tracking-wide">Low Risk Results</p>
+              <p className="text-xs text-emerald-600/70 mt-1 font-medium">Healthy Baseline</p>
             </motion.div>
-            <motion.div whileHover={{ scale: isReduced ? 1 : 1.05 }} className="text-center p-6 bg-amber-50 rounded-2xl border border-amber-100">
-              <Activity size={32} className="mx-auto text-amber-500 mb-3" />
+            <motion.div whileHover={{ scale: isReduced ? 1 : 1.02 }} className="text-center p-6 bg-amber-50 rounded-2xl border border-amber-100/50">
+              <Activity size={28} className="mx-auto text-amber-500 mb-3" />
               <div className="text-4xl font-serif font-bold text-amber-700 mb-1">
                 {activeTrends.riskLevels?.medium || 0}
               </div>
-              <p className="text-sm font-bold text-amber-800 uppercase tracking-wide">Moderate Risk</p>
-              <p className="text-xs text-amber-600 mt-1">Score: 30-69</p>
+              <p className="text-sm font-bold text-amber-800 uppercase tracking-wide">Elevated Results</p>
+              <p className="text-xs text-amber-600/70 mt-1 font-medium">Early Warning Signs</p>
             </motion.div>
-            <motion.div whileHover={{ scale: isReduced ? 1 : 1.05 }} className="text-center p-6 bg-rose-50 rounded-2xl border border-rose-100">
-              <Activity size={32} className="mx-auto text-rose-500 mb-3" />
+            <motion.div whileHover={{ scale: isReduced ? 1 : 1.02 }} className="text-center p-6 bg-rose-50 rounded-2xl border border-rose-100/50">
+              <Activity size={28} className="mx-auto text-rose-500 mb-3" />
               <div className="text-4xl font-serif font-bold text-rose-700 mb-1">
                 {activeTrends.riskLevels?.high || 0}
               </div>
-              <p className="text-sm font-bold text-rose-800 uppercase tracking-wide">High Risk</p>
-              <p className="text-xs text-rose-600 mt-1">Score: 70+</p>
+              <p className="text-sm font-bold text-rose-800 uppercase tracking-wide">High Risk Results</p>
+              <p className="text-xs text-rose-600/70 mt-1 font-medium">Action Required</p>
             </motion.div>
           </div>
         </motion.div>
       )}
 
-      {isDemoMode && (
+      {isSampleMode && (
         <motion.div variants={fadeIn} className="glass-card p-8 text-center bg-diana-forest/5 border border-diana-forest/20">
           <h3 className="text-lg font-bold text-diana-forest mb-2">Unlock Your Personal Trends</h3>
           <p className="text-diana-text-secondary mb-6 max-w-md mx-auto">
-            The data shown above is for demonstration. Log your first health assessment to start building your own personalized trends and risk profile.
+            The data shown above is an example. Log your first health assessment to start building your own personalized trends and risk profile.
           </p>
           <motion.button
             whileHover={{ scale: isReduced ? 1 : 1.05 }}
@@ -197,7 +270,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
         </motion.div>
       )}
 
-      {!isDemoMode && (!activeTrends || (activeTrends.clusterHistory?.length === 0 && !activeTrends.riskLevels)) && (
+      {!isSampleMode && (!activeTrends || (activeTrends.clusterHistory?.length === 0 && !activeTrends.riskLevels)) && (
         <motion.div variants={fadeIn} className="glass-card p-12 text-center bg-white">
           <div className="w-20 h-20 rounded-full bg-diana-stone flex items-center justify-center mx-auto mb-6">
             <TrendingUp size={40} className="text-diana-text-muted" />

@@ -38,6 +38,8 @@ type User struct {
 	HeartDisease          string `json:"heart_disease,omitempty" binding:"omitempty,oneof=no yes"`
 	FamilyHistoryDiabetes bool   `json:"family_history_diabetes,omitempty"`
 	SmokingStatus         string `json:"smoking_status,omitempty" binding:"omitempty,oneof=never former current"`
+	PhysicalActivity      string `json:"physical_activity,omitempty" binding:"omitempty"`
+	Alcohol               string `json:"alcohol,omitempty" binding:"omitempty"`
 
 	// Consent
 	ConsentPersonalData          bool      `json:"consent_personal_data"`
@@ -92,11 +94,16 @@ type Assessment struct {
 	BMI           float64 `json:"bmi,omitempty"`
 
 	// ML Results
-	Cluster          string `json:"cluster,omitempty"`
-	RiskScore        int    `json:"risk_score,omitempty"`
-	ModelVersion     string `json:"model_version,omitempty"`
-	DatasetHash      string `json:"dataset_hash,omitempty"`
-	ValidationStatus string `json:"validation_status,omitempty"`
+	Cluster            string  `json:"cluster,omitempty"`
+	RiskScore          int     `json:"risk_score,omitempty"`
+	RiskLabel          string  `json:"risk_label,omitempty"`
+	ClusterDescription string  `json:"cluster_description,omitempty"`
+	TreatmentFocus     string  `json:"treatment_focus,omitempty"`
+	PredictedStatus    string  `json:"predicted_status,omitempty"`
+	AtRiskProbability  float64 `json:"at_risk_probability,omitempty"`
+	ModelVersion       string  `json:"model_version,omitempty"`
+	DatasetHash        string  `json:"dataset_hash,omitempty"`
+	ValidationStatus   string  `json:"validation_status,omitempty"`
 
 	// Self-assessment fields
 	IsSelfReported bool   `json:"is_self_reported,omitempty"`
@@ -172,6 +179,7 @@ type TrendData struct {
 	TriglyceridesValues []int     `json:"triglycerides_values"`
 	FBSValues           []float64 `json:"fbs_values"`
 	RiskScores          []string  `json:"risk_scores"` // 'low', 'medium', 'high'
+	Clusters            []string  `json:"clusters"`
 }
 
 // OnboardingRequest represents onboarding data
@@ -186,6 +194,8 @@ type OnboardingRequest struct {
 	HeartDisease                 string `json:"heart_disease" binding:"omitempty,oneof=no yes"`
 	FamilyHistoryDiabetes        bool   `json:"family_history_diabetes"`
 	SmokingStatus                string `json:"smoking_status" binding:"omitempty,oneof=never former current"`
+	PhysicalActivity             string `json:"physical_activity" binding:"omitempty"`
+	Alcohol                      string `json:"alcohol" binding:"omitempty"`
 	ConsentPersonalData          bool   `json:"consent_personal_data"`
 	ConsentResearchParticipation bool   `json:"consent_research_participation"`
 	ConsentEmailUpdates          bool   `json:"consent_email_updates"`

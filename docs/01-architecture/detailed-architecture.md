@@ -32,7 +32,7 @@ Backend components (Go)
 - ML: `internal/ml`
   - Predictor interface.
   - `HTTPPredictor` posts assessment JSON to `MODEL_URL` with `X-Model-Version`; timeout `MODEL_TIMEOUT_MS`; any error/non-200 -> `cluster="error", risk=0`.
-  - `MockPredictor` deterministic clusters for stable dev/test when `MODEL_URL` is empty.
+  - `MockPredictor` deterministic clusters for stable dev/test when `MODEL_URL` is empty (not for production use).
 - Store: `internal/store`
   - Interfaces in `store.go`; Postgres impl in `postgres.go` using sqlc (`internal/store/sqlc`).
   - If `DB_DSN` is unset, repos return errors on access (handlers surface 500).
@@ -48,9 +48,9 @@ Frontend components (React)
 Data model (persistent)
 -----------------------
 - Users: email, password_hash (bcrypt), role, is_admin, profile data (menopause status, activity level), consent settings, timestamps.
-- Assessments: user_id, biomarker panel, lifestyle flags, BMI, cluster, risk_score, model_version, dataset_hash, validation_status, created_at.
+- Assessments: user_id, biomarker panel, lifestyle flags, BMI, cluster, risk_score, predicted_status, risk_label, cluster_description, treatment_focus, at_risk_probability, model_version, dataset_hash, validation_status, created_at.
 - Supporting tables: model_runs (version/hash notes), audit_events (generic audit hook), auth_events (SSE tracking).
-- Schema defined in migrations (current version: 0012).
+- Schema defined in migrations (current version: 0015).
 - Note: Patients table dropped in migration v0011 (B2B→B2C transition); assessments now link directly to users.
 
 Core request flows
@@ -72,10 +72,10 @@ Configuration (env) and defaults
 --------------------------------
 - `PORT` (default `8080`), `ENV` (`dev` default).
 - `DB_DSN` (Postgres URL). If empty, handlers fail on DB access.
-- `JWT_SECRET` (default `dev-secret`).
-- `PORT` (default `8080`).
+- `JWT_SECRET` (**required** for non-local environments; fallback to `dev-secret` for `ENV=local`).
 - `CORS_ORIGINS` (comma list; default `http://localhost:4000`).
-- `MODEL_URL` (optional), `MODEL_VERSION` (default `v0-placeholder`), `MODEL_DATASET_HASH` (optional), `MODEL_TIMEOUT_MS` (default `2000` ms).
+- `MODEL_URL` (default `http://localhost:5001/predict`), `MODEL_VERSION` (default `clinical_v2`), `MODEL_DATASET_HASH` (optional), `MODEL_TIMEOUT_MS` (default `2000` ms).
+- `ML_API_KEY` (optional; required for production ML server authentication).
 - `EXPORT_MAX_ROWS` (default `5000`).
 
 Runtime behaviors & failure modes
@@ -119,7 +119,7 @@ Observability & gaps
 Extensibility pointers
 ----------------------
 - Add RBAC by extending JWT claims and middleware checks.
-- Replace mock predictor by setting `MODEL_URL`; ensure timeouts tuned via `MODEL_TIMEOUT_MS`.
+- Use mock predictor for dev/test by leaving `MODEL_URL` empty; production should set `MODEL_URL` to ML server endpoint.
 - Expand exports by filling `datasetSlice` logic and adding filters.
 - Add analytics endpoints backed by new sqlc queries as domain evolves.
 

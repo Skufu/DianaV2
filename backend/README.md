@@ -604,7 +604,7 @@ go tool cover -html=coverage.out
 | Package | Test File | What's Tested |
 |---------|-----------|---------------|
 | `internal/config/` | `config_test.go` | Env loading, defaults, validation |
-| `internal/ml/` | `mock_test.go` | MockPredictor cluster assignments |
+| `internal/ml/` | `mock_test.go` | MockPredictor fallback behavior |
 | `internal/ml/` | `validation_test.go` | Biomarker range validation |
 | `internal/http/middleware/` | `auth_test.go` | JWT parsing, claims validation |
 | `internal/http/middleware/` | `ratelimit_test.go` | Token bucket, concurrency |
@@ -621,7 +621,9 @@ go tool cover -html=coverage.out
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `JWT_SECRET` | Yes | JWT signing key (32+ chars) |
 | `PORT` | No | Server port (default: 8080) |
-| `MODEL_URL` | No | ML server URL (default: mock) |
+| `MODEL_URL` | No | ML server URL (empty uses mock predictor) |
+| `MODEL_VERSION` | No | Model version tag (default: clinical_v2) |
+| `MODEL_TIMEOUT_MS` | No | ML request timeout in milliseconds |
 | `CORS_ORIGINS` | No | Allowed origins |
 | `REDIS_ADDR` | No | Redis address (e.g. localhost:6379) |
 | `REDIS_PASSWORD` | No | Redis password |

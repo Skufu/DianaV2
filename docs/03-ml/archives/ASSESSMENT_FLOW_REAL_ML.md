@@ -11,7 +11,7 @@
 The backend was already correctly configured:
 - `assessments.go` line 280: Calls `h.predictor.Predict()` 
 - `http_predictor.go` line 53: Sends `model_type=clinical` query param
-- Uses ClinicalPredictor with real model files from `models/clinical_v2/`
+- Uses ClinicalPredictor with real model files from `models/clinical_v2/` (binary_v2 is the default fallback)
 
 ### 2. Frontend - New MLResultModal Component
 Created `frontend/src/components/common/MLResultModal.jsx`:
@@ -57,7 +57,7 @@ Backend returns real result to frontend
 Frontend shows MLResultModal with:
   - Real risk score (0-100)
   - Real predicted status (Normal/Pre-diabetic/Diabetic)
-  - Real cluster assignment (SIDD/SIRD/MOD/MARD/Low/Mod/High Risk)
+  - Real cluster assignment (SIDD/SIRD/MOD/MARD)
   - Model version and AUC
   - Medical disclaimers
   - Guardrails and limitations

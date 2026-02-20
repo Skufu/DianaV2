@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react';
-import { LayoutDashboard, User, Download, Plus, LogOut, BookOpen, Shield, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, User, Download, Plus, LogOut, BookOpen, Shield, TrendingUp, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { navLabelVariants } from '../../utils/animations';
 
@@ -15,7 +15,7 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
     { id: 'profile', icon: User, label: 'My Profile' },
     { id: 'trends', icon: TrendingUp, label: 'Health Trends' },
     { id: 'education', icon: BookOpen, label: 'Education' },
-    { id: 'export', icon: Download, label: 'Export Data' },
+    { id: 'export', icon: FileText, label: 'Health Report' },
   ];
 
   const [hoveredTab, setHoveredTab] = useState(null);

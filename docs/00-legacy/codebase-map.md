@@ -377,14 +377,17 @@ PORT=8080
 ENV=dev
 DB_DSN=postgres://...
 JWT_SECRET=...
-MODEL_URL=http://localhost:5000
+MODEL_URL=http://localhost:5001/predict
+MODEL_VERSION=clinical_v2
+MODEL_TIMEOUT_MS=2000
 CORS_ORIGINS=http://localhost:4000
 ```
 
 ### Frontend (`frontend/.env.local`)
 ```
 VITE_API_BASE=http://localhost:8080
-VITE_ML_BASE=http://localhost:5000
+VITE_ML_BASE=http://localhost:5001
+VITE_ML_PORT=5001
 ```
 
 ---
