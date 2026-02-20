@@ -70,16 +70,16 @@ func TestHTTPPredictor_Predict_EmptyURL(t *testing.T) {
 	p := NewHTTPPredictor("", "v1", "", 5*time.Second)
 	input := validAssessmentInput()
 
-	cluster, score, err := p.Predict(context.Background(), input)
+	prediction, err := p.Predict(context.Background(), input)
 
 	if err == nil {
 		t.Errorf("Predict() expected error when URL is empty")
 	}
-	if cluster != "error" {
-		t.Errorf("Predict() cluster = %q, want 'error'", cluster)
+	if prediction.Cluster != "" {
+		t.Errorf("Predict() cluster = %q, want ''", prediction.Cluster)
 	}
-	if score != 0 {
-		t.Errorf("Predict() score = %d, want 0", score)
+	if prediction.RiskScore != 0 {
+		t.Errorf("Predict() score = %d, want 0", prediction.RiskScore)
 	}
 }
 
@@ -120,16 +120,16 @@ func TestHTTPPredictor_Predict_Success(t *testing.T) {
 	input.Diastolic = 90
 	input.BMI = 28.5
 
-	cluster, score, err := p.Predict(context.Background(), input)
+	prediction, err := p.Predict(context.Background(), input)
 
 	if err != nil {
 		t.Errorf("Predict() returned unexpected error: %v", err)
 	}
-	if cluster != "SIRD" {
-		t.Errorf("Predict() cluster = %q, want 'SIRD'", cluster)
+	if prediction.Cluster != "SIRD" {
+		t.Errorf("Predict() cluster = %q, want 'SIRD'", prediction.Cluster)
 	}
-	if score != 75 {
-		t.Errorf("Predict() score = %d, want 75", score)
+	if prediction.RiskScore != 75 {
+		t.Errorf("Predict() score = %d, want 75", prediction.RiskScore)
 	}
 }
 
@@ -151,16 +151,16 @@ func TestHTTPPredictor_Predict_WithVersionHeader(t *testing.T) {
 	input := validAssessmentInput()
 	input.HbA1c = 7.0
 
-	cluster, score, err := p.Predict(context.Background(), input)
+	prediction, err := p.Predict(context.Background(), input)
 
 	if err != nil {
 		t.Errorf("Predict() returned unexpected error: %v", err)
 	}
-	if cluster != "SIDD" {
-		t.Errorf("Predict() cluster = %q, want 'SIDD'", cluster)
+	if prediction.Cluster != "SIDD" {
+		t.Errorf("Predict() cluster = %q, want 'SIDD'", prediction.Cluster)
 	}
-	if score != 80 {
-		t.Errorf("Predict() score = %d, want 80", score)
+	if prediction.RiskScore != 80 {
+		t.Errorf("Predict() score = %d, want 80", prediction.RiskScore)
 	}
 }
 
@@ -168,16 +168,10 @@ func TestHTTPPredictor_Predict_NetworkError(t *testing.T) {
 	p := NewHTTPPredictor("http://invalid-host-that-does-not-exist-12345.com/predict", "v1", "", 1*time.Millisecond)
 	input := validAssessmentInput()
 
-	cluster, score, err := p.Predict(context.Background(), input)
+	_, err := p.Predict(context.Background(), input)
 
 	if err == nil {
 		t.Errorf("Predict() should return error on network failure")
-	}
-	if cluster != "error" {
-		t.Errorf("Predict() cluster on network error = %q, want 'error'", cluster)
-	}
-	if score != 0 {
-		t.Errorf("Predict() score on network error = %d, want 0", score)
 	}
 }
 
@@ -191,16 +185,10 @@ func TestHTTPPredictor_Predict_NonOKResponse(t *testing.T) {
 	p := NewHTTPPredictor(server.URL+"/predict", "v1", "", 5*time.Second)
 	input := validAssessmentInput()
 
-	cluster, score, err := p.Predict(context.Background(), input)
+	_, err := p.Predict(context.Background(), input)
 
 	if err == nil {
 		t.Errorf("Predict() should return error on 500 response")
-	}
-	if cluster != "error" {
-		t.Errorf("Predict() cluster on 500 response = %q, want 'error'", cluster)
-	}
-	if score != 0 {
-		t.Errorf("Predict() score on 500 response = %d, want 0", score)
 	}
 }
 
@@ -214,16 +202,10 @@ func TestHTTPPredictor_Predict_InvalidJSONResponse(t *testing.T) {
 	p := NewHTTPPredictor(server.URL+"/predict", "v1", "", 5*time.Second)
 	input := validAssessmentInput()
 
-	cluster, score, err := p.Predict(context.Background(), input)
+	_, err := p.Predict(context.Background(), input)
 
 	if err == nil {
 		t.Errorf("Predict() should return error on invalid JSON response")
-	}
-	if cluster != "error" {
-		t.Errorf("Predict() cluster on invalid JSON = %q, want 'error'", cluster)
-	}
-	if score != 0 {
-		t.Errorf("Predict() score on invalid JSON = %d, want 0", score)
 	}
 }
 
@@ -240,16 +222,10 @@ func TestHTTPPredictor_Predict_EmptyClusterResponse(t *testing.T) {
 	p := NewHTTPPredictor(server.URL+"/predict", "v1", "", 5*time.Second)
 	input := validAssessmentInput()
 
-	cluster, score, err := p.Predict(context.Background(), input)
+	_, err := p.Predict(context.Background(), input)
 
 	if err == nil {
 		t.Errorf("Predict() should return error on empty risk cluster")
-	}
-	if cluster != "error" {
-		t.Errorf("Predict() cluster with empty cluster = %q, want 'error'", cluster)
-	}
-	if score != 0 {
-		t.Errorf("Predict() score with empty cluster = %d, want 0", score)
 	}
 }
 
@@ -268,16 +244,10 @@ func TestHTTPPredictor_Predict_Timeout(t *testing.T) {
 	p := NewHTTPPredictor(server.URL+"/predict", "v1", "", 10*time.Millisecond)
 	input := validAssessmentInput()
 
-	cluster, score, err := p.Predict(context.Background(), input)
+	_, err := p.Predict(context.Background(), input)
 
 	if err == nil {
 		t.Errorf("Predict() should return error on timeout")
-	}
-	if cluster != "error" {
-		t.Errorf("Predict() cluster on timeout = %q, want 'error'", cluster)
-	}
-	if score != 0 {
-		t.Errorf("Predict() score on timeout = %d, want 0", score)
 	}
 }
 
@@ -307,16 +277,16 @@ func TestHTTPPredictor_Predict_MarshaledInput(t *testing.T) {
 		Age:           56,
 	}
 
-	cluster, score, err := p.Predict(context.Background(), input)
+	prediction, err := p.Predict(context.Background(), input)
 
 	if err != nil {
 		t.Errorf("Predict() returned unexpected error: %v", err)
 	}
-	if cluster != "MARD" {
-		t.Errorf("Predict() cluster = %q, want 'MARD'", cluster)
+	if prediction.Cluster != "MARD" {
+		t.Errorf("Predict() cluster = %q, want 'MARD'", prediction.Cluster)
 	}
-	if score != 30 {
-		t.Errorf("Predict() score = %d, want 30", score)
+	if prediction.RiskScore != 30 {
+		t.Errorf("Predict() score = %d, want 30", prediction.RiskScore)
 	}
 
 	if len(receivedJSON) == 0 {
@@ -347,13 +317,13 @@ func TestHTTPPredictor_Predict_AllClusters(t *testing.T) {
 		input := validAssessmentInput()
 		input.HbA1c = 6.5
 
-		receivedCluster, _, err := p.Predict(context.Background(), input)
+		prediction, err := p.Predict(context.Background(), input)
 
 		if err != nil {
 			t.Errorf("Predict() returned unexpected error: %v", err)
 		}
-		if receivedCluster != cluster {
-			t.Errorf("Expected cluster %q, got %q", cluster, receivedCluster)
+		if prediction.Cluster != cluster {
+			t.Errorf("Expected cluster %q, got %q", cluster, prediction.Cluster)
 		}
 
 		server.Close()
@@ -375,16 +345,16 @@ func TestHTTPPredictor_Predict_InvalidClinicalPayload(t *testing.T) {
 		HbA1c: 6.5,
 	}
 
-	cluster, score, err := p.Predict(context.Background(), input)
+	prediction, err := p.Predict(context.Background(), input)
 
 	if err == nil {
 		t.Errorf("Predict() should return error for invalid clinical payload")
 	}
-	if cluster != "error" {
-		t.Errorf("Predict() with partial input = %q, want 'error'", cluster)
+	if prediction.Cluster != "" {
+		t.Errorf("Predict() with partial input = %q, want ''", prediction.Cluster)
 	}
-	if score != 0 {
-		t.Errorf("Predict() with partial input = %d, want 0", score)
+	if prediction.RiskScore != 0 {
+		t.Errorf("Predict() with partial input = %d, want 0", prediction.RiskScore)
 	}
 }
 
@@ -410,7 +380,7 @@ func TestHTTPPredictor_Predict_RequestConstruction(t *testing.T) {
 	input := validAssessmentInput()
 	input.HbA1c = 6.8
 
-	_, _, err := p.Predict(context.Background(), input)
+	_, err := p.Predict(context.Background(), input)
 	if err != nil {
 		t.Errorf("Predict() returned unexpected error: %v", err)
 	}

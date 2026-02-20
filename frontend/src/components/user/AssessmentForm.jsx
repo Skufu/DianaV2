@@ -6,7 +6,7 @@ import Button from '../common/Button';
 import { useCreateAssessment } from '../../api';
 import { slideUp } from '../../utils/animations';
 
-const AssessmentForm = ({ onSubmit, onCancel }) => {
+const AssessmentForm = ({ initialData, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     age: '',
     bmi: '',
@@ -20,6 +20,42 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
     alcohol: 'Unknown',
     notes: ''
   });
+
+  // Pre-fill fields from UserProfile if available
+  useEffect(() => {
+    if (initialData && Object.keys(initialData).length > 0) {
+      setFormData(prev => {
+        const newData = { ...prev };
+
+        // Compute age if date_of_birth exists
+        if (initialData.date_of_birth) {
+          const birthDate = new Date(initialData.date_of_birth);
+          if (!isNaN(birthDate.getTime())) {
+            const currentYear = new Date().getFullYear();
+            const age = currentYear - birthDate.getFullYear();
+            newData.age = age.toString();
+          }
+        } else if (initialData.age) {
+          newData.age = initialData.age.toString(); // Fallback if age is explicitly passed
+        }
+
+        // Prefill lifestyle factors if present
+        if (initialData.smoking_status && initialData.smoking_status !== '') {
+          // ensure capital casing to match option values 'Never', 'Former', 'Current'
+          const s = initialData.smoking_status;
+          newData.smoking_status = s.charAt(0).toUpperCase() + s.slice(1);
+        }
+        if (initialData.physical_activity && initialData.physical_activity !== '') {
+          newData.physical_activity = initialData.physical_activity;
+        }
+        if (initialData.alcohol && initialData.alcohol !== '') {
+          newData.alcohol = initialData.alcohol;
+        }
+
+        return newData;
+      });
+    }
+  }, [initialData]);
   const [error, setError] = useState(null);
   const [showResultModal, setShowResultModal] = useState(false);
   const [assessmentResult, setAssessmentResult] = useState(null);
@@ -71,9 +107,9 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
     setIsSubmitting(true);
 
     const age = parseInt(formData.age, 10);
-    if (!age || age < 45 || age > 60) {
+    if (!age || age < 45 || age > 100) {
       setIsSubmitting(false);
-      setError('This application is designed for postmenopausal women aged 45-60 years. Please enter an age within this range.');
+      setError('This application is designed for postmenopausal women aged 45 and above. Please enter a valid age.');
       return;
     }
 
@@ -185,11 +221,11 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
                   name="age"
                   step="1"
                   min="45"
-                  max="60"
+                  max="100"
                   value={formData.age}
                   onChange={handleChange}
                   className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="Age 45-60 (postmenopausal)"
+                  placeholder="Age 45+ (postmenopausal)"
                   required
                 />
               </div>
@@ -205,181 +241,181 @@ const AssessmentForm = ({ onSubmit, onCancel }) => {
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                Triglycerides (mg/dL) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="triglycerides"
-                step="1"
-                min="30"
-                max="500"
-                value={formData.triglycerides}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                placeholder="30 - 500"
-                required
-              />
-            </motion.div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Triglycerides (mg/dL) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="triglycerides"
+                  step="1"
+                  min="30"
+                  max="500"
+                  value={formData.triglycerides}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  placeholder="30 - 500"
+                  required
+                />
+              </motion.div>
 
               {/* LDL Field */}
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                LDL Cholesterol (mg/dL) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="ldl"
-                step="1"
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  LDL Cholesterol (mg/dL) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="ldl"
+                  step="1"
                   min="30"
                   max="300"
-                value={formData.ldl}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                placeholder="30 - 300"
-                required
-              />
-            </motion.div>
+                  value={formData.ldl}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  placeholder="30 - 300"
+                  required
+                />
+              </motion.div>
 
               {/* HDL Field */}
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                HDL Cholesterol (mg/dL) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="hdl"
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  HDL Cholesterol (mg/dL) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="hdl"
                   step="1"
                   min="20"
                   max="150"
-                value={formData.hdl}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                placeholder="20 - 150"
-                required
-              />
-            </motion.div>
+                  value={formData.hdl}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  placeholder="20 - 150"
+                  required
+                />
+              </motion.div>
+            </div>
           </div>
-        </div>
 
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Lifestyle</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                Smoking Status
-              </label>
-              <select
-                name="smoking_status"
-                value={formData.smoking_status}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Lifestyle</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <motion.div
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.2 }}
               >
-                <option value="Unknown">Unknown</option>
-                <option value="Never">Never smoked</option>
-                <option value="Former">Former smoker</option>
-                <option value="Current">Current smoker</option>
-              </select>
-            </motion.div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Smoking Status
+                </label>
+                <select
+                  name="smoking_status"
+                  value={formData.smoking_status}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                >
+                  <option value="Unknown">Unknown</option>
+                  <option value="Never">Never smoked</option>
+                  <option value="Former">Former smoker</option>
+                  <option value="Current">Current smoker</option>
+                </select>
+              </motion.div>
 
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                Physical Activity
-              </label>
-              <select
-                name="physical_activity"
-                value={formData.physical_activity}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+              <motion.div
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.2 }}
               >
-                <option value="Unknown">Unknown</option>
-                <option value="Sedentary">Sedentary (little/no exercise)</option>
-                <option value="Moderate">Moderate (1-3 days/week)</option>
-                <option value="Active">Active (4+ days/week)</option>
-              </select>
-            </motion.div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Physical Activity
+                </label>
+                <select
+                  name="physical_activity"
+                  value={formData.physical_activity}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                >
+                  <option value="Unknown">Unknown</option>
+                  <option value="Sedentary">Sedentary (little/no exercise)</option>
+                  <option value="Moderate">Moderate (1-3 days/week)</option>
+                  <option value="Active">Active (4+ days/week)</option>
+                </select>
+              </motion.div>
 
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                Alcohol Use
-              </label>
-              <select
-                name="alcohol"
-                value={formData.alcohol}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+              <motion.div
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.2 }}
               >
-                <option value="Unknown">Unknown</option>
-                <option value="None">None</option>
-                <option value="Light">Light</option>
-                <option value="Moderate">Moderate</option>
-                <option value="Heavy">Heavy</option>
-              </select>
-            </motion.div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Alcohol Use
+                </label>
+                <select
+                  name="alcohol"
+                  value={formData.alcohol}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                >
+                  <option value="Unknown">Unknown</option>
+                  <option value="None">None</option>
+                  <option value="Light">Light</option>
+                  <option value="Moderate">Moderate</option>
+                  <option value="Heavy">Heavy</option>
+                </select>
+              </motion.div>
+            </div>
           </div>
-        </div>
 
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Blood Pressure</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                Systolic (mmHg) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="systolic"
-                step="1"
-                min="80"
-                max="200"
-                value={formData.systolic}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                placeholder="80 - 200"
-                required
-              />
-            </motion.div>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Blood Pressure</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <motion.div
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.2 }}
+              >
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Systolic (mmHg) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="systolic"
+                  step="1"
+                  min="80"
+                  max="200"
+                  value={formData.systolic}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  placeholder="80 - 200"
+                  required
+                />
+              </motion.div>
 
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-              <label className="block text-sm font-medium text-gray-600 mb-1">
-                Diastolic (mmHg) <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="diastolic"
-                step="1"
-                min="50"
-                max="130"
-                value={formData.diastolic}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                placeholder="50 - 130"
-                required
-              />
-            </motion.div>
+              <motion.div
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.2 }}
+              >
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Diastolic (mmHg) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  name="diastolic"
+                  step="1"
+                  min="50"
+                  max="130"
+                  value={formData.diastolic}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  placeholder="50 - 130"
+                  required
+                />
+              </motion.div>
+            </div>
           </div>
-        </div>
 
           {/* Notes Field */}
           <div>

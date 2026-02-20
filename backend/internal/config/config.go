@@ -67,7 +67,7 @@ func Load() Config {
 		DBDSN:          getEnv("DB_DSN", ""),
 		JWTSecret:      jwtSecret,
 		ModelURL:       getEnv("MODEL_URL", ""),
-		ModelVersion:   getEnv("MODEL_VERSION", "v0-placeholder"),
+		ModelVersion:   getEnv("MODEL_VERSION", "clinical_v2"),
 		DatasetHash:    getEnv("MODEL_DATASET_HASH", ""),
 		MLAPIKey:       getEnv("ML_API_KEY", ""),
 		ModelTimeoutMS: 2000,

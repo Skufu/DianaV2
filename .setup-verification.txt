@@ -1,0 +1,35 @@
+Diana V2 Setup Verification
+===========================
+Setup completed: Fri 20 Feb 2026 10:46:47 PST
+Machine: 192.168.0.118
+User: adriangabriellfrancisco
+
+Tools Installed:
+- Go: go version go1.24.4 darwin/arm64
+- Node: v21.7.0
+- npm: 10.5.0
+- Python: Python 3.13.5
+- Goose: goose version: v3.24.3
+- Docker: Yes
+
+Auto-Install Attempts:
+- Attempted: None
+- Failed: None
+
+Services Configured:
+- PostgreSQL: Running on port 5432
+- Environment: .env files created
+- Go dependencies: Downloaded
+- Frontend dependencies: Installed
+- Python venv: Created and configured
+- Database migrations: Applied
+- ML Models: Found
+
+Next Steps:
+1. ML models ready
+2. START APPLICATION: bash scripts/dev/start-all.sh
+3. Access: http://localhost:4000
+
+Demo Credentials:
+- User: demo@diana.app / demopassword123
+- Admin: admin@diana.app / admin123

@@ -1,7 +1,9 @@
 -- name: ListAssessmentsByUser :many
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+    model_version, dataset_hash, validation_status, predicted_status, risk_label,
+    cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+    created_at, updated_at
 FROM assessments
 WHERE user_id = $1
 ORDER BY created_at DESC;
@@ -12,7 +14,9 @@ SELECT COUNT(*) FROM assessments WHERE user_id = $1;
 -- name: ListAssessmentsByUserPaginated :many
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+    model_version, dataset_hash, validation_status, predicted_status, risk_label,
+    cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+    created_at, updated_at
 FROM assessments
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -21,7 +25,9 @@ LIMIT $2 OFFSET $3;
 -- name: ListAssessmentsLimited :many
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+    model_version, dataset_hash, validation_status, predicted_status, risk_label,
+    cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+    created_at, updated_at
 FROM assessments
 ORDER BY created_at DESC
 LIMIT $1;
@@ -29,7 +35,9 @@ LIMIT $1;
 -- name: GetAssessment :one
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+    model_version, dataset_hash, validation_status, predicted_status, risk_label,
+    cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+    created_at, updated_at
 FROM assessments
 WHERE id = $1
 LIMIT 1;
@@ -38,15 +46,20 @@ LIMIT 1;
 INSERT INTO assessments (
    user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
    activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-   model_version, dataset_hash, validation_status, is_self_reported, source, notes
+   model_version, dataset_hash, validation_status, predicted_status, risk_label,
+   cluster_description, treatment_focus, at_risk_probability,
+   is_self_reported, source, notes
 ) VALUES (
    $1, $2, $3, $4, $5, $6, $7, $8, $9,
    $10, $11, $12, $13, $14, $15, $16, $17, $18,
-   $19, $20, sqlc.narg('is_self_reported'), sqlc.narg('source'), sqlc.narg('notes')
+   $19, $20, $21, $22, $23,
+   $24, $25, $26, $27, $28
 )
 RETURNING id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
            activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-           model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at;
+           model_version, dataset_hash, validation_status, predicted_status, risk_label,
+           cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+           created_at, updated_at;
 
 -- name: UpdateAssessment :one
 UPDATE assessments
@@ -70,12 +83,19 @@ SET user_id = $1,
     model_version = $18,
     dataset_hash = $19,
     validation_status = $20,
-    notes = $21,
+    predicted_status = $21,
+    risk_label = $22,
+    cluster_description = $23,
+    treatment_focus = $24,
+    at_risk_probability = $25,
+    notes = $26,
     updated_at = NOW()
-WHERE id = $22
+WHERE id = $27
 RETURNING id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
           activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-          model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at;
+          model_version, dataset_hash, validation_status, predicted_status, risk_label,
+          cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+          created_at, updated_at;
 
 -- name: DeleteAssessment :exec
 DELETE FROM assessments
@@ -84,7 +104,9 @@ WHERE id = $1;
 -- name: GetLatestAssessmentByUser :one
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+    model_version, dataset_hash, validation_status, predicted_status, risk_label,
+    cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+    created_at, updated_at
 FROM assessments
 WHERE user_id = $1
 ORDER BY created_at DESC

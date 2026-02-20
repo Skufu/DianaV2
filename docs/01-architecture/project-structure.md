@@ -67,7 +67,8 @@ DIANA V2/
 │   │   ├── 0009_add_clinics.sql
 │   │   ├── 0010_admin_features.sql
 │   │   ├── 0011_refactor_users_to_menopausal.sql
-│   │   └── 0012_add_auth_events.sql
+│   │   ├── 0012_add_auth_events.sql
+│   │   └── 0015_add_assessment_ml_metadata.sql
 │   ├── go.mod
 │   ├── go.sum
 │   └── sqlc.yaml              # SQLC configuration

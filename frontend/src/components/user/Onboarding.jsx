@@ -22,6 +22,8 @@ const Onboarding = ({ onComplete }) => {
     heart_disease: '',
     family_history_diabetes: false,
     smoking_status: '',
+    physical_activity: '',
+    alcohol: '',
     consent_research_participation: false,
     consent_email_updates: false,
     consent_analytics: false,
@@ -46,7 +48,7 @@ const Onboarding = ({ onComplete }) => {
     try {
       const ageNum = parseInt(formData.age, 10);
       const validAge = !isNaN(ageNum) && ageNum > 0 && ageNum < 150;
-      const computedDateOfBirth = validAge 
+      const computedDateOfBirth = validAge
         ? `${new Date().getFullYear() - ageNum}-06-15`
         : null;
 
@@ -60,6 +62,8 @@ const Onboarding = ({ onComplete }) => {
         heart_disease: formData.heart_disease,
         family_history_diabetes: formData.family_history_diabetes || false,
         smoking_status: formData.smoking_status,
+        physical_activity: formData.physical_activity,
+        alcohol: formData.alcohol,
         consent_personal_data: formData.consent_personal_data,
         consent_research_participation: formData.consent_research_participation,
         consent_email_updates: formData.consent_email_updates,
@@ -296,8 +300,8 @@ const Onboarding = ({ onComplete }) => {
                   </motion.div>
 
                   {(formData.menopause_status === 'post' || formData.menopause_status === 'surgical') && (
-                    <motion.div 
-                      variants={fadeIn} 
+                    <motion.div
+                      variants={fadeIn}
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
@@ -323,26 +327,26 @@ const Onboarding = ({ onComplete }) => {
               )}
 
               {step === 3 && (
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
-                  <motion.div variants={fadeIn} className="group space-y-1.5">
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Hypertension Status</label>
-                    <div className="relative">
-                      <select
-                        name="hypertension"
-                        value={formData.hypertension}
-                        onChange={handleInputChange}
-                        className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
-                      >
-                        <option value="">Select...</option>
-                        <option value="no">No History</option>
-                        <option value="controlled">Yes (Controlled)</option>
-                        <option value="uncontrolled">Yes (Uncontrolled)</option>
-                      </select>
-                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
-                    </div>
-                  </motion.div>
-
+                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-5">
                   <div className="grid grid-cols-2 gap-5">
+                    <motion.div variants={fadeIn} className="group space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Hypertension</label>
+                      <div className="relative">
+                        <select
+                          name="hypertension"
+                          value={formData.hypertension}
+                          onChange={handleInputChange}
+                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
+                        >
+                          <option value="">Select...</option>
+                          <option value="no">No History</option>
+                          <option value="controlled">Yes (Controlled)</option>
+                          <option value="uncontrolled">Yes (Uncontrolled)</option>
+                        </select>
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                      </div>
+                    </motion.div>
+
                     <motion.div variants={fadeIn} className="group space-y-1.5">
                       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Heart Disease</label>
                       <div className="relative">
@@ -359,7 +363,9 @@ const Onboarding = ({ onComplete }) => {
                         <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
                       </div>
                     </motion.div>
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-5">
                     <motion.div variants={fadeIn} className="group space-y-1.5">
                       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Diabetes History</label>
                       <div className="relative">
@@ -375,25 +381,66 @@ const Onboarding = ({ onComplete }) => {
                         <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
                       </div>
                     </motion.div>
+
+                    <motion.div variants={fadeIn} className="group space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Smoking Status</label>
+                      <div className="relative">
+                        <select
+                          name="smoking_status"
+                          value={formData.smoking_status}
+                          onChange={handleInputChange}
+                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
+                        >
+                          <option value="">Select...</option>
+                          <option value="never">Never Smoked</option>
+                          <option value="former">Former Smoker</option>
+                          <option value="current">Current Smoker</option>
+                        </select>
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                      </div>
+                    </motion.div>
                   </div>
 
-                  <motion.div variants={fadeIn} className="group space-y-1.5">
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Smoking Status</label>
-                    <div className="relative">
-                      <select
-                        name="smoking_status"
-                        value={formData.smoking_status}
-                        onChange={handleInputChange}
-                        className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
-                      >
-                        <option value="">Select...</option>
-                        <option value="never">Never Smoked</option>
-                        <option value="former">Former Smoker</option>
-                        <option value="current">Current Smoker</option>
-                      </select>
-                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
-                    </div>
-                  </motion.div>
+                  <div className="grid grid-cols-2 gap-5">
+                    <motion.div variants={fadeIn} className="group space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Physical Activity</label>
+                      <div className="relative">
+                        <select
+                          name="physical_activity"
+                          value={formData.physical_activity}
+                          onChange={handleInputChange}
+                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
+                        >
+                          <option value="">Select...</option>
+                          <option value="Unknown">Unknown</option>
+                          <option value="Sedentary">Sedentary (little/no exercise)</option>
+                          <option value="Moderate">Moderate (1-3 days/week)</option>
+                          <option value="Active">Active (4+ days/week)</option>
+                        </select>
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                      </div>
+                    </motion.div>
+
+                    <motion.div variants={fadeIn} className="group space-y-1.5">
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Alcohol Use</label>
+                      <div className="relative">
+                        <select
+                          name="alcohol"
+                          value={formData.alcohol}
+                          onChange={handleInputChange}
+                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
+                        >
+                          <option value="">Select...</option>
+                          <option value="Unknown">Unknown</option>
+                          <option value="None">None</option>
+                          <option value="Light">Light</option>
+                          <option value="Moderate">Moderate</option>
+                          <option value="Heavy">Heavy</option>
+                        </select>
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                      </div>
+                    </motion.div>
+                  </div>
                 </motion.div>
               )}
 

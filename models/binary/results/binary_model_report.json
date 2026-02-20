@@ -1,0 +1,46 @@
+{
+  "model_type": "binary_risk_prediction",
+  "features": [
+    "age",
+    "bmi",
+    "hdl",
+    "triglycerides",
+    "total_cholesterol",
+    "systolic",
+    "diastolic",
+    "ldl",
+    "smoking_status",
+    "physical_activity",
+    "alcohol_use"
+  ],
+  "n_features": 11,
+  "target": "diabetes_binary (0=Non-Diabetic, 1=Diabetic)",
+  "best_model": "Logistic Regression",
+  "metrics": {
+    "accuracy": 0.7409,
+    "precision": 0.4211,
+    "recall": 0.7711,
+    "f1_score": 0.5447,
+    "auc_roc": 0.8159,
+    "cv_auc": 0.749,
+    "overfit_gap": -0.0462
+  },
+  "auc_threshold_met": true,
+  "all_models": [
+    {
+      "name": "Logistic Regression",
+      "auc": 0.8159,
+      "overfit_gap": -0.0462
+    },
+    {
+      "name": "Random Forest",
+      "auc": 0.7872,
+      "overfit_gap": 0.0507
+    },
+    {
+      "name": "XGBoost",
+      "auc": 0.7784,
+      "overfit_gap": 0.139
+    }
+  ]
+}

@@ -71,17 +71,24 @@ The API returns different response structures depending on the model type:
 ```json
 {
   "success": true,
-  "model_type": "clinical",
+  "model_type": "binary",
   "predicted_status": "Pre-diabetic",
-  "risk_cluster": "Moderate Risk",
+  "risk_cluster": "MOD",
+  "metabolic_subtype": "MOD",
+  "metabolic_subtype_full": "Mild Obesity-Related Diabetes",
+  "risk_level": "MODERATE",
+  "risk_label": "Moderate risk",
+  "cluster_description": "Mild obesity-related diabetes profile with moderate metabolic dysfunction.",
+  "treatment_focus": "Weight management through diet and exercise; monitor metabolic markers quarterly.",
   "probability": 0.58,
+  "at_risk_probability": 0.72,
   "risk_score": 58,
-  "confidence": 0.58,
+  "confidence": 0.65,
   "model_info": {
     "classifier": "XGBoost",
-    "auc_roc": 0.6732,
-    "features_used": ["bmi", "triglycerides", "ldl", "hdl", "age"],
-    "note": "Non-circular model (no HbA1c/FBS in features)"
+    "auc_roc": 0.72,
+    "features_used": ["bmi", "triglycerides", "ldl", "hdl", "age", "systolic", "diastolic", ...],
+    "note": "Binary at-risk screening model (AUC 0.72, 99.5% sensitivity) - no HbA1c/FBS"
   }
 }
 ```
@@ -108,11 +115,18 @@ The API returns different response structures depending on the model type:
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the prediction was successful |
-| `medical_status` / `predicted_status` | string | Diabetes classification: "Normal", "Pre-diabetic", or "Diabetic" |
-| `risk_cluster` | string | Risk cluster assignment (e.g., "Low Risk", "Moderate Risk", "High Risk" for clinical model; "HIGH", "MODERATE", "LOW" or SIRD/SIDD/MOD/MARD variants for ADA model) |
-| `risk_level` | string | Simplified risk level: "HIGH", "MODERATE", or "LOW" (ADA model only) |
-| `risk_score` | integer | Risk score from 0-100 (derived from probability) |
+| `model_type` | string | "binary" for clinical model, "ada" for baseline model |
+| `predicted_status` | string | Diabetes classification: "Normal", "Pre-diabetic", or "At-Risk" |
+| `risk_cluster` | string | Metabolic subtype cluster (SIRD, SIDD, MOD, MARD) |
+| `metabolic_subtype` | string | Short code for metabolic subtype |
+| `metabolic_subtype_full` | string | Full name of the metabolic subtype |
+| `risk_level` | string | Simplified risk level: "HIGH", "MODERATE", or "LOW" |
+| `risk_label` | string | Human-readable risk label (e.g., "High risk", "Moderate risk") |
+| `cluster_description` | string | Clinical description of the cluster phenotype |
+| `treatment_focus` | string | Recommended treatment approach based on subtype |
+| `risk_score` | integer | Risk score from 0-100 (derived from at-risk probability) |
 | `probability` | float | Diabetes probability (0.0 to 1.0) from classifier |
+| `at_risk_probability` | float | Combined probability of pre-diabetic + diabetic (0.0 to 1.0) |
 | `confidence` | float | Confidence score (max probability from classifier) |
 | `model_info` | object | Model metadata including classifier type, accuracy, and feature information |
 | `error` | string | Error message if `success` is false |
@@ -123,7 +137,7 @@ The API returns different response structures depending on the model type:
 
 ## Versioning & Mock Mode
 - `X-Model-Version` header and `model_version` body field are populated from `MODEL_VERSION` when set.
-- If `MODEL_URL` is empty, the backend uses an internal mock predictor and does not call the external model.
+- If `MODEL_URL` is empty, the backend uses an internal mock predictor and does not call the external model (dev/test only).
 
 ## Expectations for Model Service
 - Respond with HTTP 200 and the response schema above for valid requests.
@@ -133,29 +147,21 @@ The API returns different response structures depending on the model type:
 ## Cluster Definitions
 
 ### Clinical Model Cluster Labels
-The clinical model returns cluster labels based on risk level: "Low Risk", "Moderate Risk", or "High Risk" (as determined by K-means clustering on the training data).
+The clinical model returns cluster labels based on Ahlqvist diabetes subtypes:
 
-### ADA Model Cluster Labels
-The ADA model returns simplified risk levels: "HIGH", "MODERATE", or "LOW" (as determined by K-means clustering on the training data).
+| Cluster | Full Name | Description | Treatment Focus |
+|---------|-----------|-------------|-----------------|
+| **SIRD** | Severe Insulin-Resistant Diabetes | High BMI, severe insulin resistance, obesity-related | Focus on insulin sensitivity and cardiovascular risk reduction; consider metformin + lifestyle |
+| **SIDD** | Severe Insulin-Deficient Diabetes | Low BMI, high HbA1c, insulin deficiency | Prioritize glycemic control and beta-cell preservation; consider insulin therapy |
+| **MOD** | Mild Obesity-Related Diabetes | Moderate BMI elevation, mild glucose intolerance | Weight management and lifestyle optimization; monitor quarterly |
+| **MARD** | Mild Age-Related Diabetes | Older onset, mild metabolic dysfunction | Maintain current health habits and regular monitoring |
 
-### Research Paper Cluster Definitions (For Reference)
-The following diabetes subtype classifications from research papers describe theoretical cluster types, which map to the above risk level labels in the actual implementation:
-
-| Cluster | Full Name | Characteristics | Risk Level |
-|---------|-----------|-----------------|------------|
-| **SIDD** | Severe Insulin-Deficient Diabetes | Low BMI, high HbA1c, insulin deficiency, younger onset | High |
-| **SIRD** | Severe Insulin-Resistant Diabetes | High BMI (≥30), insulin resistance, obesity-related, cardiovascular risk | High |
-| **MOD** | Mild Obesity-Related Diabetes | Moderate BMI elevation, mild glucose intolerance, generally favorable prognosis | Moderate |
-| **MARD** | Mild Age-Related Diabetes | Older onset, mild metabolic dysfunction, low complication rate | Low |
-
-### Cluster Assignment Hints (for mock/rule-based implementations)
-
-```
-IF BMI > 30 AND HbA1c > 6.0 → SIRD (risk_score: 80-90)
-IF HbA1c > 6.5 AND BMI < 27 → SIDD (risk_score: 85-95)
-IF Age > 60 AND HbA1c < 7.0 → MARD (risk_score: 30-50)
-ELSE → MOD (risk_score: 25-40)
-```
+### Risk Level Mapping
+Each cluster is mapped to a risk level:
+- **SIRD**: HIGH risk
+- **SIDD**: HIGH risk  
+- **MOD**: MODERATE risk
+- **MARD**: LOW risk
 
 ## Input Validation
 

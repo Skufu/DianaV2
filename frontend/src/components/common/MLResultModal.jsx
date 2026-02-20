@@ -1,20 +1,17 @@
 import { useState, useEffect } from 'react';
-import { X, Activity, TrendingUp, AlertCircle, CheckCircle, Info, Brain, Shield, AlertTriangle, Stethoscope } from 'lucide-react';
+import { X, Heart, Sparkles, ShieldCheck, AlertCircle, CheckCircle, Flame, Droplets, Leaf } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /**
- * MLResultModal - Displays REAL ML prediction results with guardrails
- * 
- * This component shows actual prediction results from the backend ML model
- * with appropriate safety warnings, disclaimers, and clinical context.
+ * MLResultModal - Displays prediction results optimized for women 45+ (non-techy)
+ * Reassuring, clear tone with empowering next steps.
  */
 const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
     if (isOpen && !isLoading) {
-      // Small delay for animation
-      const timer = setTimeout(() => setShowContent(true), 300);
+      const timer = setTimeout(() => setShowContent(true), 400);
       return () => clearTimeout(timer);
     } else if (!isOpen) {
       setShowContent(false);
@@ -23,7 +20,6 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
 
   if (!isOpen) return null;
 
-  // Default/loading state
   if (!result || isLoading) {
     return (
       <AnimatePresence>
@@ -32,21 +28,21 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-diana-forest/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={onClose}
           />
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="relative z-10 w-full max-w-2xl"
+            className="relative z-10 w-full max-w-xl"
           >
-            <div className="glass-card bg-white p-8 text-center">
-              <div className="relative inline-block mb-4">
-                <div className="w-16 h-16 border-4 border-diana-forest/20 border-t-diana-forest rounded-full animate-spin" />
-                <Brain size={24} className="absolute inset-0 m-auto text-diana-forest" />
+            <div className="bg-white rounded-[32px] p-12 text-center shadow-2xl">
+              <div className="relative inline-block mb-6">
+                <div className="w-24 h-24 border-[6px] border-rose-100 border-t-rose-400 rounded-full animate-spin" />
+                <Heart size={36} className="absolute inset-0 m-auto text-rose-400 animate-pulse" />
               </div>
-              <p className="text-diana-text-secondary font-medium">Analyzing your biomarkers...</p>
-              <p className="text-sm text-diana-text-muted">Running ML prediction models</p>
+              <h3 className="text-2xl font-semibold text-slate-800 mb-3 tracking-tight">Reviewing your health profile...</h3>
+              <p className="text-slate-500 text-lg">Just a moment while we put together your personalized insights.</p>
             </div>
           </motion.div>
         </div>
@@ -54,16 +50,12 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     );
   }
 
-  // Extract data from real backend result
   const {
     risk_score = 0,
-    risk_level = 'unknown',
+    risk_level: overallRiskLevelRaw = 'unknown',
     cluster = 'Unknown',
-    predicted_status = 'Unknown',
-    model_version = 'unknown',
+    treatment_focus = '',
     validation_status = '',
-    fbs = 0,
-    hba1c = 0
   } = result;
 
   const getRiskColor = (level) => {
@@ -71,44 +63,48 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     switch (normalizedLevel) {
       case 'low':
         return {
-          bg: 'bg-green-50',
-          border: 'border-green-200',
-          text: 'text-green-700',
-          badge: 'bg-green-100 text-green-800',
-          icon: 'text-green-500',
-          gradient: 'from-green-500 to-emerald-600',
-          advice: 'Continue healthy habits. Routine check-up in 3-6 months.'
+          bg: 'bg-teal-50',
+          border: 'border-white',
+          text: 'text-teal-700',
+          badge: 'bg-teal-100 text-teal-800',
+          icon: 'text-teal-500',
+          gradient: 'from-teal-400 to-emerald-500',
+          title: 'Looking Good',
+          advice: 'Your screening indicates a low risk profile right now. Keep up the wonderful work with your healthy habits!'
         };
       case 'medium':
       case 'moderate':
         return {
           bg: 'bg-amber-50',
-          border: 'border-amber-200',
+          border: 'border-white',
           text: 'text-amber-700',
           badge: 'bg-amber-100 text-amber-800',
           icon: 'text-amber-500',
-          gradient: 'from-amber-500 to-orange-600',
-          advice: 'Consider lifestyle changes. Schedule check-up within 1 month.'
+          gradient: 'from-amber-400 to-orange-400',
+          title: 'Time for a Check-in',
+          advice: 'Your results suggest a moderate risk. Small, mindful changes to your daily routine can make a big difference.'
         };
       case 'high':
         return {
           bg: 'bg-rose-50',
-          border: 'border-rose-200',
+          border: 'border-white',
           text: 'text-rose-700',
           badge: 'bg-rose-100 text-rose-800',
           icon: 'text-rose-500',
-          gradient: 'from-rose-500 to-red-600',
-          advice: 'Consult healthcare provider within 2 weeks. Consider HbA1c testing.'
+          gradient: 'from-rose-400 to-red-400',
+          title: 'Action Recommended',
+          advice: 'Your profile shows some elevated risk factors. Don\'t worry, but please do schedule a visit with your doctor soon.'
         };
       default:
         return {
           bg: 'bg-slate-50',
-          border: 'border-slate-200',
+          border: 'border-white',
           text: 'text-slate-700',
           badge: 'bg-slate-100 text-slate-800',
           icon: 'text-slate-500',
-          gradient: 'from-slate-500 to-gray-600',
-          advice: 'Unable to determine risk level. Consult healthcare provider.'
+          gradient: 'from-slate-400 to-gray-500',
+          title: 'Results Processed',
+          advice: 'We have processed your data. Please discuss these details with your healthcare provider to understand them fully.'
         };
     }
   };
@@ -116,69 +112,64 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   const getClusterInfo = (clusterName) => {
     const clusters = {
       'SIDD': {
-        fullName: 'Severe Insulin-Deficient Diabetes',
-        desc: 'Lower BMI with elevated metabolic strain markers',
-        color: 'bg-red-100 text-red-800 border-red-200',
-        icon: '🔴',
-        risk: 'High'
+        fullName: 'Insulin Sensitivity Profile',
+        desc: 'Your body might need a little extra help utilizing insulin properly. This is very common and manageable.',
+        color: 'bg-rose-100 text-rose-800',
+        icon: <Droplets className="text-rose-600" size={24} />,
       },
       'SIRD': {
-        fullName: 'Severe Insulin-Resistant Diabetes',
-        desc: 'High BMI with elevated lipids and blood pressure',
-        color: 'bg-amber-100 text-amber-800 border-amber-200',
-        icon: '🟠',
-        risk: 'High'
+        fullName: 'Metabolic Balance Profile',
+        desc: 'Your results point toward insulin resistance, which often improves beautifully with gentle lifestyle adjustments.',
+        color: 'bg-orange-100 text-orange-800',
+        icon: <Flame className="text-orange-600" size={24} />,
       },
       'MOD': {
-        fullName: 'Mild Obesity-Related Diabetes',
-        desc: 'High BMI with moderately elevated lipid markers',
-        color: 'bg-blue-100 text-blue-800 border-blue-200',
-        icon: '🔵',
-        risk: 'Moderate'
+        fullName: 'Weight Harmony Profile',
+        desc: 'Finding a balanced weight that feels right for your body could be the key to supporting your health.',
+        color: 'bg-blue-100 text-blue-800',
+        icon: <Leaf className="text-blue-600" size={24} />,
       },
       'MARD': {
-        fullName: 'Mild Age-Related Diabetes',
-        desc: 'Lower BMI with healthier lipid and blood pressure profile',
-        color: 'bg-green-100 text-green-800 border-green-200',
-        icon: '🟢',
-        risk: 'Low'
+        fullName: 'Age-Related Changes',
+        desc: 'Natural changes as we mature are playing a role in your results. It\'s completely normal, and staying active is the best approach.',
+        color: 'bg-teal-100 text-teal-800',
+        icon: <Sparkles className="text-teal-600" size={24} />,
       },
       'Low Risk': {
-        fullName: 'Low Risk Profile',
-        desc: 'Healthier biomarker profile with lower diabetes risk',
-        color: 'bg-green-100 text-green-800 border-green-200',
-        icon: '🟢',
-        risk: 'Low'
+        fullName: 'Balanced Wellness Profile',
+        desc: 'Your health markers are looking beautifully balanced right now.',
+        color: 'bg-teal-100 text-teal-800',
+        icon: <Heart className="text-teal-600" size={24} />,
       },
       'Moderate Risk': {
-        fullName: 'Moderate Risk Profile',
-        desc: 'Elevated markers suggesting increased risk',
-        color: 'bg-amber-100 text-amber-800 border-amber-200',
-        icon: '🟡',
-        risk: 'Moderate'
+        fullName: 'Attention Needed Profile',
+        desc: 'Some of your markers are slightly elevated and could use some nurturing.',
+        color: 'bg-amber-100 text-amber-800',
+        icon: <AlertCircle className="text-amber-600" size={24} />,
       },
       'High Risk': {
-        fullName: 'High Risk Profile',
-        desc: 'Significantly elevated markers requiring attention',
-        color: 'bg-red-100 text-red-800 border-red-200',
-        icon: '🔴',
-        risk: 'High'
+        fullName: 'Care Priority Profile',
+        desc: 'Your markers are elevated. Partnering closely with your doctor is the best and safest next step.',
+        color: 'bg-rose-100 text-rose-800',
+        icon: <ShieldCheck className="text-rose-600" size={24} />,
       }
     };
-    return clusters[clusterName] || clusters['MARD'];
+    return clusters[clusterName] || clusters['Moderate Risk'];
   };
 
-  const colors = getRiskColor(risk_level);
+  const normalizedRiskScore = Number.isFinite(risk_score) ? risk_score : null;
+  const overallRiskScore = normalizedRiskScore ?? 0;
+  const overallRiskLevel = normalizedRiskScore !== null
+    ? (overallRiskScore >= 67 ? 'high' : overallRiskScore >= 34 ? 'moderate' : 'low')
+    : (overallRiskLevelRaw || 'unknown').toLowerCase();
+
+  const colors = getRiskColor(overallRiskLevel);
   const clusterInfo = getClusterInfo(cluster);
 
-  // Check for biomarker warnings
   const hasWarnings = validation_status && validation_status.includes('warning');
-  const warningList = hasWarnings 
+  const warningList = hasWarnings
     ? validation_status.replace('warning:', '').split(',').filter(w => w)
     : [];
-
-  // Check if actual diagnostic values were provided
-  const hasDiagnosticValues = fbs > 0 || hba1c > 0;
 
   return (
     <AnimatePresence>
@@ -188,40 +179,37 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-diana-forest/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={onClose}
           />
 
           <motion.div
-            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            initial={{ scale: 0.95, opacity: 0, y: 30 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-            transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-            className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[32px] bg-slate-50 shadow-2xl"
           >
-            <div className="glass-card bg-white p-0 overflow-hidden">
+            <div className="overflow-hidden">
               {/* Header */}
-              <div className={`bg-gradient-to-r ${colors.gradient} p-6 text-white relative`}>
+              <div className={`bg-gradient-to-br ${colors.gradient} p-8 text-white relative`}>
                 <motion.button
                   whileHover={{ scale: 1.1, backgroundColor: "rgba(255,255,255,0.3)" }}
                   whileTap={{ scale: 0.9 }}
                   onClick={onClose}
-                  className="absolute top-4 right-4 p-2 rounded-lg bg-white/20 transition-colors"
+                  className="absolute top-6 right-6 p-2.5 rounded-full bg-white/20 transition-colors shadow-sm"
                 >
                   <X size={20} />
                 </motion.button>
 
                 <div className="flex items-center gap-3 mb-2">
-                  <Brain size={24} className="text-white/90" />
-                  <span className="text-sm font-bold uppercase tracking-wider text-white/80">ML Analysis Complete</span>
+                  <Sparkles size={24} className="text-white/90" />
+                  <span className="text-sm font-semibold uppercase tracking-widest text-white/90">Your Results</span>
                 </div>
-                <h2 className="text-2xl font-bold">Your Assessment Results</h2>
-                <p className="text-white/80 text-sm mt-1">
-                  Model: {model_version || 'clinical_v2'} • No HbA1c/FBS used in prediction
-                </p>
+                <h2 className="text-[34px] font-medium tracking-tight mb-1">{colors.title}</h2>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-8 space-y-7">
                 <AnimatePresence mode="wait">
                   {!showContent ? (
                     <motion.div
@@ -229,301 +217,189 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center py-12"
+                      className="flex flex-col items-center justify-center py-16"
                     >
-                      <div className="relative">
-                        <div className="w-16 h-16 border-4 border-diana-forest/20 border-t-diana-forest rounded-full animate-spin" />
-                        <Brain size={24} className="absolute inset-0 m-auto text-diana-forest" />
-                      </div>
-                      <p className="mt-4 text-diana-text-secondary font-medium">Processing results...</p>
+                      <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin mb-4" />
+                      <p className="text-slate-500 font-medium text-lg">Preparing your personalized insights...</p>
                     </motion.div>
                   ) : (
                     <motion.div
                       key="content"
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ staggerChildren: 0.1 }}
+                      transition={{ staggerChildren: 0.08 }}
                     >
-                      {/* 🚨 SAFETY GUARDRAIL: Medical Disclaimer Banner */}
+                      {/* Wellness Score Card */}
                       <motion.div
-                        initial={{ opacity: 0, y: 10 }} 
+                        initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-amber-50 border-l-4 border-amber-500 rounded-r-xl p-4 mb-6"
+                        className={`${colors.bg} rounded-3xl p-7 mb-7 shadow-sm border ${colors.border}`}
                       >
-                        <div className="flex items-start gap-3">
-                          <Stethoscope size={24} className="text-amber-600 shrink-0 mt-0.5" />
-                          <div>
-                            <h4 className="font-bold text-amber-800 mb-1">Medical Disclaimer</h4>
-                            <p className="text-sm text-amber-700">
-                              This is a <strong>screening tool only</strong> and does not replace professional medical diagnosis. 
-                              This prediction was made <strong>without using HbA1c or fasting blood sugar</strong> values. 
-                              Always consult a healthcare provider for proper diagnosis and treatment.
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-
-                      {/* Risk Score Section */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }} 
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`${colors.bg} border ${colors.border} rounded-2xl p-6 mb-6`}
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <Activity className={colors.icon} size={24} />
-                            <span className="font-bold text-diana-text-primary">Diabetes Risk Score</span>
-                          </div>
-                          <span className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${colors.badge}`}>
-                            {risk_level} Risk
-                          </span>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-xl font-semibold text-slate-800">Your Wellness Score</h3>
                         </div>
 
-                        <div className="flex items-end gap-3 mb-4">
-                          <span className={`text-5xl font-bold ${colors.text}`}>{risk_score}</span>
-                          <span className="text-diana-text-muted mb-2">/ 100</span>
+                        <div className="flex items-baseline gap-2 mb-5">
+                          <span className={`text-[80px] leading-none font-light tracking-tighter ${colors.text}`}>{overallRiskScore}</span>
+                          <span className="text-slate-500 font-medium text-lg">/ 100</span>
                         </div>
 
-                        <div className="w-full bg-white/50 rounded-full h-3 mb-4">
+                        <div className="w-full bg-white/60 rounded-full h-4 mb-5 overflow-hidden shadow-inner">
                           <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: `${risk_score}%` }}
-                            transition={{ duration: 1, delay: 0.2 }}
-                            className={`h-3 rounded-full bg-gradient-to-r ${colors.gradient}`}
+                            animate={{ width: `${overallRiskScore}%` }}
+                            transition={{ duration: 1.2, ease: "easeOut" }}
+                            className={`h-full rounded-full bg-gradient-to-r ${colors.gradient} opacity-90`}
                           />
                         </div>
 
-                        {/* Risk Interpretation */}
-                        <div className="bg-white/60 rounded-lg p-3 mt-3">
-                          <p className="text-sm font-medium text-diana-text-primary mb-1">Clinical Interpretation:</p>
-                          <p className="text-sm text-diana-text-secondary">{colors.advice}</p>
-                        </div>
-
-                        {/* Predicted Status */}
-                        <div className="mt-4 pt-4 border-t border-white/50">
-                          <p className="text-sm text-diana-text-secondary">
-                            <span className="font-medium">Predicted Status:</span>{' '}
-                            <span className={`font-bold ${colors.text}`}>{predicted_status}</span>
+                        <div className="bg-white/80 rounded-2xl p-5 mt-2 shadow-sm">
+                          <p className="text-slate-700 leading-relaxed font-medium text-[17px]">
+                            {colors.advice}
                           </p>
                         </div>
                       </motion.div>
 
-                      {/* Cluster Information */}
+                      {/* Personal Profile Card */}
                       <motion.div
-                        initial={{ opacity: 0, y: 10 }} 
-                        animate={{ opacity: 1, y: 0 }} 
-                        transition={{ delay: 0.1 }}
-                        className="bg-white border border-diana-sand rounded-2xl p-6 mb-6"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white rounded-3xl p-7 mb-7 shadow-sm border border-slate-100"
                       >
-                        <div className="flex items-center gap-3 mb-4">
-                          <TrendingUp className="text-diana-forest" size={24} />
-                          <span className="font-bold text-diana-text-primary">Metabolic Subtype</span>
-                          <span className="ml-auto text-sm text-diana-text-muted">
-                            Risk Level: {clusterInfo.risk}
-                          </span>
-                        </div>
+                        <h3 className="text-lg font-semibold text-slate-800 mb-5 flex items-center gap-2">
+                          <Leaf className="text-teal-500" size={22} />
+                          Your Personal Profile
+                        </h3>
 
-                        <div className={`inline-flex items-center gap-3 px-4 py-3 rounded-xl border ${clusterInfo.color} mb-3`}>
-                          <span className="text-2xl">{clusterInfo.icon}</span>
+                        <div className="flex items-start gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-100/50">
+                          <div className={`p-4 rounded-full ${clusterInfo.color} shrink-0 shadow-sm`}>
+                            {clusterInfo.icon}
+                          </div>
                           <div>
-                            <div className="font-bold">{cluster}</div>
-                            <div className="text-sm opacity-80">{clusterInfo.fullName}</div>
+                            <div className="font-semibold text-slate-800 text-[19px] mb-1.5">{clusterInfo.fullName}</div>
+                            <p className="text-slate-600 text-[16px] leading-relaxed mb-3">
+                              {clusterInfo.desc}
+                            </p>
+                            {treatment_focus && (
+                              <div className="inline-block px-4 py-1.5 bg-white border border-slate-200 rounded-full text-[13px] text-slate-600 font-medium shadow-sm">
+                                Focus on: {treatment_focus}
+                              </div>
+                            )}
                           </div>
                         </div>
-
-                        <p className="text-sm text-diana-text-secondary">
-                          {clusterInfo.desc}
-                        </p>
                       </motion.div>
 
-                      {/* 🚨 GUARDRAIL: Biomarker Warnings */}
+                      {/* Gentle Warnings (if any) */}
                       {hasWarnings && warningList.length > 0 && (
                         <motion.div
-                          initial={{ opacity: 0, y: 10 }} 
-                          animate={{ opacity: 1, y: 0 }} 
-                          transition={{ delay: 0.15 }}
-                          className="bg-rose-50 border border-rose-200 rounded-2xl p-6 mb-6"
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-rose-50/50 rounded-3xl p-7 mb-7 border border-rose-100"
                         >
-                          <h3 className="font-bold text-rose-800 mb-3 flex items-center gap-2">
-                            <AlertTriangle size={20} className="text-rose-600" />
-                            Abnormal Biomarker Values Detected
+                          <h3 className="text-lg font-semibold text-rose-800 mb-3 flex items-center gap-2">
+                            <Heart size={22} className="text-rose-500" />
+                            Gentle Reminders
                           </h3>
-                          <ul className="space-y-2">
+                          <p className="text-[16px] text-rose-700 mb-4 leading-relaxed">
+                            A few numbers in your results stood out. It's completely normal to have fluctuations, but they are great points to discuss at your next doctor's visit:
+                          </p>
+                          <ul className="space-y-3">
                             {warningList.map((warning) => (
-                              <li key={warning} className="flex items-start gap-2 text-sm text-rose-700">
-                                <AlertCircle size={16} className="mt-0.5 shrink-0 text-rose-500" />
-                                {formatWarning(warning)}
+                              <li key={warning} className="flex items-start gap-3 text-[15px] text-rose-800/80 bg-white/70 p-3 rounded-xl shadow-sm">
+                                <span className="text-rose-400 mt-0.5 font-bold">•</span>
+                                <span className="pt-0.5">{formatFriendlyWarning(warning)}</span>
                               </li>
                             ))}
                           </ul>
-                          <p className="text-xs text-rose-600 mt-3">
-                            These values may affect your health. Please discuss with your healthcare provider.
-                          </p>
                         </motion.div>
                       )}
 
-                      {/* 🚨 GUARDRAIL: Limitations Section */}
+                      {/* Gentle Next Steps */}
                       <motion.div
-                        initial={{ opacity: 0, y: 10 }} 
-                        animate={{ opacity: 1, y: 0 }} 
-                        transition={{ delay: 0.2 }}
-                        className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mb-6"
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white rounded-3xl p-7 mb-7 shadow-sm border border-slate-100"
                       >
-                        <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                          <Info size={20} className="text-slate-600" />
-                          Understanding This Prediction
+                        <h3 className="text-lg font-semibold text-slate-800 mb-5 flex items-center gap-2">
+                          <ShieldCheck size={22} className="text-indigo-500" />
+                          Suggested Next Steps
                         </h3>
-
-                        <div className="space-y-4">
-                          <div className="flex items-start gap-3">
-                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                              <span className="text-xs font-bold text-blue-600">1</span>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-slate-700">Screening Tool</p>
-                              <p className="text-xs text-slate-600">
-                                This model predicts risk using BMI, lipids, and blood pressure only. 
-                                It cannot diagnose diabetes. AUC: 0.694 (moderate accuracy).
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-start gap-3">
-                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                              <span className="text-xs font-bold text-blue-600">2</span>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-slate-700">No Lab Tests Used</p>
-                              <p className="text-xs text-slate-600">
-                                HbA1c and fasting blood sugar were NOT used in this prediction. 
-                                This is intentional for pre-screening purposes.
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-start gap-3">
-                            <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                              <span className="text-xs font-bold text-blue-600">3</span>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-slate-700">Population Limitations</p>
-                              <p className="text-xs text-slate-600">
-                                Model trained on US data. Performance may vary for other populations.
-                                External validation recommended.
-                              </p>
-                            </div>
-                          </div>
-
-                          {hasDiagnosticValues && (
-                            <div className="flex items-start gap-3">
-                              <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-0.5">
-                                <CheckCircle size={14} className="text-green-600" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-slate-700">Diagnostic Values Provided</p>
-                                <p className="text-xs text-slate-600">
-                                  You provided HbA1c: {hba1c > 0 ? hba1c : 'N/A'}% and FBS: {fbs > 0 ? fbs : 'N/A'} mg/dL. 
-                                  These were NOT used in the ML prediction but are important for clinical diagnosis.
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-
-                      {/* Recommendations */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }} 
-                        animate={{ opacity: 1, y: 0 }} 
-                        transition={{ delay: 0.25 }}
-                        className={`${colors.bg} border ${colors.border} rounded-2xl p-6 mb-6`}
-                      >
-                        <h3 className="font-bold text-diana-text-primary mb-3 flex items-center gap-2">
-                          <Shield size={20} className={colors.icon} />
-                          Recommendations
-                        </h3>
-                        <ul className="space-y-2">
-                          {risk_level === 'high' && (
+                        <ul className="space-y-4">
+                          {overallRiskLevel === 'high' && (
                             <>
-                              <li className="flex items-start gap-2 text-sm text-diana-text-secondary">
-                                <AlertCircle size={16} className="text-rose-500 mt-0.5 shrink-0" />
-                                Schedule an appointment with your healthcare provider within 2 weeks
+                              <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
+                                <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
+                                <span><strong>Book a chat with your doctor.</strong> Share these insights with them so they can guide you softly and securely.</span>
                               </li>
-                              <li className="flex items-start gap-2 text-sm text-diana-text-secondary">
-                                <CheckCircle size={16} className="text-rose-500 mt-0.5 shrink-0" />
-                                Request HbA1c and fasting blood glucose tests for proper diagnosis
+                              <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
+                                <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
+                                <span><strong>Ask about a routine blood test.</strong> Simple lab tests can give you a fuller picture of how your lovely body is doing.</span>
                               </li>
-                              <li className="flex items-start gap-2 text-sm text-diana-text-secondary">
-                                <CheckCircle size={16} className="text-rose-500 mt-0.5 shrink-0" />
-                                Monitor blood glucose daily and maintain a log
+                              <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
+                                <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
+                                <span><strong>Be kind to yourself.</strong> Stress affects our bodies too, so take deep breaths and gentle steps forward!</span>
                               </li>
                             </>
                           )}
-                          {(risk_level === 'medium' || risk_level === 'moderate') && (
+                          {(overallRiskLevel === 'medium' || overallRiskLevel === 'moderate') && (
                             <>
-                              <li className="flex items-start gap-2 text-sm text-diana-text-secondary">
-                                <AlertCircle size={16} className="text-amber-500 mt-0.5 shrink-0" />
-                                Consider scheduling a check-up within the next month
+                              <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
+                                <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
+                                <span><strong>Consider a check-up.</strong> It might be a wonderful time to schedule an appointment just to see how you're feeling.</span>
                               </li>
-                              <li className="flex items-start gap-2 text-sm text-diana-text-secondary">
-                                <CheckCircle size="16" className="text-amber-500 mt-0.5 shrink-0" />
-                                Consider HbA1c testing to confirm risk status
+                              <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
+                                <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
+                                <span><strong>Enjoy nourishing foods.</strong> Focus on adding vibrant, colorful veggies and whole grains to your lovely meals.</span>
                               </li>
-                              <li className="flex items-start gap-2 text-sm text-diana-text-secondary">
-                                <CheckCircle size={16} className="text-amber-500 mt-0.5 shrink-0" />
-                                Focus on lifestyle modifications: diet and exercise
+                              <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
+                                <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
+                                <span><strong>Stay active your way.</strong> A lovely daily walk, dancing to a favorite song, or gentle stretching makes a huge difference.</span>
                               </li>
                             </>
                           )}
-                          {risk_level === 'low' && (
+                          {overallRiskLevel === 'low' && (
                             <>
-                              <li className="flex items-start gap-2 text-sm text-diana-text-secondary">
-                                <CheckCircle size={16} className="text-green-500 mt-0.5 shrink-0" />
-                                Continue your healthy lifestyle habits
+                              <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
+                                <div className="mt-1 bg-green-50 text-green-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
+                                <span><strong>Keep up the wonderful work!</strong> Your current routine is serving your body beautifully.</span>
                               </li>
-                              <li className="flex items-start gap-2 text-sm text-diana-text-secondary">
-                                <CheckCircle size={16} className="text-green-500 mt-0.5 shrink-0" />
-                                Schedule routine check-up within 3-6 months
+                              <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
+                                <div className="mt-1 bg-green-50 text-green-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
+                                <span><strong>Stay reasonably active.</strong> Dancing, walking, or gardening are joyful ways to keep moving.</span>
                               </li>
-                              <li className="flex items-start gap-2 text-sm text-diana-text-secondary">
-                                <CheckCircle size={16} className="text-green-500 mt-0.5 shrink-0" />
-                                Consider HbA1c testing as part of routine screening
+                              <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
+                                <div className="mt-1 bg-green-50 text-green-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
+                                <span><strong>See your doctor for routine wellness visits</strong> just to keep everything wonderfully on track.</span>
                               </li>
                             </>
                           )}
                         </ul>
                       </motion.div>
 
-                      {/* Footer Disclaimer */}
-                      <div className="bg-slate-100 border border-slate-200 rounded-xl p-4 mb-6">
-                        <p className="text-xs text-slate-600 flex items-start gap-2">
-                          <Info size={14} className="mt-0.5 shrink-0" />
-                          <span>
-                            This analysis is generated by machine learning models (AUC: 0.694) and is for 
-                            <strong> screening purposes only</strong>. It does not replace professional medical advice. 
-                            Always consult with your healthcare provider for personalized medical guidance. 
-                            Model version: {model_version || 'clinical_v2'}.
-                          </span>
+                      {/* Gentle Disclaimer */}
+                      <div className="bg-slate-100 rounded-2xl p-6 mb-7 text-center">
+                        <p className="text-[15px] text-slate-600 leading-relaxed font-medium max-w-lg mx-auto">
+                          Remember, this is just a supportive tool to help you stay informed, not a medical diagnosis. We always encourage you to talk with your doctor regarding your health.
                         </p>
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex gap-3 pt-2">
+                      <div className="flex gap-5 pt-2">
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={onClose}
-                          className="flex-1 px-6 py-3 border border-diana-sand text-diana-text-secondary font-bold rounded-xl hover:bg-diana-stone transition-all"
+                          className="flex-1 py-4 text-slate-500 font-semibold text-[17px] rounded-2xl hover:bg-slate-100 transition-all"
                         >
-                          Cancel
+                          Close
                         </motion.button>
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={onConfirm}
-                          className="flex-1 px-6 py-3 bg-diana-forest text-white font-bold rounded-xl hover:bg-diana-forest-light transition-all shadow-lg shadow-diana-forest/20"
+                          className="flex-1 py-4 bg-slate-800 text-white font-semibold text-[17px] rounded-2xl shadow-xl shadow-slate-800/10 hover:bg-slate-700 transition-all tracking-wide"
                         >
-                          Save to Dashboard
+                          Save My Results
                         </motion.button>
                       </div>
                     </motion.div>
@@ -538,24 +414,24 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   );
 };
 
-// Helper function to format warning messages
-const formatWarning = (warning) => {
+// Friendly warning translations
+const formatFriendlyWarning = (warning) => {
   const warningMap = {
-    'fbs_diabetic_range': 'Fasting blood sugar is in diabetic range (≥126 mg/dL)',
-    'fbs_prediabetic_range': 'Fasting blood sugar is in pre-diabetic range (100-125 mg/dL)',
-    'hba1c_diabetic_range': 'HbA1c is in diabetic range (≥6.5%)',
-    'hba1c_prediabetic_range': 'HbA1c is in pre-diabetic range (5.7-6.4%)',
-    'chol_high': 'Total cholesterol is high (≥240 mg/dL)',
-    'chol_borderline': 'Total cholesterol is borderline (200-239 mg/dL)',
-    'ldl_high': 'LDL cholesterol is high (≥160 mg/dL)',
-    'ldl_borderline': 'LDL cholesterol is borderline (130-159 mg/dL)',
-    'hdl_low': 'HDL cholesterol is low (<50 mg/dL for women)',
-    'triglycerides_high': 'Triglycerides are high (≥200 mg/dL)',
-    'triglycerides_borderline': 'Triglycerides are borderline (150-199 mg/dL)',
-    'bp_high': 'Blood pressure is high (≥140/90 mmHg)',
-    'bp_elevated': 'Blood pressure is elevated (120-139/80-89 mmHg)',
-    'bmi_obese': 'BMI indicates obesity (≥30 kg/m²)',
-    'bmi_overweight': 'BMI indicates overweight (25-29.9 kg/m²)'
+    'fbs_diabetic_range': 'Your fasting blood sugar was a bit elevated.',
+    'fbs_prediabetic_range': 'Your fasting blood sugar is slightly higher than usual.',
+    'hba1c_diabetic_range': 'Your recent blood sugar average (HbA1c) is a bit high.',
+    'hba1c_prediabetic_range': 'Your recent blood sugar average (HbA1c) is slightly elevated.',
+    'chol_high': 'Your total cholesterol is on the higher side.',
+    'chol_borderline': 'Your total cholesterol is slightly elevated.',
+    'ldl_high': 'Your LDL (often called "bad") cholesterol is a bit high.',
+    'ldl_borderline': 'Your LDL cholesterol is slightly above the ideal range.',
+    'hdl_low': 'Your HDL (often called "good") cholesterol is a little low.',
+    'triglycerides_high': 'Your triglycerides (a type of fat in blood) are high.',
+    'triglycerides_borderline': 'Your triglycerides are slightly elevated.',
+    'bp_high': 'Your blood pressure is running a little high.',
+    'bp_elevated': 'Your blood pressure is slightly elevated.',
+    'bmi_obese': 'Your BMI indicates it might be good to discuss weight management with your doctor.',
+    'bmi_overweight': 'Your BMI is slightly above the typical range.'
   };
   return warningMap[warning] || warning.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };

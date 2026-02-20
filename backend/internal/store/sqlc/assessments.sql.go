@@ -89,70 +89,85 @@ const createAssessment = `-- name: CreateAssessment :one
 INSERT INTO assessments (
    user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
    activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-   model_version, dataset_hash, validation_status, is_self_reported, source, notes
+   model_version, dataset_hash, validation_status, predicted_status, risk_label,
+   cluster_description, treatment_focus, at_risk_probability,
+   is_self_reported, source, notes
 ) VALUES (
    $1, $2, $3, $4, $5, $6, $7, $8, $9,
    $10, $11, $12, $13, $14, $15, $16, $17, $18,
-   $19, $20, $21, $22, $23
+   $19, $20, $21, $22, $23,
+   $24, $25, $26, $27, $28
 )
 RETURNING id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
            activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-           model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+           model_version, dataset_hash, validation_status, predicted_status, risk_label,
+           cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+           created_at, updated_at
 `
 
 type CreateAssessmentParams struct {
-	UserID           pgtype.Int4    `json:"user_id"`
-	Fbs              pgtype.Numeric `json:"fbs"`
-	Hba1c            pgtype.Numeric `json:"hba1c"`
-	Cholesterol      pgtype.Int4    `json:"cholesterol"`
-	Ldl              pgtype.Int4    `json:"ldl"`
-	Hdl              pgtype.Int4    `json:"hdl"`
-	Triglycerides    pgtype.Int4    `json:"triglycerides"`
-	Systolic         pgtype.Int4    `json:"systolic"`
-	Diastolic        pgtype.Int4    `json:"diastolic"`
-	Activity         pgtype.Text    `json:"activity"`
-	HistoryFlag      pgtype.Bool    `json:"history_flag"`
-	Smoking          pgtype.Text    `json:"smoking"`
-	Hypertension     pgtype.Text    `json:"hypertension"`
-	HeartDisease     pgtype.Text    `json:"heart_disease"`
-	Bmi              pgtype.Numeric `json:"bmi"`
-	Cluster          pgtype.Text    `json:"cluster"`
-	RiskScore        pgtype.Int4    `json:"risk_score"`
-	ModelVersion     pgtype.Text    `json:"model_version"`
-	DatasetHash      pgtype.Text    `json:"dataset_hash"`
-	ValidationStatus pgtype.Text    `json:"validation_status"`
-	IsSelfReported   pgtype.Bool    `json:"is_self_reported"`
-	Source           pgtype.Text    `json:"source"`
-	Notes            pgtype.Text    `json:"notes"`
+	UserID             pgtype.Int4    `json:"user_id"`
+	Fbs                pgtype.Numeric `json:"fbs"`
+	Hba1c              pgtype.Numeric `json:"hba1c"`
+	Cholesterol        pgtype.Int4    `json:"cholesterol"`
+	Ldl                pgtype.Int4    `json:"ldl"`
+	Hdl                pgtype.Int4    `json:"hdl"`
+	Triglycerides      pgtype.Int4    `json:"triglycerides"`
+	Systolic           pgtype.Int4    `json:"systolic"`
+	Diastolic          pgtype.Int4    `json:"diastolic"`
+	Activity           pgtype.Text    `json:"activity"`
+	HistoryFlag        pgtype.Bool    `json:"history_flag"`
+	Smoking            pgtype.Text    `json:"smoking"`
+	Hypertension       pgtype.Text    `json:"hypertension"`
+	HeartDisease       pgtype.Text    `json:"heart_disease"`
+	Bmi                pgtype.Numeric `json:"bmi"`
+	Cluster            pgtype.Text    `json:"cluster"`
+	RiskScore          pgtype.Int4    `json:"risk_score"`
+	ModelVersion       pgtype.Text    `json:"model_version"`
+	DatasetHash        pgtype.Text    `json:"dataset_hash"`
+	ValidationStatus   pgtype.Text    `json:"validation_status"`
+	PredictedStatus    pgtype.Text    `json:"predicted_status"`
+	RiskLabel          pgtype.Text    `json:"risk_label"`
+	ClusterDescription pgtype.Text    `json:"cluster_description"`
+	TreatmentFocus     pgtype.Text    `json:"treatment_focus"`
+	AtRiskProbability  pgtype.Float8  `json:"at_risk_probability"`
+	IsSelfReported     bool           `json:"is_self_reported"`
+	Source             string         `json:"source"`
+	Notes              pgtype.Text    `json:"notes"`
 }
 
 type CreateAssessmentRow struct {
-	ID               int32              `json:"id"`
-	UserID           pgtype.Int4        `json:"user_id"`
-	Fbs              pgtype.Numeric     `json:"fbs"`
-	Hba1c            pgtype.Numeric     `json:"hba1c"`
-	Cholesterol      pgtype.Int4        `json:"cholesterol"`
-	Ldl              pgtype.Int4        `json:"ldl"`
-	Hdl              pgtype.Int4        `json:"hdl"`
-	Triglycerides    pgtype.Int4        `json:"triglycerides"`
-	Systolic         pgtype.Int4        `json:"systolic"`
-	Diastolic        pgtype.Int4        `json:"diastolic"`
-	Activity         pgtype.Text        `json:"activity"`
-	HistoryFlag      pgtype.Bool        `json:"history_flag"`
-	Smoking          pgtype.Text        `json:"smoking"`
-	Hypertension     pgtype.Text        `json:"hypertension"`
-	HeartDisease     pgtype.Text        `json:"heart_disease"`
-	Bmi              pgtype.Numeric     `json:"bmi"`
-	Cluster          pgtype.Text        `json:"cluster"`
-	RiskScore        pgtype.Int4        `json:"risk_score"`
-	ModelVersion     pgtype.Text        `json:"model_version"`
-	DatasetHash      pgtype.Text        `json:"dataset_hash"`
-	ValidationStatus pgtype.Text        `json:"validation_status"`
-	IsSelfReported   bool               `json:"is_self_reported"`
-	Source           string             `json:"source"`
-	Notes            pgtype.Text        `json:"notes"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	ID                 int32              `json:"id"`
+	UserID             pgtype.Int4        `json:"user_id"`
+	Fbs                pgtype.Numeric     `json:"fbs"`
+	Hba1c              pgtype.Numeric     `json:"hba1c"`
+	Cholesterol        pgtype.Int4        `json:"cholesterol"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	Systolic           pgtype.Int4        `json:"systolic"`
+	Diastolic          pgtype.Int4        `json:"diastolic"`
+	Activity           pgtype.Text        `json:"activity"`
+	HistoryFlag        pgtype.Bool        `json:"history_flag"`
+	Smoking            pgtype.Text        `json:"smoking"`
+	Hypertension       pgtype.Text        `json:"hypertension"`
+	HeartDisease       pgtype.Text        `json:"heart_disease"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	Cluster            pgtype.Text        `json:"cluster"`
+	RiskScore          pgtype.Int4        `json:"risk_score"`
+	ModelVersion       pgtype.Text        `json:"model_version"`
+	DatasetHash        pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus   pgtype.Text        `json:"validation_status"`
+	PredictedStatus    pgtype.Text        `json:"predicted_status"`
+	RiskLabel          pgtype.Text        `json:"risk_label"`
+	ClusterDescription pgtype.Text        `json:"cluster_description"`
+	TreatmentFocus     pgtype.Text        `json:"treatment_focus"`
+	AtRiskProbability  pgtype.Float8      `json:"at_risk_probability"`
+	IsSelfReported     bool               `json:"is_self_reported"`
+	Source             string             `json:"source"`
+	Notes              pgtype.Text        `json:"notes"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) CreateAssessment(ctx context.Context, arg CreateAssessmentParams) (CreateAssessmentRow, error) {
@@ -177,6 +192,11 @@ func (q *Queries) CreateAssessment(ctx context.Context, arg CreateAssessmentPara
 		arg.ModelVersion,
 		arg.DatasetHash,
 		arg.ValidationStatus,
+		arg.PredictedStatus,
+		arg.RiskLabel,
+		arg.ClusterDescription,
+		arg.TreatmentFocus,
+		arg.AtRiskProbability,
 		arg.IsSelfReported,
 		arg.Source,
 		arg.Notes,
@@ -204,6 +224,11 @@ func (q *Queries) CreateAssessment(ctx context.Context, arg CreateAssessmentPara
 		&i.ModelVersion,
 		&i.DatasetHash,
 		&i.ValidationStatus,
+		&i.PredictedStatus,
+		&i.RiskLabel,
+		&i.ClusterDescription,
+		&i.TreatmentFocus,
+		&i.AtRiskProbability,
 		&i.IsSelfReported,
 		&i.Source,
 		&i.Notes,
@@ -226,39 +251,46 @@ func (q *Queries) DeleteAssessment(ctx context.Context, id int32) error {
 const getAssessment = `-- name: GetAssessment :one
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+    model_version, dataset_hash, validation_status, predicted_status, risk_label,
+    cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+    created_at, updated_at
 FROM assessments
 WHERE id = $1
 LIMIT 1
 `
 
 type GetAssessmentRow struct {
-	ID               int32              `json:"id"`
-	UserID           pgtype.Int4        `json:"user_id"`
-	Fbs              pgtype.Numeric     `json:"fbs"`
-	Hba1c            pgtype.Numeric     `json:"hba1c"`
-	Cholesterol      pgtype.Int4        `json:"cholesterol"`
-	Ldl              pgtype.Int4        `json:"ldl"`
-	Hdl              pgtype.Int4        `json:"hdl"`
-	Triglycerides    pgtype.Int4        `json:"triglycerides"`
-	Systolic         pgtype.Int4        `json:"systolic"`
-	Diastolic        pgtype.Int4        `json:"diastolic"`
-	Activity         pgtype.Text        `json:"activity"`
-	HistoryFlag      pgtype.Bool        `json:"history_flag"`
-	Smoking          pgtype.Text        `json:"smoking"`
-	Hypertension     pgtype.Text        `json:"hypertension"`
-	HeartDisease     pgtype.Text        `json:"heart_disease"`
-	Bmi              pgtype.Numeric     `json:"bmi"`
-	Cluster          pgtype.Text        `json:"cluster"`
-	RiskScore        pgtype.Int4        `json:"risk_score"`
-	ModelVersion     pgtype.Text        `json:"model_version"`
-	DatasetHash      pgtype.Text        `json:"dataset_hash"`
-	ValidationStatus pgtype.Text        `json:"validation_status"`
-	IsSelfReported   bool               `json:"is_self_reported"`
-	Source           string             `json:"source"`
-	Notes            pgtype.Text        `json:"notes"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	ID                 int32              `json:"id"`
+	UserID             pgtype.Int4        `json:"user_id"`
+	Fbs                pgtype.Numeric     `json:"fbs"`
+	Hba1c              pgtype.Numeric     `json:"hba1c"`
+	Cholesterol        pgtype.Int4        `json:"cholesterol"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	Systolic           pgtype.Int4        `json:"systolic"`
+	Diastolic          pgtype.Int4        `json:"diastolic"`
+	Activity           pgtype.Text        `json:"activity"`
+	HistoryFlag        pgtype.Bool        `json:"history_flag"`
+	Smoking            pgtype.Text        `json:"smoking"`
+	Hypertension       pgtype.Text        `json:"hypertension"`
+	HeartDisease       pgtype.Text        `json:"heart_disease"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	Cluster            pgtype.Text        `json:"cluster"`
+	RiskScore          pgtype.Int4        `json:"risk_score"`
+	ModelVersion       pgtype.Text        `json:"model_version"`
+	DatasetHash        pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus   pgtype.Text        `json:"validation_status"`
+	PredictedStatus    pgtype.Text        `json:"predicted_status"`
+	RiskLabel          pgtype.Text        `json:"risk_label"`
+	ClusterDescription pgtype.Text        `json:"cluster_description"`
+	TreatmentFocus     pgtype.Text        `json:"treatment_focus"`
+	AtRiskProbability  pgtype.Float8      `json:"at_risk_probability"`
+	IsSelfReported     bool               `json:"is_self_reported"`
+	Source             string             `json:"source"`
+	Notes              pgtype.Text        `json:"notes"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) GetAssessment(ctx context.Context, id int32) (GetAssessmentRow, error) {
@@ -286,6 +318,11 @@ func (q *Queries) GetAssessment(ctx context.Context, id int32) (GetAssessmentRow
 		&i.ModelVersion,
 		&i.DatasetHash,
 		&i.ValidationStatus,
+		&i.PredictedStatus,
+		&i.RiskLabel,
+		&i.ClusterDescription,
+		&i.TreatmentFocus,
+		&i.AtRiskProbability,
 		&i.IsSelfReported,
 		&i.Source,
 		&i.Notes,
@@ -350,7 +387,9 @@ func (q *Queries) GetAssessmentTrendByUser(ctx context.Context, userID pgtype.In
 const getLatestAssessmentByUser = `-- name: GetLatestAssessmentByUser :one
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+    model_version, dataset_hash, validation_status, predicted_status, risk_label,
+    cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+    created_at, updated_at
 FROM assessments
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -358,32 +397,37 @@ LIMIT 1
 `
 
 type GetLatestAssessmentByUserRow struct {
-	ID               int32              `json:"id"`
-	UserID           pgtype.Int4        `json:"user_id"`
-	Fbs              pgtype.Numeric     `json:"fbs"`
-	Hba1c            pgtype.Numeric     `json:"hba1c"`
-	Cholesterol      pgtype.Int4        `json:"cholesterol"`
-	Ldl              pgtype.Int4        `json:"ldl"`
-	Hdl              pgtype.Int4        `json:"hdl"`
-	Triglycerides    pgtype.Int4        `json:"triglycerides"`
-	Systolic         pgtype.Int4        `json:"systolic"`
-	Diastolic        pgtype.Int4        `json:"diastolic"`
-	Activity         pgtype.Text        `json:"activity"`
-	HistoryFlag      pgtype.Bool        `json:"history_flag"`
-	Smoking          pgtype.Text        `json:"smoking"`
-	Hypertension     pgtype.Text        `json:"hypertension"`
-	HeartDisease     pgtype.Text        `json:"heart_disease"`
-	Bmi              pgtype.Numeric     `json:"bmi"`
-	Cluster          pgtype.Text        `json:"cluster"`
-	RiskScore        pgtype.Int4        `json:"risk_score"`
-	ModelVersion     pgtype.Text        `json:"model_version"`
-	DatasetHash      pgtype.Text        `json:"dataset_hash"`
-	ValidationStatus pgtype.Text        `json:"validation_status"`
-	IsSelfReported   bool               `json:"is_self_reported"`
-	Source           string             `json:"source"`
-	Notes            pgtype.Text        `json:"notes"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	ID                 int32              `json:"id"`
+	UserID             pgtype.Int4        `json:"user_id"`
+	Fbs                pgtype.Numeric     `json:"fbs"`
+	Hba1c              pgtype.Numeric     `json:"hba1c"`
+	Cholesterol        pgtype.Int4        `json:"cholesterol"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	Systolic           pgtype.Int4        `json:"systolic"`
+	Diastolic          pgtype.Int4        `json:"diastolic"`
+	Activity           pgtype.Text        `json:"activity"`
+	HistoryFlag        pgtype.Bool        `json:"history_flag"`
+	Smoking            pgtype.Text        `json:"smoking"`
+	Hypertension       pgtype.Text        `json:"hypertension"`
+	HeartDisease       pgtype.Text        `json:"heart_disease"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	Cluster            pgtype.Text        `json:"cluster"`
+	RiskScore          pgtype.Int4        `json:"risk_score"`
+	ModelVersion       pgtype.Text        `json:"model_version"`
+	DatasetHash        pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus   pgtype.Text        `json:"validation_status"`
+	PredictedStatus    pgtype.Text        `json:"predicted_status"`
+	RiskLabel          pgtype.Text        `json:"risk_label"`
+	ClusterDescription pgtype.Text        `json:"cluster_description"`
+	TreatmentFocus     pgtype.Text        `json:"treatment_focus"`
+	AtRiskProbability  pgtype.Float8      `json:"at_risk_probability"`
+	IsSelfReported     bool               `json:"is_self_reported"`
+	Source             string             `json:"source"`
+	Notes              pgtype.Text        `json:"notes"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) GetLatestAssessmentByUser(ctx context.Context, userID pgtype.Int4) (GetLatestAssessmentByUserRow, error) {
@@ -411,6 +455,11 @@ func (q *Queries) GetLatestAssessmentByUser(ctx context.Context, userID pgtype.I
 		&i.ModelVersion,
 		&i.DatasetHash,
 		&i.ValidationStatus,
+		&i.PredictedStatus,
+		&i.RiskLabel,
+		&i.ClusterDescription,
+		&i.TreatmentFocus,
+		&i.AtRiskProbability,
 		&i.IsSelfReported,
 		&i.Source,
 		&i.Notes,
@@ -437,39 +486,46 @@ func (q *Queries) GetLatestAssessmentDateByUser(ctx context.Context, userID pgty
 const listAssessmentsByUser = `-- name: ListAssessmentsByUser :many
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+    model_version, dataset_hash, validation_status, predicted_status, risk_label,
+    cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+    created_at, updated_at
 FROM assessments
 WHERE user_id = $1
 ORDER BY created_at DESC
 `
 
 type ListAssessmentsByUserRow struct {
-	ID               int32              `json:"id"`
-	UserID           pgtype.Int4        `json:"user_id"`
-	Fbs              pgtype.Numeric     `json:"fbs"`
-	Hba1c            pgtype.Numeric     `json:"hba1c"`
-	Cholesterol      pgtype.Int4        `json:"cholesterol"`
-	Ldl              pgtype.Int4        `json:"ldl"`
-	Hdl              pgtype.Int4        `json:"hdl"`
-	Triglycerides    pgtype.Int4        `json:"triglycerides"`
-	Systolic         pgtype.Int4        `json:"systolic"`
-	Diastolic        pgtype.Int4        `json:"diastolic"`
-	Activity         pgtype.Text        `json:"activity"`
-	HistoryFlag      pgtype.Bool        `json:"history_flag"`
-	Smoking          pgtype.Text        `json:"smoking"`
-	Hypertension     pgtype.Text        `json:"hypertension"`
-	HeartDisease     pgtype.Text        `json:"heart_disease"`
-	Bmi              pgtype.Numeric     `json:"bmi"`
-	Cluster          pgtype.Text        `json:"cluster"`
-	RiskScore        pgtype.Int4        `json:"risk_score"`
-	ModelVersion     pgtype.Text        `json:"model_version"`
-	DatasetHash      pgtype.Text        `json:"dataset_hash"`
-	ValidationStatus pgtype.Text        `json:"validation_status"`
-	IsSelfReported   bool               `json:"is_self_reported"`
-	Source           string             `json:"source"`
-	Notes            pgtype.Text        `json:"notes"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	ID                 int32              `json:"id"`
+	UserID             pgtype.Int4        `json:"user_id"`
+	Fbs                pgtype.Numeric     `json:"fbs"`
+	Hba1c              pgtype.Numeric     `json:"hba1c"`
+	Cholesterol        pgtype.Int4        `json:"cholesterol"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	Systolic           pgtype.Int4        `json:"systolic"`
+	Diastolic          pgtype.Int4        `json:"diastolic"`
+	Activity           pgtype.Text        `json:"activity"`
+	HistoryFlag        pgtype.Bool        `json:"history_flag"`
+	Smoking            pgtype.Text        `json:"smoking"`
+	Hypertension       pgtype.Text        `json:"hypertension"`
+	HeartDisease       pgtype.Text        `json:"heart_disease"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	Cluster            pgtype.Text        `json:"cluster"`
+	RiskScore          pgtype.Int4        `json:"risk_score"`
+	ModelVersion       pgtype.Text        `json:"model_version"`
+	DatasetHash        pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus   pgtype.Text        `json:"validation_status"`
+	PredictedStatus    pgtype.Text        `json:"predicted_status"`
+	RiskLabel          pgtype.Text        `json:"risk_label"`
+	ClusterDescription pgtype.Text        `json:"cluster_description"`
+	TreatmentFocus     pgtype.Text        `json:"treatment_focus"`
+	AtRiskProbability  pgtype.Float8      `json:"at_risk_probability"`
+	IsSelfReported     bool               `json:"is_self_reported"`
+	Source             string             `json:"source"`
+	Notes              pgtype.Text        `json:"notes"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) ListAssessmentsByUser(ctx context.Context, userID pgtype.Int4) ([]ListAssessmentsByUserRow, error) {
@@ -503,6 +559,11 @@ func (q *Queries) ListAssessmentsByUser(ctx context.Context, userID pgtype.Int4)
 			&i.ModelVersion,
 			&i.DatasetHash,
 			&i.ValidationStatus,
+			&i.PredictedStatus,
+			&i.RiskLabel,
+			&i.ClusterDescription,
+			&i.TreatmentFocus,
+			&i.AtRiskProbability,
 			&i.IsSelfReported,
 			&i.Source,
 			&i.Notes,
@@ -522,7 +583,9 @@ func (q *Queries) ListAssessmentsByUser(ctx context.Context, userID pgtype.Int4)
 const listAssessmentsByUserPaginated = `-- name: ListAssessmentsByUserPaginated :many
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+    model_version, dataset_hash, validation_status, predicted_status, risk_label,
+    cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+    created_at, updated_at
 FROM assessments
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -536,32 +599,37 @@ type ListAssessmentsByUserPaginatedParams struct {
 }
 
 type ListAssessmentsByUserPaginatedRow struct {
-	ID               int32              `json:"id"`
-	UserID           pgtype.Int4        `json:"user_id"`
-	Fbs              pgtype.Numeric     `json:"fbs"`
-	Hba1c            pgtype.Numeric     `json:"hba1c"`
-	Cholesterol      pgtype.Int4        `json:"cholesterol"`
-	Ldl              pgtype.Int4        `json:"ldl"`
-	Hdl              pgtype.Int4        `json:"hdl"`
-	Triglycerides    pgtype.Int4        `json:"triglycerides"`
-	Systolic         pgtype.Int4        `json:"systolic"`
-	Diastolic        pgtype.Int4        `json:"diastolic"`
-	Activity         pgtype.Text        `json:"activity"`
-	HistoryFlag      pgtype.Bool        `json:"history_flag"`
-	Smoking          pgtype.Text        `json:"smoking"`
-	Hypertension     pgtype.Text        `json:"hypertension"`
-	HeartDisease     pgtype.Text        `json:"heart_disease"`
-	Bmi              pgtype.Numeric     `json:"bmi"`
-	Cluster          pgtype.Text        `json:"cluster"`
-	RiskScore        pgtype.Int4        `json:"risk_score"`
-	ModelVersion     pgtype.Text        `json:"model_version"`
-	DatasetHash      pgtype.Text        `json:"dataset_hash"`
-	ValidationStatus pgtype.Text        `json:"validation_status"`
-	IsSelfReported   bool               `json:"is_self_reported"`
-	Source           string             `json:"source"`
-	Notes            pgtype.Text        `json:"notes"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	ID                 int32              `json:"id"`
+	UserID             pgtype.Int4        `json:"user_id"`
+	Fbs                pgtype.Numeric     `json:"fbs"`
+	Hba1c              pgtype.Numeric     `json:"hba1c"`
+	Cholesterol        pgtype.Int4        `json:"cholesterol"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	Systolic           pgtype.Int4        `json:"systolic"`
+	Diastolic          pgtype.Int4        `json:"diastolic"`
+	Activity           pgtype.Text        `json:"activity"`
+	HistoryFlag        pgtype.Bool        `json:"history_flag"`
+	Smoking            pgtype.Text        `json:"smoking"`
+	Hypertension       pgtype.Text        `json:"hypertension"`
+	HeartDisease       pgtype.Text        `json:"heart_disease"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	Cluster            pgtype.Text        `json:"cluster"`
+	RiskScore          pgtype.Int4        `json:"risk_score"`
+	ModelVersion       pgtype.Text        `json:"model_version"`
+	DatasetHash        pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus   pgtype.Text        `json:"validation_status"`
+	PredictedStatus    pgtype.Text        `json:"predicted_status"`
+	RiskLabel          pgtype.Text        `json:"risk_label"`
+	ClusterDescription pgtype.Text        `json:"cluster_description"`
+	TreatmentFocus     pgtype.Text        `json:"treatment_focus"`
+	AtRiskProbability  pgtype.Float8      `json:"at_risk_probability"`
+	IsSelfReported     bool               `json:"is_self_reported"`
+	Source             string             `json:"source"`
+	Notes              pgtype.Text        `json:"notes"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) ListAssessmentsByUserPaginated(ctx context.Context, arg ListAssessmentsByUserPaginatedParams) ([]ListAssessmentsByUserPaginatedRow, error) {
@@ -595,6 +663,11 @@ func (q *Queries) ListAssessmentsByUserPaginated(ctx context.Context, arg ListAs
 			&i.ModelVersion,
 			&i.DatasetHash,
 			&i.ValidationStatus,
+			&i.PredictedStatus,
+			&i.RiskLabel,
+			&i.ClusterDescription,
+			&i.TreatmentFocus,
+			&i.AtRiskProbability,
 			&i.IsSelfReported,
 			&i.Source,
 			&i.Notes,
@@ -614,39 +687,46 @@ func (q *Queries) ListAssessmentsByUserPaginated(ctx context.Context, arg ListAs
 const listAssessmentsLimited = `-- name: ListAssessmentsLimited :many
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-    model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+    model_version, dataset_hash, validation_status, predicted_status, risk_label,
+    cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+    created_at, updated_at
 FROM assessments
 ORDER BY created_at DESC
 LIMIT $1
 `
 
 type ListAssessmentsLimitedRow struct {
-	ID               int32              `json:"id"`
-	UserID           pgtype.Int4        `json:"user_id"`
-	Fbs              pgtype.Numeric     `json:"fbs"`
-	Hba1c            pgtype.Numeric     `json:"hba1c"`
-	Cholesterol      pgtype.Int4        `json:"cholesterol"`
-	Ldl              pgtype.Int4        `json:"ldl"`
-	Hdl              pgtype.Int4        `json:"hdl"`
-	Triglycerides    pgtype.Int4        `json:"triglycerides"`
-	Systolic         pgtype.Int4        `json:"systolic"`
-	Diastolic        pgtype.Int4        `json:"diastolic"`
-	Activity         pgtype.Text        `json:"activity"`
-	HistoryFlag      pgtype.Bool        `json:"history_flag"`
-	Smoking          pgtype.Text        `json:"smoking"`
-	Hypertension     pgtype.Text        `json:"hypertension"`
-	HeartDisease     pgtype.Text        `json:"heart_disease"`
-	Bmi              pgtype.Numeric     `json:"bmi"`
-	Cluster          pgtype.Text        `json:"cluster"`
-	RiskScore        pgtype.Int4        `json:"risk_score"`
-	ModelVersion     pgtype.Text        `json:"model_version"`
-	DatasetHash      pgtype.Text        `json:"dataset_hash"`
-	ValidationStatus pgtype.Text        `json:"validation_status"`
-	IsSelfReported   bool               `json:"is_self_reported"`
-	Source           string             `json:"source"`
-	Notes            pgtype.Text        `json:"notes"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	ID                 int32              `json:"id"`
+	UserID             pgtype.Int4        `json:"user_id"`
+	Fbs                pgtype.Numeric     `json:"fbs"`
+	Hba1c              pgtype.Numeric     `json:"hba1c"`
+	Cholesterol        pgtype.Int4        `json:"cholesterol"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	Systolic           pgtype.Int4        `json:"systolic"`
+	Diastolic          pgtype.Int4        `json:"diastolic"`
+	Activity           pgtype.Text        `json:"activity"`
+	HistoryFlag        pgtype.Bool        `json:"history_flag"`
+	Smoking            pgtype.Text        `json:"smoking"`
+	Hypertension       pgtype.Text        `json:"hypertension"`
+	HeartDisease       pgtype.Text        `json:"heart_disease"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	Cluster            pgtype.Text        `json:"cluster"`
+	RiskScore          pgtype.Int4        `json:"risk_score"`
+	ModelVersion       pgtype.Text        `json:"model_version"`
+	DatasetHash        pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus   pgtype.Text        `json:"validation_status"`
+	PredictedStatus    pgtype.Text        `json:"predicted_status"`
+	RiskLabel          pgtype.Text        `json:"risk_label"`
+	ClusterDescription pgtype.Text        `json:"cluster_description"`
+	TreatmentFocus     pgtype.Text        `json:"treatment_focus"`
+	AtRiskProbability  pgtype.Float8      `json:"at_risk_probability"`
+	IsSelfReported     bool               `json:"is_self_reported"`
+	Source             string             `json:"source"`
+	Notes              pgtype.Text        `json:"notes"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) ListAssessmentsLimited(ctx context.Context, limit int32) ([]ListAssessmentsLimitedRow, error) {
@@ -680,6 +760,11 @@ func (q *Queries) ListAssessmentsLimited(ctx context.Context, limit int32) ([]Li
 			&i.ModelVersion,
 			&i.DatasetHash,
 			&i.ValidationStatus,
+			&i.PredictedStatus,
+			&i.RiskLabel,
+			&i.ClusterDescription,
+			&i.TreatmentFocus,
+			&i.AtRiskProbability,
 			&i.IsSelfReported,
 			&i.Source,
 			&i.Notes,
@@ -789,66 +874,83 @@ SET user_id = $1,
     model_version = $18,
     dataset_hash = $19,
     validation_status = $20,
-    notes = $21,
+    predicted_status = $21,
+    risk_label = $22,
+    cluster_description = $23,
+    treatment_focus = $24,
+    at_risk_probability = $25,
+    notes = $26,
     updated_at = NOW()
-WHERE id = $22
+WHERE id = $27
 RETURNING id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
           activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
-          model_version, dataset_hash, validation_status, is_self_reported, source, notes, created_at, updated_at
+          model_version, dataset_hash, validation_status, predicted_status, risk_label,
+          cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
+          created_at, updated_at
 `
 
 type UpdateAssessmentParams struct {
-	UserID           pgtype.Int4    `json:"user_id"`
-	Fbs              pgtype.Numeric `json:"fbs"`
-	Hba1c            pgtype.Numeric `json:"hba1c"`
-	Cholesterol      pgtype.Int4    `json:"cholesterol"`
-	Ldl              pgtype.Int4    `json:"ldl"`
-	Hdl              pgtype.Int4    `json:"hdl"`
-	Triglycerides    pgtype.Int4    `json:"triglycerides"`
-	Systolic         pgtype.Int4    `json:"systolic"`
-	Diastolic        pgtype.Int4    `json:"diastolic"`
-	Activity         pgtype.Text    `json:"activity"`
-	HistoryFlag      pgtype.Bool    `json:"history_flag"`
-	Smoking          pgtype.Text    `json:"smoking"`
-	Hypertension     pgtype.Text    `json:"hypertension"`
-	HeartDisease     pgtype.Text    `json:"heart_disease"`
-	Bmi              pgtype.Numeric `json:"bmi"`
-	Cluster          pgtype.Text    `json:"cluster"`
-	RiskScore        pgtype.Int4    `json:"risk_score"`
-	ModelVersion     pgtype.Text    `json:"model_version"`
-	DatasetHash      pgtype.Text    `json:"dataset_hash"`
-	ValidationStatus pgtype.Text    `json:"validation_status"`
-	Notes            pgtype.Text    `json:"notes"`
-	ID               int32          `json:"id"`
+	UserID             pgtype.Int4    `json:"user_id"`
+	Fbs                pgtype.Numeric `json:"fbs"`
+	Hba1c              pgtype.Numeric `json:"hba1c"`
+	Cholesterol        pgtype.Int4    `json:"cholesterol"`
+	Ldl                pgtype.Int4    `json:"ldl"`
+	Hdl                pgtype.Int4    `json:"hdl"`
+	Triglycerides      pgtype.Int4    `json:"triglycerides"`
+	Systolic           pgtype.Int4    `json:"systolic"`
+	Diastolic          pgtype.Int4    `json:"diastolic"`
+	Activity           pgtype.Text    `json:"activity"`
+	HistoryFlag        pgtype.Bool    `json:"history_flag"`
+	Smoking            pgtype.Text    `json:"smoking"`
+	Hypertension       pgtype.Text    `json:"hypertension"`
+	HeartDisease       pgtype.Text    `json:"heart_disease"`
+	Bmi                pgtype.Numeric `json:"bmi"`
+	Cluster            pgtype.Text    `json:"cluster"`
+	RiskScore          pgtype.Int4    `json:"risk_score"`
+	ModelVersion       pgtype.Text    `json:"model_version"`
+	DatasetHash        pgtype.Text    `json:"dataset_hash"`
+	ValidationStatus   pgtype.Text    `json:"validation_status"`
+	PredictedStatus    pgtype.Text    `json:"predicted_status"`
+	RiskLabel          pgtype.Text    `json:"risk_label"`
+	ClusterDescription pgtype.Text    `json:"cluster_description"`
+	TreatmentFocus     pgtype.Text    `json:"treatment_focus"`
+	AtRiskProbability  pgtype.Float8  `json:"at_risk_probability"`
+	Notes              pgtype.Text    `json:"notes"`
+	ID                 int32          `json:"id"`
 }
 
 type UpdateAssessmentRow struct {
-	ID               int32              `json:"id"`
-	UserID           pgtype.Int4        `json:"user_id"`
-	Fbs              pgtype.Numeric     `json:"fbs"`
-	Hba1c            pgtype.Numeric     `json:"hba1c"`
-	Cholesterol      pgtype.Int4        `json:"cholesterol"`
-	Ldl              pgtype.Int4        `json:"ldl"`
-	Hdl              pgtype.Int4        `json:"hdl"`
-	Triglycerides    pgtype.Int4        `json:"triglycerides"`
-	Systolic         pgtype.Int4        `json:"systolic"`
-	Diastolic        pgtype.Int4        `json:"diastolic"`
-	Activity         pgtype.Text        `json:"activity"`
-	HistoryFlag      pgtype.Bool        `json:"history_flag"`
-	Smoking          pgtype.Text        `json:"smoking"`
-	Hypertension     pgtype.Text        `json:"hypertension"`
-	HeartDisease     pgtype.Text        `json:"heart_disease"`
-	Bmi              pgtype.Numeric     `json:"bmi"`
-	Cluster          pgtype.Text        `json:"cluster"`
-	RiskScore        pgtype.Int4        `json:"risk_score"`
-	ModelVersion     pgtype.Text        `json:"model_version"`
-	DatasetHash      pgtype.Text        `json:"dataset_hash"`
-	ValidationStatus pgtype.Text        `json:"validation_status"`
-	IsSelfReported   bool               `json:"is_self_reported"`
-	Source           string             `json:"source"`
-	Notes            pgtype.Text        `json:"notes"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
+	ID                 int32              `json:"id"`
+	UserID             pgtype.Int4        `json:"user_id"`
+	Fbs                pgtype.Numeric     `json:"fbs"`
+	Hba1c              pgtype.Numeric     `json:"hba1c"`
+	Cholesterol        pgtype.Int4        `json:"cholesterol"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	Systolic           pgtype.Int4        `json:"systolic"`
+	Diastolic          pgtype.Int4        `json:"diastolic"`
+	Activity           pgtype.Text        `json:"activity"`
+	HistoryFlag        pgtype.Bool        `json:"history_flag"`
+	Smoking            pgtype.Text        `json:"smoking"`
+	Hypertension       pgtype.Text        `json:"hypertension"`
+	HeartDisease       pgtype.Text        `json:"heart_disease"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	Cluster            pgtype.Text        `json:"cluster"`
+	RiskScore          pgtype.Int4        `json:"risk_score"`
+	ModelVersion       pgtype.Text        `json:"model_version"`
+	DatasetHash        pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus   pgtype.Text        `json:"validation_status"`
+	PredictedStatus    pgtype.Text        `json:"predicted_status"`
+	RiskLabel          pgtype.Text        `json:"risk_label"`
+	ClusterDescription pgtype.Text        `json:"cluster_description"`
+	TreatmentFocus     pgtype.Text        `json:"treatment_focus"`
+	AtRiskProbability  pgtype.Float8      `json:"at_risk_probability"`
+	IsSelfReported     bool               `json:"is_self_reported"`
+	Source             string             `json:"source"`
+	Notes              pgtype.Text        `json:"notes"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) UpdateAssessment(ctx context.Context, arg UpdateAssessmentParams) (UpdateAssessmentRow, error) {
@@ -873,6 +975,11 @@ func (q *Queries) UpdateAssessment(ctx context.Context, arg UpdateAssessmentPara
 		arg.ModelVersion,
 		arg.DatasetHash,
 		arg.ValidationStatus,
+		arg.PredictedStatus,
+		arg.RiskLabel,
+		arg.ClusterDescription,
+		arg.TreatmentFocus,
+		arg.AtRiskProbability,
 		arg.Notes,
 		arg.ID,
 	)
@@ -899,6 +1006,11 @@ func (q *Queries) UpdateAssessment(ctx context.Context, arg UpdateAssessmentPara
 		&i.ModelVersion,
 		&i.DatasetHash,
 		&i.ValidationStatus,
+		&i.PredictedStatus,
+		&i.RiskLabel,
+		&i.ClusterDescription,
+		&i.TreatmentFocus,
+		&i.AtRiskProbability,
 		&i.IsSelfReported,
 		&i.Source,
 		&i.Notes,

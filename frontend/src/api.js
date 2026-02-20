@@ -356,7 +356,7 @@ export const useTrends = (months = 12) => {
         const riskScoreMap = { low: 20, medium: 50, high: 80 };
         return {
           date,
-          cluster: 'SIDD', // Backend doesn't provide cluster in trends, using default
+          cluster: data.clusters?.[index] || 'Unknown',
           riskScore: riskScoreMap[riskLevel] || 0,
         };
       });

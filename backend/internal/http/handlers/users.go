@@ -158,6 +158,8 @@ func (h *UsersHandler) CompleteOnboarding(c *gin.Context) {
 		HeartDisease:              req.HeartDisease,
 		FamilyHistoryDiabetes:     req.FamilyHistoryDiabetes,
 		SmokingStatus:             req.SmokingStatus,
+		PhysicalActivity:          req.PhysicalActivity,
+		Alcohol:                   req.Alcohol,
 		AssessmentFrequencyMonths: req.AssessmentFrequencyMonths,
 		ReminderEmail:             req.ReminderEmail,
 	}
