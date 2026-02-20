@@ -11,32 +11,37 @@ import (
 )
 
 type Assessment struct {
-	ID               int32              `json:"id"`
-	Fbs              pgtype.Numeric     `json:"fbs"`
-	Hba1c            pgtype.Numeric     `json:"hba1c"`
-	Cholesterol      pgtype.Int4        `json:"cholesterol"`
-	Ldl              pgtype.Int4        `json:"ldl"`
-	Hdl              pgtype.Int4        `json:"hdl"`
-	Triglycerides    pgtype.Int4        `json:"triglycerides"`
-	Systolic         pgtype.Int4        `json:"systolic"`
-	Diastolic        pgtype.Int4        `json:"diastolic"`
-	Activity         pgtype.Text        `json:"activity"`
-	HistoryFlag      pgtype.Bool        `json:"history_flag"`
-	Smoking          pgtype.Text        `json:"smoking"`
-	Hypertension     pgtype.Text        `json:"hypertension"`
-	HeartDisease     pgtype.Text        `json:"heart_disease"`
-	Bmi              pgtype.Numeric     `json:"bmi"`
-	Cluster          pgtype.Text        `json:"cluster"`
-	RiskScore        pgtype.Int4        `json:"risk_score"`
-	ModelVersion     pgtype.Text        `json:"model_version"`
-	DatasetHash      pgtype.Text        `json:"dataset_hash"`
-	ValidationStatus pgtype.Text        `json:"validation_status"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `json:"updated_at"`
-	UserID           pgtype.Int4        `json:"user_id"`
-	IsSelfReported   bool               `json:"is_self_reported"`
-	Source           string             `json:"source"`
-	Notes            pgtype.Text        `json:"notes"`
+	ID                 int32              `json:"id"`
+	Fbs                pgtype.Numeric     `json:"fbs"`
+	Hba1c              pgtype.Numeric     `json:"hba1c"`
+	Cholesterol        pgtype.Int4        `json:"cholesterol"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	Systolic           pgtype.Int4        `json:"systolic"`
+	Diastolic          pgtype.Int4        `json:"diastolic"`
+	Activity           pgtype.Text        `json:"activity"`
+	HistoryFlag        pgtype.Bool        `json:"history_flag"`
+	Smoking            pgtype.Text        `json:"smoking"`
+	Hypertension       pgtype.Text        `json:"hypertension"`
+	HeartDisease       pgtype.Text        `json:"heart_disease"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	Cluster            pgtype.Text        `json:"cluster"`
+	RiskScore          pgtype.Int4        `json:"risk_score"`
+	ModelVersion       pgtype.Text        `json:"model_version"`
+	DatasetHash        pgtype.Text        `json:"dataset_hash"`
+	ValidationStatus   pgtype.Text        `json:"validation_status"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	UserID             pgtype.Int4        `json:"user_id"`
+	IsSelfReported     bool               `json:"is_self_reported"`
+	Source             string             `json:"source"`
+	Notes              pgtype.Text        `json:"notes"`
+	PredictedStatus    pgtype.Text        `json:"predicted_status"`
+	RiskLabel          pgtype.Text        `json:"risk_label"`
+	ClusterDescription pgtype.Text        `json:"cluster_description"`
+	TreatmentFocus     pgtype.Text        `json:"treatment_focus"`
+	AtRiskProbability  pgtype.Float8      `json:"at_risk_probability"`
 }
 
 type AuditEvent struct {
@@ -165,6 +170,8 @@ type User struct {
 	EmailVerified                bool               `json:"email_verified"`
 	EmailVerifiedAt              pgtype.Timestamptz `json:"email_verified_at"`
 	Role                         string             `json:"role"`
+	PhysicalActivity             pgtype.Text        `json:"physical_activity"`
+	Alcohol                      pgtype.Text        `json:"alcohol"`
 }
 
 type UserClinic struct {

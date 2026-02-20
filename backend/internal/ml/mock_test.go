@@ -73,15 +73,30 @@ func TestMockPredictor_Predict(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cluster, risk, err := p.Predict(context.Background(), tt.input)
+			prediction, err := p.Predict(context.Background(), tt.input)
 			if err != nil {
 				t.Errorf("Predict() returned unexpected error: %v", err)
 			}
-			if cluster != tt.wantCluster {
-				t.Errorf("cluster = %q, want %q", cluster, tt.wantCluster)
+			if prediction.Cluster != tt.wantCluster {
+				t.Errorf("cluster = %q, want %q", prediction.Cluster, tt.wantCluster)
 			}
-			if risk < tt.wantRiskRange[0] || risk > tt.wantRiskRange[1] {
-				t.Errorf("risk = %d, want in range [%d, %d]", risk, tt.wantRiskRange[0], tt.wantRiskRange[1])
+			if prediction.RiskScore < tt.wantRiskRange[0] || prediction.RiskScore > tt.wantRiskRange[1] {
+				t.Errorf("risk = %d, want in range [%d, %d]", prediction.RiskScore, tt.wantRiskRange[0], tt.wantRiskRange[1])
+			}
+			if prediction.PredictedStatus == "" {
+				t.Error("predicted status should not be empty")
+			}
+			if prediction.RiskLabel == "" {
+				t.Error("risk label should not be empty")
+			}
+			if prediction.ClusterDescription == "" {
+				t.Error("cluster description should not be empty")
+			}
+			if prediction.TreatmentFocus == "" {
+				t.Error("treatment focus should not be empty")
+			}
+			if prediction.AtRiskProbability <= 0 {
+				t.Errorf("at risk probability = %f, want > 0", prediction.AtRiskProbability)
 			}
 		})
 	}

@@ -8,7 +8,7 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
   // Count-up animation for risk score
   useEffect(() => {
     if (riskScore === displayScore) return;
-    
+
     const duration = 1000; // 1 second animation
     const steps = 60; // 60fps
     const startScore = displayScore;
@@ -24,9 +24,9 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
         rafId = requestAnimationFrame(animate);
       }
     };
-    
+
     animate();
-    
+
     return () => {
       if (rafId) {
         cancelAnimationFrame(rafId);
@@ -50,15 +50,15 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
   const getClusterColor = (cluster) => {
     switch (cluster) {
       case 'SIRD':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'SIDD':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'MOD':
         return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'SIDD':
+        return 'bg-rose-100 text-rose-800 border-rose-200';
+      case 'MOD':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'MARD':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-teal-100 text-teal-800 border-teal-200';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-slate-100 text-slate-800 border-slate-200';
     }
   };
 
@@ -67,28 +67,27 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
       {/* Risk Score */}
       <motion.div
         variants={scaleIn}
-        whileHover={{ y: -4 }}
-        className="bg-white p-4 rounded-lg shadow border"
       >
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold text-gray-900">Diabetes Risk Score</h3>
+          <h3 className="text-xl font-semibold text-slate-800">Diabetes Risk Score</h3>
+        </div>
+
+        <div className="flex items-baseline gap-2 mb-5">
           <motion.span
-            className={`text-3xl font-bold px-4 py-2 rounded-lg ${getRiskColor(riskLevel)}`}
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
+            className={`text-[80px] leading-none font-light tracking-tighter text-slate-800`}
           >
             {displayScore}
           </motion.span>
         </div>
 
         <motion.div
-          className="flex items-center space-x-2"
+          className="flex items-center space-x-3"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.3 }}
         >
-          <span className="text-sm text-gray-600">Risk Level:</span>
-          <span className={`px-3 py-1 rounded-md text-sm font-medium ${getRiskColor(riskLevel)}`}>
+          <span className="text-base font-semibold text-slate-700">Risk Level:</span>
+          <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${getRiskColor(riskLevel)}`}>
             {riskLevel?.toUpperCase() || 'UNKNOWN'}
           </span>
         </motion.div>
@@ -98,15 +97,14 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
       {cluster && (
         <motion.div
           variants={scaleIn}
-          whileHover={{ y: -4 }}
-          className="mt-4 pt-4 border-t"
+          className="mt-6 pt-6 border-t border-slate-100"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.3 }}
         >
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Metabolic Subtype:</span>
-            <span className={`px-3 py-1 rounded-md text-sm font-medium ${getClusterColor(cluster)}`}>
+          <div className="flex items-center space-x-3">
+            <span className="text-base font-semibold text-slate-700">Metabolic Profile:</span>
+            <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${getClusterColor(cluster)}`}>
               {cluster}
             </span>
           </div>

@@ -22,8 +22,8 @@ from Ian_ML.common.paths import MODELS_ROOT
 
 logger = logging.getLogger(__name__)
 
-MODELS_DIR = MODELS_ROOT / "clinical_v2"
-RESULTS_DIR = MODELS_ROOT / "clinical_v2" / "results"
+MODELS_DIR = MODELS_ROOT / "binary_v2"
+RESULTS_DIR = MODELS_ROOT / "binary_v2" / "results"
 MODEL_HASHES_FILE = MODELS_DIR / "model_hashes.json"
 
 
@@ -33,40 +33,47 @@ def resolve_clinical_models_dir(explicit_dir: Optional[Path] = None) -> Path:
     Priority:
       1) explicit_dir argument
       2) CLINICAL_MODELS_DIR environment override
-      3) models/clinical_v2 (required)
+      3) models/binary_v2 (default - binary at-risk screening model)
     """
     if explicit_dir is not None:
         explicit_dir = Path(explicit_dir)
-        return _validate_clinical_v2_dir(explicit_dir)
+        return _validate_model_dir(explicit_dir)
 
     env_override = os.environ.get("CLINICAL_MODELS_DIR")
     if env_override:
-        return _validate_clinical_v2_dir(Path(env_override))
+        return _validate_model_dir(Path(env_override))
 
-    candidate = MODELS_ROOT / "clinical_v2"
-    return _validate_clinical_v2_dir(candidate)
+    # Default to binary_v2 (binary at-risk screening model with AUC 0.72)
+    candidate = MODELS_ROOT / "binary_v2"
+    return _validate_model_dir(candidate)
 
 
-def _validate_clinical_v2_dir(path: Path) -> Path:
-    """Ensure clinical_v2 artifacts are present and consistent."""
+def _validate_model_dir(path: Path) -> Path:
+    """Ensure model artifacts are present and consistent."""
     model_path = path / "best_model.joblib"
     if not model_path.exists():
+        # Fallback to clinical_v2 if binary_v2 not available
+        fallback = MODELS_ROOT / "clinical_v2"
+        if fallback.exists() and (fallback / "best_model.joblib").exists():
+            logger.warning(f"Model not found at {path}, falling back to {fallback}")
+            return _validate_model_dir(fallback)
         raise FileNotFoundError(
-            f"Clinical v2 model not found at {model_path}. clinical/ is deprecated."
+            f"Model not found at {model_path}. Run training first."
         )
 
     features_path = path / "features.json"
     if not features_path.exists():
         raise FileNotFoundError(
-            f"Clinical v2 feature manifest not found at {features_path}."
+            f"Feature manifest not found at {features_path}."
         )
 
     with open(features_path) as f:
         features_manifest = json.load(f)
     n_features = features_manifest.get("n_features")
-    if n_features not in (13, 16, 17):
+    # Support 11-17 features (binary: 11 base, 16 with enrichment, clinical: 13-17)
+    if n_features is None or not (11 <= n_features <= 17):
         raise ValueError(
-            f"Clinical v2 requires 13, 16, or 17 features, found {n_features} in {features_path}."
+            f"Model requires 11-17 features, found {n_features} in {features_path}."
         )
 
     return path
@@ -375,9 +382,18 @@ class ClinicalPredictor:
                 "Run 'python Ian_ML/training/train_v2.py' or 'python scripts/train/train_quick.py' first."
             )
         
-        self.scaler = safe_load_model(self.models_dir / "scaler.joblib")
+        # Load or extract scaler (may be separate file or embedded in pipeline)
+        scaler_path = self.models_dir / "scaler.joblib"
+        if scaler_path.exists():
+            self.scaler = safe_load_model(scaler_path)
+        else:
+            self.scaler = None
+
         imputer_path = self.models_dir / "imputer.joblib"
-        self.imputer = safe_load_model(imputer_path) if imputer_path.exists() else None
+        if imputer_path.exists():
+            self.imputer = safe_load_model(imputer_path)
+        else:
+            self.imputer = None
 
         # Cluster scaler is fitted on CLUSTER_FEATURES (5 features), not CLINICAL_FEATURES (13)
         self.cluster_features = CLUSTER_FEATURES
@@ -491,25 +507,38 @@ class ClinicalPredictor:
             metabolic_score += 1
         if bmi >= 30:
             metabolic_score += 1
-        waist = data.get('waist_circumference', 0) or 0
-        if waist >= 80:
-            metabolic_score += 1
-
+        waist = data.get('waist_circumference', np.nan) or np.nan
+        if waist == 0: waist = np.nan
+        
         # Race encoding
         race_map = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6}
-        race_raw = data.get('race_ethnicity', 0) or 0
-        race_encoded = race_map.get(int(race_raw), 0) if race_raw else 0
+        race_raw = data.get('race_ethnicity', np.nan)
+        race_encoded = race_map.get(int(race_raw), np.nan) if not pd.isna(race_raw) and race_raw else np.nan
 
         # Enrichment features with safe defaults
-        family_history = data.get('family_history_diabetes', 0) or 0
-        crp = data.get('crp', 0) or 0
+        family_history = data.get('family_history_diabetes', np.nan)
+        if family_history == 0 or family_history is None:
+            family_history = np.nan
 
-        return np.array([[bmi, tg, ldl, hdl, age,
-                          data.get('systolic', 120), data.get('diastolic', 80),
-                          bmi_category, tg_hdl_ratio,
-                          smoking_encoded, activity_encoded, alcohol_encoded,
-                          metabolic_score,
-                          waist, family_history, race_encoded, crp]], dtype=float)
+        # Build feature vector dynamically based on model's expected features
+        # Binary v2 uses 16 features (no crp), clinical_v2 may use different sets
+        feature_values = [
+            bmi, tg, ldl, hdl, age,
+            data.get('systolic', 120), data.get('diastolic', 80),
+            bmi_category, tg_hdl_ratio,
+            smoking_encoded, activity_encoded, alcohol_encoded,
+            metabolic_score,
+            waist, family_history, race_encoded
+        ]
+
+        # Only include crp if model expects 17 features (backward compat)
+        if len(self.features) == 17:
+            crp = data.get('crp', np.nan)
+            if crp == 0 or crp is None:
+                crp = np.nan
+            feature_values.append(crp)
+
+        return np.array([feature_values], dtype=float)
 
     def _build_cluster_vector(self, data: Dict[str, float]) -> np.ndarray:
         """Build the 5-feature cluster vector matching CLUSTER_FEATURES order."""
@@ -517,8 +546,24 @@ class ClinicalPredictor:
 
     def _transform_features(self, X: np.ndarray) -> np.ndarray:
         """Apply optional imputation and scaling in serving order."""
+        if self.classifier is not None and hasattr(self.classifier, "named_steps"):
+            # Pipeline model: use pipeline's imputer/scaler if separate ones not available
+            pipeline = self.classifier
+            X_work = X
+            if self.imputer is None and "imputer" in pipeline.named_steps:
+                X_work = pipeline.named_steps["imputer"].transform(X_work)
+            elif self.imputer is not None:
+                X_work = self.imputer.transform(X_work)
+            if self.scaler is None and "scaler" in pipeline.named_steps:
+                X_work = pipeline.named_steps["scaler"].transform(X_work)
+            elif self.scaler is not None:
+                X_work = self.scaler.transform(X_work)
+            return X_work
+        # Legacy: separate imputer/scaler files
         X_work = self.imputer.transform(X) if self.imputer is not None else X
-        return self.scaler.transform(X_work)
+        if self.scaler is not None:
+            return self.scaler.transform(X_work)
+        return X_work
     
     def validate_input(self, data: Dict[str, float]) -> tuple[bool, list]:
         # Only check for base features - engineered features are computed
@@ -559,12 +604,12 @@ class ClinicalPredictor:
                 "error": f"Missing required features: {missing}"
             }
         
-        # Prepare model feature vector in training order (13 features for classifier).
+        # Prepare model feature vector in training order (16 features for classifier).
         X = self._build_feature_vector(data)
 
-        X_imputed = self.imputer.transform(X) if self.imputer is not None else X
-        X_scaled = self.scaler.transform(X_imputed)
-        
+        # Transform features (handles both Pipeline and separate scaler/imputer)
+        X_scaled = self._transform_features(X)
+
         # Build separate cluster feature vector (5 features for KMeans)
         X_cluster = self._build_cluster_vector(data)
         X_cluster_scaled = (
@@ -572,30 +617,46 @@ class ClinicalPredictor:
             if self.cluster_scaler is not None
             else X_cluster  # Fallback: unscaled (KMeans will be less accurate)
         )
-        
+
         # Get prediction probabilities
         try:
-            proba = self.classifier.predict_proba(X_scaled)[0]
-            predicted_class = int(np.argmax(proba))
-            diabetic_threshold = self.decision_thresholds.get("diabetic")
-            pre_diabetic_threshold = self.decision_thresholds.get("pre_diabetic")
-            if diabetic_threshold is not None and proba[2] >= float(diabetic_threshold):
-                predicted_class = 2
-            elif (
-                pre_diabetic_threshold is not None
-                and proba[1] >= float(pre_diabetic_threshold)
-            ):
-                predicted_class = 1
-            diabetes_prob = float(proba[2] if len(proba) > 2 else max(proba))
-            at_risk_prob = float((proba[1] + proba[2]) if len(proba) > 2 else max(proba))
+            # If classifier is a pipeline, it will handle imputation and scaling itself.
+            # Otherwise, use the manually scaled features.
+            if hasattr(self.classifier, "named_steps"):
+                proba = self.classifier.predict_proba(X)[0]
+            else:
+                proba = self.classifier.predict_proba(X_scaled)[0]
+                
+            # Handle binary (2-class) vs multi-class (3-class) models
+            if len(proba) == 2:
+                # Binary model: proba[0] = Normal, proba[1] = At-Risk
+                at_risk_prob = float(proba[1])
+                diabetes_prob = float(proba[1])  # Same as at-risk for binary
+                predicted_class = 1 if proba[1] >= 0.5 else 0
+                # Use optimized threshold if available
+                threshold = self.decision_thresholds.get("at_risk", 0.5)
+                predicted_class = 1 if proba[1] >= float(threshold) else 0
+                status_map = {0: "Normal", 1: "At-Risk"}
+            else:
+                # Multi-class model (3 classes)
+                predicted_class = int(np.argmax(proba))
+                diabetic_threshold = self.decision_thresholds.get("diabetic")
+                pre_diabetic_threshold = self.decision_thresholds.get("pre_diabetic")
+                if diabetic_threshold is not None and proba[2] >= float(diabetic_threshold):
+                    predicted_class = 2
+                elif (
+                    pre_diabetic_threshold is not None
+                    and proba[1] >= float(pre_diabetic_threshold)
+                ):
+                    predicted_class = 1
+                diabetes_prob = float(proba[2])
+                at_risk_prob = float(proba[1] + proba[2])
+                status_map = {0: "Normal", 1: "Pre-diabetic", 2: "Diabetic"}
+            predicted_status = status_map.get(predicted_class, "Unknown")
             risk_score = int(at_risk_prob * 100)
             confidence = round(max(proba), 3)
         except Exception as e:
             return {"success": False, "error": str(e)}
-        
-        # Map predicted class to status
-        status_map = {0: "Normal", 1: "Pre-diabetic", 2: "Diabetic"}
-        predicted_status = status_map.get(predicted_class, "Unknown")
         
         # Get risk cluster info if kmeans is available
         if self.kmeans is not None:
@@ -629,7 +690,7 @@ class ClinicalPredictor:
         
         return {
             "success": True,
-            "model_type": "clinical",
+            "model_type": "binary",
             "predicted_status": predicted_status,
             # Ahlqvist subtype schema
             "risk_cluster": risk_cluster,
@@ -651,7 +712,7 @@ class ClinicalPredictor:
                 "features_used": self.features,
                 "cluster_features": self.cluster_features,
                 "decision_thresholds": self.decision_thresholds,
-                "note": "Non-circular model (no HbA1c/FBS in features)"
+                "note": "Binary at-risk screening model (AUC 0.72, 99.5% sensitivity) - no HbA1c/FBS"
             }
         }
     
@@ -704,12 +765,13 @@ def get_clinical_predictor() -> ClinicalPredictor:
 def predict(data: Dict[str, float], model_type: str = "ada") -> Dict[str, Any]:
     """
     Convenience function for single prediction.
-    
+
     Args:
         data: Patient data dictionary
-        model_type: "clinical" for non-circular model, "ada" for baseline
+        model_type: "binary" or "clinical" for binary at-risk screening model (default),
+                   "ada" for baseline HbA1c/FBS-based model
     """
-    if model_type == "clinical":
+    if model_type in ("binary", "clinical"):
         return get_clinical_predictor().predict(data)
     return get_predictor().predict(data)
 

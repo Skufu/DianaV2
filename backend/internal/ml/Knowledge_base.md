@@ -28,8 +28,8 @@ Integration layer for diabetes risk assessment, supporting external ML server ca
 - Reference ranges follow the SIDD/SIRD research methodology.
 
 **Configuration:**
-- `MODEL_URL`: ML server endpoint (empty triggers mock mode).
-- `MODEL_VERSION`: Tracked via `X-Model-Version` header.
+- `MODEL_URL`: ML server endpoint (empty triggers mock mode for local dev).
+- `MODEL_VERSION`: Tracked via `X-Model-Version` header (default `clinical_v2`).
 - `MODEL_DATASET_HASH`: Used for data lineage tracking.
 - `MODEL_TIMEOUT_MS`: Default 2000ms, configurable via env.
 
@@ -38,9 +38,9 @@ Integration layer for diabetes risk assessment, supporting external ML server ca
 **Prediction Flow:**
 1. Handlers call `ValidateBiomarkers(assessment)` to get clinical warnings.
 2. `Predictor.Predict()` is invoked:
-   - **HTTP**: POSTs JSON to `${MODEL_URL}?model_type=ada`.
-   - **Mock**: Deterministic rules (e.g., `BMI > 30 && HbA1c > 6.0` → `SIRD`).
-3. Returns `cluster` name and `risk_score` (0-100) for database persistence.
+   - **HTTP**: POSTs JSON to `${MODEL_URL}?model_type=clinical`.
+   - **Mock**: Deterministic rules (e.g., `BMI > 30 && triglycerides >= 150` → `SIRD`).
+3. Returns `cluster` name, `risk_score`, and ML metadata for database persistence.
 
 **Header Requirements:**
 - HTTP requests MUST include `X-Model-Version` if `MODEL_VERSION` is set.

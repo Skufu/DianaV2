@@ -338,12 +338,15 @@ JWT_SECRET=your-secure-random-secret-min-32-chars  # REQUIRED for ALL environmen
 CORS_ORIGINS=http://localhost:4000
 MODEL_URL=http://localhost:5001/predict
 ML_PORT=5001
-ML_API_KEY=your-secure-ml-api-key  # REQUIRED for all environments
+MODEL_VERSION=clinical_v2
+MODEL_DATASET_HASH=nhanes_postmenopausal_2011_2020
+MODEL_TIMEOUT_MS=2000
+ML_API_KEY=your-secure-ml-api-key  # Optional for dev, required for production
 ```
 
 **Important**: `JWT_SECRET` is **required** for ALL environments (development, staging, production). The application will fail to start with a fatal error if `JWT_SECRET` is missing. Use a secure random string of at least 32 characters.
 
-**ML API Key**: `ML_API_KEY` is **required** for all environments (development, staging, production). The ML server will return 401 Unauthorized for requests without a valid `X-API-Key` header. The frontend must be configured with `VITE_ML_API_KEY` to authenticate with the ML service.
+**ML API Key**: `ML_API_KEY` is **required** for production ML service authentication. In local development, it can be omitted to allow unauthenticated ML calls; the ML server will return 401 Unauthorized when a key is configured but missing in requests. The frontend should set `VITE_ML_API_KEY` to match when auth is enabled.
 
 ### Frontend (frontend/.env.local)
 ```bash

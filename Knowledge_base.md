@@ -106,7 +106,7 @@ Comprehensive knowledge base documentation for all major directories:
 
 ### Python ML
 - **Dual Predictor Pattern**: `DianaPredictor` (ADA baseline) + `ClinicalPredictor` (metabolic models).
-- **Config**: `MODEL_URL` empty triggers mock mode for local dev.
+- **Config**: `MODEL_URL` empty triggers mock mode for local dev (production should set the ML endpoint).
 - **Headers**: HTTP requests must include `X-Model-Version` if `MODEL_VERSION` is set.
 - **SHAP**: Use `ml.explainability` for SHAP values, waterfall plots.
 

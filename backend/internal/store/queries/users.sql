@@ -11,6 +11,7 @@ SELECT id, email, password_hash, role, is_admin, is_active, account_status, crea
     first_name, last_name, date_of_birth, phone, address,
     menopause_status, menopause_type, years_menopause,
     hypertension, heart_disease, family_history_diabetes, smoking_status,
+    physical_activity, alcohol,
     consent_personal_data, consent_research_participation, 
     consent_email_updates, consent_analytics, consent_updated_at,
     assessment_frequency_months, reminder_email, last_assessment_reminder_sent,
@@ -50,7 +51,8 @@ UPDATE users SET
     first_name = $2, last_name = $3, date_of_birth = $4, phone = $5,
     address = $6, menopause_status = $7, menopause_type = $8, years_menopause = $9,
     hypertension = $10, heart_disease = $11, family_history_diabetes = $12, smoking_status = $13,
-    assessment_frequency_months = $14, reminder_email = $15,
+    physical_activity = $14, alcohol = $15,
+    assessment_frequency_months = $16, reminder_email = $17,
     updated_at = NOW()
 WHERE id = $1;
 

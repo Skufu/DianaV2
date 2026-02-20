@@ -342,8 +342,8 @@ JWT_SECRET=REPLACE_ME
 CORS_ORIGINS=http://localhost:3000,http://localhost:4000,http://localhost:5173
 MODEL_URL=http://localhost:5001/predict
 ML_PORT=5001
-MODEL_VERSION=v0-mock
-MODEL_DATASET_HASH=mock_dataset_v1
+MODEL_VERSION=clinical_v2
+MODEL_DATASET_HASH=nhanes_postmenopausal_2011_2020
 MODEL_TIMEOUT_MS=2000
 EXPORT_MAX_ROWS=5000
 

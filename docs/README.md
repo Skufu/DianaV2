@@ -59,7 +59,6 @@
 ### 📁 03-ml/
 | Document | Description | Key Topics |
 |----------|-------------|------------|
-| [integration.md](./03-ml/integration.md) | Backend-ML integration | HTTPPredictor, mock mode |
 | [api-contract.md](./03-ml/api-contract.md) | ML API spec | Endpoints, request/response formats |
 | [methodology.md](./03-ml/methodology.md) | Research methodology | ADA criteria, Ahlqvist clusters |
 | [rationale.md](./03-ml/rationale.md) | ML justification | Defense-ready methodology |
