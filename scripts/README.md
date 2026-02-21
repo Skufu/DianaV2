@@ -28,7 +28,7 @@ scripts/
 | **Start All Services** | dev | `start-all.sh` |
 | **Tail Logs** | dev | `logs.sh` |
 | **Check API Drift** | dev | `check-api-drift.sh` |
-| **Retrain ML Models** | dev | `retrain-all.sh` |
+| **Retrain ML Models** | dev | `retrain-clinical.sh` |
 | **Download NHANES Data** | data | `download_nhanes_multi.py` |
 | **Process NHANES Data** | data | `process_nhanes_multi.py` |
 | **Impute Missing Data** | data | `impute_missing_data.py` |
@@ -54,7 +54,7 @@ scripts/
 |--------|---------|-------|
 | `setup.sh` | Install dependencies, create .env, run migrations | `bash scripts/dev/setup.sh` |
 | `start-all.sh` | Start backend + frontend + ML server | `bash scripts/dev/start-all.sh` |
-| `retrain-all.sh` | Full ML pipeline retrain (process → impute → train) | `bash scripts/dev/retrain-all.sh` |
+| `retrain-clinical.sh` | Full ML pipeline retrain (process → impute → train) | `bash scripts/dev/retrain-clinical.sh` |
 | `logs.sh` | Tail logs for all services | `bash scripts/dev/logs.sh` |
 
 > **Note**: Windows alternatives available: `start-all.bat` and `start-all.ps1`
@@ -174,7 +174,7 @@ bash scripts/dev/start-all.sh
 
 ### Complete ML Pipeline Retrain
 ```bash
-bash scripts/dev/retrain-all.sh
+bash scripts/dev/retrain-clinical.sh
 ```
 
 ### Manual ML Pipeline Step-by-Step

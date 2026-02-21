@@ -114,8 +114,10 @@ def engineer_features_reduced(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
 
+    # Philippine (Asia-Pacific WHO) BMI cutoffs:
+    # Underweight <18.5, Normal 18.5-22.9, Overweight 23-24.9, Obese ≥25
     df["bmi_category"] = pd.cut(
-        df["bmi"], bins=[0, 18.5, 25, 30, 100], labels=[0, 1, 2, 3]
+        df["bmi"], bins=[0, 18.5, 23, 25, 100], labels=[0, 1, 2, 3]
     ).astype(float)
     df["tg_hdl_ratio"] = df["triglycerides"] / df["hdl"].replace(0, np.nan)
 
@@ -136,7 +138,7 @@ def engineer_features_reduced(df: pd.DataFrame) -> pd.DataFrame:
             "high_tg": df["triglycerides"] > 150,
             "low_hdl": df["hdl"] < 50,
             "high_bp": df["systolic"] >= 130 if "systolic" in df.columns else False,
-            "high_bmi": df["bmi"] >= 30,
+            "high_bmi": df["bmi"] >= 25,  # PH Asia-Pacific WHO obesity cutoff
             "high_waist": df["waist_circumference"] >= 80 if "waist_circumference" in df.columns else False,
         }
     )
@@ -1533,7 +1535,7 @@ def main():
     overfit_gap = train_accuracy - oof_accuracy
 
     report = {
-        "model_type": "clinical_v2_reduced_features",
+        "model_type": "clinical_3class_reduced_features",
         "features": REDUCED_FEATURES,
         "n_features": len(REDUCED_FEATURES),
         "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",

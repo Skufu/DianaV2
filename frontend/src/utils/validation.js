@@ -34,12 +34,6 @@ export const patientSchema = z.object({
     .nullable(),
   familyHistory: z.boolean(),
   physActivity: z.boolean(),
-  systolic: z.string()
-    .regex(/^\d{2,3}$/, 'Invalid systolic value')
-    .nullable(),
-  diastolic: z.string()
-    .regex(/^\d{2,3}$/, 'Invalid diastolic value')
-    .nullable(),
   activity: z.enum(['No', 'Yes', 'sedentary', 'light', 'moderate', 'active', 'very_active'], {
     errorMap: () => ({ message: 'Please select activity level' }),
   }),
@@ -97,18 +91,6 @@ export const assessmentSchema = z.object({
     .nullable(),
   triglycerides: z.string()
     .regex(/^\d{1,4}(\.\d{1})?$/, 'Invalid triglycerides value')
-    .nullable(),
-  systolic: z.string()
-    .regex(/^\d{2,3}$/, 'Invalid systolic value')
-    .refine((val) => !val || (parseInt(val) >= 70 && parseInt(val) <= 250), {
-      message: 'Systolic must be between 70-250 mmHg',
-    })
-    .nullable(),
-  diastolic: z.string()
-    .regex(/^\d{2,3}$/, 'Invalid diastolic value')
-    .refine((val) => !val || (parseInt(val) >= 40 && parseInt(val) <= 150), {
-      message: 'Diastolic must be between 40-150 mmHg',
-    })
     .nullable(),
   activity: z.enum(['', 'active', 'sedentary', 'light', 'moderate', 'active', 'very_active'], {
     errorMap: () => ({ message: 'Please select activity level' }),

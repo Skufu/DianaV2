@@ -13,8 +13,6 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel }) => {
     triglycerides: '',
     ldl: '',
     hdl: '',
-    systolic: '',
-    diastolic: '',
     smoking_status: 'Unknown',
     physical_activity: 'Unknown',
     alcohol: 'Unknown',
@@ -79,8 +77,6 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel }) => {
       triglycerides: '',
       ldl: '',
       hdl: '',
-      systolic: '',
-      diastolic: '',
       smoking_status: 'Unknown',
       physical_activity: 'Unknown',
       alcohol: 'Unknown',
@@ -97,7 +93,7 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel }) => {
     e.preventDefault();
     setError(null);
 
-    const requiredFields = ['age', 'bmi', 'triglycerides', 'ldl', 'hdl', 'systolic', 'diastolic'];
+    const requiredFields = ['age', 'bmi', 'triglycerides', 'ldl', 'hdl'];
     const hasMissingRequired = requiredFields.some(field => !formData[field]);
     if (hasMissingRequired) {
       setError('Please complete all required fields for the clinical assessment.');
@@ -119,8 +115,6 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel }) => {
       triglycerides: parseInt(formData.triglycerides),
       ldl: parseInt(formData.ldl),
       hdl: parseInt(formData.hdl),
-      systolic: parseInt(formData.systolic),
-      diastolic: parseInt(formData.diastolic),
       smoking_status: formData.smoking_status || 'Unknown',
       physical_activity: formData.physical_activity || 'Unknown',
       alcohol: formData.alcohol || 'Unknown',
@@ -370,52 +364,7 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel }) => {
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Blood Pressure</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <motion.div
-                whileHover={{ y: -2 }}
-                transition={{ duration: 0.2 }}
-              >
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Systolic (mmHg) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="systolic"
-                  step="1"
-                  min="80"
-                  max="200"
-                  value={formData.systolic}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="80 - 200"
-                  required
-                />
-              </motion.div>
 
-              <motion.div
-                whileHover={{ y: -2 }}
-                transition={{ duration: 0.2 }}
-              >
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Diastolic (mmHg) <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="diastolic"
-                  step="1"
-                  min="50"
-                  max="130"
-                  value={formData.diastolic}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="50 - 130"
-                  required
-                />
-              </motion.div>
-            </div>
-          </div>
 
           {/* Notes Field */}
           <div>

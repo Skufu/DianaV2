@@ -1,10 +1,10 @@
 #!/bin/bash
 # =============================================================================
 # DIANA ML Pipeline - Binary Retrain Script
-# Runs all steps: process raw data → label → train binary model (At-Risk vs Normal)
+# Runs all steps: process raw data → label → train binary_v2_no_bp model (At-Risk vs Normal)
 #
 # Usage: source venv/bin/activate (Mac/Linux) or source venv/Scripts/activate (Windows)
-#        Then run: ./scripts/dev/retrain-binary.sh
+#        Then run: ./scripts/dev/retrain-binary_v2_no_bp.sh
 # =============================================================================
 
 set -e  # Exit on first error
@@ -35,7 +35,7 @@ cd "$PROJECT_DIR"
 if [ ! -d "data/nhanes/raw" ]; then
     echo -e "${RED}ERROR: Run this script from the project root directory${NC}"
     echo "  cd /path/to/DianaV2"
-    echo "  ./scripts/dev/retrain-binary.sh"
+    echo "  ./scripts/dev/retrain-binary_v2_no_bp.sh"
     exit 1
 fi
 
@@ -124,14 +124,14 @@ echo ""
 echo -e "${YELLOW}Step 3/5: Skipping pre-imputation (leakage-safe pipeline handles this)${NC}"
 echo "------------------------------------------------------------"
 echo "  Pre-imputation SKIPPED - SimpleImputer in CV pipeline prevents leakage"
-echo "  See: train_binary_v2.py uses diana_dataset_final.csv (not pre-imputed)"
+echo "  See: train_binary_v2_no_bp.py uses diana_dataset_final.csv (not pre-imputed)"
 echo -e "${GREEN}✓ Proceeding with leakage-safe imputation${NC}"
 
-# Step 4: Train binary model (At-Risk vs Normal with nested CV)
+# Step 4: Train binary_v2_no_bp model (At-Risk vs Normal with nested CV)
 echo ""
 echo -e "${BLUE}Step 4/5: Training Binary ML model (At-Risk vs Normal)...${NC}"
 echo "------------------------------------------------------------"
-python Ian_ML/training/train_binary_v2.py
+python Ian_ML/training/train_binary_v2_no_bp.py
 if [ $? -ne 0 ]; then
     echo -e "${RED}ERROR: Binary model training failed${NC}"
     exit 1
@@ -148,7 +148,7 @@ echo "------------------------------------------------------------"
 # Check which models were actually created
 echo ""
 echo "Models created:"
-MODELS_DIR="models/binary_v2"
+MODELS_DIR="models/binary_v2_no_bp"
 
 if [ -f "$MODELS_DIR/best_model.joblib" ]; then
     echo -e "  ${GREEN}✓ Best Model (Pipeline)${NC}"
@@ -200,7 +200,7 @@ if [ -f "$REPORT_FILE" ]; then
     echo -e "  NPV:           ${CYAN}$NPV${NC}"
     echo -e "  Threshold:     ${CYAN}$THRESHOLD${NC}"
     
-    # Check if AUC >= 0.70 (minimum acceptable for binary)
+    # Check if AUC >= 0.70 (minimum acceptable for binary_v2_no_bp)
     AUC_CHECK=$(python -c "import json; auc=json.load(open('$REPORT_FILE'))['metrics']['auc_roc']; print('PASS' if auc >= 0.70 else 'FAIL')" 2>/dev/null || echo "FAIL")
     if [ "$AUC_CHECK" = "PASS" ]; then
         echo -e "  ${GREEN}✓ AUC above minimum threshold (0.70)${NC}"
@@ -228,9 +228,9 @@ echo ""
 echo "Outputs:"
 echo "  - Processed data:  data/nhanes/processed/diana_training_data_multi.csv"
 echo "  - Final dataset:   data/nhanes/processed/diana_dataset_final.csv (leakage-safe)"
-echo "  - Binary Models:   models/binary_v2/*.joblib"
-echo "  - Visualizations:  models/binary_v2/visualizations/"
-echo "  - Results:         models/binary_v2/results/"
+echo "  - Binary Models:   models/binary_v2_no_bp/*.joblib"
+echo "  - Visualizations:  models/binary_v2_no_bp/visualizations/"
+echo "  - Results:         models/binary_v2_no_bp/results/"
 echo ""
 echo -e "${YELLOW}IMPORTANT: Check the actual results above before updating documentation!${NC}"
 echo ""

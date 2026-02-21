@@ -125,10 +125,10 @@ The pipeline includes additional biomarkers beyond core diabetes indicators:
 | Processed | `data/nhanes/processed/diana_training_data_multi.csv` |
 | Cleaned/Imputed | `data/nhanes/processed/diana_dataset_imputed.csv` |
 | Clustered | `data/nhanes/processed/diana_clustered_final.csv` |
-| Trained Models | `models/clinical_v2/*.joblib` |
-| Clinical Models | `models/clinical_v2/*.joblib` |
-| Visualizations | `models/clinical_v2/visualizations/` |
-| Results | `models/clinical_v2/results/` |
+| Trained Models | `models/clinical_3class/*.joblib` |
+| Clinical Models | `models/clinical_3class/*.joblib` |
+| Visualizations | `models/clinical_3class/visualizations/` |
+| Results | `models/clinical_3class/results/` |
 
 ---
 

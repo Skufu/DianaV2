@@ -20,16 +20,16 @@ const Button = React.memo(({
     'relative overflow-hidden group px-5 py-3 flex items-center justify-center gap-2 rounded-xl font-medium tracking-wide shadow-sm disabled:opacity-60 disabled:cursor-not-allowed transition-colors focus:outline-none';
 
   const variants = {
-    primary: 'bg-[#4318FF] text-white',
-    outline: 'border-2 border-[#4318FF] text-[#4318FF]',
-    ghost: 'text-[#A3AED0] hover:bg-[#F4F7FE]',
-    danger: 'bg-[#EE5D50] text-white',
+    primary: 'bg-diana-teal text-white',
+    outline: 'border-2 border-diana-teal text-diana-teal',
+    ghost: 'text-slate-500 hover:bg-slate-50',
+    danger: 'bg-red-500 text-white',
   };
 
   const hoverVariants = {
-    primary: { backgroundColor: '#2B3674', scale: isReduced ? 1 : 1.02, boxShadow: "0px 4px 12px rgba(67, 24, 255, 0.4)" },
-    outline: { backgroundColor: '#4318FF', color: '#ffffff', scale: isReduced ? 1 : 1.02 },
-    ghost: { scale: isReduced ? 1 : 1.02, backgroundColor: '#F4F7FE', color: '#4318FF' },
+    primary: { backgroundColor: '#0F766E', scale: isReduced ? 1 : 1.02, boxShadow: "0px 4px 12px rgba(13, 148, 136, 0.4)" },
+    outline: { backgroundColor: '#0D9488', color: '#ffffff', scale: isReduced ? 1 : 1.02 },
+    ghost: { scale: isReduced ? 1 : 1.02, backgroundColor: '#F8FAFC', color: '#0D9488' },
     danger: { opacity: 0.9, scale: isReduced ? 1 : 1.02 },
   };
 
@@ -38,7 +38,7 @@ const Button = React.memo(({
   };
 
   const focusVariants = {
-    boxShadow: "0px 0px 0px 3px rgba(67, 24, 255, 0.3)",
+    boxShadow: "0px 0px 0px 3px rgba(13, 148, 136, 0.3)",
     scale: isReduced ? 1 : 1.01
   };
 

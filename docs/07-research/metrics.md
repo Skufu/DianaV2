@@ -21,9 +21,9 @@
 
 | Metric | Target | Actual | Notes |
 |--------|--------|--------|-------|
-| **AUC-ROC (Clinical)** | ≥ 0.70 | **0.6743** | Acceptable for non-circular screening |
+| **AUC-ROC (Clinical)** | ≥ 0.70 | **0.694** | Acceptable for non-circular screening |
 | **AUC-ROC (ADA model)** | ~1.0 | ~1.0 | Expected when HbA1c is feature |
-| **Overfit Gap** | < 15% | 8.55% | Train-Test accuracy difference |
+| **Overfit Gap** | < 15% | **16.06%** | Train-Test accuracy difference (slightly over target) |
 
 ---
 
@@ -69,10 +69,10 @@ AUC = Σ(i=1 to n-1) [(Xi+1 - Xi) × (Yi + Yi+1) / 2]
 
 | Parameter | Value |
 |-----------|-------|
-| Method | K-Fold |
-| K | 5 |
-| Scope | Within 70% training set |
-| Purpose | Hyperparameter tuning, model selection |
+| Method | Nested LOGO (outer) + GroupKFold Pipeline CV (inner) |
+| K | 5 (for inner fold) |
+| Scope | Grouped by cycle to prevent data leakage |
+| Purpose | Robust performance estimation across different NHANES cycles |
 
 ---
 

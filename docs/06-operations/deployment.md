@@ -16,7 +16,7 @@
      - Generate one: `openssl rand -base64 32` or use a secret manager
      - Example format: `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0`
    - `CORS_ORIGINS` = `https://<vercel-domain>,http://localhost:4000`
-    - `MODEL_VERSION` = `clinical_v2`
+    - `MODEL_VERSION` = `binary_v2_no_bp` (Options: `binary_v2_no_bp`, `clinical_3class`)
     - `MODEL_URL` = `https://<ml-service>/predict`
     - `MODEL_DATASET_HASH` = `nhanes_postmenopausal_2011_2020`
     - `MODEL_TIMEOUT_MS` = `2000`

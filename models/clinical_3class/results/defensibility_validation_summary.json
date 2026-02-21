@@ -1,0 +1,49 @@
+{
+  "generated_at_utc": "2026-02-21T07:40:52.308305+00:00",
+  "status": "PASS",
+  "checks": {
+    "required_artifacts_found": [
+      "best_model_report.json",
+      "logo_fold_metrics.csv",
+      "decision_thresholds.json",
+      "calibration_report.json",
+      "class_metrics_ci.json",
+      "k_comparison.json",
+      "clustering_positioning.json"
+    ],
+    "required_artifacts_missing": [],
+    "report_sanity_issues": [],
+    "threshold_consistency_issues": [],
+    "logo_fold_metrics_issues": [],
+    "clustering_consistency_issues": [],
+    "headline_metrics": {
+      "best_model": "Logistic Regression",
+      "auc_roc": 0.6941718923971846,
+      "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
+      "decision_thresholds": {
+        "pre_diabetic": 0.3,
+        "diabetic": 0.2,
+        "objective": "Optimize recall on Pre-diabetic/Diabetic classes",
+        "screening_behavior": {
+          "description": "This model is designed for SCREENING (case-finding), not diagnosis",
+          "clinical_rationale": "For screening, we prioritize sensitivity over specificity. A false positive (healthy labeled at-risk) is less harmful than a false negative (missed diabetic). Patients flagged as at-risk will receive follow-up diagnostic testing.",
+          "expected_class_recall": {
+            "Diabetic": "High (~75%+) - Must catch most diabetics",
+            "Pre-diabetic": "Moderate (~40-50%) - Catch about half for early intervention",
+            "Normal": "Low (~10-20%) - Acceptable over-flagging in screening context"
+          },
+          "threshold_strategy": "Apply lower probability thresholds for at-risk classes, forcing predictions toward Pre-diabetic/Diabetic when probability exceeds threshold",
+          "selection_score_weights": {
+            "Diabetic_recall": "45%",
+            "Pre_diabetic_recall": "30%",
+            "AUC_ROC": "20%",
+            "Macro_F1": "5%",
+            "Normal_recall": "0% (intentionally not weighted)"
+          }
+        }
+      }
+    }
+  },
+  "issues": [],
+  "note": "This verifier checks for scientific traceability of existing artifacts. It does not compute new evaluation metrics."
+}

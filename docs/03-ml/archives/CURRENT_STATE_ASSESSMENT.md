@@ -134,7 +134,7 @@ Returns:
 Backend saves prediction to database:
 - `cluster`: "SIRD"
 - `risk_score`: 52
-- `model_version`: "clinical_v2"
+- `model_version`: "clinical_3class"
 - `validation_status`: "valid"
 
 ---

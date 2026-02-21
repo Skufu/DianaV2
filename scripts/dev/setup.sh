@@ -344,7 +344,7 @@ JWT_SECRET=REPLACE_ME
 CORS_ORIGINS=http://localhost:3000,http://localhost:4000,http://localhost:5173
 MODEL_URL=http://localhost:5001/predict
 ML_PORT=5001
-MODEL_VERSION=clinical_v2
+MODEL_VERSION=binary_v2_no_bp
 MODEL_DATASET_HASH=nhanes_postmenopausal_2011_2020
 MODEL_TIMEOUT_MS=2000
 EXPORT_MAX_ROWS=5000
@@ -541,13 +541,13 @@ print_step "Checking ML Models"
 cd "$ROOT_DIR"
 
 MODELS_FOUND=false
-if [ -f "models/clinical_v2/best_model.joblib" ] && [ -f "models/clinical_v2/kmeans_model.joblib" ]; then
+if [ -f "models/binary_v2_no_bp/best_model.joblib" ] && [ -f "models/binary_v2_no_bp/kmeans_model.joblib" ]; then
     MODELS_FOUND=true
     print_success "ML models found"
 else
     print_warning "ML models not found. You need to train them or copy from shared location:"
-    print_info "Option 1: Train models: bash scripts/dev/retrain-all.sh"
-    print_info "Option 2: Copy from shared drive if someone has trained them (put in models/clinical_v2/)"
+    print_info "Option 1: Train models: bash scripts/dev/retrain-binary.sh"
+    print_info "Option 2: Copy from shared drive if someone has trained them (put in models/binary_v2_no_bp/)"
 fi
 
 # ─────────────────────────────────────────────────────────────
@@ -590,7 +590,7 @@ Services Configured:
 - ML Models: $MODELS_STATUS
 
 Next Steps:
-1. $(if [ "$MODELS_FOUND" = false ]; then echo "TRAIN ML MODELS: bash scripts/dev/retrain-all.sh"; else echo "ML models ready"; fi)
+1. $(if [ "$MODELS_FOUND" = false ]; then echo "TRAIN ML MODELS: bash scripts/dev/retrain-binary.sh"; else echo "ML models ready"; fi)
 2. START APPLICATION: bash scripts/dev/start-all.sh
 3. Access: http://localhost:4000
 
@@ -616,9 +616,9 @@ echo ""
 
 if [ "$MODELS_FOUND" = false ]; then
     echo -e "  ${YELLOW}1. Train ML models (REQUIRED before starting):${NC}"
-    echo -e "     ${CYAN}bash scripts/dev/retrain-all.sh${NC}"
+    echo -e "     ${CYAN}bash scripts/dev/retrain-binary.sh${NC}"
     echo ""
-    echo "     OR copy models from shared location to models/clinical_v2/"
+    echo "     OR copy models from shared location to models/binary_v2_no_bp/"
     echo ""
     echo -e "  ${BOLD}2. Start the application:${NC}"
 else

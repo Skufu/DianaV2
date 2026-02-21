@@ -97,7 +97,7 @@ Please consider:
 
 - **Code**: `Ian_ML/service/predict.py` (Flask API)
 - **Documentation**: `docs/03-ml/COMPLETE_METHODOLOGY.md`
-- **Model artifacts**: `models/clinical_v2/`
+- **Model artifacts**: `models/clinical_3class/`
 
 ---
 

@@ -125,7 +125,7 @@ start_dev() {
     echo ""
     echo "  Frontend:   http://localhost:4000"
     echo "  Backend:    http://localhost:8080/api/v1/healthz"
-    echo "  ML Server:  http://localhost:5000/health"
+    echo "  ML Server:  http://localhost:5001/health"
     echo "  PostgreSQL: localhost:5432"
     echo ""
     echo "  Logs: $0 logs"
@@ -156,7 +156,7 @@ start_prod() {
     echo ""
     echo "  Frontend:   http://localhost"
     echo "  Backend:    http://localhost:8080/api/v1/healthz"
-    echo "  ML Server:  http://localhost:5000/health"
+    echo "  ML Server:  http://localhost:5001/health"
     echo ""
     echo "  Logs: $0 logs"
     echo "  Stop: $0 stop"
@@ -216,10 +216,10 @@ show_status() {
         print_error "Backend:    http://localhost:8080/api/v1/healthz"
     fi
     
-    if curl -s http://localhost:5000/health > /dev/null 2>&1; then
-        print_success "ML Server:  http://localhost:5000/health"
+    if curl -s http://localhost:5001/health > /dev/null 2>&1; then
+        print_success "ML Server:  http://localhost:5001/health"
     else
-        print_error "ML Server:  http://localhost:5000/health"
+        print_error "ML Server:  http://localhost:5001/health"
     fi
     
     if curl -s http://localhost > /dev/null 2>&1 || curl -s http://localhost:4000 > /dev/null 2>&1; then
