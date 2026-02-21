@@ -614,16 +614,6 @@ h1 {
   </div>
 </div>
 
-<div class="quick-ref" style="animation-delay: 0.63s; margin-top: 16px;">
-  <div class="quick-ref__title">Demo Credentials</div>
-  <div class="ref-grid">
-    <div class="ref-item"><div class="ref-item__value">demo@diana.app</div><div class="ref-item__label">User</div></div>
-    <div class="ref-item"><div class="ref-item__value">demopassword123</div><div class="ref-item__label">Password</div></div>
-    <div class="ref-item"><div class="ref-item__value">admin@diana.app</div><div class="ref-item__label">Admin</div></div>
-    <div class="ref-item"><div class="ref-item__value">admin123</div><div class="ref-item__label">Password</div></div>
-  </div>
-</div>
-
 <div class="quick-ref" style="animation-delay: 0.66s; margin-top: 16px;">
   <div class="quick-ref__title">ML Model Features (16 features)</div>
   <table class="api-table">
@@ -676,6 +666,51 @@ h1 {
   </table>
   <div class="card__desc" style="margin-top: 12px;">
     Uses 5 features: <code>bmi, triglycerides, ldl, hdl, age</code> (CLUSTER_FEATURES)
+  </div>
+</div>
+
+<div class="quick-ref" style="animation-delay: 0.72s; margin-top: 16px;">
+  <div class="quick-ref__title">Environment Configuration</div>
+  <table class="api-table">
+    <thead><tr><th>Variable</th><th>Value</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>PORT</code></td><td>8080</td><td>Backend server port</td></tr>
+      <tr><td><code>ENV</code></td><td>dev</td><td>Environment (dev/production)</td></tr>
+      <tr><td><code>DB_DSN</code></td><td>postgres://diana:diana@localhost:5432/diana</td><td>PostgreSQL connection string</td></tr>
+      <tr><td><code>JWT_SECRET</code></td><td>CL6X+9KzHiTBA6gmL9fw/a1+HTIxMvy/LcWMbrYulZU=</td><td>JWT signing key</td></tr>
+      <tr><td><code>CORS_ORIGINS</code></td><td>localhost:3000,4000,5173</td><td>Allowed CORS origins</td></tr>
+      <tr><td><code>MODEL_URL</code></td><td>http://localhost:5001/predict</td><td>ML server endpoint</td></tr>
+      <tr><td><code>ML_PORT</code></td><td>5001</td><td>ML server port</td></tr>
+      <tr><td><code>MODEL_VERSION</code></td><td>binary_v2</td><td>Active model version</td></tr>
+      <tr><td><code>MODEL_DATASET_HASH</code></td><td>nhanes_postmenopausal_2011_2020</td><td>Dataset used for training</td></tr>
+      <tr><td><code>MODEL_TIMEOUT_MS</code></td><td>2000</td><td>ML request timeout (ms)</td></tr>
+      <tr><td><code>ML_API_KEY</code></td><td>dev-ml-api-key-12345</td><td>API key for ML service auth</td></tr>
+      <tr><td><code>EXPORT_MAX_ROWS</code></td><td>5000</td><td>Max rows for CSV export</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="quick-ref" style="animation-delay: 0.74s; margin-top: 16px;">
+  <div class="quick-ref__title">ML Service Configuration</div>
+  <table class="api-table">
+    <thead><tr><th>Setting</th><th>Value</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>ML_API_KEY</code></td><td>dev-ml-api-key-12345</td><td>Auth key (skip in dev if not set)</td></tr>
+      <tr><td><code>DATA_PATH</code></td><td>diana_dataset_final.csv</td><td>Training dataset</td></tr>
+      <tr><td><code>MODEL_VERSION</code></td><td>binary_v2</td><td>Model version folder</td></tr>
+      <tr><td><code>CLUSTER_FEATURES</code></td><td>bmi, tg, ldl, hdl, age (5)</td><td>K-Means clustering features</td></tr>
+      <tr><td><code>FEATURES</code></td><td>16 features</td><td>Classifier features (see above)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="quick-ref" style="animation-delay: 0.76s; margin-top: 16px;">
+  <div class="quick-ref__title">Demo Credentials</div>
+  <div class="ref-grid">
+    <div class="ref-item"><div class="ref-item__value">demo@diana.app</div><div class="ref-item__label">User Email</div></div>
+    <div class="ref-item"><div class="ref-item__value">demopassword123</div><div class="ref-item__label">Password</div></div>
+    <div class="ref-item"><div class="ref-item__value">admin@diana.app</div><div class="ref-item__label">Admin Email</div></div>
+    <div class="ref-item"><div class="ref-item__value">admin123</div><div class="ref-item__label">Password</div></div>
   </div>
 </div>
 
