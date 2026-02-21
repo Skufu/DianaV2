@@ -783,17 +783,17 @@ func (q *Queries) ListAssessmentsLimited(ctx context.Context, limit int32) ([]Li
 
 const trendAverages = `-- name: TrendAverages :many
 SELECT to_char(created_at, 'YYYY-MM') AS label,
-    COALESCE(avg(hba1c), 0)::float8 AS hba1c,
-    COALESCE(avg(fbs), 0)::float8 AS fbs
+    COALESCE(avg(bmi), 0)::float8 AS bmi,
+    COALESCE(avg(risk_score), 0)::float8 AS risk_score
 FROM assessments
 GROUP BY label
 ORDER BY label
 `
 
 type TrendAveragesRow struct {
-	Label string  `json:"label"`
-	Hba1c float64 `json:"hba1c"`
-	Fbs   float64 `json:"fbs"`
+	Label     string  `json:"label"`
+	Bmi       float64 `json:"bmi"`
+	RiskScore float64 `json:"risk_score"`
 }
 
 func (q *Queries) TrendAverages(ctx context.Context) ([]TrendAveragesRow, error) {
@@ -805,7 +805,7 @@ func (q *Queries) TrendAverages(ctx context.Context) ([]TrendAveragesRow, error)
 	var items []TrendAveragesRow
 	for rows.Next() {
 		var i TrendAveragesRow
-		if err := rows.Scan(&i.Label, &i.Hba1c, &i.Fbs); err != nil {
+		if err := rows.Scan(&i.Label, &i.Bmi, &i.RiskScore); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -818,8 +818,8 @@ func (q *Queries) TrendAverages(ctx context.Context) ([]TrendAveragesRow, error)
 
 const trendAveragesByUser = `-- name: TrendAveragesByUser :many
 SELECT to_char(created_at, 'YYYY-MM') AS label,
-    COALESCE(avg(hba1c), 0)::float8 AS hba1c,
-    COALESCE(avg(fbs), 0)::float8 AS fbs
+    COALESCE(avg(bmi), 0)::float8 AS bmi,
+    COALESCE(avg(risk_score), 0)::float8 AS risk_score
 FROM assessments
 WHERE user_id = $1
 GROUP BY label
@@ -827,9 +827,9 @@ ORDER BY label
 `
 
 type TrendAveragesByUserRow struct {
-	Label string  `json:"label"`
-	Hba1c float64 `json:"hba1c"`
-	Fbs   float64 `json:"fbs"`
+	Label     string  `json:"label"`
+	Bmi       float64 `json:"bmi"`
+	RiskScore float64 `json:"risk_score"`
 }
 
 func (q *Queries) TrendAveragesByUser(ctx context.Context, userID pgtype.Int4) ([]TrendAveragesByUserRow, error) {
@@ -841,7 +841,7 @@ func (q *Queries) TrendAveragesByUser(ctx context.Context, userID pgtype.Int4) (
 	var items []TrendAveragesByUserRow
 	for rows.Next() {
 		var i TrendAveragesByUserRow
-		if err := rows.Scan(&i.Label, &i.Hba1c, &i.Fbs); err != nil {
+		if err := rows.Scan(&i.Label, &i.Bmi, &i.RiskScore); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -115,9 +115,8 @@ func setupInsightsRouter() (*gin.Engine, *mockInsightsStore) {
 			{Cluster: "MARD", Count: 5},
 		},
 		trendAverages: &[]models.TrendPoint{
-			{Label: "HbA1c", HbA1c: 6.8, FBS: 120},
-			{Label: "FBS", HbA1c: 6.8, FBS: 120},
-			{Label: "BMI", HbA1c: 6.8, FBS: 120},
+			{Label: "2024-01", BMI: 24.5, RiskScore: 30.0},
+			{Label: "2024-02", BMI: 25.0, RiskScore: 50.0},
 		},
 	}
 
@@ -181,17 +180,16 @@ func TestInsightsHandler_BiomarkerTrends_Success(t *testing.T) {
 
 	var response []models.TrendPoint
 	_ = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, 3, len(response))
+	assert.Equal(t, 2, len(response))
 
-	hba1c := response[0]
-	fbs := response[1]
-	bmi := response[2]
-	assert.Equal(t, "HbA1c", hba1c.Label)
-	assert.Equal(t, 6.8, hba1c.HbA1c)
-	assert.Equal(t, "FBS", fbs.Label)
-	assert.Equal(t, float64(120), fbs.FBS)
-	assert.Equal(t, "BMI", bmi.Label)
-	assert.Equal(t, float64(6.8), bmi.HbA1c)
+	point1 := response[0]
+	point2 := response[1]
+	assert.Equal(t, "2024-01", point1.Label)
+	assert.Equal(t, 24.5, point1.BMI)
+	assert.Equal(t, 30.0, point1.RiskScore)
+	assert.Equal(t, "2024-02", point2.Label)
+	assert.Equal(t, 25.0, point2.BMI)
+	assert.Equal(t, 50.0, point2.RiskScore)
 }
 
 func TestInsightsHandler_BiomarkerTrends_AuthRequired(t *testing.T) {

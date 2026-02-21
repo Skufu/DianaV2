@@ -8,6 +8,7 @@ import (
 
 type Predictor interface {
 	Predict(ctx context.Context, input models.Assessment) (Prediction, error)
+	GetActiveModelMetadata(ctx context.Context) (*ModelMetadata, error)
 }
 
 type MockPredictor struct{}
@@ -69,4 +70,14 @@ func (m *MockPredictor) Predict(ctx context.Context, input models.Assessment) (P
 			AtRiskProbability:  0.30,
 		}, nil
 	}
+}
+
+func (m *MockPredictor) GetActiveModelMetadata(ctx context.Context) (*ModelMetadata, error) {
+	return &ModelMetadata{
+		ModelVersion: "mock_v1",
+		DatasetHash:  "mock_hash",
+		Notes:        "Mock models metadata",
+		Features:     []string{"mock_feature"},
+		Metrics:      map[string]interface{}{"accuracy": 0.99},
+	}, nil
 }

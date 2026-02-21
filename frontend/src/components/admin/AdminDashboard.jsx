@@ -277,17 +277,17 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                   <Legend />
                   <Line
                     type="monotone"
-                    dataKey="hba1c"
-                    name="HbA1c"
-                    stroke="#7C3AED"
+                    dataKey="risk_score"
+                    name="Avg Risk Score"
+                    stroke="#F43F5E"
                     strokeWidth={2}
                     isAnimationActive={!shouldDisableHeavyEffects()}
                   />
                   <Line
                     type="monotone"
-                    dataKey="fbs"
-                    name="FBS"
-                    stroke="#06B6D4"
+                    dataKey="bmi"
+                    name="Avg BMI"
+                    stroke="#10B981"
                     strokeWidth={2}
                     isAnimationActive={!shouldDisableHeavyEffects()}
                   />

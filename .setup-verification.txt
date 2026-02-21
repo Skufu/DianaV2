@@ -1,11 +1,11 @@
 Diana V2 Setup Verification
 ===========================
-Setup completed: Fri 20 Feb 2026 10:46:47 PST
-Machine: 192.168.0.118
+Setup completed: Fri Feb 20 18:18:08 PST 2026
+Machine: ADRIANs-Laptop.local
 User: adriangabriellfrancisco
 
 Tools Installed:
-- Go: go version go1.24.4 darwin/arm64
+- Go: go version go1.25.1 darwin/arm64
 - Node: v21.7.0
 - npm: 10.5.0
 - Python: Python 3.13.5

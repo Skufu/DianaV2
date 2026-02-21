@@ -812,6 +812,37 @@ def model_info():
         return jsonify({"error": "Model info failed"}), 500
 
 
+@app.route('/model/active/metadata', methods=['GET'])
+@require_api_key
+@rate_limit
+def active_model_metadata():
+    """Get detailed metadata for the currently active clinical model."""
+    try:
+        clin_predictor = get_clinical_predictor()
+        if clin_predictor is None:
+             return jsonify({
+                 "error": "Clinical model not available."
+             }), 503
+        
+        # Determine model version/name based on the directory it was loaded from
+        model_version = "clinical_v2"
+        if "binary_v2" in str(clin_predictor.models_dir):
+            model_version = "binary_v2"
+            
+        return jsonify({
+            "model_version": model_version,
+            "features": clin_predictor.features,
+            "metrics": clin_predictor.metrics,
+            # Generate a pseudo-hash based on features and model if no dataset_hash is present
+            "dataset_hash": clin_predictor.metrics.get("dataset_hash", "N/A"),
+            "notes": f"Active {model_version} screening model"
+        })
+    except Exception as e:
+        logger.exception("Active model metadata failed")
+        return jsonify({"error": "Failed to fetch active model metadata"}), 500
+
+
+
 @app.route('/insights/metrics', methods=['GET'])
 @require_api_key
 @rate_limit

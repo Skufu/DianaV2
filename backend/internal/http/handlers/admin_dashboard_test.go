@@ -198,7 +198,9 @@ func TestAdminDashboardHandler_GetDashboard_Success(t *testing.T) {
 			{Cluster: "high_risk", Count: 8},
 		},
 		trends: []models.TrendPoint{
-			{Label: "HbA1c", HbA1c: 6.9, FBS: 120},
+			{Label: "2024-01", BMI: 25.0, RiskScore: 30.0},
+			{Label: "2024-02", BMI: 26.5, RiskScore: 50.0},
+			{Label: "2024-03", BMI: 28.0, RiskScore: 70.0},
 		},
 	}
 	router := setupAdminDashboardRouter("admin", clinics, assessments)
@@ -224,7 +226,7 @@ func TestAdminDashboardHandler_GetDashboard_Success(t *testing.T) {
 
 	trends, ok := payload["trends"].([]any)
 	assert.True(t, ok)
-	assert.Len(t, trends, 1)
+	assert.Len(t, trends, 3)
 }
 
 func TestAdminDashboardHandler_GetDashboard_Forbidden(t *testing.T) {
