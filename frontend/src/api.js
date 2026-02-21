@@ -634,6 +634,12 @@ export const fetchActiveModelApi = async () => {
   return apiFetch('/admin/models/active');
 };
 
+export const syncModelRunsApi = async () => {
+  return apiFetch('/admin/models/sync', {
+    method: 'POST',
+  });
+};
+
 export const createAdminUserApi = async (userData) => {
   return apiFetch('/admin/users', {
     method: 'POST',

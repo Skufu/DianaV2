@@ -1,7 +1,7 @@
 // ModelTraceability: Display ML model version history
 import React, { useEffect, useState } from 'react';
-import { fetchModelRunsApi, fetchActiveModelApi } from '../../api';
-import { Cpu, Clock, Hash, FileText, CheckCircle, ChevronLeft, ChevronRight, Shield } from 'lucide-react';
+import { fetchModelRunsApi, fetchActiveModelApi, syncModelRunsApi } from '../../api';
+import { Cpu, Clock, Hash, FileText, CheckCircle, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
 
@@ -10,6 +10,7 @@ const ModelTraceability = ({ token }) => {
   const [activeModel, setActiveModel] = useState(null);
   const [modelRuns, setModelRuns] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
 
   // Pagination
@@ -41,6 +42,28 @@ const ModelTraceability = ({ token }) => {
     load();
   }, [token, page, pageSize]);
 
+  const handleSync = async () => {
+    setSyncing(true);
+    setError(null);
+    try {
+      await syncModelRunsApi(token);
+      // Reload data
+      const [active, runs] = await Promise.all([
+        fetchActiveModelApi(token).catch(() => null),
+        fetchModelRunsApi(token, { page, page_size: pageSize }),
+      ]);
+      setActiveModel(active);
+      setModelRuns(runs.data || []);
+      setTotal(runs.total || 0);
+      setTotalPages(runs.total_pages || 1);
+    } catch (err) {
+      setError('Failed to sync model from ML Server');
+      console.error(err);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="glass-card p-12 text-center bg-white/80 shadow-sm border border-slate-200/50">
@@ -57,12 +80,22 @@ const ModelTraceability = ({ token }) => {
   return (
     <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
       {/* Header */}
-      <motion.div variants={fadeIn}>
-        <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-          <Cpu className="text-violet-600" size={24} />
-          Model Traceability
-        </h3>
-        <p className="text-slate-500 text-sm mt-1">ML model version history and dataset tracking</p>
+      <motion.div variants={fadeIn} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <Cpu className="text-violet-600" size={24} />
+            Model Traceability
+          </h3>
+          <p className="text-slate-500 text-sm mt-1">ML model version history and dataset tracking</p>
+        </div>
+        <button
+          onClick={handleSync}
+          disabled={syncing || loading}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
+        >
+          <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+          {syncing ? 'Syncing...' : 'Sync with ML Server'}
+        </button>
       </motion.div>
 
       {/* Active Model Card */}

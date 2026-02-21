@@ -131,16 +131,16 @@ GROUP BY COALESCE(cluster, '');
 
 -- name: TrendAverages :many
 SELECT to_char(created_at, 'YYYY-MM') AS label,
-    COALESCE(avg(hba1c), 0)::float8 AS hba1c,
-    COALESCE(avg(fbs), 0)::float8 AS fbs
+    COALESCE(avg(bmi), 0)::float8 AS bmi,
+    COALESCE(avg(risk_score), 0)::float8 AS risk_score
 FROM assessments
 GROUP BY label
 ORDER BY label;
 
 -- name: TrendAveragesByUser :many
 SELECT to_char(created_at, 'YYYY-MM') AS label,
-    COALESCE(avg(hba1c), 0)::float8 AS hba1c,
-    COALESCE(avg(fbs), 0)::float8 AS fbs
+    COALESCE(avg(bmi), 0)::float8 AS bmi,
+    COALESCE(avg(risk_score), 0)::float8 AS risk_score
 FROM assessments
 WHERE user_id = $1
 GROUP BY label

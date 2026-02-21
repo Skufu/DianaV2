@@ -2,7 +2,7 @@
 
 > **Purpose**: Flask API server for diabetes risk prediction using trained ML models
 > **Framework**: Flask | **ML**: scikit-learn, XGBoost, CatBoost, LightGBM
-> **Port**: 5000 (default)
+> **Port**: 5001 (default)
 
 ---
 

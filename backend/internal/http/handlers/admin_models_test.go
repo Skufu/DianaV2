@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
+	"github.com/skufu/DianaV2/backend/internal/ml"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
@@ -81,7 +82,7 @@ func setupAdminModelsRouter() (*gin.Engine, *mockAdminStore) {
 		},
 	}
 
-	handler := NewAdminModelsHandler(store)
+	handler := NewAdminModelsHandler(store, ml.NewMockPredictor())
 	router := gin.New()
 	router.Use(func(c *gin.Context) {
 		c.Set("user", middleware.UserClaims{
@@ -226,7 +227,7 @@ func TestAdminModelsHandler_ListModelRuns_AuthRequired(t *testing.T) {
 	router, _ := setupAdminModelsRouter()
 	router = gin.New()
 
-	handler := NewAdminModelsHandler(&mockAdminStore{modelRuns: &mockModelRunRepo{}})
+	handler := NewAdminModelsHandler(&mockAdminStore{modelRuns: &mockModelRunRepo{}}, ml.NewMockPredictor())
 	handler.Register(router.Group("/admin"))
 
 	req, _ := http.NewRequest("GET", "/admin/models", nil)
@@ -295,7 +296,7 @@ func TestAdminModelsHandler_GetActiveModel_AuthRequired(t *testing.T) {
 		modelRuns: &mockModelRunRepo{
 			activeRun: &models.ModelRun{ID: 1, ModelVersion: "v1.0.0"},
 		},
-	})
+	}, ml.NewMockPredictor())
 	handler.Register(router.Group("/admin"))
 
 	req, _ := http.NewRequest("GET", "/admin/models/active", nil)

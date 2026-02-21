@@ -162,7 +162,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		adminAuditHandler.Register(admin)
 
 		// Model traceability
-		adminModelsHandler := handlers.NewAdminModelsHandler(st)
+		adminModelsHandler := handlers.NewAdminModelsHandler(st, predictor)
 		adminModelsHandler.Register(admin)
 	}
 

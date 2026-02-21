@@ -1,1547 +1,685 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diana V2 - System Architecture</title>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
-    <style>
-        :root {
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-tertiary: #334155;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-blue: #3b82f6;
-            --accent-green: #10b981;
-            --accent-purple: #8b5cf6;
-            --accent-pink: #ec4899;
-            --accent-orange: #f59e0b;
-            --accent-red: #ef4444;
-            --border-color: #475569;
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --card-hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* Navigation */
-        .nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 64px;
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-
-        .nav-logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 8px;
-        }
-
-        .nav-link {
-            padding: 8px 16px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid transparent;
-        }
-
-        .nav-link:hover {
-            color: var(--text-primary);
-            background: var(--bg-tertiary);
-        }
-
-        .nav-link.active {
-            color: var(--accent-blue);
-            background: rgba(59, 130, 246, 0.1);
-            border-color: rgba(59, 130, 246, 0.2);
-        }
-
-        /* Main Content */
-        .main {
-            margin-top: 64px;
-            padding: 32px;
-            max-width: 1600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* Section */
-        .section {
-            display: none;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.4s ease, transform 0.4s ease;
-        }
-
-        .section.active {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Hero Section */
-        .hero {
-            text-align: center;
-            padding: 80px 20px;
-            background: radial-gradient(circle at center, rgba(59, 130, 246, 0.15) 0%, rgba(15, 23, 42, 0) 70%);
-            border-radius: 24px;
-            margin-bottom: 48px;
-            border: 1px solid var(--border-color);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
-            opacity: 0.5;
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 16px;
-            background: linear-gradient(135deg, #fff 30%, var(--text-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.02em;
-        }
-
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-secondary);
-            max-width: 600px;
-            margin: 0 auto 48px;
-        }
-
-        .hero-stats {
-            display: flex;
-            justify-content: center;
-            gap: 64px;
-            flex-wrap: wrap;
-        }
-
-        .stat {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 3rem;
-            font-weight: 800;
-            color: var(--accent-blue);
-            line-height: 1;
-            margin-bottom: 8px;
-        }
-
-        .stat-label {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 600;
-        }
-
-        /* Cards Grid */
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-            margin-bottom: 48px;
-        }
-
-        .card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 32px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.05), transparent 60%);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .card:hover {
-            border-color: var(--card-color);
-            transform: translateY(-4px);
-            box-shadow: 0 0 0 1px var(--card-color), var(--card-hover-shadow);
-        }
-
-        .card:hover::after {
-            opacity: 1;
-        }
-
-        .card-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.75rem;
-            margin-bottom: 24px;
-            transition: transform 0.3s;
-        }
-
-        .card:hover .card-icon {
-            transform: scale(1.1);
-        }
-
-        .card-blue {
-            --card-color: var(--accent-blue);
-        }
-
-        .card-green {
-            --card-color: var(--accent-green);
-        }
-
-        .card-purple {
-            --card-color: var(--accent-purple);
-        }
-
-        .card-pink {
-            --card-color: var(--accent-pink);
-        }
-
-        .card-orange {
-            --card-color: var(--accent-orange);
-        }
-
-        .card-red {
-            --card-color: var(--accent-red);
-        }
-
-        .card-icon {
-            background: rgba(var(--card-color-rgb), 0.1);
-            color: var(--card-color);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .card-blue .card-icon {
-            background: rgba(59, 130, 246, 0.15);
-            color: var(--accent-blue);
-        }
-
-        .card-green .card-icon {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--accent-green);
-        }
-
-        .card-purple .card-icon {
-            background: rgba(139, 92, 246, 0.15);
-            color: var(--accent-purple);
-        }
-
-        .card-pink .card-icon {
-            background: rgba(236, 72, 153, 0.15);
-            color: var(--accent-pink);
-        }
-
-        .card-orange .card-icon {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--accent-orange);
-        }
-
-        .card-red .card-icon {
-            background: rgba(239, 68, 68, 0.15);
-            color: var(--accent-red);
-        }
-
-        .card h3 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 12px;
-            color: var(--text-primary);
-        }
-
-        .card p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-
-        .card-meta {
-            margin-top: 24px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            gap: 16px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        .card-meta span {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .card-meta span::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--card-color);
-            opacity: 0.6;
-        }
-
-        /* Diagram Container */
-        .diagram-container {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 32px;
-            margin-bottom: 32px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .diagram-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 24px;
-        }
-
-        .diagram-container h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: var(--text-primary);
-        }
-
-        .diagram-container p {
-            color: var(--text-secondary);
-            max-width: 800px;
-        }
-
-        .diagram-controls {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-control {
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-control:hover {
-            color: var(--text-primary);
-            border-color: var(--text-secondary);
-        }
-
-        .mermaid-wrapper {
-            background: rgba(15, 23, 42, 0.3);
-            border-radius: 12px;
-            padding: 20px;
-            overflow: auto;
-            min-height: 200px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .mermaid {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-
-        /* Flow Legend */
-        .legend {
-            display: flex;
-            gap: 24px;
-            flex-wrap: wrap;
-            margin-bottom: 32px;
-            padding: 20px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-
-        .legend-color {
-            width: 18px;
-            height: 18px;
-            border-radius: 6px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        /* Data Table */
-        .table-responsive {
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-            background: var(--bg-secondary);
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 16px 24px;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .data-table th {
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            background: var(--bg-tertiary);
-        }
-
-        .data-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
-        .data-table tr:hover {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .badge {
-            display: inline-flex;
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
-        .badge-blue {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
-            border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-
-        .badge-green {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .badge-purple {
-            background: rgba(139, 92, 246, 0.2);
-            color: #a78bfa;
-            border: 1px solid rgba(139, 92, 246, 0.3);
-        }
-
-        .badge-orange {
-            background: rgba(245, 158, 11, 0.2);
-            color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.3);
-        }
-
-        .badge-red {
-            background: rgba(239, 68, 68, 0.2);
-            color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        /* Footer */
-        .footer {
-            text-align: center;
-            padding: 48px 20px;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            border-top: 1px solid var(--border-color);
-            margin-top: 64px;
-            background: var(--bg-secondary);
-        }
-
-        .footer code {
-            display: inline-block;
-            padding: 4px 8px;
-            background: var(--bg-tertiary);
-            border-radius: 4px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8em;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-                /* In simpler implementation, hide links on mobile */
-            }
-
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            .hero-stats {
-                gap: 32px;
-            }
-
-            .main {
-                padding: 16px;
-            }
-
-            .card {
-                padding: 24px;
-            }
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--bg-tertiary);
-            border-radius: 5px;
-            border: 2px solid var(--bg-primary);
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-secondary);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diana V2 - Complete Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --bg: #0a0e17;
+  --surface: #111827;
+  --surface2: #1a2234;
+  --surface-elevated: #232d42;
+  --border: rgba(148, 163, 184, 0.08);
+  --border-bright: rgba(148, 163, 184, 0.2);
+  --text: #f1f5f9;
+  --text-dim: #94a3b8;
+  --accent: #22d3ee;
+  --accent-dim: rgba(34, 211, 238, 0.1);
+  --node-frontend: #38bdf8;
+  --node-backend: #4ade80;
+  --node-ml: #f472b6;
+  --node-db: #a78bfa;
+  --node-external: #fbbf24;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface2: #f1f5f9;
+    --surface-elevated: #ffffff;
+    --border: rgba(15, 23, 42, 0.08);
+    --border-bright: rgba(15, 23, 42, 0.15);
+    --text: #0f172a;
+    --text-dim: #64748b;
+    --accent: #0891b2;
+    --accent-dim: rgba(8, 145, 178, 0.08);
+    --node-frontend: #0284c7;
+    --node-backend: #16a34a;
+    --node-ml: #db2777;
+    --node-db: #7c3aed;
+    --node-external: #d97706;
+  }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  background-image: 
+    radial-gradient(ellipse at 20% 0%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(244, 114, 182, 0.06) 0%, transparent 50%);
+  color: var(--text);
+  font-family: var(--font-body);
+  padding: 32px;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.container { max-width: 1400px; margin: 0 auto; }
+
+header {
+  text-align: center;
+  margin-bottom: 32px;
+  animation: fadeUp 0.5s ease-out both;
+}
+
+h1 {
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, var(--node-frontend), var(--node-ml));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle { color: var(--text-dim); font-size: 14px; font-family: var(--font-mono); }
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  animation: fadeUp 0.5s ease-out both;
+}
+
+.kpi:nth-child(1) { animation-delay: 0.1s; }
+.kpi:nth-child(2) { animation-delay: 0.15s; }
+.kpi:nth-child(3) { animation-delay: 0.2s; }
+.kpi:nth-child(4) { animation-delay: 0.25s; }
+
+.kpi__value { font-size: 22px; font-weight: 700; font-family: var(--font-mono); }
+.kpi__value--frontend { color: var(--node-frontend); }
+.kpi__value--backend { color: var(--node-backend); }
+.kpi__value--ml { color: var(--node-ml); }
+.kpi__value--db { color: var(--node-db); }
+
+.kpi__label { font-size: 10px; color: var(--text-dim); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+.system-flow {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 20px;
+  animation: fadeUp 0.5s ease-out both;
+  animation-delay: 0.3s;
+}
+
+.system-flow__title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.flow-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.flow-box--user { border-color: rgba(251, 191, 36, 0.4); color: var(--node-external); }
+.flow-box--frontend { border-color: rgba(56, 189, 248, 0.4); color: var(--node-frontend); }
+.flow-box--backend { border-color: rgba(74, 222, 128, 0.4); color: var(--node-backend); }
+.flow-box--ml { border-color: rgba(244, 114, 182, 0.4); color: var(--node-ml); }
+.flow-box--db { border-color: rgba(167, 139, 250, 0.4); color: var(--node-db); }
+
+.flow-arrow { color: var(--border-bright); font-size: 16px; }
+
+.layer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 16px;
+  animation: fadeUp 0.5s ease-out both;
+}
+
+.layer__header {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.layer__header .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+.layer--frontend .layer__header { color: var(--node-frontend); }
+.layer--frontend .layer__header .dot { background: var(--node-frontend); }
+.layer--frontend { border-left: 3px solid var(--node-frontend); }
+
+.layer--backend .layer__header { color: var(--node-backend); }
+.layer--backend .layer__header .dot { background: var(--node-backend); }
+.layer--backend { border-left: 3px solid var(--node-backend); }
+
+.layer--ml .layer__header { color: var(--node-ml); }
+.layer--ml .layer__header .dot { background: var(--node-ml); }
+.layer--ml { border-left: 3px solid var(--node-ml); }
+
+.layer--db .layer__header { color: var(--node-db); }
+.layer--db .layer__header .dot { background: var(--node-db); }
+.layer--db { border-left: 3px solid var(--node-db); }
+
+.layer--scripts .layer__header { color: var(--node-external); }
+.layer--scripts .layer__header .dot { background: var(--node-external); }
+.layer--scripts { border-left: 3px solid var(--node-external); }
+
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+.card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.card__title {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.card__title code {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.card__desc { color: var(--text-dim); font-size: 11px; line-height: 1.5; margin-bottom: 8px; }
+
+.card__files {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.card__files code {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-dim);
+  display: block;
+  line-height: 1.6;
+}
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+.api-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+
+.api-table th {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border-bright);
+}
+
+.api-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+
+.api-table code {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.api-table tr:hover { background: var(--surface2); }
+
+.quick-ref {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+
+.quick-ref__title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.ref-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+
+.ref-item { text-align: center; }
+
+.ref-item__value { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--accent); }
+
+.ref-item__label { font-size: 9px; color: var(--text-dim); }
+
+.make-commands {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.make-cmd {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.make-cmd__name { color: var(--accent); font-weight: 600; }
+.make-cmd__desc { color: var(--text-dim); font-size: 9px; margin-top: 4px; }
+
+.cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+@media (max-width: 1000px) {
+  .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  .cols-2 { grid-template-columns: 1fr; }
+  .ref-grid { grid-template-columns: repeat(3, 1fr); }
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+  .make-commands { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  body { padding: 16px; }
+  .grid-3, .grid-4, .grid-2 { grid-template-columns: 1fr; }
+  .flow-diagram { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+</style>
 </head>
-
 <body>
-    <nav class="nav">
-        <div class="nav-logo">⚡ Diana V2 Architecture</div>
-        <div class="nav-links">
-            <a href="#overview" class="nav-link active" data-target="overview">Overview</a>
-            <a href="#system" class="nav-link" data-target="system">System</a>
-            <a href="#flows" class="nav-link" data-target="flows">Flows</a>
-            <a href="#database" class="nav-link" data-target="database">Database</a>
-            <a href="#ml" class="nav-link" data-target="ml">ML Pipeline</a>
-            <a href="#api" class="nav-link" data-target="api">API</a>
+
+<div class="container">
+<header>
+  <h1>Diana V2</h1>
+  <p class="subtitle">Diabetes Risk Assessment for Menopausal Women</p>
+</header>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="kpi__value kpi__value--frontend">React 18</div><div class="kpi__label">Frontend</div></div>
+  <div class="kpi"><div class="kpi__value kpi__value--backend">Go/Gin</div><div class="kpi__label">Backend API</div></div>
+  <div class="kpi"><div class="kpi__value kpi__value--ml">sklearn</div><div class="kpi__label">ML Service</div></div>
+  <div class="kpi"><div class="kpi__value kpi__value--db">PostgreSQL</div><div class="kpi__label">Database</div></div>
+</div>
+
+<div class="system-flow">
+  <div class="system-flow__title">System Data Flow</div>
+  <div class="flow-diagram">
+    <div class="flow-box flow-box--user">User</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box flow-box--frontend">React Form</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box flow-box--backend">Go API</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box flow-box--ml">Flask ML</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box flow-box--db">PostgreSQL</div>
+  </div>
+</div>
+
+<div class="layer layer--frontend" style="animation-delay: 0.35s">
+  <div class="layer__header"><span class="dot"></span> Frontend (React 18 + Vite)</div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card__title"><code>App.jsx</code> Root & Routing</div>
+      <div class="card__desc">React Router navigation. Auth state (JWT tokens), user role, global UI state.</div>
+      <div class="card__files"><code>src/App.jsx</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>api.js</code> API Client</div>
+      <div class="card__desc">Fetch wrapper + React Query. Auto token refresh on 401. localStorage tokens.</div>
+      <div class="card__files"><code>src/api.js</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>components/user/</code></div>
+      <div class="card__desc">Dashboard_user, AssessmentForm, Onboarding, PersonalTrends, UserProfile</div>
+      <div class="card__files"><code>Dashboard_user.jsx</code><code>AssessmentForm.jsx</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>components/insights/</code></div>
+      <div class="card__desc">ML visualizations. Insights, BiomarkerTrends, ClusterComparison, CohortAnalysis</div>
+      <div class="card__files"><code>Insights.jsx</code><code>BiomarkerTrends.jsx</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>components/admin/</code></div>
+      <div class="card__desc">Admin dashboard. AdminDashboard, UserManagement, AuditLog, ModelTraceability</div>
+      <div class="card__files"><code>AdminDashboard.jsx</code><code>UserManagement.jsx</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>components/common/</code></div>
+      <div class="card__desc">Shared UI. BiomarkerInput, RiskIndicator, SHAPExplanation, PDFExport, Toast</div>
+      <div class="card__files"><code>BiomarkerInput.jsx</code><code>RiskIndicator.jsx</code></div>
+    </div>
+  </div>
+</div>
+
+<div class="layer layer--backend" style="animation-delay: 0.4s">
+  <div class="layer__header"><span class="dot"></span> Backend (Go 1.21 + Gin)</div>
+  <div class="grid-4">
+    <div class="card">
+      <div class="card__title"><code>main.go</code> Entry</div>
+      <div class="card__desc">Server init, middleware stack, graceful shutdown.</div>
+      <div class="card__files"><code>cmd/server/main.go</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>router.go</code> Routes</div>
+      <div class="card__desc">/auth/*, /users/*, /admin/*, /analytics/*, /insights/*</div>
+      <div class="card__files"><code>http/router/router.go</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>handlers/</code></div>
+      <div class="card__desc">auth, users, assessments, analytics, insights, admin_*, cohort</div>
+      <div class="card__files"><code>handlers/auth.go</code><code>handlers/assessments.go</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>middleware/</code></div>
+      <div class="card__desc">JWT auth, RBAC, rate limiting, CORS, security, audit</div>
+      <div class="card__files"><code>middleware/auth.go</code><code>middleware/rbac.go</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>ml/</code> ML Client</div>
+      <div class="card__desc">HTTP client to Flask. Predictor interface + mock.</div>
+      <div class="card__files"><code>ml/http_predictor.go</code><code>ml/validation.go</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>store/</code> Data Layer</div>
+      <div class="card__desc">SQLC queries. user, assessment, clinic, admin repos.</div>
+      <div class="card__files"><code>store/sqlc/*.sql.go</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>services/</code></div>
+      <div class="card__desc">validation, PDF export, notifications</div>
+      <div class="card__files"><code>services/validation_service.go</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>cache/</code> Redis</div>
+      <div class="card__desc">Session cache, rate limiting</div>
+      <div class="card__files"><code>cache/redis_cache.go</code></div>
+    </div>
+  </div>
+</div>
+
+<div class="layer layer--ml" style="animation-delay: 0.45s">
+  <div class="layer__header"><span class="dot"></span> ML Service (Python/Flask + sklearn)</div>
+  <div class="cols-2">
+    <div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card__title"><code>server.py</code> Flask API</div>
+          <div class="card__desc">Endpoints: /health, /predict, /insights/*, /ab-tests, /monitoring/drift</div>
+          <div class="card__files"><code>service/server.py</code></div>
         </div>
-    </nav>
+        <div class="card">
+          <div class="card__title"><code>predict.py</code></div>
+          <div class="card__desc">DianaPredictor + ClinicalPredictor. 16 features (sklearn RandomForest/LogisticRegression). Returns 3-class + cluster.</div>
+          <div class="card__files"><code>service/predict.py</code></div>
+        </div>
+        <div class="card">
+          <div class="card__title"><code>explainability.py</code></div>
+          <div class="card__desc">SHAP values for feature importance explanations.</div>
+          <div class="card__files"><code>service/explainability.py</code></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card__title"><code> train_v2.py</code> 3-Class</div>
+          <div class="card__desc">3-class: Normal/Pre-diabetic/Diabetic. sklearn. WARNING: Low AUC - for screening only, NOT diagnostic.</div>
+          <div class="card__files"><code>training/train_v2.py</code></div>
+        </div>
+        <div class="card">
+          <div class="card__title"><code>train_binary_v2.py</code></div>
+          <div class="card__desc">Binary: Normal vs At-Risk (Pre-diabetic + Diabetic). Prioritizes sensitivity for screening.</div>
+          <div class="card__files"><code>training/train_binary_v2.py</code></div>
+        </div>
+        <div class="card">
+          <div class="card__title"><code>clustering.py</code></div>
+          <div class="card__desc">K-Means K=4 (Ahlqvist): SIDD, SIRD, MOD, MARD</div>
+          <div class="card__files"><code>training/clustering.py</code></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="layer layer--scripts" style="animation-delay: 0.47s">
+  <div class="layer__header"><span class="dot"></span> Scripts & Training Pipelines</div>
+  <div class="cols-2">
+    <div class="grid-3">
+      <div class="card">
+        <div class="card__title">Data Pipeline</div>
+        <div class="card__desc">NHANES download, processing, feature engineering</div>
+        <div class="card__files"><code>scripts/data/process_nhanes_multi.py</code><code>scripts/data/feature_selection.py</code></div>
+      </div>
+      <div class="card">
+        <div class="card__title">Model Training</div>
+        <div class="card__desc">Train classifiers + clustering</div>
+        <div class="card__files"><code>scripts/train/train_clusters.py</code><code>scripts/train/train_binary.py</code></div>
+      </div>
+      <div class="card">
+        <div class="card__title">Evaluation</div>
+        <div class="card__desc">Model metrics, validation, analysis</div>
+        <div class="card__files"><code>scripts/eval/*.py</code></div>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card__title">Dev Scripts</div>
+        <div class="card__desc">Setup, start all services</div>
+        <div class="card__files"><code>scripts/dev/setup.sh</code><code>scripts/dev/start-all.sh</code></div>
+      </div>
+      <div class="card">
+        <div class="card__title">Thesis Outputs</div>
+        <div class="card__desc">Generate thesis artifacts</div>
+        <div class="card__files"><code>scripts/thesis/generate_thesis_outputs.py</code></div>
+      </div>
+      <div class="card">
+        <div class="card__title">Validation</div>
+        <div class="card__desc">Model validation scripts</div>
+        <div class="card__files"><code>scripts/validation/*.py</code></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="layer layer--db" style="animation-delay: 0.5s">
+  <div class="layer__header"><span class="dot"></span> Database (PostgreSQL + Redis)</div>
+  <div class="cols-2">
+    <div>
+      <table class="api-table">
+        <thead><tr><th>Table</th><th>Key Fields</th></tr></thead>
+        <tbody>
+          <tr><td><code>users</code></td><td>email, password_hash, role, is_admin, profile_data</td></tr>
+          <tr><td><code>assessments</code></td><td>user_id, biomarkers, cluster, risk_score</td></tr>
+          <tr><td><code>refresh_tokens</code></td><td>user_id, token_hash, expires_at</td></tr>
+          <tr><td><code>audit_events</code></td><td>user_id, action, entity_type, details</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <table class="api-table">
+        <thead><tr><th>Component</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>Redis</code></td><td>Session cache, rate limiting</td></tr>
+          <tr><td><code>SQLC</code></td><td>Type-safe SQL query generation</td></tr>
+          <tr><td><code>Goose</code></td><td>Database migrations</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="layer" style="animation-delay: 0.55s">
+  <div class="layer__header"><span class="dot" style="background:var(--accent)"></span> Make Commands (How to Run)</div>
+  <div class="make-commands">
+    <div class="make-cmd"><span class="make-cmd__name">make dev</span><div class="make-cmd__desc">Run Go backend</div></div>
+    <div class="make-cmd"><span class="make-cmd__name">make ml</span><div class="make-cmd__desc">Run Flask ML server</div></div>
+    <div class="make-cmd"><span class="make-cmd__name">make start-all</span><div class="make-cmd__desc">Start all services</div></div>
+    <div class="make-cmd"><span class="make-cmd__name">make seed</span><div class="make-cmd__desc">Create demo users</div></div>
+    <div class="make-cmd"><span class="make-cmd__name">make db_up</span><div class="make-cmd__desc">Run migrations</div></div>
+    <div class="make-cmd"><span class="make-cmd__name">make test</span><div class="make-cmd__desc">Run Go tests</div></div>
+    <div class="make-cmd"><span class="make-cmd__name">make sqlc</span><div class="make-cmd__desc">Regenerate SQLC queries</div></div>
+    <div class="make-cmd"><span class="make-cmd__name">make build</span><div class="make-cmd__desc">Build Go binaries</div></div>
+    <div class="make-cmd"><span class="make-cmd__name">npm run dev</span><div class="make-cmd__desc">Run frontend (port 4000)</div></div>
+  </div>
+</div>
+
+<div class="layer" style="animation-delay: 0.58s">
+  <div class="layer__header"><span class="dot" style="background:var(--accent)"></span> Key API Endpoints</div>
+  <div class="cols-2">
+    <table class="api-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Handler</th></tr></thead>
+      <tbody>
+        <tr><td><code>POST</code></td><td><code>/auth/login</code></td><td>auth.go</td></tr>
+        <tr><td><code>POST</code></td><td><code>/auth/register</code></td><td>auth.go</td></tr>
+        <tr><td><code>GET</code></td><td><code>/users/me/profile</code></td><td>users.go</td></tr>
+        <tr><td><code>POST</code></td><td><code>/users/me/assessments</code></td><td>assessments.go</td></tr>
+        <tr><td><code>GET</code></td><td><code>/users/me/trends</code></td><td>users.go</td></tr>
+      </tbody>
+    </table>
+    <table class="api-table">
+      <thead><tr><th>Method</th><th>Path</th><th>Handler</th></tr></thead>
+      <tbody>
+        <tr><td><code>GET</code></td><td><code>/analytics/summary</code></td><td>analytics.go</td></tr>
+        <tr><td><code>GET</code></td><td><code>/insights/metrics</code></td><td>insights.go</td></tr>
+        <tr><td><code>GET</code></td><td><code>/admin/users</code></td><td>admin_users.go</td></tr>
+        <tr><td><code>GET</code></td><td><code>/admin/audit</code></td><td>admin_audit.go</td></tr>
+        <tr><td><code>GET</code></td><td><code>/admin/models</code></td><td>admin_models.go</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="quick-ref" style="animation-delay: 0.6s">
+  <div class="quick-ref__title">Ports & URLs</div>
+  <div class="ref-grid">
+    <div class="ref-item"><div class="ref-item__value">:4000</div><div class="ref-item__label">Frontend</div></div>
+    <div class="ref-item"><div class="ref-item__value">:8080</div><div class="ref-item__label">Backend</div></div>
+    <div class="ref-item"><div class="ref-item__value">:5001</div><div class="ref-item__label">ML Server</div></div>
+    <div class="ref-item"><div class="ref-item__value">:5432</div><div class="ref-item__label">PostgreSQL</div></div>
+    <div class="ref-item"><div class="ref-item__value">:6379</div><div class="ref-item__label">Redis</div></div>
+  </div>
+</div>
+
+<div class="quick-ref" style="animation-delay: 0.63s; margin-top: 16px;">
+  <div class="quick-ref__title">Demo Credentials</div>
+  <div class="ref-grid">
+    <div class="ref-item"><div class="ref-item__value">demo@diana.app</div><div class="ref-item__label">User</div></div>
+    <div class="ref-item"><div class="ref-item__value">demopassword123</div><div class="ref-item__label">Password</div></div>
+    <div class="ref-item"><div class="ref-item__value">admin@diana.app</div><div class="ref-item__label">Admin</div></div>
+    <div class="ref-item"><div class="ref-item__value">admin123</div><div class="ref-item__label">Password</div></div>
+  </div>
+</div>
+
+<div class="quick-ref" style="animation-delay: 0.66s; margin-top: 16px;">
+  <div class="quick-ref__title">ML Model Features (16 features)</div>
+  <table class="api-table">
+    <thead><tr><th>Feature</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>bmi</code></td><td>raw</td><td>Body Mass Index</td></tr>
+      <tr><td><code>triglycerides</code></td><td>raw</td><td>Triglyceride level (mg/dL)</td></tr>
+      <tr><td><code>ldl</code></td><td>raw</td><td>Low-density lipoprotein</td></tr>
+      <tr><td><code>hdl</code></td><td>raw</td><td>High-density lipoprotein</td></tr>
+      <tr><td><code>age</code></td><td>raw</td><td>Patient age</td></tr>
+      <tr><td><code>systolic</code></td><td>raw</td><td>Systolic blood pressure</td></tr>
+      <tr><td><code>diastolic</code></td><td>raw</td><td>Diastolic blood pressure</td></tr>
+      <tr><td><code>bmi_category</code></td><td>engineered</td><td>BMI category (underweight/normal/overweight/obese)</td></tr>
+      <tr><td><code>tg_hdl_ratio</code></td><td>engineered</td><td>Triglycerides/HDL ratio</td></tr>
+      <tr><td><code>smoking_encoded</code></td><td>engineered</td><td>Smoking status (0/1)</td></tr>
+      <tr><td><code>activity_encoded</code></td><td>engineered</td><td>Physical activity level</td></tr>
+      <tr><td><code>alcohol_encoded</code></td><td>engineered</td><td>Alcohol use (0/1)</td></tr>
+      <tr><td><code>metabolic_syndrome_score</code></td><td>engineered</td><td>Metabolic syndrome criteria count</td></tr>
+      <tr><td><code>waist_circumference</code></td><td>raw</td><td>Waist circumference (cm)</td></tr>
+      <tr><td><code>family_history_diabetes</code></td><td>raw</td><td>Family history (0/1)</td></tr>
+      <tr><td><code>race_encoded</code></td><td>engineered</td><td>Race/ethnicity encoded</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="quick-ref" style="animation-delay: 0.68s; margin-top: 16px;">
+  <div class="quick-ref__title">Binary vs 3-Class Classification (Screening Tool - NOT for Diagnosis)</div>
+  <table class="api-table">
+    <thead><tr><th>Model</th><th>Target</th><th>Classes</th><th>Use Case</th></tr></thead>
+    <tbody>
+      <tr><td><code>3-class</code></td><td>diabetes_label</td><td>Normal / Pre-diabetic / Diabetic</td><td>Screening (low AUC - not diagnostic)</td></tr>
+      <tr><td><code>binary</code></td><td>at_risk_binary</td><td>Normal (0) / At-Risk (1)</td><td>Screening (Pre-diabetic + Diabetic = At-Risk)</td></tr>
+    </tbody>
+  </table>
+  <div class="card__desc" style="margin-top: 12px;">
+    <strong>IMPORTANT:</strong> This is a <strong>screening tool only</strong>, NOT for diagnosis. The 3-class model has low AUC-ROC and should not be used for diagnostic purposes. Binary model prioritizes sensitivity for screening.
+  </div>
+</div>
+
+<div class="quick-ref" style="animation-delay: 0.70s; margin-top: 16px;">
+  <div class="quick-ref__title">Clustering (K-Means K=4)</div>
+  <table class="api-table">
+    <thead><tr><th>Cluster</th><th>Name</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>SIDD</code></td><td>Severe Insulin-Deficient</td><td>High BMI, high triglycerides</td></tr>
+      <tr><td><code>SIRD</code></td><td>Severe Insulin-Resistant</td><td>High BMI, insulin resistance</td></tr>
+      <tr><td><code>MOD</code></td><td>Mild Obesity-Related</td><td>Obesity-driven, mild metabolic issues</td></tr>
+      <tr><td><code>MARD</code></td><td>Mild Age-Related</td><td>Age-related risk, lower BMI</td></tr>
+    </tbody>
+  </table>
+  <div class="card__desc" style="margin-top: 12px;">
+    Uses 5 features: <code>bmi, triglycerides, ldl, hdl, age</code> (CLUSTER_FEATURES)
+  </div>
+</div>
+
+</div>
 
-    <main class="main">
-        <!-- Overview Section -->
-        <section id="overview" class="section active">
-            <div class="hero">
-                <h1>Diana V2 System Architecture</h1>
-                <p>Advanced predictive diabetes risk assessment platform with specialized clustering for menopausal
-                    women</p>
-                <div class="hero-stats">
-                    <div class="stat">
-                        <div class="stat-value">5</div>
-                        <div class="stat-label">Services</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">50+</div>
-                        <div class="stat-label">API Endpoints</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">3</div>
-                        <div class="stat-label">Languages</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value">4</div>
-                        <div class="stat-label">Risk Clusters</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="cards-grid">
-                <div class="card card-blue" data-target="system">
-                    <div class="card-icon">⚛️</div>
-                    <h3>Frontend</h3>
-                    <p>Modern React 18 SPA with Vite, Tailwind CSS, and Recharts for interactive data visualization.</p>
-                    <div class="card-meta">
-                        <span>Port: 4000</span>
-                        <span>JavaScript</span>
-                    </div>
-                </div>
-
-                <div class="card card-green" data-target="system">
-                    <div class="card-icon">🚀</div>
-                    <h3>Backend</h3>
-                    <p>High-performance Go/Gin REST API with JWT auth, robust middleware, and efficient SQLC queries.
-                    </p>
-                    <div class="card-meta">
-                        <span>Port: 8080</span>
-                        <span>Go 1.21+</span>
-                    </div>
-                </div>
-
-                <div class="card card-pink" data-target="ml">
-                    <div class="card-icon">🧠</div>
-                    <h3>ML Service</h3>
-                    <p>Python/Flask serving XGBoost classification and K-Means clustering with SHAP explainability.</p>
-                    <div class="card-meta">
-                        <span>Port: 5001</span>
-                        <span>Python 3.10+</span>
-                    </div>
-                </div>
-
-                <div class="card card-purple" data-target="database">
-                    <div class="card-icon">🗄️</div>
-                    <h3>Database</h3>
-                    <p>PostgreSQL with Goose migrations for structured data, Redis for caching and session management.
-                    </p>
-                    <div class="card-meta">
-                        <span>Port: 5432</span>
-                        <span>SQL</span>
-                    </div>
-                </div>
-
-                <div class="card card-orange" data-target="api">
-                    <div class="card-icon">🔌</div>
-                    <h3>API Layer</h3>
-                    <p>Comprehensive REST API with 50+ endpoints, secured by RBAC and rate limiting middleware.</p>
-                    <div class="card-meta">
-                        <span>REST + SSE</span>
-                        <span>JSON</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>🏗️ High-Level Architecture</h2>
-                        <p>Complete system topology showing all services and their interactions</p>
-                    </div>
-                </div>
-                <div class="mermaid-wrapper">
-                    <div class="mermaid">
-                        flowchart TB
-                        subgraph Client["🖥️ Client"]
-                        Browser["Web Browser (SPA)"]
-                        end
-
-                        subgraph FE["⚛️ Frontend - Port 4000"]
-                        React["React 18 + Vite"]
-                        end
-
-                        subgraph BE["🚀 Backend - Port 8080"]
-                        Gin["Gin HTTP Server"]
-                        MW["Middleware Stack"]
-                        Handlers["API Handlers"]
-                        Services["Services"]
-                        end
-
-                        subgraph ML["🧠 ML Service - Port 5001"]
-                        Flask["Flask Server"]
-                        Predictor["DianaPredictor"]
-                        Explainer["SHAP Explainer"]
-                        end
-
-                        subgraph DB["🗄️ Data Layer"]
-                        Postgres[("PostgreSQL")]
-                        Redis[("Redis Cache")]
-                        Models[("ML Models")]
-                        end
-
-                        Browser -->|"HTTP/HTTPS"| React
-                        React -->|"REST API (JWT)"| Gin
-                        Gin --> MW
-                        MW --> Handlers
-                        Handlers --> Services
-                        Handlers -->|"SQLC Query"| Postgres
-                        Handlers -->|"Cache/Session"| Redis
-                        Handlers -->|"POST /predict"| Flask
-                        Flask --> Predictor
-                        Flask --> Explainer
-                        Flask -.->|"Load Artifacts"| Models
-
-                        style Client fill:#e3f2fd,color:#000,stroke:#90caf9
-                        style FE fill:#fff3e0,color:#000,stroke:#ffcc80
-                        style BE fill:#e8f5e9,color:#000,stroke:#a5d6a7
-                        style ML fill:#fce4ec,color:#000,stroke:#f48fb1
-                        style DB fill:#f3e5f5,color:#000,stroke:#ce93d8
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- System Section -->
-        <section id="system" class="section">
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>🚀 Backend Architecture</h2>
-                        <p>Go/Gin backend with layered Hexagonal-inspired architecture</p>
-                    </div>
-                </div>
-                <div class="mermaid-wrapper">
-                    <div class="mermaid">
-                        graph TD
-                        subgraph Client["Client"]
-                        Req["HTTP Request"]
-                        end
-
-                        subgraph Router["Router Layer"]
-                        CORS["CORS Middleware"]
-                        Security["Security Headers"]
-                        RateLimit["Rate Limiting"]
-                        Logger["Request Logger"]
-                        Recovery["Panic Recovery"]
-                        end
-
-                        subgraph Auth["Auth Layer"]
-                        JWT["JWT Validation"]
-                        RBAC["Role Check"]
-                        end
-
-                        subgraph Handlers["Handler Layer"]
-                        AuthH["/auth"]
-                        UserH["/users"]
-                        AssessH["/assessments"]
-                        AnalyticsH["/analytics"]
-                        AdminH["/admin"]
-                        end
-
-                        subgraph Services["Service Layer"]
-                        PDF["PDF Service"]
-                        Validation["Validation Service"]
-                        Notify["Notification Service"]
-                        end
-
-                        subgraph Data["Data Layer"]
-                        SQLC["SQLC Queries"]
-                        Postgres[("PostgreSQL")]
-                        Redis[("Redis Cache")]
-                        end
-
-                        subgraph ML["ML Integration"]
-                        Predictor["HTTP Predictor"]
-                        MLServer["ML Server"]
-                        end
-
-                        Req --> CORS
-                        CORS --> Security
-                        Security --> RateLimit
-                        RateLimit --> Logger
-                        Logger --> Recovery
-                        Recovery --> JWT
-                        JWT --> RBAC
-                        RBAC --> Handlers
-                        Handlers --> Services
-                        Handlers --> SQLC
-                        SQLC --> Postgres
-                        Handlers --> Redis
-                        AssessH --> Predictor
-                        Predictor --> MLServer
-
-                        style Client fill:#e3f2fd,color:#000
-                        style Router fill:#fff8e1,color:#000
-                        style Auth fill:#e8f5e9,color:#000
-                        style Handlers fill:#e3f2fd,color:#000
-                        style Services fill:#f3e5f5,color:#000
-                        style Data fill:#fce4ec,color:#000
-                        style ML fill:#e0f2f1,color:#000
-                    </div>
-                </div>
-            </div>
-
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>⚛️ Frontend Component Hierarchy</h2>
-                        <p>React component structure and organization</p>
-                    </div>
-                </div>
-                <div class="mermaid-wrapper">
-                    <div class="mermaid">
-                        graph TD
-                        App["App.jsx (Router)"]
-
-                        subgraph Auth["Authentication"]
-                        Login["Login.jsx"]
-                        Signup["Signup.jsx"]
-                        end
-
-                        subgraph User["User Features"]
-                        Dashboard["Dashboard_user.jsx"]
-                        Profile["UserProfile.jsx"]
-                        Onboarding["Onboarding.jsx"]
-                        Assessment["AssessmentForm.jsx"]
-                        Trends["PersonalTrends.jsx"]
-                        end
-
-                        subgraph Insights["Insights"]
-                        InsightsMain["Insights.jsx"]
-                        Biomarker["BiomarkerTrends.jsx"]
-                        Cluster["ClusterComparison.jsx"]
-                        Model["ModelPerformance.jsx"]
-                        end
-
-                        subgraph Admin["Admin"]
-                        AdminDash["AdminDashboard.jsx"]
-                        UserMgmt["UserManagement.jsx"]
-                        Audit["AuditLogViewer.jsx"]
-                        Models["ModelTraceability.jsx"]
-                        end
-
-                        subgraph Common["Shared Components"]
-                        Sidebar["Sidebar.jsx"]
-                        Input["BiomarkerInput.jsx"]
-                        Risk["RiskIndicator.jsx"]
-                        SHAP["SHAPExplanation.jsx"]
-                        Layout["Layout.jsx"]
-                        end
-
-                        App --> Auth
-                        App --> User
-                        App --> Insights
-                        App --> Admin
-
-                        User --> Common
-                        Insights --> Common
-                        Admin --> Common
-
-                        style App fill:#fff3e0,color:#000
-                        style Auth fill:#e8f5e9,color:#000
-                        style User fill:#e3f2fd,color:#000
-                        style Insights fill:#fce4ec,color:#000
-                        style Admin fill:#f3e5f5,color:#000
-                        style Common fill:#e0f2f1,color:#000
-                    </div>
-                </div>
-            </div>
-
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #e3f2fd;"></div>
-                    <span>Client/Blue</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #fff3e0;"></div>
-                    <span>Frontend/Orange</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #e8f5e9;"></div>
-                    <span>Backend/Green</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #fce4ec;"></div>
-                    <span>Data/Pink</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #f3e5f5;"></div>
-                    <span>Serving/Purple</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Flows Section -->
-        <section id="flows" class="section">
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>🔐 Authentication Flow</h2>
-                        <p>User login, JWT issuance, and session management</p>
-                    </div>
-                </div>
-                <div class="mermaid-wrapper">
-                    <div class="mermaid">
-                        sequenceDiagram
-                        actor User
-                        participant FE as Frontend
-                        participant BE as Backend
-                        participant DB as PostgreSQL
-                        participant Redis as Redis
-
-                        User->>FE: Enter credentials
-                        FE->>BE: POST /auth/login
-                        BE->>DB: GetUserByEmail()
-                        DB-->>BE: User record
-                        BE->>BE: bcrypt.CompareHash
-
-                        alt Invalid credentials
-                        BE-->>FE: 401 Unauthorized
-                        FE-->>User: Show error message
-                        else Valid
-                        BE->>BE: Generate Access & Refresh JWTs
-                        BE->>Redis: Cache session metadata
-                        BE-->>FE: 200 OK + JWTs
-                        FE->>FE: Store tokens securely
-                        FE-->>User: Redirect to Dashboard
-                        end
-                    </div>
-                </div>
-            </div>
-
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>📝 Assessment Creation Flow</h2>
-                        <p>End-to-end flow from biomarker submission to ML prediction</p>
-                    </div>
-                </div>
-                <div class="mermaid-wrapper">
-                    <div class="mermaid">
-                        sequenceDiagram
-                        actor User
-                        participant FE as Frontend
-                        participant BE as Backend
-                        participant ML as ML Service
-                        participant DB as PostgreSQL
-                        participant Redis as Redis
-
-                        User->>FE: Submit biomarkers
-                        FE->>BE: POST /assessments
-                        BE->>BE: Validate inputs & schema
-
-                        alt Validation Failed
-                        BE-->>FE: 400 Bad Request
-                        else Valid
-                        BE->>ML: POST /predict (16 features)
-
-                        alt ML Error
-                        ML-->>BE: Error/Timeout
-                        BE->>BE: Log Error
-                        BE-->>FE: 500 Internal Error
-                        else Success
-                        ML->>ML: Impute -> Scale -> Predict
-                        ML-->>BE: {cluster, risk, shap_values}
-                        end
-
-                        BE->>DB: CreateAssessment()
-                        BE->>Redis: Invalidate user cache
-                        BE-->>FE: 201 Created
-                        FE-->>User: Show Results + Risk Gauge + SHAP
-                        end
-                    </div>
-                </div>
-            </div>
-
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>👑 Admin Dashboard Flow</h2>
-                        <p>Real-time admin monitoring via Server-Sent Events (SSE)</p>
-                    </div>
-                </div>
-                <div class="mermaid-wrapper">
-                    <div class="mermaid">
-                        sequenceDiagram
-                        actor Admin
-                        participant FE as Admin UI
-                        participant BE as Backend
-                        participant SSE as SSE Broker
-                        participant DB as PostgreSQL
-                        participant Redis as Redis
-
-                        Admin->>FE: Access Dashboard
-                        FE->>BE: GET /admin/dashboard
-                        BE->>BE: Validate Admin Role (JWT)
-
-                        alt Not admin
-                        BE-->>FE: 403 Forbidden
-                        else Admin
-                        BE->>Redis: Get cached stats
-
-                        alt Cache miss
-                        Redis-->>BE: nil
-                        BE->>DB: Query Aggregates
-                        DB-->>BE: Stats Data
-                        BE->>Redis: Cache (TTL 5m)
-                        end
-
-                        BE-->>FE: Dashboard Data JSON
-                        FE->>BE: GET /admin/events/stream
-                        BE->>SSE: Register Client
-
-                        loop Real-time Events
-                        BE->>SSE: Publish Event (e.g. login)
-                        SSE-->>FE: Push Event Payload
-                        FE->>FE: Update UI
-                        end
-                        end
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Database Section -->
-        <section id="database" class="section">
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>🗄️ Entity Relationship Diagram</h2>
-                        <p>Core PostgreSQL schema structure</p>
-                    </div>
-                </div>
-                <div class="mermaid-wrapper">
-                    <div class="mermaid">
-                        erDiagram
-                        USERS ||--o{ ASSESSMENTS : creates
-                        USERS ||--o{ REFRESH_TOKENS : has
-                        USERS ||--o{ AUDIT_EVENTS : generates
-                        USERS ||--o{ AUTH_EVENTS : generates
-                        USERS }o--o{ CLINICS : belongs_to
-                        ASSESSMENTS ||--o{ MODEL_RUNS : linked_to
-
-                        USERS {
-                        uuid id PK
-                        string email UK
-                        string password_hash
-                        string role "user|admin"
-                        boolean is_admin
-                        jsonb profile_data
-                        timestamp created_at
-                        }
-
-                        ASSESSMENTS {
-                        uuid id PK
-                        uuid user_id FK
-                        float hba1c
-                        float fbs
-                        float bmi
-                        float cholesterol
-                        float ldl
-                        float hdl
-                        float triglycerides
-                        float systolic_bp
-                        float diastolic_bp
-                        string cluster "SIDD|SIRD|MOD|MARD"
-                        float risk_score
-                        string model_version
-                        timestamp created_at
-                        }
-
-                        REFRESH_TOKENS {
-                        uuid id PK
-                        uuid user_id FK
-                        string token_hash
-                        timestamp expires_at
-                        }
-
-                        AUDIT_EVENTS {
-                        uuid id PK
-                        uuid user_id FK
-                        string action
-                        string entity_type
-                        jsonb details
-                        timestamp created_at
-                        }
-
-                        CLINICS {
-                        uuid id PK
-                        string name
-                        string code UK
-                        jsonb settings
-                        }
-
-                        MODEL_RUNS {
-                        uuid id PK
-                        string model_version
-                        float accuracy
-                        timestamp trained_at
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>📊 Key Tables Reference</h2>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Table</th>
-                                <th>Purpose</th>
-                                <th>Key Fields</th>
-                                <th>Relations</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>users</strong></td>
-                                <td>User identity & state</td>
-                                <td>id, email, role</td>
-                                <td><span class="badge badge-blue">1:N</span> assessments</td>
-                            </tr>
-                            <tr>
-                                <td><strong>assessments</strong></td>
-                                <td>Health data & predictions</td>
-                                <td>biomarkers (10+), cluster, risk</td>
-                                <td><span class="badge badge-green">N:1</span> users</td>
-                            </tr>
-                            <tr>
-                                <td><strong>refresh_tokens</strong></td>
-                                <td>Session persistence</td>
-                                <td>token_hash, expires_at</td>
-                                <td><span class="badge badge-green">N:1</span> users</td>
-                            </tr>
-                            <tr>
-                                <td><strong>audit_events</strong></td>
-                                <td>Security & compliance logs</td>
-                                <td>action, entity, details</td>
-                                <td><span class="badge badge-green">N:1</span> users</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- ML Section -->
-        <section id="ml" class="section">
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>🧠 ML Pipeline Architecture</h2>
-                        <p>Automated training, validation, and serving pipeline</p>
-                    </div>
-                </div>
-                <div class="mermaid-wrapper">
-                    <div class="mermaid">
-                        flowchart LR
-                        subgraph Data["📊 Data Ingestion"]
-                        NHANES["NHANES Dataset"]
-                        end
-
-                        subgraph Pipeline["🔧 Preprocessing"]
-                        Download["Download Raw"]
-                        Process["Clean & Standardize"]
-                        Impute["Median Imputation"]
-                        Feature["Feature Selection
-                        (16 Features)"]
-                        end
-
-                        subgraph Training["🎓 Training"]
-                        Train["train_v2.py
-                        (LogReg/RF)"]
-                        Cluster["clustering.py
-                        (K-Means)"]
-                        end
-
-                        subgraph Models["🤖 Model Artifacts"]
-                        Clinical["Clinical Model"]
-                        KMeans["K-Means (K=4)"]
-                        Scaler["Standard Scaler"]
-                        end
-
-                        subgraph Serving["🚀 Serving Logic"]
-                        Flask["Flask App"]
-                        Predict["Prediction Logic"]
-                        Explain["SHAP Explainer"]
-                        end
-
-                        subgraph Monitor["📈 Monitoring"]
-                        Drift["Drift Check"]
-                        MLflow["MLflow Tracking"]
-                        end
-
-                        NHANES --> Download
-                        Download --> Process
-                        Process --> Impute
-                        Impute --> Feature
-                        Feature --> Train
-                        Feature --> Cluster
-                        Train --> Clinical
-                        Train --> Scaler
-                        Cluster --> KMeans
-                        Clinical --> Flask
-                        KMeans --> Flask
-                        Scaler --> Flask
-                        Flask --> Predict
-                        Predict --> Explain
-                        Predict --> Drift
-                        Train -.-> MLflow
-
-                        style Data fill:#e3f2fd,color:#000
-                        style Pipeline fill:#fff3e0,color:#000
-                        style Training fill:#e8f5e9,color:#000
-                        style Models fill:#fce4ec,color:#000
-                        style Serving fill:#f3e5f5,color:#000
-                        style Monitor fill:#e0f2f1,color:#000
-                    </div>
-                </div>
-            </div>
-
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>🎯 Clustering Model (Ahlqvist Subtypes)</h2>
-                        <p>K-Means clustering logic using 5 key metabolic features</p>
-                    </div>
-                </div>
-                <div class="mermaid-wrapper">
-                    <div class="mermaid">
-                        graph TB
-                        subgraph Input["Input Features (5 Core)"]
-                        Bio["BMI
-                        Triglycerides
-                        LDL
-                        HDL
-                        Age"]
-                        end
-
-                        subgraph Model["Clustering Engine"]
-                        Scale["Standard Scaler"]
-                        K4["K-Means Model
-                        (K=4 Centroids)"]
-                        end
-
-                        subgraph Clusters["Risk Clusters (Ahlqvist Mapping)"]
-                        SIDD["SIDD
-                        Severe Insulin-Deficient
-                        (High Risk)"]
-                        SIRD["SIRD
-                        Severe Insulin-Resistant
-                        (High Risk)"]
-                        MOD["MOD
-                        Mild Obesity-Related
-                        (Moderate Risk)"]
-                        MARD["MARD
-                        Mild Age-Related
-                        (Low Risk)"]
-                        end
-
-                        Input --> Scale
-                        Scale --> K4
-                        K4 --> SIDD
-                        K4 --> SIRD
-                        K4 --> MOD
-                        K4 --> MARD
-
-                        style Input fill:#e3f2fd,color:#000
-                        style Model fill:#fff3e0,color:#000
-                        style Clusters fill:#e8f5e9,color:#000
-                        style SIDD fill:#ffcdd2,stroke:#e57373
-                        style SIRD fill:#ffcdd2,stroke:#e57373
-                        style MOD fill:#fff9c4,stroke:#fbc02d
-                        style MARD fill:#c8e6c9,stroke:#43a047
-                    </div>
-                </div>
-            </div>
-
-            <div class="cards-grid">
-                <div class="card card-blue">
-                    <div class="card-icon">📊</div>
-                    <h3>SIDD</h3>
-                    <p>Severe Insulin-Deficient Diabetes</p>
-                    <div class="card-meta">
-                        <span>Low insulin secretion</span>
-                        <span>Poor glycaemic control</span>
-                    </div>
-                </div>
-
-                <div class="card card-red">
-                    <div class="card-icon">🔥</div>
-                    <h3>SIRD</h3>
-                    <p>Severe Insulin-Resistant Diabetes</p>
-                    <div class="card-meta">
-                        <span>High insulin resistance</span>
-                        <span>High obesity risk</span>
-                    </div>
-                </div>
-
-                <div class="card card-orange">
-                    <div class="card-icon">⚖️</div>
-                    <h3>MOD</h3>
-                    <p>Mild Obesity-Related Diabetes</p>
-                    <div class="card-meta">
-                        <span>High BMI</span>
-                        <span>Moderate metabolic issues</span>
-                    </div>
-                </div>
-
-                <div class="card card-green">
-                    <div class="card-icon">👵</div>
-                    <h3>MARD</h3>
-                    <p>Mild Age-Related Diabetes</p>
-                    <div class="card-meta">
-                        <span>Older age onset</span>
-                        <span>Best prognosis</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- API Section -->
-        <section id="api" class="section">
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>🔌 API Endpoint Map</h2>
-                        <p>API surface area by authorization level</p>
-                    </div>
-                </div>
-                <div class="mermaid-wrapper">
-                    <div class="mermaid">
-                        flowchart TB
-                        subgraph Public["🔓 Public (No Auth)"]
-                        P1["GET /healthz"]
-                        P2["GET /livez"]
-                        P3["POST /auth/login"]
-                        P4["POST /auth/register"]
-                        P5["POST /auth/refresh"]
-                        end
-
-                        subgraph Protected["🔒 Protected (JWT Bearer)"]
-                        subgraph User["/users/me/*"]
-                        U1["GET /profile"]
-                        U2["PUT /profile"]
-                        U3["POST /onboarding"]
-                        U4["GET /assessments"]
-                        U5["POST /assessments"]
-                        U6["GET /export/pdf"]
-                        end
-
-                        subgraph Analytics["/analytics"]
-                        A1["GET /summary"]
-                        end
-
-                        subgraph Insights["/insights"]
-                        I1["GET /metrics"]
-                        I2["GET /cluster"]
-                        end
-                        end
-
-                        subgraph Admin["👑 Admin (JWT + Role)"]
-                        AD1["GET /admin/dashboard"]
-                        AD2["GET /admin/users"]
-                        AD3["POST /admin/users"]
-                        AD7["GET /admin/events/stream (SSE)"]
-                        end
-
-                        Client["Client App"] --> Public
-                        Client --> Protected
-                        Client --> Admin
-
-                        style Client fill:#e3f2fd,color:#000
-                        style Public fill:#e8f5e9,color:#000
-                        style Protected fill:#fff3e0,color:#000
-                        style Admin fill:#fce4ec,color:#000
-                    </div>
-                </div>
-            </div>
-
-            <div class="diagram-container">
-                <div class="diagram-header">
-                    <div>
-                        <h2>📋 Endpoint Reference</h2>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Method</th>
-                                <th>Endpoint</th>
-                                <th>Auth</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="badge badge-green">GET</span></td>
-                                <td>/api/v1/healthz</td>
-                                <td><span class="badge badge-blue">Public</span></td>
-                                <td>Liveness probe</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-orange">POST</span></td>
-                                <td>/api/v1/auth/login</td>
-                                <td><span class="badge badge-blue">Public</span></td>
-                                <td>Authenticate & get tokens</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-green">GET</span></td>
-                                <td>/api/v1/users/me/profile</td>
-                                <td><span class="badge badge-purple">JWT</span></td>
-                                <td>Get current user profile</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-orange">POST</span></td>
-                                <td>/api/v1/users/me/assessments</td>
-                                <td><span class="badge badge-purple">JWT</span></td>
-                                <td>Submit biomarkers & predict</td>
-                            </tr>
-                            <tr>
-                                <td><span class="badge badge-green">GET</span></td>
-                                <td>/api/v1/admin/dashboard</td>
-                                <td><span class="badge badge-red">Admin</span></td>
-                                <td>Admin statistics</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <footer class="footer">
-            <p><strong>Diana V2 Architecture Map</strong></p>
-            <p style="margin-top: 8px;"><code>Last Updated: February 20, 2026</code></p>
-        </footer>
-    </main>
-
-    <script>
-        // Initialize Mermaid
-        mermaid.initialize({
-            startOnLoad: true,
-            theme: 'dark',
-            securityLevel: 'loose',
-            themeVariables: {
-                primaryColor: '#3b82f6',
-                primaryTextColor: '#f8fafc',
-                primaryBorderColor: '#475569',
-                lineColor: '#64748b',
-                secondaryColor: '#1e293b',
-                tertiaryColor: '#334155',
-                fontFamily: 'Inter, sans-serif'
-            },
-            flowchart: {
-                useMaxWidth: true,
-                htmlLabels: true,
-                curve: 'basis'
-            }
-        });
-
-        // Navigation Logic
-        document.addEventListener('DOMContentLoaded', () => {
-            const navLinks = document.querySelectorAll('.nav-link');
-            const sections = document.querySelectorAll('.section');
-            const cardLinks = document.querySelectorAll('.card[data-target]');
-
-            function switchSection(targetId) {
-                // Hide all sections
-                sections.forEach(section => {
-                    section.classList.remove('active');
-                });
-
-                // Show target section
-                const targetSection = document.getElementById(targetId);
-                if (targetSection) {
-                    targetSection.classList.add('active');
-
-                    // Force complete diagram reflow for proper rendering after display changed
-                    setTimeout(() => {
-                        window.dispatchEvent(new Event('resize'));
-                    }, 50);
-                }
-
-                // Update nav state
-                navLinks.forEach(link => {
-                    link.classList.remove('active');
-                    if (link.dataset.target === targetId) {
-                        link.classList.add('active');
-                    }
-                });
-
-                // Scroll to top
-                window.scrollTo(0, 0);
-            }
-
-            // Bind nav click events
-            navLinks.forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const targetId = link.dataset.target;
-                    switchSection(targetId);
-                });
-            });
-
-            // Bind card click events
-            cardLinks.forEach(card => {
-                card.addEventListener('click', () => {
-                    const targetId = card.dataset.target;
-                    switchSection(targetId);
-                });
-            });
-
-            // Handle URL hash on load
-            if (window.location.hash) {
-                const hashId = window.location.hash.substring(1);
-                switchSection(hashId);
-            }
-        });
-    </script>
 </body>
-
 </html>

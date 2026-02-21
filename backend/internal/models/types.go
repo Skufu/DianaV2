@@ -130,9 +130,9 @@ type ClusterInsights struct {
 }
 
 type TrendPoint struct {
-	Label string  `json:"label"`
-	HbA1c float64 `json:"hba1c"`
-	FBS   float64 `json:"fbs"`
+	Label     string  `json:"label"`
+	BMI       float64 `json:"bmi"`
+	RiskScore float64 `json:"risk_score"`
 }
 
 // AssessmentTrend represents a single point in a user's risk trend over time

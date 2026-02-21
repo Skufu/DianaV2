@@ -206,9 +206,9 @@ func (r *pgAssessmentRepo) TrendAverages(ctx context.Context) ([]models.TrendPoi
 	var res []models.TrendPoint
 	for _, t := range rows {
 		res = append(res, models.TrendPoint{
-			Label: t.Label,
-			HbA1c: t.Hba1c,
-			FBS:   t.Fbs,
+			Label:     t.Label,
+			BMI:       t.Bmi,
+			RiskScore: t.RiskScore,
 		})
 	}
 	return res, nil
@@ -243,9 +243,9 @@ func (r *pgAssessmentRepo) TrendAveragesByUser(ctx context.Context, userID int32
 	var res []models.TrendPoint
 	for _, t := range rows {
 		res = append(res, models.TrendPoint{
-			Label: t.Label,
-			HbA1c: t.Hba1c,
-			FBS:   t.Fbs,
+			Label:     t.Label,
+			BMI:       t.Bmi,
+			RiskScore: t.RiskScore,
 		})
 	}
 	return res, nil
