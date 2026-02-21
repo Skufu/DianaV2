@@ -19,7 +19,7 @@ func NewMockPredictor() *MockPredictor {
 
 func (m *MockPredictor) Predict(ctx context.Context, input models.Assessment) (Prediction, error) {
 	switch {
-	case input.BMI >= 35 && (input.Triglycerides >= 150 || input.LDL >= 130 || (input.HDL > 0 && input.HDL < 45)) && (input.Systolic >= 130 || input.Diastolic >= 80):
+	case input.BMI >= 35 && (input.Triglycerides >= 150 || input.LDL >= 130 || (input.HDL > 0 && input.HDL < 45)):
 		return Prediction{
 			Cluster:            "SIRD",
 			RiskScore:          85,
@@ -29,7 +29,7 @@ func (m *MockPredictor) Predict(ctx context.Context, input models.Assessment) (P
 			TreatmentFocus:     "Focus on insulin sensitivity and cardiovascular risk reduction.",
 			AtRiskProbability:  0.85,
 		}, nil
-	case input.BMI < 25 && (input.Triglycerides >= 200 || input.LDL >= 160 || input.Systolic >= 140 || input.Diastolic >= 90):
+	case input.BMI < 25 && (input.Triglycerides >= 200 || input.LDL >= 160):
 		return Prediction{
 			Cluster:            "SIDD",
 			RiskScore:          78,

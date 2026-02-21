@@ -1556,7 +1556,7 @@ def main():
     overfit_gap = train_accuracy - oof_accuracy
 
     report = {
-        "model_type": "clinical_v2_reduced_features",
+        "model_type": "clinical_3class_reduced_features",
         "features": REDUCED_FEATURES,
         "n_features": len(REDUCED_FEATURES),
         "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",

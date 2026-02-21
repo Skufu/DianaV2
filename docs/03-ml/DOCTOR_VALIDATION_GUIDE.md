@@ -1,7 +1,7 @@
 # DIANA Clinical Model - Doctor Validation Guide
 
-> Version: `clinical_v2`  
-> Last updated: 2026-02-18  
+> Version: `clinical_3class`  
+> Last updated: 2026-02-21  
 > Purpose: safe, evidence-based doctor validation protocol
 
 ---
@@ -10,15 +10,15 @@
 
 Doctor validation is **allowed in study mode** with strict guardrails:
 
-- use `train_v2.py` artifacts as the evidence source,
-- use `run_validation.py` for prediction runs,
+- use `train_binary_v2_no_bp.py` artifacts as the evidence source,
+- use `run_validation.py` for prediction runs (defaults to the binary_v2_no_bp screening model),
 - treat outputs as screening support only (not diagnosis).
 
 ---
 
 ## Model Scope
 
-The clinical model predicts diabetes risk **without HbA1c/FBS as features** to reduce circularity at inference time.
+The clinical model predicts diabetes risk **without HbA1c/FBS as features** to reduce circularity at inference time. The primary mode for validation is the **binary_v2_no_bp screening model** (Normal vs At-Risk).
 
 ### Inputs
 
@@ -38,7 +38,7 @@ Optional lifestyle:
 - activity
 - alcohol
 
-The predictor computes engineered features internally for the 13-feature model contract.
+The predictor computes engineered features internally for the 16-feature model contract.
 
 ### Outputs
 
@@ -51,20 +51,42 @@ The predictor computes engineered features internally for the 13-feature model c
 
 ## Verified Performance Snapshot
 
-Source: `models/clinical_v2/results/best_model_report.json`
+Source: `models/clinical_3class/results/best_model_report.json`
 
 - Best model: Logistic Regression
 - Validation method: Nested LOGO (outer) + GroupKFold pipeline CV (inner)
-- AUC-ROC (weighted OVR): `0.6964`
+- AUC-ROC (weighted OVR): `0.6942`
 - Recall by class:
-  - Normal: `0.1573`
-  - Pre-diabetic: `0.5295`
-  - Diabetic: `0.7112`
+  - Normal: `0.1791`
+  - Pre-diabetic: `0.4726`
+  - Diabetic: `0.7292`
 - Decision thresholds:
-  - Pre-diabetic: `0.25`
-  - Diabetic: `0.35`
+  - Pre-diabetic: `0.30`
+  - Diabetic: `0.20`
 
 Interpretation: tuned for high at-risk capture; false positives are expected.
+
+### Binary Model Evaluation (At-Risk vs Normal)
+
+Source: `models/binary_v2_no_bp/results/best_model_report.json`
+
+- **Best model:** Logistic Regression (Threshold: 0.49)
+- **Validation method:** Nested LOGO (outer) + GroupKFold pipeline CV (inner)
+- **AUC-ROC:** `0.726`
+- **Sensitivity:** `0.713`
+- **Specificity:** `0.620`
+- **NPV:** `0.654`
+
+#### February 2026 Specificity Optimization
+
+The original binary_v2_no_bp screening model threshold (0.31) created too many false positives (specificity 0.308). We performed a targeted optimization to rebalance the screening tradeoff:
+
+1. **Rebalanced objective function**: weighted specificity higher in the threshold search (0.30 vs 0.25) while keeping sensitivity as primary constraint (0.35).
+2. **Raised screening validity floor**: from `specificity >= 0.30` to `>= 0.40`.
+3. **Broadened regularization search**: Expanded Logistic Regression `C` parameter grid (`[0.01, 3.0]`).
+4. **Introduced tree ensemble**: Added LightGBM to the pipeline competition.
+
+**Results:** Specificity improved by 101% (`0.308 -> 0.620`) while maintaining valid sensitivity (`0.713`). The false positive rate dropped from 69% to 38%, making the model significantly more viable for clinical triage without overwhelming resources. Logistic Regression won the cross-validated pipeline competition.
 
 ---
 
@@ -82,10 +104,10 @@ Interpretation: tuned for high at-risk capture; false positives are expected.
 ### 1) Prepare and refresh artifacts
 
 ```bash
-bash scripts/dev/retrain-all.sh
+bash scripts/dev/retrain-binary_v2_no_bp.sh
 ```
 
-### 2) Verify defensibility artifacts are consistent
+### 2) Verify clinical model defensibility artifacts are consistent
 
 ```bash
 python scripts/thesis/generate_defensibility_outputs.py

@@ -171,7 +171,7 @@ make ml
 ### Manual execution (via venv)
 ```bash
 # Full pipeline (recommended - processes data, imputes, trains, clusters)
-source venv/bin/activate && ./scripts/dev/retrain-all.sh
+source venv/bin/activate && ./scripts/dev/retrain-clinical.sh
 
 # Or run individual steps:
 ./venv/bin/python scripts/process_nhanes_multi.py

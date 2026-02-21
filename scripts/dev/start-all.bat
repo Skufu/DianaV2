@@ -42,10 +42,10 @@ exit /b 1
 :python_found
 
 :: Check ML models
-if not exist "models\clinical_v2\random_forest.joblib" (
-    if not exist "models\clinical_v2\xgboost.joblib" (
-        if not exist "models\clinical_v2\best_model.joblib" (
-            echo ML models not found. Run 'bash scripts/dev/retrain-all.sh' first.
+if not exist "models\clinical_3class\random_forest.joblib" (
+    if not exist "models\clinical_3class\xgboost.joblib" (
+        if not exist "models\clinical_3class\best_model.joblib" (
+            echo ML models not found. Run 'bash scripts/dev/retrain-clinical.sh' first.
             exit /b 1
         )
     )

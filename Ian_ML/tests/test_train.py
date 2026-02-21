@@ -55,24 +55,24 @@ def test_bmi_categorization_underweight():
 
 
 def test_bmi_categorization_normal():
-    """Test 18.5 < BMI <= 25 returns 1 (Normal). Note: pd.cut uses left-exclusive bins."""
-    df = create_test_df(bmi=[19.0, 20.0, 24.9])
+    """Test 18.5 < BMI <= 23 returns 1 (Normal). Note: pd.cut uses left-exclusive bins."""
+    df = create_test_df(bmi=[19.0, 20.0, 22.9])
     result = engineer_features_reduced(df)
     
     assert all(result['bmi_category'] == 1), "All normal BMIs should be category 1"
 
 
 def test_bmi_categorization_overweight():
-    """Test 25 < BMI <= 30 returns 2 (Overweight). Note: pd.cut uses left-exclusive bins."""
-    df = create_test_df(bmi=[25.1, 27.0, 29.9])
+    """Test 23 < BMI <= 25 returns 2 (Overweight). Note: pd.cut uses left-exclusive bins."""
+    df = create_test_df(bmi=[23.1, 24.0, 24.9])
     result = engineer_features_reduced(df)
     
     assert all(result['bmi_category'] == 2), "All overweight BMIs should be category 2"
 
 
 def test_bmi_categorization_obese():
-    """Test BMI > 30 returns 3 (Obese). Note: pd.cut uses left-exclusive bins."""
-    df = create_test_df(bmi=[30.1, 35.0, 40.0])
+    """Test BMI > 25 returns 3 (Obese). Note: pd.cut uses left-exclusive bins."""
+    df = create_test_df(bmi=[25.1, 30.0, 35.0])
     result = engineer_features_reduced(df)
     
     assert all(result['bmi_category'] == 3), "All obese BMIs should be category 3"
@@ -81,14 +81,14 @@ def test_bmi_categorization_obese():
 def test_bmi_categorization_boundary():
     """Test BMI category boundaries (pd.cut uses left-exclusive intervals)."""
     df = pd.DataFrame({
-        'bmi': [18.49, 18.5, 24.99, 25.0, 29.99, 30.0],
+        'bmi': [18.49, 18.5, 22.99, 23.0, 24.99, 25.0],
         'triglycerides': [150.0] * 6,
         'hdl': [50.0] * 6,
     })
     result = engineer_features_reduced(df)
     
-    # pd.cut bins=[0, 18.5, 25, 30, 100] -> (0,18.5]=0, (18.5,25]=1, (25,30]=2, (30,100]=3
-    # 18.5 falls in (0, 18.5] = 0; 25.0 falls in (18.5, 25] = 1; 30.0 falls in (25, 30] = 2
+    # pd.cut bins=[0, 18.5, 23, 25, 100] -> (0,18.5]=0, (18.5,23]=1, (23,25]=2, (25,100]=3
+    # 18.5 falls in (0, 18.5] = 0; 23.0 falls in (18.5, 23] = 1; 25.0 falls in (23, 25] = 2
     expected = [0.0, 0.0, 1.0, 1.0, 2.0, 2.0]
     assert list(result['bmi_category']) == expected, \
         f"Boundary values incorrect: {list(result['bmi_category'])} vs {expected}"
@@ -126,7 +126,7 @@ def test_metabolic_syndrome_scoring():
         'triglycerides': [160.0, 140.0, 200.0, 40.0],
         'hdl': [45.0, 55.0, 30.0, 60.0],
         'systolic': [135.0, 125.0, 140.0, 120.0],
-        'bmi': [32.0, 28.0, 30.0, 29.0],
+        'bmi': [26.0, 24.0, 26.0, 24.0],
         'waist_circumference': [90.0, 70.0, 95.0, 75.0],  # >=80 adds 1
     })
     result = engineer_features_reduced(df)
@@ -144,7 +144,7 @@ def test_metabolic_syndrome_without_waist():
         'triglycerides': [160.0],
         'hdl': [45.0],
         'systolic': [135.0],
-        'bmi': [32.0],
+        'bmi': [26.0],
     })
     result = engineer_features_reduced(df)
     
@@ -276,7 +276,7 @@ def test_v2_reduced_features_list():
         "metabolic_syndrome_score",
         # Enrichment
         "waist_circumference", "family_history_diabetes",
-        "race_encoded", "crp",
+        "race_encoded",
     ]
     
     for feat in expected_features:

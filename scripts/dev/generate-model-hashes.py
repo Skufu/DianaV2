@@ -51,12 +51,12 @@ def main():
     else:
         project_dir = Path.cwd()
     
-    models_dir = project_dir / "models" / "clinical_v2"
+    models_dir = project_dir / "models" / "clinical_3class"
     output_file = models_dir / "model_hashes.json"
     
     if not models_dir.exists():
         print(f"❌ Models directory not found: {models_dir}")
-        print("   Train models first: bash scripts/dev/retrain-all.sh")
+        print("   Train models first: bash scripts/dev/retrain-clinical.sh")
         return 1
     
     print(f"Generating model hashes for: {models_dir}")

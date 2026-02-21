@@ -55,13 +55,17 @@ data/
 
 1. **Download**: 
    - Python: `scripts/data/download_nhanes_multi.py`
-   - Bash (Legacy): `scripts/legacy/download_nhanes.sh`
+   - Python: `scripts/data/download_lifestyle_data.py`
 2. **Process**: `scripts/data/process_nhanes_multi.py`
    - Merges biomarker files across multiple cycles (F-L)
    - Filters postmenopausal women (age 45-60, female, no period in 12 mo)
-   - Creates diabetes labels per ADA criteria
    - Derives lifestyle features (smoking, alcohol, activity)
-3. **Output**: `data/nhanes/processed/diana_training_data_multi.csv`
+3. **Clean and Label**: `Ian_ML/training/data_processing.py`
+   - Creates diabetes labels using self-reported diagnosis (DIQ010) with ADA HbA1c overrides
+   - Removes outliers and performs data quality checks
+4. **Impute**: `scripts/data/impute_missing_data.py`
+   - Fills missing values (KNN for continuous, mode for lifestyle)
+5. **Output**: `data/nhanes/processed/diana_dataset_final.csv` and `diana_dataset_imputed.csv`
 
 ---
 
@@ -76,22 +80,22 @@ data/
 | `hdl` | HDL_*.XPT | 20-150 | mg/dL |
 | `ldl` | TRIGLY_*.XPT | 40-300 | mg/dL |
 | `total_cholesterol`| TCHOL_*.XPT | 100-400 | mg/dL |
-| `systolic` | BPX_*.XPT | 80-200 | mmHg |
-| `diastolic` | BPX_*.XPT | 40-120 | mmHg |
 | `age` | DEMO_*.XPT | 45-85 | years |
 
 ---
 
-## Diabetes Classification (ADA Criteria)
+## Diabetes Classification (Self-Reported + ADA Criteria)
 
-| Label | HbA1c Threshold | Description |
-|-------|-----------------|-------------|
-| Normal | < 5.7% | No diabetes |
-| Pre-diabetic | 5.7% - 6.4% | Increased risk |
-| Diabetic | >= 6.5% | Type 2 diabetes |
+Primary labels are derived from self-reported diagnosis (`DIQ010`), with clinical overrides using ADA HbA1c criteria to correct undiagnosed or misreported cases:
+
+| Label | Criteria |
+|-------|----------|
+| Normal | No self-reported diabetes AND HbA1c < 5.7% |
+| Pre-diabetic | Self-reported borderline OR HbA1c 5.7% - 6.4% |
+| Diabetic | Self-reported diabetes OR HbA1c >= 6.5% |
 
 ---
 
 ## Search Keywords
 
-`NHANES` `CDC` `biomarkers` `HbA1c` `fasting glucose` `BMI` `triglycerides` `HDL` `LDL` `cholesterol` `demographics` `postmenopausal` `diabetes` `ADA criteria` `XPT` `SAS format` `training data` `processed data` `blood pressure` `lifestyle`
+`NHANES` `CDC` `biomarkers` `HbA1c` `fasting glucose` `BMI` `triglycerides` `HDL` `LDL` `cholesterol` `demographics` `postmenopausal` `diabetes` `ADA criteria` `DIQ010` `XPT` `SAS format` `training data` `processed data` `lifestyle`
