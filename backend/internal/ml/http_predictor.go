@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/skufu/DianaV2/backend/internal/models"
@@ -108,4 +109,43 @@ func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (P
 		TreatmentFocus:     out.TreatmentFocus,
 		AtRiskProbability:  out.AtRiskProb,
 	}, nil
+}
+
+// GetActiveModelMetadata fetches the metadata of the currently active model from the ML server.
+func (p *HTTPPredictor) GetActiveModelMetadata(ctx context.Context) (*ModelMetadata, error) {
+	if p.url == "" {
+		return nil, fmt.Errorf("ml url is not configured")
+	}
+
+	baseURL := strings.TrimSuffix(p.url, "/predict")
+	mlURL := baseURL + "/model/active/metadata"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, mlURL, nil)
+	if err != nil {
+		log.Printf("[ML] Failed to create request for metadata: %v", err)
+		return nil, fmt.Errorf("failed to create request for metadata: %w", err)
+	}
+	if p.apiKey != "" {
+		req.Header.Set("X-API-Key", p.apiKey)
+	}
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		log.Printf("[ML] Metadata request failed: %v", err)
+		return nil, fmt.Errorf("ml metadata request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		log.Printf("[ML] Non-OK status %d for metadata: %s", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("ml server returned status %d for metadata", resp.StatusCode)
+	}
+
+	var metadata ModelMetadata
+	if err := json.NewDecoder(resp.Body).Decode(&metadata); err != nil {
+		log.Printf("[ML] Failed to decode metadata response: %v", err)
+		return nil, fmt.Errorf("failed to decode ml metadata response: %w", err)
+	}
+
+	return &metadata, nil
 }

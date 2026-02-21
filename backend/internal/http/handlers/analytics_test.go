@@ -136,7 +136,8 @@ func TestAnalyticsHandler_GetSummary_Success(t *testing.T) {
 			{Cluster: "high_risk", Count: 1},
 		},
 		trends: []models.TrendPoint{
-			{Label: "HbA1c", HbA1c: 6.8, FBS: 120},
+			{Label: "2024-01", BMI: 24.0, RiskScore: 40.0},
+			{Label: "2024-02", BMI: 24.5, RiskScore: 50.0},
 		},
 	}
 	router := setupAnalyticsRouter(true, assessments)
@@ -158,7 +159,7 @@ func TestAnalyticsHandler_GetSummary_Success(t *testing.T) {
 
 	trends, ok := payload["trends"].([]any)
 	assert.True(t, ok)
-	assert.Len(t, trends, 1)
+	assert.Len(t, trends, 2)
 }
 
 func TestAnalyticsHandler_GetSummary_Unauthorized(t *testing.T) {

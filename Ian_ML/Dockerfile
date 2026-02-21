@@ -1,7 +1,7 @@
 # Python ML Server Dockerfile
 FROM python:3.11-slim
 
-WORKDIR /app
+WORKDIR /app/Ian_ML
 
 # Install system dependencies for scientific packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -26,6 +26,8 @@ USER appuser
 # Models are mounted as volume, but include defaults
 # COPY ../models /app/models
 
+ENV PYTHONPATH=/app
+ENV FLASK_APP=Ian_ML.service.server
 EXPOSE 5000
 
 # Health check
