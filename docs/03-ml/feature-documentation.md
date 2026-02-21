@@ -38,18 +38,20 @@ These features are calculated through feature engineering in `train_v2.py`:
 ```python
 df["bmi_category"] = pd.cut(
     df["bmi"], 
-    bins=[0, 18.5, 25, 30, 100], 
+    bins=[0, 18.5, 23, 25, 100], 
     labels=[0, 1, 2, 3]
 )
 ```
 
-**Mapping:**
+**Mapping (Philippine / Asia-Pacific WHO Standard):**
 | BMI Range | Category | Value |
 |-----------|----------|-------|
 | < 18.5 | Underweight | 0 |
-| 18.5 - 24.9 | Normal | 1 |
-| 25.0 - 29.9 | Overweight | 2 |
-| ≥ 30.0 | Obese | 3 |
+| 18.5 - 22.9 | Normal | 1 |
+| 23.0 - 24.9 | Overweight | 2 |
+| ≥ 25.0 | Obese | 3 |
+
+> **Note:** Uses WHO Asia-Pacific guidelines recommended for Filipino populations. Asian populations face higher metabolic risk at lower BMI levels compared to Western populations.
 
 **Clinical Rationale:** Non-linear BMI risk capture - obesity is a major diabetes risk factor.
 
@@ -172,7 +174,7 @@ df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
 | Elevated triglycerides | ≥ 150 mg/dL | 1 |
 | Reduced HDL | < 50 mg/dL (women) | 1 |
 | Elevated BP | Systolic ≥ 130 mmHg | 1 |
-| Elevated BMI | ≥ 30 kg/m² | 1 |
+| Elevated BMI | ≥ 25 kg/m² (PH Asia-Pacific WHO) | 1 |
 | Elevated waist circumference | ≥ 80 cm (women) | 1 |
 
 **Clinical Rationale:** Metabolic syndrome is a cluster of conditions that increases diabetes risk. Score range: 0-5 (≥3 criteria = metabolic syndrome diagnosis).
@@ -316,6 +318,22 @@ Based on mutual information and clinical literature:
 
 ---
 
-*Generated: February 2026*
-*Model Version: clinical_v2*
+*Generated: February 21, 2026*
+*Model Version: clinical_3class / binary_v2_no_bp*
 *Dataset: diana_dataset_final.csv (n=1,376)*
+*BMI Standard: Philippine (Asia-Pacific WHO)*
+
+---
+
+## Future Enhancements (Doctor-Recommended)
+
+The following features were discussed with clinical advisors and documented for potential future inclusion:
+
+| Feature | Clinical Rationale | Priority | Status |
+|---------|-------------------|----------|--------|
+| SGPT (ALT) | Liver enzyme marker — elevated levels may indicate fatty liver disease associated with insulin resistance | Optional | Not required per doctor's feedback |
+| Creatinine | Kidney function marker — elevated levels may indicate diabetic nephropathy risk | Optional | Not required per doctor's feedback |
+
+> **Note:** The doctor confirmed these are not required for diabetes risk assessment but could be useful supplementary markers in future versions.
+
+*Last Updated: February 21, 2026, 11:00 PM PHT*

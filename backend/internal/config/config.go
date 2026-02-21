@@ -67,7 +67,7 @@ func Load() Config {
 		DBDSN:          getEnv("DB_DSN", ""),
 		JWTSecret:      jwtSecret,
 		ModelURL:       getEnv("MODEL_URL", ""),
-		ModelVersion:   getEnv("MODEL_VERSION", "clinical_v2"),
+		ModelVersion:   getEnv("MODEL_VERSION", "binary_v2_no_bp"),
 		DatasetHash:    getEnv("MODEL_DATASET_HASH", ""),
 		MLAPIKey:       getEnv("ML_API_KEY", ""),
 		ModelTimeoutMS: 2000,
@@ -100,9 +100,9 @@ func Load() Config {
 		BPSysNormal:             getEnvInt("CLINICAL_BP_SYS_NORMAL", 120),
 		BPSysElevated:           getEnvInt("CLINICAL_BP_SYS_ELEVATED", 140),
 		BPDiaNormal:             getEnvInt("CLINICAL_BP_DIA_NORMAL", 80),
-		BMINormal:               getEnvFloat("CLINICAL_BMI_NORMAL", 25.0),
-		BMIOverweight:           getEnvFloat("CLINICAL_BMI_OVERWEIGHT", 30.0),
-		BMIObese:                getEnvFloat("CLINICAL_BMI_OBESE", 30.0),
+		BMINormal:               getEnvFloat("CLINICAL_BMI_NORMAL", 23.0),     // PH Asia-Pacific WHO
+		BMIOverweight:           getEnvFloat("CLINICAL_BMI_OVERWEIGHT", 25.0), // PH Asia-Pacific WHO
+		BMIObese:                getEnvFloat("CLINICAL_BMI_OBESE", 25.0),      // PH Asia-Pacific WHO
 		CholesterolHigh:         getEnvFloat("CLINICAL_CHOLESTEROL_HIGH", 200),
 		CholesterolBorderline:   getEnvFloat("CLINICAL_CHOLESTEROL_BORDERLINE", 200),
 		LDLHigh:                 getEnvFloat("CLINICAL_LDL_HIGH", 100),

@@ -251,7 +251,7 @@ def predict():
         model_type: "clinical" (default) or "ada"
 
     For clinical model (non-circular, recommended):
-        Base features (7): bmi, triglycerides, ldl, hdl, age, systolic, diastolic
+        Base features (5): bmi, triglycerides, ldl, hdl, age
         Lifestyle (optional): smoking, activity, alcohol
         Engineered features computed automatically from base features
 
@@ -273,15 +273,13 @@ def predict():
                     "error": "Clinical model not trained. Run Ian_ML/training/train_v2.py or scripts/train/train_quick.py first."
                 }), 503
             
-            # Extract all 7 base features + lifestyle data for 13-feature model
+            # Extract base features + lifestyle data for 14-feature model
             patient_data = {
                 "bmi": data.get("bmi"),
                 "triglycerides": data.get("triglycerides"),
                 "ldl": data.get("ldl"),
                 "hdl": data.get("hdl"),
                 "age": data.get("age", 54),
-                "systolic": data.get("systolic", 120),
-                "diastolic": data.get("diastolic", 80),
                 "smoking_status": data.get("smoking", "Unknown"),
                 "physical_activity": data.get("activity", "Unknown"),
                 "alcohol_use": data.get("alcohol", "Unknown")
@@ -320,8 +318,8 @@ def predict_explain():
         model_type: "clinical" (default) or "ada"
         format: "full" (default) or "clinician" (simplified)
 
-    For clinical model (13 features):
-        Base features: bmi, triglycerides, ldl, hdl, age, systolic, diastolic
+    For clinical model (14 features):
+        Base features: bmi, triglycerides, ldl, hdl, age
         Lifestyle: smoking, activity, alcohol (optional)
 
     Returns prediction results with SHAP-based feature contributions.
@@ -345,15 +343,13 @@ def predict_explain():
             if clin_predictor is None:
                 return jsonify({"error": "Clinical model not available"}), 503
             
-            # Extract all 7 base features + lifestyle data for 13-feature model
+            # Extract base features + lifestyle data for 14-feature model
             patient_data = {
                 "bmi": data.get("bmi"),
                 "triglycerides": data.get("triglycerides"),
                 "ldl": data.get("ldl"),
                 "hdl": data.get("hdl"),
                 "age": data.get("age", 54),
-                "systolic": data.get("systolic", 120),
-                "diastolic": data.get("diastolic", 80),
                 "smoking_status": data.get("smoking", "Unknown"),
                 "physical_activity": data.get("activity", "Unknown"),
                 "alcohol_use": data.get("alcohol", "Unknown")
@@ -726,7 +722,7 @@ def predict_batch():
 
     For clinical model:
         Each patient needs: bmi, triglycerides, ldl, hdl, age
-        Optional: systolic, diastolic, smoking, activity, alcohol
+        Optional: smoking, activity, alcohol
 
     For ADA baseline:
         Each patient needs: hba1c, fbs, bmi, triglycerides, ldl, hdl
@@ -763,8 +759,6 @@ def predict_batch():
                     "ldl": patient.get("ldl"),
                     "hdl": patient.get("hdl"),
                     "age": patient.get("age", 54),
-                    "systolic": patient.get("systolic", 120),
-                    "diastolic": patient.get("diastolic", 80),
                     "smoking_status": patient.get("smoking", "Unknown"),
                     "physical_activity": patient.get("activity", "Unknown"),
                     "alcohol_use": patient.get("alcohol", "Unknown")
@@ -826,8 +820,8 @@ def active_model_metadata():
         
         # Determine model version/name based on the directory it was loaded from
         model_version = "clinical_v2"
-        if "binary_v2" in str(clin_predictor.models_dir):
-            model_version = "binary_v2"
+        if "binary_v2_no_bp" in str(clin_predictor.models_dir):
+            model_version = "binary_v2_no_bp"
             
         return jsonify({
             "model_version": model_version,

@@ -63,25 +63,9 @@ func TestValidateBiomarkers(t *testing.T) {
 			wantValid:    true,
 		},
 		{
-			name: "hypertensive blood pressure",
-			input: models.Assessment{
-				Systolic: 145,
-			},
-			wantWarnings: []string{"bp_hypertensive"},
-			wantValid:    true,
-		},
-		{
-			name: "elevated blood pressure",
-			input: models.Assessment{
-				Systolic: 130,
-			},
-			wantWarnings: []string{"bp_elevated"},
-			wantValid:    true,
-		},
-		{
 			name: "obese BMI",
 			input: models.Assessment{
-				BMI: 32,
+				BMI: 26,
 			},
 			wantWarnings: []string{"bmi_obese"},
 			wantValid:    true,
@@ -89,7 +73,7 @@ func TestValidateBiomarkers(t *testing.T) {
 		{
 			name: "overweight BMI",
 			input: models.Assessment{
-				BMI: 27,
+				BMI: 24,
 			},
 			wantWarnings: []string{"bmi_overweight"},
 			wantValid:    true,
@@ -113,7 +97,7 @@ func TestValidateBiomarkers(t *testing.T) {
 				Systolic: 150,
 				BMI:      35,
 			},
-			minWarningCount: 4,
+			minWarningCount: 3,
 			wantValid:       true,
 		},
 	}
@@ -198,9 +182,9 @@ func getDefaultThresholds() config.ClinicalThresholds {
 		BPSysNormal:             120,
 		BPSysElevated:           140,
 		BPDiaNormal:             80,
-		BMINormal:               25.0,
-		BMIOverweight:           30.0,
-		BMIObese:                30.0,
+		BMINormal:               23.0,
+		BMIOverweight:           25.0,
+		BMIObese:                25.0,
 		CholesterolHigh:         200,
 		CholesterolBorderline:   200,
 		LDLHigh:                 100,

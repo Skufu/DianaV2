@@ -31,6 +31,8 @@ export ML_API_KEY=$(openssl rand -base64 32)
 # - JWT_SECRET=$JWT_SECRET
 # - ML_API_KEY=$ML_API_KEY
 # - POSTGRES_PASSWORD=your-password
+
+> **Windows Users:** If you don't have `openssl` installed, you can generate a random 32-character string using any password generator or from node: `node -e "console.log(crypto.randomBytes(32).toString('base64'))"`
 ```
 
 ## 🎯 Common Commands
@@ -45,6 +47,8 @@ export ML_API_KEY=$(openssl rand -base64 32)
 ./docker-start.sh status   # Check service health
 ./docker-start.sh clean    # Remove everything (WARNING: deletes data)
 ```
+
+> **Windows Users:** You cannot run `.sh` files natively in Command Prompt or PowerShell without WSL or Git Bash. Standard alternative commands are provided below.
 
 ### Using docker-compose directly
 
@@ -68,7 +72,7 @@ docker-compose down
 |---------|-------------|------------|
 | Frontend | http://localhost:4000 | http://localhost |
 | Backend API | http://localhost:8080 | http://localhost:8080 |
-| ML Server | http://localhost:5000 | http://localhost:5000 |
+| ML Server | http://localhost:5001 | http://localhost:5001 |
 | PostgreSQL | localhost:5432 | (internal only) |
 
 ## 🔧 Development Workflow
@@ -82,7 +86,7 @@ docker-compose down
 This starts:
 - Frontend on port 4000 (Vite dev server with hot reload)
 - Backend on port 8080 (Go with Air hot reload)
-- ML Server on port 5000 (Flask with auto-reload)
+- ML Server on port 5001 (Flask with auto-reload)
 - PostgreSQL on port 5432
 
 ### 2. Make Code Changes
@@ -183,7 +187,7 @@ ls models/
 curl http://localhost:8080/api/v1/healthz
 
 # ML Server
-curl http://localhost:5000/health
+curl http://localhost:5001/health
 
 # Frontend
 curl http://localhost:4000  # or http://localhost for prod
@@ -259,7 +263,7 @@ Docker Desktop handles architecture automatically. All images support arm64.
 
 1. **Allocate at least 4GB RAM** to Docker Desktop
 2. **Enable VirtioFS** in Docker Desktop Settings
-3. **Disable AirPlay Receiver** if using port 5000:
+3. **AirPlay Receiver Port Conflict:** We map the ML server to `5001` on the host side because macOS Monterey AirPlay Receiver uses port `5000`. If you still have port 5000 issues internally:
    - System Settings → General → AirDrop & Handoff → AirPlay Receiver → OFF
 
 ### Keyboard Shortcuts

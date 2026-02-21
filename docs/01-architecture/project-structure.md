@@ -142,7 +142,7 @@ DIANA V2/
 │   │   └── process_nhanes_multi.py
 │   ├── dev/                   # Development scripts
 │   │   ├── logs.sh
-│   │   ├── retrain-all.sh
+│   │   ├── retrain-clinical.sh
 │   │   ├── setup.sh
 │   │   ├── start-all.bat
 │   │   ├── start-all.ps1

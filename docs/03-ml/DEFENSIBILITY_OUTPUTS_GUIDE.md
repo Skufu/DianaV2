@@ -6,14 +6,14 @@ This document is a narrative guide for interpreting defensibility outputs.
 
 Use the following as the source of truth for current values:
 
-- `models/clinical_v2/results/best_model_report.json`
-- `models/clinical_v2/results/defensibility_validation_summary.json`
+- `models/clinical_3class/results/best_model_report.json`
+- `models/clinical_3class/results/defensibility_validation_summary.json`
 
 Important: `scripts/thesis/generate_defensibility_outputs.py` is now a verifier and does not generate synthetic metrics.
 
-**Location**: `models/clinical_v2/`
-- Results: `models/clinical_v2/results/`
-- Visualizations: `models/clinical_v2/visualizations/`
+**Location**: `models/clinical_3class/`
+- Results: `models/clinical_3class/results/`
+- Visualizations: `models/clinical_3class/visualizations/`
 
 ---
 
@@ -48,29 +48,29 @@ Fold 5 (2017-2018): AUC=0.680, Acc=0.554, Recall_Pre=0.415
 **Key Metrics**:
 ```json
 {
-  "brier_score_weighted": 0.162,  // Lower is better
+  "brier_score_weighted": 0.195,  // Lower is better
   "brier_per_class": {
-    "Normal": 0.188,
-    "Pre-diabetic": 0.190,
-    "Diabetic": 0.108  // Best calibrated
+    "Normal": 0.219,
+    "Pre-diabetic": 0.218,
+    "Diabetic": 0.148  // Best calibrated
   },
   "expected_calibration_error": {
     "mean": 0.161,
     "per_class": {
-      "Normal": 0.133,
-      "Pre-diabetic": 0.088,
-      "Diabetic": 0.262
+      "Normal": 0.106,
+      "Pre-diabetic": 0.028,
+      "Diabetic": 0.101
     }
   }
 }
 ```
 
 **Interpretation**:
-- **Brier Score 0.162**: Moderate calibration (0 = perfect, 0.25 = random)
-- **Diabetic class**: Best calibrated (Brier=0.108) - high confidence predictions are accurate
+- **Brier Score 0.195**: Moderate calibration (0 = perfect, 0.25 = random)
+- **Diabetic class**: Best calibrated (Brier=0.148) - high confidence predictions are accurate
 - **ECE 0.161**: Average calibration gap is ~16 percentage points
 
-**Panel Defense**: "We analyzed calibration using Brier scores and Expected Calibration Error. The model is reasonably calibrated, especially for the Diabetic class (Brier=0.108), meaning high predicted probabilities correspond to actual high risk."
+**Panel Defense**: "We analyzed calibration using Brier scores and Expected Calibration Error. The model is reasonably calibrated, especially for the Diabetic class (Brier=0.148), meaning high predicted probabilities correspond to actual high risk."
 
 **Limitation to Acknowledge**: "Calibration could be improved with Platt scaling or isotonic regression, which we note as future work."
 
@@ -84,19 +84,19 @@ Fold 5 (2017-2018): AUC=0.680, Acc=0.554, Recall_Pre=0.415
 ```json
 {
   "Normal": {
-    "precision": {"mean": 0.62, "ci_95": [0.58, 0.66]},
-    "recall": {"mean": 0.65, "ci_95": [0.61, 0.69]},
-    "f1": {"mean": 0.63, "ci_95": [0.59, 0.67]}
+    "precision": {"mean": 0.80, "ci_95": [0.75, 0.85]},
+    "recall": {"mean": 0.18, "ci_95": [0.15, 0.21]},
+    "f1": {"mean": 0.29, "ci_95": [0.25, 0.33]}
   },
   "Pre-diabetic": {
-    "precision": {"mean": 0.48, "ci_95": [0.43, 0.53]},
-    "recall": {"mean": 0.42, "ci_95": [0.37, 0.47]},
-    "f1": {"mean": 0.45, "ci_95": [0.40, 0.50]}
+    "precision": {"mean": 0.34, "ci_95": [0.29, 0.39]},
+    "recall": {"mean": 0.47, "ci_95": [0.43, 0.52]},
+    "f1": {"mean": 0.40, "ci_95": [0.35, 0.45]}
   },
   "Diabetic": {
-    "precision": {"mean": 0.58, "ci_95": [0.52, 0.64]},
-    "recall": {"mean": 0.44, "ci_95": [0.38, 0.50]},
-    "f1": {"mean": 0.50, "ci_95": [0.44, 0.56]}
+    "precision": {"mean": 0.34, "ci_95": [0.29, 0.39]},
+    "recall": {"mean": 0.73, "ci_95": [0.67, 0.78]},
+    "f1": {"mean": 0.46, "ci_95": [0.41, 0.51]}
   }
 }
 ```
@@ -115,17 +115,17 @@ Fold 5 (2017-2018): AUC=0.680, Acc=0.554, Recall_Pre=0.415
 
 ```json
 {
-  "pre_diabetic": 0.35,
-  "diabetic": 0.28,
-  "selection_score": 0.67,
+  "pre_diabetic": 0.30,
+  "diabetic": 0.20,
+  "selection_score": 0.72,
   "objective": "Optimize recall on Pre-diabetic/Diabetic classes",
   "note": "Thresholds chosen to maximize sensitivity for at-risk classes"
 }
 ```
 
 **Interpretation**:
-- **Pre-diabetic threshold**: 0.35 (lowered from default 0.5 to catch more cases)
-- **Diabetic threshold**: 0.28 (even lower for highest risk class)
+- **Pre-diabetic threshold**: 0.30 (lowered from default 0.5 to catch more cases)
+- **Diabetic threshold**: 0.20 (even lower for highest risk class)
 - **Objective**: Prioritize sensitivity over specificity for screening
 
 **Panel Defense**: "We optimized decision thresholds to maximize recall on at-risk classes (Pre-diabetic and Diabetic). This prioritizes sensitivity for a screening tool - we'd rather flag borderline cases for follow-up testing than miss them."
@@ -235,7 +235,7 @@ Cluster | Size | Diabetic Rate | Avg BMI | Avg TG/HDL
 **Response**: "We used nested Leave-One-Group-Out CV, holding out entire NHANES cycles. The logo_fold_metrics.csv shows consistent AUC across all 5 cycles (0.662-0.692), demonstrating temporal stability."
 
 ### Concern 2: "Are your probabilities calibrated?"
-**Response**: "We analyzed calibration using Brier scores (0.162 overall, 0.108 for Diabetic class) and generated reliability diagrams. While not perfect, the model is reasonably calibrated, especially for high-risk predictions."
+**Response**: "We analyzed calibration using Brier scores (0.195 overall, 0.148 for Diabetic class) and generated reliability diagrams. While not perfect, the model is reasonably calibrated, especially for high-risk predictions."
 
 ### Concern 3: "Why did you choose K=4?"
 **Response**: "The k_comparison.json shows K=2 is optimal by silhouette, but we chose K=4 to align with Ahlqvist et al. (2018) clinical subtypes. We present both and acknowledge the trade-off between statistical optimality and clinical interpretability."
@@ -244,7 +244,7 @@ Cluster | Size | Diabetic Rate | Avg BMI | Avg TG/HDL
 **Response**: "Yes, class_metrics_ci.json provides 95% confidence intervals from 1000 bootstrap samples. This shows the statistical uncertainty in our class-level performance metrics."
 
 ### Concern 5: "How did you choose decision thresholds?"
-**Response**: "The decision_thresholds.json shows we optimized thresholds (Pre-diabetic: 0.35, Diabetic: 0.28) to maximize recall on at-risk classes. This prioritizes sensitivity for screening - better to flag borderline cases than miss them."
+**Response**: "The decision_thresholds.json shows we optimized thresholds (Pre-diabetic: 0.30, Diabetic: 0.20) to maximize recall on at-risk classes. This prioritizes sensitivity for screening - better to flag borderline cases than miss them."
 
 ---
 

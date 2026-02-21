@@ -342,7 +342,7 @@ JWT_SECRET=REPLACE_ME
 CORS_ORIGINS=http://localhost:3000,http://localhost:4000,http://localhost:5173
 MODEL_URL=http://localhost:5001/predict
 ML_PORT=5001
-MODEL_VERSION=clinical_v2
+MODEL_VERSION=binary_v2_no_bp
 MODEL_DATASET_HASH=nhanes_postmenopausal_2011_2020
 MODEL_TIMEOUT_MS=2000
 EXPORT_MAX_ROWS=5000
@@ -561,15 +561,14 @@ Write-Step "Checking ML Models"
 Set-Location $PROJECT_DIR
 
 $MODELS_FOUND = $false
-if ((Test-Path "models\clinical_v2\random_forest.joblib") -or 
-    (Test-Path "models\clinical_v2\xgboost.joblib") -or 
-    (Test-Path "models\clinical_v2\best_model.joblib")) {
+if ((Test-Path "models\binary_v2_no_bp\best_model.joblib") -and 
+    (Test-Path "models\binary_v2_no_bp\kmeans_model.joblib")) {
     $MODELS_FOUND = $true
     Write-Success "ML models found"
 } else {
     Write-Warning "ML models not found. You need to train them or copy from shared location:"
-    Write-Info "Option 1: Train models: bash scripts\dev\retrain-all.sh"
-    Write-Info "Option 2: Copy from shared drive if someone has trained them (put in models/clinical_v2/)"
+    Write-Info "Option 1: Train models: bash scripts\dev\retrain-binary.sh"
+    Write-Info "Option 2: Copy from shared drive if someone has trained them (put in models/binary_v2_no_bp/)"
 }
 
 # ─────────────────────────────────────────────────────────────
@@ -616,7 +615,7 @@ Services Configured:
 - ML Models: $MODELS_STATUS
 
 Next Steps:
-1. $(if (-not $MODELS_FOUND) { "TRAIN ML MODELS: bash scripts/dev/retrain-all.sh" } else { "ML models ready" })
+1. $(if (-not $MODELS_FOUND) { "TRAIN ML MODELS: bash scripts/dev/retrain-binary.sh" } else { "ML models ready" })
 2. START APPLICATION: bash scripts/dev/start-all.sh
 3. Access: http://localhost:4000
 
@@ -643,9 +642,9 @@ Write-Host ""
 
 if (-not $MODELS_FOUND) {
     Write-Host "  1. Train ML models (REQUIRED before starting):" -ForegroundColor Yellow
-    Write-Host "     bash scripts/dev/retrain-all.sh" -ForegroundColor Cyan
+    Write-Host "     bash scripts/dev/retrain-binary.sh" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "     OR copy models from shared location to models/clinical_v2/"
+    Write-Host "     OR copy models from shared location to models/binary_v2_no_bp/"
     Write-Host ""
     Write-Host "  2. Start the application:"
 } else {

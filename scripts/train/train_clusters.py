@@ -23,8 +23,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 DATA_PATH = Path("data/nhanes/processed/diana_dataset_final.csv")
-MODELS_DIR = Path("models/clinical_v2")  # Save to clinical_v2
-VIZ_DIR = Path("models/clinical_v2/visualizations")
+MODELS_DIR = Path("models/clinical_3class")  # Save to clinical_3class
+VIZ_DIR = Path("models/clinical_3class/visualizations")
 
 # Features for clustering — non-circular clinical biomarkers only
 # No HbA1c/FBS to avoid circular reasoning with diabetes diagnosis
@@ -289,7 +289,7 @@ def train_clusters():
     )
     df_out.to_csv("data/nhanes/processed/clustered_data.csv", index=False)
     
-    print("\n[SUCCESS] Training complete! Artifacts saved to models/clinical_v2/")
+    print("\n[SUCCESS] Training complete! Artifacts saved to models/clinical_3class/")
     print(f"   - cluster_scaler.joblib (fitted on {len(CLUSTER_FEATURES)} features: {CLUSTER_FEATURES})")
     print(f"   - kmeans_model.joblib (K={best_k})")
     print(f"   - cluster_labels.json (with subtypes + risk levels)")

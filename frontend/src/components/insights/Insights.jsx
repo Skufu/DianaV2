@@ -116,7 +116,7 @@ const Insights = ({ token, patients = [] }) => {
       { factor: 'FBS', importance: 0.25, color: '#06B6D4' },
       { factor: 'BMI', importance: 0.18, color: '#10B981' },
       { factor: 'Age', importance: 0.12, color: '#F59E0B' },
-      { factor: 'Blood Pressure', importance: 0.10, color: '#F43F5E' },
+      { factor: 'Family History', importance: 0.10, color: '#F43F5E' },
       { factor: 'Physical Activity', importance: 0.07, color: '#64748B' }
     ];
   }, [mlIG]);

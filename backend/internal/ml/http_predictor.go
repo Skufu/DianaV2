@@ -48,7 +48,7 @@ func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (P
 	}
 
 	if input.BMI <= 0 || input.Triglycerides <= 0 || input.LDL <= 0 || input.HDL <= 0 ||
-		input.Systolic <= 0 || input.Diastolic <= 0 || input.Age < 18 || input.Age > 120 {
+		input.Age < 18 || input.Age > 120 {
 		return Prediction{}, fmt.Errorf("invalid clinical payload for ML prediction")
 	}
 

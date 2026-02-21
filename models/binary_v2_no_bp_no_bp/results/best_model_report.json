@@ -1,0 +1,44 @@
+{
+  "model_type": "binary_v2_no_bp",
+  "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
+  "best_model": "Logistic Regression",
+  "n_features": 14,
+  "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
+  "metrics": {
+    "auc_roc": 0.7181364435050548,
+    "auc_ci_95": [
+      0.6915196545428322,
+      0.7443446861004769
+    ],
+    "accuracy": 0.6671511627906976,
+    "sensitivity": 0.7438692098092643,
+    "sensitivity_ci_95": [
+      0.714280828610514,
+      0.7737735803772859
+    ],
+    "specificity": 0.5794392523364486,
+    "ppv": 0.6691176470588235,
+    "npv": 0.6642857142857143,
+    "f1": 0.7045161290322581,
+    "mean_threshold": 0.46166666666666645,
+    "inner_cv_auc_mean": 0.726672071091497,
+    "inner_cv_auc_std": 0.005058057716206001
+  },
+  "features": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age",
+    "bmi_category",
+    "tg_hdl_ratio",
+    "smoking_encoded",
+    "activity_encoded",
+    "alcohol_encoded",
+    "metabolic_syndrome_score",
+    "waist_circumference",
+    "family_history_diabetes",
+    "race_encoded"
+  ],
+  "clinical_rationale": "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). Prioritizes sensitivity for screening."
+}

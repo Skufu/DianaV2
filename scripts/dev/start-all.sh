@@ -65,9 +65,9 @@ kill_on_port() {
     fi
 }
 
-# Check if ML models exist (clinical_v2 is the current model version)
-if [ ! -f "models/clinical_v2/best_model.joblib" ] && [ ! -f "models/clinical_v2/imputer.joblib" ] && [ ! -f "models/clinical_v2/scaler.joblib" ]; then
-    echo -e "${RED}ML models not found. Run 'bash scripts/dev/retrain-all.sh' first.${NC}"
+# Check if ML models exist (clinical_3class is the current model version)
+if [ ! -f "models/clinical_3class/best_model.joblib" ] && [ ! -f "models/clinical_3class/imputer.joblib" ] && [ ! -f "models/clinical_3class/scaler.joblib" ]; then
+    echo -e "${RED}ML models not found. Run 'bash scripts/dev/retrain-clinical.sh' first.${NC}"
     exit 1
 fi
 
@@ -76,7 +76,7 @@ import sys
 from pathlib import Path
 import joblib
 
-models_dir = Path("models/clinical_v2")
+models_dir = Path("models/clinical_3class")
 kmeans_path = models_dir / "kmeans_model.joblib"
 cluster_scaler_path = models_dir / "cluster_scaler.joblib"
 
@@ -94,7 +94,7 @@ if getattr(cluster_scaler, "n_features_in_", None) != expected:
 PY
 then
     echo -e "${YELLOW}Clinical v2 clustering artifacts out of date. Retraining...${NC}"
-    "$PYTHON" "scripts/train/retrain_clinical_v2_kmeans.py" || exit 1
+    "$PYTHON" "scripts/train/retrain_clinical_3class_kmeans.py" || exit 1
 fi
 
 # Load environment

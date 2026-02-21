@@ -71,7 +71,7 @@ func GenerateMockData() (models.UserProfile, []models.Assessment) {
 func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessments []models.Assessment) ([]byte, error) {
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(15, 15, 15)
-	
+
 	// Better page breaking for larger text sections
 	pdf.SetAutoPageBreak(true, 15)
 
@@ -108,7 +108,7 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 	pdf.SetFont("Arial", "B", 14)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
 	pdf.CellFormat(0, 8, fmt.Sprintf("Patient: %s", fullname), "", 1, "L", false, 0, "")
-	
+
 	pdf.SetFont("Arial", "", 12)
 	pdf.SetTextColor(textLight[0], textLight[1], textLight[2])
 	pdf.CellFormat(0, 7, fmt.Sprintf("Age: %s   |   Status: %s   |   ID: #%d", age, casesTitle(user.MenopauseStatus), user.User.ID), "", 1, "L", false, 0, "")
@@ -117,12 +117,12 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 	// === KEY METRICS ===
 	if len(assessments) > 0 {
 		a := assessments[0]
-		
+
 		pdf.SetFont("Arial", "B", 16)
 		pdf.SetTextColor(primary[0], primary[1], primary[2])
 		pdf.Cell(0, 10, "Summary")
 		pdf.Ln(10)
-		
+
 		// 2 wide cards instead of 3 cramped ones
 		boxW := 85.0
 		boxH := 28.0
@@ -142,7 +142,7 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 	pdf.Ln(10)
 
 	// === SINGLE COLUMN SECTIONS ===
-	
+
 	// History
 	if len(assessments) > 1 {
 		s.drawHistorySection(pdf, assessments, 180.0)
@@ -203,7 +203,7 @@ func (s *PDFExportService) drawBiomarkerTable(pdf *fpdf.Fpdf, a models.Assessmen
 	pdf.SetFont("Arial", "B", 11)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
 	pdf.SetFillColor(borderLight[0], borderLight[1], borderLight[2])
-	
+
 	for i, h := range headers {
 		pdf.CellFormat(widths[i], 9, h, "B", 0, aligns[i], true, 0, "")
 	}
@@ -214,21 +214,21 @@ func (s *PDFExportService) drawBiomarkerTable(pdf *fpdf.Fpdf, a models.Assessmen
 		{"HDL (Good Cholesterol)", fmt.Sprintf("%d mg/dL", a.HDL), "> 50", s.getHDLStatus(a.HDL)},
 		{"LDL (Bad Cholesterol)", fmt.Sprintf("%d mg/dL", a.LDL), "< 100", s.getLDLStatus(a.LDL)},
 		{"Triglycerides", fmt.Sprintf("%d mg/dL", a.Triglycerides), "< 150", s.getTGStatus(a.Triglycerides)},
-		{"BMI", fmt.Sprintf("%.1f", a.BMI), "18.5 - 24.9", s.getBMIStatus(a.BMI)},
+		{"BMI", fmt.Sprintf("%.1f", a.BMI), "18.5 - 22.9", s.getBMIStatus(a.BMI)},
 	}
 
 	pdf.SetFont("Arial", "", 12)
 	for _, r := range rows {
 		pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
 		pdf.CellFormat(widths[0], 9, r.name, "B", 0, "L", false, 0, "")
-		
+
 		pdf.SetFont("Arial", "B", 12)
 		pdf.CellFormat(widths[1], 9, r.val, "B", 0, "R", false, 0, "")
 		pdf.SetFont("Arial", "", 12)
-		
+
 		pdf.SetTextColor(textLight[0], textLight[1], textLight[2])
 		pdf.CellFormat(widths[2], 9, r.ref, "B", 0, "C", false, 0, "")
-		
+
 		c := s.getStatusColor(r.status)
 		pdf.SetTextColor(c[0], c[1], c[2])
 		pdf.SetFont("Arial", "B", 11)
@@ -247,7 +247,7 @@ func (s *PDFExportService) drawHistorySection(pdf *fpdf.Fpdf, assessments []mode
 	pdf.SetFont("Arial", "B", 11)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
 	pdf.SetFillColor(borderLight[0], borderLight[1], borderLight[2])
-	
+
 	pdf.CellFormat(colW, 8, "Date", "B", 0, "C", true, 0, "")
 	pdf.CellFormat(colW, 8, "Risk Score", "B", 0, "C", true, 0, "")
 	pdf.CellFormat(colW, 8, "BMI", "B", 1, "C", true, 0, "")
@@ -258,7 +258,7 @@ func (s *PDFExportService) drawHistorySection(pdf *fpdf.Fpdf, assessments []mode
 	if len(assessments) < maxRows {
 		maxRows = len(assessments)
 	}
-	
+
 	for i := 0; i < maxRows; i++ {
 		a := assessments[i]
 		pdf.CellFormat(colW, 8, a.CreatedAt.Format("Jan 02, 2006"), "B", 0, "C", false, 0, "")
@@ -277,7 +277,7 @@ func (s *PDFExportService) drawCarePlanSection(pdf *fpdf.Fpdf, a models.Assessme
 
 	pdf.SetFont("Arial", "", 12)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-	
+
 	for _, rec := range recs {
 		pdf.SetTextColor(accent[0], accent[1], accent[2])
 		pdf.Cell(8, 8, "\u2022") // bullet point
@@ -322,7 +322,7 @@ func (s *PDFExportService) getRiskColor(score int) [3]int {
 
 func (s *PDFExportService) getSmartRecommendations(a models.Assessment) []string {
 	var recs []string
-	
+
 	if a.RiskScore >= 70 {
 		recs = append(recs, "Your overall high risk score indicates it is important to discuss these results with your doctor soon.")
 	}
@@ -332,7 +332,7 @@ func (s *PDFExportService) getSmartRecommendations(a models.Assessment) []string
 	} else if a.BMI >= 25 {
 		recs = append(recs, "Weight: Incorporating more physical activity and slight dietary changes can help manage your weight.")
 	}
-	
+
 	if a.LDL >= 130 || a.Cholesterol >= 200 {
 		recs = append(recs, "Cholesterol: Your lipid levels are high. Evaluation for lipid-lowering therapy or dietary changes may be necessary.")
 	}
@@ -362,10 +362,11 @@ func (s *PDFExportService) getFBSStatus(v float64) string {
 	return "Normal"
 }
 func (s *PDFExportService) getBMIStatus(v float64) string {
-	if v >= 30 {
+	// Philippine (Asia-Pacific WHO) BMI cutoffs
+	if v >= 25 {
 		return "Obese"
 	}
-	if v >= 25 {
+	if v >= 23 {
 		return "Overweight"
 	}
 	return "Normal"

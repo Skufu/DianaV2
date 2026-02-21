@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Defensibility artifact verifier for clinical_v2.
+Defensibility artifact verifier for clinical_3class.
 
 This script does NOT generate synthetic metrics. It only validates that
 evaluation artifacts produced by Ian_ML/training/train_v2.py are present and
@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-MODELS_DIR = Path("models/clinical_v2")
+MODELS_DIR = Path("models/clinical_3class")
 RESULTS_DIR = MODELS_DIR / "results"
 SUMMARY_PATH = RESULTS_DIR / "defensibility_validation_summary.json"
 

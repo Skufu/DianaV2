@@ -1,0 +1,43 @@
+{
+  "method": "kmeans_k4_on_scaled_clinical_features",
+  "cluster_labels": {
+    "3": {
+      "label": "High Risk",
+      "risk_level": "HIGH",
+      "diabetic_rate": 0.3882978723404255,
+      "pre_diabetic_rate": 0.3723404255319149,
+      "risk_score": 0.5744680851063829,
+      "size": 188
+    },
+    "1": {
+      "label": "Moderate Risk",
+      "risk_level": "MODERATE",
+      "diabetic_rate": 0.26476190476190475,
+      "pre_diabetic_rate": 0.36,
+      "risk_score": 0.44476190476190475,
+      "size": 525
+    },
+    "0": {
+      "label": "Low-Moderate Risk",
+      "risk_level": "LOW_MODERATE",
+      "diabetic_rate": 0.13829787234042554,
+      "pre_diabetic_rate": 0.3723404255319149,
+      "risk_score": 0.324468085106383,
+      "size": 94
+    },
+    "2": {
+      "label": "Low Risk",
+      "risk_level": "LOW",
+      "diabetic_rate": 0.0913884007029877,
+      "pre_diabetic_rate": 0.28646748681898065,
+      "risk_score": 0.23462214411247803,
+      "size": 569
+    }
+  },
+  "cluster_sizes": {
+    "Low-Moderate Risk": 94,
+    "Moderate Risk": 525,
+    "Low Risk": 569,
+    "High Risk": 188
+  }
+}

@@ -22,8 +22,8 @@ from Ian_ML.common.paths import MODELS_ROOT
 
 logger = logging.getLogger(__name__)
 
-MODELS_DIR = MODELS_ROOT / "binary_v2"
-RESULTS_DIR = MODELS_ROOT / "binary_v2" / "results"
+MODELS_DIR = MODELS_ROOT / "binary"
+RESULTS_DIR = MODELS_ROOT / "binary" / "results"
 MODEL_HASHES_FILE = MODELS_DIR / "model_hashes.json"
 
 
@@ -33,7 +33,7 @@ def resolve_clinical_models_dir(explicit_dir: Optional[Path] = None) -> Path:
     Priority:
       1) explicit_dir argument
       2) CLINICAL_MODELS_DIR environment override
-      3) models/binary_v2 (default - binary at-risk screening model)
+      3) models/binary (default - binary at-risk screening model)
     """
     if explicit_dir is not None:
         explicit_dir = Path(explicit_dir)
@@ -43,8 +43,8 @@ def resolve_clinical_models_dir(explicit_dir: Optional[Path] = None) -> Path:
     if env_override:
         return _validate_model_dir(Path(env_override))
 
-    # Default to binary_v2 (binary at-risk screening model with AUC 0.72)
-    candidate = MODELS_ROOT / "binary_v2"
+    # Default to binary_v2_no_bp (binary at-risk screening model with AUC 0.72)
+    candidate = MODELS_ROOT / "binary_v2_no_bp"
     return _validate_model_dir(candidate)
 
 
@@ -52,8 +52,8 @@ def _validate_model_dir(path: Path) -> Path:
     """Ensure model artifacts are present and consistent."""
     model_path = path / "best_model.joblib"
     if not model_path.exists():
-        # Fallback to clinical_v2 if binary_v2 not available
-        fallback = MODELS_ROOT / "clinical_v2"
+        # Fallback to clinical_3class if binary_v2_no_bp not available
+        fallback = MODELS_ROOT / "clinical_3class"
         if fallback.exists() and (fallback / "best_model.joblib").exists():
             logger.warning(f"Model not found at {path}, falling back to {fallback}")
             return _validate_model_dir(fallback)
@@ -78,16 +78,16 @@ def _validate_model_dir(path: Path) -> Path:
 
     return path
 
-# Features expected by the model (clinical_v2 - no hba1c/fbs to avoid circular reasoning)
+# Features expected by the model (binary - no hba1c/fbs to avoid circular reasoning, no BP)
 REQUIRED_FEATURES = [
-    'bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic',
+    'bmi', 'triglycerides', 'ldl', 'hdl', 'age',
     'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded',
     'alcohol_encoded', 'metabolic_syndrome_score',
     'waist_circumference', 'family_history_diabetes', 'race_encoded'
 ]
 
 # Raw input features (before engineering)
-RAW_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic',
+RAW_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age',
                 'smoking_status', 'physical_activity', 'alcohol_use',
                 'waist_circumference', 'family_history_diabetes', 'race_ethnicity']
 
@@ -212,8 +212,6 @@ class DianaPredictor:
             'ldl': (10, 400),
             'hdl': (10, 150),
             'age': (18, 100),
-            'systolic': (70, 250),
-            'diastolic': (40, 150),
         }
         for feature, (min_val, max_val) in ranges.items():
             if feature in data and data[feature] is not None:
@@ -229,8 +227,9 @@ class DianaPredictor:
         """Engineer features from raw input to match model expectations."""
         df = pd.DataFrame([data])
         
+        # Philippine (Asia-Pacific WHO) BMI cutoffs
         df["bmi_category"] = pd.cut(
-            df["bmi"], bins=[0, 18.5, 25, 30, 100], labels=[0, 1, 2, 3]
+            df["bmi"], bins=[0, 18.5, 23, 25, 100], labels=[0, 1, 2, 3]
         ).astype(float)
         
         df["tg_hdl_ratio"] = df["triglycerides"] / df["hdl"].replace(0, np.nan)
@@ -250,8 +249,7 @@ class DianaPredictor:
         metabolic_criteria = pd.DataFrame({
             "high_tg": df["triglycerides"] > 150,
             "low_hdl": df["hdl"] < 50,
-            "high_bp": df["systolic"] >= 130,
-            "high_bmi": df["bmi"] >= 30,
+            "high_bmi": df["bmi"] >= 25,  # PH Asia-Pacific WHO obesity cutoff
         })
         df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
         
@@ -343,13 +341,13 @@ class DianaPredictor:
 # =============================================================================
 
 # Base features required from user (engineered features computed from these)
-CLINICAL_BASE_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic']
+CLINICAL_BASE_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
 
 # Optional enrichment features (model works without them via imputation)
 CLINICAL_ENRICHMENT_FEATURES = ['waist_circumference', 'family_history_diabetes', 'race_ethnicity']
 
-# Full feature set including engineered features (16 features for classifier)
-CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'systolic', 'diastolic',
+# Full feature set including engineered features (14 features for classifier, no BP)
+CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age',
                      'bmi_category', 'tg_hdl_ratio', 'smoking_encoded',
                      'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score',
                      'waist_circumference', 'family_history_diabetes', 'race_encoded']
@@ -476,11 +474,12 @@ class ClinicalPredictor:
         hdl = data['hdl']
         age = data['age']
 
+        # Philippine (Asia-Pacific WHO) BMI cutoffs
         if bmi < 18.5:
             bmi_category = 0
-        elif bmi < 25:
+        elif bmi < 23:
             bmi_category = 1
-        elif bmi < 30:
+        elif bmi < 25:
             bmi_category = 2
         else:
             bmi_category = 3
@@ -503,9 +502,7 @@ class ClinicalPredictor:
             metabolic_score += 1
         if hdl < 50:
             metabolic_score += 1
-        if data.get('systolic', 0) >= 130:
-            metabolic_score += 1
-        if bmi >= 30:
+        if bmi >= 25:  # PH Asia-Pacific WHO obesity cutoff
             metabolic_score += 1
         waist = data.get('waist_circumference', np.nan) or np.nan
         if waist == 0: waist = np.nan
@@ -521,10 +518,9 @@ class ClinicalPredictor:
             family_history = np.nan
 
         # Build feature vector dynamically based on model's expected features
-        # Binary v2 uses 16 features (no crp), clinical_v2 may use different sets
+        # Binary v2 uses 14 features (no BP, no crp), clinical_v2 may use different sets
         feature_values = [
             bmi, tg, ldl, hdl, age,
-            data.get('systolic', 120), data.get('diastolic', 80),
             bmi_category, tg_hdl_ratio,
             smoking_encoded, activity_encoded, alcohol_encoded,
             metabolic_score,
@@ -578,8 +574,6 @@ class ClinicalPredictor:
             'ldl': (10, 400),
             'hdl': (10, 150),
             'age': (18, 120),
-            'systolic': (70, 250),
-            'diastolic': (40, 150),
         }
         for feature, (min_val, max_val) in ranges.items():
             if feature in data and data[feature] is not None:
@@ -690,7 +684,7 @@ class ClinicalPredictor:
         
         return {
             "success": True,
-            "model_type": "binary",
+            "model_type": "binary_v2_no_bp",
             "predicted_status": predicted_status,
             # Ahlqvist subtype schema
             "risk_cluster": risk_cluster,
@@ -768,10 +762,10 @@ def predict(data: Dict[str, float], model_type: str = "ada") -> Dict[str, Any]:
 
     Args:
         data: Patient data dictionary
-        model_type: "binary" or "clinical" for binary at-risk screening model (default),
+        model_type: "binary_v2_no_bp" or "clinical" for binary at-risk screening model (default),
                    "ada" for baseline HbA1c/FBS-based model
     """
-    if model_type in ("binary", "clinical"):
+    if model_type in ("binary_v2_no_bp", "clinical"):
         return get_clinical_predictor().predict(data)
     return get_predictor().predict(data)
 

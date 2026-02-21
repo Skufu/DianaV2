@@ -50,12 +50,11 @@ const CohortAnalysis = ({ token }) => {
     // Prepare data for radar chart
     const radarData = useMemo(() => {
         if (!groups.length) return [];
-        const metrics = ['avg_hba1c', 'avg_fbs', 'avg_bmi', 'avg_bp_systolic', 'avg_risk_score'];
+        const metrics = ['avg_hba1c', 'avg_fbs', 'avg_bmi', 'avg_risk_score'];
         const metricLabels = {
             avg_hba1c: 'HbA1c',
             avg_fbs: 'FBS',
             avg_bmi: 'BMI',
-            avg_bp_systolic: 'BP Systolic',
             avg_risk_score: 'Risk Score'
         };
 
@@ -248,7 +247,6 @@ const CohortAnalysis = ({ token }) => {
                                     <th className="text-right py-3 px-4">Avg HbA1c</th>
                                     <th className="text-right py-3 px-4">Avg FBS</th>
                                     <th className="text-right py-3 px-4">Avg BMI</th>
-                                    <th className="text-right py-3 px-4">Avg BP</th>
                                     <th className="text-right py-3 px-4">Avg Risk</th>
                                 </tr>
                             </thead>
@@ -266,7 +264,6 @@ const CohortAnalysis = ({ token }) => {
                                         <td className="text-right py-3 px-4">{g.avg_hba1c?.toFixed(1) || 'N/A'}</td>
                                         <td className="text-right py-3 px-4">{g.avg_fbs?.toFixed(1) || 'N/A'}</td>
                                         <td className="text-right py-3 px-4">{g.avg_bmi?.toFixed(1) || 'N/A'}</td>
-                                        <td className="text-right py-3 px-4">{g.avg_bp_systolic?.toFixed(0) || 'N/A'}/{g.avg_bp_diastolic?.toFixed(0) || 'N/A'}</td>
                                         <td className="text-right py-3 px-4">{g.avg_risk_score?.toFixed(1) || 'N/A'}%</td>
                                     </tr>
                                 ))}

@@ -74,7 +74,7 @@ Configuration (env) and defaults
 - `DB_DSN` (Postgres URL). If empty, handlers fail on DB access.
 - `JWT_SECRET` (**required** for non-local environments; fallback to `dev-secret` for `ENV=local`).
 - `CORS_ORIGINS` (comma list; default `http://localhost:4000`).
-- `MODEL_URL` (default `http://localhost:5001/predict`), `MODEL_VERSION` (default `clinical_v2`), `MODEL_DATASET_HASH` (optional), `MODEL_TIMEOUT_MS` (default `2000` ms).
+- `MODEL_URL` (default `http://localhost:5001/predict`), `MODEL_VERSION` (default `clinical_3class`), `MODEL_DATASET_HASH` (optional), `MODEL_TIMEOUT_MS` (default `2000` ms).
 - `ML_API_KEY` (optional; required for production ML server authentication).
 - `EXPORT_MAX_ROWS` (default `5000`).
 

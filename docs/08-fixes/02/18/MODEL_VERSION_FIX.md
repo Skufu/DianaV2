@@ -1,4 +1,4 @@
-# Fixed: Model Version Shows Real clinical_v2
+# Fixed: Model Version Shows Real clinical_3class
 
 > **Status**: ✅ COMPLETED  
 > **Date**: February 18, 2026
@@ -22,9 +22,9 @@ The **environment variable** `MODEL_VERSION` was set to `v0-mock` in multiple `.
 
 | File | Old Value | New Value |
 |------|-----------|-----------|
-| `/.env` | `v0-mock` | `clinical_v2` |
-| `/backend/.env` | `v0-mock` | `clinical_v2` |
-| `/configs/.env.local.mac` | `v0-mock` | `clinical_v2` |
+| `/.env` | `v0-mock` | `clinical_3class` |
+| `/backend/.env` | `v0-mock` | `clinical_3class` |
+| `/configs/.env.local.mac` | `v0-mock` | `clinical_3class` |
 
 Also updated `MODEL_DATASET_HASH` from `mock_dataset_v1` to `nhanes_postmenopausal_2011_2020`.
 
@@ -42,7 +42,7 @@ The backend ALWAYS calls the clinical model endpoint with `?model_type=clinical`
 ### Flow:
 1. Frontend submits assessment → Backend
 2. Backend calls ML server: `POST /predict?model_type=clinical`
-3. ML server uses `ClinicalPredictor` (clinical_v2 model)
+3. ML server uses `ClinicalPredictor` (clinical_3class model)
 4. Real prediction returned with risk score, cluster, etc.
 5. Backend saves assessment with model version from env var
 
@@ -51,9 +51,9 @@ The backend ALWAYS calls the clinical model endpoint with `?model_type=clinical`
 ## 📝 Changes Made
 
 ### Updated Files:
-1. **/.env** - Changed MODEL_VERSION to clinical_v2
-2. **/backend/.env** - Changed MODEL_VERSION to clinical_v2  
-3. **/configs/.env.local.mac** - Changed MODEL_VERSION to clinical_v2
+1. **/.env** - Changed MODEL_VERSION to clinical_3class
+2. **/backend/.env** - Changed MODEL_VERSION to clinical_3class  
+3. **/configs/.env.local.mac** - Changed MODEL_VERSION to clinical_3class
 
 ---
 
@@ -78,7 +78,7 @@ bash scripts/dev/start-all.sh
 
 After restarting, new assessments will show:
 ```
-Model: clinical_v2 • No HbA1c/FBS used in prediction
+Model: clinical_3class • No HbA1c/FBS used in prediction
 ```
 
 **The model was always real** - only the version label was wrong!
@@ -91,8 +91,8 @@ Yes! Here's the proof:
 
 1. **Backend calls clinical endpoint**: `http_predictor.go:53` adds `?model_type=clinical`
 2. **ML Server routes to ClinicalPredictor**: `server.py:268-289` uses `get_clinical_predictor()`
-3. **ClinicalPredictor loads real model**: `predict.py:289-526` loads from `models/clinical_v2/`
-4. **Real model files exist**: `models/clinical_v2/catboost_best.joblib` (and others)
+3. **ClinicalPredictor loads real model**: `predict.py:289-526` loads from `models/clinical_3class/`
+4. **Real model files exist**: `models/clinical_3class/catboost_best.joblib` (and others)
 5. **Real predictions**: AUC 0.694, actual risk scores based on biomarkers
 
 The "v0-mock" was just a **label** - the actual predictions were always from the real clinical model!
@@ -102,9 +102,9 @@ The "v0-mock" was just a **label** - the actual predictions were always from the
 ## 🎯 Summary
 
 - **Model predictions**: ✅ REAL (always were)
-- **Model version label**: ✅ FIXED (changed to clinical_v2)
+- **Model version label**: ✅ FIXED (changed to clinical_3class)
 - **Action needed**: Restart backend to load new env vars
 
 ---
 
-**After restart, you'll see "clinical_v2" instead of "v0-mock"!**
+**After restart, you'll see "clinical_3class" instead of "v0-mock"!**

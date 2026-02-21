@@ -31,12 +31,6 @@ func ValidateBiomarkers(input models.Assessment, thresholds config.ClinicalThres
 		warnings = append(warnings, "hba1c_prediabetic")
 	}
 
-	if input.Systolic >= thresholds.BPSysElevated {
-		warnings = append(warnings, "bp_hypertensive")
-	} else if input.Systolic >= thresholds.BPSysNormal {
-		warnings = append(warnings, "bp_elevated")
-	}
-
 	if input.BMI >= thresholds.BMIObese {
 		warnings = append(warnings, "bmi_obese")
 	} else if input.BMI >= thresholds.BMINormal {

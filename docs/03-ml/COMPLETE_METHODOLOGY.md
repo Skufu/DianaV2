@@ -66,7 +66,7 @@ Two stages are used:
 ## 3. Feature Set
 
 ### 3.1 Deployed feature contract (13 features)
-From `models/clinical_v2/features.json`:
+From `models/clinical_3class/features.json`:
 1. `bmi`
 2. `triglycerides`
 3. `ldl`
@@ -140,7 +140,7 @@ Prediction rule at inference:
 
 ## 5. Current Performance (Latest Artifacts)
 
-From `models/clinical_v2/results/best_model_report.json`:
+From `models/clinical_3class/results/best_model_report.json`:
 - **Best model**: Logistic Regression
 - **AUC-ROC (weighted OvR)**: 0.6941
 - **Macro F1**: 0.3802
@@ -162,7 +162,7 @@ Clinical operating point (at-risk threshold 0.50):
 
 ## 6. Clustering
 
-K-means defensibility from `models/clinical_v2/results/k_comparison.json`:
+K-means defensibility from `models/clinical_3class/results/k_comparison.json`:
 - K=2: silhouette 0.1659, CH 291.13, DB 2.039
 - K=4: silhouette 0.1570, CH 209.75, DB 1.847
 
@@ -171,8 +171,8 @@ Positioning:
 - Clinical interpretability mapping: K=4
 
 Runtime cluster labels are persisted in:
-- `models/clinical_v2/cluster_labels.json`
-- `models/clinical_v2/results/cluster_analysis.json`
+- `models/clinical_3class/cluster_labels.json`
+- `models/clinical_3class/results/cluster_analysis.json`
 
 ---
 
@@ -234,7 +234,7 @@ Training and clustering use fixed seeds (`random_state=42`) where supported.
 
 - Methodology is now aligned to implemented label logic and deployed inference flow.
 - The key previous mismatch (diabetic-range HbA1c label leakage into pre-diabetic class) is corrected.
-- Documentation now matches the current artifacts under `models/clinical_v2/results/`.
+- Documentation now matches the current artifacts under `models/clinical_3class/results/`.
 
 *Document Version: 2.0*  
 *Last Updated: 2026-02-15*

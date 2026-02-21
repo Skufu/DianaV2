@@ -9,7 +9,7 @@ This script only derives `clustering_positioning.json` from existing
 import json
 from pathlib import Path
 
-MODELS_DIR = Path("models/clinical_v2")
+MODELS_DIR = Path("models/clinical_3class")
 RESULTS_DIR = MODELS_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 

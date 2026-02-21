@@ -128,16 +128,11 @@ func (g *ReportGenerator) addBiomarkerSection(pdf *fpdf.Fpdf, assessment models.
 	// Biomarker rows
 	g.addBiomarkerRow(pdf, "HbA1c (%)", fmt.Sprintf("%.1f", assessment.HbA1c), "< 5.7", g.getHbA1cStatus(assessment.HbA1c))
 	g.addBiomarkerRow(pdf, "Fasting Blood Sugar (mg/dL)", fmt.Sprintf("%.0f", assessment.FBS), "< 100", g.getFBSStatus(assessment.FBS))
-	g.addBiomarkerRow(pdf, "BMI (kg/m²)", fmt.Sprintf("%.1f", assessment.BMI), "18.5 - 24.9", g.getBMIStatus(assessment.BMI))
+	g.addBiomarkerRow(pdf, "BMI (kg/m²)", fmt.Sprintf("%.1f", assessment.BMI), "18.5 - 22.9", g.getBMIStatus(assessment.BMI))
 	g.addBiomarkerRow(pdf, "Total Cholesterol (mg/dL)", fmt.Sprintf("%d", assessment.Cholesterol), "< 200", g.getCholStatus(assessment.Cholesterol))
 	g.addBiomarkerRow(pdf, "LDL (mg/dL)", fmt.Sprintf("%d", assessment.LDL), "< 100", g.getLDLStatus(assessment.LDL))
 	g.addBiomarkerRow(pdf, "HDL (mg/dL)", fmt.Sprintf("%d", assessment.HDL), "> 50", g.getHDLStatus(assessment.HDL))
 	g.addBiomarkerRow(pdf, "Triglycerides (mg/dL)", fmt.Sprintf("%d", assessment.Triglycerides), "< 150", g.getTGStatus(assessment.Triglycerides))
-
-	if assessment.Systolic > 0 || assessment.Diastolic > 0 {
-		bp := fmt.Sprintf("%d/%d", assessment.Systolic, assessment.Diastolic)
-		g.addBiomarkerRow(pdf, "Blood Pressure (mmHg)", bp, "< 120/80", g.getBPStatus(assessment.Systolic, assessment.Diastolic))
-	}
 
 	pdf.Ln(8)
 }
@@ -307,9 +302,10 @@ func (g *ReportGenerator) getFBSStatus(val float64) string {
 }
 
 func (g *ReportGenerator) getBMIStatus(val float64) string {
-	if val >= 30 {
+	// Philippine (Asia-Pacific WHO) BMI cutoffs
+	if val >= 25 {
 		return "Obese"
-	} else if val >= 25 {
+	} else if val >= 23 {
 		return "Overweight"
 	} else if val < 18.5 {
 		return "Underweight"
@@ -386,12 +382,6 @@ func (g *ReportGenerator) getRecommendations(assessment models.Assessment) []str
 	if assessment.LDL >= 160 || assessment.Triglycerides >= 200 {
 		recs = append(recs, "Discuss lipid management with healthcare provider")
 		recs = append(recs, "Consider reducing saturated fats and increasing fiber intake")
-	}
-
-	// Based on blood pressure
-	if assessment.Systolic >= 140 || assessment.Diastolic >= 90 {
-		recs = append(recs, "Monitor blood pressure regularly")
-		recs = append(recs, "Reduce sodium intake and manage stress")
 	}
 
 	// General recommendations

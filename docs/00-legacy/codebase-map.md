@@ -301,7 +301,7 @@ DianaV2/
 | `train.py` | Model training |
 | `train_clusters.py` | Clustering |
 | `train_enhanced.py` | Enhanced training |
-| `retrain-all.sh` | Full retraining pipeline |
+| `retrain-clinical.sh` | Full retraining pipeline |
 
 ### Analysis
 | Script | Purpose |
@@ -378,7 +378,7 @@ ENV=dev
 DB_DSN=postgres://...
 JWT_SECRET=...
 MODEL_URL=http://localhost:5001/predict
-MODEL_VERSION=clinical_v2
+MODEL_VERSION=clinical_3class
 MODEL_TIMEOUT_MS=2000
 CORS_ORIGINS=http://localhost:4000
 ```

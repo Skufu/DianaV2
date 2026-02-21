@@ -52,7 +52,7 @@ Do **not** treat synthetic or hardcoded artifact generation as evidence. The art
 1. Regenerate model artifacts:
 
 ```bash
-bash scripts/dev/retrain-all.sh
+bash scripts/dev/retrain-clinical.sh
 ```
 
 2. Verify defensibility artifact consistency:

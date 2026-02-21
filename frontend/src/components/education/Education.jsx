@@ -146,10 +146,10 @@ const biomarkerReference = [
     {
         name: 'Body Mass Index (BMI)',
         unit: 'kg/m²',
-        normal: '< 25.0',
-        prediabetic: '25.0 - 29.9',
-        diabetic: '≥ 30.0',
-        description: 'Ratio of weight to height. Higher BMI increases diabetes risk, especially with central obesity.'
+        normal: '< 23.0',
+        prediabetic: '23.0 - 24.9',
+        diabetic: '≥ 25.0',
+        description: 'Ratio of weight to height. Uses Philippine (Asia-Pacific WHO) cutoffs. Higher BMI increases diabetes risk, especially with central obesity.'
     },
     {
         name: 'Waist Circumference',
@@ -174,14 +174,6 @@ const biomarkerReference = [
         prediabetic: '40 - 49',
         diabetic: '< 40',
         description: '"Good" cholesterol that helps remove other forms of cholesterol. Lower values indicate higher risk.'
-    },
-    {
-        name: 'Blood Pressure (Systolic)',
-        unit: 'mmHg',
-        normal: '< 130',
-        prediabetic: '130 - 139',
-        diabetic: '≥ 140',
-        description: 'Force of blood against artery walls. Included in ATP III criteria for metabolic syndrome.'
     },
     {
         name: 'TG/HDL Ratio',

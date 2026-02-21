@@ -1,0 +1,21 @@
+{
+  "features": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age",
+    "bmi_category",
+    "tg_hdl_ratio",
+    "smoking_encoded",
+    "activity_encoded",
+    "alcohol_encoded",
+    "metabolic_syndrome_score",
+    "waist_circumference",
+    "family_history_diabetes",
+    "race_encoded"
+  ],
+  "n_features": 14,
+  "target": "at_risk_binary (0=Normal, 1=At-Risk)",
+  "note": "Binary reformulation with 14 features (no BP), LOCO validation"
+}

@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/ml"
+	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
@@ -94,7 +94,8 @@ func isNotFoundError(err error) bool {
 		return false
 	}
 	return containsString(err.Error(), "no active model") ||
-		containsString(err.Error(), "not found")
+		containsString(err.Error(), "not found") ||
+		containsString(err.Error(), "no rows in result set")
 }
 
 // syncModelRuns fetchesthe latest active model from the ML server and creates a record if it doesn't exist
@@ -122,7 +123,7 @@ func (h *AdminModelsHandler) syncModelRuns(c *gin.Context) {
 
 	// Fetch highest active model
 	active, err := h.store.ModelRuns().GetActive(c.Request.Context())
-	
+
 	// Create it if there was an error fetching or the version/hash do not match
 	needsCreate := false
 	if err != nil && isNotFoundError(err) {
@@ -132,12 +133,12 @@ func (h *AdminModelsHandler) syncModelRuns(c *gin.Context) {
 		ErrInternal(c, "Failed to check historical model runs")
 		return
 	} else if active != nil && (active.ModelVersion != meta.ModelVersion || active.DatasetHash != meta.DatasetHash) {
-		needsCreate = true 
+		needsCreate = true
 	} else {
 		// No sync needed, it's already active
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Already up to date",
-			"run": active,
+			"run":     active,
 		})
 		return
 	}
@@ -158,7 +159,7 @@ func (h *AdminModelsHandler) syncModelRuns(c *gin.Context) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Synced successfully",
-			"run": createdRun,
+			"run":     createdRun,
 		})
 		return
 	}

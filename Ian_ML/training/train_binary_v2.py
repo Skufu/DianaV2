@@ -2,12 +2,12 @@
 DIANA Binary Classification Training V2 - Defensible Evaluation
 
 Binary reformulation: At-Risk (Pre-diabetic + Diabetic) vs Normal
-- 16 engineered features (same as 3-class clinical_v2)
+- 16 engineered features (same as 3-class clinical_3class)
 - Nested Leave-One-Group-Out (LOGO) validation on NHANES cycles
 - Leakage-safe pipeline
 - Threshold optimization for recall
 
-Usage: python Ian_ML/training/train_binary_v2.py
+Usage: python Ian_ML/training/train_binary_v2_no_bp.py
 """
 
 from __future__ import annotations
@@ -55,14 +55,14 @@ warnings.filterwarnings("ignore")
 
 # Configuration
 DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
-MODELS_DIR = MODELS_ROOT / "binary_v2"
+MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp"
 RESULTS_DIR = MODELS_DIR / "results"
 VIZ_DIR = MODELS_DIR / "visualizations"
 
 N_JOBS = int(os.environ.get("ML_N_JOBS", "1"))
 BOOTSTRAP_SAMPLES = int(os.environ.get("ML_BOOTSTRAP_SAMPLES", "1000"))
 
-# 16 features (same as clinical_v2)
+# 16 features (same as clinical_3class)
 FEATURES = [
     # Original metabolic biomarkers (7)
     "bmi", "triglycerides", "ldl", "hdl", "age",
@@ -108,11 +108,13 @@ AHLQVIST_SUBTYPES = {
 
 
 def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Create engineered features (same as clinical_v2)."""
+    """Create engineered features (same as clinical_3class)."""
     df = df.copy()
 
+    # Philippine (Asia-Pacific WHO) BMI cutoffs:
+    # Underweight <18.5, Normal 18.5-22.9, Overweight 23-24.9, Obese ≥25
     bmi_category = pd.cut(
-        df["bmi"], bins=[0, 18.5, 25, 30, 100], labels=[0, 1, 2, 3]
+        df["bmi"], bins=[0, 18.5, 23, 25, 100], labels=[0, 1, 2, 3]
     )
     df["bmi_category"] = pd.Series(bmi_category, index=df.index, dtype="float64")
     df["tg_hdl_ratio"] = df["triglycerides"] / df["hdl"].replace(0, np.nan)
@@ -140,7 +142,7 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
             "high_tg": df["triglycerides"] > 150,
             "low_hdl": df["hdl"] < 50,
             "high_bp": df["systolic"] >= 130 if "systolic" in df.columns else False,
-            "high_bmi": df["bmi"] >= 30,
+            "high_bmi": df["bmi"] >= 25,  # PH Asia-Pacific WHO obesity cutoff
             "high_waist": df["waist_circumference"] >= 80 if "waist_circumference" in df.columns else False,
         }
     )
@@ -154,9 +156,9 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def create_binary_target(df: pd.DataFrame) -> pd.DataFrame:
+def create_binary_v2_no_bp_target(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Create binary target:
+    Create binary_v2_no_bp target:
     - 0 = Normal (healthy)
     - 1 = At-Risk (Pre-diabetic + Diabetic)
     
@@ -166,9 +168,9 @@ def create_binary_target(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     # Normal (0) stays 0
     # Pre-diabetic (1) + Diabetic (2) become 1 (At-Risk)
-    df["at_risk_binary"] = (df["diabetes_label"] >= 1).astype(int)
+    df["at_risk_binary_v2_no_bp"] = (df["diabetes_label"] >= 1).astype(int)
     
-    counts = df["at_risk_binary"].value_counts()
+    counts = df["at_risk_binary_v2_no_bp"].value_counts()
     total_count = len(df)
     normal_count = int(counts.get(0, 0) or 0)
     at_risk_count = int(counts.get(1, 0) or 0)
@@ -206,7 +208,7 @@ def build_model_registry() -> dict:
             "estimator": LogisticRegression(
                 max_iter=1500, class_weight="balanced", random_state=42
             ),
-            "param_grid": {"model__C": [0.1, 0.3, 1.0, 2.0]},
+            "param_grid": {"model__C": [0.01, 0.1, 0.3, 1.0, 3.0]},
         },
         "Random Forest": {
             "estimator": RandomForestClassifier(
@@ -219,11 +221,41 @@ def build_model_registry() -> dict:
             },
         },
     }
+
+    # Add gradient boosting — best model family for tabular data
+    try:
+        from lightgbm import LGBMClassifier
+        registry["LightGBM"] = {
+            "estimator": LGBMClassifier(
+                random_state=42, verbose=-1, n_jobs=N_JOBS,
+                is_unbalance=True,  # Fix: match class_weight="balanced" used by LR/RF
+            ),
+            "param_grid": {
+                "model__n_estimators": [200, 400],
+                "model__max_depth": [3, 5, 7],
+                "model__learning_rate": [0.05, 0.1],
+                "model__min_child_samples": [20, 30],
+            },
+        }
+    except ImportError:
+        from sklearn.ensemble import GradientBoostingClassifier
+        registry["Gradient Boosting"] = {
+            "estimator": GradientBoostingClassifier(
+                random_state=42, max_features="sqrt",
+            ),
+            "param_grid": {
+                "model__n_estimators": [200, 300],
+                "model__max_depth": [3, 5],
+                "model__learning_rate": [0.05, 0.1],
+                "model__min_samples_leaf": [15, 25],
+            },
+        }
+
     return registry
 
 
-def compute_binary_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_proba: np.ndarray) -> dict:
-    """Compute comprehensive binary classification metrics."""
+def compute_binary_v2_no_bp_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_proba: np.ndarray) -> dict:
+    """Compute comprehensive binary_v2_no_bp classification metrics."""
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     
     accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0.0
@@ -245,13 +277,13 @@ def compute_binary_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_proba: np.n
     }
 
 
-def optimize_binary_threshold(
+def optimize_binary_v2_no_bp_threshold(
     y_true: np.ndarray, 
     y_proba: np.ndarray,
     min_sensitivity: float = 0.75,
 ) -> dict:
     """
-    Multi-strategy threshold optimization for binary screening.
+    Multi-strategy threshold optimization for binary_v2_no_bp screening.
 
     Returns the BEST operating point across three strategies:
 
@@ -278,32 +310,32 @@ def optimize_binary_threshold(
     best_j_thresh = 0.5
     for thresh in thresholds:
         y_pred = (y_proba >= thresh).astype(int)
-        m = compute_binary_metrics(y_true, y_pred, y_proba)
+        m = compute_binary_v2_no_bp_metrics(y_true, y_pred, y_proba)
         j = m["sensitivity"] + m["specificity"] - 1.0
         if j > best_j:
             best_j = j
             best_j_thresh = thresh
     strategies["youden"] = {
         "threshold": float(best_j_thresh),
-        "metrics": compute_binary_metrics(
+        "metrics": compute_binary_v2_no_bp_metrics(
             y_true, (y_proba >= best_j_thresh).astype(int), y_proba
         ),
     }
 
-    # --- Strategy 2: Screening (high sens, spec >= 0.30) ---
+    # --- Strategy 2: Screening (high sens, spec >= 0.40) ---
     best_screen_score = -1.0
     best_screen_thresh = 0.5
     for thresh in thresholds:
         y_pred = (y_proba >= thresh).astype(int)
-        m = compute_binary_metrics(y_true, y_pred, y_proba)
-        if m["specificity"] >= 0.30 and m["sensitivity"] >= min_sensitivity:
+        m = compute_binary_v2_no_bp_metrics(y_true, y_pred, y_proba)
+        if m["specificity"] >= 0.40 and m["sensitivity"] >= min_sensitivity:
             score = 0.60 * m["sensitivity"] + 0.40 * m["f1"]
             if score > best_screen_score:
                 best_screen_score = score
                 best_screen_thresh = thresh
     strategies["screening"] = {
         "threshold": float(best_screen_thresh),
-        "metrics": compute_binary_metrics(
+        "metrics": compute_binary_v2_no_bp_metrics(
             y_true, (y_proba >= best_screen_thresh).astype(int), y_proba
         ),
     }
@@ -313,14 +345,14 @@ def optimize_binary_threshold(
     best_gmean_thresh = 0.5
     for thresh in thresholds:
         y_pred = (y_proba >= thresh).astype(int)
-        m = compute_binary_metrics(y_true, y_pred, y_proba)
+        m = compute_binary_v2_no_bp_metrics(y_true, y_pred, y_proba)
         gmean = np.sqrt(m["sensitivity"] * m["specificity"])
         if gmean > best_gmean:
             best_gmean = gmean
             best_gmean_thresh = thresh
     strategies["gmean"] = {
         "threshold": float(best_gmean_thresh),
-        "metrics": compute_binary_metrics(
+        "metrics": compute_binary_v2_no_bp_metrics(
             y_true, (y_proba >= best_gmean_thresh).astype(int), y_proba
         ),
     }
@@ -328,8 +360,8 @@ def optimize_binary_threshold(
     # --- Pick overall best via composite score ---
     def _composite(m: dict) -> float:
         return (
-            0.40 * m["sensitivity"]
-            + 0.25 * m["specificity"]
+            0.35 * m["sensitivity"]
+            + 0.30 * m["specificity"]
             + 0.25 * m["f1"]
             + 0.10 * m["accuracy"]
         )
@@ -427,7 +459,7 @@ def run_nested_logo_evaluation(
             )
             train_oof_proba = np.asarray(train_oof)[:, 1]
             
-            thresh_result = optimize_binary_threshold(y_train, train_oof_proba)
+            thresh_result = optimize_binary_v2_no_bp_threshold(y_train, train_oof_proba)
             threshold = thresh_result["threshold"]
 
             # Test predictions
@@ -435,8 +467,8 @@ def run_nested_logo_evaluation(
             test_pred_default = (test_proba >= 0.5).astype(int)
             test_pred_thresholded = (test_proba >= threshold).astype(int)
 
-            default_metrics = compute_binary_metrics(y_test, test_pred_default, test_proba)
-            threshold_metrics = compute_binary_metrics(y_test, test_pred_thresholded, test_proba)
+            default_metrics = compute_binary_v2_no_bp_metrics(y_test, test_pred_default, test_proba)
+            threshold_metrics = compute_binary_v2_no_bp_metrics(y_test, test_pred_thresholded, test_proba)
 
             fold_rows.append({
                 "Fold": fold_idx,
@@ -483,8 +515,8 @@ def run_nested_logo_evaluation(
         y_pred_default = np.concatenate(s["y_pred_default"])
         y_pred_thresholded = np.concatenate(s["y_pred_thresholded"])
 
-        default_metrics = compute_binary_metrics(y_true, y_pred_default, y_proba)
-        threshold_metrics = compute_binary_metrics(y_true, y_pred_thresholded, y_proba)
+        default_metrics = compute_binary_v2_no_bp_metrics(y_true, y_pred_default, y_proba)
+        threshold_metrics = compute_binary_v2_no_bp_metrics(y_true, y_pred_thresholded, y_proba)
         
         # Bootstrap CIs for key metrics
         sensitivity_ci = bootstrap_metric_ci(
@@ -511,6 +543,7 @@ def run_nested_logo_evaluation(
             "Mean_Threshold": np.mean(s["thresholds"]),
             "Inner_CV_AUC_Mean": float(np.mean(s["inner_cv_auc"])),
             "Inner_CV_AUC_Std": float(np.std(s["inner_cv_auc"])),
+            "Mean_Fold_AUC": float(np.mean([fold_df[(fold_df["Model"] == model_name)]["AUC_ROC"].mean()])) if not fold_df.empty else 0.0,
         })
 
         aggregated[model_name] = {
@@ -645,9 +678,9 @@ def train_serving_kmeans(
          clinical context.
 
     At inference time, the clustering should ONLY be applied to patients
-    the binary classifier has already flagged as At-Risk.
+    the binary_v2_no_bp classifier has already flagged as At-Risk.
     """
-    # Use base clinical features for clustering (same as clinical_v2)
+    # Use base clinical features for clustering (same as clinical_3class)
     cluster_features = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
 
     # Create feature index mapping
@@ -751,7 +784,7 @@ def save_feature_manifest() -> None:
         json.dump({
             "features": FEATURES,
             "n_features": len(FEATURES),
-            "target": "at_risk_binary (0=Normal, 1=At-Risk)",
+            "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
             "note": "Binary reformulation with 16 features, LOCO validation",
         }, f, indent=2)
 
@@ -776,8 +809,8 @@ def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) ->
     best_row = comparison_df[comparison_df["Model"] == best_model_name].iloc[0]
     
     report = {
-        "model_type": "binary_v2",
-        "target": "at_risk_binary (0=Normal, 1=At-Risk)",
+        "model_type": "binary_v2_no_bp",
+        "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
         "best_model": best_model_name,
         "n_features": len(FEATURES),
         "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
@@ -847,21 +880,21 @@ def main():
     # Engineer features
     df = engineer_features(df)
     
-    # Create binary target
-    df = create_binary_target(df)
+    # Create binary_v2_no_bp target
+    df = create_binary_v2_no_bp_target(df)
     
     # Filter to records with target and cycle
-    df_clean = df.dropna(subset=["at_risk_binary", "cycle"]).copy()
+    df_clean = df.dropna(subset=["at_risk_binary_v2_no_bp", "cycle"]).copy()
     print(f"       Records after filtering: {len(df_clean)}")
     
     # Check for missing features
-    missing_cols = [f for f in FEATURES + ["at_risk_binary", "cycle"] if f not in df.columns]
+    missing_cols = [f for f in FEATURES + ["at_risk_binary_v2_no_bp", "cycle"] if f not in df.columns]
     if missing_cols:
         raise ValueError(f"Missing columns: {missing_cols}")
     
     # Prepare data
     X = df_clean[FEATURES].values.astype(float)
-    y = df_clean["at_risk_binary"].values.astype(int)
+    y = df_clean["at_risk_binary_v2_no_bp"].values.astype(int)
     groups = df_clean["cycle"].astype(str).to_numpy()
     # Keep original 3-class labels for cluster profiling
     diabetes_labels = df_clean["diabetes_label"].values.astype(int)
@@ -882,9 +915,10 @@ def main():
         X, y, groups, model_registry
     )
     
-    # Select best model
-    best = comparison_df.loc[comparison_df["AUC_ROC"].idxmax()]
-    best_model_name = best["Model"]
+    # Select best model by mean fold AUC (more defensible than aggregated AUC)
+    fold_auc_by_model = fold_df.groupby("Model")["AUC_ROC"].mean()
+    best_model_name = fold_auc_by_model.idxmax()
+    best = comparison_df[comparison_df["Model"] == best_model_name].iloc[0]
     
     print("\n" + "=" * 78)
     print("MODEL COMPARISON")
@@ -905,7 +939,7 @@ def main():
     print(f"  Sensitivity:  {best['Sensitivity']:.4f}")
     print(f"  Specificity:  {best['Specificity']:.4f}")
     print(f"  NPV:          {best['NPV']:.4f}")
-    print(f"  AUC >= 0.70:  {'YES ✓' if best['AUC_ROC'] >= 0.70 else 'NO'}")
+    print(f"  AUC >= 0.70:  {'YES (pass)' if best['AUC_ROC'] >= 0.70 else 'NO (fail)'}")
     
     # Train final model on full data
     print("\n[FINAL] Training best model on full dataset...")

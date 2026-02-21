@@ -11,7 +11,7 @@
 The backend was already correctly configured:
 - `assessments.go` line 280: Calls `h.predictor.Predict()` 
 - `http_predictor.go` line 53: Sends `model_type=clinical` query param
-- Uses ClinicalPredictor with real model files from `models/clinical_v2/` (binary_v2 is the default fallback)
+- Uses ClinicalPredictor with real model files from `models/clinical_3class/` (binary_v2_no_bp is the default fallback)
 
 ### 2. Frontend - New MLResultModal Component
 Created `frontend/src/components/common/MLResultModal.jsx`:
@@ -94,7 +94,7 @@ Frontend shows MLResultModal with:
 
 ### Footer Disclaimer
 - Reiterates screening purpose
-- Shows model version (clinical_v2)
+- Shows model version (clinical_3class)
 - Shows AUC (0.694)
 - "Does not replace professional medical advice"
 
@@ -109,7 +109,7 @@ Frontend shows MLResultModal with:
   "risk_level": "medium",        // low/medium/high
   "predicted_status": "Pre-diabetic",
   "cluster": "High Risk",        // SIDD/SIRD/MOD/MARD/Low/Mod/High
-  "model_version": "clinical_v2",
+  "model_version": "clinical_3class",
   "validation_status": "warning:fbs_prediabetic_range,bmi_overweight"
 }
 ```
@@ -206,7 +206,7 @@ curl http://localhost:5001/health
 
 The flow is:
 1. User submits form → Backend calls ML server
-2. ML server uses ClinicalPredictor (clinical_v2 model)
+2. ML server uses ClinicalPredictor (clinical_3class model)
 3. Real prediction returned (risk score, status, cluster)
 4. Results shown with comprehensive guardrails and disclaimers
 
