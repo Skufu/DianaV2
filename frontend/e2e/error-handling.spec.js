@@ -29,6 +29,19 @@ test.describe('Error Handling - Network Failures', () => {
       });
     });
 
+    await page.route('**/users/me/onboarding', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      });
+    });
+
     await page.addInitScript(() => {
       localStorage.setItem('diana_token', 'test.access.token');
       localStorage.setItem('diana_refresh_token', 'test.refresh.token');
@@ -57,12 +70,12 @@ test.describe('Error Handling - Network Failures', () => {
       return route.abort('timedout');
     });
 
-    await page.reload();
+    await page.goto('/');
 
     const loadingElement = page.locator('text=Loading your health data...');
     await expect(loadingElement).toBeVisible({ timeout: 5000 });
 
-    const errorBanner = page.locator('.bg-rose-500\\/10:has-text("Failed to load assessments")');
+    const errorBanner = page.locator('.bg-rose-50:has-text("Failed to load assessments")');
     await expect(errorBanner).toBeVisible({ timeout: 10000 });
   });
 
@@ -84,11 +97,11 @@ test.describe('Error Handling - Network Failures', () => {
       });
     });
 
-    await page.reload();
+    await page.goto('/');
 
     await page.waitForTimeout(1000);
 
-    const errorBanner = page.locator('.bg-rose-500\\/10:has-text("Failed to load assessments")');
+    const errorBanner = page.locator('.bg-rose-50:has-text("Failed to load assessments")');
     await expect(errorBanner).toBeVisible({ timeout: 5000 });
   });
 
@@ -102,7 +115,7 @@ test.describe('Error Handling - Network Failures', () => {
       return route.abort('failed');
     });
 
-    await page.reload();
+    await page.goto('/');
 
     await page.waitForTimeout(1000);
 
@@ -137,7 +150,7 @@ test.describe('Error Handling - Network Failures', () => {
       });
     });
 
-    await page.reload();
+    await page.goto('/');
 
     await page.waitForTimeout(1000);
 
@@ -162,18 +175,19 @@ test.describe('Error Handling - Network Failures', () => {
         body: JSON.stringify([
           {
             id: '1',
-            hba1c: 5.8,
-            fbs: 100,
             bmi: 25.0,
+            ldl: 130,
+            hdl: 50,
+            triglycerides: 150,
             risk_score: 25,
-            cluster: 'MOD',
+            risk_level: 'low',
             created_at: '2024-01-15T10:00:00Z',
           },
         ]),
       });
     });
 
-    await page.reload();
+    await page.goto('/');
 
     const loadingElement = page.locator('text=Loading your health data...');
     await expect(loadingElement).toBeVisible({ timeout: 1000 });
@@ -197,7 +211,7 @@ test.describe('Error Handling - Network Failures', () => {
       });
     });
 
-    await page.reload();
+    await page.goto('/');
 
     await page.waitForTimeout(500);
 
@@ -230,17 +244,12 @@ test.describe('Error Handling - Network Failures', () => {
         body: JSON.stringify([
           {
             id: '1',
-            hba1c: 5.8,
-            fbs: 100,
             bmi: 25.0,
-            cholesterol: 200,
             ldl: 130,
             hdl: 50,
             triglycerides: 150,
-            systolic_bp: 120,
-            diastolic_bp: 80,
             risk_score: 25,
-            cluster: 'MOD',
+            risk_level: 'low',
             created_at: '2024-01-15T10:00:00Z',
           },
         ]),
@@ -265,7 +274,7 @@ test.describe('Error Handling - Network Failures', () => {
       });
     });
 
-    await page.reload();
+    await page.goto('/');
 
     await page.waitForTimeout(3000);
 
@@ -275,7 +284,7 @@ test.describe('Error Handling - Network Failures', () => {
     const retryButton = page.locator('button:has-text("Retry")');
     await expect(retryButton).toBeVisible();
 
-    await expect(retryButton).toHaveClass(/bg-rose-500/);
+    await expect(retryButton).toHaveClass(/bg-rose-600/);
 
     await retryButton.click();
 

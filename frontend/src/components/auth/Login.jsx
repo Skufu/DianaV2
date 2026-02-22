@@ -249,6 +249,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                     <div className="pt-2">
                       <Button
                         type="submit"
+                        data-testid="login-submit-button"
                         isLoading={loading}
                         fullWidth
                         variant="blue"

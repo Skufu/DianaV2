@@ -187,11 +187,6 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if req.BMI == nil || req.Triglycerides == nil || req.LDL == nil || req.HDL == nil || req.Systolic == nil || req.Diastolic == nil {
-		ErrBadRequest(c, "BMI, triglycerides, LDL, HDL, systolic, and diastolic are required")
-		return
-	}
-
 	if req.BMI != nil && *req.BMI < 0 {
 		ErrBadRequest(c, "BMI must be non-negative")
 		return

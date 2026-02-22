@@ -84,18 +84,19 @@ const UserProfile = ({ setActiveTab }) => {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-6 text-rose-400 max-w-md mx-auto">
-          <AlertTriangle size={20} className="mx-auto mb-2" />
-          <p>Failed to load profile</p>
-          <Button
-            onClick={() => refetch()}
-            variant="danger"
-            className="mt-4"
-          >
-            Retry
-          </Button>
+      <div className="bg-rose-50 border border-rose-100 rounded-[32px] p-10 text-center max-w-md mx-auto shadow-sm">
+        <div className="w-16 h-16 rounded-3xl bg-rose-100 flex items-center justify-center mx-auto mb-6">
+          <AlertTriangle size={32} className="text-rose-600" />
         </div>
+        <h3 className="text-xl font-serif font-bold text-slate-900 mb-2">Profile Error</h3>
+        <p className="text-slate-600 mb-8 font-medium">Failed to load your profile data. Please try again.</p>
+        <Button
+          onClick={() => refetch()}
+          variant="blue"
+          className="shadow-lg shadow-blue-600/20 px-8"
+        >
+          Retry
+        </Button>
       </div>
     );
   }
@@ -148,9 +149,10 @@ const UserProfile = ({ setActiveTab }) => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 text-rose-400"
+            className="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-rose-700 flex items-center gap-3 shadow-sm"
           >
-            {formError}
+            <AlertTriangle size={18} className="shrink-0" />
+            <span className="font-medium">{formError}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -384,8 +386,8 @@ const UserProfile = ({ setActiveTab }) => {
           <Button
             type="submit"
             isLoading={updateProfileMutation.isPending}
-            variant="primary"
-            className="px-8 py-4 bg-diana-forest hover:bg-diana-forest-light shadow-lg shadow-diana-forest/20"
+            variant="blue"
+            className="px-8 py-4 shadow-lg shadow-blue-600/20"
             icon={!updateProfileMutation.isPending ? Save : undefined}
           >
             {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
@@ -393,18 +395,20 @@ const UserProfile = ({ setActiveTab }) => {
         </div>
       </form>
 
-      <motion.div variants={fadeIn} className="bg-rose-500/10 backdrop-blur-sm rounded-2xl border border-rose-500/20 p-6">
-        <div className="flex items-start gap-3">
-          <AlertTriangle size={20} className="text-rose-400 mt-1" />
+      <motion.div variants={fadeIn} className="bg-white rounded-[32px] p-8 shadow-sm border border-rose-100">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center shrink-0">
+            <AlertTriangle size={24} className="text-rose-600" />
+          </div>
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-rose-400 mb-2">Delete Account</h2>
-            <p className="text-slate-400 text-sm mb-4">
-              Deleting your account will permanently remove all your data. This action cannot be undone.
+            <h2 className="text-xl font-serif font-bold text-slate-900 mb-2">Delete Account</h2>
+            <p className="text-slate-500 text-base mb-6 leading-relaxed">
+              Deleting your account will permanently remove all your health data and activity logs. This action is irreversible.
             </p>
             <Button
               variant="danger"
               onClick={() => setShowDeleteConfirm(true)}
-              className="!px-4 !py-2 !text-sm"
+              className="!px-6 !py-3 shadow-lg shadow-rose-600/20"
             >
               Delete My Account
             </Button>
@@ -419,24 +423,27 @@ const UserProfile = ({ setActiveTab }) => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 border border-slate-700"
+              className="bg-white rounded-[32px] p-8 max-w-md w-full mx-4 border border-slate-100 shadow-2xl"
             >
-              <h3 className="text-xl font-bold text-white mb-2">Confirm Account Deletion</h3>
-              <p className="text-slate-400 mb-6">
-                Are you sure you want to permanently delete your account? All your health data will be lost.
+              <div className="w-16 h-16 rounded-3xl bg-rose-50 flex items-center justify-center mb-6">
+                <AlertTriangle size={32} className="text-rose-600" />
+              </div>
+              <h3 className="text-2xl font-serif font-bold text-slate-900 mb-2">Confirm Deletion</h3>
+              <p className="text-slate-500 text-base mb-8 leading-relaxed">
+                Are you absolutely sure? This will permanently erase your health records and cannot be undone.
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-4">
                 <Button
                   variant="ghost"
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 !bg-slate-700 hover:!bg-slate-600 !text-white"
+                  className="flex-1 !bg-slate-100 hover:!bg-slate-200 !text-slate-600"
                 >
                   Cancel
                 </Button>
                 <Button
                   variant="danger"
                   onClick={handleDeleteAccount}
-                  className="flex-1"
+                  className="flex-1 shadow-lg shadow-rose-600/20"
                 >
                   Delete Account
                 </Button>
