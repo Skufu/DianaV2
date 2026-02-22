@@ -84,6 +84,7 @@ func TestHTTPPredictor_Predict_EmptyURL(t *testing.T) {
 }
 
 func TestHTTPPredictor_Predict_Success(t *testing.T) {
+	version := "v1.0.0"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Errorf("Expected POST request, got %s", r.Method)
@@ -91,8 +92,8 @@ func TestHTTPPredictor_Predict_Success(t *testing.T) {
 		if r.URL.Path != "/predict" {
 			t.Errorf("Expected path /predict, got %s", r.URL.Path)
 		}
-		if r.URL.Query().Get("model_type") != "clinical" {
-			t.Errorf("Expected model_type=clinical query param")
+		if r.URL.Query().Get("model_type") != version {
+			t.Errorf("Expected model_type=%s query param, got %s", version, r.URL.Query().Get("model_type"))
 		}
 		if r.Header.Get("Content-Type") != "application/json" {
 			t.Errorf("Expected Content-Type application/json")
@@ -391,7 +392,8 @@ func TestHTTPPredictor_Predict_RequestConstruction(t *testing.T) {
 	if receivedContentType != "application/json" {
 		t.Errorf("Expected Content-Type application/json, got %s", receivedContentType)
 	}
-	if receivedURL != "/predict?model_type=clinical" {
-		t.Errorf("Expected URL with query param, got %s", receivedURL)
+	expectedURL := "/predict?model_type=v1.5.0"
+	if receivedURL != expectedURL {
+		t.Errorf("Expected URL with query param %s, got %s", expectedURL, receivedURL)
 	}
 }

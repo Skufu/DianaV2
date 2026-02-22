@@ -20,6 +20,7 @@ import {
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
+import { API_BASE } from '../../api';
 
 const AuthEventLogViewer = ({ token }) => {
   const isReduced = useReducedMotion();
@@ -55,7 +56,8 @@ const AuthEventLogViewer = ({ token }) => {
     }
 
     const url = new URL(
-      `${import.meta.env.VITE_API_BASE || '/api/v1'}/admin/events/stream`
+      `${API_BASE}/admin/events/stream`,
+      window.location.origin
     );
     if (token) {
       url.searchParams.append('token', token);

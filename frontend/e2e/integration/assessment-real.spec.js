@@ -43,12 +43,11 @@ test.describe('Integration: Real Assessment Creation', () => {
           'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
         },
         body: JSON.stringify({
-          hba1c: 5.8,
-          fbs: 100,
+          age: 55,
           bmi: 25.0,
-          cholesterol: 200,
-          systolic_bp: 120,
-          diastolic_bp: 80,
+          triglycerides: 150,
+          ldl: 130,
+          hdl: 50,
         }),
       });
 
@@ -67,7 +66,7 @@ test.describe('Integration: Real Assessment Creation', () => {
     expect(assessmentResponse.data).toHaveProperty('risk_level');
   });
 
-  test('should fail validation with HbA1c > 15 via API', async ({ page }) => {
+  test('should fail validation with BMI out of range via API', async ({ page }) => {
     await page.fill(SELECTORS.loginEmailInput, 'demo@diana.app');
     await page.fill(SELECTORS.loginPasswordInput, 'demopassword123');
     await page.click(SELECTORS.loginButton);
@@ -84,10 +83,11 @@ test.describe('Integration: Real Assessment Creation', () => {
           'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
         },
         body: JSON.stringify({
-          hba1c: 16.5,
-          fbs: 100,
-          bmi: 25.0,
-          cholesterol: 200,
+          age: 55,
+          bmi: -5.0,
+          triglycerides: 150,
+          ldl: 130,
+          hdl: 50,
         }),
       });
 
@@ -101,7 +101,7 @@ test.describe('Integration: Real Assessment Creation', () => {
 
     expect(assessmentResponse.ok).toBe(false);
     expect(assessmentResponse.status).toBe(400);
-    expect(assessmentResponse.error).toMatch(/hba1c/i);
+    expect(assessmentResponse.error).toMatch(/bmi/i);
   });
 
   test('should fail validation with missing required fields via API', async ({ page }) => {
@@ -121,8 +121,8 @@ test.describe('Integration: Real Assessment Creation', () => {
           'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
         },
         body: JSON.stringify({
+          age: 55,
           bmi: 25.0,
-          cholesterol: 200,
         }),
       });
 
@@ -136,7 +136,7 @@ test.describe('Integration: Real Assessment Creation', () => {
 
     expect(assessmentResponse.ok).toBe(false);
     expect(assessmentResponse.status).toBe(400);
-    expect(assessmentResponse.error).toMatch(/required|fbs|hba1c/i);
+    expect(assessmentResponse.error).toMatch(/required|triglycerides|ldl|hdl/i);
   });
 
   test('should handle unauthorized access without authentication', async ({ page }) => {
@@ -149,8 +149,11 @@ test.describe('Integration: Real Assessment Creation', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          hba1c: 5.8,
-          fbs: 100,
+          age: 55,
+          bmi: 25.0,
+          triglycerides: 150,
+          ldl: 130,
+          hdl: 50,
         }),
       });
 
@@ -191,8 +194,11 @@ test.describe('Integration: Real Assessment Creation', () => {
           'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
         },
         body: JSON.stringify({
-          hba1c: 5.8,
-          fbs: 100,
+          age: 55,
+          bmi: 25.0,
+          triglycerides: 150,
+          ldl: 130,
+          hdl: 50,
         }),
       });
 

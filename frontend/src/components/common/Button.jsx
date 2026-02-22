@@ -13,7 +13,8 @@ const Button = React.memo(({
   fullWidth,
   disabled,
   isLoading = false,
-  type = 'button'
+  type = 'button',
+  ...props
 }) => {
   const isReduced = useReducedMotion();
   const baseStyle =
@@ -24,7 +25,7 @@ const Button = React.memo(({
     blue: 'bg-blue-600 text-white',
     outline: 'border-2 border-diana-teal text-diana-teal',
     ghost: 'text-slate-500 hover:bg-slate-50',
-    danger: 'bg-red-500 text-white',
+    danger: 'bg-rose-600 text-white',
   };
 
   const hoverVariants = {
@@ -32,7 +33,7 @@ const Button = React.memo(({
     blue: { backgroundColor: '#1D4ED8', scale: isReduced ? 1 : 1.02, boxShadow: "0px 4px 12px rgba(37, 99, 235, 0.4)" },
     outline: { backgroundColor: '#0D9488', color: '#ffffff', scale: isReduced ? 1 : 1.02 },
     ghost: { scale: isReduced ? 1 : 1.02, backgroundColor: '#F8FAFC', color: '#0D9488' },
-    danger: { opacity: 0.9, scale: isReduced ? 1 : 1.02 },
+    danger: { backgroundColor: '#E11D48', scale: isReduced ? 1 : 1.02, boxShadow: "0px 4px 12px rgba(225, 29, 72, 0.4)" },
   };
 
   const tapVariants = {
@@ -46,6 +47,7 @@ const Button = React.memo(({
 
   return (
     <motion.button
+      {...props}
       type={type}
       onClick={!isLoading ? onClick : undefined}
       disabled={disabled || isLoading}

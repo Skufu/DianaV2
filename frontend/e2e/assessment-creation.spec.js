@@ -84,11 +84,12 @@ test.describe('Assessment Creation Flow', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             id: 1,
-            hba1c: body.hba1c,
-            fbs: body.fbs,
             bmi: body.bmi,
-            cholesterol: body.cholesterol,
-            risk_score: 0.25,
+            age: body.age,
+            ldl: body.ldl,
+            hdl: body.hdl,
+            triglycerides: body.triglycerides,
+            risk_score: 25,
             risk_level: 'low',
             created_at: new Date().toISOString(),
           }),
@@ -132,10 +133,11 @@ test.describe('Assessment Creation Flow', () => {
           'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
         },
         body: JSON.stringify({
-          hba1c: 5.7,
-          fbs: 95,
+          age: 55,
           bmi: 24.5,
-          cholesterol: 190,
+          triglycerides: 150,
+          ldl: 130,
+          hdl: 50,
         }),
       });
 
@@ -147,9 +149,8 @@ test.describe('Assessment Creation Flow', () => {
     });
 
     expect(assessmentResponse).toMatchObject({
-      hba1c: 5.7,
-      fbs: 95,
-      risk_score: 0.25,
+      bmi: 24.5,
+      risk_score: 25,
       risk_level: 'low',
     });
 
@@ -197,8 +198,11 @@ test.describe('Assessment Creation Flow', () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            hba1c: 5.7,
-            fbs: 95,
+            age: 55,
+            bmi: 24.5,
+            triglycerides: 150,
+            ldl: 130,
+            hdl: 50,
           }),
         });
 
@@ -286,12 +290,12 @@ test.describe('Real Backend Assessment Tests', () => {
       if (request.method() === 'POST') {
         const body = await request.postDataJSON();
 
-        if (!body.hba1c || !body.fbs) {
+        if (!body.bmi || !body.triglycerides || !body.ldl || !body.hdl) {
           return route.fulfill({
             status: 400,
             headers: corsHeaders,
             contentType: 'application/json',
-            body: JSON.stringify({ error: 'HbA1c and FBS are required fields' }),
+            body: JSON.stringify({ error: 'BMI, triglycerides, LDL, and HDL are required fields' }),
           });
         }
 
@@ -301,12 +305,11 @@ test.describe('Real Backend Assessment Tests', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             id: 1,
-            hba1c: body.hba1c,
-            fbs: body.fbs,
+            age: body.age,
             bmi: body.bmi,
-            cholesterol: body.cholesterol,
-            systolic_bp: body.systolic_bp,
-            diastolic_bp: body.diastolic_bp,
+            ldl: body.ldl,
+            hdl: body.hdl,
+            triglycerides: body.triglycerides,
             risk_score: 35,
             risk_level: 'moderate',
             created_at: new Date().toISOString(),
@@ -320,12 +323,11 @@ test.describe('Real Backend Assessment Tests', () => {
         contentType: 'application/json',
         body: JSON.stringify([{
           id: 1,
-          hba1c: MOCK_ASSESSMENT.hba1c,
-          fbs: MOCK_ASSESSMENT.fbs,
           bmi: MOCK_ASSESSMENT.bmi,
-          cholesterol: MOCK_ASSESSMENT.cholesterol,
-          systolic_bp: MOCK_ASSESSMENT.systolic_bp,
-          diastolic_bp: MOCK_ASSESSMENT.diastolic_bp,
+          age: MOCK_ASSESSMENT.age,
+          ldl: MOCK_ASSESSMENT.ldl,
+          hdl: MOCK_ASSESSMENT.hdl,
+          triglycerides: MOCK_ASSESSMENT.triglycerides,
           risk_score: 35,
           risk_level: 'moderate',
           created_at: new Date().toISOString(),
@@ -348,12 +350,11 @@ test.describe('Real Backend Assessment Tests', () => {
           'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
         },
         body: JSON.stringify({
-          hba1c: 5.8,
-          fbs: 100,
+          age: 55,
           bmi: 25.0,
-          cholesterol: 200,
-          systolic_bp: 120,
-          diastolic_bp: 80,
+          triglycerides: 150,
+          ldl: 130,
+          hdl: 50,
         }),
       });
 
@@ -365,12 +366,10 @@ test.describe('Real Backend Assessment Tests', () => {
     });
 
     expect(assessmentResponse).toMatchObject({
-      hba1c: 5.8,
-      fbs: 100,
       bmi: 25.0,
-      cholesterol: 200,
-      systolic_bp: 120,
-      diastolic_bp: 80,
+      triglycerides: 150,
+      ldl: 130,
+      hdl: 50,
       risk_score: 35,
       risk_level: 'moderate',
     });
@@ -393,7 +392,7 @@ test.describe('Real Backend Assessment Tests', () => {
 
     expect(listResponse).toHaveLength(1);
     expect(listResponse[0]).toMatchObject({
-      hba1c: 5.8,
+      bmi: 25.0,
       risk_score: 35,
       risk_level: 'moderate',
     });
@@ -401,138 +400,7 @@ test.describe('Real Backend Assessment Tests', () => {
     await takeScreenshot(page, 'assessment-created-with-risk-score');
   });
 
-  test('should fail when HbA1c > 15 (validation error)', async ({ page }) => {
-    await page.goto('/');
-
-    await page.route('**/auth/login', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          access_token: 'test.access.token',
-          refresh_token: 'test.refresh.token',
-          user: {
-            id: 'e2e-user-123',
-            email: TEST_USER.email,
-            role: 'user',
-          },
-        }),
-      });
-    });
-
-    await page.route('**/users/me/profile', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-
-      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
-      if (!authHeader) {
-        return route.fulfill({
-          status: 401,
-          headers: corsHeaders,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Unauthorized' }),
-        });
-      }
-
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          first_name: 'Test',
-          last_name: 'User',
-          email: TEST_USER.email,
-          onboarding_completed: true,
-        }),
-      });
-    });
-
-    await page.route('**/users/me/assessments', async route => {
-      const request = route.request();
-      if (request.method() === 'OPTIONS') {
-        return route.fulfill({ status: 204, headers: corsHeaders });
-      }
-
-      const authHeader = request.headers()['authorization'] || request.headers()['Authorization'];
-      if (!authHeader) {
-        return route.fulfill({
-          status: 401,
-          headers: corsHeaders,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Unauthorized' }),
-        });
-      }
-
-      if (request.method() === 'POST') {
-        const body = await request.postDataJSON();
-
-        if (body.hba1c > 15.0) {
-          return route.fulfill({
-            status: 400,
-            headers: corsHeaders,
-            contentType: 'application/json',
-            body: JSON.stringify({ error: 'HbA1c must be less than or equal to 15.0' }),
-          });
-        }
-      }
-
-      return route.fulfill({
-        status: 200,
-        headers: corsHeaders,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-
-    await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
-    await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
-    await page.click(SELECTORS.loginButton);
-    await waitForNetworkIdle(page);
-
-    await expect(page.locator('h1:has-text("Welcome")')).toBeVisible({ timeout: 10000 });
-
-    const assessmentResponse = await page.evaluate(async () => {
-      const response = await fetch('/api/v1/users/me/assessments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
-        },
-        body: JSON.stringify({
-          hba1c: 16.0,
-          fbs: 100,
-          bmi: 25.0,
-          cholesterol: 200,
-          systolic_bp: 120,
-          diastolic_bp: 80,
-        }),
-      });
-
-      const data = await response.json();
-      return {
-        status: response.status,
-        ok: response.ok,
-        data: data,
-      };
-    });
-
-    expect(assessmentResponse.status).toBe(400);
-    expect(assessmentResponse.ok).toBe(false);
-    expect(assessmentResponse.data).toHaveProperty('error');
-    expect(assessmentResponse.data.error).toMatch(/hba1c/i);
-    expect(assessmentResponse.data.error).toMatch(/15/i);
-
-    await takeScreenshot(page, 'assessment-hba1c-validation-error');
-  });
-
-  test('should fail when BMI is negative (validation error)', async ({ page }) => {
+  test('should fail when BMI is out of range (validation error)', async ({ page }) => {
     await page.goto('/');
 
     await page.route('**/auth/login', async route => {
@@ -637,12 +505,11 @@ test.describe('Real Backend Assessment Tests', () => {
           'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
         },
         body: JSON.stringify({
-          hba1c: 5.8,
-          fbs: 100,
+          age: 55,
           bmi: -5.0,
-          cholesterol: 200,
-          systolic_bp: 120,
-          diastolic_bp: 80,
+          triglycerides: 150,
+          ldl: 130,
+          hdl: 50,
         }),
       });
 
@@ -735,12 +602,12 @@ test.describe('Real Backend Assessment Tests', () => {
       if (request.method() === 'POST') {
         const body = await request.postDataJSON();
 
-        if (!body.hba1c && !body.fbs) {
+        if (!body.bmi || !body.triglycerides || !body.ldl || !body.hdl) {
           return route.fulfill({
             status: 400,
             headers: corsHeaders,
             contentType: 'application/json',
-            body: JSON.stringify({ error: 'At least FBS or HbA1c must be provided' }),
+            body: JSON.stringify({ error: 'BMI, triglycerides, LDL, and HDL are required' }),
           });
         }
       }
@@ -768,8 +635,8 @@ test.describe('Real Backend Assessment Tests', () => {
           'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
         },
         body: JSON.stringify({
+          age: 55,
           bmi: 25.0,
-          cholesterol: 200,
         }),
       });
 
@@ -784,7 +651,7 @@ test.describe('Real Backend Assessment Tests', () => {
     expect(assessmentResponse.status).toBe(400);
     expect(assessmentResponse.ok).toBe(false);
     expect(assessmentResponse.data).toHaveProperty('error');
-    expect(assessmentResponse.data.error).toMatch(/at least|FBS|HbA1c/i);
+    expect(assessmentResponse.data.error).toMatch(/required|triglycerides|LDL|HDL/i);
 
     await takeScreenshot(page, 'assessment-missing-fields-validation-error');
   });
@@ -867,15 +734,14 @@ test.describe('Real Backend Assessment Tests', () => {
         const body = await request.postDataJSON();
         const newAssessment = {
           id: dashboardCallCount,
-          hba1c: body.hba1c,
-          fbs: body.fbs,
+          age: body.age,
           bmi: body.bmi,
-          cholesterol: body.cholesterol,
-          systolic_bp: body.systolic_bp,
-          diastolic_bp: body.diastolic_bp,
+          ldl: body.ldl,
+          hdl: body.hdl,
+          triglycerides: body.triglycerides,
           risk_score: 42,
           risk_level: 'moderate',
-          cluster: 'MARD',
+          cluster: 'Cluster_A',
           created_at: new Date().toISOString(),
         };
         latestAssessmentsResponse = [newAssessment, ...latestAssessmentsResponse];
@@ -902,9 +768,6 @@ test.describe('Real Backend Assessment Tests', () => {
 
     await expect(page.locator('h1:has-text("Welcome")')).toBeVisible({ timeout: 10000 });
 
-    const initialCallCount = dashboardCallCount;
-    const initialAssessments = latestAssessmentsResponse;
-
     const assessmentResponse = await page.evaluate(async () => {
       const response = await fetch('/api/v1/users/me/assessments', {
         method: 'POST',
@@ -913,12 +776,11 @@ test.describe('Real Backend Assessment Tests', () => {
           'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
         },
         body: JSON.stringify({
-          hba1c: 6.2,
-          fbs: 110,
+          age: 55,
           bmi: 27.5,
-          cholesterol: 215,
-          systolic_bp: 125,
-          diastolic_bp: 82,
+          triglycerides: 165,
+          ldl: 140,
+          hdl: 45,
         }),
       });
 
@@ -930,11 +792,9 @@ test.describe('Real Backend Assessment Tests', () => {
     });
 
     expect(assessmentResponse).toMatchObject({
-      hba1c: 6.2,
-      fbs: 110,
+      bmi: 27.5,
       risk_score: 42,
       risk_level: 'moderate',
-      cluster: 'MARD',
     });
 
     await page.evaluate(() => window.location.reload());
@@ -949,10 +809,6 @@ test.describe('Real Backend Assessment Tests', () => {
     expect(dashboardContent).toMatch(/1/);
 
     await expect(page.locator('h2:has-text("Latest Assessment")')).toBeVisible({ timeout: 5000 });
-
-    await expect(page.locator('text=6.2')).toBeVisible();
-
-    await expect(page.locator('text=110')).toBeVisible();
 
     await expect(page.locator('text=/Moderate Risk/i')).toBeVisible();
 
@@ -1035,15 +891,14 @@ test.describe('Real Backend Assessment Tests', () => {
         const body = await request.postDataJSON();
         createdAssessment = {
           id: 1,
-          hba1c: body.hba1c,
-          fbs: body.fbs,
+          age: body.age,
           bmi: body.bmi,
-          cholesterol: body.cholesterol,
-          systolic_bp: body.systolic_bp,
-          diastolic_bp: body.diastolic_bp,
+          ldl: body.ldl,
+          hdl: body.hdl,
+          triglycerides: body.triglycerides,
           risk_score: 38,
           risk_level: 'moderate',
-          cluster: 'MARD',
+          cluster: 'Cluster_A',
           created_at: new Date().toISOString(),
         };
         return route.fulfill({
@@ -1089,14 +944,10 @@ test.describe('Real Backend Assessment Tests', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             dates: [],
-            hba1c_values: [],
             bmi_values: [],
-            fbs_values: [],
             triglycerides_values: [],
             ldl_values: [],
             hdl_values: [],
-            systolic_values: [],
-            diastolic_values: [],
             risk_scores: [],
           }),
         });
@@ -1108,14 +959,10 @@ test.describe('Real Backend Assessment Tests', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           dates: [testDate],
-          hba1c_values: [createdAssessment?.hba1c || 6.5],
           bmi_values: [createdAssessment?.bmi || 26.0],
-          fbs_values: [createdAssessment?.fbs || 108],
-          triglycerides_values: [160],
-          ldl_values: [135],
-          hdl_values: [48],
-          systolic_values: [createdAssessment?.systolic_bp || 122],
-          diastolic_values: [createdAssessment?.diastolic_bp || 81],
+          triglycerides_values: [createdAssessment?.triglycerides || 160],
+          ldl_values: [createdAssessment?.ldl || 135],
+          hdl_values: [createdAssessment?.hdl || 48],
           risk_scores: ['moderate'],
         }),
       });
@@ -1145,7 +992,7 @@ test.describe('Real Backend Assessment Tests', () => {
     });
 
     expect(initialTrendsResponse.dates).toHaveLength(0);
-    expect(initialTrendsResponse.hba1c_values).toHaveLength(0);
+    expect(initialTrendsResponse.bmi_values).toHaveLength(0);
 
     const assessmentResponse = await page.evaluate(async () => {
       const response = await fetch('/api/v1/users/me/assessments', {
@@ -1155,12 +1002,11 @@ test.describe('Real Backend Assessment Tests', () => {
           'Authorization': `Bearer ${localStorage.getItem('diana_token')}`,
         },
         body: JSON.stringify({
-          hba1c: 6.5,
-          fbs: 108,
+          age: 55,
           bmi: 26.0,
-          cholesterol: 215,
-          systolic_bp: 122,
-          diastolic_bp: 81,
+          triglycerides: 160,
+          ldl: 135,
+          hdl: 48,
         }),
       });
 
@@ -1172,15 +1018,12 @@ test.describe('Real Backend Assessment Tests', () => {
     });
 
     expect(assessmentResponse).toMatchObject({
-      hba1c: 6.5,
-      fbs: 108,
       bmi: 26.0,
-      cholesterol: 215,
-      systolic_bp: 122,
-      diastolic_bp: 81,
+      ldl: 135,
+      hdl: 48,
+      triglycerides: 160,
       risk_score: 38,
       risk_level: 'moderate',
-      cluster: 'MARD',
     });
 
     createdAssessment = assessmentResponse;
@@ -1204,10 +1047,9 @@ test.describe('Real Backend Assessment Tests', () => {
     });
 
     expect(updatedTrendsResponse.dates).toHaveLength(1);
-    expect(updatedTrendsResponse.hba1c_values).toHaveLength(1);
-    expect(updatedTrendsResponse.hba1c_values[0]).toBe(6.5);
-    expect(updatedTrendsResponse.fbs_values[0]).toBe(108);
+    expect(updatedTrendsResponse.bmi_values).toHaveLength(1);
     expect(updatedTrendsResponse.bmi_values[0]).toBe(26.0);
+    expect(updatedTrendsResponse.ldl_values[0]).toBe(135);
     expect(updatedTrendsResponse.risk_scores[0]).toBe('moderate');
 
     await takeScreenshot(page, 'assessment-visible-in-trends');

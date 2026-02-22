@@ -27,28 +27,22 @@ test.describe('Authentication Flow', () => {
   });
 
   test('should display branding on login screen', async ({ page }) => {
-    await expect(page.locator(SELECTORS.brandLogo)).toBeVisible();
-    await expect(page.locator('text=Sign in to DIANA')).toBeVisible();
+    await expect(page.getByText('DIANA', { exact: true })).toBeVisible();
+    await expect(page.locator('h1:has-text("Sign in")')).toBeVisible();
   });
 
   test('should display signup form from login page', async ({ page }) => {
-    const signUpButton = page.locator('text=/Request access/i');
+    const signUpButton = page.locator('text=/Request clinical access/i');
     await expect(signUpButton).toBeVisible();
 
     await signUpButton.click();
     await waitForAnimations(page);
 
-    const loginHeading = page.locator('text=Sign in to DIANA');
+    const loginHeading = page.locator('h1:has-text("Sign in")');
     await expect(loginHeading).not.toBeVisible({ timeout: 5000 });
 
     const createAccountHeading = page.locator('h1:has-text("Create an account")');
     await expect(createAccountHeading).toBeVisible({ timeout: 10000 });
-
-    const firstNameInput = page.locator('input[placeholder="Jane"]');
-    await expect(firstNameInput).toBeVisible();
-
-    const lastNameInput = page.locator('input[placeholder="Doe"]');
-    await expect(lastNameInput).toBeVisible();
 
     const emailInput = page.locator('input[type="email"]');
     await expect(emailInput).toBeVisible();
@@ -111,15 +105,13 @@ test.describe('Authentication Flow', () => {
       });
     });
 
-    const signUpButton = page.locator('text=/Sign Up/i');
+    const signUpButton = page.locator('text=/Request clinical access/i');
     if (await signUpButton.isVisible()) {
       await signUpButton.click();
       await page.waitForTimeout(2000);
 
       const createAccountHeading = page.locator('h2:has-text("Create Account")');
       if (await createAccountHeading.isVisible({ timeout: 5000 })) {
-        await page.fill('input[placeholder="Jane"]', NEW_USER.firstName);
-        await page.fill('input[placeholder="Doe"]', NEW_USER.lastName);
         await page.fill('input[type="email"]', NEW_USER.email);
 
         const passwordInput = page.locator('input[type="password"]').first();
@@ -138,12 +130,20 @@ test.describe('Authentication Flow', () => {
   });
 
   test('should show error for invalid credentials', async ({ page }) => {
+    await page.route('**/auth/login', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({ status: 401, headers: corsHeaders, contentType: 'application/json', body: JSON.stringify({ error: 'Invalid credentials' }) });
+    });
+
     await page.fill(SELECTORS.loginEmailInput, 'invalid@example.com');
     await page.fill(SELECTORS.loginPasswordInput, 'wrongpassword');
     await page.click(SELECTORS.loginButton);
     await page.waitForTimeout(1000);
 
-    await expect(page.locator('text=/Invalid|Error|Failed|Credentials|Server|Unavailable/i')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=/Invalid credentials/i')).toBeVisible({ timeout: 5000 });
   });
 
   test('should show error when login request fails', async ({ page }) => {
@@ -201,7 +201,7 @@ test.describe('Authentication Flow', () => {
         status: 200,
         headers: corsHeaders,
         contentType: 'application/json',
-        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email }),
+        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email, onboarding_completed: true }),
       });
     });
 
@@ -234,14 +234,14 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginEmailInput, TEST_USER.email);
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
 
-    const loginButton = page.locator('[data-testid="login-submit-button"]');
+    const loginButton = page.locator(SELECTORS.loginButton).first();
     await expect(loginButton).toBeVisible();
 
-    await page.click('[data-testid="login-submit-button"]');
+    await loginButton.click({ noWaitAfter: true });
 
     await page.waitForTimeout(100);
 
-    await expect(loginButton).toBeDisabled();
+    await expect(loginButton).not.toBeVisible({ timeout: 5000 });
 
     resolveLogin();
     await waitForNetworkIdle(page);
@@ -281,7 +281,7 @@ test.describe('Authentication Flow', () => {
         status: 200,
         headers: corsHeaders,
         contentType: 'application/json',
-        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email }),
+        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email, onboarding_completed: true }),
       });
     });
 
@@ -315,10 +315,8 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
     await waitForAnimations(page);
-    await waitForNetworkIdle(page);
 
-    const dashboardOrSidebar = page.locator(`${SELECTORS.sidebar}, nav >> text=/dashboard/i`);
-    await expect(dashboardOrSidebar.first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Dashboard').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should persist session after page reload', async ({ page }) => {
@@ -352,7 +350,7 @@ test.describe('Authentication Flow', () => {
         status: 200,
         headers: corsHeaders,
         contentType: 'application/json',
-        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email }),
+        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email, onboarding_completed: true }),
       });
     });
 
@@ -386,9 +384,9 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
     await waitForAnimations(page);
-    await waitForNetworkIdle(page);
+    await expect(page.locator('text=Dashboard').first()).toBeVisible({ timeout: 10000 });
 
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await waitForNetworkIdle(page);
 
     const loginForm = page.locator(SELECTORS.loginEmailInput);
@@ -463,7 +461,7 @@ test.describe('Authentication Flow', () => {
         status: 200,
         headers: corsHeaders,
         contentType: 'application/json',
-        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email }),
+        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email, onboarding_completed: true }),
       });
     });
 
@@ -497,7 +495,7 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
     await waitForAnimations(page);
-    await waitForNetworkIdle(page);
+    await expect(page.locator('text=Dashboard').first()).toBeVisible({ timeout: 10000 });
 
     const logoutButton = page.locator(SELECTORS.logoutButton);
     if (await logoutButton.isVisible()) {
@@ -572,7 +570,7 @@ test.describe('Authentication Flow', () => {
       });
     });
 
-    const signUpButton = page.locator('text=Sign Up, text=Don\'t have an account');
+    const signUpButton = page.locator('text=/Request clinical access/i');
     if (await signUpButton.isVisible()) {
       await signUpButton.click();
       await page.waitForTimeout(2000);
@@ -580,10 +578,8 @@ test.describe('Authentication Flow', () => {
       const createAccountButton = page.locator('button:has-text("Create Account")');
       if (await createAccountButton.isVisible({ timeout: 5000 })) {
         await page.fill('input[type="email"]', 'weakpass@example.com');
-        await page.fill('input[placeholder="Jane"]', 'John');
-        await page.fill('input[placeholder="Doe"]', 'Doe');
-        await page.fill('input[placeholder*="Password"], input[name="password"]', '123');
-        await page.fill('input[placeholder*="Confirm"], input[name="confirmPassword"]', '123');
+        await page.locator('input[type="password"]').first().fill('123');
+        await page.locator('input[type="password"]').nth(1).fill('123');
 
         await createAccountButton.click();
 
@@ -591,7 +587,7 @@ test.describe('Authentication Flow', () => {
         await expect(errorMessage).toBeVisible({ timeout: 5000 });
       } else {
         await page.fill('input[type="password"]', '12345');
-        await page.click('button:has-text("Sign In")');
+        await page.locator(SELECTORS.loginButton).click();
       }
     }
   });
@@ -629,7 +625,7 @@ test.describe('Authentication Flow', () => {
       });
     });
 
-    const signUpButton = page.locator('text=Sign Up, text=Don\'t have an account');
+    const signUpButton = page.locator('text=/Request clinical access/i');
     if (await signUpButton.isVisible()) {
       await signUpButton.click();
       await page.waitForTimeout(2000);
@@ -637,10 +633,8 @@ test.describe('Authentication Flow', () => {
       const createAccountButton = page.locator('button:has-text("Create Account")');
       if (await createAccountButton.isVisible({ timeout: 5000 })) {
         await page.fill('input[type="email"]', TEST_USER.email);
-        await page.fill('input[placeholder="Jane"]', 'John');
-        await page.fill('input[placeholder="Doe"]', 'Doe');
-        await page.fill('input[placeholder*="Password"], input[name="password"]', 'Password123!');
-        await page.fill('input[placeholder*="Confirm"], input[name="confirmPassword"]', 'Password123!');
+        await page.locator('input[type="password"]').first().fill('Password123!');
+        await page.locator('input[type="password"]').nth(1).fill('Password123!');
 
         await createAccountButton.click();
 
@@ -702,20 +696,17 @@ test.describe('Authentication Flow', () => {
       });
     });
 
-    const signUpButton = page.locator('text=Sign Up, text=Don\'t have an account');
+    const signUpButton = page.locator('text=/Request clinical access/i');
     if (await signUpButton.isVisible()) {
       await signUpButton.click();
       await page.waitForTimeout(2000);
 
       const createAccountButton = page.locator('button:has-text("Create Account")');
       if (await createAccountButton.isVisible({ timeout: 5000 })) {
-        await page.fill('input[placeholder="Jane"]', 'John');
-        await page.fill('input[placeholder="Doe"]', 'Doe');
-
         await page.fill('input[type="email"]', 'invalidemailformat');
 
-        await page.fill('input[placeholder*="Password"], input[name="password"]', 'Password123!');
-        await page.fill('input[placeholder*="Confirm"], input[name="confirmPassword"]', 'Password123!');
+        await page.locator('input[type="password"]').first().fill('Password123!');
+        await page.locator('input[type="password"]').nth(1).fill('Password123!');
 
         const emailValidationIcon = page.locator('input[type="email"]').locator('..').locator('svg').first();
         await expect(emailValidationIcon).toBeVisible({ timeout: 3000 });
@@ -823,7 +814,7 @@ test.describe('Authentication Flow', () => {
         status: 200,
         headers: corsHeaders,
         contentType: 'application/json',
-        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email }),
+        body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email, onboarding_completed: true }),
       });
     });
 
@@ -879,17 +870,14 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
     await waitForAnimations(page);
-    await waitForNetworkIdle(page);
 
-    const sidebarLocator = page.locator(SELECTORS.sidebar);
-    const dashboardTextLocator = page.locator('text=/dashboard/i');
-    await expect(sidebarLocator.or(dashboardTextLocator).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Dashboard').first()).toBeVisible({ timeout: 10000 });
 
     await page.evaluate(() => {
       localStorage.setItem('diana_token', 'expired.access.token');
     });
 
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await waitForNetworkIdle(page);
 
     expect(refreshTokenCallCount).toBeGreaterThanOrEqual(1);
@@ -930,7 +918,7 @@ test.describe('Authentication Flow', () => {
           status: 200,
           headers: corsHeaders,
           contentType: 'application/json',
-          body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email }),
+          body: JSON.stringify({ name: 'E2E User', email: TEST_USER.email, onboarding_completed: true }),
         });
       }
 
@@ -988,13 +976,13 @@ test.describe('Authentication Flow', () => {
     await page.fill(SELECTORS.loginPasswordInput, TEST_USER.password);
     await page.click(SELECTORS.loginButton);
     await waitForAnimations(page);
-    await waitForNetworkIdle(page);
+    await expect(page.locator('text=Dashboard').first()).toBeVisible({ timeout: 10000 });
 
     await page.evaluate(() => {
       localStorage.setItem('diana_token', 'expired.access.token');
     });
 
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForLoadState('domcontentloaded');
 
     await page.waitForTimeout(5000);
@@ -1024,15 +1012,13 @@ test.describe('Authentication Flow', () => {
       });
     });
 
-    const signUpButton = page.locator('text=Sign Up, text=Don\'t have an account');
+    const signUpButton = page.locator('text=/Request clinical access/i');
     if (await signUpButton.isVisible()) {
       await signUpButton.click();
       await page.waitForTimeout(2000);
 
       const createAccountButton = page.locator('button:has-text("Create Account")');
       if (await createAccountButton.isVisible({ timeout: 5000 })) {
-        await page.fill('input[placeholder="Jane"]', 'John');
-        await page.fill('input[placeholder="Doe"]', 'Doe');
         await page.fill('input[type="email"]', 'mismatch@example.com');
 
         const passwordInput = page.locator('input[type="password"]').first();
@@ -1043,7 +1029,7 @@ test.describe('Authentication Flow', () => {
 
         await createAccountButton.click();
 
-        const errorMessage = page.locator('text=/password.*match|confirm.*password|do not match|must match/i');
+        const errorMessage = page.locator('text=Passwords do not match');
         await expect(errorMessage).toBeVisible({ timeout: 5000 });
 
         await expect(page.locator('h2:has-text("Create Account")')).toBeVisible({ timeout: 3000 });
@@ -1069,7 +1055,8 @@ test.describe('Authentication Flow', () => {
 
     await page.waitForTimeout(1000);
 
-    await expect(page.locator('text=Welcome Back')).toBeVisible({ timeout: 3000 });
+    const loginHeading = page.locator('h1:has-text("Sign in")');
+    await expect(loginHeading).toBeVisible({ timeout: 3000 });
 
     await expect(emailValidationIcon).toBeVisible();
   });

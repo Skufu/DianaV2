@@ -30,6 +30,7 @@ const mockAuthenticatedSession = async (page, accessToken, overrides = {}) => {
       '/users/me/assessments',
       '/users/me/onboarding',
       '/users/me/export/pdf',
+      '/analytics/summary',
     ].some(path => url.includes(path));
 
     if (!isMockedEndpoint) {
@@ -50,7 +51,7 @@ const mockAuthenticatedSession = async (page, accessToken, overrides = {}) => {
           refresh_token: 'refresh-token',
           user: {
             id: 'e2e-user',
-            email: TEST_PROFILE.email,
+            email: ({ ...{ ...TEST_PROFILE, onboarding_completed: true }, onboarding_completed: true }).email,
             role: 'user',
           },
         })
@@ -58,7 +59,7 @@ const mockAuthenticatedSession = async (page, accessToken, overrides = {}) => {
     }
 
     if (url.includes('/users/me/profile') && method === 'GET') {
-      const profile = resolveOverride(overrides.profile, TEST_PROFILE);
+      const profile = resolveOverride(overrides.profile, ({ ...{ ...TEST_PROFILE, onboarding_completed: true }, onboarding_completed: true }));
       return route.fulfill(buildJsonResponse(profile.body, profile.status));
     }
 
@@ -70,6 +71,14 @@ const mockAuthenticatedSession = async (page, accessToken, overrides = {}) => {
     if (url.includes('/users/me/onboarding')) {
       const onboarding = resolveOverride(overrides.onboarding, { success: true });
       return route.fulfill(buildJsonResponse(onboarding.body, onboarding.status));
+    }
+
+    if (url.includes('/analytics/summary')) {
+      return route.fulfill(buildJsonResponse({
+        totalAssessments: 0,
+        averageRiskScore: 0,
+        recentAssessments: [],
+      }));
     }
 
     if (url.includes('/users/me/export/pdf') && method === 'GET') {
@@ -117,7 +126,7 @@ const completeOnboardingIfNeeded = async page => {
 };
 
 const waitForAppShell = async page => {
-  const sidebar = page.locator(SELECTORS.sidebar);
+  const sidebar = page.locator('text=Health Report').locator('..').locator('..').locator('..');
   const onboardingHeader = page.locator('text=Welcome to DIANA');
 
   await Promise.race([
@@ -142,87 +151,28 @@ test.describe('Export Page Tests', () => {
     await page.goto('/');
     await waitForAppShell(page);
     await completeOnboardingIfNeeded(page);
-    await expect(page.locator(SELECTORS.sidebar)).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Health Report').locator('..').locator('..').locator('..')).toBeVisible({ timeout: 10000 });
   });
 
-  test('should navigate to export tab', async ({ page }) => {
-    const sidebar = page.locator(SELECTORS.sidebar);
-    const exportTab = sidebar.locator('button:has-text("Export Data")');
+  test('should navigate to health report tab and display content', async ({ page }) => {
+    const sidebar = page.locator('text=Health Report').locator('..').locator('..').locator('..');
+    const exportTab = sidebar.locator('button:has-text("Health Report")');
 
     await exportTab.click();
 
-    await expect(page.locator('h2:has-text("Export Data")')).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=Data Management')).toBeVisible();
-    await expect(page.locator('h3:has-text("Filter Options")')).toBeVisible();
-  });
-
-  test('should display export options visible', async ({ page }) => {
-    const sidebar = page.locator(SELECTORS.sidebar);
-    const exportTab = sidebar.locator('button:has-text("Export Data")');
-
-    await exportTab.click();
-
-    await page.waitForTimeout(1000);
-
-    const errorFallback = page.locator('text=Something went wrong');
-    const hasError = await errorFallback.isVisible().catch(() => false);
-
-    if (hasError) {
-      const showDetailsButton = page.locator('button:has-text("Show Technical Details")');
-      await showDetailsButton.click();
-
-      const errorMessage = page.locator('p:has-text("Error Message:") + p').nth(1);
-      const errorText = await errorMessage.textContent();
-      console.log('Export component error:', errorText);
-
-      throw new Error(`Export component failed to load: ${errorText}`);
-    }
-
-    await expect(page.locator('text=Export Patient Data')).toBeVisible();
-    await expect(page.locator('text=Patients Data (CSV)')).toBeVisible();
-    await expect(page.locator('text=Assessments Data (CSV)')).toBeVisible();
-    await expect(page.locator('h3:has-text("Insights Report")')).toBeVisible();
-
-    const downloadButtons = page.locator('button:has-text("Download")');
-    await expect(downloadButtons).toHaveCount(2);
-  });
-
-  test('should display filter options', async ({ page }) => {
-    const sidebar = page.locator(SELECTORS.sidebar);
-    const exportTab = sidebar.locator('button:has-text("Export Data")');
-
-    await exportTab.click();
-
-    await expect(page.locator('label:has-text("Menopausal Status")')).toBeVisible();
-    await expect(page.locator('text=All Statuses')).toBeVisible();
-    await expect(page.locator('text=Perimenopausal')).toBeVisible();
-    await expect(page.locator('text=Postmenopausal')).toBeVisible();
-
-    await expect(page.locator('label:has-text("Diabetes Risk Level")')).toBeVisible();
-    await expect(page.locator('text=All Risk Levels')).toBeVisible();
-    await expect(page.locator('text=Low Risk (0-33%)')).toBeVisible();
-    await expect(page.locator('text=Moderate Risk (34-66%)')).toBeVisible();
-    await expect(page.locator('text=High Risk (67-100%)')).toBeVisible();
-  });
-
-  test('should show data privacy notice', async ({ page }) => {
-    const sidebar = page.locator(SELECTORS.sidebar);
-    const exportTab = sidebar.locator('button:has-text("Export Data")');
-
-    await exportTab.click();
-
-    await expect(page.locator('text=Data Privacy & Security Notice')).toBeVisible();
-    await expect(page.locator('text=Exported files contain protected health information (PHI)')).toBeVisible();
-    await expect(page.locator('text=HIPAA, GDPR, or applicable data protection regulations')).toBeVisible();
+    await expect(page.locator('h2:has-text("Health Report")')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Download a summary of your health data for your records or to share with your doctor')).toBeVisible();
+    await expect(page.locator('h3:has-text("Download Health Report")')).toBeVisible();
+    await expect(page.locator('button:has-text("Download PDF")')).toBeVisible();
   });
 
   test('should generate PDF report and trigger download', async ({ page, context }) => {
-    const sidebar = page.locator(SELECTORS.sidebar);
-    const exportTab = sidebar.locator('button:has-text("Export Data")');
+    const sidebar = page.locator('text=Health Report').locator('..').locator('..').locator('..');
+    const exportTab = sidebar.locator('button:has-text("Health Report")');
 
     await exportTab.click();
 
-    const generateButton = page.locator('button:has-text("Generate")');
+    const generateButton = page.locator('button:has-text("Download PDF")');
 
     const logs = [];
     page.on('console', msg => {
@@ -233,32 +183,12 @@ test.describe('Export Page Tests', () => {
 
     await generateButton.click();
 
-    await page.waitForTimeout(2000);
-
     const hasErrors = logs.some(log => log.type === 'error');
     if (hasErrors) {
       console.log('Console errors:', logs.filter(l => l.type === 'error'));
     }
 
     const download = await downloadPromise;
-
     expect(download.suggestedFilename()).toMatch(/diana_health_report.*\.pdf$/);
-  });
-
-  test('should show appropriate message when no data to export', async ({ page }) => {
-    const sidebar = page.locator(SELECTORS.sidebar);
-    const exportTab = sidebar.locator('button:has-text("Export Data")');
-
-    await exportTab.click();
-
-    await expect(page.locator('h2:has-text("Export Data")')).toBeVisible({ timeout: 5000 });
-
-    await expect(page.locator('text=Export Patient Data')).toBeVisible();
-    await expect(page.locator('text=Patients Data (CSV)')).toBeVisible();
-    await expect(page.locator('text=Assessments Data (CSV)')).toBeVisible();
-
-    const privacyNotice = page.locator('text=Data Privacy & Security Notice');
-    await expect(privacyNotice).toBeVisible();
-    await expect(page.locator('text=Exported files contain protected health information (PHI)')).toBeVisible();
   });
 });

@@ -58,7 +58,7 @@ func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (P
 		return Prediction{}, fmt.Errorf("failed to marshal input: %w", err)
 	}
 
-	mlURL := p.url + "?model_type=clinical"
+	mlURL := fmt.Sprintf("%s?model_type=%s", p.url, p.version)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, mlURL, bytes.NewReader(body))
 	if err != nil {
 		log.Printf("[ML] Failed to create request: %v", err)

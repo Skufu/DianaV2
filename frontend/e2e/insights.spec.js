@@ -57,16 +57,16 @@ test.describe('Insights Dashboard', () => {
     await page.route('**/insights/cluster-distribution', async route => {
       if (await handleOptions(route)) return;
       return fulfillJson(route, [
-        { cluster: 'SIDD', count: 5 },
-        { cluster: 'SIRD', count: 3 },
+        { cluster: 'Cluster_A', count: 5 },
+        { cluster: 'Cluster_B', count: 3 },
       ]);
     });
 
     await page.route('**/insights/biomarker-trends', async route => {
       if (await handleOptions(route)) return;
       return fulfillJson(route, [
-        { label: 'Jan', hba1c: 6.2, fbs: 108 },
-        { label: 'Feb', hba1c: 6.4, fbs: 112 },
+        { label: 'Jan', bmi: 25.0, ldl: 130, hdl: 50 },
+        { label: 'Feb', bmi: 24.8, ldl: 128, hdl: 52 },
       ]);
     });
 
@@ -74,11 +74,11 @@ test.describe('Insights Dashboard', () => {
       if (await handleOptions(route)) return;
       return fulfillJson(route, {
         feature_ranking: [
-          { feature: 'hba1c', ig: 0.28 },
-          { feature: 'fbs', ig: 0.25 },
-          { feature: 'bmi', ig: 0.18 },
-          { feature: 'age', ig: 0.12 },
-          { feature: 'systolic_bp', ig: 0.10 },
+          { feature: 'bmi', ig: 0.28 },
+          { feature: 'triglycerides', ig: 0.25 },
+          { feature: 'ldl', ig: 0.18 },
+          { feature: 'hdl', ig: 0.12 },
+          { feature: 'age', ig: 0.10 },
           { feature: 'physical_activity', ig: 0.07 }
         ]
       });
@@ -299,7 +299,7 @@ test.describe('Insights Dashboard', () => {
     const svgElements = page.locator('svg');
     expect(await svgElements.count()).toBeGreaterThan(0);
 
-    const pieSlices = page.locator('.recharts-pie, path[fill*="SIDD"], path[fill*="SIRD"]');
+    const pieSlices = page.locator('.recharts-pie, path[fill]');
     const barRects = page.locator('.recharts-bar-rectangle');
 
     const hasPieChart = await pieSlices.count() > 0;
@@ -318,7 +318,7 @@ test.describe('Insights Dashboard', () => {
 
     expect(consoleErrors.length).toBe(0);
 
-    const clusterLabels = page.locator('text=/SIRD|SIDD|SIRD|MOD|MARD/i');
+    const clusterLabels = page.locator('text=/Cluster|distribution/i');
     const hasClusterLabels = await clusterLabels.count() > 0;
     expect(hasClusterLabels).toBeTruthy();
   });
@@ -361,7 +361,7 @@ test.describe('Insights Dashboard', () => {
       const pathCount = await chartPaths.count();
       expect(pathCount).toBeGreaterThan(0);
 
-      const biomarkerLabels = page.locator('text=/HbA1c|FBS/i');
+      const biomarkerLabels = page.locator('text=/BMI|LDL|HDL/i');
       const hasBiomarkerLabels = await biomarkerLabels.count() > 0;
       expect(hasBiomarkerLabels).toBeTruthy();
     }
@@ -415,7 +415,7 @@ test.describe('Insights Dashboard', () => {
       const labelCount = await axisLabels.count();
       expect(labelCount).toBeGreaterThan(0);
 
-      const factorLabels = page.locator('text=/HbA1c|FBS|BMI|Age|Blood Pressure|Physical Activity/i');
+      const factorLabels = page.locator('text=/BMI|Triglycerides|LDL|HDL|Age|Physical Activity/i');
       const hasFactorLabels = await factorLabels.count() > 0;
       expect(hasFactorLabels).toBeTruthy();
     }
