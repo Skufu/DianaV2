@@ -21,6 +21,7 @@ const Button = React.memo(({
 
   const variants = {
     primary: 'bg-diana-teal text-white',
+    blue: 'bg-blue-600 text-white',
     outline: 'border-2 border-diana-teal text-diana-teal',
     ghost: 'text-slate-500 hover:bg-slate-50',
     danger: 'bg-red-500 text-white',
@@ -28,6 +29,7 @@ const Button = React.memo(({
 
   const hoverVariants = {
     primary: { backgroundColor: '#0F766E', scale: isReduced ? 1 : 1.02, boxShadow: "0px 4px 12px rgba(13, 148, 136, 0.4)" },
+    blue: { backgroundColor: '#1D4ED8', scale: isReduced ? 1 : 1.02, boxShadow: "0px 4px 12px rgba(37, 99, 235, 0.4)" },
     outline: { backgroundColor: '#0D9488', color: '#ffffff', scale: isReduced ? 1 : 1.02 },
     ghost: { scale: isReduced ? 1 : 1.02, backgroundColor: '#F8FAFC', color: '#0D9488' },
     danger: { opacity: 0.9, scale: isReduced ? 1 : 1.02 },

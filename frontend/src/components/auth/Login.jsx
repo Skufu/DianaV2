@@ -79,26 +79,29 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
             <span className="text-white font-bold tracking-[0.15em] text-lg mt-0.5 uppercase">DIANA</span>
           </div>
 
-          <div className="space-y-6 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+            className="space-y-6 relative z-10"
+          >
             <h2 className="text-3xl lg:text-4xl text-white font-semibold leading-[1.2] tracking-tight">
-              Actionable insights for <br />
+              Clinical insights for <br />
               <span className="text-teal-100 font-serif italic pr-2 font-medium">menopausal care.</span>
             </h2>
-            <p className="text-blue-50 text-[16px] leading-relaxed font-normal mt-6">
-              DIANA unifies validated biomarkers and patient history to empower clinicians with evidence-based risk assessments.
-            </p>
 
-            <div className="pt-10 flex flex-col gap-4">
-              <div className="flex items-center gap-4 text-[15px] text-white bg-white/10 p-4 rounded-xl border border-white/10 shadow-sm">
-                <ShieldCheck className="h-6 w-6 text-teal-300 shrink-0" />
-                <span className="font-medium tracking-wide">Secure Clinical Environment</span>
-              </div>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut", delay: 0.4 }}
+              className="pt-8 flex flex-col gap-4"
+            >
               <div className="flex items-center gap-4 text-[15px] text-white bg-white/10 p-4 rounded-xl border border-white/10 shadow-sm">
                 <Database className="h-6 w-6 text-teal-300 shrink-0" />
-                <span className="font-medium tracking-wide">Trained on validated datasets</span>
+                <span className="font-medium tracking-wide">Trained on NHANES dataset</span>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           <div className="mt-14 lg:mt-0 relative z-10">
             <p className="text-blue-200/80 text-[11px] font-bold tracking-[0.15em] uppercase">clinical decision support system</p>
@@ -119,8 +122,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
             {/* Header */}
             <div className="flex flex-col mb-8">
               <motion.div variants={fadeIn} initial="hidden" animate="visible">
-                <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Welcome back</h1>
-                <p className="text-[16px] text-slate-500 mt-2 font-medium">Sign in to access your clinical dashboard.</p>
+                <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Sign in</h1>
               </motion.div>
             </div>
 
@@ -149,7 +151,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                     <div className="space-y-2">
                       <label className="text-[14px] font-semibold text-slate-700">Email Address</label>
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-diana-teal transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
                           <Mail size={20} />
                         </div>
                         <motion.input
@@ -158,7 +160,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-diana-teal/20 focus:border-diana-teal focus:bg-white transition-all shadow-sm"
+                          className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:bg-white transition-all shadow-sm"
                           placeholder="doctor@clinic.com"
                           required
                           autoComplete="email"
@@ -173,14 +175,14 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                         <button
                           type="button"
                           onClick={() => onShowForgotPassword?.(email)}
-                          className="text-[14px] font-semibold text-diana-forest hover:text-diana-forest-light transition-colors focus:outline-none"
+                          className="text-[14px] font-semibold text-blue-600 hover:text-blue-700 transition-colors focus:outline-none"
                         >
                           Forgot password?
                         </button>
                       </div>
 
                       <div className="relative group">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-diana-teal transition-colors">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
                           <Lock size={20} />
                         </div>
                         <motion.input
@@ -189,7 +191,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                           type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="block w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-diana-teal/20 focus:border-diana-teal focus:bg-white transition-all shadow-sm"
+                          className="block w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:bg-white transition-all shadow-sm"
                           placeholder="••••••••"
                           required
                           autoComplete="current-password"
@@ -210,7 +212,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                       <input
                         id="remember-me"
                         type="checkbox"
-                        className="h-5 w-5 text-diana-forest bg-white border border-slate-300 rounded focus:ring-2 focus:ring-diana-forest/20 focus:ring-offset-0 cursor-pointer transition-all"
+                        className="h-5 w-5 text-blue-600 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-blue-600/20 focus:ring-offset-0 cursor-pointer transition-all"
                       />
                       <label htmlFor="remember-me" className="ml-3 block text-[15px] font-medium text-slate-600 cursor-pointer select-none">
                         Keep me signed in
@@ -234,7 +236,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                             <button
                               type="button"
                               onClick={() => onShowVerify?.(email)}
-                              className="text-left text-[14px] font-semibold text-diana-forest hover:text-diana-forest-light transition-colors focus:outline-none ml-6"
+                              className="text-left text-[14px] font-semibold text-blue-600 hover:text-blue-700 transition-colors focus:outline-none ml-6"
                             >
                               Resend verification email
                             </button>
@@ -249,8 +251,8 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                         type="submit"
                         isLoading={loading}
                         fullWidth
-                        variant="primary"
-                        className="py-4 shadow-sm text-[16px] font-semibold bg-diana-forest hover:bg-[#152865] focus:ring-4 focus:ring-offset-1 focus:ring-diana-forest/30 transition-all h-[54px] rounded-xl"
+                        variant="blue"
+                        className="py-4 shadow-sm text-[16px] font-semibold bg-blue-600 hover:bg-blue-700 text-white focus:ring-4 focus:ring-offset-1 focus:ring-blue-600/30 transition-all h-[54px] rounded-xl"
                       >
                         Sign in to Dashboard
                       </Button>
@@ -281,7 +283,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                     Not registered yet?{' '}
                     <button
                       onClick={onShowSignup}
-                      className="font-bold text-diana-forest hover:text-diana-forest-light transition-colors focus:outline-none"
+                      className="font-bold text-blue-600 hover:text-blue-700 transition-colors focus:outline-none"
                     >
                       Request clinical access
                     </button>

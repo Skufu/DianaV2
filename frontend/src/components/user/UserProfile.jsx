@@ -47,8 +47,6 @@ const UserProfile = ({ setActiveTab }) => {
       const payload = {
         ...formData,
         years_menopause: formData.years_menopause ? parseInt(formData.years_menopause, 10) : 0,
-        assessment_frequency_months: formData.assessment_frequency_months ? parseInt(formData.assessment_frequency_months, 10) : 3,
-        reminder_email: !!formData.reminder_email,
         family_history_diabetes: !!formData.family_history_diabetes,
       };
 
@@ -380,47 +378,7 @@ const UserProfile = ({ setActiveTab }) => {
           </div>
         </motion.div>
 
-        <motion.div
-          variants={fadeIn}
-          whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          className="glass-card p-8 bg-white"
-        >
-          <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
-            <Mail size={24} className="text-diana-forest" />
-            Settings
-          </h2>
 
-          <div>
-            <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Assessment Reminder Frequency</label>
-            <select
-              name="assessment_frequency_months"
-              value={formData.assessment_frequency_months || 1}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all mb-6"
-            >
-              <option value="1">Monthly</option>
-              <option value="3">Quarterly (Every 3 months)</option>
-              <option value="6">Biannually (Every 6 months)</option>
-              <option value="12">Annually (Every 12 months)</option>
-            </select>
-
-            <motion.label
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              className="flex items-center gap-3 cursor-pointer p-4 rounded-xl border border-diana-sand hover:bg-diana-stone/30 transition-colors"
-            >
-              <input
-                type="checkbox"
-                name="reminder_email"
-                checked={formData.reminder_email || false}
-                onChange={handleChange}
-                className="w-5 h-5 rounded border-diana-forest text-diana-forest focus:ring-diana-forest focus:ring-offset-0"
-              />
-              <span className="text-sm font-medium text-diana-text-primary">Receive email reminders for your next assessment</span>
-            </motion.label>
-          </div>
-        </motion.div>
 
         <div className="flex justify-end pt-4">
           <Button

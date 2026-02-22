@@ -12,8 +12,6 @@ export const useInputFocusVariants = () => {
   return useMemo(() => ({
     focus: { 
       scale: isReduced ? 1 : 1.01, 
-      borderColor: "#4318FF", 
-      boxShadow: "0px 0px 0px 1px #4318FF",
       transition: { duration: 0.2 }
     }
   }), [isReduced]);
@@ -23,8 +21,6 @@ export const useInputFocusVariants = () => {
 export const getInputFocusVariants = (isReduced) => ({
   focus: { 
     scale: isReduced ? 1 : 1.01, 
-    borderColor: "#4318FF", 
-    boxShadow: "0px 0px 0px 1px #4318FF",
     transition: { duration: 0.2 }
   }
 });
@@ -186,7 +182,6 @@ export const navLabelVariants = {
 export const getFocusVariants = (isReduced) => ({
   focus: {
     scale: isReduced ? 1 : 1.02,
-    boxShadow: "0px 0px 0px 3px rgba(67, 24, 255, 0.2)",
     transition: { duration: 0.2 }
   }
 });

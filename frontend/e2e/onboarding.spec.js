@@ -182,11 +182,6 @@ test.describe('Onboarding Flow', () => {
     await nextButton.click();
     await page.waitForTimeout(1000);
 
-    await page.selectOption('select[name="assessment_frequency_months"]', '3');
-
-    await nextButton.click();
-    await page.waitForTimeout(1000);
-
     const consentResearch = page.locator('input[name="consent_research_participation"]');
     const consentEmail = page.locator('input[name="consent_email_updates"]');
     const consentAnalytics = page.locator('input[name="consent_analytics"]');
@@ -306,11 +301,6 @@ test.describe('Onboarding Flow', () => {
     await page.selectOption('select[name="heart_disease"]', 'no');
     await page.selectOption('select[name="family_history_diabetes"]', 'false');
     await page.selectOption('select[name="smoking_status"]', 'never');
-
-    await nextButton.click();
-    await page.waitForTimeout(1000);
-
-    await page.selectOption('select[name="assessment_frequency_months"]', '3');
 
     await nextButton.click();
     await page.waitForTimeout(1000);
@@ -492,11 +482,6 @@ test.describe('Onboarding Flow', () => {
     await page.selectOption('select[name="heart_disease"]', 'no');
     await page.selectOption('select[name="family_history_diabetes"]', 'false');
     await page.selectOption('select[name="smoking_status"]', 'never');
-
-    await nextButton.click();
-    await page.waitForTimeout(1000);
-
-    await page.selectOption('select[name="assessment_frequency_months"]', '3');
 
     await nextButton.click();
     await page.waitForTimeout(1000);

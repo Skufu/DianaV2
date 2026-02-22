@@ -165,7 +165,8 @@ const App = () => {
         setShowOnboarding(true);
       }
     } else if (profileError) {
-      const status = profileError.response?.status;
+      // apiFetch throws Error with .status set to the HTTP status code
+      const status = profileError.status;
       if (status === 401 || status === 403) {
         // Clear all auth state and storage on auth error
         localStorage.removeItem('diana_token');
@@ -355,19 +356,19 @@ const App = () => {
             className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? (isSidebarCollapsed ? 'ml-20' : 'ml-20 lg:ml-72') + ' p-6 lg:p-8' : ''}`}
           >
             <ErrorBoundary section={activeTab}>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  variants={pageVariants}
-                  initial="initial"
-                  animate="animate"
-                  exit="exit"
-                >
-                  <Suspense fallback={<LoadingSkeleton />}>
+              <Suspense fallback={<LoadingSkeleton />}>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    variants={pageVariants}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                  >
                     {renderUserContent()}
-                  </Suspense>
-                </motion.div>
-              </AnimatePresence>
+                  </motion.div>
+                </AnimatePresence>
+              </Suspense>
             </ErrorBoundary>
           </main>
 

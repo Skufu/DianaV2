@@ -56,7 +56,6 @@ test.describe('Assessment Creation Flow', () => {
           first_name: 'Test',
           last_name: 'User',
           email: TEST_USER.email,
-          assessment_frequency_months: 3,
         }),
       });
     });

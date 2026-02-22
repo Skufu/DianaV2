@@ -28,7 +28,6 @@ const Onboarding = ({ onComplete }) => {
     consent_email_updates: false,
     consent_analytics: false,
     consent_personal_data: false,
-    assessment_frequency_months: '3',
   });
 
   const handleInputChange = (e) => {
@@ -68,8 +67,6 @@ const Onboarding = ({ onComplete }) => {
         consent_research_participation: formData.consent_research_participation,
         consent_email_updates: formData.consent_email_updates,
         consent_analytics: formData.consent_analytics,
-        assessment_frequency_months: parseInt(formData.assessment_frequency_months, 10) || 3,
-        reminder_email: true,
       };
       await completeOnboardingMutation.mutateAsync(payload);
       onComplete();
@@ -120,7 +117,6 @@ const Onboarding = ({ onComplete }) => {
     { title: 'Personal', icon: User },
     { title: 'Health', icon: Heart },
     { title: 'History', icon: Shield },
-    { title: 'Settings', icon: FileText },
     { title: 'Consent', icon: CheckCircle2 },
   ];
 
@@ -159,7 +155,7 @@ const Onboarding = ({ onComplete }) => {
         {/* Header & Progress */}
         <div className="mb-10">
           <div className="flex items-center justify-between mb-8">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Step {step} of 5</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Step {step} of 4</span>
             <motion.span
               key={step} // Animate text change
               initial={{ opacity: 0, y: -5 }}
@@ -176,7 +172,7 @@ const Onboarding = ({ onComplete }) => {
               layout
               className="h-full bg-diana-navy"
               initial={{ width: 0 }}
-              animate={{ width: `${(step / 5) * 100}%` }}
+              animate={{ width: `${(step / 4) * 100}%` }}
               transition={{ duration: 0.5, ease: "easeInOut" }}
             />
           </div>
@@ -194,15 +190,13 @@ const Onboarding = ({ onComplete }) => {
                 {step === 1 && "Start your clinical profile"}
                 {step === 2 && "Menopausal health status"}
                 {step === 3 && "Medical history overview"}
-                {step === 4 && "System preferences"}
-                {step === 5 && "Privacy & Consent"}
+                {step === 4 && "Privacy & Consent"}
               </h1>
               <p className="text-slate-500">
                 {step === 1 && "We need a few basic details to personalize your care plan."}
                 {step === 2 && "Understanding where you are in your journey helps us tailor recommendations."}
                 {step === 3 && "This information creates the baseline for your clinical risk assessment."}
-                {step === 4 && "Customize how often you'd like to check in with the platform."}
-                {step === 5 && "Please review how your data will be used and protected."}
+                {step === 4 && "Please review how your data will be used and protected."}
               </p>
             </motion.div>
           </AnimatePresence>
@@ -445,29 +439,6 @@ const Onboarding = ({ onComplete }) => {
               )}
 
               {step === 4 && (
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
-                  <motion.div variants={fadeIn} className="group space-y-1.5">
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Assessment Reminder Frequency</label>
-                    <div className="relative">
-                      <select
-                        name="assessment_frequency_months"
-                        value={formData.assessment_frequency_months}
-                        onChange={handleInputChange}
-                        className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
-                      >
-                        <option value="1">Monthly</option>
-                        <option value="3">Quarterly (Recommended)</option>
-                        <option value="6">Semi-Annually</option>
-                        <option value="12">Annually</option>
-                      </select>
-                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
-                    </div>
-                    <p className="text-[10px] text-slate-400 mt-1">We'll send you an email when it's time for your next check-in.</p>
-                  </motion.div>
-                </motion.div>
-              )}
-
-              {step === 5 && (
                 <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
                   {[
                     { name: 'consent_research_participation', label: 'Research Participation', sub: 'Allow anonymized data contribution to diabetes research.' },
@@ -525,21 +496,19 @@ const Onboarding = ({ onComplete }) => {
               </Button>
             )}
 
-            {step < 5 ? (
+            {step < 4 ? (
               <Button
-                variant="primary"
+                variant="blue"
                 onClick={nextStep}
-                className="bg-diana-navy hover:bg-diana-midnight"
               >
                 Next Step
                 <ArrowRight size={16} className="ml-1.5" />
               </Button>
             ) : (
               <Button
-                variant="primary"
+                variant="blue"
                 onClick={handleSubmit}
                 isLoading={completeOnboardingMutation.isPending}
-                className="bg-diana-navy hover:bg-diana-midnight"
                 icon={!completeOnboardingMutation.isPending ? CheckCircle2 : undefined}
               >
                 {completeOnboardingMutation.isPending ? 'Completing...' : 'Complete Setup'}

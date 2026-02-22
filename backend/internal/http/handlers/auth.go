@@ -27,6 +27,12 @@ func NewAuthHandler(cfg config.Config, store store.Store, broker *sse.Broker) *A
 	return &AuthHandler{cfg: cfg, store: store, broker: broker}
 }
 
+// isSecure returns true if cookies should use the Secure flag (HTTPS only).
+// In development (http://localhost), Secure cookies are silently dropped by browsers.
+func (h *AuthHandler) isSecure() bool {
+	return h.cfg.Env == "production" || h.cfg.Env == "prod"
+}
+
 type loginRequest struct {
 	Email    string `json:"email" binding:"required,email,max=255"`
 	Password string `json:"password" binding:"required,min=8,max=128"`
@@ -122,9 +128,9 @@ func (h *AuthHandler) login(c *gin.Context) {
 		return
 	}
 
-	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", true, true)
-	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", true, true)
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", h.isSecure(), true)
+	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", h.isSecure(), true)
 
 	// Publish successful login event
 	if h.broker != nil {
@@ -213,9 +219,9 @@ func (h *AuthHandler) register(c *gin.Context) {
 		return
 	}
 
-	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", true, true)
-	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", true, true)
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", h.isSecure(), true)
+	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", h.isSecure(), true)
 
 	// Publish user creation event for real-time tracking
 	if h.broker != nil {
@@ -331,9 +337,9 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 		return
 	}
 
-	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", true, true)
-	c.SetCookie("diana_refresh_token", newRefreshToken, 7*24*60*60, "/", "", true, true)
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", h.isSecure(), true)
+	c.SetCookie("diana_refresh_token", newRefreshToken, 7*24*60*60, "/", "", h.isSecure(), true)
 
 	// Publish token refresh event
 	if h.broker != nil {
@@ -368,9 +374,9 @@ func (h *AuthHandler) logout(c *gin.Context) {
 		}
 	}
 
-	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("diana_token", "", -1, "/", "", true, true)
-	c.SetCookie("diana_refresh_token", "", -1, "/", "", true, true)
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("diana_token", "", -1, "/", "", h.isSecure(), true)
+	c.SetCookie("diana_refresh_token", "", -1, "/", "", h.isSecure(), true)
 
 	// Publish logout event (using email from context if available)
 	if h.broker != nil {
