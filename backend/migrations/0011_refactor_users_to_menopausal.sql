@@ -22,7 +22,6 @@ ADD COLUMN IF NOT EXISTS years_menopause INT CHECK (years_menopause >= 0 AND yea
 ALTER TABLE users 
 ADD COLUMN IF NOT EXISTS hypertension TEXT CHECK (hypertension IN ('no', 'controlled', 'uncontrolled')),
 ADD COLUMN IF NOT EXISTS heart_disease TEXT CHECK (heart_disease IN ('no', 'yes')),
-ADD COLUMN IF NOT EXISTS family_history_diabetes BOOLEAN NOT NULL DEFAULT false,
 ADD COLUMN IF NOT EXISTS smoking_status TEXT CHECK (smoking_status IN ('never', 'former', 'current'));
 
 -- Step 4: Add consent columns
@@ -152,7 +151,6 @@ DROP COLUMN IF EXISTS consent_email_updates,
 DROP COLUMN IF EXISTS consent_research_participation,
 DROP COLUMN IF EXISTS consent_personal_data,
 DROP COLUMN IF EXISTS smoking_status,
-DROP COLUMN IF EXISTS family_history_diabetes,
 DROP COLUMN IF EXISTS heart_disease,
 DROP COLUMN IF EXISTS hypertension,
 DROP COLUMN IF EXISTS years_menopause,

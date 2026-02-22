@@ -36,7 +36,6 @@ type User struct {
 	// Medical History
 	Hypertension          string `json:"hypertension,omitempty" binding:"omitempty,oneof=no controlled uncontrolled"`
 	HeartDisease          string `json:"heart_disease,omitempty" binding:"omitempty,oneof=no yes"`
-	FamilyHistoryDiabetes bool   `json:"family_history_diabetes,omitempty"`
 	SmokingStatus         string `json:"smoking_status,omitempty" binding:"omitempty,oneof=never former current"`
 	PhysicalActivity      string `json:"physical_activity,omitempty" binding:"omitempty"`
 	Alcohol               string `json:"alcohol,omitempty" binding:"omitempty"`
@@ -192,7 +191,6 @@ type OnboardingRequest struct {
 	YearsMenopause               int    `json:"years_menopause" binding:"omitempty,min=0,max=50"`
 	Hypertension                 string `json:"hypertension" binding:"omitempty,oneof=no controlled uncontrolled"`
 	HeartDisease                 string `json:"heart_disease" binding:"omitempty,oneof=no yes"`
-	FamilyHistoryDiabetes        bool   `json:"family_history_diabetes"`
 	SmokingStatus                string `json:"smoking_status" binding:"omitempty,oneof=never former current"`
 	PhysicalActivity             string `json:"physical_activity" binding:"omitempty"`
 	Alcohol                      string `json:"alcohol" binding:"omitempty"`

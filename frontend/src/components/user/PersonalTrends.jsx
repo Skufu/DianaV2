@@ -92,8 +92,8 @@ const PersonalTrends = ({ onStartAssessment }) => {
 
           {/* Chart Area */}
           <div className="h-[300px] w-full mb-8">
-            <ResponsiveContainer width="100%" height="100%">
-              {activeTrends.clusterHistory.length > 1 ? (
+            {activeTrends.clusterHistory.length > 1 ? (
+              <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={activeTrends.clusterHistory.slice().reverse()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
@@ -131,12 +131,12 @@ const PersonalTrends = ({ onStartAssessment }) => {
                     activeDot={{ r: 6, strokeWidth: 0, fill: '#059669' }}
                   />
                 </AreaChart>
-              ) : (
-                <div className="h-full flex items-center justify-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  <p className="text-slate-500 font-medium text-center">Log one more assessment to see your chart trend!</p>
-                </div>
-              )}
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <p className="text-slate-500 font-medium text-center">Log one more assessment to see your chart trend!</p>
+              </div>
+            )}
           </div>
 
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">Previous Assessments</h2>

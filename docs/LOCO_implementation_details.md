@@ -1,6 +1,6 @@
 # LOCO Implementation Details: Technical Documentation
 
-This document details the **Leave-One-Cycle-Out (LOCO)** cross-validation strategy implemented in `Ian_ML/training/train_v2.py`. This approach is designed to simulate temporal generalization and provide a defensible evaluation of the Diana V2 clinical model.
+This document details the **Leave-One-Cycle-Out (LOCO)** cross-validation strategy implemented in `Ian_ML/training/train_binary_v2_no_bp.py`. This approach is designed to simulate temporal generalization and provide a defensible evaluation of the Diana V2 binary screening model.
 
 ## 1. High-Level Strategy: Nested Cross-Validation
 
@@ -68,24 +68,25 @@ The decision thresholds for "at-risk" classification are tuned using **Out-Of-Fo
 
 ## 4. Threshold Optimization Logic
 
-The model optimizes distinct probability thresholds for **Pre-diabetic** and **Diabetic** classes to prioritize sensitivity (recall) for at-risk patients.
+The model optimizes a single probability threshold for **At-Risk** classification (combining Pre-diabetic and Diabetic) to prioritize sensitivity for screening.
 
-### Optimization Objective: `selection_score`
-The optimization maximizes a weighted score that heavily penalizes missing an at-risk patient:
+### Multi-Strategy Evaluation
+The optimization evaluates the target metric across three distinct strategies on the Out-Of-Fold (OOF) predictions:
+1. **Youden's J** ($\text{Sensitivity} + \text{Specificity} - 1$): The standard clinical threshold for balanced accuracy.
+2. **Screening**: Maximizes a weighted sum of sensitivity ($60\%$) and F1 ($40\%$), subject to keeping specificity $\ge 0.40$ and sensitivity $\ge 0.75$.
+3. **G-mean** ($\sqrt{\text{Sensitivity} \times \text{Specificity}}$): Penalizes extreme imbalances.
+
+### Optimization Objective: `composite score`
+After finding the best threshold for each of the three strategies, the overall winner is selected by maximizing a composite score that ensures we value recall highly but still reward meaningful specificity:
 
 $$
-\text{Score} = 0.45 \times \text{Recall}_{\text{Diabetic}} + 0.30 \times \text{Recall}_{\text{Pre-diabetic}} + 0.20 \times \text{AUC} + 0.05 \times \text{MacroF1}
+\text{Composite Score} = 0.35 \times \text{Sensitivity} + 0.30 \times \text{Specificity} + 0.25 \times \text{F1} + 0.10 \times \text{Accuracy}
 $$
 
 ### Algorithm
-1. **Grid Search:** Iterate through possible threshold combinations:
-   - Pre-diabetic threshold: 0.25 to 0.65
-   - Diabetic threshold: 0.20 to 0.60
-2. **Apply Logic:**
-   - If $P(\text{Diabetic}) \ge T_{\text{diab}} \rightarrow$ Predict **Diabetic**
-   - Else if $P(\text{Pre-diabetic}) \ge T_{\text{pre}} \rightarrow$ Predict **Pre-diabetic**
-   - Else $\rightarrow$ Predict **Normal**
-3. **Select Best:** Choose thresholds that maximize the `selection_score` on the training OOF data.
+1. **Grid Search:** Iterate through possible thresholds from 0.10 to 0.90 in 0.01 increments.
+2. **Evaluate Strategies:** Find the optimal threshold for Youden, Screening, and G-mean.
+3. **Select Best:** Evaluate the composite score for the three proposed thresholds, and select the one that yields the highest score.
 
 ## 5. Final Model & Serving
 
@@ -96,10 +97,10 @@ After the evaluation is complete, the final model for production is trained on *
 
 ## 6. Verification Trace
 
-The implementation in `train_v2.py` has been verified against these principles:
-- [x] **Outer Loop:** Verified use of `LeaveOneGroupOut` (lines 926, 943).
-- [x] **Inner Loop:** Verified use of `GroupKFold` (line 145).
-- [x] **Pipeline:** Verified `Imputer` and `Scaler` are inside Pipeline (lines 952-958).
-- [x] **No Leakage:** Verified thresholds tuned on `train_oof_proba` (line 988), applied to `test_proba` (line 992).
+The implementation in `train_binary_v2_no_bp.py` has been verified against these principles:
+- [x] **Outer Loop:** Verified use of `LeaveOneGroupOut` (lines 396, 412).
+- [x] **Inner Loop:** Verified use of `GroupKFold` (lines 199, 417).
+- [x] **Pipeline:** Verified `Imputer` and `Scaler` are inside Pipeline (lines 422-425).
+- [x] **No Leakage:** Verified thresholds tuned on `train_oof_proba` (line 461), applied to `test_proba` (line 466).
 
 This robust design ensures that reported metrics are a realistic estimate of how the model will perform on future patient populations.

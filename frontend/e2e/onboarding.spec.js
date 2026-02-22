@@ -176,8 +176,7 @@ test.describe('Onboarding Flow', () => {
 
     await page.selectOption('select[name="hypertension"]', 'no');
     await page.selectOption('select[name="heart_disease"]', 'no');
-    await page.selectOption('select[name="family_history_diabetes"]', 'false');
-    await page.selectOption('select[name="smoking_status"]', 'never');
+        await page.selectOption('select[name="smoking_status"]', 'never');
 
     await nextButton.click();
     await page.waitForTimeout(1000);
@@ -299,8 +298,7 @@ test.describe('Onboarding Flow', () => {
 
     await page.selectOption('select[name="hypertension"]', 'no');
     await page.selectOption('select[name="heart_disease"]', 'no');
-    await page.selectOption('select[name="family_history_diabetes"]', 'false');
-    await page.selectOption('select[name="smoking_status"]', 'never');
+        await page.selectOption('select[name="smoking_status"]', 'never');
 
     await nextButton.click();
     await page.waitForTimeout(1000);
@@ -480,8 +478,7 @@ test.describe('Onboarding Flow', () => {
 
     await page.selectOption('select[name="hypertension"]', 'no');
     await page.selectOption('select[name="heart_disease"]', 'no');
-    await page.selectOption('select[name="family_history_diabetes"]', 'false');
-    await page.selectOption('select[name="smoking_status"]', 'never');
+        await page.selectOption('select[name="smoking_status"]', 'never');
 
     await nextButton.click();
     await page.waitForTimeout(1000);

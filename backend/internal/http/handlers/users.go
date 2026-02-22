@@ -156,7 +156,6 @@ func (h *UsersHandler) CompleteOnboarding(c *gin.Context) {
 		YearsMenopause:            req.YearsMenopause,
 		Hypertension:              req.Hypertension,
 		HeartDisease:              req.HeartDisease,
-		FamilyHistoryDiabetes:     req.FamilyHistoryDiabetes,
 		SmokingStatus:             req.SmokingStatus,
 		PhysicalActivity:          req.PhysicalActivity,
 		Alcohol:                   req.Alcohol,

@@ -1,0 +1,11 @@
+{
+  "primary_unsupervised": {
+    "k": 2,
+    "basis": "Best unsupervised compactness/separation (silhouette)."
+  },
+  "exploratory_clinical_mapping": {
+    "k": 4,
+    "basis": "Clinically interpretable risk stratification aligned to 4 groups."
+  },
+  "recommended_thesis_wording": "Use K=2 as the primary unsupervised finding; present K=4 as exploratory clinical mapping for interpretability."
+}

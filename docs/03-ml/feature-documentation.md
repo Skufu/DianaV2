@@ -193,20 +193,9 @@ df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
 
 ---
 
-### 3.2 Family History of Diabetes (`family_history_diabetes`)
+### 3.2 [REMOVED] Family History of Diabetes (`family_history_diabetes`)
 
-**NHANES Source:** `MCQ300C` - Close relative had diabetes? (1=Yes, 2=No)
-
-**Derivation:**
-```python
-return (mcq['MCQ300C'] == 1).astype(float).where(mcq['MCQ300C'].notna())
-```
-
-**Availability:** 80.7% (1,111/1,376 records)
-- Note: MCQ300C was **dropped in 2021-2023 cycle**
-- Missing values handled by imputation in CV pipeline
-
-**Clinical Rationale:** Strong genetic predictor. First-degree relative with diabetes increases risk 2-3 fold.
+*Note: This feature was removed during the V2 upgrade due to severe missingness (83%) in recent NHANES cycles, as detailed in the `dataset-gap-analysis.md`. Model performance slightly improved upon its removal.*
 
 ---
 

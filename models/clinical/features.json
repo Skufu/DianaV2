@@ -5,6 +5,8 @@
     "ldl",
     "hdl",
     "age",
+    "systolic",
+    "diastolic",
     "bmi_category",
     "tg_hdl_ratio",
     "smoking_encoded",
@@ -12,10 +14,8 @@
     "alcohol_encoded",
     "metabolic_syndrome_score",
     "waist_circumference",
-    "family_history_diabetes",
     "race_encoded"
   ],
-  "n_features": 14,
-  "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
-  "note": "Binary reformulation with 14 features (no BP), LOCO validation"
+  "n_features": 15,
+  "note": "Defensible v2 feature contract (13 reduced features)"
 }

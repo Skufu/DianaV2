@@ -47,7 +47,6 @@ const UserProfile = ({ setActiveTab }) => {
       const payload = {
         ...formData,
         years_menopause: formData.years_menopause ? parseInt(formData.years_menopause, 10) : 0,
-        family_history_diabetes: !!formData.family_history_diabetes,
       };
 
       if (formData.age) {
@@ -347,21 +346,7 @@ const UserProfile = ({ setActiveTab }) => {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Family History of Diabetes</label>
-              <select
-                name="family_history_diabetes"
-                value={formData.family_history_diabetes ? 'yes' : 'no'}
-                onChange={(e) => setFormData(prev => ({
-                  ...prev,
-                  family_history_diabetes: e.target.value === 'yes'
-                }))}
-                className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest focus:ring-1 focus:ring-diana-forest transition-all"
-              >
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
-            </div>
+            {/* Family history removed based on gap analysis */}
 
             <div>
               <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Smoking Status</label>

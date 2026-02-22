@@ -54,7 +54,7 @@ from sklearn.preprocessing import StandardScaler, label_binarize
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-from Ian_ML.common.paths import CLINICAL_V2_MODELS_DIR, NHANES_PROCESSED_ROOT
+from Ian_ML.common.paths import CLINICAL_MODELS_DIR, NHANES_PROCESSED_ROOT
 
 warnings.filterwarnings("ignore")
 
@@ -66,7 +66,7 @@ HAS_LIGHTGBM = False  # Disabled: overkill for small dataset
 # Use non-imputed file for leakage-safe imputation inside CV pipeline
 # Previously used diana_dataset_imputed.csv which caused data leakage
 DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
-MODELS_DIR = CLINICAL_V2_MODELS_DIR
+MODELS_DIR = CLINICAL_MODELS_DIR
 RESULTS_DIR = MODELS_DIR / "results"
 VIZ_DIR = MODELS_DIR / "visualizations"
 
@@ -95,7 +95,7 @@ REDUCED_FEATURES = [
     "metabolic_syndrome_score",
     # Enrichment features (3) - crp removed (data not available for all cycles)
     "waist_circumference",
-    "family_history_diabetes",
+    
     "race_encoded",
 ]
 

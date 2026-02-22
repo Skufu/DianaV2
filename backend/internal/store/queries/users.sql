@@ -10,7 +10,7 @@ LIMIT 1;
 SELECT id, email, password_hash, role, is_admin, is_active, account_status, created_at, updated_at,
     first_name, last_name, date_of_birth, phone, address,
     menopause_status, menopause_type, years_menopause,
-    hypertension, heart_disease, family_history_diabetes, smoking_status,
+    hypertension, heart_disease, smoking_status,
     physical_activity, alcohol,
     consent_personal_data, consent_research_participation, 
     consent_email_updates, consent_analytics, consent_updated_at,
@@ -50,9 +50,9 @@ WHERE id = $1;
 UPDATE users SET
     first_name = $2, last_name = $3, date_of_birth = $4, phone = $5,
     address = $6, menopause_status = $7, menopause_type = $8, years_menopause = $9,
-    hypertension = $10, heart_disease = $11, family_history_diabetes = $12, smoking_status = $13,
-    physical_activity = $14, alcohol = $15,
-    assessment_frequency_months = $16, reminder_email = $17,
+    hypertension = $10, heart_disease = $11, smoking_status = $12,
+    physical_activity = $13, alcohol = $14,
+    assessment_frequency_months = $15, reminder_email = $16,
     updated_at = NOW()
 WHERE id = $1;
 
