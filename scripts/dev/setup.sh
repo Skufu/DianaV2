@@ -473,7 +473,7 @@ print_success "Frontend dependencies installed"
 
 # Create frontend .env if needed
 if [ ! -f ".env" ]; then
-    echo "VITE_API_BASE=http://localhost:8080/api/v1" > .env
+    echo "VITE_API_BASE=/api/v1" > .env
     echo "VITE_ML_BASE=http://localhost:5001" >> .env
     echo "VITE_ML_PORT=5001" >> .env
     echo "VITE_ML_API_KEY=dev-ml-api-key-12345" >> .env

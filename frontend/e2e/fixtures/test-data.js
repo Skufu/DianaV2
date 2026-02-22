@@ -23,15 +23,14 @@ export const NEW_USER = {
 };
 
 export const MOCK_ASSESSMENT = {
-    hba1c: 5.8,
-    fbs: 100,
     bmi: 25.0,
-    cholesterol: 200,
+    age: 55,
     ldl: 130,
     hdl: 50,
     triglycerides: 150,
-    systolic_bp: 120,
-    diastolic_bp: 80,
+    smoking_status: 'Never',
+    physical_activity: 'Moderate',
+    alcohol: 'None',
 };
 
 export const TEST_PROFILE = {
@@ -44,24 +43,16 @@ export const TEST_PROFILE = {
 
 export const TEST_TRENDS = {
     dates: [],
-    hba1c_values: [],
     bmi_values: [],
-    systolic_values: [],
-    diastolic_values: [],
     ldl_values: [],
     hdl_values: [],
     triglycerides_values: [],
-    fbs_values: [],
     risk_scores: [],
 };
 
 export const MOCK_TRENDS_DATA = {
     dates: ['2024-01-15', '2024-02-15', '2024-03-15'],
-    hba1c_values: [5.8, 5.6, 5.9],
     bmi_values: [25.0, 24.5, 25.5],
-    fbs_values: [100, 95, 105],
-    systolic_values: [120, 118, 122],
-    diastolic_values: [80, 78, 82],
     ldl_values: [130, 125, 135],
     hdl_values: [50, 52, 48],
     triglycerides_values: [150, 145, 155],
@@ -84,14 +75,10 @@ export const TEST_PATIENT = {
     age: 55,
     height: 175,
     weight: 85,
-    systolic: 130,
-    diastolic: 85,
-    cholesterol: 210,
     ldl: 130,
     hdl: 55,
     triglycerides: 160,
-    fbs: 115,
-    hba1c: 6.2,
+    bmi: 27.8,
     activity: 'moderate',
     smoking: 'never',
     familyHistory: true,
