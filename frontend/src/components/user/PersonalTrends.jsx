@@ -1,29 +1,18 @@
 import React, { useState } from 'react';
 import { TrendingUp, Calendar, Activity, Plus } from 'lucide-react';
 import { useTrends } from '../../api';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { motion } from 'framer-motion';
-import { fadeIn, slideUp, useReducedMotion } from '../../utils/animations';
-import { shouldDisableHeavyEffects } from '../../utils/deviceCapabilities';
+import { fadeIn, useReducedMotion } from '../../utils/animations';
 
-const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
+const PersonalTrends = ({ onStartAssessment }) => {
   const isReduced = useReducedMotion();
   const [selectedMonths, setSelectedMonths] = useState(12);
 
   const { data: trends, isLoading } = useTrends(selectedMonths);
 
-  const MOCK_DATA = {
-    clusterHistory: [
-      { date: '2025-08-15', cluster: 'SIDD', riskScore: 78 },
-      { date: '2025-10-10', cluster: 'MOD', riskScore: 52 },
-      { date: '2026-01-15', cluster: 'MARD', riskScore: 24 },
-    ],
-    riskLevels: { low: 1, medium: 2, high: 1 }
-  };
-
   const hasAssessmentData = trends?.clusterHistory && trends.clusterHistory.length > 0;
-  const isSampleMode = !hasAssessmentData && !isLoading;
-  const activeTrends = isSampleMode ? MOCK_DATA : (trends || {});
+  const activeTrends = trends || {};
   const getTimeOptions = (hasData) => {
     const baseOptions = [
       { value: 1, label: '1 Month' },
@@ -45,7 +34,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
     return baseOptions;
   };
 
-  const timeOptions = getTimeOptions(hasAssessmentData || isSampleMode);
+  const timeOptions = getTimeOptions(hasAssessmentData);
 
   const handleLogAssessment = () => {
     if (onStartAssessment) {
@@ -74,26 +63,16 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
           <p className="text-blue-100 text-lg max-w-xl leading-relaxed">
             Track your health metrics over time and visualize your progress
           </p>
-          {isSampleMode && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full border border-white/30"
-            >
-              <Activity size={12} className="text-blue-100" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-50">Sample View</span>
-            </motion.div>
-          )}
         </div>
         <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
         <div className="absolute bottom-0 right-20 w-40 h-40 bg-blue-400/20 rounded-full blur-2xl -mb-10 pointer-events-none" />
       </motion.div>
 
-      {(hasAssessmentData || isSampleMode) && (
+      {hasAssessmentData && (
         <motion.div variants={fadeIn} className="flex justify-between items-center">
           <div>
             <p className="text-diana-text-secondary">
-              {isSampleMode ? 'Showing example health data' : 'Select time range to view your data'}
+              Select time range to view your data
             </p>
           </div>
           <div className="flex gap-2">
@@ -104,11 +83,10 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
                 whileTap={{ scale: isReduced ? 1 : 0.95 }}
                 whileFocus={{ scale: isReduced ? 1 : 1.05, boxShadow: "0px 0px 0px 2px #10B981" }}
                 onClick={() => setSelectedMonths(option.value)}
-                disabled={isSampleMode}
                 className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${selectedMonths === option.value
                   ? 'bg-diana-forest text-white shadow-diana-forest/30'
                   : 'bg-white text-diana-text-secondary hover:bg-slate-50 border border-slate-200'
-                  } ${isSampleMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  }`}
               >
                 {option.label}
               </motion.button>
@@ -221,7 +199,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
         <motion.div variants={fadeIn} className="glass-card p-6 md:p-8 bg-white shadow-sm border border-slate-100 flex flex-col items-center text-center md:items-start md:text-left">
           <h2 className="text-2xl font-serif font-bold text-diana-text-primary mb-2">Your Health Snapshot</h2>
           <p className="text-slate-500 mb-8 max-w-2xl">
-            A quick summary of your past assessments. The goal is to keep your numbers in the green "Healthy Baseline" zone by maintaining steady habits.
+            A quick summary of your past assessments. The goal is to keep your numbers in the green &quot;Healthy Baseline&quot; zone by maintaining steady habits.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 w-full">
             <motion.div whileHover={{ scale: isReduced ? 1 : 1.02 }} className="text-center p-6 bg-emerald-50 rounded-2xl border border-emerald-100/50">
@@ -252,25 +230,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
         </motion.div>
       )}
 
-      {isSampleMode && (
-        <motion.div variants={fadeIn} className="glass-card p-8 text-center bg-diana-forest/5 border border-diana-forest/20">
-          <h3 className="text-lg font-bold text-diana-forest mb-2">Unlock Your Personal Trends</h3>
-          <p className="text-diana-text-secondary mb-6 max-w-md mx-auto">
-            The data shown above is an example. Log your first health assessment to start building your own personalized trends and risk profile.
-          </p>
-          <motion.button
-            whileHover={{ scale: isReduced ? 1 : 1.05 }}
-            whileTap={{ scale: isReduced ? 1 : 0.95 }}
-            onClick={handleLogAssessment}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-diana-forest text-white font-bold rounded-xl hover:bg-diana-forest-light transition-all shadow-lg"
-          >
-            <Plus size={20} />
-            Log Your First Assessment
-          </motion.button>
-        </motion.div>
-      )}
-
-      {!isSampleMode && (!activeTrends || (activeTrends.clusterHistory?.length === 0 && !activeTrends.riskLevels)) && (
+      {!hasAssessmentData && (
         <motion.div variants={fadeIn} className="glass-card p-12 text-center bg-white">
           <div className="w-20 h-20 rounded-full bg-diana-stone flex items-center justify-center mx-auto mb-6">
             <TrendingUp size={40} className="text-diana-text-muted" />
@@ -278,7 +238,7 @@ const PersonalTrends = ({ userId, setActiveTab, onStartAssessment }) => {
           <h3 className="text-xl font-bold text-diana-text-primary mb-2">No Health Data Yet</h3>
           <p className="text-diana-text-secondary mb-6 max-w-md mx-auto">
             Start tracking your health journey by logging your first assessment.
-            You'll see trends, risk analysis, and personalized insights here.
+            You&apos;ll see trends, risk analysis, and personalized insights here.
           </p>
           <motion.button
             whileHover={{ scale: isReduced ? 1 : 1.05 }}

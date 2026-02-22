@@ -3,7 +3,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 export { API_BASE };
 const ML_BASE = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
@@ -108,11 +108,11 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
   }
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({ error: `Request failed with status ${response.status}` }));
     const message = error.message || error.error || 'Request failed';
     const requestError = new Error(message);
+    requestError.status = response.status;
     if (error.code) requestError.code = error.code;
-    if (error.status) requestError.status = error.status;
     throw requestError;
   }
 

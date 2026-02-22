@@ -55,7 +55,7 @@ const AuthEventLogViewer = ({ token }) => {
     }
 
     const url = new URL(
-      `${import.meta.env.VITE_API_BASE || 'http://localhost:8080/api/v1'}/admin/events/stream`
+      `${import.meta.env.VITE_API_BASE || '/api/v1'}/admin/events/stream`
     );
     if (token) {
       url.searchParams.append('token', token);

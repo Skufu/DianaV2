@@ -38,18 +38,25 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// Logging middleware
 	r.Use(middleware.Logger())
 
-	// Security headers
-	r.Use(middleware.SecurityHeaders())
-
-	// CORS configuration
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     cfg.CORSOrigins,
+	// CORS configuration (must be before other middleware that might reject requests)
+	corsConfig := cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
-	}))
+	}
+	if cfg.Env == "production" || cfg.Env == "prod" {
+		corsConfig.AllowOrigins = cfg.CORSOrigins
+	} else {
+		// In development, allow all origins to avoid CORS issues with proxies
+		corsConfig.AllowAllOrigins = true
+		corsConfig.AllowCredentials = false // AllowAllOrigins requires AllowCredentials=false
+	}
+	r.Use(cors.New(corsConfig))
+
+	// Security headers
+	r.Use(middleware.SecurityHeaders())
 
 	// Rate limiting (1000 requests per minute per IP/user - relaxed for testing)
 	rateLimiter := middleware.NewRateLimiter(1000, time.Minute)
