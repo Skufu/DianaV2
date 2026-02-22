@@ -61,21 +61,21 @@ test.describe('Visual Regression: Insights Component', () => {
     await page.route('**/insights/cluster-distribution', async route => {
       if (await handleOptions(route)) return;
       return fulfillJson(route, [
-        { cluster: 'SIDD', count: 5 },
-        { cluster: 'SIRD', count: 3 },
-        { cluster: 'MOD', count: 2 },
-        { cluster: 'MARD', count: 4 },
+        { cluster: 'Cluster_A', count: 5 },
+        { cluster: 'Cluster_B', count: 3 },
+        { cluster: 'Cluster_C', count: 2 },
+        { cluster: 'Cluster_D', count: 4 },
       ]);
     });
 
     await page.route('**/insights/biomarker-trends', async route => {
       if (await handleOptions(route)) return;
       return fulfillJson(route, [
-        { label: 'Jan', hba1c: 6.2, fbs: 108, ldl: 120 },
-        { label: 'Feb', hba1c: 6.4, fbs: 112, ldl: 125 },
-        { label: 'Mar', hba1c: 6.1, fbs: 105, ldl: 118 },
-        { label: 'Apr', hba1c: 6.3, fbs: 110, ldl: 122 },
-        { label: 'May', hba1c: 6.5, fbs: 115, ldl: 128 },
+        { label: 'Jan', bmi: 25.0, ldl: 120, hdl: 50, triglycerides: 150 },
+        { label: 'Feb', bmi: 24.8, ldl: 125, hdl: 52, triglycerides: 148 },
+        { label: 'Mar', bmi: 25.2, ldl: 118, hdl: 48, triglycerides: 155 },
+        { label: 'Apr', bmi: 24.5, ldl: 122, hdl: 51, triglycerides: 145 },
+        { label: 'May', bmi: 25.5, ldl: 128, hdl: 49, triglycerides: 160 },
       ]);
     });
 
@@ -93,24 +93,24 @@ test.describe('Visual Regression: Insights Component', () => {
     await page.route('**/insights/information-gain', async route => {
       if (await handleOptions(route)) return;
       return fulfillJson(route, [
-        { feature: 'HbA1c', importance: 0.25 },
-        { feature: 'FBS', importance: 0.20 },
-        { feature: 'Age', importance: 0.15 },
-        { feature: 'BMI', importance: 0.12 },
-        { feature: 'Cholesterol', importance: 0.10 },
-        { feature: 'Family History', importance: 0.08 },
-        { feature: 'Blood Pressure', importance: 0.06 },
-        { feature: 'Physical Activity', importance: 0.04 },
+        { feature: 'BMI', importance: 0.25 },
+        { feature: 'Triglycerides', importance: 0.20 },
+        { feature: 'LDL', importance: 0.15 },
+        { feature: 'HDL', importance: 0.12 },
+        { feature: 'Age', importance: 0.10 },
+        { feature: 'Smoking Status', importance: 0.08 },
+        { feature: 'Physical Activity', importance: 0.06 },
+        { feature: 'Alcohol', importance: 0.04 },
       ]);
     });
 
     await page.route('**/insights/clusters', async route => {
       if (await handleOptions(route)) return;
       return fulfillJson(route, [
-        { cluster: 'SIDD', description: 'Severe Insulin-Deficient Diabetes', avg_age: 55, avg_hba1c: 7.2 },
-        { cluster: 'SIRD', description: 'Severe Insulin-Resistant Diabetes', avg_age: 58, avg_hba1c: 6.8 },
-        { cluster: 'MOD', description: 'Mild Obesity-Related Diabetes', avg_age: 52, avg_hba1c: 6.1 },
-        { cluster: 'MARD', description: 'Mild Age-Related Diabetes', avg_age: 68, avg_hba1c: 6.3 },
+        { cluster: 'Cluster_A', description: 'High Risk Metabolic', avg_age: 55, avg_bmi: 28.5 },
+        { cluster: 'Cluster_B', description: 'Moderate Risk', avg_age: 58, avg_bmi: 26.0 },
+        { cluster: 'Cluster_C', description: 'Low Risk Active', avg_age: 52, avg_bmi: 24.5 },
+        { cluster: 'Cluster_D', description: 'Low Risk Controlled', avg_age: 68, avg_bmi: 25.0 },
       ]);
     });
   });
@@ -195,9 +195,9 @@ test.describe('Visual Regression: Insights Component', () => {
 
       const componentChecks = [
         { name: 'ModelPerformance', pattern: /accuracy|precision|recall|f1|auc/i },
-        { name: 'RiskFactorChart', pattern: /feature|importance|HbA1c|FBS/i },
-        { name: 'SubgroupDistribution', pattern: /cluster|distribution|SIDD|SIRD/i },
-        { name: 'ClusterComparison', pattern: /SIDD|SIRD|MOD|MARD|description/i },
+        { name: 'RiskFactorChart', pattern: /feature|importance|BMI|Triglycerides/i },
+        { name: 'SubgroupDistribution', pattern: /cluster|distribution/i },
+        { name: 'ClusterComparison', pattern: /Cluster|description|risk/i },
       ];
 
       for (const component of componentChecks) {

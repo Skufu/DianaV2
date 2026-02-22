@@ -43,21 +43,12 @@ const PersonalTrends = ({ onStartAssessment }) => {
   };
 
   if (isLoading) {
-    return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 text-diana-text-muted">Loading your trends...</motion.div>;
+    return <motion.div key="loading_trends" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12 text-diana-text-muted">Loading your trends...</motion.div>;
   }
 
-  // Use simple non-staggered variants for instant mounting 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { duration: 0.3 }
-    }
-  };
-
   return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
-      <motion.div variants={fadeIn} className="bg-gradient-to-br from-diana-forest to-[#1A365D] rounded-3xl p-8 md:p-10 text-white shadow-xl relative overflow-hidden">
+    <motion.div key="content_trends" variants={fadeIn} initial="hidden" animate="visible" className="space-y-8">
+      <motion.div className="bg-gradient-to-br from-diana-forest to-[#1A365D] rounded-3xl p-8 md:p-10 text-white shadow-xl relative overflow-hidden">
         <div className="relative z-10">
           <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3">Health Trends</h1>
           <p className="text-blue-100 text-lg max-w-xl leading-relaxed">

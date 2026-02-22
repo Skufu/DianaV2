@@ -3,7 +3,14 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
+let API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
+
+// Fix Git Bash (MSYS2) path translation bug where '/api/v1' becomes 'C:/Program Files/Git/api/v1'
+if (API_BASE && /^[a-zA-Z]:[/\\]/.test(API_BASE)) {
+  console.warn(`[API] Detected Windows file path in API_BASE (${API_BASE}) likely due to Git Bash path translation. Normalizing to '/api/v1'`);
+  API_BASE = '/api/v1';
+}
+
 export { API_BASE };
 const ML_BASE = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 

@@ -388,27 +388,15 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel }) => {
 
           {/* Submit Button */}
           <div className="flex justify-end">
-            <motion.button
+            <Button
               type="submit"
-              disabled={isSubmitting}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              whileFocus={{ scale: 1.02, boxShadow: "0px 0px 0px 2px #10B981" }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center gap-2 px-6 py-3 bg-diana-forest text-white font-bold rounded-xl hover:bg-diana-forest-light shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              isLoading={isSubmitting}
+              variant="blue"
+              className="px-8 py-3 shadow-lg shadow-blue-600/20"
+              icon={!isSubmitting ? Save : undefined}
             >
-              {isSubmitting && (
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="mr-2"
-                  aria-hidden="true"
-                >
-                  <Activity size={20} />
-                </motion.div>
-              )}
-              <span aria-live="polite">{isSubmitting ? 'Analyzing...' : 'Submit for Analysis'}</span>
-            </motion.button>
+              {isSubmitting ? 'Analyzing...' : 'Submit for Analysis'}
+            </Button>
           </div>
 
           {/* Error Display */}
@@ -423,12 +411,12 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel }) => {
                   stiffness: 300,
                   damping: 30
                 }}
-                className="bg-rose-50 border border-rose-200 rounded-lg p-4 text-rose-400 flex items-center gap-3"
+                className="bg-rose-50 border border-rose-100 rounded-2xl p-4 text-rose-700 flex items-center gap-3 shadow-sm"
               >
                 <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
                   <AlertCircle size={20} className="text-rose-600" />
                 </div>
-                <p>{error}</p>
+                <p className="font-medium">{error}</p>
               </motion.div>
             )}
           </AnimatePresence>

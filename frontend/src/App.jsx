@@ -45,8 +45,8 @@ const LoadingSkeleton = memo(function LoadingSkeleton() {
 
 const App = () => {
   const isReduced = useReducedMotion();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [token, setToken] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('diana_token'));
+  const [token, setToken] = useState(() => localStorage.getItem('diana_token'));
   const [refreshToken, setRefreshToken] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);

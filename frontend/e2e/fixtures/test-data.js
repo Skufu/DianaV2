@@ -88,7 +88,7 @@ export const SELECTORS = {
     // Auth
     loginEmailInput: 'input[type="email"]',
     loginPasswordInput: 'input[type="password"]',
-    loginButton: 'button:has-text("Sign In"), button:has-text("Login")',
+    loginButton: '[data-testid="login-submit-button"]',
     logoutButton: '[data-testid="logout-button"], button:has-text("Log Out"), button:has-text("Logout")',
     brandLogo: 'img[alt="DIANA Logo"]',
 

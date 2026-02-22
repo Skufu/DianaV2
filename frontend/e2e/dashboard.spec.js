@@ -54,11 +54,25 @@ test.describe('Dashboard Rendering', () => {
         body: JSON.stringify({
           id: '1',
           email: TEST_USER.email,
-          name: 'Test User',
+          name: 'Test User', onboarding_completed: true, onboarding_completed: true,
           onboarding_completed: true,
           first_name: 'Test',
           last_name: 'User',
         }),
+      });
+    });
+
+    // Mock onboarding status endpoint
+    await page.route('**/users/me/onboarding', async route => {
+      const request = route.request();
+      if (request.method() === 'OPTIONS') {
+        return route.fulfill({ status: 204, headers: corsHeaders });
+      }
+      return route.fulfill({
+        status: 200,
+        headers: corsHeaders,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
       });
     });
 
@@ -111,7 +125,7 @@ test.describe('Dashboard Rendering', () => {
 
     expect(errors).toEqual([]);
 
-    await expect(page.locator('text=Welcome Back!')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Welcome to DIANA').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('7.2: Empty state when no assessments', async ({ page }) => {
@@ -123,7 +137,7 @@ test.describe('Dashboard Rendering', () => {
 
     await page.waitForTimeout(1000);
 
-    await expect(page.locator('text=Start your first health assessment')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Log Your First Assessment').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('7.3: Risk score card displays', async ({ page }) => {
@@ -134,10 +148,10 @@ test.describe('Dashboard Rendering', () => {
         contentType: 'application/json',
         body: JSON.stringify([{
           id: '1',
-          hba1c: 5.8,
-          fbs: 100,
           bmi: 25.0,
-          cholesterol: 200,
+          ldl: 130,
+          hdl: 50,
+          triglycerides: 150,
           risk_score: 0.35,
           risk_level: 'Low',
           created_at: '2026-01-23T10:00:00Z',
@@ -172,7 +186,7 @@ test.describe('Dashboard Rendering', () => {
     await page.waitForTimeout(1000);
 
     await expect(page.locator('text=Risk Level').first()).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=Low Risk')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=LOW').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('7.4: Assessment summary card visible', async ({ page }) => {
@@ -184,16 +198,18 @@ test.describe('Dashboard Rendering', () => {
         body: JSON.stringify([
           {
             id: '1',
-            hba1c: 5.8,
-            fbs: 100,
+            bmi: 25.0,
+            ldl: 130,
+            hdl: 50,
             risk_score: 0.35,
             risk_level: 'Low',
             created_at: '2026-01-23T10:00:00Z',
           },
           {
             id: '2',
-            hba1c: 6.2,
-            fbs: 110,
+            bmi: 27.5,
+            ldl: 140,
+            hdl: 45,
             risk_score: 0.55,
             risk_level: 'Medium',
             created_at: '2026-01-22T10:00:00Z',
@@ -210,7 +226,7 @@ test.describe('Dashboard Rendering', () => {
 
     await page.waitForTimeout(1000);
 
-    await expect(page.locator('text=Assessments')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('text=Assessments').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('7.5: Charts render with no errors', async ({ page }) => {
