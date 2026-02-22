@@ -83,13 +83,13 @@ REQUIRED_FEATURES = [
     'bmi', 'triglycerides', 'ldl', 'hdl', 'age',
     'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded',
     'alcohol_encoded', 'metabolic_syndrome_score',
-    'waist_circumference', 'family_history_diabetes', 'race_encoded'
+    'waist_circumference',  'race_encoded'
 ]
 
 # Raw input features (before engineering)
 RAW_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age',
                 'smoking_status', 'physical_activity', 'alcohol_use',
-                'waist_circumference', 'family_history_diabetes', 'race_ethnicity']
+                'waist_circumference',  'race_ethnicity']
 
 
 def compute_file_hash(filepath: Path) -> str:
@@ -344,13 +344,13 @@ class DianaPredictor:
 CLINICAL_BASE_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
 
 # Optional enrichment features (model works without them via imputation)
-CLINICAL_ENRICHMENT_FEATURES = ['waist_circumference', 'family_history_diabetes', 'race_ethnicity']
+CLINICAL_ENRICHMENT_FEATURES = ['waist_circumference',  'race_ethnicity']
 
 # Full feature set including engineered features (14 features for classifier, no BP)
 CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age',
                      'bmi_category', 'tg_hdl_ratio', 'smoking_encoded',
                      'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score',
-                     'waist_circumference', 'family_history_diabetes', 'race_encoded']
+                     'waist_circumference',  'race_encoded']
 
 # Features used for KMeans clustering (5 base clinical biomarkers)
 # Must match train_clusters.py CLUSTER_FEATURES exactly
@@ -513,7 +513,7 @@ class ClinicalPredictor:
         race_encoded = race_map.get(int(race_raw), np.nan) if not pd.isna(race_raw) and race_raw else np.nan
 
         # Enrichment features with safe defaults
-        family_history = data.get('family_history_diabetes', np.nan)
+        family_history = data.get( np.nan)
         if family_history == 0 or family_history is None:
             family_history = np.nan
 

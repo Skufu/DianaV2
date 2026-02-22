@@ -7,7 +7,7 @@ Binary reformulation: At-Risk (Pre-diabetic + Diabetic) vs Normal
 - Leakage-safe pipeline
 - Threshold optimization for recall
 
-Usage: python Ian_ML/training/train_binary_v2_no_bp_no_bp.py
+Usage: python Ian_ML/training/train_binary_v2_no_bp.py
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ warnings.filterwarnings("ignore")
 
 # Configuration
 DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
-MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp_no_bp"
+MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp"
 RESULTS_DIR = MODELS_DIR / "results"
 VIZ_DIR = MODELS_DIR / "visualizations"
 
@@ -70,7 +70,7 @@ FEATURES = [
     "bmi_category", "tg_hdl_ratio", "smoking_encoded",
     "activity_encoded", "alcohol_encoded", "metabolic_syndrome_score",
     # Enrichment features (3)
-    "waist_circumference", "family_history_diabetes", "race_encoded",
+    "waist_circumference",  "race_encoded",
 ]
 
 # Ahlqvist et al. T2DM Subtype definitions

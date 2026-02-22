@@ -1,0 +1,3 @@
+cluster,bmi,triglycerides,ldl,hdl,age,systolic,diastolic,bmi_category,tg_hdl_ratio,smoking_encoded,activity_encoded,alcohol_encoded,metabolic_syndrome_score,waist_circumference,race_encoded,size,diabetic_rate
+0,25.134,91.459,123.975,69.649,54.691,118.126,70.558,2.083,1.485,0.633,1.059,1.182,1.522,88.229,3.32,556,0.07014388489208633
+1,35.112,143.02,125.598,51.476,54.529,128.287,75.078,2.977,3.027,0.667,0.841,1.098,3.183,110.504,2.965,820,0.29024390243902437

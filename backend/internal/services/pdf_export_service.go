@@ -3,19 +3,17 @@ package services
 import (
 	"bytes"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/go-pdf/fpdf"
 	"github.com/skufu/DianaV2/backend/internal/models"
 )
 
-// Professional Medical Color Palette
+// Professional Medical Color Palette (Industry Standard)
 var (
 	textDark    = [3]int{30, 41, 59}    // Slate-800
 	textLight   = [3]int{100, 116, 139} // Slate-500
 	primary     = [3]int{15, 23, 42}    // Slate-900
-	accent      = [3]int{59, 130, 246}  // Blue-500
 	bgLight     = [3]int{248, 250, 252} // Slate-50
 	borderLight = [3]int{226, 232, 240} // Slate-200
 
@@ -26,140 +24,120 @@ var (
 
 type PDFExportService struct{}
 
-type PDFExportOptions struct {
-	UserID        int64
-	UserName      string
-	UserEmail     string
-	Assessments   []models.Assessment
-	IncludeCharts bool
-	FormatDate    time.Time
-}
-
 func NewPDFExportService() *PDFExportService {
 	return &PDFExportService{}
 }
 
-// GenerateMockData creates realistic mock data for PDF testing
-func GenerateMockData() (models.UserProfile, []models.Assessment) {
-	dob := time.Date(1968, 5, 15, 0, 0, 0, 0, time.UTC)
-	user := models.UserProfile{
-		User: models.User{
-			ID:              1,
-			Email:           "maria.santos@email.com",
-			FirstName:       "Maria",
-			LastName:        "Santos",
-			DateOfBirth:     &dob,
-			MenopauseStatus: "post",
-			YearsMenopause:  8,
-		},
-		AssessmentCount:  6,
-		CurrentCluster:   "MARD",
-		CurrentRiskLevel: "moderate",
-	}
-
-	baseTime := time.Now()
-	assessments := []models.Assessment{
-		{ID: 6, UserID: 1, BMI: 27.4, LDL: 142, HDL: 48, Triglycerides: 168, Cholesterol: 215, Cluster: "MARD", RiskScore: 58, CreatedAt: baseTime},
-		{ID: 5, UserID: 1, BMI: 27.8, LDL: 148, HDL: 45, Triglycerides: 175, Cluster: "MARD", RiskScore: 62, CreatedAt: baseTime.AddDate(0, -1, 0)},
-		{ID: 4, UserID: 1, BMI: 28.1, LDL: 155, HDL: 44, Triglycerides: 182, Cluster: "SIDD", RiskScore: 68, CreatedAt: baseTime.AddDate(0, -2, 0)},
-		{ID: 3, UserID: 1, BMI: 28.5, LDL: 162, HDL: 42, Triglycerides: 195, Cluster: "SIDD", RiskScore: 72, CreatedAt: baseTime.AddDate(0, -4, 0)},
-	}
-	return user, assessments
-}
-
-// GenerateHealthReport generates a readable, multi-page friendly PDF
+// GenerateHealthReport generates a professional clinical screening report on a single page
 func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessments []models.Assessment) ([]byte, error) {
 	pdf := fpdf.New("P", "mm", "A4", "")
-	pdf.SetMargins(15, 15, 15)
-
-	// Better page breaking for larger text sections
-	pdf.SetAutoPageBreak(true, 15)
-
-	if len(assessments) == 0 {
-		user, assessments = GenerateMockData()
-	}
-
+	pdf.SetMargins(10, 10, 10) // Industry standard tighter margins
+	pdf.SetAutoPageBreak(true, 10)
 	pdf.AddPage()
 
-	// === HEADER ===
-	pdf.SetFont("Arial", "B", 26)
+	// === HEADER (Clinical Branding) ===
+	pdf.SetFont("Arial", "B", 20)
 	pdf.SetTextColor(primary[0], primary[1], primary[2])
-	pdf.CellFormat(80, 12, "DIANA", "", 0, "L", false, 0, "")
+	pdf.CellFormat(0, 10, "DIANA CLINICAL HEALTH REPORT", "", 1, "C", false, 0, "")
 
-	pdf.SetFont("Arial", "", 12)
+	pdf.SetFont("Arial", "", 9)
 	pdf.SetTextColor(textLight[0], textLight[1], textLight[2])
-	pdf.CellFormat(0, 12, "Health Report  |  "+time.Now().Format("January 2, 2006"), "", 1, "R", false, 0, "")
+	pdf.CellFormat(0, 5, "Diabetes Risk Screening Tool for Postmenopausal Well-being", "", 1, "C", false, 0, "")
 
+	pdf.Ln(4)
 	pdf.SetDrawColor(primary[0], primary[1], primary[2])
-	pdf.SetLineWidth(0.5)
-	pdf.Line(15, pdf.GetY()+2, 195, pdf.GetY()+2)
-	pdf.Ln(10)
+	pdf.SetLineWidth(0.4)
+	pdf.Line(10, pdf.GetY(), 200, pdf.GetY())
+	pdf.Ln(6)
 
-	// === PATIENT INFO (Larger Text) ===
+	// === PATIENT & RISK SUMMARY (Side-by-Side) ===
+	currentY := pdf.GetY()
+
+	// Left Column: Patient Profile
+	pdf.SetFont("Arial", "B", 12)
+	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
+	pdf.CellFormat(95, 7, "Patient Profile", "", 1, "L", false, 0, "")
+
 	fullname := fmt.Sprintf("%s %s", user.FirstName, user.LastName)
 	if user.FirstName == "" {
 		fullname = user.Email
 	}
+
+	pdf.SetFont("Arial", "", 10)
+	pdf.SetTextColor(textLight[0], textLight[1], textLight[2])
+	s.drawInfoRow(pdf, "Full Name:", fullname, 30)
+
 	age := "N/A"
 	if user.DateOfBirth != nil {
-		age = fmt.Sprintf("%d yrs", time.Now().Year()-user.DateOfBirth.Year())
+		age = fmt.Sprintf("%d years", time.Now().Year()-user.DateOfBirth.Year())
 	}
+	s.drawInfoRow(pdf, "Age / ID:", fmt.Sprintf("%s (ID: #%d)", age, user.User.ID), 30)
+	s.drawInfoRow(pdf, "Status:", casesTitle(user.MenopauseStatus), 30)
+	s.drawInfoRow(pdf, "Reported:", time.Now().Format("Jan 02, 2006"), 30)
 
-	pdf.SetFont("Arial", "B", 14)
-	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-	pdf.CellFormat(0, 8, fmt.Sprintf("Patient: %s", fullname), "", 1, "L", false, 0, "")
+	bottomYPatient := pdf.GetY()
 
-	pdf.SetFont("Arial", "", 12)
-	pdf.SetTextColor(textLight[0], textLight[1], textLight[2])
-	pdf.CellFormat(0, 7, fmt.Sprintf("Age: %s   |   Status: %s   |   ID: #%d", age, casesTitle(user.MenopauseStatus), user.User.ID), "", 1, "L", false, 0, "")
-	pdf.Ln(8)
-
-	// === KEY METRICS ===
+	// Right Column: Clinical Interpretation
 	if len(assessments) > 0 {
 		a := assessments[0]
+		pdf.SetY(currentY)
+		pdf.SetX(110)
 
-		pdf.SetFont("Arial", "B", 16)
-		pdf.SetTextColor(primary[0], primary[1], primary[2])
-		pdf.Cell(0, 10, "Summary")
-		pdf.Ln(10)
+		pdf.SetFont("Arial", "B", 12)
+		pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
+		pdf.CellFormat(90, 7, "Screening Interpretation", "", 1, "C", false, 0, "")
 
-		// 2 wide cards instead of 3 cramped ones
-		boxW := 85.0
-		boxH := 28.0
-		gap := 10.0
-		y := pdf.GetY()
+		pdf.SetX(110)
+		scoreColor := s.getRiskColor(a.RiskScore)
+		pdf.SetFillColor(scoreColor[0], scoreColor[1], scoreColor[2])
+		pdf.SetTextColor(255, 255, 255)
+		pdf.SetFont("Arial", "B", 14)
 
-		s.drawMetricCard(pdf, 15, y, boxW, boxH, "DIABETES RISK SCORE", fmt.Sprintf("%d%%", a.RiskScore), s.getRiskColor(a.RiskScore))
-		s.drawMetricCard(pdf, 15+boxW+gap, y, boxW, boxH, "BODY MASS INDEX (BMI)", fmt.Sprintf("%.1f", a.BMI), s.getStatusColor(s.getBMIStatus(a.BMI)))
+		riskLevel := "LOW RISK"
+		if a.RiskScore >= 70 {
+			riskLevel = "HIGH RISK"
+		} else if a.RiskScore >= 30 {
+			riskLevel = "MODERATE RISK"
+		}
 
-		pdf.SetY(y + boxH + 12)
+		pdf.CellFormat(90, 10, riskLevel, "1", 1, "C", true, 0, "")
+
+		pdf.SetX(110)
+		pdf.SetFillColor(primary[0], primary[1], primary[2])
+		pdf.CellFormat(90, 10, fmt.Sprintf("Risk Score: %d%%", a.RiskScore), "1", 1, "C", true, 0, "")
 	}
 
-	// === BIOMARKER TABLE ===
+	if pdf.GetY() < bottomYPatient {
+		pdf.SetY(bottomYPatient)
+	}
+	pdf.Ln(8)
+
+	// === BIOMARKER VALUES ===
 	if len(assessments) > 0 {
 		s.drawBiomarkerTable(pdf, assessments[0])
 	}
-	pdf.Ln(10)
+	pdf.Ln(6)
 
-	// === SINGLE COLUMN SECTIONS ===
-
-	// History
+	// === HISTORY & TRENDS ===
 	if len(assessments) > 1 {
-		s.drawHistorySection(pdf, assessments, 180.0)
-		pdf.Ln(10)
+		s.drawHistorySection(pdf, assessments)
+		pdf.Ln(6)
 	}
 
-	// Care Plan
+	// === RECOMMENDATIONS ===
 	if len(assessments) > 0 {
-		s.drawCarePlanSection(pdf, assessments[0], 180.0)
+		s.drawRecommendations(pdf, assessments[0])
 	}
 
 	// === FOOTER ===
 	pdf.SetY(-20)
-	pdf.SetFont("Arial", "", 10)
+	pdf.SetFont("Arial", "I", 8)
 	pdf.SetTextColor(textLight[0], textLight[1], textLight[2])
-	pdf.CellFormat(0, 5, "Generated by DIANA. This report is for informational purposes only.", "", 1, "C", false, 0, "")
-	pdf.CellFormat(0, 5, "Please consult with your doctor for medical advice.", "", 0, "C", false, 0, "")
+	pdf.SetDrawColor(borderLight[0], borderLight[1], borderLight[2])
+	pdf.Line(10, pdf.GetY(), 200, pdf.GetY())
+	pdf.Ln(2)
+	pdf.CellFormat(0, 4, "This screening report is AI-assisted and intended for professional clinical reference only.", "", 1, "C", false, 0, "")
+	pdf.CellFormat(0, 4, fmt.Sprintf("Generated: %s | DIANA V2 Health Systems", time.Now().Format("2006-01-02 15:04")), "", 1, "C", false, 0, "")
 
 	var buf bytes.Buffer
 	if err := pdf.Output(&buf); err != nil {
@@ -168,135 +146,106 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 	return buf.Bytes(), nil
 }
 
-func (s *PDFExportService) drawMetricCard(pdf *fpdf.Fpdf, x, y, w, h float64, label, value string, color [3]int) {
-	pdf.SetFillColor(bgLight[0], bgLight[1], bgLight[2])
-	pdf.SetDrawColor(borderLight[0], borderLight[1], borderLight[2])
-	pdf.Rect(x, y, w, h, "FD")
-
-	// Status bar
-	pdf.SetFillColor(color[0], color[1], color[2])
-	pdf.Rect(x, y, 4, h, "F")
-
-	// Label
-	pdf.SetXY(x+8, y+5)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.SetTextColor(textLight[0], textLight[1], textLight[2])
-	pdf.Cell(w-8, 6, label)
-
-	// Value
-	pdf.SetXY(x+8, y+12)
-	pdf.SetFont("Arial", "B", 20)
-	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-	pdf.Cell(w-8, 12, value)
+func (s *PDFExportService) drawInfoRow(pdf *fpdf.Fpdf, label, value string, labelW float64) {
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(labelW, 5, label, "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.CellFormat(70, 5, value, "", 1, "L", false, 0, "")
 }
 
 func (s *PDFExportService) drawBiomarkerTable(pdf *fpdf.Fpdf, a models.Assessment) {
-	pdf.SetFont("Arial", "B", 16)
-	pdf.SetTextColor(primary[0], primary[1], primary[2])
-	pdf.Cell(0, 10, "Detailed Results")
-	pdf.Ln(10)
-
-	headers := []string{"Test Name", "Result", "Normal Range", "Status"}
-	widths := []float64{60, 40, 45, 35}
-	aligns := []string{"L", "R", "C", "C"}
-
-	pdf.SetFont("Arial", "B", 11)
+	pdf.SetFont("Arial", "B", 12)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-	pdf.SetFillColor(borderLight[0], borderLight[1], borderLight[2])
+	pdf.Cell(0, 8, "Biomarker Assessment")
+	pdf.Ln(8)
 
+	headers := []string{"Biomarker Component", "Patient Result", "Reference Range", "Clinical Status"}
+	widths := []float64{65, 40, 45, 40}
+
+	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFillColor(borderLight[0], borderLight[1], borderLight[2])
 	for i, h := range headers {
-		pdf.CellFormat(widths[i], 9, h, "B", 0, aligns[i], true, 0, "")
+		pdf.CellFormat(widths[i], 8, h, "1", 0, "C", true, 0, "")
 	}
-	pdf.Ln(9)
+	pdf.Ln(8)
 
 	rows := []struct{ name, val, ref, status string }{
+		{"BMI (Body Mass Index)", fmt.Sprintf("%.1f kg/m2", a.BMI), "18.5 - 22.9", s.getBMIStatus(a.BMI)},
 		{"Total Cholesterol", fmt.Sprintf("%d mg/dL", a.Cholesterol), "< 200", s.getCholStatus(a.Cholesterol)},
-		{"HDL (Good Cholesterol)", fmt.Sprintf("%d mg/dL", a.HDL), "> 50", s.getHDLStatus(a.HDL)},
-		{"LDL (Bad Cholesterol)", fmt.Sprintf("%d mg/dL", a.LDL), "< 100", s.getLDLStatus(a.LDL)},
+		{"LDL (Low-Density Lipoprotein)", fmt.Sprintf("%d mg/dL", a.LDL), "< 100", s.getLDLStatus(a.LDL)},
+		{"HDL (High-Density Lipoprotein)", fmt.Sprintf("%d mg/dL", a.HDL), "> 50", s.getHDLStatus(a.HDL)},
 		{"Triglycerides", fmt.Sprintf("%d mg/dL", a.Triglycerides), "< 150", s.getTGStatus(a.Triglycerides)},
-		{"BMI", fmt.Sprintf("%.1f", a.BMI), "18.5 - 22.9", s.getBMIStatus(a.BMI)},
 	}
 
-	pdf.SetFont("Arial", "", 12)
+	pdf.SetFont("Arial", "", 9)
 	for _, r := range rows {
 		pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-		pdf.CellFormat(widths[0], 9, r.name, "B", 0, "L", false, 0, "")
+		pdf.CellFormat(widths[0], 6, " "+r.name, "1", 0, "L", false, 0, "")
+		pdf.CellFormat(widths[1], 6, r.val, "1", 0, "C", false, 0, "")
+		pdf.CellFormat(widths[2], 6, r.ref, "1", 0, "C", false, 0, "")
 
-		pdf.SetFont("Arial", "B", 12)
-		pdf.CellFormat(widths[1], 9, r.val, "B", 0, "R", false, 0, "")
-		pdf.SetFont("Arial", "", 12)
-
-		pdf.SetTextColor(textLight[0], textLight[1], textLight[2])
-		pdf.CellFormat(widths[2], 9, r.ref, "B", 0, "C", false, 0, "")
-
-		c := s.getStatusColor(r.status)
-		pdf.SetTextColor(c[0], c[1], c[2])
-		pdf.SetFont("Arial", "B", 11)
-		pdf.CellFormat(widths[3], 9, r.status, "B", 1, "C", false, 0, "")
-		pdf.SetFont("Arial", "", 12)
+		color := s.getStatusColor(r.status)
+		pdf.SetTextColor(color[0], color[1], color[2])
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(widths[3], 6, r.status, "1", 1, "C", false, 0, "")
+		pdf.SetFont("Arial", "", 9)
 	}
 }
 
-func (s *PDFExportService) drawHistorySection(pdf *fpdf.Fpdf, assessments []models.Assessment, w float64) {
-	pdf.SetFont("Arial", "B", 16)
-	pdf.SetTextColor(primary[0], primary[1], primary[2])
-	pdf.Cell(w, 10, "Your Health History")
-	pdf.Ln(10)
-
-	colW := w / 3.0
-	pdf.SetFont("Arial", "B", 11)
+func (s *PDFExportService) drawHistorySection(pdf *fpdf.Fpdf, assessments []models.Assessment) {
+	pdf.SetFont("Arial", "B", 12)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
+	pdf.Cell(0, 8, "Clinical Risk Trends")
+	pdf.Ln(8)
+
+	colW := 190.0 / 4.0
+	pdf.SetFont("Arial", "B", 9)
 	pdf.SetFillColor(borderLight[0], borderLight[1], borderLight[2])
+	pdf.CellFormat(colW, 7, "Assessment Date", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(colW, 7, "Risk Score", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(colW, 7, "BMI", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(colW, 7, "Risk Cluster", "1", 1, "C", true, 0, "")
 
-	pdf.CellFormat(colW, 8, "Date", "B", 0, "C", true, 0, "")
-	pdf.CellFormat(colW, 8, "Risk Score", "B", 0, "C", true, 0, "")
-	pdf.CellFormat(colW, 8, "BMI", "B", 1, "C", true, 0, "")
-
-	pdf.SetFont("Arial", "", 12)
+	pdf.SetFont("Arial", "", 9)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-	maxRows := 5
-	if len(assessments) < maxRows {
-		maxRows = len(assessments)
+
+	limit := 3
+	if len(assessments) < limit {
+		limit = len(assessments)
 	}
 
-	for i := 0; i < maxRows; i++ {
+	for i := 0; i < limit; i++ {
 		a := assessments[i]
-		pdf.CellFormat(colW, 8, a.CreatedAt.Format("Jan 02, 2006"), "B", 0, "C", false, 0, "")
-		pdf.CellFormat(colW, 8, fmt.Sprintf("%d%%", a.RiskScore), "B", 0, "C", false, 0, "")
-		pdf.CellFormat(colW, 8, fmt.Sprintf("%.1f", a.BMI), "B", 1, "C", false, 0, "")
+		pdf.CellFormat(colW, 6, a.CreatedAt.Format("Jan 02, 2006"), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(colW, 6, fmt.Sprintf("%d %%", a.RiskScore), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(colW, 6, fmt.Sprintf("%.1f", a.BMI), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(colW, 6, a.Cluster, "1", 1, "C", false, 0, "")
 	}
 }
 
-func (s *PDFExportService) drawCarePlanSection(pdf *fpdf.Fpdf, a models.Assessment, w float64) {
-	pdf.SetFont("Arial", "B", 16)
-	pdf.SetTextColor(primary[0], primary[1], primary[2])
-	pdf.Cell(w, 10, "Doctor Discussion Points")
-	pdf.Ln(10)
+func (s *PDFExportService) drawRecommendations(pdf *fpdf.Fpdf, a models.Assessment) {
+	pdf.SetFont("Arial", "B", 12)
+	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
+	pdf.Cell(0, 8, "Clinical Discussion Points")
+	pdf.Ln(8)
 
 	recs := s.getSmartRecommendations(a)
-
-	pdf.SetFont("Arial", "", 12)
+	pdf.SetFont("Arial", "", 9)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
 
 	for _, rec := range recs {
-		pdf.SetTextColor(accent[0], accent[1], accent[2])
-		pdf.Cell(8, 8, "\u2022") // bullet point
-		pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-		pdf.MultiCell(w-8, 8, rec, "", "L", false)
-		pdf.Ln(2)
+		pdf.CellFormat(4, 5, "-", "", 0, "R", false, 0, "")
+		pdf.MultiCell(186, 5, " "+rec, "", "L", false)
 	}
 }
 
-// --- Helpers ---
+// --- Clinical Logic Helpers ---
 
 func casesTitle(s string) string {
 	if len(s) == 0 {
 		return "N/A"
 	}
-	if s[0] >= 'a' && s[0] <= 'z' {
-		return string(s[0]-32) + s[1:]
-	}
-	return s
+	return string(s[0]-32) + s[1:]
 }
 
 func (s *PDFExportService) getStatusColor(status string) [3]int {
@@ -322,47 +271,22 @@ func (s *PDFExportService) getRiskColor(score int) [3]int {
 
 func (s *PDFExportService) getSmartRecommendations(a models.Assessment) []string {
 	var recs []string
-
 	if a.RiskScore >= 70 {
-		recs = append(recs, "Your overall high risk score indicates it is important to discuss these results with your doctor soon.")
+		recs = append(recs, "High clinical risk detected. Schedule immediate medical consultation for comprehensive diagnostic screening.")
 	}
-
-	if a.BMI >= 30 {
-		recs = append(recs, "Weight: Nutritional counseling and a structured weight management plan could significantly improve your health markers.")
-	} else if a.BMI >= 25 {
-		recs = append(recs, "Weight: Incorporating more physical activity and slight dietary changes can help manage your weight.")
+	if a.BMI >= 25 {
+		recs = append(recs, "Weight management intervention indicated. Discuss nutritional counseling and gradual metabolic targets.")
 	}
-
-	if a.LDL >= 130 || a.Cholesterol >= 200 {
-		recs = append(recs, "Cholesterol: Your lipid levels are high. Evaluation for lipid-lowering therapy or dietary changes may be necessary.")
+	if a.LDL >= 130 || a.Cholesterol >= 200 || a.Triglycerides >= 150 {
+		recs = append(recs, "Lipid panel outside reference range. Evaluate cardiovascular risk and lipid-lowering lifestyle modifications.")
 	}
-
 	if len(recs) == 0 {
-		recs = append(recs, "Your recent markers are excellent. Continue your healthy lifestyle habits and proceed with your regular annual check-ups.")
+		recs = append(recs, "Biomarkers are within physiological targets. Maintain current preventative lifestyle habits and annual screening.")
 	}
 	return recs
 }
 
-func (s *PDFExportService) getHbA1cStatus(v float64) string {
-	if v >= 6.5 {
-		return "High"
-	}
-	if v >= 5.7 {
-		return "Pre-diabetic"
-	}
-	return "Normal"
-}
-func (s *PDFExportService) getFBSStatus(v float64) string {
-	if v >= 126 {
-		return "High"
-	}
-	if v >= 100 {
-		return "Elevated"
-	}
-	return "Normal"
-}
 func (s *PDFExportService) getBMIStatus(v float64) string {
-	// Philippine (Asia-Pacific WHO) BMI cutoffs
 	if v >= 25 {
 		return "Obese"
 	}
@@ -405,7 +329,33 @@ func (s *PDFExportService) getTGStatus(v int) string {
 	return "Normal"
 }
 
-// Helper for tests
+// GenerateMockData creates realistic mock data for PDF testing
+func GenerateMockData() (models.UserProfile, []models.Assessment) {
+	dob := time.Date(1968, 5, 15, 0, 0, 0, 0, time.UTC)
+	user := models.UserProfile{
+		User: models.User{
+			ID:              1,
+			Email:           "maria.santos@email.com",
+			FirstName:       "Maria",
+			LastName:        "Santos",
+			DateOfBirth:     &dob,
+			MenopauseStatus: "post",
+			YearsMenopause:  8,
+		},
+		AssessmentCount:  6,
+		CurrentCluster:   "MARD",
+		CurrentRiskLevel: "moderate",
+	}
+
+	baseTime := time.Now()
+	assessments := []models.Assessment{
+		{ID: 6, UserID: 1, BMI: 27.4, LDL: 142, HDL: 48, Triglycerides: 168, Cholesterol: 215, Cluster: "MARD", RiskScore: 58, CreatedAt: baseTime},
+		{ID: 5, UserID: 1, BMI: 27.8, LDL: 148, HDL: 45, Triglycerides: 175, Cluster: "MARD", RiskScore: 62, CreatedAt: baseTime.AddDate(0, -1, 0)},
+		{ID: 4, UserID: 1, BMI: 28.1, LDL: 155, HDL: 44, Triglycerides: 182, Cluster: "SIDD", RiskScore: 68, CreatedAt: baseTime.AddDate(0, -2, 0)},
+	}
+	return user, assessments
+}
+
 func getRiskLevel(score int32) string {
 	if score < 30 {
 		return "Low"
@@ -415,5 +365,3 @@ func getRiskLevel(score int32) string {
 	}
 	return "High"
 }
-
-var _ = rand.Int
