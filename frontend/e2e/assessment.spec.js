@@ -49,8 +49,7 @@ test.describe('Profile Navigation Flow', () => {
             if (await hypertensionSelect.isVisible().catch(() => false)) {
                 await page.selectOption('select[name="hypertension"]', 'no');
                 await page.selectOption('select[name="heart_disease"]', 'no');
-                await page.selectOption('select[name="family_history_diabetes"]', 'false');
-                await page.selectOption('select[name="smoking_status"]', 'never');
+                                await page.selectOption('select[name="smoking_status"]', 'never');
             }
 
             const consentCheckbox = page.locator('input[name="consent_personal_data"]');

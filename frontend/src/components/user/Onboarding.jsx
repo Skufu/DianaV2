@@ -20,7 +20,6 @@ const Onboarding = ({ onComplete }) => {
     years_menopause: '',
     hypertension: '',
     heart_disease: '',
-    family_history_diabetes: false,
     smoking_status: '',
     physical_activity: '',
     alcohol: '',
@@ -59,7 +58,6 @@ const Onboarding = ({ onComplete }) => {
         years_menopause: parseInt(formData.years_menopause, 10) || 0,
         hypertension: formData.hypertension,
         heart_disease: formData.heart_disease,
-        family_history_diabetes: formData.family_history_diabetes || false,
         smoking_status: formData.smoking_status,
         physical_activity: formData.physical_activity,
         alcohol: formData.alcohol,
@@ -360,21 +358,7 @@ const Onboarding = ({ onComplete }) => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-5">
-                    <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Diabetes History</label>
-                      <div className="relative">
-                        <select
-                          name="family_history_diabetes"
-                          value={formData.family_history_diabetes ? 'true' : 'false'}
-                          onChange={e => setFormData(prev => ({ ...prev, family_history_diabetes: e.target.value === 'true' }))}
-                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
-                        >
-                          <option value="false">No</option>
-                          <option value="true">Yes</option>
-                        </select>
-                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
-                      </div>
-                    </motion.div>
+                    {/* Family History removed based on gap analysis */}
 
                     <motion.div variants={fadeIn} className="group space-y-1.5">
                       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Smoking Status</label>
