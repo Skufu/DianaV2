@@ -19,6 +19,18 @@ import json
 from pathlib import Path
 from typing import Dict, Any, Optional
 from Ian_ML.common.paths import MODELS_ROOT
+from Ian_ML.common.feature_constants import (
+    CLUSTER_FEATURES,
+    CLINICAL_FEATURES,
+    CLUSTER_FEATURE_COUNT,
+    CLINICAL_FEATURE_COUNT,
+    ADA_FEATURES,
+    ADA_FEATURE_COUNT,
+    KMEANS_K,
+    MIN_CLINICAL_FEATURES,
+    MAX_CLINICAL_FEATURES,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -130,11 +142,57 @@ def verify_model_integrity(filepath: Path) -> bool:
 def safe_load_model(filepath: Path):
     if not verify_model_integrity(filepath):
         raise SecurityError(f"Model integrity verification failed: {filepath}")
-    return joblib.load(filepath)
+    model = joblib.load(filepath)
+    return _patch_sklearn_compat(model)
 
 
 class SecurityError(Exception):
     pass
+
+
+def _patch_simple_imputer(imputer) -> None:
+    if not hasattr(imputer, "_fill_dtype"):
+        if hasattr(imputer, "_fit_dtype"):
+            imputer._fill_dtype = imputer._fit_dtype
+        elif hasattr(imputer, "statistics_"):
+            imputer._fill_dtype = np.array(imputer.statistics_).dtype
+        else:
+            imputer._fill_dtype = np.float64
+    if not hasattr(imputer, "_fit_dtype"):
+        if hasattr(imputer, "_fill_dtype"):
+            imputer._fit_dtype = imputer._fill_dtype
+        elif hasattr(imputer, "statistics_"):
+            imputer._fit_dtype = np.array(imputer.statistics_).dtype
+        else:
+            imputer._fit_dtype = np.float64
+
+
+def _patch_sklearn_compat(model):
+    try:
+        from sklearn.impute import SimpleImputer
+    except Exception:
+        SimpleImputer = None
+
+    def _walk(obj):
+        if obj is None:
+            return
+        if SimpleImputer is not None and isinstance(obj, SimpleImputer):
+            _patch_simple_imputer(obj)
+            return
+        if hasattr(obj, "named_steps"):
+            for step in obj.named_steps.values():
+                _walk(step)
+        if hasattr(obj, "steps"):
+            for _, step in obj.steps:
+                _walk(step)
+        if hasattr(obj, "transformers"):
+            for _, transformer, _ in obj.transformers:
+                _walk(transformer)
+        if hasattr(obj, "estimator"):
+            _walk(obj.estimator)
+
+    _walk(model)
+    return model
 
 # Medical status thresholds (per ADA guidelines)
 def get_medical_status(hba1c):
@@ -157,51 +215,63 @@ class DianaPredictor:
     """
     
     def __init__(self, models_dir: Optional[Path] = None):
-        """Load all model artifacts."""
+        """Load ADA baseline model artifacts when available."""
         self.models_dir = models_dir or MODELS_DIR
         self.results_dir = RESULTS_DIR
-        
-        self.scaler = safe_load_model(self.models_dir / "scaler.joblib")
-        n_scaler_features = self.scaler.n_features_in_
-        
-        rf_path = self.models_dir / "random_forest.joblib"
-        best_path = self.models_dir / "best_model.joblib"
-        
-        if rf_path.exists():
-            rf = safe_load_model(rf_path)
-            if rf.n_features_in_ == n_scaler_features:
-                self.classifier = rf
+        self.model_loaded = False
+        self.scaler = None
+        self.classifier = None
+        self.kmeans = None
+        self.cluster_labels = {"0": {"label": "ADA Baseline", "risk_level": "MODERATE"}}
+        self.metrics = {}
+        self.decision_thresholds = {}
+        self.cluster_analysis = {}
+
+        try:
+            scaler_path = self.models_dir / "scaler.joblib"
+            if not scaler_path.exists():
+                raise FileNotFoundError(f"Scaler not found at {scaler_path}")
+            self.scaler = safe_load_model(scaler_path)
+            n_scaler_features = getattr(self.scaler, "n_features_in_", None)
+
+            rf_path = self.models_dir / "random_forest.joblib"
+            best_path = self.models_dir / "best_model.joblib"
+
+            if rf_path.exists():
+                rf = safe_load_model(rf_path)
+                if n_scaler_features is None or rf.n_features_in_ == n_scaler_features:
+                    self.classifier = rf
+                elif best_path.exists():
+                    self.classifier = safe_load_model(best_path)
+                else:
+                    self.classifier = rf
             elif best_path.exists():
                 self.classifier = safe_load_model(best_path)
             else:
-                self.classifier = rf
-        elif best_path.exists():
-            self.classifier = safe_load_model(best_path)
-        else:
-            raise FileNotFoundError("No classifier model found")
-        # Backward compatibility for callers expecting `.model`.
-        self.model = self.classifier
-        
-        self.kmeans = safe_load_model(self.models_dir / "kmeans_model.joblib")
-        
-        cluster_labels_path = self.models_dir / "cluster_labels.json"
-        if cluster_labels_path.exists():
-            with open(cluster_labels_path) as f:
-                self.cluster_labels = json.load(f)
-        else:
-            self.cluster_labels = {"0": {"label": "HIGH", "risk_level": "HIGH"}, "1": {"label": "MODERATE", "risk_level": "MODERATE"}}
-        
-        metrics_path = self.models_dir / "model_metrics.json"
-        if metrics_path.exists():
-            with open(metrics_path) as f:
-                self.metrics = json.load(f)
-        else:
-            self.metrics = {}
+                raise FileNotFoundError("No classifier model found")
 
-        self.decision_thresholds = self.metrics.get("decision_thresholds", {})
+            self.model = self.classifier
+
+            kmeans_path = self.models_dir / "kmeans_model.joblib"
+            if kmeans_path.exists():
+                self.kmeans = safe_load_model(kmeans_path)
+
+            cluster_labels_path = self.models_dir / "cluster_labels.json"
+            if cluster_labels_path.exists():
+                with open(cluster_labels_path) as f:
+                    self.cluster_labels = json.load(f)
+
+            metrics_path = self.models_dir / "model_metrics.json"
+            if metrics_path.exists():
+                with open(metrics_path) as f:
+                    self.metrics = json.load(f)
+            self.decision_thresholds = self.metrics.get("decision_thresholds", {})
+            self.model_loaded = True
+        except FileNotFoundError as e:
+            logger.warning("ADA model artifacts missing, using ADA baseline rules: %s", e)
     
     def validate_input(self, data: Dict[str, float]) -> tuple[bool, list]:
-        missing = [f for f in REQUIRED_FEATURES if f not in data or data[f] is None]
+        missing = [f for f in ADA_FEATURES if f not in data or data[f] is None]
         if missing:
             return False, missing
         
@@ -224,36 +294,9 @@ class DianaPredictor:
         return True, []
     
     def _engineer_features(self, data: Dict[str, float]) -> pd.DataFrame:
-        """Engineer features from raw input to match model expectations."""
+        """Build ADA feature frame in training order."""
         df = pd.DataFrame([data])
-        
-        # Philippine (Asia-Pacific WHO) BMI cutoffs
-        df["bmi_category"] = pd.cut(
-            df["bmi"], bins=[0, 18.5, 23, 25, 100], labels=[0, 1, 2, 3]
-        ).astype(float)
-        
-        df["tg_hdl_ratio"] = df["triglycerides"] / df["hdl"].replace(0, np.nan)
-        
-        smoking_map = {"Never": 0, "Former": 1, "Current": 2, "Unknown": 1}
-        if "smoking_status" in df.columns:
-            df["smoking_encoded"] = df["smoking_status"].map(smoking_map).fillna(1)
-        
-        activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2, "Unknown": 1}
-        if "physical_activity" in df.columns:
-            df["activity_encoded"] = df["physical_activity"].map(activity_map).fillna(1)
-        
-        alcohol_map = {"None": 0, "Light": 1, "Moderate": 2, "Heavy": 3}
-        if "alcohol_use" in df.columns:
-            df["alcohol_encoded"] = df["alcohol_use"].map(alcohol_map).fillna(1)
-        
-        metabolic_criteria = pd.DataFrame({
-            "high_tg": df["triglycerides"] > 150,
-            "low_hdl": df["hdl"] < 50,
-            "high_bmi": df["bmi"] >= 25,  # PH Asia-Pacific WHO obesity cutoff
-        })
-        df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
-        
-        return df[REQUIRED_FEATURES]
+        return df[ADA_FEATURES]  # type: ignore[return-value]
     
     def predict(self, data: Dict[str, float]) -> Dict[str, Any]:
         """
@@ -271,47 +314,94 @@ class DianaPredictor:
                 "success": False,
                 "error": f"Missing required features: {missing}"
             }
-        
+
+        if not self.model_loaded:
+            hba1c = data.get("hba1c")
+            fbs = data.get("fbs")
+            status_by_hba1c = get_medical_status(hba1c) if hba1c is not None else "Normal"
+            status_by_fbs = "Normal"
+            if fbs is not None:
+                if fbs >= 126:
+                    status_by_fbs = "Diabetic"
+                elif fbs >= 100:
+                    status_by_fbs = "Pre-diabetic"
+            if "Diabetic" in (status_by_hba1c, status_by_fbs):
+                medical_status = "Diabetic"
+                risk_score = 85
+                at_risk_probability = 0.9
+                risk_level = "HIGH"
+            elif "Pre-diabetic" in (status_by_hba1c, status_by_fbs):
+                medical_status = "Pre-diabetic"
+                risk_score = 55
+                at_risk_probability = 0.6
+                risk_level = "MODERATE"
+            else:
+                medical_status = "Normal"
+                risk_score = 20
+                at_risk_probability = 0.2
+                risk_level = "LOW"
+            return {
+                "success": True,
+                "model_type": "ada",
+                "medical_status": medical_status,
+                "predicted_status": medical_status,
+                "risk_cluster": "ADA Baseline",
+                "risk_level": risk_level,
+                "risk_label": risk_level,
+                "risk_score": risk_score,
+                "probability": round(at_risk_probability, 3),
+                "at_risk_probability": round(at_risk_probability, 3),
+                "confidence": round(at_risk_probability, 3),
+                "model_info": {
+                    "note": "ADA baseline rule-based screening",
+                    "features_used": ADA_FEATURES,
+                },
+            }
+
         X = self._engineer_features(data)
         X_scaled = self.scaler.transform(X)
-        
-        cluster_id = int(self.kmeans.predict(X_scaled)[0])
-        
-        cluster_info = self.cluster_labels.get(str(cluster_id), {})
-        cluster_label = cluster_info.get("label", f"Cluster-{cluster_id}")
-        risk_level = cluster_info.get("risk_level", "UNKNOWN")
-        
+
+        cluster_label = "ADA Baseline"
+        risk_level = "UNKNOWN"
+        if self.kmeans is not None:
+            cluster_id = int(self.kmeans.predict(X_scaled)[0])
+            cluster_info = self.cluster_labels.get(str(cluster_id), {})
+            cluster_label = cluster_info.get("label", f"Cluster-{cluster_id}")
+            risk_level = cluster_info.get("risk_level", "UNKNOWN")
+
         try:
             proba = self.classifier.predict_proba(X_scaled)[0]
             diabetes_prob = float(proba[2]) if len(proba) == 3 else float(max(proba))
             risk_score = int(diabetes_prob * 100)
             confidence = round(max(proba), 3)
         except (ValueError, IndexError, AttributeError) as e:
-            import logging
-            logging.warning(f"Classifier prediction failed: {e}")
+            logger.warning("Classifier prediction failed: %s", e)
             diabetes_prob = 0.5
             risk_score = 50
             confidence = 0.5
-        
+
         if diabetes_prob < 0.33:
             medical_status = "Normal"
         elif diabetes_prob < 0.66:
             medical_status = "Pre-diabetic"
         else:
             medical_status = "Diabetic"
-        
+
         return {
             "success": True,
+            "model_type": "ada",
             "medical_status": medical_status,
+            "predicted_status": medical_status,
             "risk_cluster": cluster_label,
             "risk_level": risk_level,
             "risk_score": risk_score,
             "probability": round(diabetes_prob, 3),
+            "at_risk_probability": round(diabetes_prob, 3),
             "confidence": confidence,
             "model_info": {
                 "n_clusters": self.metrics.get("n_clusters", 2),
-                "classifier_accuracy": self.metrics.get("random_forest", {}).get("test_accuracy", 0)
-            }
+                "classifier_accuracy": self.metrics.get("random_forest", {}).get("test_accuracy", 0),
+            },
         }
     
     def _get_risk_label(self, cluster_id: int) -> str:
@@ -347,14 +437,12 @@ CLINICAL_BASE_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
 CLINICAL_ENRICHMENT_FEATURES = ['waist_circumference',  'race_ethnicity']
 
 # Full feature set including engineered features (14 features for classifier, no BP)
-CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age',
-                     'bmi_category', 'tg_hdl_ratio', 'smoking_encoded',
-                     'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score',
-                     'waist_circumference',  'race_encoded']
+# IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
+# CLINICAL_FEATURES is now imported at the top of the file
 
 # Features used for KMeans clustering (5 base clinical biomarkers)
-# Must match train_clusters.py CLUSTER_FEATURES exactly
-CLUSTER_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+# IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
+# CLUSTER_FEATURES is now imported at the top of the file
 
 CLINICAL_MODELS_DIR = resolve_clinical_models_dir()
 CLINICAL_RESULTS_DIR = CLINICAL_MODELS_DIR / "results"
@@ -368,9 +456,10 @@ class ClinicalPredictor:
     Features: BMI, Triglycerides, LDL, HDL, Age
     """
     
-    def __init__(self, models_dir: Optional[Path] = None):
+    def __init__(self, models_dir: Optional[Path] = None, model_type: Optional[str] = None):
         """Load clinical model artifacts."""
         self.models_dir = resolve_clinical_models_dir(models_dir)
+        self.model_type = model_type or "clinical"
         self.results_dir = self.models_dir / "results"
         self.features = CLINICAL_FEATURES
         
@@ -487,10 +576,14 @@ class ClinicalPredictor:
         tg_hdl_ratio = tg / hdl if hdl > 0 else 0
 
         smoking_map = {'Never': 0, 'Former': 1, 'Current': 2, 'Unknown': 1}
-        smoking_encoded = smoking_map.get(data.get('smoking_status', 'Unknown'), 1)
+        smoking_raw = str(data.get('smoking_status', 'Unknown') or 'Unknown').strip()
+        smoking_key = smoking_raw.title() if smoking_raw.lower() != 'unknown' else 'Unknown'
+        smoking_encoded = smoking_map.get(smoking_key, 1)
 
         activity_map = {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Unknown': 1}
-        activity_encoded = activity_map.get(data.get('physical_activity', 'Unknown'), 1)
+        activity_raw = str(data.get('physical_activity', 'Unknown') or 'Unknown').strip()
+        activity_key = activity_raw.title() if activity_raw.lower() != 'unknown' else 'Unknown'
+        activity_encoded = activity_map.get(activity_key, 1)
 
         alcohol_map = {'None': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
         alcohol_raw = str(data.get('alcohol_use', 'Unknown') or 'Unknown').strip()
@@ -505,34 +598,51 @@ class ClinicalPredictor:
         if bmi >= 25:  # PH Asia-Pacific WHO obesity cutoff
             metabolic_score += 1
         waist = data.get('waist_circumference', np.nan) or np.nan
-        if waist == 0: waist = np.nan
-        
+        if waist == 0:
+            waist = np.nan
+
         # Race encoding
         race_map = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6}
         race_raw = data.get('race_ethnicity', np.nan)
         race_encoded = race_map.get(int(race_raw), np.nan) if not pd.isna(race_raw) and race_raw else np.nan
 
         # Enrichment features with safe defaults
-        family_history = data.get( np.nan)
+        family_history = data.get('family_history_diabetes', np.nan)
         if family_history == 0 or family_history is None:
             family_history = np.nan
 
-        # Build feature vector dynamically based on model's expected features
-        # Binary v2 uses 14 features (no BP, no crp), clinical_v2 may use different sets
-        feature_values = [
-            bmi, tg, ldl, hdl, age,
-            bmi_category, tg_hdl_ratio,
-            smoking_encoded, activity_encoded, alcohol_encoded,
-            metabolic_score,
-            waist, family_history, race_encoded
-        ]
+        systolic = data.get('systolic', np.nan)
+        diastolic = data.get('diastolic', np.nan)
+        if systolic == 0 or systolic is None:
+            systolic = np.nan
+        if diastolic == 0 or diastolic is None:
+            diastolic = np.nan
 
-        # Only include crp if model expects 17 features (backward compat)
-        if len(self.features) == 17:
-            crp = data.get('crp', np.nan)
-            if crp == 0 or crp is None:
-                crp = np.nan
-            feature_values.append(crp)
+        crp = data.get('crp', np.nan)
+        if crp == 0 or crp is None:
+            crp = np.nan
+
+        feature_map = {
+            'bmi': bmi,
+            'triglycerides': tg,
+            'ldl': ldl,
+            'hdl': hdl,
+            'age': age,
+            'systolic': systolic,
+            'diastolic': diastolic,
+            'bmi_category': bmi_category,
+            'tg_hdl_ratio': tg_hdl_ratio,
+            'smoking_encoded': smoking_encoded,
+            'activity_encoded': activity_encoded,
+            'alcohol_encoded': alcohol_encoded,
+            'metabolic_syndrome_score': metabolic_score,
+            'waist_circumference': waist,
+            'family_history_diabetes': family_history,
+            'race_encoded': race_encoded,
+            'crp': crp,
+        }
+
+        feature_values = [feature_map.get(feature, np.nan) for feature in self.features]
 
         return np.array([feature_values], dtype=float)
 
@@ -682,9 +792,16 @@ class ClinicalPredictor:
             cluster_description = ""
             treatment_focus = ""
         
+        model_type = self.model_type or "clinical"
+        note_by_type = {
+            "binary_v2_no_bp": "Binary at-risk screening model (no HbA1c/FBS).",
+            "binary_v2_bp": "Binary at-risk screening model with BP features (no HbA1c/FBS).",
+            "clinical_3class": "Three-class screening model (Normal/Pre-diabetic/Diabetic).",
+            "clinical": "Clinical screening model (no HbA1c/FBS).",
+        }
         return {
             "success": True,
-            "model_type": "binary_v2_no_bp",
+            "model_type": model_type,
             "predicted_status": predicted_status,
             # Ahlqvist subtype schema
             "risk_cluster": risk_cluster,
@@ -706,7 +823,7 @@ class ClinicalPredictor:
                 "features_used": self.features,
                 "cluster_features": self.cluster_features,
                 "decision_thresholds": self.decision_thresholds,
-                "note": "Binary at-risk screening model (AUC 0.72, 99.5% sensitivity) - no HbA1c/FBS"
+                "note": note_by_type.get(model_type, "Clinical screening model."),
             }
         }
     
@@ -736,9 +853,28 @@ class ClinicalPredictor:
         return [self.predict(p) for p in patients]
 
 
-# Singleton instances
-_predictor = None
 _clinical_predictor = None
+_clinical_predictors = {}
+_predictor = None
+
+
+def _resolve_model_type(model_type: Optional[str]) -> str:
+    if not model_type:
+        return "clinical"
+    return model_type
+
+
+def _resolve_clinical_models_dir_for_type(model_type: Optional[str]) -> Path:
+    resolved_type = _resolve_model_type(model_type)
+    if resolved_type == "binary_v2_no_bp":
+        return _validate_model_dir(MODELS_ROOT / "binary_v2_no_bp")
+    if resolved_type == "binary_v2_bp":
+        return _validate_model_dir(MODELS_ROOT / "binary_v2_with_bp_archived" / "binary_v2")
+    if resolved_type == "clinical_3class":
+        return _validate_model_dir(MODELS_ROOT / "clinical_3class")
+    if resolved_type == "clinical":
+        return resolve_clinical_models_dir()
+    return resolve_clinical_models_dir()
 
 def get_predictor() -> DianaPredictor:
     """Get or create singleton ADA predictor instance."""
@@ -752,8 +888,18 @@ def get_clinical_predictor() -> ClinicalPredictor:
     """Get or create singleton clinical predictor instance."""
     global _clinical_predictor
     if _clinical_predictor is None:
-        _clinical_predictor = ClinicalPredictor()
+        _clinical_predictor = ClinicalPredictor(model_type="clinical")
     return _clinical_predictor
+
+
+def get_clinical_predictor_for(model_type: Optional[str]) -> ClinicalPredictor:
+    resolved_type = _resolve_model_type(model_type)
+    if resolved_type in _clinical_predictors:
+        return _clinical_predictors[resolved_type]
+    models_dir = _resolve_clinical_models_dir_for_type(resolved_type)
+    predictor = ClinicalPredictor(models_dir=models_dir, model_type=resolved_type)
+    _clinical_predictors[resolved_type] = predictor
+    return predictor
 
 
 def predict(data: Dict[str, float], model_type: str = "ada") -> Dict[str, Any]:
@@ -765,8 +911,8 @@ def predict(data: Dict[str, float], model_type: str = "ada") -> Dict[str, Any]:
         model_type: "binary_v2_no_bp" or "clinical" for binary at-risk screening model (default),
                    "ada" for baseline HbA1c/FBS-based model
     """
-    if model_type in ("binary_v2_no_bp", "clinical"):
-        return get_clinical_predictor().predict(data)
+    if model_type in ("binary_v2_no_bp", "clinical", "clinical_3class", "binary_v2_bp"):
+        return get_clinical_predictor_for(model_type).predict(data)
     return get_predictor().predict(data)
 
 

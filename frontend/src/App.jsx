@@ -61,6 +61,9 @@ const App = () => {
   const [authToken, setAuthToken] = useState('');
   const [showAssessmentModal, setShowAssessmentModal] = useState(false);
 
+const [authError, setAuthError] = useState(null);
+
+  // React Query hooks
   // React Query hooks - only fetch profile when authenticated
   const queryClient = useQueryClient();
   const { data: profile, isLoading: profileLoading, error: profileError } = useUserProfile(isAuthenticated);
@@ -106,6 +109,11 @@ const App = () => {
     const resetToken = params.get('reset_token');
     const verifyToken = params.get('verify_token');
     const email = params.get('email');
+    const error = params.get('error');
+
+    if (error) {
+      setAuthError(error === 'session_expired' ? 'Session expired. Please log in again.' : error);
+    }
 
     if (resetToken) {
       setAuthView('reset');
@@ -279,7 +287,7 @@ const App = () => {
                   if (email) setAuthEmail(email);
                   setAuthView('verify');
                 }}
-                error={loginError}
+                error={loginError || authError}
               />
             )}
           </Suspense>

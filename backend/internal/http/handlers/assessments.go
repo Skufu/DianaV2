@@ -192,6 +192,11 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 
+	if req.ModelType != "" && req.ModelType != "clinical" && req.ModelType != "ada" && req.ModelType != "binary_v2_no_bp" && req.ModelType != "binary_v2_bp" && req.ModelType != "clinical_3class" {
+		ErrBadRequest(c, "Invalid model type")
+		return
+	}
+
 	if req.FBS != nil && *req.FBS < 0 {
 		ErrBadRequest(c, "FBS must be non-negative")
 		return
@@ -246,25 +251,28 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 
 	// Add user_id to assessment
 	assessment := models.Assessment{
-		UserID:         userID,
-		FBS:            coalesceFloat64(req.FBS, 0),
-		HbA1c:          coalesceFloat64(req.HbA1c, 0),
-		Cholesterol:    coalesceInt(req.Cholesterol, 0),
-		LDL:            coalesceInt(req.LDL, 0),
-		HDL:            coalesceInt(req.HDL, 0),
-		Triglycerides:  coalesceInt(req.Triglycerides, 0),
-		Systolic:       coalesceInt(req.Systolic, 0),
-		Diastolic:      coalesceInt(req.Diastolic, 0),
-		Age:            age,
-		Activity:       req.Activity,
-		Alcohol:        req.Alcohol,
-		HistoryFlag:    req.HistoryFlag,
-		Smoking:        req.Smoking,
-		Hypertension:   req.Hypertension,
-		HeartDisease:   req.HeartDisease,
-		BMI:            coalesceFloat64(req.BMI, 0),
-		IsSelfReported: true,
-		Source:         "manual",
+		UserID:                userID,
+		FBS:                   coalesceFloat64(req.FBS, 0),
+		HbA1c:                 coalesceFloat64(req.HbA1c, 0),
+		Cholesterol:           coalesceInt(req.Cholesterol, 0),
+		LDL:                   coalesceInt(req.LDL, 0),
+		HDL:                   coalesceInt(req.HDL, 0),
+		Triglycerides:         coalesceInt(req.Triglycerides, 0),
+		Systolic:              coalesceInt(req.Systolic, 0),
+		Diastolic:             coalesceInt(req.Diastolic, 0),
+		WaistCircumference:    coalesceFloat64(req.WaistCircumference, 0),
+		RaceEthnicity:         coalesceInt(req.RaceEthnicity, 0),
+		FamilyHistoryDiabetes: coalesceBool(req.FamilyHistoryDiabetes, false),
+		Age:                   age,
+		Activity:              req.Activity,
+		Alcohol:               req.Alcohol,
+		HistoryFlag:           req.HistoryFlag,
+		Smoking:               req.Smoking,
+		Hypertension:          req.Hypertension,
+		HeartDisease:          req.HeartDisease,
+		BMI:                   coalesceFloat64(req.BMI, 0),
+		IsSelfReported:        true,
+		Source:                "manual",
 	}
 	if assessment.Alcohol == "" {
 		assessment.Alcohol = "Unknown"
@@ -272,7 +280,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 
 	// Get prediction from ML server
 	// Pass request context for cancellation support
-	prediction, err := h.predictor.Predict(c.Request.Context(), assessment)
+	prediction, err := h.predictor.PredictWithModelType(c.Request.Context(), assessment, req.ModelType)
 	if err != nil {
 		log.Printf("Failed to get ML prediction: %v", err)
 		ErrInternal(c, "Failed to get prediction from ML service")
@@ -305,6 +313,9 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	// Get full assessment with model info
 	assessment.ID = created.ID
 	assessment.ModelVersion = h.modelVer
+	if req.ModelType != "" {
+		assessment.ModelVersion = req.ModelType
+	}
 	assessment.DatasetHash = h.datasetHash
 
 	h.invalidateUserCache(c.Request.Context(), userID)
@@ -407,6 +418,9 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	assessment.Triglycerides = coalesceInt(req.Triglycerides, assessment.Triglycerides)
 	assessment.Systolic = coalesceInt(req.Systolic, assessment.Systolic)
 	assessment.Diastolic = coalesceInt(req.Diastolic, assessment.Diastolic)
+	assessment.WaistCircumference = coalesceFloat64(req.WaistCircumference, assessment.WaistCircumference)
+	assessment.RaceEthnicity = coalesceInt(req.RaceEthnicity, assessment.RaceEthnicity)
+	assessment.FamilyHistoryDiabetes = coalesceBool(req.FamilyHistoryDiabetes, assessment.FamilyHistoryDiabetes)
 	assessment.Activity = req.Activity
 	assessment.Alcohol = req.Alcohol
 	assessment.HistoryFlag = req.HistoryFlag
@@ -521,4 +535,11 @@ func coalesceInt(i *int, def int) int {
 		return def
 	}
 	return *i
+}
+
+func coalesceBool(b *bool, def bool) bool {
+	if b == nil {
+		return def
+	}
+	return *b
 }

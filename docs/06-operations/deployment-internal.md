@@ -18,7 +18,7 @@
    - `CORS_ORIGINS` = `https://<vercel-domain>,http://localhost:4000`
     - `MODEL_VERSION` = `clinical_3class`
     - `MODEL_URL` = `https://<ml-service>/predict`
-    - `MODEL_DATASET_HASH` = `nhanes_postmenopausal_2011_2020`
+    - `MODEL_DATASET_HASH` = `nhanes_postmenopausal_2011_2024`
     - `MODEL_TIMEOUT_MS` = `2000`
     - `ML_API_KEY` = **required for production ML service auth**
     - `ML_PORT` = `5001` (local dev only)

@@ -1,6 +1,6 @@
 // BiologicalNetwork: Premium animated canvas background with connected nodes
 // Uses React.memo and stable refs to prevent re-initialization on parent re-renders
-import React, { useEffect, useRef, memo } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import { shouldDisableHeavyEffects, getAnimationNodeCount } from '../../utils/deviceCapabilities';
 
 const BiologicalNetwork = memo(({
@@ -19,12 +19,12 @@ const BiologicalNetwork = memo(({
     const isVisibleRef = useRef(true); // Track if canvas is visible
     const reducedMotionRef = useRef(false); // Track reduced motion preference
 
-    // Return null on low-tier devices to save resources
-    if (shouldDisableHeavyEffects()) {
-        return null;
-    }
+    const shouldDisableEffects = shouldDisableHeavyEffects();
 
     useEffect(() => {
+        if (shouldDisableEffects) {
+            return undefined;
+        }
         const canvas = canvasRef.current;
         if (!canvas) return;
 
@@ -124,7 +124,7 @@ const BiologicalNetwork = memo(({
 
             const nodes = nodesRef.current;
             const mouse = mouseRef.current;
-            const time = Date.now() * 0.001;
+            Date.now();
 
             // Premium: subtle ambient glow that follows mouse
             if (mouse.x !== null && mouse.y !== null) {
@@ -300,6 +300,7 @@ const BiologicalNetwork = memo(({
             const dpr = dprRef.current;
             canvas.width = width * dpr;
             canvas.height = height * dpr;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.scale(dpr, dpr);
             canvas.style.width = `${width}px`;
             canvas.style.height = `${height}px`;
@@ -315,7 +316,11 @@ const BiologicalNetwork = memo(({
             mediaQuery.removeEventListener('change', handleMotionChange);
             observer.disconnect();
         };
-    }, []); // Empty dependency array - only run once!
+    }, [shouldDisableEffects, nodeCount, connectionDistance, speed]);
+
+    if (shouldDisableEffects) {
+        return null;
+    }
 
     return (
         <canvas

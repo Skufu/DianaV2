@@ -206,6 +206,10 @@ h1 {
 .layer--scripts .layer__header .dot { background: var(--node-external); }
 .layer--scripts { border-left: 3px solid var(--node-external); }
 
+.layer--doctor .layer__header { color: #f97316; }
+.layer--doctor .layer__header .dot { background: #f97316; }
+.layer--doctor { border-left: 3px solid #f97316; }
+
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 
@@ -495,7 +499,43 @@ h1 {
   </div>
 </div>
 
-<div class="layer layer--scripts" style="animation-delay: 0.47s">
+<div class="layer layer--doctor" style="animation-delay: 0.47s">
+  <div class="layer__header"><span class="dot"></span> Doctor/Clinician Portal</div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card__title"><code>Role System</code></div>
+      <div class="card__desc">3-tier roles: user, admin, doctor. Staff access with RBAC middleware.</div>
+      <div class="card__files"><code>migrations/0014_add_user_roles.sql</code><code>middleware/rbac.go</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>Doctor Dashboard</code></div>
+      <div class="card__desc">Insights view, Model Rationale, Log Assessment. Limited nav vs admin.</div>
+      <div class="card__files"><code>AdminDashboard.jsx</code><code>AdminSidebar.jsx</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>Model Selector</code></div>
+      <div class="card__desc">Doctors can select: binary_v2_no_bp, binary_v2_bp, clinical_3class, ada.</div>
+      <div class="card__files"><code>AssessmentForm.jsx</code><code>MLResultModal.jsx</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>Cohort Analysis</code></div>
+      <div class="card__desc">Grouped stats: cluster, risk_level, age_group, menopause_status.</div>
+      <div class="card__files"><code>handlers/cohort.go</code><code>CohortAnalysis.jsx</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>Clinic Dashboard</code></div>
+      <div class="card__desc">Multi-tenant clinics with member roles. Aggregate patient statistics.</div>
+      <div class="card__files"><code>clinic_dashboard.go</code><code>clinics.sql</code></div>
+    </div>
+    <div class="card">
+      <div class="card__title"><code>Validation Guide</code></div>
+      <div class="card__desc">Clinical model validation workflow for doctors. Performance metrics & caveats.</div>
+      <div class="card__files"><code>DOCTOR_VALIDATION_GUIDE.md</code></div>
+    </div>
+  </div>
+</div>
+
+<div class="layer layer--scripts" style="animation-delay: 0.5s">
   <div class="layer__header"><span class="dot"></span> Scripts & Training Pipelines</div>
   <div class="cols-2">
     <div class="grid-3">
