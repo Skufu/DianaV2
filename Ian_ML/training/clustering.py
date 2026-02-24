@@ -2,7 +2,7 @@
 DIANA Clinical Clustering Script (K=4 Ahlqvist Subtype Classification)
 K-Means clustering for T2DM subtype identification per Ahlqvist et al. (2018).
 
-Clusters: SIRD, SIDD, MOD, MARD (4 recognized T2DM subtypes)
+Clusters: SIRD, SIDD, MOD, MARD (4 T2DM subtypes per Ahlqvist et al. 2018)
 Features: All biomarkers (standardized)
 
 Also generates K=2 through K=6 analysis for thesis documentation.
@@ -45,8 +45,8 @@ AHLQVIST_SUBTYPES = {
     },
     'SIDD': {
         'full_name': 'Severe Insulin-Deficient Diabetes',
-        'characteristics': 'High TG/HDL ratio — metabolic derangement (proxy for insulin deficiency)',
-        'clinical_implication': 'May need early insulin therapy',
+        'characteristics': 'High TG/HDL ratio (proxy — true SIDD requires HOMA2-B/C-peptide)',
+        'clinical_implication': 'May need early insulin therapy; SIDD/SIRD distinction is approximate without HOMA2',
         'risk_level': 'HIGH'
     },
     'MOD': {
@@ -88,14 +88,19 @@ def analyze_k_range(X_scaled, k_range=(2, 7)):
 
 def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     """
-    Assign Ahlqvist subtype labels to clusters based on centroid characteristics.
+    Assign Ahlqvist-inspired subtype labels to clusters based on centroid characteristics.
     Uses proxy metrics since HbA1c/FBS are excluded from clustering features.
-    
-    Assignment strategy (without HbA1c):
+
+    LIMITATION: DIANA lacks HOMA2-B, HOMA2-IR, and C-peptide, which are the
+    primary discriminators for SIDD vs SIRD in Ahlqvist et al. (2018). The TG/HDL
+    proxy used here cannot truly distinguish insulin deficiency (SIDD) from
+    insulin resistance (SIRD). MOD and MARD are more reliably identified.
+
+    Assignment strategy (without HbA1c, HOMA2, or C-peptide):
     1. SIRD (Severe Insulin-Resistant): Highest insulin resistance composite
        (BMI + TG/50 - HDL/10)
     2. SIDD (Severe Insulin-Deficient): Highest TG/HDL ratio among remaining
-       (metabolic derangement proxy)
+       (approximate proxy — true SIDD requires HOMA2-B/C-peptide)
     3. MOD (Mild Obesity-Related): Highest BMI of remaining
     4. MARD (Mild Age-Related): Remaining (typically lowest metabolic risk)
     """
@@ -116,8 +121,8 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     if not available_clusters:
         return final_labels
     
-    # 2. Identify SIDD: Highest TG/HDL ratio among remaining
-    # Without HbA1c, we use TG/HDL as proxy for metabolic derangement
+    # 2. Identify SIDD (approximate — TG/HDL proxy cannot truly distinguish
+    #    SIDD from SIRD without HOMA2-B/C-peptide; see Ahlqvist et al. 2018)
     tg_hdl_scores = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]

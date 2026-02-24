@@ -7,7 +7,7 @@ Binary reformulation: At-Risk (Pre-diabetic + Diabetic) vs Normal
 - Leakage-safe pipeline
 - Threshold optimization for recall
 
-Usage: python Ian_ML/training/train_binary_v2_no_bp.py
+Usage: python Ian_ML/training/train_binary_v2.py
 """
 
 from __future__ import annotations
@@ -92,8 +92,8 @@ AHLQVIST_SUBTYPES = {
     },
     'SIDD': {
         'full_name': 'Severe Insulin-Deficient Diabetes',
-        'characteristics': 'High TG/HDL ratio — metabolic derangement (proxy for insulin deficiency)',
-        'clinical_implication': 'May need early insulin therapy',
+        'characteristics': 'High TG/HDL ratio (proxy — true SIDD requires HOMA2-B/C-peptide)',
+        'clinical_implication': 'May need early insulin therapy; SIDD/SIRD distinction is approximate without HOMA2',
         'risk_level': 'HIGH',
         'risk_label': 'High Risk'
     },
@@ -287,7 +287,7 @@ def compute_binary_v2_no_bp_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_pr
 def optimize_binary_v2_no_bp_threshold(
     y_true: np.ndarray, 
     y_proba: np.ndarray,
-    min_sensitivity: float = 0.75,
+    min_sensitivity: float = 0.80,
 ) -> dict:
     """
     Multi-strategy threshold optimization for binary_v2_no_bp screening.
@@ -297,7 +297,7 @@ def optimize_binary_v2_no_bp_threshold(
     1. **Youden's J** (Sensitivity + Specificity - 1)
        Best balanced accuracy — the textbook clinical threshold.
 
-    2. **Screening** (maximize sensitivity subject to specificity >= 0.30)
+    2. **Screening** (maximize sensitivity subject to specificity >= 0.40)
        High recall, but avoids the degenerate "flag everyone" trap.
 
     3. **G-mean** (sqrt(sensitivity * specificity))
@@ -305,7 +305,7 @@ def optimize_binary_v2_no_bp_threshold(
 
     After finding each strategy's best threshold, the function picks the
     overall winner based on a composite score:
-        0.40 * sensitivity + 0.25 * specificity + 0.25 * f1 + 0.10 * accuracy
+        0.35 * sensitivity + 0.30 * specificity + 0.25 * f1 + 0.10 * accuracy
     This ensures we value recall highly but still reward meaningful specificity.
     """
     thresholds = np.arange(0.10, 0.90, 0.01)
@@ -617,12 +617,19 @@ def bootstrap_auc_ci(y_true: np.ndarray, y_proba: np.ndarray,
 
 def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     """
-    Assign Ahlqvist subtype labels to clusters based on centroid characteristics.
-    Assignment strategy (without HbA1c):
+    Assign Ahlqvist-inspired subtype labels to clusters based on centroid characteristics.
+
+    LIMITATION: DIANA lacks HOMA2-B, HOMA2-IR, and C-peptide, which are the
+    primary discriminators for SIDD vs SIRD in Ahlqvist et al. (2018). The TG/HDL
+    proxy used here captures dyslipidemia patterns but cannot truly distinguish
+    insulin deficiency (SIDD) from insulin resistance (SIRD). MOD and MARD
+    identifications are more reliable as they depend on BMI and age.
+
+    Assignment strategy (without HbA1c, HOMA2, or C-peptide):
     1. SIRD (Severe Insulin-Resistant): Highest insulin resistance composite
        (BMI + TG/50 - HDL/10)
     2. SIDD (Severe Insulin-Deficient): Highest TG/HDL ratio among remaining
-       (metabolic derangement proxy)
+       (approximate proxy — true SIDD requires HOMA2-B/C-peptide)
     3. MOD (Mild Obesity-Related): Highest BMI of remaining
     4. MARD (Mild Age-Related): Remaining (typically lowest metabolic risk)
     """
@@ -640,7 +647,8 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     final_labels[sird_id] = 'SIRD'
     available_clusters.remove(sird_id)
     
-    # 2. Identify SIDD
+    # 2. Identify SIDD (approximate — TG/HDL proxy cannot truly distinguish
+    #    SIDD from SIRD without HOMA2-B/C-peptide; see Ahlqvist et al. 2018)
     tg_hdl_scores = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
@@ -676,7 +684,7 @@ def train_serving_kmeans(
     Train K-Means clustering for T2DM subtype identification.
 
     IMPORTANT SCIENTIFIC DECISION:
-    Ahlqvist et al. (2018) defined SIRD/SIDD/MOD/MARD subtypes for
+    Ahlqvist et al. (2018) defined SIRD/SIDD/MOD/MARD subtypes for diagnosed
     *diagnosed* T2DM patients.  We therefore:
       1. Fit K-Means ONLY on at-risk patients (y == 1).
       2. Save the scaler fitted on at-risk patients so that at inference
@@ -949,13 +957,29 @@ def main():
     print(f"  NPV:          {best['NPV']:.4f}")
     print(f"  AUC >= 0.70:  {'YES (pass)' if best['AUC_ROC'] >= 0.70 else 'NO (fail)'}")
     
-    # Train final model on full data
+    # Train final model on full data with best hyperparameters from LOGO CV
     print("\n[FINAL] Training best model on full dataset...")
     best_cfg = model_registry[best_model_name]
+
+    # Collect best_params from each fold and vote on most-frequent set
+    best_model_folds = fold_df[fold_df["Model"] == best_model_name]
+    fold_params_list = [json.loads(p) for p in best_model_folds["Best_Params"]]
+    # Serialize each param dict to a hashable string for voting
+    param_strings = [json.dumps(p, sort_keys=True) for p in fold_params_list]
+    from collections import Counter
+    most_common_params = json.loads(Counter(param_strings).most_common(1)[0][0])
+    print(f"  Voted best params ({len(fold_params_list)} folds): {most_common_params}")
+
+    # Build estimator with best hyperparameters applied
+    estimator = best_cfg["estimator"]
+    # Strip the 'model__' prefix from pipeline param names
+    native_params = {k.replace('model__', ''): v for k, v in most_common_params.items()}
+    estimator.set_params(**native_params)
+
     final_pipeline = Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
         ("scaler", StandardScaler()),
-        ("model", best_cfg["estimator"]),
+        ("model", estimator),
     ])
     
     # Fit on all data

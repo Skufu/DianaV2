@@ -26,14 +26,17 @@ from typing import List
 # =============================================================================
 # CLUSTER FEATURES - K-Means Clustering (Ahlqvist Subtypes)
 # =============================================================================
-# 5 features used for K-Means clustering to identify T2DM subtypes
-# These are the base clinical biomarkers (non-circular, no HbA1c/FBS)
+# 6 features used for K-Means clustering to identify T2DM subtypes
+# Base clinical biomarkers (non-circular, no HbA1c/FBS)
+# waist_circumference added per Diabetologia 2024 ML study showing it
+# significantly improves SIRD identification in Ahlqvist-style clustering
 CLUSTER_FEATURES: List[str] = [
     'bmi',
     'triglycerides',
     'ldl',
     'hdl',
     'age',
+    'waist_circumference',
 ]
 
 CLUSTER_FEATURE_COUNT: int = len(CLUSTER_FEATURES)
@@ -123,8 +126,8 @@ AHLQVIST_SUBTYPES = {
     },
     'SIDD': {
         'full_name': 'Severe Insulin-Deficient Diabetes',
-        'characteristics': 'High TG/HDL ratio — metabolic derangement (proxy for insulin deficiency)',
-        'clinical_implication': 'May need early insulin therapy',
+        'characteristics': 'High TG/HDL ratio (proxy — true SIDD requires HOMA2-B/C-peptide)',
+        'clinical_implication': 'May need early insulin therapy; SIDD/SIRD distinction is approximate without HOMA2',
         'risk_level': 'HIGH',
     },
     'MOD': {
