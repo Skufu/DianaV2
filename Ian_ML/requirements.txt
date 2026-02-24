@@ -22,4 +22,4 @@ scipy>=1.12.0
 # Additional boosting models
 # catboost==1.2.2  # Commented out: Windows build failure (PyYAML 6.0 cython_sources error)
 #                    CatBoost is optional - production model uses XGBoost
-lightgbm>=4.3.0
+lightgbm>=4.5.0
