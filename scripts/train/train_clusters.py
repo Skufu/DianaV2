@@ -12,6 +12,17 @@ uses proxy metrics since HbA1c is not available.
 Usage: python scripts/train/train_clusters.py
 """
 
+import sys
+
+# Add parent to path for imports
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "Ian_ML"))
+from Ian_ML.common.feature_constants import (
+    CLUSTER_FEATURES,
+    CLUSTER_FEATURE_COUNT,
+    KMEANS_K,
+)
+
+
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -27,8 +38,8 @@ MODELS_DIR = Path("models/clinical_3class")  # Save to clinical_3class
 VIZ_DIR = Path("models/clinical_3class/visualizations")
 
 # Features for clustering — non-circular clinical biomarkers only
-# No HbA1c/FBS to avoid circular reasoning with diabetes diagnosis
-CLUSTER_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+# IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
+# CLUSTER_FEATURES is now imported at the top of the file
 
 
 def find_optimal_k(X_scaled, k_range=range(2, 7)):

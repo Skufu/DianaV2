@@ -73,6 +73,7 @@ test.describe('Time to Interactive Performance', () => {
                         sizeKB: (size.length / 1024).toFixed(2),
                     });
                 } catch (e) {
+                    console.warn('Failed to read bundle response body', e);
                 }
             }
         });

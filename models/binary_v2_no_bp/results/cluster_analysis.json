@@ -1,0 +1,45 @@
+{
+  "method": "kmeans_k4_on_scaled_clinical_features",
+  "cluster_labels": {
+    "0": {
+      "label": "SIDD",
+      "risk_level": "HIGH",
+      "diabetic_rate": 0.5789473684210527,
+      "pre_diabetic_rate": 0.42105263157894735,
+      "risk_score": 0.5789473684210527,
+      "size": 76
+    },
+    "1": {
+      "label": "MOD",
+      "risk_level": "MODERATE",
+      "diabetic_rate": 0.2818181818181818,
+      "pre_diabetic_rate": 0.7181818181818181,
+      "risk_score": 0.2818181818181818,
+      "size": 220
+    },
+    "2": {
+      "label": "MARD",
+      "risk_level": "LOW",
+      "diabetic_rate": 0.295,
+      "pre_diabetic_rate": 0.705,
+      "risk_score": 0.295,
+      "size": 200
+    },
+    "3": {
+      "label": "SIRD",
+      "risk_level": "HIGH",
+      "diabetic_rate": 0.47058823529411764,
+      "pre_diabetic_rate": 0.5294117647058824,
+      "risk_score": 0.47058823529411764,
+      "size": 238
+    }
+  },
+  "cluster_sizes": {
+    "SIDD": 76,
+    "MOD": 220,
+    "MARD": 200,
+    "SIRD": 238
+  },
+  "n_clusters": 4,
+  "ahlqvist_subtypes": true
+}

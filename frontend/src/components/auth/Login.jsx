@@ -47,7 +47,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
       {/* Calm, Accessible Background Elements */}
       {/* 1. Subtle Background Grid (Softer for light mode) */}
       <div className="absolute inset-0 z-0 opacity-[0.4]">
-        <svg className="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <svg className="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <pattern id="light-grid" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" strokeWidth="1" />
@@ -70,7 +70,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
         {/* Left Side: Clinical Value Prop (Trustworthy primary blue) */}
         <div className="w-full lg:w-[460px] p-10 lg:p-14 flex flex-col justify-between relative bg-gradient-to-br from-diana-forest to-[#152865] overflow-hidden">
           {/* Subtle medical pattern overlay */}
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay"></div>
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay" />
 
           <div className="relative z-10 flex items-center gap-3 mb-10">
             <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm border border-white/20">
@@ -149,17 +149,18 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
 
                     {/* Email Field */}
                     <div className="space-y-2">
-                      <label className="text-[14px] font-semibold text-slate-700">Email Address</label>
+                      <label htmlFor="login-email" className="text-[14px] font-semibold text-slate-700">Email Address</label>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
                           <Mail size={20} />
                         </div>
-                        <motion.input
-                          whileFocus="focus"
-                          variants={inputFocusVariants}
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          <motion.input
+                            whileFocus="focus"
+                            variants={inputFocusVariants}
+                            type="email"
+                            id="login-email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                           className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:bg-white transition-all shadow-sm"
                           placeholder="doctor@clinic.com"
                           required
@@ -171,7 +172,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                     {/* Password Field */}
                     <div className="space-y-2 pt-1">
                       <div className="flex items-center justify-between">
-                        <label className="text-[14px] font-semibold text-slate-700">Password</label>
+                          <label htmlFor="login-password" className="text-[14px] font-semibold text-slate-700">Password</label>
                         <button
                           type="button"
                           onClick={() => onShowForgotPassword?.(email)}
@@ -189,6 +190,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                           whileFocus="focus"
                           variants={inputFocusVariants}
                           type={showPassword ? "text" : "password"}
+                          id="login-password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="block w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:bg-white transition-all shadow-sm"
@@ -283,6 +285,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                   <p className="mt-8 text-center text-[15px] text-slate-500 font-medium">
                     Not registered yet?{' '}
                     <button
+                      type="button"
                       onClick={onShowSignup}
                       className="font-bold text-blue-600 hover:text-blue-700 transition-colors focus:outline-none"
                     >

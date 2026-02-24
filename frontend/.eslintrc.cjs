@@ -1,5 +1,6 @@
 module.exports = {
   root: true,
+  ignorePatterns: ['dist/', 'node_modules/'],
   env: {
     browser: true,
     es2021: true,
@@ -21,7 +22,6 @@ module.exports = {
   rules: {
     // React best practices
     'react/react-in-jsx-scope': 'off',
-    'react/prop-types': 'warn',
     'react/jsx-key': 'error',
     'react/jsx-no-comment-textnodes': 'error',
     'react/jsx-no-duplicate-props': 'error',

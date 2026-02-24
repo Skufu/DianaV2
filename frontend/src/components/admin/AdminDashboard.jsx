@@ -1,7 +1,7 @@
 // AdminDashboard: System administration with tabbed subviews
 import React, { useState, useMemo, lazy, Suspense } from 'react';
 import Insights from '../insights/Insights';
-import { useAdminDashboard, useClinicComparison } from '../../api';
+import { useAdminDashboard, useClinicComparison, useUserProfile } from '../../api';
 import { shouldDisableHeavyEffects } from '../../utils/deviceCapabilities';
 import {
   BarChart,
@@ -37,7 +37,9 @@ import { staggerContainer, fadeIn, cardVariants, slideUp, useReducedMotion, brea
 const UserManagement = lazy(() => import('./UserManagement'));
 const AuditLogViewer = lazy(() => import('./AuditLogViewer'));
 const ModelTraceability = lazy(() => import('./ModelTraceability'));
+const AssessmentForm = lazy(() => import('../user/AssessmentForm'));
 const AuthEventLogViewer = lazy(() => import('./AuthEventLogViewer'));
+const ModelRationale = lazy(() => import('./ModelRationale'));
 
 const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'];
 
@@ -47,31 +49,31 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
   const isReduced = useReducedMotion();
   // Animation enabled by default
 
-  const canViewAdminData = userRole === 'admin';
+	const canViewAdminData = userRole === 'admin';
   const { data: dashboardData, isLoading, error } = useAdminDashboard({ enabled: !!token && canViewAdminData });
   const { data: clinicsData } = useClinicComparison({ enabled: !!token && canViewAdminData });
+  const { data: profile } = useUserProfile(!!token);
+  const canViewAuditData = userRole === 'admin' || userRole === 'doctor';
   const clinics = clinicsData ?? [];
 
   if (userRole !== 'admin' && userRole !== 'doctor') {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="glass-card p-12 text-center bg-white/80"
-      >
-        <Shield className="w-16 h-16 text-rose-500 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
-        <p className="text-slate-500">Admin role required to view this dashboard.</p>
-      </motion.div>
-    );
+    return <AccessDenied message="Admin or Doctor role required to view this dashboard." />;
   }
 
   const renderContent = () => {
-    if (userRole === 'doctor') {
-      return <Insights />;
-    }
     switch (activeView) {
+      case 'assessment':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <AssessmentForm initialData={profile} showModelSelector />
+          </Suspense>
+        );
+      case 'rationale':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ModelRationale />
+          </Suspense>
+        );
       case 'users':
         return (
           <Suspense fallback={<LoadingSpinner />}>
@@ -79,6 +81,9 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
           </Suspense>
         );
       case 'audit':
+        if (!canViewAuditData) {
+          return <AccessDenied message="Admin role required to view audit logs." />;
+        }
         return (
           <Suspense fallback={<LoadingSpinner />}>
             <AuditLogViewer token={token} />
@@ -91,6 +96,9 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
           </Suspense>
         );
       case 'auth-events':
+        if (!canViewAuditData) {
+          return <AccessDenied message="Admin role required to view auth events." />;
+        }
         return (
           <Suspense fallback={<LoadingSpinner />}>
             <AuthEventLogViewer token={token} />
@@ -366,9 +374,13 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
       <header>
         <div className="flex items-center gap-3 mb-2">
           <Shield className="text-violet-600" size={28} />
-          <h4 className="text-violet-600 font-medium text-sm">System Administration</h4>
+          <h4 className="text-violet-600 font-medium text-sm">
+            {userRole === 'doctor' ? 'Clinical Review' : 'System Administration'}
+          </h4>
         </div>
-        <h2 className="text-3xl font-bold text-slate-900">Admin Dashboard</h2>
+                <h2 className="text-3xl font-bold text-slate-900">
+                  {userRole === 'doctor' ? 'Doctor Dashboard' : 'Admin Dashboard'}
+                </h2>
       </header>
 
       {/* Content */}
@@ -386,6 +398,19 @@ const LoadingSpinner = () => (
   >
     <div className="animate-spin w-8 h-8 border-4 border-violet-600 border-t-transparent rounded-full mx-auto mb-4" />
     <p className="text-slate-500">Loading...</p>
+  </motion.div>
+);
+
+const AccessDenied = ({ message = 'Admin role required to view this dashboard.' }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.3 }}
+    className="glass-card p-12 text-center bg-white/80"
+  >
+    <Shield className="w-16 h-16 text-rose-500 mx-auto mb-4" />
+    <h2 className="text-2xl font-bold text-slate-900 mb-2">Access Denied</h2>
+    <p className="text-slate-500">{message}</p>
   </motion.div>
 );
 

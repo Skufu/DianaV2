@@ -339,7 +339,7 @@ CORS_ORIGINS=http://localhost:4000
 MODEL_URL=http://localhost:5001/predict
 ML_PORT=5001
 MODEL_VERSION=binary_v2_no_bp  # Options: binary_v2_no_bp (default) or clinical_3class
-MODEL_DATASET_HASH=nhanes_postmenopausal_2011_2020
+MODEL_DATASET_HASH=nhanes_postmenopausal_2011_2024
 MODEL_TIMEOUT_MS=2000
 ML_API_KEY=your-secure-ml-api-key  # Optional for dev, required for production
 ```

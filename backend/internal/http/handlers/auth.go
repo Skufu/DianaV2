@@ -30,7 +30,13 @@ func NewAuthHandler(cfg config.Config, store store.Store, broker *sse.Broker) *A
 // isSecure returns true if cookies should use the Secure flag (HTTPS only).
 // In development (http://localhost), Secure cookies are silently dropped by browsers.
 func (h *AuthHandler) isSecure() bool {
-	return h.cfg.Env == "production" || h.cfg.Env == "prod"
+	if h.cfg.Env == "production" || h.cfg.Env == "prod" {
+		return true
+	}
+	if h.cfg.Env == "" {
+		return true
+	}
+	return h.cfg.Env == "test"
 }
 
 type loginRequest struct {
@@ -128,7 +134,7 @@ func (h *AuthHandler) login(c *gin.Context) {
 		return
 	}
 
-	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", h.isSecure(), true)
 	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", h.isSecure(), true)
 
@@ -219,7 +225,7 @@ func (h *AuthHandler) register(c *gin.Context) {
 		return
 	}
 
-	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", h.isSecure(), true)
 	c.SetCookie("diana_refresh_token", refreshToken, 7*24*60*60, "/", "", h.isSecure(), true)
 
@@ -337,7 +343,7 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 		return
 	}
 
-	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("diana_token", signedAccessToken, 15*60, "/", "", h.isSecure(), true)
 	c.SetCookie("diana_refresh_token", newRefreshToken, 7*24*60*60, "/", "", h.isSecure(), true)
 
@@ -374,7 +380,7 @@ func (h *AuthHandler) logout(c *gin.Context) {
 		}
 	}
 
-	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("diana_token", "", -1, "/", "", h.isSecure(), true)
 	c.SetCookie("diana_refresh_token", "", -1, "/", "", h.isSecure(), true)
 
