@@ -56,6 +56,9 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     cluster = 'Unknown',
     treatment_focus = '',
     validation_status = '',
+    predicted_status = '',
+    model_version = '',
+    at_risk_probability,
   } = result;
 
   const getRiskColor = (level) => {
@@ -171,6 +174,19 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     ? validation_status.replace('warning:', '').split(',').filter(w => w)
     : [];
 
+  const isDoctorModel = typeof model_version === 'string' && model_version.length > 0;
+  const modelLabelMap = {
+    binary_v2_no_bp: 'Screening (No BP) – Binary at-risk',
+    binary_v2_bp: 'Screening (With BP) – Binary at-risk',
+    clinical_3class: 'Clinical 3-Class (Normal/Pre-diabetic/Diabetic)',
+    clinical: 'Clinical (No HbA1c/FBS)',
+    ada: 'ADA Baseline (HbA1c + FBS)'
+  };
+  const modelLabel = modelLabelMap[model_version] || model_version || 'Clinical Screening';
+  const probabilityText = Number.isFinite(at_risk_probability)
+    ? `${Math.round(at_risk_probability * 100)}% at-risk probability`
+    : 'Probability unavailable';
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -180,7 +196,12 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
-            onClick={onClose}
+            onClick={(event) => {
+              if (!showContent) return;
+              if (event.target === event.currentTarget) {
+                onClose();
+              }
+            }}
           />
 
           <motion.div
@@ -204,9 +225,14 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
 
                 <div className="flex items-center gap-3 mb-2">
                   <Sparkles size={24} className="text-white/90" />
-                  <span className="text-sm font-semibold uppercase tracking-widest text-white/90">Your Results</span>
+                  <span className="text-sm font-semibold uppercase tracking-widest text-white/90">AI-Assisted Results</span>
                 </div>
                 <h2 className="text-[34px] font-medium tracking-tight mb-1">{colors.title}</h2>
+                {isDoctorModel && (
+                  <div className="mt-3 text-sm text-white/90 font-medium">
+                    <span className="uppercase tracking-wide">Model:</span> {modelLabel}
+                  </div>
+                )}
               </div>
 
               <div className="p-8 space-y-7">
@@ -243,6 +269,17 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                           <span className={`text-[80px] leading-none font-light tracking-tighter ${colors.text}`}>{overallRiskScore}</span>
                           <span className="text-slate-500 font-medium text-lg">/ 100</span>
                         </div>
+
+                        {isDoctorModel && predicted_status && (
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            <span className="px-4 py-1.5 rounded-full bg-slate-800 text-white text-sm font-semibold">
+                              Predicted: {predicted_status}
+                            </span>
+                            <span className="px-4 py-1.5 rounded-full bg-white/90 text-slate-700 text-sm font-semibold border border-slate-200">
+                              {probabilityText}
+                            </span>
+                          </div>
+                        )}
 
                         <div className="w-full bg-white/60 rounded-full h-4 mb-5 overflow-hidden shadow-inner">
                           <motion.div
@@ -301,7 +338,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                             Gentle Reminders
                           </h3>
                           <p className="text-[16px] text-rose-700 mb-4 leading-relaxed">
-                            A few numbers in your results stood out. It's completely normal to have fluctuations, but they are great points to discuss at your next doctor's visit:
+                            A few numbers in your results stood out. It&apos;s completely normal to have fluctuations, but they are great points to discuss at your next doctor&apos;s visit:
                           </p>
                           <ul className="space-y-3">
                             {warningList.map((warning) => (
@@ -345,7 +382,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                             <>
                               <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
                                 <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
-                                <span><strong>Consider a check-up.</strong> It might be a wonderful time to schedule an appointment just to see how you're feeling.</span>
+                                <span><strong>Consider a check-up.</strong> It might be a wonderful time to schedule an appointment just to see how you&apos;re feeling.</span>
                               </li>
                               <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
                                 <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
@@ -376,11 +413,14 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                         </ul>
                       </motion.div>
 
-                      {/* Gentle Disclaimer */}
-                      <div className="bg-slate-100 rounded-2xl p-6 mb-7 text-center">
-                        <p className="text-[15px] text-slate-600 leading-relaxed font-medium max-w-lg mx-auto">
-                          Remember, this is just a supportive tool to help you stay informed, not a medical diagnosis. We always encourage you to talk with your doctor regarding your health.
-                        </p>
+                      <div className="bg-slate-100 rounded-2xl p-6 mb-7">
+                        <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3">Clinical Guardrails</h4>
+                        <ul className="text-[15px] text-slate-600 leading-relaxed font-medium space-y-2">
+                          <li>• AI-assisted screening support — not a diagnosis. Clinical judgment remains primary.</li>
+                          <li>• Model trained on NHANES postmenopausal cohort; external generalization may be limited.</li>
+                          <li>• False positives are expected for screening sensitivity. Confirm with HbA1c/FBS when appropriate.</li>
+                          <li>• Use with clinical context (history, symptoms, and confirmatory labs).</li>
+                        </ul>
                       </div>
 
                       {/* Action Buttons */}

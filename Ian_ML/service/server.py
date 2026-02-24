@@ -51,6 +51,7 @@ from Ian_ML.service.predict import (
     REQUIRED_FEATURES,
     CLINICAL_FEATURES,
     resolve_clinical_models_dir,
+    get_clinical_predictor_for,
 )
 
 # Configuration
@@ -160,7 +161,9 @@ class PredictorManager:
         if self._predictor is None:
             with self._lock:
                 if self._predictor is None:
+                    logger.info("Loading ADA baseline predictor (DianaPredictor)...")
                     self._predictor = DianaPredictor()
+                    logger.info("✓ ADA baseline predictor loaded successfully")
         return self._predictor
 
     def get_clinical_predictor(self):
@@ -169,8 +172,13 @@ class PredictorManager:
             with self._lock:
                 if self._clinical_predictor is None:
                     try:
+                        logger.info("Loading clinical predictor (ClinicalPredictor)...")
                         self._clinical_predictor = ClinicalPredictor()
-                    except FileNotFoundError:
+                        clin_dir = self._clinical_predictor.models_dir
+                        logger.info("✓ Clinical predictor loaded: %s (features: %d)",
+                                    clin_dir.name, len(self._clinical_predictor.features))
+                    except FileNotFoundError as e:
+                        logger.warning("Clinical model not found: %s", e)
                         return None
         return self._clinical_predictor
 
@@ -248,7 +256,7 @@ def predict():
     Predict diabetes risk for a single patient.
 
     Query params:
-        model_type: "clinical" (default) or "ada"
+        model_type: "clinical" (default), "binary_v2_no_bp", "binary_v2_bp", "clinical_3class", or "ada"
 
     For clinical model (non-circular, recommended):
         Base features (5): bmi, triglycerides, ldl, hdl, age
@@ -265,24 +273,29 @@ def predict():
         if not data:
             return jsonify({"error": "No data provided"}), 400
         
-        if model_type == 'clinical':
+        if model_type in ('clinical', 'binary_v2_no_bp', 'binary_v2_bp', 'clinical_3class'):
             # Use clinical model (non-circular)
-            clin_predictor = get_clinical_predictor()
+            clin_predictor = get_clinical_predictor_for(model_type)
             if clin_predictor is None:
                 return jsonify({
                     "error": "Clinical model not trained. Run Ian_ML/training/train_v2.py or scripts/train/train_quick.py first."
                 }), 503
-            
-            # Extract base features + lifestyle data for 14-feature model
+
+            # Extract base features + lifestyle data for clinical model
             patient_data = {
                 "bmi": data.get("bmi"),
                 "triglycerides": data.get("triglycerides"),
                 "ldl": data.get("ldl"),
                 "hdl": data.get("hdl"),
                 "age": data.get("age", 54),
+                "systolic": data.get("systolic"),
+                "diastolic": data.get("diastolic"),
                 "smoking_status": data.get("smoking", "Unknown"),
                 "physical_activity": data.get("activity", "Unknown"),
-                "alcohol_use": data.get("alcohol", "Unknown")
+                "alcohol_use": data.get("alcohol", "Unknown"),
+                "waist_circumference": data.get("waist_circumference"),
+                "race_ethnicity": data.get("race_ethnicity"),
+                "family_history_diabetes": data.get("family_history_diabetes"),
             }
             result = clin_predictor.predict(patient_data)
         else:
@@ -299,9 +312,10 @@ def predict():
         
         if not result.get("success"):
             return jsonify({"error": result.get("error")}), 400
-        
+
+        result["model_type"] = model_type
         return jsonify(result)
-        
+
     except Exception as e:
         logger.exception("Prediction failed")
         return jsonify({"error": "Prediction failed"}), 500
@@ -916,12 +930,58 @@ def get_clinical_metrics():
 def get_information_gain():
     """Get Information Gain scores for feature importance."""
     try:
-        ig_path = MODELS_ROOT / "legacy" / "results" / "information_gain_results.json"
+        # First try binary_v2_no_bp (active model)
+        ig_path = MODELS_ROOT / "binary_v2_no_bp" / "results" / "information_gain_results.json"
         if ig_path.exists():
             with open(ig_path) as f:
                 return jsonify(json.load(f))
-        else:
-            return jsonify({"error": "Information gain results not found"}), 404
+        
+        # Then try clinical model
+        clinical_dir = get_clinical_results_dir()
+        ig_path = clinical_dir / "information_gain_results.json"
+        if ig_path.exists():
+            with open(ig_path) as f:
+                return jsonify(json.load(f))
+        
+        # If no IG file exists, compute feature importance from the model
+        clin = get_clinical_predictor()
+        if clin is not None and hasattr(clin.classifier, 'coef_'):
+            # For linear models, use absolute coefficients
+            coefs = np.abs(clin.classifier.coef_[0]) if len(clin.classifier.coef_.shape) > 1 else np.abs(clin.classifier.coef_)
+            features = clin.features
+            # Normalize to 0-1 range (information gain-like)
+            total = np.sum(coefs)
+            if total > 0:
+                ig_scores = coefs / total
+            else:
+                ig_scores = coefs
+            
+            result = {
+                "feature_ranking": [
+                    {"feature": features[i], "ig": float(ig_scores[i])}
+                    for i in range(len(features)) if i < len(coefs)
+                ],
+                "method": "coefficient_magnitude",
+                "model_type": clin.model_type or "clinical"
+            }
+            # Sort by IG descending
+            result["feature_ranking"].sort(key=lambda x: x["ig"], reverse=True)
+            return jsonify(result)
+        elif clin is not None and hasattr(clin.classifier, 'feature_importances_'):
+            # For tree-based models, use feature_importances_
+            importances = clin.classifier.feature_importances_
+            features = clin.features
+            result = {
+                "feature_ranking": [
+                    {"feature": features[i], "ig": float(importances[i])}
+                    for i in range(len(features)) if i < len(importances)
+                ],
+                "method": "feature_importance",
+                "model_type": clin.model_type or "clinical"
+            }
+            result["feature_ranking"].sort(key=lambda x: x["ig"], reverse=True)
+            return jsonify(result)
+        return jsonify({"error": "Information gain results not found"}), 404
     except Exception as e:
         logger.exception("Get information gain failed")
         return jsonify({"error": "Get information gain failed"}), 500
@@ -974,8 +1034,22 @@ def get_visualization(name):
 
 if __name__ == '__main__':
     port = int(os.environ.get('ML_PORT', 5000))
-    print(f"Starting DIANA ML Server on port {port}...")
-    print(f"Health check: http://localhost:{port}/health")
-    print(f"Predict endpoint: http://localhost:{port}/predict")
-    print(f"Insights: http://localhost:{port}/insights/metrics")
+    
+    # Startup banner with model info
+    print("=" * 60)
+    print("  DIANA ML Server v2.0")
+    print("=" * 60)
+    print(f"  Port: {port}")
+    print(f"  Health: http://localhost:{port}/health")
+    print(f"  Predict: http://localhost:{port}/predict")
+    
+    # Check which models are available
+    clinical = get_clinical_predictor()
+    if clinical:
+        print(f"  ✓ Clinical model: {clinical.models_dir.name} ({len(clinical.features)} features)")
+    else:
+        print(f"  ✗ Clinical model: NOT FOUND (run training first)")
+    
+    print("=" * 60)
+    
     app.run(host='0.0.0.0', port=port, debug=False)

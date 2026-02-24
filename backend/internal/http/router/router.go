@@ -167,10 +167,13 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		// Audit logs
 		adminAuditHandler := handlers.NewAdminAuditHandler(st)
 		adminAuditHandler.Register(admin)
+	}
 
-		// Model traceability
+	adminModels := protected.Group("/admin")
+	adminModels.Use(middleware.RoleRequired("admin"))
+	{
 		adminModelsHandler := handlers.NewAdminModelsHandler(st, predictor)
-		adminModelsHandler.Register(admin)
+		adminModelsHandler.Register(adminModels)
 	}
 
 	// =========================================================================

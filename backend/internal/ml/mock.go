@@ -8,6 +8,7 @@ import (
 
 type Predictor interface {
 	Predict(ctx context.Context, input models.Assessment) (Prediction, error)
+	PredictWithModelType(ctx context.Context, input models.Assessment, modelType string) (Prediction, error)
 	GetActiveModelMetadata(ctx context.Context) (*ModelMetadata, error)
 }
 
@@ -70,6 +71,10 @@ func (m *MockPredictor) Predict(ctx context.Context, input models.Assessment) (P
 			AtRiskProbability:  0.30,
 		}, nil
 	}
+}
+
+func (m *MockPredictor) PredictWithModelType(ctx context.Context, input models.Assessment, modelType string) (Prediction, error) {
+	return m.Predict(ctx, input)
 }
 
 func (m *MockPredictor) GetActiveModelMetadata(ctx context.Context) (*ModelMetadata, error) {

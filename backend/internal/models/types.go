@@ -34,11 +34,11 @@ type User struct {
 	YearsMenopause  int    `json:"years_menopause,omitempty" binding:"omitempty,min=0,max=50"`
 
 	// Medical History
-	Hypertension          string `json:"hypertension,omitempty" binding:"omitempty,oneof=no controlled uncontrolled"`
-	HeartDisease          string `json:"heart_disease,omitempty" binding:"omitempty,oneof=no yes"`
-	SmokingStatus         string `json:"smoking_status,omitempty" binding:"omitempty,oneof=never former current"`
-	PhysicalActivity      string `json:"physical_activity,omitempty" binding:"omitempty"`
-	Alcohol               string `json:"alcohol,omitempty" binding:"omitempty"`
+	Hypertension     string `json:"hypertension,omitempty" binding:"omitempty,oneof=no controlled uncontrolled"`
+	HeartDisease     string `json:"heart_disease,omitempty" binding:"omitempty,oneof=no yes"`
+	SmokingStatus    string `json:"smoking_status,omitempty" binding:"omitempty,oneof=never former current"`
+	PhysicalActivity string `json:"physical_activity,omitempty" binding:"omitempty"`
+	Alcohol          string `json:"alcohol,omitempty" binding:"omitempty"`
 
 	// Consent
 	ConsentPersonalData          bool      `json:"consent_personal_data"`
@@ -71,26 +71,29 @@ type User struct {
 }
 
 type Assessment struct {
-	ID            int64   `json:"id"`
-	UserID        int64   `json:"user_id"` // Changed from PatientID
-	PatientID     int64   `json:"patient_id,omitempty"`
-	RiskLevel     string  `json:"risk_level,omitempty"`
-	FBS           float64 `json:"fbs,omitempty"`
-	HbA1c         float64 `json:"hba1c,omitempty"`
-	Cholesterol   int     `json:"cholesterol,omitempty"`
-	LDL           int     `json:"ldl,omitempty"`
-	HDL           int     `json:"hdl,omitempty"`
-	Triglycerides int     `json:"triglycerides,omitempty"`
-	Systolic      int     `json:"systolic,omitempty"`
-	Diastolic     int     `json:"diastolic,omitempty"`
-	Age           int     `json:"age,omitempty"`
-	Activity      string  `json:"activity,omitempty"`
-	Alcohol       string  `json:"alcohol,omitempty"`
-	HistoryFlag   bool    `json:"history_flag,omitempty"`
-	Smoking       string  `json:"smoking,omitempty"`
-	Hypertension  string  `json:"hypertension,omitempty"`
-	HeartDisease  string  `json:"heart_disease,omitempty"`
-	BMI           float64 `json:"bmi,omitempty"`
+	ID                    int64   `json:"id"`
+	UserID                int64   `json:"user_id"` // Changed from PatientID
+	PatientID             int64   `json:"patient_id,omitempty"`
+	RiskLevel             string  `json:"risk_level,omitempty"`
+	FBS                   float64 `json:"fbs,omitempty"`
+	HbA1c                 float64 `json:"hba1c,omitempty"`
+	Cholesterol           int     `json:"cholesterol,omitempty"`
+	LDL                   int     `json:"ldl,omitempty"`
+	HDL                   int     `json:"hdl,omitempty"`
+	Triglycerides         int     `json:"triglycerides,omitempty"`
+	Systolic              int     `json:"systolic,omitempty"`
+	Diastolic             int     `json:"diastolic,omitempty"`
+	WaistCircumference    float64 `json:"waist_circumference,omitempty"`
+	RaceEthnicity         int     `json:"race_ethnicity,omitempty"`
+	FamilyHistoryDiabetes bool    `json:"family_history_diabetes,omitempty"`
+	Age                   int     `json:"age,omitempty"`
+	Activity              string  `json:"activity,omitempty"`
+	Alcohol               string  `json:"alcohol,omitempty"`
+	HistoryFlag           bool    `json:"history_flag,omitempty"`
+	Smoking               string  `json:"smoking,omitempty"`
+	Hypertension          string  `json:"hypertension,omitempty"`
+	HeartDisease          string  `json:"heart_disease,omitempty"`
+	BMI                   float64 `json:"bmi,omitempty"`
 
 	// ML Results
 	Cluster            string  `json:"cluster,omitempty"`
@@ -215,23 +218,27 @@ type NotificationQueue struct {
 
 // UpdateAssessmentRequest represents the payload for updating an assessment
 type UpdateAssessmentRequest struct {
-	FBS           *float64 `json:"fbs" binding:"omitempty,min=0,max=1000"`
-	HbA1c         *float64 `json:"hba1c" binding:"omitempty,min=0,max=20"`
-	Cholesterol   *int     `json:"cholesterol" binding:"omitempty,min=0,max=1000"`
-	LDL           *int     `json:"ldl" binding:"omitempty,min=0,max=500"`
-	HDL           *int     `json:"hdl" binding:"omitempty,min=0,max=200"`
-	Triglycerides *int     `json:"triglycerides" binding:"omitempty,min=0,max=2000"`
-	Systolic      *int     `json:"systolic" binding:"omitempty,min=50,max=300"`
-	Diastolic     *int     `json:"diastolic" binding:"omitempty,min=30,max=200"`
-	Age           *int     `json:"age" binding:"omitempty,min=18,max=120"`
-	Activity      string   `json:"activity" binding:"omitempty,max=50"`
-	Alcohol       string   `json:"alcohol" binding:"omitempty,max=50"`
-	HistoryFlag   bool     `json:"history_flag"`
-	Smoking       string   `json:"smoking" binding:"omitempty,max=50"`
-	Hypertension  string   `json:"hypertension" binding:"omitempty,max=50"`
-	HeartDisease  string   `json:"heart_disease" binding:"omitempty,max=50"`
-	BMI           *float64 `json:"bmi" binding:"omitempty,min=10,max=100"`
-	Notes         string   `json:"notes" binding:"omitempty,max=2000"`
+	FBS                   *float64 `json:"fbs" binding:"omitempty,min=0,max=1000"`
+	HbA1c                 *float64 `json:"hba1c" binding:"omitempty,min=0,max=20"`
+	Cholesterol           *int     `json:"cholesterol" binding:"omitempty,min=0,max=1000"`
+	LDL                   *int     `json:"ldl" binding:"omitempty,min=0,max=500"`
+	HDL                   *int     `json:"hdl" binding:"omitempty,min=0,max=200"`
+	Triglycerides         *int     `json:"triglycerides" binding:"omitempty,min=0,max=2000"`
+	Systolic              *int     `json:"systolic" binding:"omitempty,min=50,max=300"`
+	Diastolic             *int     `json:"diastolic" binding:"omitempty,min=30,max=200"`
+	WaistCircumference    *float64 `json:"waist_circumference" binding:"omitempty,min=40,max=200"`
+	RaceEthnicity         *int     `json:"race_ethnicity" binding:"omitempty,min=1,max=6"`
+	FamilyHistoryDiabetes *bool    `json:"family_history_diabetes"`
+	Age                   *int     `json:"age" binding:"omitempty,min=18,max=120"`
+	Activity              string   `json:"activity" binding:"omitempty,max=50"`
+	Alcohol               string   `json:"alcohol" binding:"omitempty,max=50"`
+	HistoryFlag           bool     `json:"history_flag"`
+	Smoking               string   `json:"smoking" binding:"omitempty,max=50"`
+	Hypertension          string   `json:"hypertension" binding:"omitempty,max=50"`
+	HeartDisease          string   `json:"heart_disease" binding:"omitempty,max=50"`
+	BMI                   *float64 `json:"bmi" binding:"omitempty,min=10,max=100"`
+	Notes                 string   `json:"notes" binding:"omitempty,max=2000"`
+	ModelType             string   `json:"model_type" binding:"omitempty,oneof=clinical ada binary_v2_no_bp binary_v2_bp clinical_3class"`
 }
 
 // -----------------------------------------------------------------------------

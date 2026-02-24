@@ -43,6 +43,14 @@ func NewHTTPPredictor(url, version, apiKey string, timeout time.Duration) *HTTPP
 }
 
 func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (Prediction, error) {
+	return p.predictWithModelType(ctx, input, "")
+}
+
+func (p *HTTPPredictor) PredictWithModelType(ctx context.Context, input models.Assessment, modelType string) (Prediction, error) {
+	return p.predictWithModelType(ctx, input, modelType)
+}
+
+func (p *HTTPPredictor) predictWithModelType(ctx context.Context, input models.Assessment, modelType string) (Prediction, error) {
 	if p.url == "" {
 		return Prediction{}, fmt.Errorf("ml url is not configured")
 	}
@@ -58,7 +66,11 @@ func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (P
 		return Prediction{}, fmt.Errorf("failed to marshal input: %w", err)
 	}
 
-	mlURL := fmt.Sprintf("%s?model_type=%s", p.url, p.version)
+	version := p.version
+	if modelType != "" {
+		version = modelType
+	}
+	mlURL := fmt.Sprintf("%s?model_type=%s", p.url, version)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, mlURL, bytes.NewReader(body))
 	if err != nil {
 		log.Printf("[ML] Failed to create request: %v", err)
@@ -68,8 +80,8 @@ func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (P
 	if p.apiKey != "" {
 		req.Header.Set("X-API-Key", p.apiKey)
 	}
-	if p.version != "" {
-		req.Header.Set("X-Model-Version", p.version)
+	if version != "" {
+		req.Header.Set("X-Model-Version", version)
 	}
 
 	resp, err := p.client.Do(req)

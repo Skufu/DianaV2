@@ -75,7 +75,7 @@ const Onboarding = ({ onComplete }) => {
 
   const validateStep = (stepNum) => {
     switch (stepNum) {
-      case 1:
+      case 1: {
         if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.age) {
           setError('Please fill in all required fields.');
           return false;
@@ -86,12 +86,14 @@ const Onboarding = ({ onComplete }) => {
           return false;
         }
         break;
-      case 2:
+      }
+      case 2: {
         if (!formData.menopause_status) {
           setError('Please select your menopause status.');
           return false;
         }
         break;
+      }
       default:
         break;
     }
@@ -229,9 +231,10 @@ const Onboarding = ({ onComplete }) => {
                 <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
                   <div className="grid grid-cols-2 gap-5">
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">First Name</label>
+                      <label htmlFor="onboarding-first-name" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">First Name</label>
                       <input
                         type="text"
+                        id="onboarding-first-name"
                         name="first_name"
                         value={formData.first_name}
                         onChange={handleInputChange}
@@ -240,9 +243,10 @@ const Onboarding = ({ onComplete }) => {
                       />
                     </motion.div>
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Name</label>
+                      <label htmlFor="onboarding-last-name" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Name</label>
                       <input
                         type="text"
+                        id="onboarding-last-name"
                         name="last_name"
                         value={formData.last_name}
                         onChange={handleInputChange}
@@ -253,9 +257,10 @@ const Onboarding = ({ onComplete }) => {
                   </div>
 
                   <motion.div variants={fadeIn} className="group space-y-1.5">
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Age</label>
+                    <label htmlFor="onboarding-age" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Age</label>
                     <input
                       type="number"
+                      id="onboarding-age"
                       name="age"
                       min="45"
                       max="80"
@@ -272,9 +277,10 @@ const Onboarding = ({ onComplete }) => {
               {step === 2 && (
                 <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
                   <motion.div variants={fadeIn} className="group space-y-1.5">
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Menopause Status</label>
+                    <label htmlFor="onboarding-menopause-status" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Menopause Status</label>
                     <div className="relative">
                       <select
+                        id="onboarding-menopause-status"
                         name="menopause_status"
                         value={formData.menopause_status}
                         onChange={handleInputChange}
@@ -299,11 +305,12 @@ const Onboarding = ({ onComplete }) => {
                       exit={{ opacity: 0, height: 0 }}
                       className="group space-y-1.5"
                     >
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      <label htmlFor="onboarding-years-menopause" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
                         Years Since Menopause
                       </label>
                       <input
                         type="number"
+                        id="onboarding-years-menopause"
                         name="years_menopause"
                         min="0"
                         max="40"
@@ -322,9 +329,10 @@ const Onboarding = ({ onComplete }) => {
                 <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-5">
                   <div className="grid grid-cols-2 gap-5">
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Hypertension</label>
+                      <label htmlFor="onboarding-hypertension" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Hypertension</label>
                       <div className="relative">
                         <select
+                          id="onboarding-hypertension"
                           name="hypertension"
                           value={formData.hypertension}
                           onChange={handleInputChange}
@@ -340,9 +348,10 @@ const Onboarding = ({ onComplete }) => {
                     </motion.div>
 
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Heart Disease</label>
+                      <label htmlFor="onboarding-heart-disease" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Heart Disease</label>
                       <div className="relative">
                         <select
+                          id="onboarding-heart-disease"
                           name="heart_disease"
                           value={formData.heart_disease}
                           onChange={handleInputChange}
@@ -361,9 +370,10 @@ const Onboarding = ({ onComplete }) => {
                     {/* Family History removed based on gap analysis */}
 
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Smoking Status</label>
+                      <label htmlFor="onboarding-smoking-status" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Smoking Status</label>
                       <div className="relative">
                         <select
+                          id="onboarding-smoking-status"
                           name="smoking_status"
                           value={formData.smoking_status}
                           onChange={handleInputChange}
@@ -381,9 +391,10 @@ const Onboarding = ({ onComplete }) => {
 
                   <div className="grid grid-cols-2 gap-5">
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Physical Activity</label>
+                      <label htmlFor="onboarding-physical-activity" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Physical Activity</label>
                       <div className="relative">
                         <select
+                          id="onboarding-physical-activity"
                           name="physical_activity"
                           value={formData.physical_activity}
                           onChange={handleInputChange}
@@ -400,9 +411,10 @@ const Onboarding = ({ onComplete }) => {
                     </motion.div>
 
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Alcohol Use</label>
+                      <label htmlFor="onboarding-alcohol" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Alcohol Use</label>
                       <div className="relative">
                         <select
+                          id="onboarding-alcohol"
                           name="alcohol"
                           value={formData.alcohol}
                           onChange={handleInputChange}

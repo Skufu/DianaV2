@@ -18,6 +18,7 @@ sql:
       - "migrations/0014_add_user_roles.sql"
       - "migrations/0015_add_assessment_ml_metadata.sql"
       - "migrations/0016_add_user_lifestyle.sql"
+      - "migrations/0019_add_assessment_enrichment_fields.sql"
     queries: "internal/store/queries"
     gen:
       go:

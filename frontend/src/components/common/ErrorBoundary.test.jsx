@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import ErrorBoundary from './ErrorBoundary';
 
@@ -67,7 +67,7 @@ describe('ErrorBoundary', () => {
     const CustomFallback = ({ error, errorInfo, onRetry }) => (
       <div>
         <div>Error: {error?.message}</div>
-        <button onClick={onRetry}>Retry</button>
+        <button type="button" onClick={onRetry}>Retry</button>
       </div>
     );
 

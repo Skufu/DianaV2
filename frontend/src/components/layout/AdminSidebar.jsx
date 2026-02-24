@@ -1,22 +1,29 @@
 // AdminSidebar: Dedicated navigation for Admin module with Indigo accents
 import React from 'react';
-import { LayoutDashboard, Users, FileText, Shield, LogOut, Cpu, Wifi, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Shield, LogOut, Cpu, Wifi, ChevronLeft, ChevronRight, Activity, BookOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { navLabelVariants } from '../../utils/animations';
 
 const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsCollapsed, userRole }) => {
   const [hoveredView, setHoveredView] = React.useState(null);
-  const navItems = userRole === 'doctor'
-    ? [
-        { id: 'insights', icon: Activity, label: 'Insights' },
-      ]
-    : [
-        { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
-        { id: 'users', icon: Users, label: 'User Management' },
-        { id: 'audit', icon: FileText, label: 'Audit Logs' },
-        { id: 'auth-events', icon: Wifi, label: 'Auth Events' },
-        { id: 'models', icon: Cpu, label: 'Model Tracking' },
-      ];
+  const adminNavItems = [
+    { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
+    { id: 'users', icon: Users, label: 'User Management' },
+    { id: 'audit', icon: FileText, label: 'Audit Logs' },
+    { id: 'auth-events', icon: Wifi, label: 'Auth Events' },
+    { id: 'models', icon: Cpu, label: 'Model Tracking' },
+    { id: 'insights', icon: Activity, label: 'Insights' },
+    { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
+    { id: 'assessment', icon: FileText, label: 'Log Assessment' },
+  ];
+
+  const doctorNavItems = [
+    { id: 'insights', icon: Activity, label: 'Insights' },
+    { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
+    { id: 'assessment', icon: FileText, label: 'Log Assessment' },
+  ];
+
+  const navItems = userRole === 'doctor' ? doctorNavItems : adminNavItems;
 
   return (
     <motion.div
@@ -27,6 +34,7 @@ const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsC
     >
       {/* Collapse Toggle Button */}
       <button
+        type="button"
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-3 top-20 bg-white border border-slate-200 rounded-full p-1.5 shadow-sm text-indigo-600 hover:bg-slate-50 hidden lg:flex items-center justify-center z-[60]"
       >
@@ -48,7 +56,9 @@ const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsC
               className="hidden lg:block overflow-hidden"
             >
               <span className="text-xl text-slate-900 font-bold tracking-wide">DIANA</span>
-              <div className="text-xs text-indigo-600 font-medium tracking-wider">ADMIN</div>
+		<div className="text-xs text-indigo-600 font-medium tracking-wider">
+			{userRole === 'doctor' ? 'DOCTOR' : 'ADMIN'}
+		</div>
             </motion.div>
           )}
         </AnimatePresence>

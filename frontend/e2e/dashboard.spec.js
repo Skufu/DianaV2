@@ -54,7 +54,7 @@ test.describe('Dashboard Rendering', () => {
         body: JSON.stringify({
           id: '1',
           email: TEST_USER.email,
-          name: 'Test User', onboarding_completed: true, onboarding_completed: true,
+          name: 'Test User',
           onboarding_completed: true,
           first_name: 'Test',
           last_name: 'User',

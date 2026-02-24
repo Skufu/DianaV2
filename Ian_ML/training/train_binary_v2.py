@@ -51,6 +51,13 @@ except ModuleNotFoundError:
 MODELS_ROOT = paths_module.MODELS_ROOT
 NHANES_PROCESSED_ROOT = paths_module.NHANES_PROCESSED_ROOT
 
+from Ian_ML.common.feature_constants import (
+    CLUSTER_FEATURES,
+    CLUSTER_FEATURE_COUNT,
+    KMEANS_K,
+)
+
+
 warnings.filterwarnings("ignore")
 
 # Configuration
@@ -681,7 +688,8 @@ def train_serving_kmeans(
     the binary_v2_no_bp classifier has already flagged as At-Risk.
     """
     # Use base clinical features for clustering (same as clinical_3class)
-    cluster_features = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+    # IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
+    cluster_features = CLUSTER_FEATURES
 
     # Create feature index mapping
     feature_idx = {f: i for i, f in enumerate(features)}

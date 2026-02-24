@@ -139,11 +139,10 @@ const ClusterComparison = React.memo(({ clusters = [], isLoading = false }) => {
             </tr>
           </thead>
           <tbody>
-            {clusterData.map((cluster, index) => (
+            {clusterData.map((cluster) => (
               <tr
-                key={cluster.key}
-                className={`border-b border-diana-stone last:border-0 hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
-                  }`}
+                key={`${cluster.key}-${cluster.count}`}
+                className="border-b border-diana-stone last:border-0 hover:bg-blue-50/50 transition-colors"
               >
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-3">
@@ -162,8 +161,8 @@ const ClusterComparison = React.memo(({ clusters = [], isLoading = false }) => {
                 </td>
                 <td className="py-4 px-6">
                   <ul className="space-y-1.5">
-                    {cluster.characteristics.map((char, i) => (
-                      <li key={i} className="text-diana-text-secondary text-xs flex items-center gap-2">
+                    {cluster.characteristics.map((char) => (
+                      <li key={`${cluster.key}-${char}`} className="text-diana-text-secondary text-xs flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-diana-lime-dark flex-shrink-0" />
                         {char}
                       </li>
@@ -181,7 +180,7 @@ const ClusterComparison = React.memo(({ clusters = [], isLoading = false }) => {
 
       <div className="mt-6 p-6 bg-blue-50/50 rounded-xl border border-blue-100">
         <p className="text-sm text-diana-text-secondary">
-          <span className="font-bold text-diana-forest">Clinical Note:</span> These subgroups represent distinct phenotypes of type 2 diabetes with different etiologies, complications, and treatment responses. Understanding a patient's subgroup can inform personalized treatment strategies.
+          <span className="font-bold text-diana-forest">Clinical Note:</span> These subgroups represent distinct phenotypes of type 2 diabetes with different etiologies, complications, and treatment responses. Understanding a patient&apos;s subgroup can inform personalized treatment strategies.
         </p>
       </div>
     </motion.div>

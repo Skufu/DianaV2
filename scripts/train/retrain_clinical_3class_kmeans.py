@@ -25,9 +25,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from Ian_ML.common.paths import CLINICAL_V2_MODELS_DIR, NHANES_PROCESSED_ROOT
 
+from Ian_ML.common.feature_constants import (
+    CLUSTER_FEATURES,
+    CLUSTER_FEATURE_COUNT,
+    KMEANS_K,
+)
+
 # Must match train_clusters.py and predict.py CLUSTER_FEATURES exactly
-CLUSTER_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
-K = 4  # Fixed per Ahlqvist methodology
+# IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
+# CLUSTER_FEATURES and KMEANS_K are now imported at the top of the file
+K = KMEANS_K  # Alias for backward compatibility
 
 
 def assign_cluster_labels(profiles):

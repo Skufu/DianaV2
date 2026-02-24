@@ -3,7 +3,7 @@ import { LayoutDashboard, User, Download, Plus, LogOut, BookOpen, Shield, Trendi
 import { motion, AnimatePresence } from 'framer-motion';
 import { navLabelVariants } from '../../utils/animations';
 
-const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin, isCollapsed, setIsCollapsed }) => {
+const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin, isCollapsed, setIsCollapsed, userRole }) => {
   // Admin users get a completely different navigation
   const adminNavItems = [
     { id: 'admin', icon: Shield, label: 'Overview' },
@@ -31,6 +31,7 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
     >
       {/* Collapse Toggle Button (Desktop only) */}
       <button
+        type="button"
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-3 top-20 bg-white border border-diana-sand rounded-full p-1.5 shadow-sm text-diana-forest hover:bg-diana-stone hidden lg:flex items-center justify-center z-[60]"
       >
@@ -55,7 +56,7 @@ const Sidebar = ({ activeTab, setActiveTab, onStartAssessment, onLogout, isAdmin
       </div>
 
       {/* New Assessment Button - only for regular users */}
-      {!isAdmin && (
+      {(!isAdmin || userRole === 'doctor') && (
         <div className="px-4 lg:px-6 mb-2">
           <motion.button
             whileHover={{ scale: 1.02 }}
