@@ -600,6 +600,8 @@ class ClinicalPredictor:
         waist = data.get('waist_circumference', np.nan) or np.nan
         if waist == 0:
             waist = np.nan
+        if not pd.isna(waist) and waist >= 80:
+            metabolic_score += 1
 
         # Race encoding
         race_map = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6}
