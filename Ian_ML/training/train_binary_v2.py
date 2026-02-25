@@ -41,7 +41,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 
+import argparse
 import sys
+import importlib
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+
+import argparse
 import importlib
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 try:
@@ -61,6 +66,43 @@ from Ian_ML.common.feature_constants import (
 warnings.filterwarnings("ignore")
 
 # Configuration
+# Usage: python Ian_ML/training/train_binary_v2.py [--with-bp]
+DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
+
+# Default: no BP (for general screening - patients may not have BP at home)
+MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp"
+RESULTS_DIR = MODELS_DIR / "results"
+VIZ_DIR = MODELS_DIR / "visualizations"
+
+N_JOBS = int(os.environ.get("ML_N_JOBS", "1"))
+BOOTSTRAP_SAMPLES = int(os.environ.get("ML_BOOTSTRAP_SAMPLES", "1000"))
+
+# Features WITHOUT blood pressure (default - for general screening)
+# These 13 features work without requiring BP measurement
+FEATURES_NO_BP = [
+    # Original metabolic biomarkers (5)
+    "bmi", "triglycerides", "ldl", "hdl", "age",
+    # Derived features (5)
+    "bmi_category", "tg_hdl_ratio", "smoking_encoded",
+    "activity_encoded", "alcohol_encoded",
+    # Enrichment features (3)
+    "metabolic_syndrome_score", "waist_circumference", "race_encoded",
+]
+
+# Features WITH blood pressure (for doctors who have BP readings)
+FEATURES_WITH_BP = [
+    # Original metabolic biomarkers (7)
+    "bmi", "triglycerides", "ldl", "hdl", "age",
+    "systolic", "diastolic",
+    # Derived features (6)
+    "bmi_category", "tg_hdl_ratio", "smoking_encoded",
+    "activity_encoded", "alcohol_encoded", "metabolic_syndrome_score",
+    # Enrichment features (3)
+    "waist_circumference", "family_history_diabetes", "race_encoded",
+]
+
+# Use NO_BP by default
+FEATURES = FEATURES_NO_BP
 DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
 MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp"
 RESULTS_DIR = MODELS_DIR / "results"
@@ -877,7 +919,31 @@ def generate_roc_curve(aggregated: dict, best_model_name: str) -> None:
     print(f"[SAVED] ROC curve to {VIZ_DIR / 'roc_curve.png'}")
 
 
-def main():
+def main(with_bp: bool = False):
+    """Main training pipeline."""
+    global MODELS_DIR, RESULTS_DIR, VIZ_DIR, FEATURES
+    
+    # Configure based on variant
+    if with_bp:
+        MODELS_DIR = MODELS_ROOT / "binary_v2_with_bp"
+        FEATURES = FEATURES_WITH_BP
+        model_desc = "16 Features (with BP)"
+    else:
+        MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp"
+        FEATURES = FEATURES_NO_BP
+        model_desc = "13 Features (no BP)"
+    
+    RESULTS_DIR = MODELS_DIR / "results"
+    VIZ_DIR = MODELS_DIR / "visualizations"
+    
+    MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    VIZ_DIR.mkdir(parents=True, exist_ok=True)
+
+    print("=" * 78)
+    print("DIANA Binary Model Training V2 - Defensible Evaluation")
+    print(f"Binary: Normal vs At-Risk | {model_desc} | LOCO Validation")
+    print("=" * 78)
     """Main training pipeline."""
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -1002,4 +1068,9 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='DIANA Binary Model Training')
+    parser.add_argument('--with-bp', action='store_true',
+                        help='Train with blood pressure features (for doctor use)')
+    args = parser.parse_args()
+    main(with_bp=args.with_bp)
     main()

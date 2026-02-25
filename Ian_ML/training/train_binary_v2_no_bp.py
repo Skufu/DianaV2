@@ -828,6 +828,9 @@ def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) ->
         "best_model": best_model_name,
         "n_features": len(FEATURES),
         "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
+        "decision_thresholds": {
+            "at_risk": float(best_row["Mean_Threshold"])
+        },
         "metrics": {
             "auc_roc": float(best_row["AUC_ROC"]),
             "auc_ci_95": [float(best_row["AUC_CI_Lower"]), float(best_row["AUC_CI_Upper"])],
