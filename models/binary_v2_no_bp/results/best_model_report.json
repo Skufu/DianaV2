@@ -4,6 +4,9 @@
   "best_model": "Logistic Regression",
   "n_features": 13,
   "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
+  "decision_thresholds": {
+    "at_risk": 0.45666666666666655
+  },
   "metrics": {
     "auc_roc": 0.7199975383466177,
     "auc_ci_95": [
