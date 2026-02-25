@@ -600,8 +600,11 @@ class ClinicalPredictor:
         waist = data.get('waist_circumference', np.nan) or np.nan
         if waist == 0:
             waist = np.nan
-        if not pd.isna(waist) and waist >= 80:
+        # Add waist criterion to match training (metabolic syndrome requires waist >= 80)
+        if not np.isnan(waist) and waist >= 80:
             metabolic_score += 1
+
+        # Race encoding
 
         # Race encoding
         race_map = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6}
@@ -871,6 +874,8 @@ def _resolve_clinical_models_dir_for_type(model_type: Optional[str]) -> Path:
     if resolved_type == "binary_v2_no_bp":
         return _validate_model_dir(MODELS_ROOT / "binary_v2_no_bp")
     if resolved_type == "binary_v2_bp":
+        # Doctor model - includes blood pressure features
+        return _validate_model_dir(MODELS_ROOT / "binary_v2_with_bp")
         return _validate_model_dir(MODELS_ROOT / "binary_v2_with_bp_archived" / "binary_v2")
     if resolved_type == "clinical_3class":
         return _validate_model_dir(MODELS_ROOT / "clinical_3class")
