@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-01-28
-**Updated:** 2026-02-02
+**Updated:** 2026-02-26
 **Commit:** Current
 **Branch:** main
 
@@ -134,6 +134,23 @@ Comprehensive knowledge base documentation for all major directories:
 - `thesis/generate_limitations.py`: "Do NOT replace clinical judgment" - Risk scores require clinician review.
 
 ### Technical Debt (AVOID)
+HW|- Direct SQL in `postgres_admin.go` (`r.pool.QueryRow(ctx, sql, ...)`) - Use SQLC queries instead.
+NX|- Manual `strconv.Atoi` for pagination - Use `ParsePagination()` from utils.
+NH|- `interface{}` in Go 1.18+ - Use explicit interfaces or `any` with documentation.
+SK|- Silent failures in `audit.go` (`_ = a.store...`) - Log errors, don't discard.
+
+### CI/CD Issues (CRITICAL)
+QX|- **Lint failures silently ignored**: `ci.yml` has `continue-on-error: true` on golangci-lint and flake8.
+BV|- **Deploy job is no-op**: `cd.yml` deploy job only echoes instructions, no actual deployment.
+MJ|- **Missing E2E tests**: Playwright tests exist but don't run in CI.
+KM|- **Makefile stale reference**: `ml-train` target calls `train.py` (should be `train_v2.py`).
+
+### Handler Violations (FIX)
+XZ|- Manual `gin.H{"error": ...}` in handlers - Use `ErrBadRequest()`, `ErrInternal()` from utils.go.
+YB|- Manual `strconv.Atoi` in users.go:258, clinic_dashboard.go:63 - Use `ParsePagination()`.
+
+### Frontend Violations (MEDIUM)
+JR|- Missing index.jsx exports in component domains (admin, auth, user, common, layout, education, export).
 - Direct SQL in `postgres_admin.go` (`r.pool.QueryRow(ctx, sql, ...)`) - Use SQLC queries instead.
 - Manual `strconv.Atoi` for pagination - Use `ParsePagination()` from utils.
 - `interface{}` in Go 1.18+ - Use explicit interfaces or `any` with documentation.

@@ -1,0 +1,49 @@
+{
+  "model_type": "binary_v2_with_bp",
+  "target": "at_risk_binary (0=Normal, 1=At-Risk)",
+  "best_model": "Logistic Regression",
+  "n_features": 16,
+  "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
+  "decision_thresholds": {
+    "at_risk": 0.4233333333333332
+  },
+  "metrics": {
+    "auc_roc": 0.7387294473163735,
+    "auc_ci_95": [
+      0.7119922247735633,
+      0.7646274249365539
+    ],
+    "accuracy": 0.6606104651162791,
+    "sensitivity": 0.7888283378746594,
+    "sensitivity_ci_95": [
+      0.7589425039180093,
+      0.816410495923913
+    ],
+    "specificity": 0.514018691588785,
+    "ppv": 0.6498316498316499,
+    "npv": 0.6804123711340206,
+    "f1": 0.7126153846153847,
+    "mean_threshold": 0.4233333333333332,
+    "inner_cv_auc_mean": 0.7349203541094399,
+    "inner_cv_auc_std": 0.0050173836999817464
+  },
+  "features": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age",
+    "systolic",
+    "diastolic",
+    "bmi_category",
+    "tg_hdl_ratio",
+    "smoking_encoded",
+    "activity_encoded",
+    "alcohol_encoded",
+    "metabolic_syndrome_score",
+    "waist_circumference",
+    "family_history_diabetes",
+    "race_encoded"
+  ],
+  "clinical_rationale": "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). Includes BP features. Prioritizes sensitivity for screening."
+}
