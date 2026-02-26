@@ -1,0 +1,5 @@
+,AUC_ROC,AUC_ROC,AUC_ROC,AUC_ROC,Sensitivity,Sensitivity,Specificity,Specificity
+,mean,std,min,max,mean,std,mean,std
+Model,,,,,,,,
+Logistic Regression,0.7361,0.0302,0.7073,0.7935,0.7862,0.0903,0.5231,0.117
+Random Forest,0.7281,0.021,0.7005,0.7619,0.7173,0.0148,0.6177,0.0481
