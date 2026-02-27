@@ -15,7 +15,7 @@ Security, observability, and request validation layer using Gin middleware.
 | Request ID | `logger.go` | Unique ID generation per request |
 | RBAC | `rbac.go` | Role-based access control (AdminOnly, etc.) |
 | Security | `security.go` | HSTS, CSP, and other security headers |
-| Structured Log | `logger.go` | Zerolog integration with request stats |
+
 | CORS | `cors.go` | Cross-origin resource sharing (github.com/gin-contrib/cors) |
 
 ## CONVENTIONS
