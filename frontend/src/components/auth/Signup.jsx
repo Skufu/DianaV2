@@ -246,8 +246,8 @@ const Signup = ({ onSignup, onShowLogin }) => {
                     type="submit"
                     isLoading={loading}
                     fullWidth
-                    variant="primary"
-                    className="bg-diana-navy hover:bg-diana-midnight mt-2"
+                    variant="blue"
+                    className="py-4 shadow-sm text-[16px] font-semibold bg-blue-600 hover:bg-blue-700 text-white focus:ring-4 focus:ring-offset-1 focus:ring-blue-600/30 transition-all h-[54px] rounded-xl mt-2"
                   >
                     Create Account
                   </Button>
