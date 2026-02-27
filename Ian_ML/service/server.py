@@ -1046,9 +1046,9 @@ if __name__ == '__main__':
     # Check which models are available
     clinical = get_clinical_predictor()
     if clinical:
-        print(f"  ✓ Clinical model: {clinical.models_dir.name} ({len(clinical.features)} features)")
+        print(f"  [OK] Clinical model: {clinical.models_dir.name} ({len(clinical.features)} features)")
     else:
-        print(f"  ✗ Clinical model: NOT FOUND (run training first)")
+        print(f"  [!!] Clinical model: NOT FOUND (run training first)")
     
     print("=" * 60)
     

@@ -43,6 +43,10 @@ func main() {
 
 	cfg := config.Load()
 
+	// Create cancellable context for background goroutines
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	var pool *pgxpool.Pool
 	if cfg.DBDSN != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -96,16 +100,21 @@ func main() {
 				ticker := time.NewTicker(5 * time.Minute)
 				defer ticker.Stop()
 
-				for range ticker.C {
-					metrics := redisCache.GetMetrics()
-					total := metrics.Hits + metrics.Misses
-					var hitRate float64
-					if total > 0 {
-						hitRate = float64(metrics.Hits) / float64(total) * 100
-					}
+				for {
+					select {
+					case <-ticker.C:
+						metrics := redisCache.GetMetrics()
+						total := metrics.Hits + metrics.Misses
+						var hitRate float64
+						if total > 0 {
+							hitRate = float64(metrics.Hits) / float64(total) * 100
+						}
 
-					log.Printf("[CACHE METRICS] Hits: %d, Misses: %d, Total: %d, Hit Rate: %.2f%%",
-						metrics.Hits, metrics.Misses, total, hitRate)
+						log.Printf("[CACHE METRICS] Hits: %d, Misses: %d, Total: %d, Hit Rate: %.2f%%",
+							metrics.Hits, metrics.Misses, total, hitRate)
+					case <-ctx.Done():
+						return
+					}
 				}
 			}()
 		}
@@ -129,16 +138,21 @@ func main() {
 	// Start background job to clean up expired refresh tokens every 24 hours
 	go func() {
 		// Run once immediately on startup
-		if err := st.RefreshTokens().DeleteExpiredTokens(context.Background()); err != nil {
+		if err := st.RefreshTokens().DeleteExpiredTokens(ctx); err != nil {
 			log.Printf("initial token cleanup error: %v", err)
 		}
 		ticker := time.NewTicker(24 * time.Hour)
 		defer ticker.Stop()
-		for range ticker.C {
-			if err := st.RefreshTokens().DeleteExpiredTokens(context.Background()); err != nil {
-				log.Printf("token cleanup error: %v", err)
-			} else {
-				log.Printf("expired tokens cleaned up successfully")
+		for {
+			select {
+			case <-ticker.C:
+				if err := st.RefreshTokens().DeleteExpiredTokens(ctx); err != nil {
+					log.Printf("token cleanup error: %v", err)
+				} else {
+					log.Printf("expired tokens cleaned up successfully")
+				}
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
@@ -150,9 +164,12 @@ func main() {
 	<-quit
 	log.Printf("shutting down...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
+	// Cancel context to stop background goroutines
+	cancel()
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("server shutdown error: %v", err)
 	}
 	if redisCache != nil {
