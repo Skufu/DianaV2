@@ -17,6 +17,7 @@ type RateLimiter struct {
 	rate       int
 	duration   time.Duration
 	maxEntries int
+	stop       chan struct{}
 }
 
 type visitor struct {
@@ -69,6 +70,7 @@ func NewRateLimiterWithMax(rate int, duration time.Duration, maxEntries int) *Ra
 		rate:       rate,
 		duration:   duration,
 		maxEntries: maxEntries,
+		stop:       make(chan struct{}),
 	}
 	heap.Init(&rl.evictHeap)
 
@@ -130,15 +132,25 @@ func (rl *RateLimiter) cleanup() {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		rl.mu.Lock()
-		cutoff := time.Now().Add(-rl.duration * 2)
-		for rl.evictHeap.Len() > 0 && rl.evictHeap[0].lastUpdate.Before(cutoff) {
-			oldest := heap.Pop(&rl.evictHeap).(*visitor)
-			delete(rl.visitors, oldest.key)
+	for {
+		select {
+		case <-ticker.C:
+			rl.mu.Lock()
+			cutoff := time.Now().Add(-rl.duration * 2)
+			for rl.evictHeap.Len() > 0 && rl.evictHeap[0].lastUpdate.Before(cutoff) {
+				oldest := heap.Pop(&rl.evictHeap).(*visitor)
+				delete(rl.visitors, oldest.key)
+			}
+			rl.mu.Unlock()
+		case <-rl.stop:
+			return
 		}
-		rl.mu.Unlock()
 	}
+}
+
+// Stop stops the cleanup goroutine
+func (rl *RateLimiter) Stop() {
+	close(rl.stop)
 }
 
 // RateLimit returns a Gin middleware that rate limits requests
