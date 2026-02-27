@@ -5,7 +5,7 @@
   "n_features": 13,
   "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
   "decision_thresholds": {
-    "at_risk": 0.45666666666666655
+    "at_risk": 0.4566666666666665
   },
   "metrics": {
     "auc_roc": 0.7199975383466177,
@@ -23,7 +23,7 @@
     "ppv": 0.6654501216545012,
     "npv": 0.6624548736462094,
     "f1": 0.7030848329048842,
-    "mean_threshold": 0.45666666666666655,
+    "mean_threshold": 0.4566666666666665,
     "inner_cv_auc_mean": 0.7264548032626262,
     "inner_cv_auc_std": 0.005050764280707163
   },
