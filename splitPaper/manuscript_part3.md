@@ -1,15 +1,13 @@
-<!-- NHANES should now be the data -->
 association with metabolic dysfunction and Type 2 Diabetes risk, as identified in the literature
 review and validated through consultations with medical experts.
 **Non-Blood Biomarkers and Demographic Variables.** In addition to blood biomarkers,
 the following non-blood clinical indicators and demographic variables will be extracted from
-patient records: Age, Body Mass Index (BMI), Menopausal Status, and Family History of Diabetes.
+NHANES records: Age, Body Mass Index (BMI), Menopausal Status, and Family History of Diabetes.
 These variables provide essential contextual information that influences diabetes risk and will
 serve as supplementary features for the predictive model.
-All data will be extracted from hospital electronic health records or physical medical charts
-through formal coordination with hospital administrations. Patient records will be anonymized
-prior to extraction to ensure compliance with data privacy regulations and ethical research
-standards.
+All data will be extracted from NHANES public‑use datasets, which are fully de‑identified and
+ethically cleared for research use, ensuring compliance with data privacy regulations and ethical
+research standards.
 
 ```
 Variable Type Coding / Unit Source Missing-Data Rule / Notes
@@ -17,8 +15,8 @@ Fasting Blood
 Sugar (FBS)
 ```
 ```
-Continuous mg/dL Hospital lab
-record
+Continuous mg/dL NHANES lab
+dataset
 ```
 ```
 Records missing FBS are
@@ -27,8 +25,8 @@ Hemoglobin
 A1c (HbA1c)
 ```
 ```
-Continuous % Hospital lab
-record
+Continuous % NHANES lab
+dataset
 ```
 ```
 Records missing HbA1c are
@@ -37,8 +35,8 @@ Triglycerides
 (TG)
 ```
 ```
-Continuous mg/dL Hospital lab
-record
+Continuous mg/dL NHANES lab
+dataset
 ```
 ```
 Retained if core glycemic and
@@ -48,8 +46,8 @@ Lipoprotein
 (LDL-C)
 ```
 ```
-Continuous mg/dL Hospital lab
-record
+Continuous mg/dL NHANES lab
+dataset
 ```
 ```
 Retained if core glycemic and
@@ -62,8 +60,8 @@ Lipoprotein
 (HDL-C)
 ```
 ```
-Continuous mg/dL Hospital lab
-record
+Continuous mg/dL NHANES lab
+dataset
 ```
 ```
 Retained if core glycemic and
@@ -75,8 +73,8 @@ Cholesterol
 (TC)
 ```
 ```
-Continuous mg/dL Hospital lab
-record
+Continuous mg/dL NHANES lab
+dataset
 ```
 ```
 Retained if core glycemic and
@@ -129,26 +127,25 @@ Label
 (Outcome Y)
 ```
 ```
-Categorical Non-Diabetic/
-Prediabetic/
-Diabetic
+Categorical Normal/
+At‑Risk (Primary)
 ```
 ```
 Derived from FBS
-& HbA1c
+& HbA1c (labeling only)
 ```
 Derived using clinical cut-offs
 defined in Chapter 2; records
 with inconsistent or missing
 labels removed.
 _Table 3 : Dataset Composition: Blood Biomarkers and Demographic Variables_
-In the hospital dataset used for model development, structured fields are available for blood
+In the NHANES dataset used for model development, structured fields are available for blood
 biomarkers, age, BMI, menopausal status, and family history of diabetes, which are all included
 
 
 as predictive features. In contrast, lifestyle-related factors such as detailed diet, physical activity
 patterns, and smoking history are primarily discussed in the Review of Related Literature and
-medical interviews but are not consistently encoded as structured variables in the hospital records,
+medical interviews but are not consistently encoded as structured variables in the NHANES records,
 so they are not directly used as input features in the current predictive models.
 
 **Software Methodology**
@@ -167,31 +164,26 @@ the project from inception to real-world readiness.
 _Figure 2 : General Prototyping Model_
 **Phase 1: Data Acquisition and Biomarker Preparation**
 
-This phase focuses on collecting, cleaning, and preparing clinical data from partner
-hospitals to build the dataset used for feature selection and model development. De‑identified
-records of menopausal women aged 45–60 will be obtained through formal coordination, targeting
-approximately 1,000–2,000 records with documented glycemic and lipid results. Only records with
-complete core biomarkers and key demographic fields will be retained to ensure data quality and
-ethical compliance.
+This phase focuses on collecting, cleaning, and preparing NHANES data to build the dataset used
+for feature selection and model development. Records of postmenopausal women aged 45–60 are
+filtered from NHANES 2009–2023, targeting a final cohort of approximately 1,376 records. Only
+records with complete core biomarkers and key demographic fields are retained to ensure data
+quality.
 
-The dataset will include blood biomarkers (Fasting Blood Sugar, HbA1c, Triglycerides,
-LDL‑C, HDL‑C, Total Cholesterol) and non‑blood variables (Age, BMI, Menopausal Status,
+The dataset will include metabolic biomarkers and non‑blood variables used by the screening
+model (BMI, triglycerides, LDL‑C, HDL‑C, age, systolic/diastolic blood pressure, waist
+circumference) with engineered features such as TG/HDL ratio and metabolic syndrome score.
+HbA1c and FBS are retained only for ground‑truth labeling, not as input features for the primary
+screening model. Each variable is classified by data type, checked for outliers and unit
+inconsistencies, and evaluated for completeness. Variables with at least 70% non‑missing values
+are prioritized for feature selection and model training, while highly incomplete lifestyle fields are
+used only for descriptive context.
 
-
-Family History of Diabetes) as the core predictors, with lifestyle-related variables (such as
-smoking history, recent physical activity, and comorbidities like hypertension or heart disease)
-considered as candidate inputs when they are available in structured categorical or numerical form
-in the records. Each variable will be classified by data type (continuous or categorical), checked
-for outliers and unit inconsistencies, and evaluated for completeness. Variables, including any
-lifestyle-related fields, with at least 70% non-missing values will be prioritized for feature
-selection, model training, and interpretation, while highly incomplete or unstructured lifestyle
-information will be used only to descriptively characterize clusters and contextualize the findings,
-and may be excluded from the final predictive model.
-
-A glycemic status label (non‑diabetic, prediabetic, diabetic) will be assigned to each record
-using established FBS and HbA1c cut‑offs summarized in Chapter 2, and this label will serve as
-the class variable _Y_ for both feature selection and supervised learning. Records with inconsistent
-or missing information for defining this label will be removed from the analytic dataset.
+A glycemic status label (normal, pre‑diabetic, diabetic) will be assigned to each record using
+established FBS and HbA1c cut‑offs summarized in Chapter 2. This label supports feature
+selection and enables the optional 3‑class clinician output, while the primary screening model
+reformulates the outcome to binary At‑Risk vs Normal. Records with inconsistent or missing
+information for defining this label will be removed from the analytic dataset.
 Continuous predictors will then be discretized into clinically meaningful categories (for example,
 normal, borderline, and high ranges for FBS, HbA1c, lipids, and BMI) to support entropy and
 Information Gain computation.
@@ -232,15 +224,13 @@ features, which include key blood biomarkers such as Fasting Blood Sugar (FBS), 
 A1c (HbA1c), lipid profiles, and non-blood variables like age, BMI, and menopausal status, serve
 as inputs to machine learning algorithms.
 
-Supervised classification models including Logistic Regression, Random Forest, and
-XGBoost are trained using the selected features. The cleaned dataset will be randomly partitioned
-using stratified sampling into a training set (70%) and an independent test set (30%). The 30%
-subset will serve as the actual held-out test set and will not be used during model development or
-cross-validation. Within the 70% training portion, k-fold cross-validation will be applied to tune
-hyperparameters, compare algorithms, and obtain stable internal performance estimates before
-selecting the final model to evaluate the unseen test set. Model training emphasizes techniques that
+Supervised classification models including Logistic Regression and Random Forest are trained
+using the selected features. Model development uses Nested Leave‑One‑Cycle‑Out validation
+across NHANES cycles to ensure temporal generalization. Within each outer fold, GroupKFold
+is used to tune hyperparameters and compare algorithms, and a sensitivity‑biased decision
+threshold is applied to prioritize screening recall. Model training emphasizes techniques that
 balance predictive accuracy with clinical interpretability and computational efficiency to facilitate
-practical integration into medical decision-making tools.
+practical integration into medical decision‑making tools.
 
 
 _Figure 4 : Model Development and Training_
@@ -348,25 +338,17 @@ history, and any sufficiently complete lifestyle fields). The analysis will proc
 algorithms to develop a predictive classification model for identifying menopausal women at
 current risk of Type 2 Diabetes. Each model will be trained using the feature set selected through
 the entropy and Information Gain procedure, ensuring that only the most informative biomarkers
-and related variables are used as inputs. The cleaned dataset will be randomly partitioned using
-stratified sampling into a training set (70%) and an independent test set (30%). The 30% subset
-will serve as the actual held-out test set and will not be used during model development or cross-
-validation. Within the 70% training portion, k-fold cross-validation will be applied to tune
+and related variables are used as inputs. The cleaned dataset is evaluated using a nested
+Leave‑One‑Group‑Out (LOGO) strategy that holds out NHANES cycles for temporal
+generalization, with GroupKFold used for inner cross‑validation and hyperparameter tuning.
 
-
-hyperparameters, compare algorithms, and obtain stable internal performance estimates before
-selecting the final model.
-
-Candidate algorithms include Logistic Regression, Random Forest, and XGBoost, with
-Support Vector Machines (SVM) considered if preliminary results indicate potential benefit.
-Logistic Regression is included for its interpretability and clinically meaningful probability outputs,
-Random Forest for its ability to model nonlinear relationships and handle interactions among
-biomarkers, and XGBoost for its strong performance in structured healthcare data and its capacity
-to capture complex patterns. Each algorithm will be trained on the IG‑selected attributes and
-evaluated using accuracy, classification error rate _(1−accuracy)_ , precision, recall (sensitivity),
-F1‑score, and AUC‑ROC. These metrics will be used to compare candidate models and select the
-final classifier for integration into the DIANA web application based on predictive performance,
-clinical interpretability, and computational efficiency.
+Candidate algorithms include Logistic Regression and Random Forest only. Logistic Regression is
+included for its interpretability and clinically meaningful probability outputs, while Random Forest
+captures nonlinear relationships and interactions among biomarkers. Each algorithm is trained on
+the IG‑selected attributes and evaluated using accuracy, precision, recall (sensitivity), F1‑score,
+and AUC‑ROC. These metrics are used to select the final classifier for integration into the DIANA
+web application based on predictive performance, clinical interpretability, and computational
+efficiency.
 
 **Clustering Analysis.** In addition to supervised classification, the study will apply
 clustering to group menopausal women into risk‑related profiles based on the same feature set
@@ -582,5 +564,3 @@ Research and Reviews_. _28:2_. 32-39. Doi: https://doi.org/10.1002/dmrr.2352
 Campugan, M. P., & Aguaras, J. L. (2025). _Predictive modeling for diabetes classification using
 clinical biomarkers among Filipino adults_. Philippine Journal of Health Informatics,
 14(2), 45–57.
-
-
