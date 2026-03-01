@@ -1,7 +1,7 @@
 # ML Algorithms Reference
 
-# STALE PAPER REQUIREMENTS - DO NOT USE. JUST FOR REFERENCE
-> Supervised and unsupervised learning requirements per paper
+# PAPER ALIGNMENT REFERENCE (UPDATED)
+> Current supervised/unsupervised requirements aligned to binary_v2_no_bp screening pipeline.
 
 ---
 
@@ -13,10 +13,9 @@
 |-------|---------|----------------|
 | **Logistic Regression** | sklearn | `max_iter=1000`, `class_weight='balanced'` |
 | **Random Forest** | sklearn | `n_estimators=[200,300,500]`, `max_depth=[3,4,5,6]` |
-| **XGBoost** | xgboost | `n_estimators=[100,200,300]`, `max_depth=[2,3,4]` |
 
 ### Optional Models (considered)
-- **Support Vector Machine (SVM)** - if preliminary results indicate benefit
+- **Support Vector Machine (SVM)** - not used in the current screening pipeline
 
 ---
 
@@ -58,9 +57,8 @@
 | **Stratification** | By diabetes_status | Preserve class distribution |
 
 ### Cross-Validation
-- **Method**: K-fold
-- **K**: 5 (typical)
-- **Scope**: Within 70% training set only
+- **Method**: Nested LOGO (outer) + GroupKFold (inner)
+- **Scope**: Temporal generalization across NHANES cycles
 
 ---
 
@@ -68,9 +66,9 @@
 
 | Component | File | Description |
 |-----------|------|-------------|
-| Clinical Model | `Ian_ML/training/train_v2.py` | Defensible nested CV training |
+| Clinical Model | `Ian_ML/training/train_binary_v2_no_bp.py` | Defensible nested CV training |
 | Clinical Model Legacy | `Ian_ML/training/train_legacy.py` | Archived v1 (non-defensible) |
-| Binary Model | `Ian_ML/training/train_binary.py` | Binary classification training |
+| Binary Model | `Ian_ML/training/train_binary_v2_no_bp.py` | Binary classification training |
 | Prediction | `Ian_ML/service/predict.py` | Inference module |
 | K-Means | `Ian_ML/training/clustering.py` | Clustering module |
 
@@ -79,12 +77,12 @@
 ## Hyperparameter Tuning
 
 Paper recommends using cross-validation to tune:
-- `n_estimators` for RF/XGBoost
-- `max_depth` for RF/XGBoost
+- `n_estimators` for RF
+- `max_depth` for RF
 - `C` and `class_weight` for Logistic Regression
 
 ---
 
 ## Keywords
 
-`Logistic Regression` `Random Forest` `XGBoost` `SVM` `K-Means` `clustering` `classification` `cross-validation` `stratified` `train test split` `hyperparameter` `sklearn` `scikit-learn`
+`Logistic Regression` `Random Forest` `SVM` `K-Means` `clustering` `classification` `cross-validation` `stratified` `train test split` `hyperparameter` `sklearn` `scikit-learn`

@@ -29,7 +29,7 @@
 
 ## Model Comparison Process
 
-1. Compare LR, RF, XGBoost on test set
+1. Compare LR and RF on binary_v2_no_bp LOGO evaluation
 2. **Primary**: Select by highest AUC-ROC
 3. **Secondary**: Consider F1-Score
 4. **Tertiary**: Clinical interpretability

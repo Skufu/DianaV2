@@ -91,7 +91,7 @@ VITE_ML_BASE=http://localhost:5001  # For direct ML calls
 | Decision | Rationale |
 |----------|-----------|
 | Go for backend | Performance, type safety, single binary deployment |
-| Flask for ML | scikit-learn/XGBoost native Python ecosystem |
+| Flask for ML | scikit-learn native Python ecosystem |
 | SQLC for queries | Type-safe SQL, no ORM magic |
 | JWT auth | Stateless, scalable, standard |
 | Dual-model ML | Avoids circular reasoning (see ML docs) |

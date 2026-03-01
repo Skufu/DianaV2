@@ -1,7 +1,6 @@
 ```
 ix
 ```
-<!-- NHANES should now be the data -->
 **Definition of Terms
 Diabetes Mellitus (DM)**. a metabolic disorder characterized by high blood glucose levels.
 It includes several types such as Type 1 Diabetes, Type 2 Diabetes, Maturity-Onset Diabetes of

@@ -26,7 +26,7 @@ scripts/
 └── check-api-drift.sh    # API drift monitoring script
 
 models/
-└── binary/                   # Binary model artifacts (created after training)
+└── binary_v2_no_bp/          # Binary model artifacts (created after training)
     ├── results/              # Metrics and reports
     └── visualizations/       # PNG plots
 
@@ -40,17 +40,14 @@ Note: Model files (best_model.joblib, scaler.joblib, kmeans_model.joblib, cluste
 | Aspect | Details |
 |--------|---------|
 | **Dataset** | NHANES 2009-2023 (6 cycles, 1,376 postmenopausal women) |
-| **Features** | 25 features: 7 base biomarkers + 18 engineered (ratios, categories, interactions) |
-| **Target** | Diabetes status (3-class: Normal/Pre-diabetic/Diabetic) |
-| **Algorithms** | LR, RF, XGBoost, CatBoost, LightGBM, Voting Ensemble, Stacking Ensemble |
-| **Best Model** | XGBoost (AUC-ROC: 0.6732, selected for deployment) |
+| **Features** | 13 features: metabolic + engineered (no HbA1c/FBS for screening) |
+| **Target** | Binary screening (Normal vs At‑Risk) with optional 3‑class clinician mode |
+| **Algorithms** | Logistic Regression, Random Forest |
+| **Best Model** | Logistic Regression (AUC-ROC: ~0.72, binary_v2_no_bp) |
 | **Clustering** | K-Means with K=4 (Ahlqvist diabetes subtypes) |
-| **Imputation** | SMOTE+Tomek for class balance, median for biomarkers |
+| **Imputation** | Median/GroupKFold pipeline imputation (no SMOTE) |
 
-> **Note on AUC**: Clinical model achieves 0.6732 AUC (XGBoost) which is realistic for 
-> non-circular prediction (excludes HbA1c/FBS from features). This is comparable to 
-> CDC diabetes risk calculators (AUC 0.72-0.79). All 7 models tested: XGBoost (0.6732), 
-> CatBoost (0.6726), LR (0.6683), Stacking (0.6689), Voting (0.6632), RF (0.6534), LightGBM (0.6452).
+> **Note on AUC**: The binary screening model achieves ~0.72 AUC (Logistic Regression), which is realistic for non‑circular prediction that excludes HbA1c/FBS. This is comparable to CDC diabetes risk calculators (AUC 0.72–0.79) and is intended for screening rather than diagnosis.
 
 ---
 
@@ -62,10 +59,10 @@ Uses all biomarkers including HbA1c (diagnostic criterion):
 REQUIRED_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl']
 ```
 
-### 2. Clinical Model (Non-Circular)
-Uses only metabolic features, excluding HbA1c/FBS:
+### 2. Screening Model (Non-Circular)
+Uses non‑circular features, excluding HbA1c/FBS:
 ```python
-CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+SCREENING_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score', 'waist_circumference', 'race_encoded']
 ```
 
 ---
@@ -82,9 +79,9 @@ class DianaPredictor:
     def predict(self, features: dict) -> dict:
         # Returns: medical_status, risk_cluster, probability, risk_score
 
-class ClinicalPredictor:
-    """Non-circular predictor excluding HbA1c from features."""
-    FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+class ScreeningPredictor:
+    """Non-circular predictor excluding HbA1c/FBS from features."""
+    FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score', 'waist_circumference', 'race_encoded']
     
     def predict(self, features: dict) -> dict:
         # Returns: predicted_status, risk_cluster, probability, risk_score
@@ -126,10 +123,10 @@ Flask API with these endpoints:
 The system provides **two complementary outputs** that serve different clinical purposes:
 
 ### Output 1: Diabetes Probability (Continuous Risk Quantification)
-- **Source**: XGBoost Binary Classifier
-- **Output**: 0-100% probability representing likelihood patient currently has T2DM or prediabetes
-- **Clinical Meaning**: Based on HbA1c and FBS (diagnostic biomarkers)
-- **Example**: 96% probability for a patient with HbA1c=9.5% → High diabetes likelihood
+- **Source**: Logistic Regression binary_v2_no_bp
+- **Output**: 0-100% probability representing likelihood patient is At‑Risk (pre‑diabetic/diabetic)
+- **Clinical Meaning**: Screening probability based on non‑circular metabolic features (no HbA1c/FBS)
+- **Example**: 72% probability for a patient with elevated TG/low HDL → At‑Risk screening flag
 
 ### Output 2: Metabolic Subtype (Qualitative Phenotype Classification)
 - **Source**: K-Means Clustering (K=4, per Ahlqvist et al. 2018)
@@ -171,13 +168,13 @@ make ml
 ### Manual execution (via venv)
 ```bash
 # Full pipeline (recommended - processes data, imputes, trains, clusters)
-source venv/bin/activate && ./scripts/dev/retrain-clinical.sh
+source venv/bin/activate && ./scripts/dev/retrain-binary.sh
 
 # Or run individual steps:
 ./venv/bin/python scripts/process_nhanes_multi.py
 ./venv/bin/python Ian_ML/training/data_processing.py
 ./venv/bin/python scripts/impute_missing_data.py
-./venv/bin/python Ian_ML/training/train_v2.py
+./venv/bin/python Ian_ML/training/train_binary_v2_no_bp.py
 ./venv/bin/python scripts/train_clusters.py
 
 # Start ML server

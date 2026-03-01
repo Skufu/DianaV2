@@ -2,15 +2,15 @@
 
 ## Overview
 
-The DIANA v2 clinical model uses **16 features** derived from NHANES data across 6 cycles (2009-2023). Features are categorized into three groups:
+The DIANA v2 screening model (binary_v2_no_bp) uses **13 features** derived from NHANES data across 6 cycles (2009-2023). Features are categorized into three groups:
 
-1. **Original Metabolic Biomarkers** (7) - Direct measurements from NHANES lab/exam data
+1. **Original Metabolic Biomarkers** (5) - Direct measurements from NHANES lab/exam data
 2. **Derived/Engineered Features** (6) - Calculated from raw biomarkers and lifestyle questionnaires
-3. **Enrichment Features** (3) - Additional clinical and demographic variables
+3. **Enrichment Features** (2) - Additional clinical and demographic variables
 
 ---
 
-## 1. Original Metabolic Biomarkers (7)
+## 1. Original Metabolic Biomarkers (5)
 
 These are direct laboratory or examination measurements from NHANES:
 
@@ -21,8 +21,7 @@ These are direct laboratory or examination measurements from NHANES:
 | `ldl` | TCHOL, HDL, TRIGLY | LDL cholesterol calculated (mg/dL) | 20-300 |
 | `hdl` | HDL | HDL cholesterol (mg/dL) | 10-120 |
 | `age` | RIDAGEYR | Age in years at screening | 45-60 (filtered) |
-| `systolic` | BPXSY1-4 | Average systolic BP (mmHg) | - |
-| `diastolic` | BPXDI1-4 | Average diastolic BP (mmHg) | - |
+| `waist_circumference` | BMXWAIST | Waist circumference (cm) | - |
 
 **Note:** HbA1c and Fasting Blood Sugar (FBS) are excluded from features to avoid circularity - they are used only for ground-truth labeling per ADA criteria.
 
@@ -30,7 +29,7 @@ These are direct laboratory or examination measurements from NHANES:
 
 ## 2. Derived/Engineered Features (6)
 
-These features are calculated through feature engineering in `train_v2.py`:
+These features are calculated through feature engineering in `train_binary_v2_no_bp.py`:
 
 ### 2.1 BMI Category (`bmi_category`)
 
@@ -161,27 +160,25 @@ df["alcohol_encoded"] = df["alcohol_use"].map(alcohol_map)
 metabolic_criteria = pd.DataFrame({
     "high_tg": df["triglycerides"] > 150,
     "low_hdl": df["hdl"] < 50,
-    "high_bp": df["systolic"] >= 130,
     "high_bmi": df["bmi"] >= 30,
     "high_waist": df["waist_circumference"] >= 80,
 })
 df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
 ```
 
-**ATP III Criteria Used:**
+**ATP III Criteria Used (adapted for no‑BP model):**
 | Criterion | Threshold | Points |
 |-----------|-----------|--------|
 | Elevated triglycerides | ≥ 150 mg/dL | 1 |
 | Reduced HDL | < 50 mg/dL (women) | 1 |
-| Elevated BP | Systolic ≥ 130 mmHg | 1 |
 | Elevated BMI | ≥ 25 kg/m² (PH Asia-Pacific WHO) | 1 |
 | Elevated waist circumference | ≥ 80 cm (women) | 1 |
 
-**Clinical Rationale:** Metabolic syndrome is a cluster of conditions that increases diabetes risk. Score range: 0-5 (≥3 criteria = metabolic syndrome diagnosis).
+**Clinical Rationale:** Metabolic syndrome is a cluster of conditions that increases diabetes risk. Score range: 0-4 (≥3 criteria = metabolic syndrome indicator in this dataset).
 
 ---
 
-## 3. Enrichment Features (3)
+## 3. Enrichment Features (2)
 
 ### 3.1 Waist Circumference (`waist_circumference`)
 
@@ -193,15 +190,8 @@ df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
 
 ---
 
-### 3.2 [REMOVED] Family History of Diabetes (`family_history_diabetes`)
-
-*Note: This feature was removed during the V2 upgrade due to severe missingness (83%) in recent NHANES cycles, as detailed in the `dataset-gap-analysis.md`. Model performance slightly improved upon its removal.*
-
----
-
-### 3.3 Race/Ethnicity Encoded (`race_encoded`)
-
-**NHANES Source:** 
+### 3.2 Race/Ethnicity Encoded (`race_encoded`)
+**NHANES Source:**
 - `RIDRETH3` (2011+): 7 categories
 - `RIDRETH1` (2009-2010): 5 categories
 
@@ -229,6 +219,12 @@ elif 'RIDRETH1' in demo.columns:  # 2009-2010
 
 ---
 
+### 3.3 [REMOVED] Family History of Diabetes (`family_history_diabetes`)
+
+*Note: This feature was removed during the V2 upgrade due to severe missingness (83%) in recent NHANES cycles, as detailed in the `dataset-gap-analysis.md`. Model performance slightly improved upon its removal.*
+
+---
+
 ## Feature Engineering Pipeline
 
 ```
@@ -245,12 +241,12 @@ Data Cleaning (data_processing.py)
     - Detect outliers
     - Output: diana_dataset_final.csv
     ↓
-Feature Engineering (train_v2.py::engineer_features_reduced)
+Feature Engineering (train_binary_v2_no_bp.py::engineer_features_reduced)
     - Create derived features (bmi_category, tg_hdl_ratio, etc.)
     - Encode categorical variables
     - Calculate metabolic syndrome score
     ↓
-Model Training (train_v2.py)
+Model Training (train_binary_v2_no_bp.py)
     - SimpleImputer (median) inside CV pipeline
     - StandardScaler
     - Logistic Regression / Random Forest
@@ -264,7 +260,7 @@ Model Training (train_v2.py)
 | Feature | Missing | Rate |
 |---------|---------|------|
 | waist_circumference | 28 | 2.0% |
-| family_history_diabetes | 265 | 19.3% |
+| race_encoded | 0 | 0.0% |
 | All others (from NHANES core) | < 55 | < 4% |
 
 ### Data Imputation
@@ -281,10 +277,10 @@ Based on mutual information and clinical literature:
 | Rank | Feature | Rationale |
 |------|---------|-----------|
 | 1 | `bmi` / `bmi_category` | Strongest single predictor |
-| 2 | `age` | Age 45-60 = perimenopausal transition |
+| 2 | `age` | Age 45-60 = postmenopausal cohort |
 | 3 | `tg_hdl_ratio` | Insulin resistance surrogate |
 | 4 | `metabolic_syndrome_score` | Composite risk indicator |
-| 5 | `family_history_diabetes` | Genetic predisposition |
+| 5 | `race_encoded` | Population risk gradient |
 
 ---
 
@@ -293,7 +289,7 @@ Based on mutual information and clinical literature:
 | Version | Date | Changes |
 |---------|------|---------|
 | v1.0 | Original | 6 metabolic features only |
-| v2.0 | Current | Added 9 derived/enrichment features |
+| v2.0 | Current | Binary_v2_no_bp 13‑feature contract |
 | v2.1 | Planned | CRP (removed - not available all cycles) |
 
 ---
@@ -308,7 +304,7 @@ Based on mutual information and clinical literature:
 ---
 
 *Generated: February 21, 2026*
-*Model Version: clinical_3class / binary_v2_no_bp*
+*Model Version: binary_v2_no_bp*
 *Dataset: diana_dataset_final.csv (n=1,376)*
 *BMI Standard: Philippine (Asia-Pacific WHO)*
 

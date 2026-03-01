@@ -113,7 +113,7 @@ A full-stack health application designed for menopausal women to assess diabetes
 | MLflow Config | `Ian_ML/service/mlflow_config.py` | MLflow experiment tracking |
 | Data Pipeline Script | `scripts/data/process_nhanes_multi.py` | NHANES download and processing |
 | Feature Selection | `scripts/data/feature_selection.py` | Mutual Information + IG analysis |
-| Cluster Training | `scripts/train/train_clusters.py` | K-Means, CatBoost |
+| Cluster Training | `scripts/train/train_clusters.py` | K-Means (Ahlqvist K=4) |
 | Thesis Outputs | `scripts/thesis/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
 | ML Rationale | `docs/03-ml/rationale.md` | Defense-ready methodology justification |
 
@@ -126,7 +126,7 @@ A full-stack health application designed for menopausal women to assess diabetes
 | Backend | Go 1.21+, Gin, SQLC |
 | Frontend | React 18, Vite, Tailwind CSS |
 | Database | PostgreSQL (Goose migrations) |
-| ML | Python 3.10+, Flask, scikit-learn, XGBoost |
+| ML | Python 3.10+, Flask, scikit-learn (Logistic Regression, Random Forest) |
 
 ---
 
@@ -400,4 +400,4 @@ VITE_ML_API_KEY=your-secure-ml-api-key  # Must match ML_API_KEY
 
 ## Search Keywords
 
-`diabetes` `prediction` `menopausal women` `biomarkers` `HbA1c` `machine learning` `Go` `Gin` `React` `Vite` `PostgreSQL` `Flask` `XGBoost` `Random Forest` `K-Means` `clustering` `NHANES` `ADA criteria` `SIRD` `SIDD` `MOD` `MARD` `JWT` `authentication` `REST API` `SQLC`
+`diabetes` `prediction` `menopausal women` `biomarkers` `HbA1c` `machine learning` `Go` `Gin` `React` `Vite` `PostgreSQL` `Flask` `Logistic Regression` `Random Forest` `K-Means` `clustering` `NHANES` `ADA criteria` `SIRD` `SIDD` `MOD` `MARD` `JWT` `authentication` `REST API` `SQLC`
