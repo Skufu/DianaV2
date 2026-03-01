@@ -6,14 +6,14 @@ This document is a narrative guide for interpreting defensibility outputs.
 
 Use the following as the source of truth for current values:
 
-- `models/clinical_3class/results/best_model_report.json`
-- `models/clinical_3class/results/defensibility_validation_summary.json`
+- `models/binary_v2_no_bp/results/best_model_report.json`
+- `models/binary_v2_no_bp/results/defensibility_validation_summary.json`
 
 Important: `scripts/thesis/generate_defensibility_outputs.py` is now a verifier and does not generate synthetic metrics.
 
-**Location**: `models/clinical_3class/`
-- Results: `models/clinical_3class/results/`
-- Visualizations: `models/clinical_3class/visualizations/`
+**Location**: `models/binary_v2_no_bp/`
+- Results: `models/binary_v2_no_bp/results/`
+- Visualizations: `models/binary_v2_no_bp/visualizations/`
 
 ---
 

@@ -17,7 +17,7 @@ This document summarizes the high-level layout of the DIANA V2 repository and cl
   - `migrations/`: Goose migrations defining the Postgres schema and indexes.
 - `frontend/`: React (Vite) SPA client.
   - `frontend/src/`: Components, API helper, styles, app shell.
-- `Ian_ML/`: Python ML service (Flask, scikit-learn, XGBoost).
+- `Ian_ML/`: Python ML service (Flask, scikit-learn).
   - `server.py`: Main ML server exposing prediction endpoints.
   - `train/`, `eval/`, `data/`: ML training, evaluation, and data directories.
 - `configs/`: Example env files (`env.example`, `.env.local.example`).

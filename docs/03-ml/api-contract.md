@@ -71,7 +71,7 @@ The API returns different response structures depending on the model type:
 ```json
 {
   "success": true,
-  "model_type": "binary",
+  "model_type": "binary_v2_no_bp",
   "predicted_status": "Pre-diabetic",
   "risk_cluster": "MOD",
   "metabolic_subtype": "MOD",
@@ -85,10 +85,10 @@ The API returns different response structures depending on the model type:
   "risk_score": 58,
   "confidence": 0.65,
   "model_info": {
-    "classifier": "XGBoost",
+    "classifier": "Logistic Regression",
     "auc_roc": 0.72,
     "features_used": ["bmi", "triglycerides", "ldl", "hdl", "age", "systolic", "diastolic", ...],
-    "note": "Binary at-risk screening model (AUC 0.72, 99.5% sensitivity) - no HbA1c/FBS"
+    "note": "Binary at-risk screening model (AUC 0.72, sensitivity-prioritized) - no HbA1c/FBS"
   }
 }
 ```
@@ -115,7 +115,7 @@ The API returns different response structures depending on the model type:
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the prediction was successful |
-| `model_type` | string | "binary" for clinical model, "ada" for baseline model |
+| `model_type` | string | "binary_v2_no_bp" for clinical screening model, "ada" for baseline model |
 | `predicted_status` | string | Diabetes classification: "Normal", "Pre-diabetic", or "At-Risk" |
 | `risk_cluster` | string | Metabolic subtype cluster (SIRD, SIDD, MOD, MARD) |
 | `metabolic_subtype` | string | Short code for metabolic subtype |

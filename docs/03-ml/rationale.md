@@ -164,7 +164,7 @@ Apply **z-score standardization** (mean=0, std=1) to all features.
 |-------|----------------|-----|
 | **Logistic Regression** | ✅ Yes | Regularization penalizes coefficient magnitudes |
 | **Random Forest** | ❌ No | Tree splits are scale-invariant |
-| **XGBoost** | ❌ No | Tree-based, uses split points |
+| **XGBoost** | ❌ No | Tree-based, uses split points (not used in binary_v2_no_bp) |
 | **K-Means** | ✅ Yes | Euclidean distance dominated by large-range features |
 
 **Critical for K-Means:**
@@ -222,40 +222,33 @@ For a dataset with 800 Normal, 200 Pre-diabetic, 100 Diabetic:
 
 ---
 
-## 5. Model Selection: 7 Models Compared
+## 5. Model Selection: Binary Screening (LR vs RF)
 
 ### The Decision
-Compare seven models: **Logistic Regression, Random Forest, XGBoost, CatBoost, LightGBM, Voting Ensemble, Stacking Ensemble**.
+Compare **Logistic Regression** and **Random Forest** for binary_v2_no_bp screening.
 
 ### Rationale
 
 | Model | Complexity | Interpretability | Performance | Thesis Value |
 |-------|------------|------------------|-------------|--------------|
-| **Logistic Regression** | Low | High (coefficients = feature effects) | Baseline (AUC 0.6683) | Shows linear relationships |
-| **Random Forest** | Medium | Moderate (feature importance) | Good (AUC 0.6534) | Captures non-linear patterns |
-| **XGBoost** ⭐ | High | Low (many trees) | **Best (AUC 0.6732)** | State-of-art for tabular data |
-| **CatBoost** | High | Low | Very close second (AUC 0.6726) | Handles categorical features |
-| **LightGBM** | High | Low | Lower (AUC 0.6452) | Fast gradient boosting |
-| **Voting Ensemble** | High | Very Low | Good (AUC 0.6632) | Combines base learners |
-| **Stacking Ensemble** | High | Very Low | Good (AUC 0.6689) | Meta-learner combination |
+| **Logistic Regression** ⭐ | Low | High (coefficients = feature effects) | **Best (AUC ~0.72)** | Transparent screening baseline |
+| **Random Forest** | Medium | Moderate (feature importance) | Competitive | Captures non-linear patterns |
 
-**Why seven models:**
-- **Core three** (LR, RF, XGBoost) = Standard progression from simple to complex
-- **Additional boosting** (CatBoost, LightGBM) = Test alternative gradient boosting algorithms
-- **Ensemble methods** (Voting, Stacking) = Explore model combination strategies
-- Demonstrates thorough exploration while maintaining thesis focus
+**Why only two models:**
+- Screening goal + modest sample size favors interpretable, low‑variance models.
+- LR provides transparency; RF adds non‑linear capacity without heavy boosting complexity.
 
 **Why NOT neural networks:**
 - Overkill for ~1,376 records and 25 features
 - Requires extensive hyperparameter tuning
 - Harder to explain to non-technical panel members
-- Tree-based models (XGBoost) typically outperform NNs on tabular data
+- Tree-based models (RF/XGBoost) typically outperform NNs on tabular data, but we prioritize interpretability for screening
 
 **Key Finding:**
-XGBoost achieved the best performance (AUC 0.6732), with CatBoost very close (0.6726). The ensemble methods did not outperform the best individual model, suggesting XGBoost already captures the optimal signal from the data.
+Logistic Regression achieved the best screening performance (~0.72 AUC) while remaining interpretable; Random Forest was close but not superior.
 
 ### Defense Script
-> "I conducted a comprehensive comparison of seven algorithms spanning three categories: baseline models (Logistic Regression), tree ensembles (Random Forest, XGBoost, CatBoost, LightGBM), and meta-ensembles (Voting, Stacking). XGBoost emerged as the best performer with AUC 0.6732, closely followed by CatBoost at 0.6726. Interestingly, ensemble methods did not outperform XGBoost, indicating it already optimally combines the available features. This thorough comparison demonstrates due diligence in model selection while identifying XGBoost as the most suitable algorithm for deployment."
+> "I compared Logistic Regression and Random Forest for the binary_v2_no_bp screening model. Logistic Regression achieved the best AUC (~0.72) while remaining clinically interpretable, so it was selected for deployment."
 
 ---
 
@@ -283,21 +276,16 @@ Prioritize **AUC-ROC ≥ 0.80** as primary metric, with **Recall** as clinical s
 
 | Scenario | Expected AUC | Assessment |
 |----------|--------------|------------|
-| **Current Result (XGBoost)** | **0.6732** | **Acceptable for screening** |
+| **Current Result (Logistic Regression)** | **~0.72** | **Acceptable for screening** |
 | **Target** | 0.70-0.75 | Good |
 | **Excellent** | > 0.80 | Rare without HbA1c |
 
-**All Clinical Model Results:**
-- XGBoost: 0.6732 (best - selected)
-- CatBoost: 0.6726
-- Stacking Ensemble: 0.6689  
-- Logistic Regression: 0.6683
-- Voting Ensemble: 0.6632
-- Random Forest: 0.6534
-- LightGBM: 0.6452
+**Binary Screening Results:**
+- Logistic Regression: ~0.72 (best - selected)
+- Random Forest: ~0.72 (close)
 
 ### Defense Script
-> "I prioritized AUC-ROC because it measures discrimination across all thresholds. After comparing seven models, XGBoost achieved the best performance with AUC 0.6732. Our Clinical Predictor excludes HbA1c and FBS to avoid circularity. An AUC of 0.67 is acceptable and comparable to the CDC Prediabetes Risk Test (AUC 0.72-0.79). Given the non-circular constraint, this represents realistic performance for a screening tool."
+> "I prioritized AUC-ROC because it measures discrimination across all thresholds. Logistic Regression achieved the best performance (~0.72) for binary_v2_no_bp while remaining interpretable. Our screening model excludes HbA1c and FBS to avoid circularity. An AUC around 0.72 is acceptable and comparable to the CDC Prediabetes Risk Test (AUC 0.72-0.79)."
 
 ---
 
@@ -409,7 +397,7 @@ Use **5-fold stratified cross-validation** within the training set.
 - AUC 0.70-0.80 is realistic and clinically useful
 
 ### Defense Script
-> "We maintain two model types. The ADA Predictor includes HbA1c and achieves near-perfect AUC because HbA1c thresholds directly define diabetes status per ADA guidelines—this validates our implementation. The Clinical Predictor excludes diagnostic biomarkers (HbA1c, FBS) and predicts risk from the metabolic profile alone. After comparing seven algorithms, XGBoost achieved the best performance with AUC 0.6732. This model provides clinical value for screening patients who haven't yet received glucose-specific testing."
+> "We maintain two model types. The ADA Predictor includes HbA1c and achieves near-perfect AUC because HbA1c thresholds directly define diabetes status per ADA guidelines—this validates our implementation. The screening predictor excludes diagnostic biomarkers (HbA1c, FBS) and predicts risk from the metabolic profile alone. Logistic Regression achieved the best performance (~0.72) for binary_v2_no_bp and provides clinical value for screening patients who haven't yet received glucose-specific testing."
 
 ---
 
@@ -420,9 +408,9 @@ Use **5-fold stratified cross-validation** within the training set.
 | "Why Mutual Information?" | "Handles continuous features without arbitrary binning" |
 | "Why median imputation?" | "Robust to outliers in skewed clinical distributions" |
 | "Why balanced weights?" | "Penalizes missing diabetics without synthetic samples" |
-| "Why seven models?" | "Comprehensive comparison: baseline (LR), tree ensembles (RF/XGB/Cat/LGB), meta-ensembles (Vote/Stack)" |
-| "Which model is best?" | "XGBoost at AUC 0.6732, closely followed by CatBoost at 0.6726" |
-| "Why AUC 0.67?" | "Acceptable for non-circular screening; comparable to CDC tools at 0.72-0.79" |
+| "Why only two models?" | "With 1,376 records and a screening goal, we prioritized interpretable LR and RF to reduce overfitting and improve explainability." |
+| "Which model is best?" | "Logistic Regression at ~0.72 AUC for binary_v2_no_bp." |
+| "Why AUC ~0.72?" | "Acceptable for non-circular screening; comparable to CDC tools at 0.72-0.79" |
 | "Why K=4 clusters?" | "Matches Ahlqvist et al. T2DM subtype classification" |
 | "Why is ADA model perfect?" | "HbA1c defines both feature and label—validates implementation" |
-| "What's the real contribution?" | "Clinical Predictor screens without glucose testing; XGBoost achieves 0.6732 AUC" |
+| "What's the real contribution?" | "Screening without glucose testing; Logistic Regression achieves ~0.72 AUC" |

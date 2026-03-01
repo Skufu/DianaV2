@@ -8,7 +8,7 @@
 |----------|---------|-------------|
 | [biomarkers.md](biomarkers.md) | Blood & non-blood biomarkers | FBS, HbA1c, TG, LDL, HDL, TC, BMI, Age |
 | [diabetes_subgroups.md](diabetes_subgroups.md) | T2DM cluster classification | SIDD, SIRD, MOD, MARD definitions |
-| [ml_algorithms.md](ml_algorithms.md) | ML model requirements | LR, RF, XGBoost, K-Means specs |
+| [ml_algorithms.md](ml_algorithms.md) | ML model requirements | LR, RF, K-Means specs |
 | [feature_selection.md](feature_selection.md) | Entropy & Information Gain | IG formulas, feature ranking |
 | [data_pipeline.md](data_pipeline.md) | Data processing steps | NHANES → Training data flow |
 | [metrics.md](metrics.md) | Evaluation metrics | Accuracy, F1, AUC-ROC thresholds |
@@ -36,4 +36,4 @@
 
 ## Search Keywords
 
-`DIANA` `diabetes` `menopausal` `postmenopausal` `biomarkers` `HbA1c` `FBS` `lipid` `K-Means` `clustering` `SIDD` `SIRD` `MARD` `MOD` `Random Forest` `XGBoost` `Information Gain` `entropy` `AUC-ROC` `risk prediction` `NHANES`
+`DIANA` `diabetes` `menopausal` `postmenopausal` `biomarkers` `HbA1c` `FBS` `lipid` `K-Means` `clustering` `SIDD` `SIRD` `MARD` `MOD` `Random Forest` `Logistic Regression` `Information Gain` `entropy` `AUC-ROC` `risk prediction` `NHANES`
