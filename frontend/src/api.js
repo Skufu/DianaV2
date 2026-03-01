@@ -154,10 +154,11 @@ const blobFetch = async (endpoint, options = {}) => {
   return response;
 };
 
-const mlFetch = async path => {
+const mlFetchJson = async (path, options = {}) => {
   const apiKey = import.meta.env.VITE_ML_API_KEY;
   const headers = {
     'Content-Type': 'application/json',
+    ...(options.headers || {}),
   };
 
   if (apiKey) {
@@ -165,18 +166,24 @@ const mlFetch = async path => {
   }
 
   const res = await fetch(`${ML_BASE}${path}`, {
+    method: options.method || 'GET',
     headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+    signal: options.signal,
   });
 
   if (!res.ok) throw new Error(`ML API error: ${res.status}`);
   return res.json();
 };
 
+const mlFetch = async path => mlFetchJson(path);
+
 export const fetchMLHealthApi = () => mlFetch('/health');
 export const fetchMLMetricsApi = () => mlFetch('/insights/metrics');
 export const fetchMLInformationGainApi = () => mlFetch('/insights/information-gain');
 export const fetchMLClustersApi = () => mlFetch('/insights/clusters');
 export const getMLVisualizationUrl = name => `${ML_BASE}/insights/visualizations/${name}`;
+export { mlFetchJson };
 
 // ============================================================================
 // REACT QUERY HOOKS
