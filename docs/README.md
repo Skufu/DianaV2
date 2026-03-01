@@ -93,7 +93,7 @@
 | [diabetes_subgroups.md](./07-research/diabetes_subgroups.md) | Subtype clustering | Ahlqvist categories |
 | [feature_selection.md](./07-research/feature_selection.md) | Feature engineering | Mutual information, IG |
 | [metrics.md](./07-research/metrics.md) | Model metrics | AUC, precision, recall |
-| [ml_algorithms.md](./07-research/ml_algorithms.md) | ML algorithms comparison | XGBoost, CatBoost, etc. |
+| [ml_algorithms.md](./07-research/ml_algorithms.md) | ML algorithms comparison | Logistic Regression, Random Forest |
 | [data_pipeline.md](./07-research/data_pipeline.md) | Data processing | NHANES, imputation |
 | [ui_requirements.md](./07-research/ui_requirements.md) | UI specifications | Paper figures alignment |
 | [README.md](./07-research/README.md) | Research RAG index | Paper documentation hub |

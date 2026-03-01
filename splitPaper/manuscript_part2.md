@@ -656,9 +656,11 @@ structured biomarker records.
 
 The research involves using NHANES clinical biomarker data for model development, applying
 feature selection (entropy and Information Gain), supervised classification, and clustering, and
-integrating the model into a web‑based application. The system will be evaluated by licensed
-physicians to assess its clinical applicability, usability, and interpretability in supporting diabetes
-risk detection for menopausal women.
+integrating the model into a web‑based application. NHANES was selected because it is
+publicly available, de‑identified, and collected using standardized laboratory protocols, allowing
+reproducible model development while Philippine hospital data collection remains in progress. The
+system will be evaluated by licensed physicians to assess its clinical applicability, usability, and
+interpretability in supporting diabetes risk detection for menopausal women.
 
 This design aligns with the study's objectives of identifying the most informative biomarker
 attributes, developing ML‑based classification and clustering methods for risk prediction and
@@ -730,7 +732,9 @@ informed decision-making in the Philippine healthcare context.
 
 The study will utilize NHANES laboratory and demographic records as the primary source of data
 for model development. These records contain standardized biomarker measurements and
-demographic information necessary for training the predictive classification model.
+demographic information necessary for training the predictive classification model. HbA1c and FBS
+are retained for labeling but excluded from the primary screening feature set to avoid circular
+prediction and to ensure that risk is inferred from non‑circular metabolic surrogates.
 **Blood Biomarkers.** The following blood-based clinical biomarkers will be collected from
 patient records: Fasting Blood Sugar (FBS), Glycated Hemoglobin (HbA1c), Triglycerides (TG),
 Low-Density Lipoprotein Cholesterol (LDL-C), High-Density Lipoprotein Cholesterol (HDL-C),
@@ -746,7 +750,9 @@ These variables provide essential contextual information that influences diabete
 serve as supplementary features for the predictive model.
 All data will be extracted from NHANES public‑use datasets, which are fully de‑identified and
 ethically cleared for research use, ensuring compliance with data privacy regulations and ethical
-research standards.
+research standards. HbA1c and FBS are retained for labeling but excluded from the primary
+screening feature set to avoid circular prediction, forcing the model to learn risk from non‑circular
+metabolic surrogates.
 
 ```
 Variable Type Coding / Unit Source Missing-Data Rule / Notes

@@ -1,7 +1,6 @@
 ```
 ix
 ```
-<!-- NHANES should now be the data -->
 **Definition of Terms
 Diabetes Mellitus (DM)**. a metabolic disorder characterized by high blood glucose levels.
 It includes several types such as Type 1 Diabetes, Type 2 Diabetes, Maturity-Onset Diabetes of
@@ -550,7 +549,6 @@ the users to interpret predictive insights derived from the patient data
 
 
 
-<!-- NHANES should now be the data -->
 trends in biomarkers such as fasting plasma glucose, HbA1c, and Estradiol,
 among others. This allows the user to observe trends across their patient
 population and detect potential increases in diabetes risk prevalence among
@@ -1221,7 +1219,7 @@ group profiling, and validating the system's clinical utility in the Philippine 
 
 This study utilizes data from the National Health and Nutrition Examination Survey (NHANES), a major program of the National Center for Health Statistics (NCHS) which is part of the Centers for Disease Control and Prevention (CDC). NHANES is designed to assess the health and nutritional status of adults and children in the United States through interviews and direct physical examinations. The survey examines a nationally representative sample of about 5,000 persons each year. These persons are located in counties across the country, 15 of which are visited each year.
 
-For this study, the research locale is effectively the publicly available NHANES database, specifically the merged datasets from the 2009 to 2023 cycles. This comprehensive dataset provides a robust source of clinical biomarker data, demographic information, and health questionnaire responses relevant to menopausal women and diabetes risk, serving as a reliable foundation for developing and validating the DIANA predictive model.
+For this study, the research locale is effectively the publicly available NHANES database, specifically the merged datasets from the 2009 to 2023 cycles. This comprehensive dataset provides a robust source of clinical biomarker data, demographic information, and health questionnaire responses relevant to menopausal women and diabetes risk, serving as a reliable foundation for developing and validating the DIANA predictive model. NHANES was selected because it is de‑identified, standardized across cycles, and includes laboratory‑measured biomarkers collected under consistent protocols, enabling reproducible model training. Philippine hospital data collection was not yet available during the study period; therefore NHANES serves as a defensible development dataset with the explicit limitation that Philippine‑specific calibration and external validation are required before local clinical deployment.
 
 The "Usapang Perimenopause at Menopause" Facebook interest group serves as the locale for user acceptance testing of the DIANA web application. This online community of Filipino women actively discussing menopause-related health topics provides access to the target end-user population who will evaluate the application's usability, clarity, and practical relevance. Volunteer members who meet the study's inclusion criteria will be invited to test the application and provide structured feedback on its interface design, information presentation, and usefulness for personal health monitoring. Engagement and data collection from the group will only commence upon receipt of formal permission and cooperation from group administrators, ensuring compliance with ethical standards and data privacy regulations.
 
@@ -1256,7 +1254,7 @@ informed decision-making in the Philippine healthcare context.
 
 **Data Gathering Tools and Procedures**
 
-The study will utilize the **NHANES database** as the primary source of data for model development. The dataset is publicly available and contains comprehensive clinical biomarker measurements and demographic information necessary for training the predictive classification model.
+The study will utilize the **NHANES database** as the primary source of data for model development. The dataset is publicly available and contains comprehensive clinical biomarker measurements and demographic information necessary for training the predictive classification model. This choice addresses data accessibility and ethics (public, de‑identified data) while preserving clinical rigor because biomarker values are measured using standardized protocols rather than self‑report. NHANES is cross‑sectional; therefore the model is designed to detect **current undiagnosed risk** rather than forecast future incidence.
 **Blood Biomarkers.** The following blood-based clinical biomarkers will be collected from
 patient records: Fasting Blood Sugar (FBS), Glycated Hemoglobin (HbA1c), Triglycerides (TG),
 Low-Density Lipoprotein Cholesterol (LDL-C), High-Density Lipoprotein Cholesterol (HDL-C),
@@ -1273,7 +1271,12 @@ serve as supplementary features for the predictive model.
 All data will be extracted from the official NHANES website and data repository. The dataset is
 already de‑identified and anonymized, ensuring compliance with data privacy regulations and
 ethical research standards without the need for additional institutional clearances for data
-collection.
+collection. A key methodological decision is to **exclude HbA1c and FBS from the primary
+screening feature set** while retaining them for ground‑truth labeling. HbA1c and FBS directly
+define glycemic status in clinical guidelines; including them as predictors would create circular
+reasoning and artificially inflate performance. Excluding them forces the model to rely on
+non‑circular metabolic surrogates (lipids, BMI, age, blood pressure), producing a realistic
+screening tool rather than a diagnostic lookup.
 
 ```
 Variable Type Coding / Unit Source Missing-Data Rule / Notes
@@ -1321,60 +1324,6 @@ lipid fields are complete.
 ```
 
 
-<!-- NHANES should now be the data -->
-association with metabolic dysfunction and Type 2 Diabetes risk, as identified in the literature
-review and validated through consultations with medical experts.
-**Non-Blood Biomarkers and Demographic Variables.** In addition to blood biomarkers,
-the following non-blood clinical indicators and demographic variables will be extracted from
-patient records: Age, Body Mass Index (BMI), Menopausal Status, and Family History of Diabetes.
-These variables provide essential contextual information that influences diabetes risk and will
-serve as supplementary features for the predictive model.
-All data will be extracted from the official NHANES website and data repository. The dataset is already de-identified and anonymized, ensuring compliance with data privacy regulations and ethical research standards without the need for additional institutional clearances for data collection.
-
-```
-Variable Type Coding / Unit Source Missing-Data Rule / Notes
-Fasting Blood
-Sugar (FBS)
-```
-```
-Continuous mg/dL NHANES Lab
-Data
-```
-```
-Records missing FBS are
-excluded from model training.
-Hemoglobin
-A1c (HbA1c)
-```
-```
-Continuous % NHANES Lab
-Data
-```
-```
-Records missing HbA1c are
-excluded from model training.
-Triglycerides
-(TG)
-```
-```
-Continuous mg/dL NHANES Lab
-Data
-```
-```
-Retained if core glycemic and
-lipid fields are complete.
-Low-Density
-Lipoprotein
-(LDL-C)
-```
-```
-Continuous mg/dL NHANES Lab
-Data
-```
-```
-Retained if core glycemic and
-lipid fields are complete.
-```
 
 ```
 High-Density
@@ -1485,10 +1434,11 @@ The dataset will include metabolic biomarkers and non‑blood variables used by 
 model (BMI, triglycerides, LDL‑C, HDL‑C, age, systolic/diastolic blood pressure, waist
 circumference) with engineered features such as TG/HDL ratio and metabolic syndrome score. HbA1c
 and FBS are retained only for ground‑truth labeling, not as input features for the primary screening
-model. Each variable is classified by data type, checked for outliers and unit inconsistencies, and
-evaluated for completeness. Variables with at least 70% non‑missing values are prioritized for
-feature selection and model training, while highly incomplete lifestyle fields are used only for
-descriptive context.
+model. This exclusion prevents circularity because HbA1c/FBS are themselves diagnostic criteria; a
+model that uses them would simply rediscover the label rather than detect undiagnosed risk. Each
+variable is classified by data type, checked for outliers and unit inconsistencies, and evaluated for
+completeness. Variables with at least 70% non‑missing values are prioritized for feature selection
+and model training, while highly incomplete lifestyle fields are used only for descriptive context.
  
 
 A glycemic status label (normal, pre‑diabetic, diabetic) will be assigned to each record using
@@ -1531,11 +1481,14 @@ as inputs to machine learning algorithms.
 
 Supervised classification models including Logistic Regression and Random Forest are trained
 using the selected features. Model development uses Nested Leave‑One‑Cycle‑Out validation
-across NHANES cycles to ensure temporal generalization. Within each outer fold, GroupKFold
-is used to tune hyperparameters and compare algorithms, and a sensitivity‑biased decision
-threshold is applied to prioritize screening recall. Model training emphasizes techniques that
-balance predictive accuracy with clinical interpretability and computational efficiency to facilitate
-practical integration into medical decision‑making tools.
+across NHANES cycles to ensure temporal generalization. This design holds out entire survey
+cycles to simulate deployment on future data and to avoid leakage across temporally adjacent
+records. Within each outer fold, GroupKFold is used to tune hyperparameters and compare
+algorithms, and a sensitivity‑biased decision threshold is applied to prioritize screening recall
+because the clinical cost of missing at‑risk patients outweighs the cost of additional follow‑up
+testing. Model training emphasizes techniques that balance predictive accuracy with clinical
+interpretability and computational efficiency to facilitate practical integration into medical
+decision‑making tools.
 
 
 _Figure 4 : Model Development and Training_
@@ -1650,11 +1603,12 @@ generalization, with GroupKFold used for inner cross‑validation and hyperparam
 
 Candidate algorithms include Logistic Regression and Random Forest only. Logistic Regression is
 included for its interpretability and clinically meaningful probability outputs, while Random Forest
-captures nonlinear relationships and interactions among biomarkers. Each algorithm is trained on
-the IG‑selected attributes and evaluated using accuracy, precision, recall (sensitivity), F1‑score,
-and AUC‑ROC. These metrics are used to select the final classifier for integration into the DIANA
-web application based on predictive performance, clinical interpretability, and computational
-efficiency.
+captures nonlinear relationships and interactions among biomarkers. This reduced set reflects a
+deliberate trade‑off: with a modest sample size and a screening‑first goal, simpler models are less
+likely to overfit and are easier to justify clinically. Each algorithm is trained on the IG‑selected
+attributes and evaluated using accuracy, precision, recall (sensitivity), F1‑score, and AUC‑ROC.
+These metrics are used to select the final classifier for integration into the DIANA web application
+based on predictive performance, clinical interpretability, and computational efficiency.
 
 **Clustering Analysis.** In addition to supervised classification, the study will apply
 clustering to group menopausal women into risk‑related profiles based on the same feature set
@@ -1860,7 +1814,7 @@ The default DIANA screening model is **binary (Normal vs At‑Risk)** using the 
 - **NPV**: 0.6625
 - **F1‑Score**: 0.7031
 
-The optimized **at‑risk threshold** was **0.4567**, prioritizing sensitivity to minimize false negatives in screening contexts.
+The optimized **at‑risk threshold** was **0.4567**, selected from out‑of‑fold probabilities under LOGO‑CV to prioritize sensitivity and minimize false negatives in screening contexts where missed cases carry higher clinical cost than additional confirmatory testing.
 
 **4.2 Temporal Validation (LOGO by NHANES Cycle)**
 
@@ -1871,6 +1825,8 @@ Leave‑One‑Cycle‑Out results demonstrate temporal stability across cycles (
 - **Random Forest**: AUC 0.7201 (σ=0.0207), Sensitivity 0.7142, Specificity 0.6255
 
 _Table 6 : Binary Model LOGO Summary by Algorithm_
+
+**Methodological Justification and Limitations.** The achieved AUC (~0.72) is consistent with realistic screening performance when diagnostic biomarkers are excluded. Because HbA1c and FBS are withheld from model inputs, the classifier must infer risk from non‑circular metabolic features, which is clinically safer but inherently more difficult. The approach is intended for **screening support**, not standalone diagnosis. Limitations include the use of U.S. NHANES data (requiring Philippine‑specific validation), the cross‑sectional nature of NHANES (predicting current undiagnosed status rather than future incidence), and moderate clustering separation that should be interpreted as exploratory subgrouping rather than definitive phenotypes.
 
 **4.3 Clustering Results (K‑Means, K=4)**
 

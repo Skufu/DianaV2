@@ -1,7 +1,7 @@
 # Ian_ML Module - DIANA Machine Learning Server
 
 > **Purpose**: Flask API server for diabetes risk prediction using trained ML models
-> **Framework**: Flask | **ML**: scikit-learn, XGBoost, CatBoost, LightGBM
+> **Framework**: Flask | **ML**: scikit-learn (Logistic Regression, Random Forest)
 > **Port**: 5001 (default)
 
 ---
@@ -28,8 +28,7 @@ Ian_ML/
 │   ├── explainability.py # SHAP explanations
 │   └── ...
 ├── training/             # Training/data prep modules
-│   ├── train.py          # Train classification models
-│   ├── train_v2.py       # Defensible LOGO/nested-CV training
+│   ├── train_binary_v2_no_bp.py # Defensible LOGO/nested-CV training
 │   ├── clustering.py     # K-Means cluster training
 │   └── data_processing.py# Prepare NHANES data for training
 ├── tests/                # ML test suites
@@ -132,7 +131,7 @@ POST /predict?model_type=clinical
 | Type | Query Param | Features | Use Case |
 |------|-------------|----------|----------|
 | ADA | `?model_type=ada` | 6 features (hba1c, fbs, bmi, tg, ldl, hdl) | Diagnostic confirmation |
-| Clinical | `?model_type=clinical` | 5 features (bmi, tg, ldl, hdl, age) | Screening without lab test |
+| Clinical | `?model_type=binary_v2_no_bp` | 13 features (no HbA1c/FBS) | Screening without diagnostic biomarkers |
 
 ---
 
@@ -144,8 +143,8 @@ cd Ian_ML
 # 1. Process NHANES data
 python training/data_processing.py
 
-# 2. Train classifiers (RF, XGB, LR)
-python training/train.py
+# 2. Train classifiers (LR, RF)
+python training/train_binary_v2_no_bp.py
 
 # 3. Train K-Means clustering
 python training/clustering.py
@@ -206,4 +205,4 @@ python service/server.py
 
 ## Search Keywords
 
-`Flask` `API` `prediction` `diabetes` `machine learning` `scikit-learn` `XGBoost` `Random Forest` `K-Means` `clustering` `biomarkers` `HbA1c` `clinical` `ADA` `risk score` `SIRD` `SIDD` `MOD` `MARD` `analytics` `visualizations` `ROC` `feature importance`
+`Flask` `API` `prediction` `diabetes` `machine learning` `scikit-learn` `Logistic Regression` `Random Forest` `K-Means` `clustering` `biomarkers` `HbA1c` `clinical` `ADA` `risk score` `SIRD` `SIDD` `MOD` `MARD` `analytics` `visualizations` `ROC` `feature importance`

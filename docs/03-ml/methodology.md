@@ -74,51 +74,34 @@ For panel defense, also compute Information Gain using clinical thresholds.
 
 ## Supervised Classification
 
-### Algorithms (All 7 Models Trained)
+### Algorithms (Current Screening Pipeline)
 | Model | Parameters | Purpose |
 |-------|------------|---------|
-| Logistic Regression | C=0.1, balanced weights | Interpretable baseline |
+| Logistic Regression | C=0.1, balanced weights | Interpretable baseline, best AUC for binary screening |
 | Random Forest | n_estimators=500, max_depth=6, min_samples_leaf=15 | Captures nonlinear relationships |
-| **XGBoost** ⭐ | n_estimators=300, max_depth=4, learning_rate=0.05, min_child_weight=5-10, reg_alpha=0.5-2.0, reg_lambda=2.0-10.0, subsample=0.6-0.8, colsample_bytree=0.6-0.8 | **Best performer (AUC 0.6732)** |
 
-**Note on XGBoost Hyperparameter Tuning**: The model uses an extensive grid search with 8 parameters (3×3×3×3×3×3×2×2 = 972 combinations tested). Grid search parameters include:
-- `n_estimators`: [100, 200, 300]
-- `max_depth`: [2, 3, 4] (shallow trees for regularization)
-- `learning_rate`: [0.01, 0.03, 0.05]
-- `min_child_weight`: [5, 7, 10] (higher = more regularization)
-- `reg_alpha`: [0.5, 1.0, 2.0] (L1 regularization)
-- `reg_lambda`: [2.0, 5.0, 10.0] (L2 regularization)
-- `subsample`: [0.6, 0.8] (row sampling)
-- `colsample_bytree`: [0.6, 0.8] (column sampling)
-| CatBoost | depth=5, iterations=300, l2_leaf_reg=5 | Handles categorical features natively |
-| LightGBM | num_leaves=31, n_estimators=300, reg_lambda=5.0 | Fast gradient boosting |
-| Voting Ensemble | soft voting, weighted (LR+RF+XGB+LightGBM) | Combines base learners |
-| Stacking Ensemble | LR meta-learner on 4 base models | Learns optimal combination |
-
-### Feature Engineering (24 features)
+### Feature Engineering (13 features)
 | Category | Features |
 |----------|----------|
-| Base | bmi, triglycerides, ldl, hdl, age, systolic, diastolic |
-| Categorical | bmi_category, bp_category, age_group |
-| Lipid Ratios | tg_hdl_ratio, ldl_hdl_ratio, cholesterol_hdl_ratio, tg_hdl_ratio_sq |
-| Advanced | vldl, non_hdl, metabolic_syndrome_score, metabolic_risk |
-| Polynomial | bmi_squared, age_bmi_interaction, tg_log |
-| Lifestyle | smoking_encoded, activity_encoded, alcohol_encoded, hypertension |
+| Base | bmi, triglycerides, ldl, hdl, age |
+| Categorical | bmi_category, race_encoded |
+| Lipid Ratios | tg_hdl_ratio |
+| Advanced | metabolic_syndrome_score, waist_circumference |
+| Lifestyle | smoking_encoded, activity_encoded, alcohol_encoded |
 
 ### Class Imbalance
-- **Method**: SMOTE+Tomek (SMOTETomek)
-- **Rationale**: Combines oversampling with Tomek link removal for cleaner decision boundaries
+- **Method**: No SMOTE/Tomek in binary_v2_no_bp; prefer class weights and thresholding
+- **Rationale**: Avoid synthetic samples and preserve calibration for screening
 
 ### Data Splitting
 | Split | Portion | Purpose |
 |-------|---------|---------|
-| Training | ~85% | Model training + cross-validation |
-| Testing | ~15% | Final evaluation (held-out) |
-| Validation | Leave-One-Cycle-Out | Temporal validation across NHANES cycles |
+| Training | Nested LOGO (outer) | Temporal validation across NHANES cycles |
+| Validation | GroupKFold (inner) | Hyperparameter tuning and model selection |
 
 ### Cross-Validation
-- **Method**: 5-fold Stratified CV + Leave-One-Cycle-Out
-- **Scoring**: AUC-ROC (weighted OvR)
+- **Method**: Nested LOGO (outer) + GroupKFold (inner)
+- **Scoring**: AUC-ROC
 - **Purpose**: Hyperparameter tuning, temporal generalization
 
 ---
@@ -159,18 +142,9 @@ Clusters labeled using rank-based assignment for NHANES postmenopausal populatio
 | Model Type | AUC Target | Best Model | Test AUC | Notes |
 |------------|------------|------------|----------|-------|
 | ADA Predictor | ~1.0 | N/A | ~1.0 | HbA1c feature = circular, validates implementation |
-| **Clinical Predictor** | ≥ 0.70 | **XGBoost** | **0.6732** | Best non-circular screening model |
+| **Binary Screening** | ≥ 0.70 | **Logistic Regression** | **~0.72** | Best non-circular screening model |
 
-**All Clinical Model Results:**
-- XGBoost: **0.6732** (best) - Selected for deployment
-- CatBoost: 0.6726 (very close second)
-- Logistic Regression: 0.6683 
-- Stacking Ensemble: 0.6689
-- Voting Ensemble: 0.6632
-- Random Forest: 0.6534
-- LightGBM: 0.6452
-
-> **Note**: AUC ~0.67 is realistic and acceptable for non-circular screening (comparable to CDC tools at 0.72-0.79).
+> **Note**: AUC ~0.72 is realistic and acceptable for non‑circular screening (comparable to CDC tools at 0.72-0.79).
 
 ---
 
@@ -181,9 +155,9 @@ Clusters labeled using rank-based assignment for NHANES postmenopausal populatio
 - **Use Case**: Diagnostic confirmation
 - **Expected AUC**: ~1.0 (circular - HbA1c defines labels)
 
-### 2. Clinical Predictor (ClinicalPredictor)
-- **Features**: BMI, TG, LDL, HDL, Age (NO HbA1c/FBS)
-- **Use Case**: Screening without lab test
+### 2. Binary Screening Predictor (binary_v2_no_bp)
+- **Features**: 13-feature contract without HbA1c/FBS
+- **Use Case**: Screening without diagnostic biomarkers
 - **Expected AUC**: ≥ 0.70 (Good discrimination for screening)
 - **Rationale**: See [rationale.md](rationale.md) for non-circular defense
 
@@ -224,7 +198,7 @@ python Ian_ML/training/data_processing.py
 python scripts/impute_missing_data.py
 
 # 5. Train and Cluster
-python Ian_ML/training/train_v2.py
+python Ian_ML/training/train_binary_v2_no_bp.py
 python scripts/train/train_clusters.py
 
 # 6. Start ML server

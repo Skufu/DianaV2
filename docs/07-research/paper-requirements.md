@@ -1,4 +1,4 @@
-# STALE PAPER REQUIREMENTS - DO NOT USE. JUST FOR REFERENCE
+# PAPER REQUIREMENTS (ALIGNED TO CURRENT SYSTEM)
 
 # DIANA Paper Requirements - Complete Reference
 
@@ -32,7 +32,7 @@ A predictive **classification** model-based application that uses selected blood
 
 ## Biomarkers / Features
 
-### Blood Biomarkers (6 Required)
+### Blood Biomarkers (6 Required for labeling)
 | Biomarker | Full Name | Unit | Normal | Pre-diabetic | Diabetic |
 |-----------|-----------|------|--------|--------------|----------|
 | **FBS** | Fasting Blood Sugar | mg/dL | <100 | 100-125 | ≥126 |
@@ -42,37 +42,36 @@ A predictive **classification** model-based application that uses selected blood
 | **HDL-C** | HDL Cholesterol | mg/dL | ≥60 | 40-59 | <40 |
 | **TC** | Total Cholesterol | mg/dL | <200 | 200-239 | ≥240 |
 
-> **Note on Clinical Model**: The clinical (non-circular) model **EXCLUDES HbA1c and FBS** since these are used to define the ground truth labels. This leaves: **BMI, TG, LDL, HDL, Age** as predictive features.
+> **Note on Screening Model**: The screening model **EXCLUDES HbA1c and FBS** since these define the ground‑truth labels. Screening uses non‑circular features only and predicts **binary risk** (Normal vs At‑Risk).
 
-### Non-Blood Features (4 Required)
+### Non-Blood Features (Core)
 | Feature | Type | Description |
 |---------|------|-------------|
 | **Age** | Continuous (years) | 45-60 range |
 | **BMI** | Continuous (kg/m²) | Calculated from height/weight |
 | **Menopausal Status** | Categorical | All Postmenopausal in cohort |
-| **Family History** | Binary (Yes/No) | First-degree relative with diabetes |
+| **Race/Ethnicity** | Categorical | NHANES RIDRETH harmonized |
 
-### Lifestyle Factors (Optional - if structured in records)
+### Lifestyle Factors (Encoded)
 | Factor | Type | Description |
 |--------|------|-------------|
-| Smoking History | Binary | ≥100 cigarettes lifetime |
-| Physical Activity | Binary | Activity in past 30 days |
-| Hypertension | Binary | Diagnosed hypertension |
-| Heart Disease | Binary | Coronary heart disease, angina, MI |
+| Smoking History | Encoded | NHANES smoking status → ordinal |
+| Physical Activity | Encoded | NHANES activity indicators → ordinal |
+| Alcohol Use | Encoded | NHANES alcohol intake → ordinal |
 
 ---
 
-## Diabetes Classification (Ground Truth Labels - 3 Classes)
+## Diabetes Classification (Ground Truth Labels)
 
-**Outcome Variable Y**: Glycemic Class Label derived from **HbA1c** (primary) and **FBS** (secondary) per ADA guidelines:
+**Outcome Variable Y**: Glycemic status derived from **HbA1c** (primary) and **FBS** (secondary) per ADA guidelines:
 
 | Status | HbA1c | FBS | Label |
 |--------|-------|-----|-------|
-| **Non-Diabetic** | < 5.7% | < 100 mg/dL | 0 |
+| **Normal** | < 5.7% | < 100 mg/dL | 0 |
 | **Pre-diabetic** | 5.7 - 6.4% | 100 - 125 mg/dL | 1 |
 | **Diabetic** | ≥ 6.5% | ≥ 126 mg/dL | 2 |
 
-> **Important**: This is a **3-class classification** problem, NOT binary.
+> **Important**: Labels are **3‑class**, but the **screening model** is **binary** by collapsing Pre‑diabetic + Diabetic into **At‑Risk**.
 
 ---
 
@@ -92,33 +91,32 @@ Before model training, compute Information Gain (IG) for each feature:
 
 | Aspect | Details |
 |--------|---------|
-| **Features (Clinical Model)** | BMI, Triglycerides, LDL, HDL, Age (excludes HbA1c/FBS) |
-| **Target** | Glycemic status (**3-class**: Non-Diabetic / Pre-diabetic / Diabetic) |
-| **Algorithms** | Logistic Regression, Random Forest, XGBoost (SVM optional) |
+| **Features (Screening Model)** | 13‑feature non‑circular contract (excludes HbA1c/FBS) |
+| **Target** | Binary risk (Normal vs At‑Risk) |
+| **Algorithms** | Logistic Regression (selected) and Random Forest (comparison) |
 
 ### AUC Performance Targets
 
 | Model Type | AUC Target | Notes |
 |------------|------------|-------|
 | **ADA Model** (includes HbA1c/FBS) | ~1.0 | Validates implementation correctness |
-| **Clinical Model** (excludes HbA1c/FBS) | ≥ 0.70 | Acceptable for screening (justifiable lower due to removed key biomarkers) |
+| **Screening Model** (excludes HbA1c/FBS) | 0.70‑0.75 | Acceptable for non‑circular screening |
 | **Paper's Ideal** | ≥ 0.80 | Ideal threshold for clinical applications |
 
-> **Note**: The clinical model's AUC is expected to be lower because HbA1c and FBS (the biomarkers used to *define* diabetes) are deliberately excluded to avoid circular reasoning. An AUC of 0.67-0.75 is acceptable and comparable to CDC risk assessment tools.
+> **Note**: The screening model's AUC is expected to be lower because HbA1c and FBS (the biomarkers used to *define* diabetes) are deliberately excluded to avoid circular reasoning. An AUC of 0.67‑0.75 is acceptable and comparable to CDC risk assessment tools.
 
-### Data Splitting
-| Split | Percentage | Purpose |
-|-------|------------|---------|
-| Training Set | 70% | Model training with k-fold CV |
-| Test Set | 30% | Held-out for final evaluation |
-| Cross-Validation | 5-fold | Hyperparameter tuning within training set |
+### Validation Strategy
+| Split | Purpose |
+|-------|---------|
+| Outer CV | Leave‑One‑NHANES‑Cycle‑Out (LOGO) for generalization |
+| Inner CV | GroupKFold within training set for tuning |
+| Class Balance | `class_weight='balanced'` (no SMOTE) |
 
 ### Algorithms Required
 | Model | Library | Purpose |
 |-------|---------|---------|
 | Logistic Regression | sklearn | Interpretable baseline, probability outputs |
 | Random Forest | sklearn | Nonlinear relationships, feature importance |
-| XGBoost | xgboost | Strong performance on structured data |
 
 ### Performance Metrics
 | Metric | Description |
@@ -195,7 +193,6 @@ Before model training, compute Information Gain (IG) for each feature:
 | `scaler.joblib` | StandardScaler |
 | `logistic_regression.joblib` | LR model |
 | `random_forest.joblib` | RF model |
-| `xgboost.joblib` | XGB model |
 | `kmeans_model.joblib` | K-Means |
 | `best_model.joblib` | Copy of best |
 
@@ -241,7 +238,7 @@ Before model training, compute Information Gain (IG) for each feature:
 ### Software Stack
 | Component | Technology |
 |-----------|------------|
-| ML Framework | Python 3.10+, scikit-learn, XGBoost |
+| ML Framework | Python 3.10+, scikit-learn |
 | Backend | Go 1.21+, PostgreSQL |
 | Frontend | React, Vite |
 | ML Server | Flask (Python) |

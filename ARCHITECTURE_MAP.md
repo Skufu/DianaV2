@@ -497,13 +497,13 @@ flowchart LR
     end
 
     subgraph Training["🎓 Training"]
-        TrainV2["train_v2.py<br/>Clinical Model"]
+        TrainV2["train_binary_v2_no_bp.py<br/>Binary Screening Model"]
         Clustering["clustering.py<br/>K-Means K=4"]
-        Binary["train_binary.py<br/>Binary Classifier"]
+        Binary["train_binary_v2_no_bp.py<br/>Binary Classifier"]
     end
 
     subgraph Models["🤖 Model Artifacts"]
-        Clinical["Clinical Model<br/>XGBoost/CatBoost"]
+        Clinical["Clinical Model<br/>Logistic Regression"]
         Cluster["Clustering Model<br/>K-Means"]
         Scaler["Feature Scaler<br/>StandardScaler"]
         Features["Feature List<br/>JSON"]

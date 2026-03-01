@@ -12,7 +12,7 @@ Development utilities, data pipeline, ML training orchestration, and thesis arti
 |------|----------|-------|
 | Data pipeline | `data/*.py` | NHANES download, merge, imputation |
 | Dev setup | `dev/setup.sh`, `dev/start-all.sh` | Local orchestration |
-| ML training | `train/train_clusters.py` | K-Means, CatBoost |
+| ML training | `train/train_clusters.py` | K-Means (Ahlqvist K=4) |
 | Thesis outputs | `thesis/generate_thesis_outputs.py` | All-in-one artifact generator |
 | Validation | `validation/*.py` | Input validation scripts |
 

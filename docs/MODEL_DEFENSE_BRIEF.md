@@ -31,7 +31,7 @@ We deliberately traded **Efficiency** (Accuracy/Precision) for **Effectiveness**
 ---
 
 ## 3. The "Defensibility" Features
-Your code (`Ian_ML/training/train_optimized.py`) automatically generates three pieces of evidence to prove this wasn't an accident:
+Your code (`Ian_ML/training/train_binary_v2_no_bp.py`) automatically generates three pieces of evidence to prove this wasn't an accident:
 
 ### A. Threshold Optimization
 *   **Feature:** `optimize_at_risk_thresholds`
@@ -56,7 +56,7 @@ Your code (`Ian_ML/training/train_optimized.py`) automatically generates three p
 ## 5. The "Failed" Optimization Experiment (A Success Story)
 
 **Context:**
-We attempted to force higher performance using advanced techniques (SMOTE for synthetic data + Randomized Hyperparameter Search) in `train_optimized.py`.
+We attempted to force higher performance using advanced techniques (synthetic resampling + randomized search) in earlier experiments (now deprecated).
 
 **The Results:**
 | Metric | Baseline (Selected) | Optimized (Rejected) |
@@ -97,6 +97,6 @@ Who does the model miss? We analyzed the ~29% of False Negatives.
 *   **Defense:** "The model effectively learns the 'Metabolic Syndrome' phenotype (Obese + Dyslipidemic). It struggles with non-obese diabetics because the dataset lacks insulin resistance markers (like HOMA-IR). This is a **data limitation**, not a model failure."
 
 ## 7. Final Verdict
-We have explored **Algorithms (SMOTE)**, **Feature Engineering (Polynomials)**, and **Feature Selection (RFE)**. All roads lead back to the Baseline.
+We explored **resampling**, **feature engineering (polynomials)**, and **feature selection (RFE)**. All roads lead back to the baseline.
 *   **Optimal State:** The current model represents the mathematical ceiling of this specific NHANES subset.
 *   **Recommendation:** Deploy V2 Baseline. Use the "Recall/Precision Trade-off Plot" (`visualizations/tradeoff_curves.png`) to let stakeholders choose their own risk tolerance.

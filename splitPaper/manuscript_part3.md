@@ -341,14 +341,17 @@ the entropy and Information Gain procedure, ensuring that only the most informat
 and related variables are used as inputs. The cleaned dataset is evaluated using a nested
 Leave‑One‑Group‑Out (LOGO) strategy that holds out NHANES cycles for temporal
 generalization, with GroupKFold used for inner cross‑validation and hyperparameter tuning.
+LOGO‑CV is chosen to test temporal generalization by holding out entire survey cycles, which
+reduces leakage across adjacent years and better simulates deployment on future data.
 
 Candidate algorithms include Logistic Regression and Random Forest only. Logistic Regression is
 included for its interpretability and clinically meaningful probability outputs, while Random Forest
-captures nonlinear relationships and interactions among biomarkers. Each algorithm is trained on
-the IG‑selected attributes and evaluated using accuracy, precision, recall (sensitivity), F1‑score,
-and AUC‑ROC. These metrics are used to select the final classifier for integration into the DIANA
-web application based on predictive performance, clinical interpretability, and computational
-efficiency.
+captures nonlinear relationships and interactions among biomarkers. This reduced set reflects a
+deliberate trade‑off: with a modest sample size and a screening‑first goal, simpler models are less
+likely to overfit and are easier to justify clinically. Each algorithm is trained on the IG‑selected
+attributes and evaluated using accuracy, precision, recall (sensitivity), F1‑score, and AUC‑ROC.
+These metrics are used to select the final classifier for integration into the DIANA web application
+based on predictive performance, clinical interpretability, and computational efficiency.
 
 **Clustering Analysis.** In addition to supervised classification, the study will apply
 clustering to group menopausal women into risk‑related profiles based on the same feature set
@@ -417,7 +420,9 @@ have serious consequences. The F1-Score, which balances precision and recall, wi
 single metric for comparing models. Additionally, the Area Under the ROC Curve (AUC-ROC)
 will be calculated to evaluate the model's ability to discriminate between diabetic/prediabetic and
 non-diabetic cases across varying probability thresholds. A model with an AUC above 0.80 will
-be considered acceptable for clinical applications.
+be considered acceptable for clinical applications. For screening contexts without diagnostic
+biomarkers, lower AUC values (around 0.70) remain clinically useful when sensitivity is prioritized,
+since the goal is to flag at‑risk individuals for confirmatory testing rather than to replace diagnosis.
 
 These probability scores, ranging from 0 to 1 and displayed as 0–100% in the application,
 represent the model’s estimated confidence that a given menopausal patient currently has

@@ -29,7 +29,7 @@
 | Detail view | Full profile on click/hover |
 | Historical readings | Previous biomarker values |
 | Trend overlay | Line graph comparing readings over time |
-| Risk assessment | Probability (0-100%) + category (Low/Moderate/High) |
+| Risk assessment | Probability (0-100%) + binary label (Normal/At‑Risk) |
 
 ### 3. Analytics Tab
 | Feature | Description |
@@ -85,7 +85,7 @@
 1. **Graph-based visualization** - Show trends over time
 2. **One-picture summary** - HbA1c, cholesterol, creatinine on single view
 3. **Simple login** - Quick access to patient dashboard
-4. **Risk categorization** - Clear Low/Moderate/High tags
+4. **Risk categorization** - Clear Normal/At‑Risk tags (3‑class optional for clinicians)
 5. **Trend tracking** - Historical comparison (e.g., 1st year vs now)
 
 ---
