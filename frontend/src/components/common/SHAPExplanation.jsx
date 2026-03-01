@@ -2,9 +2,10 @@
  * SHAP Explanation Component
  * Displays SHAP values for model interpretability
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { Brain, ChevronDown, ChevronUp, AlertCircle, Info } from 'lucide-react';
+import { mlFetchJson } from '../../api';
 
 const FEATURE_LABELS = {
     bmi: 'BMI',
@@ -19,7 +20,6 @@ const FEATURE_LABELS = {
 const SHAPExplanation = ({
     patientData,
     modelType = 'clinical',
-    mlBase = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`,
     showTitle = true,
     compact = false
 }) => {
@@ -28,6 +28,42 @@ const SHAPExplanation = ({
     const [error, setError] = useState(null);
     const [expanded, setExpanded] = useState(!compact);
     const abortControllerRef = useRef(null);
+
+    const fetchExplanation = useCallback(async () => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        
+        setLoading(true);
+        setError(null);
+
+        try {
+            const data = await mlFetchJson(
+                `/predict/explain?model_type=${modelType}&format=full&include_plot=waterfall`,
+                {
+                    method: 'POST',
+                    body: patientData,
+                    signal: abortControllerRef.current.signal,
+                }
+            );
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            const predictionValue = data?.probability ?? data?.at_risk_probability ?? data?.prediction;
+            const explanationPayload = data.explanation || data;
+            setExplanation({
+                ...explanationPayload,
+                prediction: explanationPayload?.prediction ?? predictionValue,
+            });
+        } catch (err) {
+            if (err.name === 'AbortError') return;
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [patientData, modelType]);
 
     useEffect(() => {
         if (patientData && Object.keys(patientData).length > 0) {
@@ -39,56 +75,36 @@ const SHAPExplanation = ({
                 abortControllerRef.current.abort();
             }
         };
-    }, [patientData, modelType]);
-
-    const fetchExplanation = async () => {
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        abortControllerRef.current = new AbortController();
-        
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await fetch(
-                `${mlBase}/explain?model_type=${modelType}&include_plot=waterfall`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(patientData),
-                    signal: abortControllerRef.current.signal
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`Failed to get explanation: ${response.statusText}`);
-            }
-
-            const data = await response.json();
-            if (data.error) {
-                throw new Error(data.error);
-            }
-
-            setExplanation(data);
-        } catch (err) {
-            if (err.name === 'AbortError') return;
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [fetchExplanation, patientData]);
 
     // Prepare chart data
     const getChartData = () => {
         if (!explanation?.shap_values) return [];
 
+        const isObjectShape = Array.isArray(explanation.shap_values)
+            && explanation.shap_values.length > 0
+            && typeof explanation.shap_values[0] === 'object';
+
+        if (isObjectShape) {
+            return explanation.shap_values
+                .map(sv => ({
+                    feature: FEATURE_LABELS[sv.feature] || sv.feature,
+                    value: sv.shap_value,
+                    featureValue: sv.feature_value,
+                    absValue: Math.abs(sv.shap_value),
+                }))
+                .sort((a, b) => b.absValue - a.absValue);
+        }
+
+        const featureNames = explanation.feature_names || [];
+        const featureValues = explanation.feature_values || [];
+
         return explanation.shap_values
-            .map(sv => ({
-                feature: FEATURE_LABELS[sv.feature] || sv.feature,
-                value: sv.shap_value,
-                featureValue: sv.feature_value,
-                absValue: Math.abs(sv.shap_value)
+            .map((value, index) => ({
+                feature: FEATURE_LABELS[featureNames[index]] || featureNames[index] || `Feature ${index + 1}`,
+                value,
+                featureValue: featureValues[index],
+                absValue: Math.abs(value),
             }))
             .sort((a, b) => b.absValue - a.absValue);
     };
@@ -126,6 +142,7 @@ const SHAPExplanation = ({
             {/* Header */}
             <button
                 onClick={() => setExpanded(!expanded)}
+                type="button"
                 className="w-full flex items-center justify-between p-4 hover:bg-gray-700/30 transition-colors"
             >
                 <div className="flex items-center gap-3">

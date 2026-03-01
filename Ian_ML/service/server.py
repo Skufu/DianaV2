@@ -28,6 +28,7 @@ Environment:
     ML_PORT: Port to run on (default: 5000)
 """
 
+import importlib
 import os
 import sys
 import json
@@ -38,8 +39,14 @@ import time
 import hmac
 from collections import defaultdict
 import numpy as np
-from flask import Flask, request, jsonify, g
-from flask_cors import CORS
+flask_module = importlib.import_module("flask")
+Flask = flask_module.Flask
+request = flask_module.request
+jsonify = flask_module.jsonify
+g = flask_module.g
+
+cors_module = importlib.import_module("flask_cors")
+CORS = cors_module.CORS
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -61,28 +68,35 @@ API_KEY = os.environ.get('ML_API_KEY')  # API key for authentication (required i
 
 # Import new ML infrastructure modules
 try:
-    from Ian_ML.service.explainability import SHAPExplainer, format_for_clinician
-    SHAP_AVAILABLE = True
+    from Ian_ML.service.explainability import SHAPExplainer, format_for_clinician, generate_waterfall_plot
+    shap_module_available = True
 except ImportError:
-    SHAP_AVAILABLE = False
+    SHAPExplainer = None
+    format_for_clinician = None
+    generate_waterfall_plot = None
+    shap_module_available = False
 
 try:
     from Ian_ML.service.ab_testing import get_ab_manager, ABTestConfig
-    AB_TESTING_AVAILABLE = True
+    ab_testing_available = True
 except ImportError:
-    AB_TESTING_AVAILABLE = False
+    get_ab_manager = None
+    ABTestConfig = None
+    ab_testing_available = False
 
 try:
     from Ian_ML.service.drift_detection import get_drift_monitor
-    DRIFT_AVAILABLE = True
+    drift_available = True
 except ImportError:
-    DRIFT_AVAILABLE = False
+    get_drift_monitor = None
+    drift_available = False
 
 try:
     from Ian_ML.service.mlflow_config import get_mlflow_manager
-    MLFLOW_AVAILABLE = True
+    mlflow_available = True
 except ImportError:
-    MLFLOW_AVAILABLE = False
+    get_mlflow_manager = None
+    mlflow_available = False
 
 logger = logging.getLogger(__name__)
 
@@ -340,13 +354,14 @@ def predict_explain():
     """
     global shap_explainer
     
-    if not SHAP_AVAILABLE:
+    if not shap_module_available or SHAPExplainer is None:
         return jsonify({"error": "SHAP not available. Install shap package."}), 503
     
     try:
         data = request.get_json()
         model_type = request.args.get('model_type', 'clinical')
         output_format = request.args.get('format', 'full')
+        include_plot = request.args.get('include_plot', 'false').lower() == 'waterfall'
         
         if not data:
             return jsonify({"error": "No data provided"}), 400
@@ -409,13 +424,24 @@ def predict_explain():
                 shap_explainer = SHAPExplainer(ada_predictor.classifier, model_type="tree")
 
             features = np.array([[patient_data[f] for f in REQUIRED_FEATURES]], dtype=float)
-            features_scaled = ada_predictor.scaler.transform(features)
-            explanation = shap_explainer.explain(features_scaled[0], REQUIRED_FEATURES)
+            if ada_predictor.scaler is not None:
+                features_scaled = ada_predictor.scaler.transform(features)
+                explanation = shap_explainer.explain(features_scaled[0], REQUIRED_FEATURES)
+            else:
+                explanation = shap_explainer.explain(features[0], REQUIRED_FEATURES)
         
         # Format response
         if output_format == 'clinician':
+            if format_for_clinician is None:
+                return jsonify({"error": "SHAP formatter not available"}), 503
             result['explanation'] = format_for_clinician(explanation)
         else:
+            if include_plot:
+                if generate_waterfall_plot is None:
+                    return jsonify({"error": "SHAP plotter not available"}), 503
+                waterfall_plot = generate_waterfall_plot(explanation)
+                if waterfall_plot:
+                    explanation['waterfall_plot'] = waterfall_plot
             result['explanation'] = explanation
         
         result['model_type'] = model_type
@@ -435,7 +461,7 @@ def predict_explain():
 @rate_limit
 def ab_tests():
     """List or create A/B tests."""
-    if not AB_TESTING_AVAILABLE:
+    if not ab_testing_available or get_ab_manager is None:
         return jsonify({"error": "A/B testing not available"}), 503
     
     manager = get_ab_manager()
@@ -478,7 +504,7 @@ def ab_tests():
 @rate_limit
 def ab_test_detail(test_id):
     """Get, update, or delete a specific A/B test."""
-    if not AB_TESTING_AVAILABLE:
+    if not ab_testing_available or get_ab_manager is None:
         return jsonify({"error": "A/B testing not available"}), 503
     
     manager = get_ab_manager()
@@ -517,7 +543,7 @@ def ab_test_detail(test_id):
 @rate_limit
 def ab_test_results(test_id):
     """Get comparison results for an A/B test."""
-    if not AB_TESTING_AVAILABLE:
+    if not ab_testing_available or get_ab_manager is None:
         return jsonify({"error": "A/B testing not available"}), 503
     
     manager = get_ab_manager()
@@ -538,7 +564,7 @@ def ab_test_results(test_id):
 @rate_limit
 def drift_status():
     """Get current drift monitoring status."""
-    if not DRIFT_AVAILABLE:
+    if not drift_available or get_drift_monitor is None:
         return jsonify({"error": "Drift detection not available"}), 503
     
     monitor = get_drift_monitor()
@@ -550,7 +576,7 @@ def drift_status():
 @rate_limit
 def check_drift():
     """Check for drift in provided data."""
-    if not DRIFT_AVAILABLE:
+    if not drift_available or get_drift_monitor is None:
         return jsonify({"error": "Drift detection not available"}), 503
     
     try:
@@ -583,7 +609,7 @@ def check_drift():
 @rate_limit
 def set_drift_reference():
     """Set reference data for drift detection."""
-    if not DRIFT_AVAILABLE:
+    if not drift_available or get_drift_monitor is None:
         return jsonify({"error": "Drift detection not available"}), 503
     
     try:
@@ -612,7 +638,7 @@ def set_drift_reference():
 @rate_limit
 def get_alerts():
     """Get recent drift alerts."""
-    if not DRIFT_AVAILABLE:
+    if not drift_available or get_drift_monitor is None:
         return jsonify({"error": "Drift detection not available"}), 503
     
     monitor = get_drift_monitor()
@@ -628,7 +654,7 @@ def get_alerts():
 @rate_limit
 def acknowledge_alert(timestamp):
     """Acknowledge a drift alert."""
-    if not DRIFT_AVAILABLE:
+    if not drift_available or get_drift_monitor is None:
         return jsonify({"error": "Drift detection not available"}), 503
     
     monitor = get_drift_monitor()
@@ -648,7 +674,7 @@ def acknowledge_alert(timestamp):
 @rate_limit
 def list_models():
     """List all model versions from MLflow registry."""
-    if not MLFLOW_AVAILABLE:
+    if not mlflow_available or get_mlflow_manager is None:
         return jsonify({"error": "MLflow not available"}), 503
     
     manager = get_mlflow_manager()
@@ -670,7 +696,7 @@ def list_models():
 @rate_limit
 def list_model_runs(name):
     """List training runs for a model."""
-    if not MLFLOW_AVAILABLE:
+    if not mlflow_available or get_mlflow_manager is None:
         return jsonify({"error": "MLflow not available"}), 503
     
     manager = get_mlflow_manager()
@@ -689,7 +715,7 @@ def list_model_runs(name):
 @rate_limit
 def promote_model(name, version):
     """Promote a model version to production."""
-    if not MLFLOW_AVAILABLE:
+    if not mlflow_available or get_mlflow_manager is None:
         return jsonify({"error": "MLflow not available"}), 503
     
     manager = get_mlflow_manager()
@@ -712,7 +738,7 @@ def promote_model(name, version):
 @rate_limit
 def list_experiments():
     """List all MLflow experiments."""
-    if not MLFLOW_AVAILABLE:
+    if not mlflow_available or get_mlflow_manager is None:
         return jsonify({"error": "MLflow not available"}), 503
     
     manager = get_mlflow_manager()
@@ -956,30 +982,31 @@ def get_information_gain():
             else:
                 ig_scores = coefs
             
+            feature_ranking = [
+                {"feature": features[i], "ig": float(ig_scores[i])}
+                for i in range(len(features)) if i < len(coefs)
+            ]
+            feature_ranking.sort(key=lambda x: x["ig"], reverse=True)
             result = {
-                "feature_ranking": [
-                    {"feature": features[i], "ig": float(ig_scores[i])}
-                    for i in range(len(features)) if i < len(coefs)
-                ],
+                "feature_ranking": feature_ranking,
                 "method": "coefficient_magnitude",
                 "model_type": clin.model_type or "clinical"
             }
-            # Sort by IG descending
-            result["feature_ranking"].sort(key=lambda x: x["ig"], reverse=True)
             return jsonify(result)
         elif clin is not None and hasattr(clin.classifier, 'feature_importances_'):
             # For tree-based models, use feature_importances_
             importances = clin.classifier.feature_importances_
             features = clin.features
+            feature_ranking = [
+                {"feature": features[i], "ig": float(importances[i])}
+                for i in range(len(features)) if i < len(importances)
+            ]
+            feature_ranking.sort(key=lambda x: x["ig"], reverse=True)
             result = {
-                "feature_ranking": [
-                    {"feature": features[i], "ig": float(importances[i])}
-                    for i in range(len(features)) if i < len(importances)
-                ],
+                "feature_ranking": feature_ranking,
                 "method": "feature_importance",
                 "model_type": clin.model_type or "clinical"
             }
-            result["feature_ranking"].sort(key=lambda x: x["ig"], reverse=True)
             return jsonify(result)
         return jsonify({"error": "Information gain results not found"}), 404
     except Exception as e:
@@ -1009,7 +1036,7 @@ def get_clusters():
 @rate_limit
 def get_visualization(name):
     """Serve visualization images."""
-    from flask import send_file
+    send_file = flask_module.send_file
     
     allowed = ['confusion_matrix', 'roc_curve', 'information_gain_chart', 
                'cluster_heatmap', 'cluster_scatter', 'cluster_distribution', 

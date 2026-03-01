@@ -4,6 +4,10 @@ This document specifies the HTTP contract between DianaV2 and the external ML in
 
 ## Endpoint & Transport
 - Method/URL: `POST /predict` with optional query parameter `?model_type=clinical` (default) or `?model_type=ada`
+- Explainability: `POST /predict/explain` with optional query params:
+  - `model_type`: `clinical` (default) or `ada`
+  - `format`: `full` (default) or `clinician`
+  - `include_plot`: `waterfall` to include base64 PNG
 - Timeout: `MODEL_TIMEOUT_MS` (ms) applies to the entire HTTP request.
 - Auth: API key authentication via `X-API-Key` header (required in production when `ML_API_KEY` is set; skipped in development mode)
 
@@ -58,6 +62,45 @@ Example request:
   "triglycerides": 180,
   "ldl": 132,
   "hdl": 48
+}
+```
+
+## Explainability Response (Predict + SHAP)
+
+### `POST /predict/explain`
+
+Returns the normal prediction response with an `explanation` object.
+
+```json
+{
+  "success": true,
+  "model_type": "clinical",
+  "predicted_status": "At-Risk",
+  "probability": 0.72,
+  "risk_score": 72,
+  "explanation": {
+    "base_value": 0.31,
+    "shap_values": [0.04, 0.12, -0.02, 0.08, 0.19],
+    "feature_values": [29.4, 180, 132, 48, 55],
+    "feature_names": ["bmi", "triglycerides", "ldl", "hdl", "age"],
+    "contributions": [
+      {"feature": "age", "value": 55, "shap_value": 0.19, "impact": 0.19, "direction": "increases risk"}
+    ],
+    "explainer_type": "tree",
+    "waterfall_plot": "<base64-encoded-png>"
+  }
+}
+```
+
+If `format=clinician`, the `explanation` field contains a simplified summary:
+
+```json
+{
+  "summary": "Factors increasing risk: age, triglycerides.",
+  "factors": [
+    {"name": "Age", "value": "55.0", "impact": "19%", "direction": "↑", "color": "red"}
+  ],
+  "available": true
 }
 ```
 
