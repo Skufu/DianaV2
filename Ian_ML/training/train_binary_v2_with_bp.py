@@ -57,6 +57,7 @@ NHANES_PROCESSED_ROOT = paths_module.NHANES_PROCESSED_ROOT
 from Ian_ML.common.feature_constants import (
     CLUSTER_FEATURES,
     KMEANS_K,
+    CLINICAL_FEATURES_WITH_BP,
 )
 
 
@@ -72,17 +73,7 @@ N_JOBS = int(os.environ.get("ML_N_JOBS", "1"))
 BOOTSTRAP_SAMPLES = int(os.environ.get("ML_BOOTSTRAP_SAMPLES", "1000"))
 
 # 16 features (with BP - DIFFERENCE from binary_v2_no_bp)
-FEATURES = [
-    # Original metabolic biomarkers (5)
-    "bmi", "triglycerides", "ldl", "hdl", "age",
-    # BP features (2) - THE ONLY DIFFERENCE
-    "systolic", "diastolic",
-    # Derived features (6)
-    "bmi_category", "tg_hdl_ratio", "smoking_encoded",
-    "activity_encoded", "alcohol_encoded", "metabolic_syndrome_score",
-    # Enrichment features (3)
-    "waist_circumference", "family_history_diabetes", "race_encoded",
-]
+FEATURES = CLINICAL_FEATURES_WITH_BP
 
 # Ahlqvist et al. T2DM Subtype definitions
 AHLQVIST_SUBTYPES = {
@@ -153,11 +144,6 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
         "high_waist": df["waist_circumference"] >= 80 if "waist_circumference" in df.columns else False,
     })
     df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
-
-    if "race_ethnicity" in df.columns:
-        df["race_encoded"] = df["race_ethnicity"].fillna(0).astype(float)
-    else:
-        df["race_encoded"] = 0.0
 
     if "family_history_diabetes" in df.columns:
         df["family_history_diabetes"] = df["family_history_diabetes"].fillna(0).astype(float)

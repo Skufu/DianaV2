@@ -43,6 +43,50 @@ except Exception:
 logger = logging.getLogger(__name__)
 
 
+def _extract_tree_model(model: Any) -> Any:
+    """Recursively unwrap wrapper models to find a tree-based estimator.
+
+    Handles: CalibratedClassifierCV, Pipeline, and nested combinations.
+    Returns the inner estimator that TreeExplainer can use, or None.
+    """
+    working_model: Any = model
+
+    # CalibratedClassifierCV wraps an estimator
+    try:
+        from sklearn.calibration import CalibratedClassifierCV
+        if isinstance(working_model, CalibratedClassifierCV):
+            inner = getattr(working_model, "estimator", None)
+            if inner is not None:
+                return _extract_tree_model(inner)
+    except ImportError:
+        pass
+
+    # Pipeline: take the last step
+    named_steps = getattr(working_model, "named_steps", None)
+    if isinstance(named_steps, dict) and named_steps:
+        steps = list(named_steps.values())
+        return _extract_tree_model(steps[-1])
+
+    steps_attr = getattr(working_model, "steps", None)
+    if isinstance(steps_attr, list) and steps_attr:
+        return _extract_tree_model(steps_attr[-1][1])
+
+    # If the model itself looks like a tree-based estimator, return it
+    tree_types = (
+        "RandomForestClassifier", "RandomForestRegressor",
+        "GradientBoostingClassifier", "GradientBoostingRegressor",
+        "XGBClassifier", "XGBRegressor",
+        "LGBMClassifier", "LGBMRegressor",
+        "DecisionTreeClassifier", "DecisionTreeRegressor",
+        "ExtraTreesClassifier", "ExtraTreesRegressor",
+    )
+    class_name = type(working_model).__name__
+    if class_name in tree_types:
+        return model
+
+    return None
+
+
 class SHAPExplainer:
     """
     SHAP-based model explainer for DIANA predictions.
@@ -87,8 +131,36 @@ class SHAPExplainer:
         
         try:
             if self.model_type == "tree":
-                # For tree-based models (RF, XGBoost, GradientBoosting)
-                self._explainer = shap_module.TreeExplainer(self.model)
+                # Try to extract raw tree model from wrappers (CalibratedClassifierCV, Pipeline)
+                tree_model = _extract_tree_model(self.model)
+                if tree_model is not None:
+                    try:
+                        self._explainer = shap_module.TreeExplainer(tree_model)
+                        logger.info("SHAP TreeExplainer initialized (extracted %s from wrapper)",
+                                    type(tree_model).__name__)
+                        return
+                    except Exception as inner_e:
+                        logger.warning("TreeExplainer failed on extracted model: %s", inner_e)
+                else:
+                    # Try directly (model might already be a supported tree type)
+                    try:
+                        self._explainer = shap_module.TreeExplainer(self.model)
+                        logger.info("SHAP TreeExplainer initialized directly")
+                        return
+                    except Exception as inner_e:
+                        logger.warning("TreeExplainer failed on model: %s", inner_e)
+
+                # Fallback: use KernelExplainer with predict_proba on the full model
+                logger.info("Falling back to KernelExplainer for tree model type")
+                predict_fn = (
+                    self.model.predict_proba if hasattr(self.model, 'predict_proba')
+                    else self.model.predict
+                )
+                if self.background_data is not None:
+                    self._explainer = shap_module.KernelExplainer(predict_fn, self.background_data)
+                else:
+                    logger.warning("No background data for KernelExplainer fallback; explainer unavailable")
+                    return
             elif self.model_type == "linear":
                 # For linear models (LogisticRegression, LinearSVC)
                 self._explainer = shap_module.LinearExplainer(
@@ -118,7 +190,8 @@ class SHAPExplainer:
         self,
         features: np.ndarray,
         feature_names: List[str],
-        class_index: Optional[int] = None
+        class_index: Optional[int] = None,
+        feature_values_override: Optional[np.ndarray] = None
     ) -> dict[str, Any]:
         """
         Generate SHAP explanation for a prediction.
@@ -153,22 +226,42 @@ class SHAPExplainer:
             if isinstance(shap_values, list):
                 # For multi-class, use the specified class or the one with highest probability
                 if class_index is not None:
-                    shap_values = shap_values[class_index]
+                    shap_values = np.array(shap_values[class_index])
                 else:
-                    # Default to the last class (often "positive" class like Diabetic)
-                    shap_values = shap_values[-1]
+                    # Default to the last class (often "positive" class like Diabetic / At-Risk)
+                    shap_values = np.array(shap_values[-1])
+            else:
+                shap_values = np.array(shap_values)
             
             # Get base value
             base_value = self._explainer.expected_value
             if isinstance(base_value, (list, np.ndarray)):
-                base_value = base_value[-1] if class_index is None else base_value[class_index]
+                idx = class_index if class_index is not None else -1
+                base_value = float(np.array(base_value).flat[idx])
+            else:
+                base_value = float(base_value)
 
             if base_value is None:
                 return self._empty_explanation(feature_names)
             
-            # Get SHAP values for first instance
-            instance_shap = shap_values[0] if getattr(shap_values, "ndim", 1) > 1 else shap_values
-            instance_features = features[0]
+            # Get SHAP values for first instance — ensure 1D
+            if shap_values.ndim > 1:
+                instance_shap = shap_values[0]
+            else:
+                instance_shap = shap_values
+            # If still multi-dimensional (e.g. multi-class per-sample), take last class
+            if instance_shap.ndim > 1:
+                instance_shap = instance_shap[:, -1]
+            instance_shap = np.asarray(instance_shap, dtype=float).ravel()
+            
+            instance_features = np.asarray(features[0], dtype=float).ravel()
+            if feature_values_override is not None:
+                try:
+                    override_values = np.asarray(feature_values_override, dtype=float).ravel()
+                    if override_values.shape[0] == instance_features.shape[0]:
+                        instance_features = override_values
+                except Exception:
+                    logger.warning("Failed to apply feature_values_override; using model-space values")
             
             # Build contributions list
             contributions = self._build_contributions(
@@ -179,15 +272,15 @@ class SHAPExplainer:
             
             return {
                 "base_value": float(base_value),
-                "shap_values": np.asarray(instance_shap, dtype=float).tolist(),
-                "feature_values": np.asarray(instance_features, dtype=float).tolist(),
+                "shap_values": instance_shap.tolist(),
+                "feature_values": instance_features.tolist(),
                 "feature_names": feature_names,
                 "contributions": contributions,
                 "explainer_type": self.model_type
             }
             
         except Exception as e:
-            logger.error(f"SHAP explanation failed: {e}")
+            logger.error(f"SHAP explanation failed: {e}", exc_info=True)
             return self._empty_explanation(feature_names)
     
     def _build_contributions(
@@ -383,7 +476,18 @@ def _friendly_name(feature: str) -> str:
         "fbs": "Fasting Blood Sugar",
         "smoking_status": "Smoking Status",
         "physical_activity": "Physical Activity",
-        "alcohol_use": "Alcohol Use"
+        "alcohol_use": "Alcohol Use",
+        "smoking_encoded": "Smoking Status",
+        "activity_encoded": "Activity Level",
+        "alcohol_encoded": "Alcohol Use",
+        "bmi_category": "BMI Category",
+        "tg_hdl_ratio": "TG/HDL Ratio",
+        "metabolic_syndrome_score": "Metabolic Score",
+        "waist_circumference": "Waist Circumference",
+        "family_history_diabetes": "Family History",
+        "systolic": "Systolic Blood Pressure",
+        "diastolic": "Diastolic Blood Pressure",
+        "crp": "C-Reactive Protein (CRP)",
     }
     return name_map.get(feature.lower(), feature.title())
 

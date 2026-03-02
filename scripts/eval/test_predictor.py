@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
-"""Test the updated ClinicalPredictor with 13 features"""
+"""Test the updated ClinicalPredictor with 12 features."""
 import sys
 sys.path.insert(0, '.')
 from Ian_ML.service.predict import ClinicalPredictor, CLINICAL_FEATURES
 
-print('Testing ClinicalPredictor with updated 13 features...')
+print('Testing ClinicalPredictor with updated 12 features...')
 print(f'Total features used: {len(CLINICAL_FEATURES)}')
 print(f'Features: {CLINICAL_FEATURES}')
 
 # Test data - only base features needed
-test_patient = {
+test_patient: dict[str, float] = {
     'bmi': 29.4,
     'triglycerides': 180,
     'ldl': 132,
     'hdl': 48,
     'age': 55,
-    'systolic': 130,
-    'diastolic': 85,
-    'smoking_status': 'Never',
-    'physical_activity': 'Moderate',
-    'alcohol_use': 'Light'
+    'waist_circumference': 86,
+    'smoking_status': 0,
+    'physical_activity': 1,
+    'alcohol_use': 1
 }
 
 try:
@@ -36,7 +35,7 @@ try:
         print(f"\n✗ Prediction failed: {result.get('error')}")
 except FileNotFoundError as e:
     print(f'\n⚠ Model files not found (need to train first): {e}')
-    print('   Run: python Ian_ML/training/train.py')
+    print('   Run: python Ian_ML/training/train_binary_v2_no_bp.py')
 except Exception as e:
     print(f'\n✗ Error: {e}')
     import traceback

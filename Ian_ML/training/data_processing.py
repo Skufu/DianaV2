@@ -320,7 +320,7 @@ def main():
         'total_cholesterol', 'ldl', 'hdl', 'triglycerides',
         'systolic', 'diastolic',
         'waist_circumference', 'fasting_insulin', 'crp',       # Enrichment biomarkers
-        'family_history_diabetes', 'race_ethnicity',            # Enrichment categorical
+        'family_history_diabetes',            # Enrichment categorical
         'smoking_status', 'physical_activity', 'alcohol_use',   # Lifestyle features
         'cycle',
         'diabetes_status', 'diabetes_label', 'menopausal_status',

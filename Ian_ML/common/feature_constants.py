@@ -42,31 +42,64 @@ CLUSTER_FEATURES: List[str] = [
 CLUSTER_FEATURE_COUNT: int = len(CLUSTER_FEATURES)
 
 # =============================================================================
-# CLINICAL FEATURES - Binary/Classification Model (Non-Circular)
+# CLINICAL FEATURES - Binary/Classification Models (Non-Circular)
 # =============================================================================
-# 13 features for the clinical classification model
-# Includes base biomarkers + derived features + enrichment features
-# Excludes HbA1c/FBS to avoid circular reasoning with diabetes diagnosis
-CLINICAL_FEATURES: List[str] = [
-    # Original metabolic biomarkers (5)
+CLINICAL_FEATURES_NO_BP: List[str] = [
     'bmi',
     'triglycerides',
     'ldl',
     'hdl',
     'age',
-    # Derived features (6)
     'bmi_category',
     'tg_hdl_ratio',
     'smoking_encoded',
     'activity_encoded',
     'alcohol_encoded',
     'metabolic_syndrome_score',
-    # Enrichment features (2)
     'waist_circumference',
-    'race_encoded',
 ]
 
+CLINICAL_FEATURES_WITH_BP: List[str] = [
+    'bmi',
+    'triglycerides',
+    'ldl',
+    'hdl',
+    'age',
+    'systolic',
+    'diastolic',
+    'bmi_category',
+    'tg_hdl_ratio',
+    'smoking_encoded',
+    'activity_encoded',
+    'alcohol_encoded',
+    'metabolic_syndrome_score',
+    'waist_circumference',
+    'family_history_diabetes',
+]
+
+CLINICAL_FEATURES_WITH_BP_NO_FAMILY: List[str] = [
+    'bmi',
+    'triglycerides',
+    'ldl',
+    'hdl',
+    'age',
+    'systolic',
+    'diastolic',
+    'bmi_category',
+    'tg_hdl_ratio',
+    'smoking_encoded',
+    'activity_encoded',
+    'alcohol_encoded',
+    'metabolic_syndrome_score',
+    'waist_circumference',
+]
+
+CLINICAL_FEATURES: List[str] = CLINICAL_FEATURES_NO_BP
+
 CLINICAL_FEATURE_COUNT: int = len(CLINICAL_FEATURES)
+CLINICAL_FEATURE_COUNT_NO_BP: int = len(CLINICAL_FEATURES_NO_BP)
+CLINICAL_FEATURE_COUNT_WITH_BP: int = len(CLINICAL_FEATURES_WITH_BP)
+CLINICAL_FEATURE_COUNT_WITH_BP_NO_FAMILY: int = len(CLINICAL_FEATURES_WITH_BP_NO_FAMILY)
 
 # =============================================================================
 # ADA FEATURES - Baseline Diagnostic Model
@@ -99,7 +132,6 @@ RAW_FEATURES: List[str] = [
     'physical_activity',
     'alcohol_use',
     'waist_circumference',
-    'race_ethnicity',
 ]
 
 RAW_FEATURE_COUNT: int = len(RAW_FEATURES)

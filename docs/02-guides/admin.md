@@ -70,6 +70,12 @@ ML model version history:
 - **Active Model Card** - Currently deployed model version and dataset hash
 - **Training History** - All model runs with version, date, and notes
 
+### 5. Clinical Explainability (Doctor/Admin)
+Clinician-only explainability workspace:
+- Enter biomarker values to generate SHAP-based feature contributions
+- View waterfall plots and per-feature risk impacts
+- Supports Clinical and ADA baseline model types
+
 ---
 
 ## API Endpoints

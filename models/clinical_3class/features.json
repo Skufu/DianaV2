@@ -14,9 +14,8 @@
     "alcohol_encoded",
     "metabolic_syndrome_score",
     "waist_circumference",
-    "family_history_diabetes",
-    "race_encoded"
+    "family_history_diabetes"
   ],
-  "n_features": 16,
-  "note": "Defensible v2 feature contract (13 reduced features)"
+  "n_features": 15,
+  "note": "Defensible v2 feature contract (no race)"
 }

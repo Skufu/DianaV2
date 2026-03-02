@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/cache"
 	"github.com/skufu/DianaV2/backend/internal/config"
+	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/ml"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
@@ -37,7 +38,16 @@ func NewAssessmentsHandler(store store.Store, predictor ml.Predictor, cache *cac
 }
 
 // Register registers the handler routes
-func (h *AssessmentsHandler) Register(r *gin.RouterGroup) {
+func (h *AssessmentsHandler) Register(r *gin.RouterGroup, auditLogger *middleware.AuditLogger) {
+	if auditLogger != nil {
+		r.POST("", middleware.CaptureRequestBody(), auditLogger.LogAction("assessment.create", "assessment"), h.Create)
+		r.GET("", h.List)
+		r.GET("/:assessmentID", h.Get)
+		r.PUT("/:assessmentID", middleware.CaptureRequestBody(), auditLogger.LogAction("assessment.update", "assessment"), h.Update)
+		r.DELETE("/:assessmentID", auditLogger.LogAction("assessment.delete", "assessment"), h.Delete)
+		return
+	}
+
 	r.POST("", h.Create)
 	r.GET("", h.List)
 	r.GET("/:assessmentID", h.Get)
@@ -192,7 +202,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if req.ModelType != "" && req.ModelType != "clinical" && req.ModelType != "ada" && req.ModelType != "binary_v2_no_bp" && req.ModelType != "binary_v2_bp" && req.ModelType != "clinical_3class" {
+	if req.ModelType != "" && req.ModelType != "clinical" && req.ModelType != "ada" && req.ModelType != "binary_v2_no_bp" && req.ModelType != "binary_v2_bp" {
 		ErrBadRequest(c, "Invalid model type")
 		return
 	}
@@ -261,7 +271,6 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		Systolic:              coalesceInt(req.Systolic, 0),
 		Diastolic:             coalesceInt(req.Diastolic, 0),
 		WaistCircumference:    coalesceFloat64(req.WaistCircumference, 0),
-		RaceEthnicity:         coalesceInt(req.RaceEthnicity, 0),
 		FamilyHistoryDiabetes: coalesceBool(req.FamilyHistoryDiabetes, false),
 		Age:                   age,
 		Activity:              req.Activity,
@@ -277,6 +286,10 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	if assessment.Alcohol == "" {
 		assessment.Alcohol = "Unknown"
 	}
+
+	// Validate biomarker ranges before ML prediction (clinical safety)
+	validationResult := ml.ValidateBiomarkers(assessment, h.thresholds)
+	assessment.ValidationStatus = ml.FormatValidationStatus(validationResult)
 
 	// Get prediction from ML server
 	// Pass request context for cancellation support
@@ -297,10 +310,6 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 
 	// Add risk level
 	assessment.RiskLevel = calculateRiskLevel(assessment.RiskScore)
-
-	// Validate biomarker ranges before ML prediction (clinical safety)
-	validationResult := ml.ValidateBiomarkers(assessment, h.thresholds)
-	assessment.ValidationStatus = ml.FormatValidationStatus(validationResult)
 
 	// Create assessment in database
 	created, err := h.store.Assessments().Create(c.Request.Context(), assessment)
@@ -419,7 +428,6 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	assessment.Systolic = coalesceInt(req.Systolic, assessment.Systolic)
 	assessment.Diastolic = coalesceInt(req.Diastolic, assessment.Diastolic)
 	assessment.WaistCircumference = coalesceFloat64(req.WaistCircumference, assessment.WaistCircumference)
-	assessment.RaceEthnicity = coalesceInt(req.RaceEthnicity, assessment.RaceEthnicity)
 	assessment.FamilyHistoryDiabetes = coalesceBool(req.FamilyHistoryDiabetes, assessment.FamilyHistoryDiabetes)
 	assessment.Activity = req.Activity
 	assessment.Alcohol = req.Alcohol
@@ -450,9 +458,26 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 		assessment.Alcohol = "Unknown"
 	}
 
+	if req.ModelType != "" && req.ModelType != "clinical" && req.ModelType != "ada" && req.ModelType != "binary_v2_no_bp" && req.ModelType != "binary_v2_bp" {
+		ErrBadRequest(c, "Invalid model type")
+		return
+	}
+
+	modelType := req.ModelType
+	if modelType == "" {
+		if assessment.ModelVersion != "" {
+			modelType = assessment.ModelVersion
+		} else {
+			modelType = h.modelVer
+		}
+	}
+
+	validationResult := ml.ValidateBiomarkers(*assessment, h.thresholds)
+	assessment.ValidationStatus = ml.FormatValidationStatus(validationResult)
+
 	// Re-predict with updated values
 	// Pass request context for cancellation support
-	prediction, err := h.predictor.Predict(c.Request.Context(), *assessment)
+	prediction, err := h.predictor.PredictWithModelType(c.Request.Context(), *assessment, modelType)
 	if err != nil {
 		log.Printf("Failed to get ML prediction on update: %v", err)
 		ErrInternal(c, "Failed to get prediction from ML service")
@@ -476,7 +501,7 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	}
 
 	assessment.ID = updated.ID
-	assessment.ModelVersion = h.modelVer
+	assessment.ModelVersion = modelType
 	assessment.DatasetHash = h.datasetHash
 
 	h.invalidateUserCache(c.Request.Context(), userID)

@@ -44,6 +44,7 @@ type Config struct {
 	RedisAddr          string
 	RedisPassword      string
 	RedisDB            int
+	RateLimitPerMinute int
 	ClinicalThresholds ClinicalThresholds
 }
 
@@ -74,6 +75,15 @@ func Load() Config {
 		RedisAddr:      getEnv("REDIS_ADDR", "localhost:6379"),
 		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
 		RedisDB:        0,
+	}
+
+	// Rate limiting: stricter in production, relaxed for dev/testing
+	// Production: 600/min (10/sec) - industry standard for health APIs
+	// Development: 3000/min (50/sec) - allows E2E tests and rapid reloads
+	if env == "production" || env == "prod" {
+		cfg.RateLimitPerMinute = getEnvInt("RATE_LIMIT_PER_MINUTE", 600)
+	} else {
+		cfg.RateLimitPerMinute = getEnvInt("RATE_LIMIT_PER_MINUTE", 3000)
 	}
 	cfg.CORSOrigins = splitAndTrim(getEnv("CORS_ORIGINS", "http://localhost:4000,http://localhost:3000,http://localhost:3001"))
 	if v := os.Getenv("EXPORT_MAX_ROWS"); v != "" {

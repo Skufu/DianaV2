@@ -40,6 +40,7 @@ const ModelTraceability = lazy(() => import('./ModelTraceability'));
 const AssessmentForm = lazy(() => import('../user/AssessmentForm'));
 const AuthEventLogViewer = lazy(() => import('./AuthEventLogViewer'));
 const ModelRationale = lazy(() => import('./ModelRationale'));
+const ClinicalExplainability = lazy(() => import('./ClinicalExplainability'));
 
 const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'];
 
@@ -74,6 +75,12 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
             <ModelRationale />
           </Suspense>
         );
+      case 'explainability':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <ClinicalExplainability />
+          </Suspense>
+        );
       case 'users':
         return (
           <Suspense fallback={<LoadingSpinner />}>
@@ -105,7 +112,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
           </Suspense>
         );
       case 'insights':
-        return <Insights />;
+        return <Insights token={token} />;
       default:
         return renderOverview();
     }

@@ -11,10 +11,9 @@
     "activity_encoded",
     "alcohol_encoded",
     "metabolic_syndrome_score",
-    "waist_circumference",
-    "race_encoded"
+    "waist_circumference"
   ],
-  "n_features": 13,
+  "n_features": 12,
   "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
-  "note": "Binary reformulation with 14 features (no BP), LOCO validation"
+  "note": "Binary reformulation with 12 features (no BP), LOCO validation"
 }

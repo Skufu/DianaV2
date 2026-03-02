@@ -198,7 +198,7 @@
 |---------|------|
 | Flask server | `Ian_ML/service/server.py` |
 | Predictors | `Ian_ML/service/predict.py` |
-| Model training | `Ian_ML/training/train_v2.py` |
+| Model training | `Ian_ML/training/train_binary_v2_no_bp.py` |
 | Clustering | `Ian_ML/training/clustering.py` |
 | Data Processing | `Ian_ML/training/data_processing.py` |
 | Explainability | `Ian_ML/service/explainability.py` |

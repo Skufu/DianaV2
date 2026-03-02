@@ -14,10 +14,9 @@
     "alcohol_encoded",
     "metabolic_syndrome_score",
     "waist_circumference",
-    "family_history_diabetes",
-    "race_encoded"
+    "family_history_diabetes"
   ],
-  "n_features": 16,
+  "n_features": 15,
   "target": "at_risk_binary (0=Normal, 1=At-Risk)",
-  "note": "Binary reformulation with 16 features, LOCO validation"
+  "note": "Binary reformulation with 16 features (WITH BP), LOCO validation"
 }

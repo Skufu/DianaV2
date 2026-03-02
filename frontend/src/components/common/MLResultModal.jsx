@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Heart, Sparkles, ShieldCheck, AlertCircle, CheckCircle, Flame, Droplets, Leaf } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -8,6 +9,11 @@ import { motion, AnimatePresence } from 'framer-motion';
  */
 const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   const [showContent, setShowContent] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen && !isLoading) {
@@ -18,37 +24,8 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     }
   }, [isOpen, isLoading]);
 
-  if (!isOpen) return null;
-
-  if (!result || isLoading) {
-    return (
-      <AnimatePresence>
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="relative z-10 w-full max-w-xl"
-          >
-            <div className="bg-white rounded-[32px] p-12 text-center shadow-2xl">
-              <div className="relative inline-block mb-6">
-                <div className="w-24 h-24 border-[6px] border-rose-100 border-t-rose-400 rounded-full animate-spin" />
-                <Heart size={36} className="absolute inset-0 m-auto text-rose-400 animate-pulse" />
-              </div>
-              <h3 className="text-2xl font-semibold text-slate-800 mb-3 tracking-tight">Reviewing your health profile...</h3>
-              <p className="text-slate-500 text-lg">Just a moment while we put together your personalized insights.</p>
-            </div>
-          </motion.div>
-        </div>
-      </AnimatePresence>
-    );
-  }
+  // Safely default result to avoid destructuring errors when closed
+  const safeResult = result || {};
 
   const {
     risk_score = 0,
@@ -59,7 +36,9 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     predicted_status = '',
     model_version = '',
     at_risk_probability,
-  } = result;
+    validation_warnings = [],
+    warning = '',
+  } = safeResult;
 
   const getRiskColor = (level) => {
     const normalizedLevel = level?.toLowerCase() || 'unknown';
@@ -176,21 +155,49 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
 
   const isDoctorModel = typeof model_version === 'string' && model_version.length > 0;
   const modelLabelMap = {
-    binary_v2_no_bp: 'Screening (No BP) – Binary at-risk',
-    binary_v2_bp: 'Screening (With BP) – Binary at-risk',
-    clinical_3class: 'Clinical 3-Class (Normal/Pre-diabetic/Diabetic)',
+    binary_v2_no_bp: 'Primary Screening (No BP) — Binary at-risk',
+    binary_v2_bp: 'Screening (With BP) — Binary at-risk',
     clinical: 'Clinical (No HbA1c/FBS)',
     ada: 'ADA Baseline (HbA1c + FBS)'
   };
-  const modelLabel = modelLabelMap[model_version] || model_version || 'Clinical Screening';
+  const modelLabel = modelLabelMap[model_version] || model_version || 'Screening (No BP) — Binary at-risk';
   const probabilityText = Number.isFinite(at_risk_probability)
     ? `${Math.round(at_risk_probability * 100)}% at-risk probability`
     : 'Probability unavailable';
 
-  return (
+  const renderLoading = () => (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="relative z-10 w-full max-w-xl"
+      >
+        <div className="bg-white rounded-[32px] p-12 text-center shadow-2xl">
+          <div className="relative inline-block mb-6">
+            <div className="w-24 h-24 border-[6px] border-rose-100 border-t-rose-400 rounded-full animate-spin" />
+            <Heart size={36} className="absolute inset-0 m-auto text-rose-400 animate-pulse" />
+          </div>
+          <h3 className="text-2xl font-semibold text-slate-800 mb-3 tracking-tight">Reviewing your health profile...</h3>
+          <p className="text-slate-500 text-lg">Just a moment while we put together your personalized insights.</p>
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  if (!mounted) return null;
+
+  const modalContent = (
     <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {(isOpen && (!result || isLoading)) && renderLoading()}
+      {(isOpen && result && !isLoading) && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -309,18 +316,51 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                         </h3>
 
                         <div className="flex items-start gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-100/50">
-                          <div className={`p-4 rounded-full ${clusterInfo.color} shrink-0 shadow-sm`}>
+                          <motion.div
+                            whileHover={{ scale: 1.1, rotate: 5 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                            className={`p-4 rounded-full ${clusterInfo.color} shrink-0 shadow-sm`}
+                          >
                             {clusterInfo.icon}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-slate-800 text-[19px] mb-1.5">{clusterInfo.fullName}</div>
-                            <p className="text-slate-600 text-[16px] leading-relaxed mb-3">
+                          </motion.div>
+                          <div className="flex flex-col">
+                            {['SIDD', 'SIRD', 'MOD', 'MARD'].includes(cluster) && (
+                              <motion.div
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.3 }}
+                                className="mb-1.5 inline-block"
+                              >
+                                <span className="text-[13px] font-bold tracking-widest text-indigo-500 uppercase bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
+                                  Cluster: {cluster}
+                                </span>
+                              </motion.div>
+                            )}
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.4 }}
+                              className="font-bold text-slate-800 text-[20px] mb-2 leading-tight"
+                            >
+                              {clusterInfo.fullName}
+                            </motion.div>
+                            <motion.p
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.5 }}
+                              className="text-slate-600 text-[16px] leading-relaxed mb-3"
+                            >
                               {clusterInfo.desc}
-                            </p>
+                            </motion.p>
                             {treatment_focus && (
-                              <div className="inline-block px-4 py-1.5 bg-white border border-slate-200 rounded-full text-[13px] text-slate-600 font-medium shadow-sm">
+                              <motion.div
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.6 }}
+                                className="inline-block px-4 py-1.5 bg-white border border-slate-200 rounded-full text-[13px] text-slate-600 font-medium shadow-sm w-fit"
+                              >
                                 Focus on: {treatment_focus}
-                              </div>
+                              </motion.div>
                             )}
                           </div>
                         </div>
@@ -350,6 +390,33 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                           </ul>
                         </motion.div>
                       )}
+
+                      {/* Validation Warnings - Out of Distribution Values */}
+                      {(warning || (validation_warnings && validation_warnings.length > 0)) && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 15 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-amber-50/50 rounded-3xl p-7 mb-7 border border-amber-200"
+                        >
+                          <h3 className="text-lg font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                            <AlertCircle size={22} className="text-amber-500" />
+                            Data Range Warning
+                          </h3>
+                          <p className="text-[16px] text-amber-700 mb-4 leading-relaxed">
+                            Some of your values are outside the range the model was trained on. The prediction and SHAP explanations may be less reliable:
+                          </p>
+                          <ul className="space-y-2">
+                            {validation_warnings && validation_warnings.map((warn) => (
+                              <li key={warn} className="flex items-start gap-2 text-[14px] text-amber-800 bg-white/70 p-3 rounded-xl">
+                                <span className="text-amber-500 mt-0.5">⚠️</span>
+                                <span>{warn}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </motion.div>
+                      )}
+
+
 
                       {/* Gentle Next Steps */}
                       <motion.div
@@ -452,6 +519,8 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
       )}
     </AnimatePresence>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 // Friendly warning translations

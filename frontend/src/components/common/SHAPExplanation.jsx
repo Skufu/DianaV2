@@ -1,6 +1,7 @@
 /**
  * SHAP Explanation Component
  * Displays SHAP values for model interpretability
+ * Light‑theme variant matching the admin dashboard glass‑card style.
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
@@ -14,7 +15,18 @@ const FEATURE_LABELS = {
     hdl: 'HDL Cholesterol',
     age: 'Age',
     hba1c: 'HbA1c',
-    fbs: 'Fasting Blood Sugar'
+    fbs: 'Fasting Blood Sugar',
+    bmi_category: 'BMI Category',
+    tg_hdl_ratio: 'TG/HDL Ratio',
+    smoking_encoded: 'Smoking Status',
+    activity_encoded: 'Activity Level',
+    alcohol_encoded: 'Alcohol Use',
+    metabolic_syndrome_score: 'Metabolic Score',
+    waist_circumference: 'Waist Circumference',
+    family_history_diabetes: 'Family History',
+    crp: 'CRP',
+    systolic: 'Systolic BP',
+    diastolic: 'Diastolic BP',
 };
 
 const SHAPExplanation = ({
@@ -23,6 +35,9 @@ const SHAPExplanation = ({
     showTitle = true,
     compact = false
 }) => {
+    const resolvedModelType = (modelType === 'binary_v2_no_bp' || modelType === 'binary_v2_bp')
+        ? 'clinical'
+        : modelType;
     const [explanation, setExplanation] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -34,13 +49,13 @@ const SHAPExplanation = ({
             abortControllerRef.current.abort();
         }
         abortControllerRef.current = new AbortController();
-        
+
         setLoading(true);
         setError(null);
 
         try {
             const data = await mlFetchJson(
-                `/predict/explain?model_type=${modelType}&format=full&include_plot=waterfall`,
+                `/predict/explain?model_type=${resolvedModelType}&format=full&include_plot=waterfall`,
                 {
                     method: 'POST',
                     body: patientData,
@@ -63,13 +78,13 @@ const SHAPExplanation = ({
         } finally {
             setLoading(false);
         }
-    }, [patientData, modelType]);
+    }, [patientData, resolvedModelType]);
 
     useEffect(() => {
         if (patientData && Object.keys(patientData).length > 0) {
             fetchExplanation();
         }
-        
+
         return () => {
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
@@ -113,10 +128,10 @@ const SHAPExplanation = ({
 
     if (loading) {
         return (
-            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700">
-                <div className="flex items-center gap-2 text-gray-400">
-                    <Brain className="w-5 h-5 animate-pulse" />
-                    <span>Generating explanation...</span>
+            <div className="glass-card bg-white rounded-3xl p-6 border border-slate-200/60">
+                <div className="flex items-center gap-3 text-slate-500">
+                    <Brain className="w-5 h-5 animate-pulse text-purple-500" />
+                    <span className="font-medium">Generating SHAP explanation…</span>
                 </div>
             </div>
         );
@@ -124,10 +139,10 @@ const SHAPExplanation = ({
 
     if (error) {
         return (
-            <div className="bg-red-900/20 rounded-xl p-4 border border-red-700/50">
-                <div className="flex items-center gap-2 text-red-400">
+            <div className="glass-card bg-white rounded-3xl p-6 border border-rose-200/60">
+                <div className="flex items-center gap-2 text-rose-600">
                     <AlertCircle className="w-5 h-5" />
-                    <span>Unable to generate explanation: {error}</span>
+                    <span className="font-medium">Unable to generate explanation: {error}</span>
                 </div>
             </div>
         );
@@ -138,73 +153,74 @@ const SHAPExplanation = ({
     }
 
     return (
-        <div className="bg-gray-800/50 rounded-xl border border-gray-700 overflow-hidden">
+        <div className="glass-card bg-white rounded-3xl border border-slate-200/60 overflow-hidden">
             {/* Header */}
             <button
                 onClick={() => setExpanded(!expanded)}
                 type="button"
-                className="w-full flex items-center justify-between p-4 hover:bg-gray-700/30 transition-colors"
+                className="w-full flex items-center justify-between p-5 hover:bg-slate-50 transition-colors"
             >
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-500/20 rounded-lg">
-                        <Brain className="w-5 h-5 text-purple-400" />
+                    <div className="p-2 bg-purple-100 rounded-xl">
+                        <Brain className="w-5 h-5 text-purple-600" />
                     </div>
                     {showTitle && (
                         <div className="text-left">
-                            <h3 className="text-white font-medium">AI Explanation</h3>
-                            <p className="text-sm text-gray-400">SHAP Feature Contributions</p>
+                            <h3 className="text-slate-900 font-semibold">AI Explanation</h3>
+                            <p className="text-sm text-slate-500">SHAP Feature Contributions</p>
                         </div>
                     )}
                 </div>
                 {expanded ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
+                    <ChevronUp className="w-5 h-5 text-slate-400" />
                 ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                    <ChevronDown className="w-5 h-5 text-slate-400" />
                 )}
             </button>
 
             {/* Content */}
             {expanded && (
-                <div className="p-4 pt-0 space-y-4">
+                <div className="px-5 pb-5 space-y-5">
                     {/* Info tooltip */}
-                    <div className="flex items-start gap-2 p-3 bg-blue-900/20 rounded-lg border border-blue-700/30">
-                        <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-blue-300">
+                    <div className="flex items-start gap-2 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                        <Info className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-indigo-700">
                             SHAP values show how each feature contributes to the prediction.
-                            <span className="text-emerald-400"> Green bars</span> increase risk,
-                            <span className="text-rose-400"> red bars</span> decrease risk.
+                            <span className="text-emerald-600 font-medium"> Green bars</span> increase risk,
+                            <span className="text-rose-600 font-medium"> red bars</span> decrease risk.
                         </p>
                     </div>
 
                     {/* Bar Chart */}
-                    <div className="h-64">
+                    <div className="h-72 bg-slate-50 rounded-2xl p-3 border border-slate-100">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
                                 data={chartData}
                                 layout="vertical"
-                                margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+                                margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
                             >
-                                <XAxis type="number" stroke="#9ca3af" fontSize={12} />
+                                <XAxis type="number" stroke="#64748b" fontSize={12} />
                                 <YAxis
                                     type="category"
                                     dataKey="feature"
-                                    stroke="#9ca3af"
+                                    stroke="#64748b"
                                     fontSize={12}
-                                    width={90}
+                                    width={110}
                                 />
                                 <Tooltip
                                     contentStyle={{
-                                        backgroundColor: '#1f2937',
-                                        border: '1px solid #374151',
-                                        borderRadius: '8px',
-                                        color: '#fff'
+                                        backgroundColor: '#fff',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '12px',
+                                        color: '#0f172a',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                                     }}
                                     formatter={(value, name, props) => [
                                         `${value.toFixed(4)} (Value: ${props.payload.featureValue?.toFixed(1) ?? 'N/A'})`,
                                         'Contribution'
                                     ]}
                                 />
-                                <ReferenceLine x={0} stroke="#6b7280" />
+                                <ReferenceLine x={0} stroke="#94a3b8" strokeDasharray="3 3" />
                                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                     {chartData.map((entry) => (
                                         <Cell
@@ -219,12 +235,12 @@ const SHAPExplanation = ({
 
                     {/* Waterfall plot image if available */}
                     {explanation.waterfall_plot && (
-                        <div className="mt-4">
-                            <h4 className="text-sm text-gray-400 mb-2">Detailed Waterfall Plot</h4>
+                        <div className="mt-2">
+                            <h4 className="text-sm font-semibold text-slate-600 mb-2">Detailed Waterfall Plot</h4>
                             <img
                                 src={`data:image/png;base64,${explanation.waterfall_plot}`}
                                 alt="SHAP Waterfall Plot"
-                                className="w-full rounded-lg border border-gray-700"
+                                className="w-full rounded-2xl border border-slate-200"
                                 loading="lazy"
                                 decoding="async"
                                 width="800"
@@ -234,16 +250,16 @@ const SHAPExplanation = ({
                     )}
 
                     {/* Summary */}
-                    <div className="grid grid-cols-2 gap-3 pt-2">
-                        <div className="bg-gray-700/30 rounded-lg p-3">
-                            <div className="text-xs text-gray-400">Base Value</div>
-                            <div className="text-lg font-semibold text-white">
+                    <div className="grid grid-cols-2 gap-4 pt-1">
+                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                            <div className="text-xs font-medium text-slate-500 mb-1">Base Value</div>
+                            <div className="text-xl font-bold text-slate-900">
                                 {explanation.base_value?.toFixed(3) ?? 'N/A'}
                             </div>
                         </div>
-                        <div className="bg-gray-700/30 rounded-lg p-3">
-                            <div className="text-xs text-gray-400">Final Prediction</div>
-                            <div className="text-lg font-semibold text-white">
+                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                            <div className="text-xs font-medium text-slate-500 mb-1">Final Prediction</div>
+                            <div className="text-xl font-bold text-slate-900">
                                 {explanation.prediction != null
                                     ? `${(explanation.prediction * 100).toFixed(1)}%`
                                     : 'N/A'}

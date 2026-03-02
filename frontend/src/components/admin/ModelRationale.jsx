@@ -5,54 +5,49 @@ import { slideUp, staggerContainer } from '../../utils/animations';
 const modelCards = [
   {
     id: 'binary_v2_no_bp',
-    title: 'Screening (No BP) — Binary At-Risk',
-    summary: 'Binary screening model for Normal vs At-Risk without BP, HbA1c, or FBS to reduce circularity.',
+    title: 'Primary Screening (No BP) — Binary At‑Risk',
+    summary: 'Default clinician workflow. Uses metabolic biomarkers only to avoid circularity and keep screening accessible when BP/labs are unavailable.',
     inputs: ['BMI', 'Triglycerides', 'LDL', 'HDL', 'Age', 'Lifestyle (optional)'],
-    outputs: ['Predicted status (Normal / At-Risk)', 'At-risk probability', 'Risk score 0–100'],
-    training: 'NHANES postmenopausal cohort (2009–2023). Nested Leave-One-Group-Out validation by NHANES cycle.',
-    notes: 'Optimized for screening sensitivity; false positives expected and should trigger confirmatory labs.'
+    outputs: ['Predicted status (Normal / At‑Risk)', 'At‑risk probability', 'Risk score 0–100'],
+    training: 'NHANES postmenopausal cohort (2009–2023). Nested Leave‑One‑Group‑Out validation by NHANES cycle.',
+    notes: 'Optimized for screening sensitivity; confirm with diagnostic labs when at‑risk.'
   },
   {
     id: 'binary_v2_bp',
-    title: 'Screening (With BP) — Binary At-Risk',
-    summary: 'Binary screening model that includes systolic/diastolic BP for risk triage.',
+    title: 'Screening (With BP) — Binary At‑Risk',
+    summary: 'Adds systolic/diastolic BP for triage when vitals are reliable and recent.',
     inputs: ['BMI', 'Triglycerides', 'LDL', 'HDL', 'Age', 'Systolic', 'Diastolic', 'Lifestyle (optional)'],
-    outputs: ['Predicted status (Normal / At-Risk)', 'At-risk probability', 'Risk score 0–100'],
-    training: 'NHANES postmenopausal cohort (2009–2023). Nested Leave-One-Group-Out validation by NHANES cycle.',
-    notes: 'Use for screening only; confirm with HbA1c/FBS when at-risk.'
-  },
-  {
-    id: 'clinical_3class',
-    title: 'Clinical 3-Class (Normal / Pre-diabetic / Diabetic)',
-    summary: 'Three-class screening model using metabolic and BP features for clinical stratification.',
-    inputs: ['BMI', 'Triglycerides', 'LDL', 'HDL', 'Age', 'Systolic', 'Diastolic', 'Lifestyle (optional)'],
-    outputs: ['Predicted status (Normal / Pre-diabetic / Diabetic)', 'At-risk probability', 'Risk score 0–100'],
-    training: 'NHANES postmenopausal cohort (2009–2023). Thresholds tuned to capture pre-diabetic and diabetic classes.',
-    notes: 'Designed for screening; thresholds favor sensitivity over specificity.'
+    outputs: ['Predicted status (Normal / At‑Risk)', 'At‑risk probability', 'Risk score 0–100'],
+    training: 'NHANES postmenopausal cohort (2009–2023). Nested Leave‑One‑Group‑Out validation by NHANES cycle.',
+    notes: 'Use when BP is measured at visit. Confirm risk classification with HbA1c/FBS.'
   },
   {
     id: 'ada',
     title: 'ADA Baseline (HbA1c + FBS)',
-    summary: 'Baseline diagnostic model using HbA1c and FBS, aligned with ADA biomarker criteria.',
+    summary: 'Diagnostic baseline aligned with ADA biomarker thresholds. Not used for initial screening decisions.',
     inputs: ['HbA1c', 'FBS', 'BMI', 'Triglycerides', 'LDL', 'HDL'],
     outputs: ['Medical status', 'Risk score 0–100'],
     training: 'NHANES postmenopausal cohort; used as diagnostic baseline.',
-    notes: 'HbA1c/FBS are diagnostic markers; treat outputs as confirmatory, not predictive.'
+    notes: 'HbA1c/FBS are diagnostic markers; interpret as confirmatory evidence.'
   }
 ];
 
 const rationaleSections = [
   {
-    title: 'Why Binary vs 3-Class',
-    content: 'Binary models prioritize sensitivity for case-finding (Normal vs At-Risk). Three-class models provide finer stratification (Normal, Pre-diabetic, Diabetic) while still tuned for screening sensitivity.'
+    title: 'Why Binary Screening',
+    content: 'Binary screening prioritizes sensitivity for case‑finding (Normal vs At‑Risk). It keeps triage clear while prompting confirmatory labs when flagged.'
   },
   {
-    title: 'Why “No BP” vs “With BP”',
-    content: 'No-BP models avoid reliance on vitals when blood pressure is unavailable. BP-enabled models add systolic/diastolic signals for stronger clinical stratification when vitals are reliable.'
+    title: 'Default Model for Clinics',
+    content: 'The no‑BP screening model is the default for clinical workflow because it avoids circularity and works when vitals or diagnostic labs are not immediately available.'
+  },
+  {
+    title: 'When to Use BP‑Enabled Screening',
+    content: 'Use the BP‑enabled model when systolic/diastolic readings are measured at visit and reliable. It improves stratification but should not replace confirmatory labs.'
   },
   {
     title: 'How the Models Were Trained',
-    content: 'Models were trained on NHANES postmenopausal cohorts with Leave-One-Group-Out validation using NHANES cycles as groups. This tests temporal generalization across survey cycles. Training artifacts follow the repo’s LOCO validation workflow.'
+    content: 'Models were trained on NHANES postmenopausal cohorts with Leave‑One‑Group‑Out validation across NHANES cycles. This tests temporal generalization and reduces overfitting to a single survey cycle.'
   },
   {
     title: 'What is NHANES?',
@@ -83,9 +78,9 @@ const ModelRationale = () => {
         </div>
         <ul className="text-blue-100 text-lg leading-loose space-y-2">
           <li>• Screening support only — not diagnostic or prescriptive.</li>
-          <li>• Models trained on NHANES postmenopausal cohort (US population).</li>
+          <li>• Default workflow uses the No‑BP screening model for rapid triage.</li>
           <li>• Use confirmatory labs (HbA1c/FBS) for clinical decisions.</li>
-          <li>• Interpret results in full patient context (history, symptoms, comorbidities).</li>
+          <li>• Interpret results in the full patient context (history, symptoms, comorbidities).</li>
         </ul>
       </motion.div>
 

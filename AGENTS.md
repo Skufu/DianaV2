@@ -53,6 +53,8 @@ Comprehensive knowledge base documentation for all major directories:
 | `frontend/src/components/` | ✅ Complete | All UI components, patterns, conventions |
 | `frontend/src/components/education/` | ✅ Complete | Education components for diabetes prevention education |
 | `frontend/src/components/export/` | ✅ Complete | Export components for PDF download functionality |
+| `frontend/e2e/` | ✅ Complete | Playwright E2E tests, fixtures, integration tests |
+| `docs/` | ✅ Complete | Documentation hub, architecture guides, thesis defense |
 
 ## WHERE TO LOOK
 
@@ -71,7 +73,7 @@ Comprehensive knowledge base documentation for all major directories:
 | User flows | frontend/src/components/user/ | Onboarding, Dashboard, Trends, Profile |
 | Charts | frontend/src/components/common/ | SHAPExplanation (Recharts integration) |
 | API wrapper | frontend/src/api.js | apiFetch/mlFetch, centralized endpoints |
-| ML training | Ian_ML/training/train_v2.py, scripts/train/train_clusters.py | Defensible nested CV, K-Means |
+| ML training | Ian_ML/training/train_binary_v2_no_bp.py, scripts/train/train_clusters.py | Defensible nested CV, K-Means |
 | Data processing | scripts/data/*.py | NHANES download, merge, imputation |
 | Thesis generation | scripts/thesis/*.py | Manuscript verification, vignettes, outputs |
 | CI/CD | .github/workflows/ci.yml | Multi-language tests, docker builds |

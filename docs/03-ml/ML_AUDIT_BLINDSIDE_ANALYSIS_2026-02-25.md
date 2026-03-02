@@ -20,16 +20,16 @@ This document captures the findings from a comprehensive blindside analysis of t
 |--------|--------|
 | **Issue** | Code included BP features but saved to `no_bp` directory |
 | **Root Cause** | FEATURES list had systolic/diastolic, directory named `no_bp` |
-| **Fix Applied** | Split into two variants: `--with-bp` (16 features) and default (13 features) |
-| **Files Changed** | `train_binary_v2.py`, `predict.py`, directory structure |
+| **Fix Applied** | Split into two variants: `--with-bp` (16 features) and default (12 features) |
+| **Files Changed** | `train_binary_v2_no_bp.py`, `predict.py`, directory structure |
 
 **Usage:**
 ```bash
 # General screening (no BP required)
-python Ian_ML/training/train_binary_v2.py
+python Ian_ML/training/train_binary_v2_no_bp.py
 
 # Doctor model (with BP)
-python Ian_ML/training/train_binary_v2.py --with-bp
+python Ian_ML/training/train_binary_v2_with_bp.py
 ```
 
 ---
@@ -154,7 +154,7 @@ This must be explicitly discussed in the manuscript as a core limitation. Recomm
 ## 📋 Action Items
 
 ### Code Fixes (Complete)
-- [x] Blood pressure feature split (--with-bp flag)
+- [x] Blood pressure feature split (train_binary_v2_with_bp.py)
 - [x] Alcohol encoding consistency  
 - [x] min_sensitivity threshold fix
 - [x] Docstring feature count fix
@@ -172,7 +172,7 @@ This must be explicitly discussed in the manuscript as a core limitation. Recomm
 
 | File | Changes |
 |------|---------|
-| `Ian_ML/training/train_binary_v2.py` | Feature split, docstring |
+| `Ian_ML/training/train_binary_v2_no_bp.py` | Feature split, docstring |
 | `Ian_ML/training/train_binary_v2_no_bp.py` | Alcohol encoding, min_sensitivity |
 | `Ian_ML/service/predict.py` | BP model routing |
 | `models/binary_v2_with_bp/` | Renamed from archived |
