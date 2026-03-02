@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -113,6 +114,76 @@ func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 	// ML failures should fail request instead of silently storing mock predictions.
 	if w.Code != http.StatusInternalServerError {
 		t.Fatalf("expected status 500 when ML fails, got %d", w.Code)
+	}
+}
+
+func TestAssessmentsHandler_Create_StoresPredictionFromRealValues(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	modelSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"risk_cluster":        "SIRD",
+			"risk_score":          72,
+			"predicted_status":    "Diabetic",
+			"risk_label":          "High risk",
+			"cluster_description": "Severe insulin-resistant diabetes profile.",
+			"treatment_focus":     "Lifestyle + insulin sensitivity",
+			"at_risk_probability": 0.82,
+		})
+	}))
+	defer modelSrv.Close()
+
+	repo := &fakeAssessmentRepo{}
+	h := NewAssessmentsHandler(
+		&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+		ml.NewHTTPPredictor(modelSrv.URL, "binary_v2_no_bp", "", defaultTestTimeout),
+		nil,
+		"binary_v2_no_bp",
+		"hash123",
+		getDefaultTestThresholds(),
+	)
+
+	r := gin.New()
+	r.Use(mockAuthMiddleware())
+	r.POST("/:id/assessments", h.Create)
+
+	body := bytes.NewBufferString(`{"age":55,"bmi":32,"triglycerides":210,"ldl":160,"hdl":42,"systolic":142,"diastolic":90,"hba1c":6.5,"fbs":126}`)
+	req, _ := http.NewRequest(http.MethodPost, "/1/assessments", body)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", w.Code)
+	}
+	if repo.last.Cluster != "SIRD" {
+		t.Fatalf("expected cluster SIRD, got %s", repo.last.Cluster)
+	}
+	if repo.last.RiskScore != 72 {
+		t.Fatalf("expected risk score 72, got %d", repo.last.RiskScore)
+	}
+	if repo.last.RiskLevel != "high" {
+		t.Fatalf("expected risk level high, got %s", repo.last.RiskLevel)
+	}
+	if repo.last.PredictedStatus != "Diabetic" {
+		t.Fatalf("expected predicted status Diabetic, got %s", repo.last.PredictedStatus)
+	}
+	if repo.last.RiskLabel != "High risk" {
+		t.Fatalf("expected risk label High risk, got %s", repo.last.RiskLabel)
+	}
+	if repo.last.ClusterDescription == "" || repo.last.TreatmentFocus == "" {
+		t.Fatalf("expected cluster metadata populated")
+	}
+	if repo.last.AtRiskProbability <= 0 {
+		t.Fatalf("expected at risk probability to be set")
+	}
+	if !strings.Contains(repo.last.ValidationStatus, "bmi_obese") {
+		t.Fatalf("expected validation status to include bmi_obese, got %s", repo.last.ValidationStatus)
+	}
+	if !strings.Contains(repo.last.ValidationStatus, "hba1c_diabetic") {
+		t.Fatalf("expected validation status to include hba1c_diabetic, got %s", repo.last.ValidationStatus)
 	}
 }
 

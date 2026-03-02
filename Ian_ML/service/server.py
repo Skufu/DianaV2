@@ -225,11 +225,16 @@ def get_clinical_results_dir():
 def require_api_key(f):
     """Decorator to require API key authentication for endpoints.
     
+    In testing mode, authentication is skipped to keep unit tests isolated.
     In development mode (ML_API_KEY not set), authentication is skipped.
     In production (ML_API_KEY is set), API key validation is enforced.
     """
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
+        # Skip API key validation in test mode
+        if app.config.get("TESTING"):
+            return f(*args, **kwargs)
+
         # Skip API key validation in development mode (when ML_API_KEY is not set)
         if not API_KEY:
             logger.debug("ML_API_KEY not configured - running in development mode (no auth)")
@@ -270,7 +275,7 @@ def predict():
     Predict diabetes risk for a single patient.
 
     Query params:
-        model_type: "clinical" (default), "binary_v2_no_bp", "binary_v2_bp", "clinical_3class", or "ada"
+        model_type: "clinical" (default), "binary_v2_no_bp", "binary_v2_bp", or "ada"
 
     For clinical model (non-circular, recommended):
         Base features (5): bmi, triglycerides, ldl, hdl, age
@@ -287,12 +292,12 @@ def predict():
         if not data:
             return jsonify({"error": "No data provided"}), 400
         
-        if model_type in ('clinical', 'binary_v2_no_bp', 'binary_v2_bp', 'clinical_3class'):
+        if model_type in ('clinical', 'binary_v2_no_bp', 'binary_v2_bp'):
             # Use clinical model (non-circular)
             clin_predictor = get_clinical_predictor_for(model_type)
             if clin_predictor is None:
                 return jsonify({
-                    "error": "Clinical model not trained. Run Ian_ML/training/train_v2.py or scripts/train/train_quick.py first."
+                    "error": "Clinical model not trained. Run Ian_ML/training/train_binary_v2_no_bp.py or scripts/train/train_quick.py first."
                 }), 503
 
             # Extract base features + lifestyle data for clinical model
@@ -308,7 +313,6 @@ def predict():
                 "physical_activity": data.get("activity", "Unknown"),
                 "alcohol_use": data.get("alcohol", "Unknown"),
                 "waist_circumference": data.get("waist_circumference"),
-                "race_ethnicity": data.get("race_ethnicity"),
                 "family_history_diabetes": data.get("family_history_diabetes"),
             }
             result = clin_predictor.predict(patient_data)
@@ -346,7 +350,7 @@ def predict_explain():
         model_type: "clinical" (default) or "ada"
         format: "full" (default) or "clinician" (simplified)
 
-    For clinical model (14 features):
+    For clinical model (12 features):
         Base features: bmi, triglycerides, ldl, hdl, age
         Lifestyle: smoking, activity, alcohol (optional)
 
@@ -372,7 +376,7 @@ def predict_explain():
             if clin_predictor is None:
                 return jsonify({"error": "Clinical model not available"}), 503
             
-            # Extract base features + lifestyle data for 14-feature model
+            # Extract base features + lifestyle data for 12-feature model
             patient_data = {
                 "bmi": data.get("bmi"),
                 "triglycerides": data.get("triglycerides"),
@@ -404,7 +408,8 @@ def predict_explain():
             clinical_features_scaled = clin_predictor._transform_features(clinical_features)
             explanation = shap_explainer.explain(
                 clinical_features_scaled[0],
-                clin_predictor.features
+                clin_predictor.features,
+                feature_values_override=clinical_features[0]
             )
         else:
             # ADA model
@@ -426,9 +431,17 @@ def predict_explain():
             features = np.array([[patient_data[f] for f in REQUIRED_FEATURES]], dtype=float)
             if ada_predictor.scaler is not None:
                 features_scaled = ada_predictor.scaler.transform(features)
-                explanation = shap_explainer.explain(features_scaled[0], REQUIRED_FEATURES)
+                explanation = shap_explainer.explain(
+                    features_scaled[0],
+                    REQUIRED_FEATURES,
+                    feature_values_override=features[0]
+                )
             else:
-                explanation = shap_explainer.explain(features[0], REQUIRED_FEATURES)
+                explanation = shap_explainer.explain(
+                    features[0],
+                    REQUIRED_FEATURES,
+                    feature_values_override=features[0]
+                )
         
         # Format response
         if output_format == 'clinician':
@@ -788,7 +801,7 @@ def predict_batch():
             clin_predictor = get_clinical_predictor()
             if clin_predictor is None:
                 return jsonify({
-                    "error": "Clinical model not trained. Run Ian_ML/training/train_v2.py first."
+                    "error": "Clinical model not trained. Run Ian_ML/training/train_binary_v2_no_bp.py first."
                 }), 503
 
             results = []
@@ -925,7 +938,7 @@ def get_clinical_metrics():
         results_dir = get_clinical_results_dir()
         
         if not results_dir.exists():
-            return jsonify({"error": "Clinical model not trained. Run Ian_ML/training/train_v2.py or scripts/train/train_quick.py first."}), 404
+            return jsonify({"error": "Clinical model not trained. Run Ian_ML/training/train_binary_v2_no_bp.py or scripts/train/train_quick.py first."}), 404
         
         comparison_path = results_dir / "model_comparison.csv"
         if comparison_path.exists():

@@ -65,7 +65,7 @@ Two stages are used:
 
 ## 3. Feature Set
 
-### 3.1 Deployed feature contract (13 features)
+### 3.1 Deployed feature contract (12 features)
 From `models/binary_v2_no_bp/features.json`:
 1. `bmi`
 2. `triglycerides`
@@ -79,24 +79,23 @@ From `models/binary_v2_no_bp/features.json`:
 10. `alcohol_encoded`
 11. `metabolic_syndrome_score`
 12. `waist_circumference`
-13. `race_encoded`
 
 ### 3.2 Feature engineering rules
 Implemented in `Ian_ML/training/train_binary_v2_no_bp.py` / `Ian_ML/service/predict.py`:
-- BMI bins: `<18.5`, `18.5-24.9`, `25-29.9`, `>=30`
+- BMI bins: `<18.5`, `18.5-22.9`, `23-24.9`, `>=25`
 - `tg_hdl_ratio = triglycerides / hdl`
 - Lifestyle encoding maps for smoking/activity/alcohol
 - Metabolic syndrome score = count of:
   - TG > 150
   - HDL < 50
-  - BMI >= 30
+  - BMI >= 25
 
 ### 3.3 Feature selection provenance
 Feature-selection analyses (correlation/LASSO/RFECV) are documented in:
 - `Ian_ML/training/feature_selection_analysis.py`
 - `models/binary_v2_no_bp/results/feature_selection_analysis.csv`
 
-The production/deployed v2 model uses the fixed 13-feature contract above.
+The production/deployed v2 model uses the fixed 12-feature contract above.
 
 ---
 
@@ -164,7 +163,7 @@ Runtime cluster labels are persisted in:
 
 ### 7.1 Python inference (`binary_v2_no_bp`)
 Current inference in `Ian_ML/service/predict.py`:
-- Uses the 13-feature contract
+- Uses the 12-feature contract
 - Applies imputer + scaler + classifier artifacts
 - Applies learned at‑risk threshold
 - Returns:

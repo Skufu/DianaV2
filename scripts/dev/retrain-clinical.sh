@@ -119,28 +119,22 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}✓ Data cleaning complete${NC}"
 
-# Step 3: SKIP pre-imputation (handled inside CV pipeline for leakage-safe evaluation)
-# The train_v2.py uses SimpleImputer inside the Pipeline, which fits ONLY on training data
-# This prevents data leakage that would occur if we pre-imputed on the entire dataset
 echo ""
 echo -e "${YELLOW}Step 3/6: Skipping pre-imputation (leakage-safe pipeline handles this)${NC}"
 echo "------------------------------------------------------------"
 echo "  Pre-imputation SKIPPED - SimpleImputer in CV pipeline prevents leakage"
-echo "  See: train_v2.py uses diana_dataset_final.csv (not pre-imputed)"
+echo "  See: train_binary_v2_no_bp.py uses diana_dataset_final.csv (not pre-imputed)"
 echo -e "${GREEN}✓ Proceeding with leakage-safe imputation${NC}"
-
-# Step 4: Train models (clinical_3class with nested CV)
 echo ""
-echo -e "${BLUE}Step 4/6: Training ML models (clinical_3class)...${NC}"
+echo -e "${BLUE}Step 4/6: Training ML models (binary_v2_no_bp)...${NC}"
 echo "------------------------------------------------------------"
-python Ian_ML/training/train_v2.py
+python Ian_ML/training/train_binary_v2_no_bp.py
 if [ $? -ne 0 ]; then
     echo -e "${RED}ERROR: Model training failed${NC}"
     exit 1
 fi
 echo -e "${GREEN}✓ Model training complete${NC}"
 
-# Step 5: Train clustering (K=4 Ahlqvist subtypes)
 echo ""
 echo -e "${BLUE}Step 5/6: Training K-Means clustering...${NC}"
 echo "------------------------------------------------------------"
@@ -150,40 +144,24 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}✓ Clustering complete${NC}"
 
-# =============================================================================
-# STEP 6: Validate Output & Report Actual Results
-# =============================================================================
 echo ""
 echo -e "${CYAN}Step 6/6: Validating outputs...${NC}"
 echo "------------------------------------------------------------"
 
-# Check which models were actually created
 echo ""
 echo "Models created:"
-MODELS_DIR="models/clinical_3class"
+MODELS_DIR="models/binary_v2_no_bp"
 
 if [ -f "$MODELS_DIR/best_model.joblib" ]; then
-    echo -e "  ${GREEN}✓ Best Model (Calibrated)${NC}"
+    echo -e "  ${GREEN}✓ Best Model (Pipeline)${NC}"
 else
     echo -e "  ${RED}✗ Best Model${NC}"
 fi
 
-if [ -f "$MODELS_DIR/best_model_uncalibrated.joblib" ]; then
-    echo -e "  ${GREEN}✓ Best Model (Uncalibrated)${NC}"
+if [ -f "$MODELS_DIR/cluster_scaler.joblib" ]; then
+    echo -e "  ${GREEN}✓ Cluster Scaler${NC}"
 else
-    echo -e "  ${RED}✗ Best Model (Uncalibrated)${NC}"
-fi
-
-if [ -f "$MODELS_DIR/scaler.joblib" ]; then
-    echo -e "  ${GREEN}✓ Scaler${NC}"
-else
-    echo -e "  ${RED}✗ Scaler${NC}"
-fi
-
-if [ -f "$MODELS_DIR/imputer.joblib" ]; then
-    echo -e "  ${GREEN}✓ Imputer${NC}"
-else
-    echo -e "  ${RED}✗ Imputer${NC}"
+    echo -e "  ${RED}✗ Cluster Scaler${NC}"
 fi
 
 if [ -f "$MODELS_DIR/kmeans_model.joblib" ]; then
@@ -192,7 +170,6 @@ else
     echo -e "  ${YELLOW}✗ K-Means Clustering (run train_clusters.py)${NC}"
 fi
 
-# Extract and display actual metrics from best_model_report.json
 echo ""
 REPORT_FILE="$MODELS_DIR/results/best_model_report.json"
 if [ -f "$REPORT_FILE" ]; then
@@ -200,15 +177,14 @@ if [ -f "$REPORT_FILE" ]; then
     
     BEST_MODEL=$(python -c "import json; print(json.load(open('$REPORT_FILE'))['best_model'])" 2>/dev/null || echo "Unknown")
     AUC_ROC=$(python -c "import json; print(json.load(open('$REPORT_FILE'))['metrics']['auc_roc'])" 2>/dev/null || echo "0.0")
-    RECALL_DIABETIC=$(python -c "import json; print(json.load(open('$REPORT_FILE'))['class_level_metrics']['recall_by_class']['Diabetic'])" 2>/dev/null || echo "0.0")
-    OVERFIT=$(python -c "import json; print(json.load(open('$REPORT_FILE'))['metrics']['overfit_gap'])" 2>/dev/null || echo "0.0")
+    SENSITIVITY=$(python -c "import json; print(json.load(open('$REPORT_FILE'))['metrics']['sensitivity'])" 2>/dev/null || echo "0.0")
+    SPECIFICITY=$(python -c "import json; print(json.load(open('$REPORT_FILE'))['metrics']['specificity'])" 2>/dev/null || echo "0.0")
     
     echo -e "  Best Model:          ${CYAN}$BEST_MODEL${NC}"
     echo -e "  AUC-ROC:             ${CYAN}$AUC_ROC${NC}"
     echo -e "  Diabetic Sensitivity:${CYAN}$RECALL_DIABETIC${NC}"
     echo -e "  Overfit Gap:         ${CYAN}$OVERFIT${NC}"
     
-    # Check if AUC >= 0.65 (minimum acceptable)
     AUC_CHECK=$(python -c "import json; auc=json.load(open('$REPORT_FILE'))['metrics']['auc_roc']; print('PASS' if auc >= 0.65 else 'FAIL')" 2>/dev/null || echo "FAIL")
     if [ "$AUC_CHECK" = "PASS" ]; then
         echo -e "  ${GREEN}✓ AUC above minimum threshold (0.65)${NC}"
@@ -219,7 +195,6 @@ else
     echo -e "${YELLOW}WARNING: Could not find best_model_report.json${NC}"
 fi
 
-# Summary
 echo ""
 echo "============================================================"
 echo -e "${GREEN}DIANA ML Pipeline Complete!${NC}"
@@ -228,9 +203,9 @@ echo ""
 echo "Outputs:"
 echo "  - Processed data:  data/nhanes/processed/diana_training_data_multi.csv"
 echo "  - Final dataset:   data/nhanes/processed/diana_dataset_final.csv (leakage-safe)"
-echo "  - Models:          models/clinical_3class/*.joblib"
-echo "  - Visualizations:  models/clinical_3class/visualizations/"
-echo "  - Results:         models/clinical_3class/results/"
+echo "  - Models:          models/binary_v2_no_bp/*.joblib"
+echo "  - Visualizations:  models/binary_v2_no_bp/visualizations/"
+echo "  - Results:         models/binary_v2_no_bp/results/"
 echo ""
 echo -e "${YELLOW}IMPORTANT: Check the actual results above before updating documentation!${NC}"
 echo ""

@@ -2,11 +2,11 @@
 
 ## Overview
 
-The DIANA v2 screening model (binary_v2_no_bp) uses **13 features** derived from NHANES data across 6 cycles (2009-2023). Features are categorized into three groups:
+The DIANA v2 screening model (binary_v2_no_bp) uses **12 features** derived from NHANES data across 6 cycles (2009-2023). Features are categorized into three groups:
 
 1. **Original Metabolic Biomarkers** (5) - Direct measurements from NHANES lab/exam data
 2. **Derived/Engineered Features** (6) - Calculated from raw biomarkers and lifestyle questionnaires
-3. **Enrichment Features** (2) - Additional clinical and demographic variables
+3. **Enrichment Features** (1) - Additional clinical variables
 
 ---
 
@@ -21,7 +21,6 @@ These are direct laboratory or examination measurements from NHANES:
 | `ldl` | TCHOL, HDL, TRIGLY | LDL cholesterol calculated (mg/dL) | 20-300 |
 | `hdl` | HDL | HDL cholesterol (mg/dL) | 10-120 |
 | `age` | RIDAGEYR | Age in years at screening | 45-60 (filtered) |
-| `waist_circumference` | BMXWAIST | Waist circumference (cm) | - |
 
 **Note:** HbA1c and Fasting Blood Sugar (FBS) are excluded from features to avoid circularity - they are used only for ground-truth labeling per ADA criteria.
 
@@ -132,7 +131,7 @@ df["activity_encoded"] = df["physical_activity"].map(activity_map)
 
 **Derivation:**
 ```python
-alcohol_map = {"None": 0, "Light": 1, "Moderate": 2, "Heavy": 3}
+alcohol_map = {"None": 0, "Light": 1, "Moderate": 2, "Heavy": 3, "Unknown": 1}
 df["alcohol_encoded"] = df["alcohol_use"].map(alcohol_map)
 ```
 
@@ -160,7 +159,7 @@ df["alcohol_encoded"] = df["alcohol_use"].map(alcohol_map)
 metabolic_criteria = pd.DataFrame({
     "high_tg": df["triglycerides"] > 150,
     "low_hdl": df["hdl"] < 50,
-    "high_bmi": df["bmi"] >= 30,
+    "high_bmi": df["bmi"] >= 25,
     "high_waist": df["waist_circumference"] >= 80,
 })
 df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
@@ -178,7 +177,7 @@ df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
 
 ---
 
-## 3. Enrichment Features (2)
+## 3. Enrichment Features (1)
 
 ### 3.1 Waist Circumference (`waist_circumference`)
 
@@ -190,32 +189,8 @@ df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
 
 ---
 
-### 3.2 Race/Ethnicity Encoded (`race_encoded`)
-**NHANES Source:**
-- `RIDRETH3` (2011+): 7 categories
-- `RIDRETH1` (2009-2010): 5 categories
-
-**Harmonization Logic:**
-```python
-if 'RIDRETH3' in demo.columns:  # 2011+
-    remap = {1: 1, 2: 2, 3: 3, 4: 4, 6: 5, 7: 6}
-    # 1=MA, 2=OH, 3=NH White, 4=NH Black, 6=NH Asian→5, 7=Other→6
-elif 'RIDRETH1' in demo.columns:  # 2009-2010
-    remap = {1: 1, 2: 2, 3: 3, 4: 4, 5: 6}
-    # Category 5 = Other (includes Asian, can't separate)
-```
-
-**Unified Mapping:**
-| Value | Category |
-|-------|----------|
-| 1 | Mexican American |
-| 2 | Other Hispanic |
-| 3 | Non-Hispanic White |
-| 4 | Non-Hispanic Black |
-| 5 | Non-Hispanic Asian |
-| 6 | Other/Multi |
-
-**Clinical Rationale:** Different ethnic groups have varying diabetes prevalence and risk profiles. Used as ordinal encoding (may capture gradient).
+### 3.2 Race/Ethnicity Encoded (`race_encoded`) — removed
+Race/ethnicity is no longer used in the binary_v2_no_bp screening model. It was removed to simplify inputs and reduce demographic leakage.
 
 ---
 
@@ -260,7 +235,7 @@ Model Training (train_binary_v2_no_bp.py)
 | Feature | Missing | Rate |
 |---------|---------|------|
 | waist_circumference | 28 | 2.0% |
-| race_encoded | 0 | 0.0% |
+| race_encoded | removed | removed |
 | All others (from NHANES core) | < 55 | < 4% |
 
 ### Data Imputation
@@ -280,7 +255,7 @@ Based on mutual information and clinical literature:
 | 2 | `age` | Age 45-60 = postmenopausal cohort |
 | 3 | `tg_hdl_ratio` | Insulin resistance surrogate |
 | 4 | `metabolic_syndrome_score` | Composite risk indicator |
-| 5 | `race_encoded` | Population risk gradient |
+| 5 | `race_encoded` | removed |
 
 ---
 
@@ -289,7 +264,7 @@ Based on mutual information and clinical literature:
 | Version | Date | Changes |
 |---------|------|---------|
 | v1.0 | Original | 6 metabolic features only |
-| v2.0 | Current | Binary_v2_no_bp 13‑feature contract |
+| v2.0 | Current | Binary_v2_no_bp 12‑feature contract |
 | v2.1 | Planned | CRP (removed - not available all cycles) |
 
 ---

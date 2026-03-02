@@ -58,9 +58,22 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// Security headers
 	r.Use(middleware.SecurityHeaders())
 
-	// Rate limiting (1000 requests per minute per IP/user - relaxed for testing)
-	rateLimiter := middleware.NewRateLimiter(1000, time.Minute)
+	// Rate limiting - environment-aware configuration
+	// Production: 600/min (10/sec) - industry standard for health APIs
+	// Development: 3000/min (50/sec) - allows E2E tests and rapid reloads
+	// Override via RATE_LIMIT_PER_MINUTE env var
+	rateLimiter := middleware.NewRateLimiter(cfg.RateLimitPerMinute, time.Minute)
 	r.Use(middleware.RateLimit(rateLimiter))
+
+	// Stricter rate limiting for expensive endpoints (insights, analytics)
+	// These do heavy DB queries and should be more restricted
+	var expensiveRateLimit int
+	if cfg.Env == "production" || cfg.Env == "prod" {
+		expensiveRateLimit = 120 // 2/sec in production
+	} else {
+		expensiveRateLimit = 600 // 10/sec in development
+	}
+	expensiveLimiter := middleware.NewRateLimiter(expensiveRateLimit, time.Minute)
 
 	// Request body size limit (1MB max to prevent DoS via large payloads)
 	r.Use(middleware.MaxBodySize(1 << 20))
@@ -105,6 +118,8 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	protected := api.Group("")
 	protected.Use(middleware.Auth(cfg.JWTSecret, st.Users()))
 
+	auditLogger := middleware.NewAuditLogger(st)
+
 	// User profile and self-service endpoints (/users/me/...)
 	userGroup := protected.Group("/users/me")
 	{
@@ -113,7 +128,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 
 		// User's own assessments
 		assessmentsHandler := handlers.NewAssessmentsHandler(st, predictor, cache, cfg.ModelVersion, cfg.DatasetHash, cfg.ClinicalThresholds)
-		assessmentsHandler.Register(userGroup.Group("/assessments"))
+		assessmentsHandler.Register(userGroup.Group("/assessments"), auditLogger)
 
 		// User's export functionality
 		exportHandler := handlers.NewExportHandler(st)
@@ -122,6 +137,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 
 	insightsGroup := protected.Group("/insights")
 	insightsGroup.Use(middleware.RoleRequired("admin", "doctor"))
+	insightsGroup.Use(middleware.RateLimit(expensiveLimiter))
 	{
 		insightsHandler := handlers.NewInsightsHandler(st, cache)
 		insightsHandler.Register(insightsGroup)
@@ -131,6 +147,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	}
 
 	analyticsGroup := protected.Group("/analytics")
+	analyticsGroup.Use(middleware.RateLimit(expensiveLimiter))
 	{
 		analyticsHandler := handlers.NewAnalyticsHandler(st, cache)
 		analyticsHandler.Register(analyticsGroup)
@@ -146,8 +163,6 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// -------------------------------------------------------------------------
 	// Admin routes (requires admin role)
 	// -------------------------------------------------------------------------
-	auditLogger := middleware.NewAuditLogger(st)
-
 	// Auth events SSE endpoint (must be registered BEFORE protected admin routes - uses token query param, not Bearer)
 	// Reuses the broker created earlier for auth handlers
 	authEventHandler := handlers.NewAuthEventHandler(cfg, st, broker)

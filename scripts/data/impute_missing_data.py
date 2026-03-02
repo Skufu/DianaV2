@@ -2,7 +2,7 @@
 DIANA Data Imputation Script (OPTIONAL - for exploration only)
 
 ⚠️  WARNING: This script causes DATA LEAKAGE when used before LOGO cross-validation.
-    The train_v2.py pipeline uses SimpleImputer INSIDE the CV loop for leakage-safe
+The train_binary_v2_no_bp.py pipeline uses SimpleImputer INSIDE the CV loop for leakage-safe
     imputation. Only use this script for:
     
     1. Exploratory data analysis (EDA)

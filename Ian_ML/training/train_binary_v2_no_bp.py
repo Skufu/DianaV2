@@ -1,14 +1,4 @@
-"""
-DIANA Binary Classification Training V2 - Defensible Evaluation
-
-Binary reformulation: At-Risk (Pre-diabetic + Diabetic) vs Normal
-- 16 engineered features (same as 3-class clinical_3class)
-- Nested Leave-One-Group-Out (LOGO) validation on NHANES cycles
-- Leakage-safe pipeline
-- Threshold optimization for recall
-
-Usage: python Ian_ML/training/train_binary_v2_no_bp.py
-"""
+"""DIANA Binary Classification Training V2."""
 
 from __future__ import annotations
 
@@ -40,6 +30,7 @@ from sklearn.model_selection import (
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
+from typing import Any, cast
 
 import sys
 import importlib
@@ -51,11 +42,13 @@ except ModuleNotFoundError:
 MODELS_ROOT = paths_module.MODELS_ROOT
 NHANES_PROCESSED_ROOT = paths_module.NHANES_PROCESSED_ROOT
 
-from Ian_ML.common.feature_constants import (
-    CLUSTER_FEATURES,
-    CLUSTER_FEATURE_COUNT,
-    KMEANS_K,
-)
+try:
+    feature_constants = importlib.import_module("Ian_ML.common.feature_constants")
+except ModuleNotFoundError:
+    feature_constants = importlib.import_module("..common.feature_constants", package=__package__)
+CLUSTER_FEATURES = feature_constants.CLUSTER_FEATURES
+CLUSTER_FEATURE_COUNT = feature_constants.CLUSTER_FEATURE_COUNT
+KMEANS_K = feature_constants.KMEANS_K
 
 
 warnings.filterwarnings("ignore")
@@ -69,15 +62,15 @@ VIZ_DIR = MODELS_DIR / "visualizations"
 N_JOBS = int(os.environ.get("ML_N_JOBS", "1"))
 BOOTSTRAP_SAMPLES = int(os.environ.get("ML_BOOTSTRAP_SAMPLES", "1000"))
 
-# 13 features (removed BP)
+# 12 features (removed BP and race)
 FEATURES = [
     # Original metabolic biomarkers (5)
     "bmi", "triglycerides", "ldl", "hdl", "age",
     # Derived features (6)
     "bmi_category", "tg_hdl_ratio", "smoking_encoded",
     "activity_encoded", "alcohol_encoded", "metabolic_syndrome_score",
-    # Enrichment features (3)
-    "waist_circumference",  "race_encoded",
+    # Enrichment features (2)
+    "waist_circumference",
 ]
 
 # Ahlqvist et al. T2DM Subtype definitions
@@ -153,23 +146,10 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     )
     df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
 
-    if "race_ethnicity" in df.columns:
-        df["race_encoded"] = df["race_ethnicity"].fillna(0).astype(float)
-    else:
-        df["race_encoded"] = 0.0
-
     return df
 
 
 def create_binary_v2_no_bp_target(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Create binary_v2_no_bp target:
-    - 0 = Normal (healthy)
-    - 1 = At-Risk (Pre-diabetic + Diabetic)
-    
-    Clinical rationale: For screening, we want to catch anyone who needs 
-    intervention or follow-up testing.
-    """
     df = df.copy()
     # Normal (0) stays 0
     # Pre-diabetic (1) + Diabetic (2) become 1 (At-Risk)
@@ -198,7 +178,6 @@ def create_binary_v2_no_bp_target(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_inner_cv(groups: np.ndarray) -> GroupKFold:
-    """Choose a valid group-aware inner CV splitter."""
     n_groups = len(np.unique(groups))
     n_splits = min(3, n_groups)
     if n_splits < 2:
@@ -206,9 +185,8 @@ def get_inner_cv(groups: np.ndarray) -> GroupKFold:
     return GroupKFold(n_splits=n_splits)
 
 
-def build_model_registry() -> dict:
-    """Create model configs for nested pipeline CV."""
-    registry = {
+def build_model_registry() -> dict[str, dict[str, object]]:
+    registry: dict[str, dict[str, object]] = {
         "Logistic Regression": {
             "estimator": LogisticRegression(
                 max_iter=1500, class_weight="balanced", random_state=42
@@ -259,8 +237,7 @@ def build_model_registry() -> dict:
     return registry
 
 
-def compute_binary_v2_no_bp_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_proba: np.ndarray) -> dict:
-    """Compute comprehensive binary_v2_no_bp classification metrics."""
+def compute_binary_v2_no_bp_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_proba: np.ndarray) -> dict[str, float | int]:
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
     
     accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0.0
@@ -283,34 +260,14 @@ def compute_binary_v2_no_bp_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_pr
 
 
 def optimize_binary_v2_no_bp_threshold(
-    y_true: np.ndarray, 
+    y_true: np.ndarray,
     y_proba: np.ndarray,
     min_sensitivity: float = 0.80,
-) -> dict:
-    """
-    Multi-strategy threshold optimization for binary_v2_no_bp screening.
-
-    Returns the BEST operating point across three strategies:
-
-    1. **Youden's J** (Sensitivity + Specificity - 1)
-       Best balanced accuracy — the textbook clinical threshold.
-
-    2. **Screening** (maximize sensitivity subject to specificity >= 0.40)
-       High recall, but avoids the degenerate "flag everyone" trap.
-
-    3. **G-mean** (sqrt(sensitivity * specificity))
-       Geometric mean penalises extreme imbalance more than Youden.
-
-    After finding each strategy's best threshold, the function picks the
-    overall winner based on a composite score:
-        0.35 * sensitivity + 0.30 * specificity + 0.25 * f1 + 0.10 * accuracy
-    This ensures we value recall highly but still reward meaningful specificity.
-    """
+) -> dict[str, object]:
     thresholds = np.arange(0.10, 0.90, 0.01)
-    
-    strategies: dict[str, dict] = {}
 
-    # --- Strategy 1: Youden's J ---
+    strategies: dict[str, dict[str, object]] = {}
+
     best_j = -1.0
     best_j_thresh = 0.5
     for thresh in thresholds:
@@ -320,14 +277,14 @@ def optimize_binary_v2_no_bp_threshold(
         if j > best_j:
             best_j = j
             best_j_thresh = thresh
+    youden_metrics = compute_binary_v2_no_bp_metrics(
+        y_true, (y_proba >= best_j_thresh).astype(int), y_proba
+    )
     strategies["youden"] = {
         "threshold": float(best_j_thresh),
-        "metrics": compute_binary_v2_no_bp_metrics(
-            y_true, (y_proba >= best_j_thresh).astype(int), y_proba
-        ),
+        "metrics": youden_metrics,
     }
 
-    # --- Strategy 2: Screening (high sens, spec >= 0.40) ---
     best_screen_score = -1.0
     best_screen_thresh = 0.5
     for thresh in thresholds:
@@ -338,14 +295,14 @@ def optimize_binary_v2_no_bp_threshold(
             if score > best_screen_score:
                 best_screen_score = score
                 best_screen_thresh = thresh
+    screening_metrics = compute_binary_v2_no_bp_metrics(
+        y_true, (y_proba >= best_screen_thresh).astype(int), y_proba
+    )
     strategies["screening"] = {
         "threshold": float(best_screen_thresh),
-        "metrics": compute_binary_v2_no_bp_metrics(
-            y_true, (y_proba >= best_screen_thresh).astype(int), y_proba
-        ),
+        "metrics": screening_metrics,
     }
 
-    # --- Strategy 3: G-mean ---
     best_gmean = -1.0
     best_gmean_thresh = 0.5
     for thresh in thresholds:
@@ -355,38 +312,56 @@ def optimize_binary_v2_no_bp_threshold(
         if gmean > best_gmean:
             best_gmean = gmean
             best_gmean_thresh = thresh
+    gmean_metrics = compute_binary_v2_no_bp_metrics(
+        y_true, (y_proba >= best_gmean_thresh).astype(int), y_proba
+    )
     strategies["gmean"] = {
         "threshold": float(best_gmean_thresh),
-        "metrics": compute_binary_v2_no_bp_metrics(
-            y_true, (y_proba >= best_gmean_thresh).astype(int), y_proba
-        ),
+        "metrics": gmean_metrics,
     }
 
-    # --- Pick overall best via composite score ---
-    def _composite(m: dict) -> float:
-        return (
-            0.35 * m["sensitivity"]
-            + 0.30 * m["specificity"]
-            + 0.25 * m["f1"]
-            + 0.10 * m["accuracy"]
+    best_name = None
+    best_score = -1.0
+    all_strategies = {}
+    for name, strat in strategies.items():
+        if not isinstance(strat, dict):
+            continue
+        metrics = strat.get("metrics", {})
+        if not isinstance(metrics, dict):
+            continue
+        composite = (
+            0.35 * float(metrics.get("sensitivity", 0.0))
+            + 0.30 * float(metrics.get("specificity", 0.0))
+            + 0.25 * float(metrics.get("f1", 0.0))
+            + 0.10 * float(metrics.get("accuracy", 0.0))
         )
+        if composite > best_score:
+            best_score = composite
+            best_name = name
+        threshold = strat.get("threshold", 0.5)
+        sensitivity = metrics.get("sensitivity", 0.0)
+        specificity = metrics.get("specificity", 0.0)
+        accuracy = metrics.get("accuracy", 0.0)
+        f1 = metrics.get("f1", 0.0)
+        all_strategies[name] = {
+            "threshold": float(threshold) if isinstance(threshold, (int, float)) else 0.5,
+            "sensitivity": float(sensitivity) if isinstance(sensitivity, (int, float)) else 0.0,
+            "specificity": float(specificity) if isinstance(specificity, (int, float)) else 0.0,
+            "accuracy": float(accuracy) if isinstance(accuracy, (int, float)) else 0.0,
+            "f1": float(f1) if isinstance(f1, (int, float)) else 0.0,
+        }
 
-    best_name = max(strategies, key=lambda n: _composite(strategies[n]["metrics"]))
+    if best_name is None:
+        raise RuntimeError("No valid threshold strategy found")
 
+    best_strategy = strategies[best_name]
+    best_threshold = best_strategy.get("threshold", 0.5)
+    best_metrics = best_strategy.get("metrics", {})
     return {
-        "threshold": strategies[best_name]["threshold"],
-        "metrics": strategies[best_name]["metrics"],
+        "threshold": best_threshold,
+        "metrics": best_metrics,
         "strategy": best_name,
-        "all_strategies": {
-            name: {
-                "threshold": s["threshold"],
-                "sensitivity": s["metrics"]["sensitivity"],
-                "specificity": s["metrics"]["specificity"],
-                "accuracy": s["metrics"]["accuracy"],
-                "f1": s["metrics"]["f1"],
-            }
-            for name, s in strategies.items()
-        },
+        "all_strategies": all_strategies,
     }
 
 
@@ -394,8 +369,8 @@ def run_nested_logo_evaluation(
     X: np.ndarray,
     y: np.ndarray,
     groups: np.ndarray,
-    model_registry: dict,
-) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    model_registry: dict[str, dict[str, object]],
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, dict[str, object]]]:
     """
     Outer loop: LOGO on NHANES cycles.
     Inner loop: group-aware grid search with leakage-safe pipeline.
@@ -545,10 +520,10 @@ def run_nested_logo_evaluation(
             "PPV": threshold_metrics["ppv"],
             "NPV": threshold_metrics["npv"],
             "F1": threshold_metrics["f1"],
-            "Mean_Threshold": np.mean(s["thresholds"]),
+            "Mean_Threshold": float(np.mean(s["thresholds"])),
             "Inner_CV_AUC_Mean": float(np.mean(s["inner_cv_auc"])),
             "Inner_CV_AUC_Std": float(np.std(s["inner_cv_auc"])),
-            "Mean_Fold_AUC": float(np.mean([fold_df[(fold_df["Model"] == model_name)]["AUC_ROC"].mean()])) if not fold_df.empty else 0.0,
+            "Mean_Fold_AUC": float(fold_df[fold_df["Model"] == model_name]["AUC_ROC"].mean()) if not fold_df.empty else 0.0,
         })
 
         aggregated[model_name] = {
@@ -562,9 +537,13 @@ def run_nested_logo_evaluation(
     return fold_df, comparison_df, aggregated
 
 
-def bootstrap_metric_ci(y_true: np.ndarray, y_pred: np.ndarray, 
-                        metric_fn, n_bootstraps: int = 1000, ci: float = 0.95) -> tuple:
-    """Bootstrap confidence interval for a metric."""
+def bootstrap_metric_ci(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    metric_fn,
+    n_bootstraps: int = 1000,
+    ci: float = 0.95,
+) -> tuple[float, float]:
     rng = np.random.RandomState(42)
     n_samples = len(y_true)
     scores = []
@@ -586,9 +565,12 @@ def bootstrap_metric_ci(y_true: np.ndarray, y_pred: np.ndarray,
     )
 
 
-def bootstrap_auc_ci(y_true: np.ndarray, y_proba: np.ndarray, 
-                     n_bootstraps: int = 1000, ci: float = 0.95) -> tuple:
-    """Bootstrap confidence interval for AUC."""
+def bootstrap_auc_ci(
+    y_true: np.ndarray,
+    y_proba: np.ndarray,
+    n_bootstraps: int = 1000,
+    ci: float = 0.95,
+) -> tuple[float, float]:
     rng = np.random.RandomState(42)
     n_samples = len(y_true)
     scores = []
@@ -613,55 +595,38 @@ def bootstrap_auc_ci(y_true: np.ndarray, y_proba: np.ndarray,
     )
 
 
-def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
-    """
-    Assign Ahlqvist-inspired subtype labels to clusters based on centroid characteristics.
-
-    LIMITATION: DIANA lacks HOMA2-B, HOMA2-IR, and C-peptide, which are the
-    primary discriminators for SIDD vs SIRD in Ahlqvist et al. (2018). The TG/HDL
-    proxy used here captures dyslipidemia patterns but cannot truly distinguish
-    insulin deficiency (SIDD) from insulin resistance (SIRD). MOD and MARD
-    identifications are more reliable as they depend on BMI and age.
-
-    Assignment strategy (without HbA1c, HOMA2, or C-peptide):
-    1. SIRD (Severe Insulin-Resistant): Highest insulin resistance composite
-       (BMI + TG/50 - HDL/10)
-    2. SIDD (Severe Insulin-Deficient): Highest TG/HDL ratio among remaining
-       (approximate proxy — true SIDD requires HOMA2-B/C-peptide)
-    3. MOD (Mild Obesity-Related): Highest BMI of remaining
-    4. MARD (Mild Age-Related): Remaining (typically lowest metabolic risk)
-    """
+def assign_ahlqvist_labels(cluster_centers, feature_names, k=4) -> dict[int, str]:
     centers_df = pd.DataFrame(cluster_centers, columns=feature_names)
     available_clusters = list(range(k))
-    final_labels = {}
+    final_labels: dict[int, str] = {}
     
     # 1. Identify SIRD
-    ir_scores = {}
+    ir_scores: dict[int, float] = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
         ir_scores[cid] = c.get('bmi', 0) + (c.get('triglycerides', 0) / 50) - (c.get('hdl', 0) / 10)
     
-    sird_id = max(ir_scores, key=ir_scores.get)
+    sird_id = max(ir_scores, key=lambda cid: float(ir_scores[cid]))
     final_labels[sird_id] = 'SIRD'
     available_clusters.remove(sird_id)
     
     # 2. Identify SIDD (approximate — TG/HDL proxy cannot truly distinguish
     #    SIDD from SIRD without HOMA2-B/C-peptide; see Ahlqvist et al. 2018)
-    tg_hdl_scores = {}
+    tg_hdl_scores: dict[int, float] = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
         tg_hdl_scores[cid] = c.get('triglycerides', 0) / max(c.get('hdl', 1), 0.01)
     
-    sidd_id = max(tg_hdl_scores, key=tg_hdl_scores.get)
+    sidd_id = max(tg_hdl_scores, key=lambda cid: float(tg_hdl_scores[cid]))
     final_labels[sidd_id] = 'SIDD'
     available_clusters.remove(sidd_id)
     
     # 3. Identify MOD
-    mod_scores = {}
+    mod_scores: dict[int, float] = {}
     for cid in available_clusters:
         mod_scores[cid] = centers_df.iloc[cid].get('bmi', 0)
     
-    mod_id = max(mod_scores, key=mod_scores.get)
+    mod_id = max(mod_scores, key=lambda cid: float(mod_scores[cid]))
     final_labels[mod_id] = 'MOD'
     available_clusters.remove(mod_id)
     
@@ -675,24 +640,9 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
 def train_serving_kmeans(
     X: np.ndarray,
     y: np.ndarray,
-    features: list,
+    features: list[str],
     diabetes_labels: np.ndarray | None = None,
-) -> dict:
-    """
-    Train K-Means clustering for T2DM subtype identification.
-
-    IMPORTANT SCIENTIFIC DECISION:
-    Ahlqvist et al. (2018) defined SIRD/SIDD/MOD/MARD subtypes for diagnosed
-    *diagnosed* T2DM patients.  We therefore:
-      1. Fit K-Means ONLY on at-risk patients (y == 1).
-      2. Save the scaler fitted on at-risk patients so that at inference
-         time we can transform a new at-risk patient into the same space.
-      3. Report per-cluster diabetic vs pre-diabetic breakdown for
-         clinical context.
-
-    At inference time, the clustering should ONLY be applied to patients
-    the binary_v2_no_bp classifier has already flagged as At-Risk.
-    """
+) -> dict[int, dict[str, object]]:
     # Use base clinical features for clustering (same as clinical_3class)
     # IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
     cluster_features = CLUSTER_FEATURES
@@ -737,14 +687,14 @@ def train_serving_kmeans(
     else:
         y_original_at_risk = None
 
-    cluster_profiles = {}
+    cluster_profiles: dict[int, dict[str, object]] = {}
     for k in range(4):
         mask = clusters == k
         cluster_size = int(np.sum(mask))
         subtype_key = label_map[k]
         subtype_info = AHLQVIST_SUBTYPES[subtype_key]
 
-        profile: dict = {
+        profile: dict[str, object] = {
             "label": subtype_key,
             "subtype": subtype_key,
             "subtype_full": subtype_info["full_name"],
@@ -793,33 +743,59 @@ def train_serving_kmeans(
 
 
 def save_feature_manifest() -> None:
-    """Persist feature contract for inference."""
     with open(MODELS_DIR / "features.json", "w") as f:
         json.dump({
             "features": FEATURES,
             "n_features": len(FEATURES),
             "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
-            "note": "Binary reformulation with 14 features (no BP), LOCO validation",
+            "note": "Binary reformulation with 12 features (no BP), LOCO validation",
         }, f, indent=2)
 
 
 def save_fold_metrics(fold_df: pd.DataFrame) -> None:
-    """Save per-fold metrics for defensibility."""
+    fold_df = fold_df.copy()
+    fold_df["Precision"] = fold_df["PPV"]
+    fold_df["Recall"] = fold_df["Sensitivity"]
+    fold_df["FPR"] = (1 - fold_df["Specificity"]).round(4)
+    fold_df["FNR"] = (1 - fold_df["Sensitivity"]).round(4)
+    fold_df["Balanced_Accuracy"] = ((fold_df["Sensitivity"] + fold_df["Specificity"]) / 2).round(4)
+    fold_df["Year_Group"] = fold_df["Test_Cycle"].astype(str)
     fold_df.to_csv(RESULTS_DIR / "logo_fold_metrics.csv", index=False)
-    
-    # Summary by model
+
     summary = fold_df.groupby("Model").agg({
         "AUC_ROC": ["mean", "std", "min", "max"],
         "Sensitivity": ["mean", "std"],
         "Specificity": ["mean", "std"],
+        "Balanced_Accuracy": ["mean", "std"],
     }).round(4)
-    
+
     summary.to_csv(RESULTS_DIR / "logo_summary_by_model.csv")
+    warning_rows = fold_df[
+        (fold_df["Specificity"] < 0.4)
+        | ((fold_df["Sensitivity"] >= 0.85) & (fold_df["Specificity"] <= 0.3))
+    ]
+    warnings = []
+    for _, row in warning_rows.iterrows():
+        warnings.append({
+            "fold": int(row["Fold"]),
+            "test_cycle": row["Test_Cycle"],
+            "model": row["Model"],
+            "auc_roc": float(row["AUC_ROC"]),
+            "accuracy": float(row["Accuracy"]),
+            "sensitivity": float(row["Sensitivity"]),
+            "specificity": float(row["Specificity"]),
+            "fpr": float(row["FPR"]),
+            "fnr": float(row["FNR"]),
+            "threshold": float(row["Threshold"]),
+        })
+    if warnings:
+        with open(RESULTS_DIR / "blindspot_warnings.json", "w") as f:
+            json.dump(warnings, f, indent=2)
+        print(f"[DEFENSIBILITY] Detected {len(warnings)} fold warnings")
     print(f"\n[DEFENSIBILITY] Saved fold metrics to {RESULTS_DIR}")
 
 
 def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) -> None:
-    """Save comprehensive report for best model."""
     best_row = comparison_df[comparison_df["Model"] == best_model_name].iloc[0]
     
     report = {
@@ -855,8 +831,7 @@ def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) ->
     print(f"[SAVED] Best model report to {RESULTS_DIR / 'best_model_report.json'}")
 
 
-def generate_roc_curve(aggregated: dict, best_model_name: str) -> None:
-    """Generate ROC curve for best model."""
+def generate_roc_curve(aggregated: dict[str, dict[str, object]], best_model_name: str) -> None:
     s = aggregated[best_model_name]
     y_true = s["y_true"]
     y_proba = s["y_proba"]
@@ -934,7 +909,7 @@ def main():
     
     # Select best model by mean fold AUC (more defensible than aggregated AUC)
     fold_auc_by_model = fold_df.groupby("Model")["AUC_ROC"].mean()
-    best_model_name = fold_auc_by_model.idxmax()
+    best_model_name = str(fold_auc_by_model.idxmax())
     best = comparison_df[comparison_df["Model"] == best_model_name].iloc[0]
     
     print("\n" + "=" * 78)
@@ -973,9 +948,11 @@ def main():
 
     # Build estimator with best hyperparameters applied
     estimator = best_cfg["estimator"]
+    if not hasattr(estimator, "set_params"):
+        raise TypeError("Selected estimator does not support set_params")
     # Strip the 'model__' prefix from pipeline param names
     native_params = {k.replace('model__', ''): v for k, v in most_common_params.items()}
-    estimator.set_params(**native_params)
+    estimator = cast(Any, estimator).set_params(**native_params)
 
     final_pipeline = Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
@@ -990,8 +967,8 @@ def main():
     joblib.dump(final_pipeline, MODELS_DIR / "best_model.joblib")
     save_feature_manifest()
     save_fold_metrics(fold_df)
-    save_best_model_report(comparison_df, best_model_name)
-    generate_roc_curve(aggregated, best_model_name)
+    save_best_model_report(comparison_df, str(best_model_name))
+    generate_roc_curve(aggregated, str(best_model_name))
     
     print("\n" + "=" * 78)
     print("TRAINING COMPLETE")

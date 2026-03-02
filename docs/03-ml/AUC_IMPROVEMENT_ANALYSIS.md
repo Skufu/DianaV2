@@ -12,11 +12,11 @@
 | Factor | Explanation |
 |--------|-------------|
 | **Sample size** | n=1,376 is too small for XGBoost/CatBoost (need 10-20k+) |
-| **Feature count** | Only 13 features - no complex interactions for trees to capture |
+| **Feature count** | Only 12 features - no complex interactions for trees to capture |
 | **Linear signal** | Biomarker-diabetes relationships are approximately linear |
 | **Nested LOGO CV** | Rigorous validation exposes overfitting in complex models |
 
-**Bottom line:** data has a **linear structure**. LR captures 90% of signal with 14 params; XGBoost uses 1000+ params and overfits.
+**Bottom line:** data has a **linear structure**. LR captures 90% of signal with 12 params; XGBoost uses 1000+ params and overfits.
 
 ---
 
@@ -28,7 +28,7 @@ Tested 8 engineered features with LR-only nested LOGO CV:
 |-------------|-----|-----------|
 | base + bmi_trig_interaction | 0.6912 | +0.0014 |
 | base + ldl_hdl_ratio | 0.6904 | +0.0006 |
-| **base (13 features)** | **0.6898** | baseline |
+| **base (12 features)** | **0.6898** | baseline |
 | base + bmi_squared | 0.6894 | -0.0004 |
 | base + age_bmi_interaction | 0.6893 | -0.0005 |
 | base + age_systolic | 0.6892 | -0.0006 |
@@ -94,13 +94,13 @@ Changed from `class_weight="balanced"` to `{0:1, 1:1.5, 2:3}` (favor diabetic re
 
 ## Code Changes Made
 
-1. **train_v2.py** - Rolled back to original baseline:
+1. **train_binary_v2_no_bp.py** - Rolled back to original baseline:
    - 13 original features
    - `class_weight="balanced"`
    - No ablation code
 
 2. **Files modified:**
-   - `Ian_ML/training/train_v2.py` (reverted)
+   - `Ian_ML/training/train_binary_v2_no_bp.py` (reverted)
 
 ---
 
@@ -125,7 +125,7 @@ Changed from `class_weight="balanced"` to `{0:1, 1:1.5, 2:3}` (favor diabetic re
 | `download_nhanes_multi.py` | Added MCQ, INS, HSCRP file downloads |
 | `process_nhanes_multi.py` | Added race harmonization, family history derivation, waist extraction |
 | `data_processing.py` | Added outlier ranges for new biomarkers |
-| `train_v2.py` | Expanded from 13 → 16 features, added waist to metabolic syndrome score |
+| `train_binary_v2_no_bp.py` | Expanded from 13 → 16 features, added waist to metabolic syndrome score |
 | `predict.py` | Updated ClinicalPredictor for 16-feature model |
 | `test_train.py` | Added 3 new tests, fixed 4 pre-existing BMI boundary bugs |
 
@@ -182,4 +182,3 @@ Comparable tools (CDC Prediabetes Risk Test) achieve 0.72-0.79 AUC but use self-
 ---
 
 *Updated: February 19, 2026 — Feature enrichment experiment added.*
-

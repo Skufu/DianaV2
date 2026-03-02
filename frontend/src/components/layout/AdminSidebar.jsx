@@ -1,6 +1,6 @@
 // AdminSidebar: Dedicated navigation for Admin module with Indigo accents
 import React from 'react';
-import { LayoutDashboard, Users, FileText, Shield, LogOut, Cpu, Wifi, ChevronLeft, ChevronRight, Activity, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Shield, LogOut, Cpu, Wifi, ChevronLeft, ChevronRight, Activity, BookOpen, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { navLabelVariants } from '../../utils/animations';
 
@@ -15,12 +15,14 @@ const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsC
     { id: 'insights', icon: Activity, label: 'Insights' },
     { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
     { id: 'assessment', icon: FileText, label: 'Log Assessment' },
+    { id: 'explainability', icon: Brain, label: 'Clinical Explainability' },
   ];
 
   const doctorNavItems = [
     { id: 'insights', icon: Activity, label: 'Insights' },
     { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
     { id: 'assessment', icon: FileText, label: 'Log Assessment' },
+    { id: 'explainability', icon: Brain, label: 'Clinical Explainability' },
   ];
 
   const navItems = userRole === 'doctor' ? doctorNavItems : adminNavItems;

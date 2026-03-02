@@ -111,7 +111,7 @@ The pipeline includes additional biomarkers beyond core diabetes indicators:
 | Fasting Insulin | LBXIN | Fasting serum insulin |
 | C-Reactive Protein | LBXCRP | Inflammation marker |
 | Family History Diabetes | MCQ300C | Binary (1=Yes, 0=No) |
-| Race/Ethnicity | RIDRETH1/RIDRETH3 | Harmonized 6-category |
+| Race/Ethnicity | RIDRETH1/RIDRETH3 | Removed from screening model |
 
 **Note**: Family history (MCQ300C) was dropped in 2021-2023 cycle.
 

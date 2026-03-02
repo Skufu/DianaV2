@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""
-Test the ML server with the fixed 13-feature extraction
-"""
+"""Test the ML server with the fixed 12-feature extraction."""
 import requests
 import json
 
 # Test data with all 7 base features + lifestyle
 # This simulates what the backend sends
-test_patient_full = {
+test_patient_full: dict[str, float] = {
     # From backend Assessment model
     "fbs": 126,
     "hba1c": 6.5,
@@ -17,16 +15,16 @@ test_patient_full = {
     "triglycerides": 180,
     "systolic": 130,
     "diastolic": 85,
-    "activity": "Moderate",
-    "smoking": "Never",
-    "hypertension": "No",
-    "heart_disease": "No",
+    "activity": 1,
+    "smoking": 0,
+    "hypertension": 0,
+    "heart_disease": 0,
     "bmi": 29.4,
     "age": 55
 }
 
 # Test data with only 5 features (old way)
-test_patient_partial = {
+test_patient_partial: dict[str, float] = {
     "bmi": 29.4,
     "triglycerides": 180,
     "ldl": 132,
@@ -35,7 +33,7 @@ test_patient_partial = {
 }
 
 print("="*60)
-print("Testing ML Server with 13-Feature Extraction")
+print("Testing ML Server with 12-Feature Extraction")
 print("="*60)
 
 # First, let's just test using the predictor directly
@@ -88,20 +86,19 @@ print("\n" + "="*60)
 print("SUMMARY")
 print("="*60)
 print("""
-✓ ClinicalPredictor now correctly accepts 7 base features:
-  - bmi, triglycerides, ldl, hdl, age, systolic, diastolic
+✓ ClinicalPredictor now correctly accepts 5 base features:
+  - bmi, triglycerides, ldl, hdl, age
   
-✓ Plus 3 lifestyle features (optional):
-  - smoking_status, physical_activity, alcohol_use
+✓ Plus lifestyle + waist features (optional):
+  - smoking_status, physical_activity, alcohol_use, waist_circumference
   
-✓ ClinicalPredictor computes 6 engineered features:
+✓ ClinicalPredictor computes engineered features:
   - bmi_category, tg_hdl_ratio, smoking_encoded,
     activity_encoded, alcohol_encoded, metabolic_syndrome_score
 
-✓ Total: 13 features as designed
+✓ Total: 12 features as designed
 
-✓ ML server.py now extracts all 7 base features from requests
-  (previously only extracted 5)
+✓ ML server.py now extracts all clinical inputs from requests
 
 ✓ Assessment logging in backend works correctly
   (all biomarkers are saved to database)

@@ -88,22 +88,22 @@ func (q *Queries) CountAssessmentsByUser(ctx context.Context, userID pgtype.Int4
 const createAssessment = `-- name: CreateAssessment :one
 INSERT INTO assessments (
    user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-   waist_circumference, race_ethnicity, family_history_diabetes,
+   waist_circumference, family_history_diabetes,
    activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
    model_version, dataset_hash, validation_status, predicted_status, risk_label,
    cluster_description, treatment_focus, at_risk_probability,
    is_self_reported, source, notes
 ) VALUES (
    $1, $2, $3, $4, $5, $6, $7, $8, $9,
-   $10, $11, $12,
-   $13, $14, $15, $16, $17, $18, $19,
-   $20, $21, $22, $23, $24,
-    $25, $26, $27,
-    $28, $29, $30,
-    $31
+   $10, $11,
+   $12, $13, $14, $15, $16, $17, $18,
+   $19, $20, $21, $22, $23,
+    $24, $25, $26,
+    $27, $28, $29,
+    $30
 )
 RETURNING id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-           waist_circumference, race_ethnicity, family_history_diabetes,
+           waist_circumference, family_history_diabetes,
            activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
            model_version, dataset_hash, validation_status, predicted_status, risk_label,
            cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
@@ -121,7 +121,6 @@ type CreateAssessmentParams struct {
 	Systolic              pgtype.Int4    `json:"systolic"`
 	Diastolic             pgtype.Int4    `json:"diastolic"`
 	WaistCircumference    pgtype.Numeric `json:"waist_circumference"`
-	RaceEthnicity         pgtype.Int2    `json:"race_ethnicity"`
 	FamilyHistoryDiabetes bool           `json:"family_history_diabetes"`
 	Activity              pgtype.Text    `json:"activity"`
 	HistoryFlag           pgtype.Bool    `json:"history_flag"`
@@ -156,7 +155,6 @@ type CreateAssessmentRow struct {
 	Systolic              pgtype.Int4        `json:"systolic"`
 	Diastolic             pgtype.Int4        `json:"diastolic"`
 	WaistCircumference    pgtype.Numeric     `json:"waist_circumference"`
-	RaceEthnicity         pgtype.Int2        `json:"race_ethnicity"`
 	FamilyHistoryDiabetes bool               `json:"family_history_diabetes"`
 	Activity              pgtype.Text        `json:"activity"`
 	HistoryFlag           pgtype.Bool        `json:"history_flag"`
@@ -193,7 +191,6 @@ func (q *Queries) CreateAssessment(ctx context.Context, arg CreateAssessmentPara
 		arg.Systolic,
 		arg.Diastolic,
 		arg.WaistCircumference,
-		arg.RaceEthnicity,
 		arg.FamilyHistoryDiabetes,
 		arg.Activity,
 		arg.HistoryFlag,
@@ -228,7 +225,6 @@ func (q *Queries) CreateAssessment(ctx context.Context, arg CreateAssessmentPara
 		&i.Systolic,
 		&i.Diastolic,
 		&i.WaistCircumference,
-		&i.RaceEthnicity,
 		&i.FamilyHistoryDiabetes,
 		&i.Activity,
 		&i.HistoryFlag,
@@ -267,7 +263,7 @@ func (q *Queries) DeleteAssessment(ctx context.Context, id int32) error {
 
 const getAssessment = `-- name: GetAssessment :one
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-    waist_circumference, race_ethnicity, family_history_diabetes,
+    waist_circumference, family_history_diabetes,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
     model_version, dataset_hash, validation_status, predicted_status, risk_label,
     cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
@@ -289,7 +285,6 @@ type GetAssessmentRow struct {
 	Systolic              pgtype.Int4        `json:"systolic"`
 	Diastolic             pgtype.Int4        `json:"diastolic"`
 	WaistCircumference    pgtype.Numeric     `json:"waist_circumference"`
-	RaceEthnicity         pgtype.Int2        `json:"race_ethnicity"`
 	FamilyHistoryDiabetes bool               `json:"family_history_diabetes"`
 	Activity              pgtype.Text        `json:"activity"`
 	HistoryFlag           pgtype.Bool        `json:"history_flag"`
@@ -329,7 +324,6 @@ func (q *Queries) GetAssessment(ctx context.Context, id int32) (GetAssessmentRow
 		&i.Systolic,
 		&i.Diastolic,
 		&i.WaistCircumference,
-		&i.RaceEthnicity,
 		&i.FamilyHistoryDiabetes,
 		&i.Activity,
 		&i.HistoryFlag,
@@ -410,7 +404,7 @@ func (q *Queries) GetAssessmentTrendByUser(ctx context.Context, userID pgtype.In
 
 const getLatestAssessmentByUser = `-- name: GetLatestAssessmentByUser :one
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-    waist_circumference, race_ethnicity, family_history_diabetes,
+    waist_circumference, family_history_diabetes,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
     model_version, dataset_hash, validation_status, predicted_status, risk_label,
     cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
@@ -433,7 +427,6 @@ type GetLatestAssessmentByUserRow struct {
 	Systolic              pgtype.Int4        `json:"systolic"`
 	Diastolic             pgtype.Int4        `json:"diastolic"`
 	WaistCircumference    pgtype.Numeric     `json:"waist_circumference"`
-	RaceEthnicity         pgtype.Int2        `json:"race_ethnicity"`
 	FamilyHistoryDiabetes bool               `json:"family_history_diabetes"`
 	Activity              pgtype.Text        `json:"activity"`
 	HistoryFlag           pgtype.Bool        `json:"history_flag"`
@@ -473,7 +466,6 @@ func (q *Queries) GetLatestAssessmentByUser(ctx context.Context, userID pgtype.I
 		&i.Systolic,
 		&i.Diastolic,
 		&i.WaistCircumference,
-		&i.RaceEthnicity,
 		&i.FamilyHistoryDiabetes,
 		&i.Activity,
 		&i.HistoryFlag,
@@ -516,7 +508,7 @@ func (q *Queries) GetLatestAssessmentDateByUser(ctx context.Context, userID pgty
 
 const listAssessmentsByUser = `-- name: ListAssessmentsByUser :many
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-    waist_circumference, race_ethnicity, family_history_diabetes,
+    waist_circumference, family_history_diabetes,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
     model_version, dataset_hash, validation_status, predicted_status, risk_label,
     cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
@@ -538,7 +530,6 @@ type ListAssessmentsByUserRow struct {
 	Systolic              pgtype.Int4        `json:"systolic"`
 	Diastolic             pgtype.Int4        `json:"diastolic"`
 	WaistCircumference    pgtype.Numeric     `json:"waist_circumference"`
-	RaceEthnicity         pgtype.Int2        `json:"race_ethnicity"`
 	FamilyHistoryDiabetes bool               `json:"family_history_diabetes"`
 	Activity              pgtype.Text        `json:"activity"`
 	HistoryFlag           pgtype.Bool        `json:"history_flag"`
@@ -584,7 +575,6 @@ func (q *Queries) ListAssessmentsByUser(ctx context.Context, userID pgtype.Int4)
 			&i.Systolic,
 			&i.Diastolic,
 			&i.WaistCircumference,
-			&i.RaceEthnicity,
 			&i.FamilyHistoryDiabetes,
 			&i.Activity,
 			&i.HistoryFlag,
@@ -620,7 +610,7 @@ func (q *Queries) ListAssessmentsByUser(ctx context.Context, userID pgtype.Int4)
 
 const listAssessmentsByUserPaginated = `-- name: ListAssessmentsByUserPaginated :many
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-    waist_circumference, race_ethnicity, family_history_diabetes,
+    waist_circumference, family_history_diabetes,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
     model_version, dataset_hash, validation_status, predicted_status, risk_label,
     cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
@@ -649,7 +639,6 @@ type ListAssessmentsByUserPaginatedRow struct {
 	Systolic              pgtype.Int4        `json:"systolic"`
 	Diastolic             pgtype.Int4        `json:"diastolic"`
 	WaistCircumference    pgtype.Numeric     `json:"waist_circumference"`
-	RaceEthnicity         pgtype.Int2        `json:"race_ethnicity"`
 	FamilyHistoryDiabetes bool               `json:"family_history_diabetes"`
 	Activity              pgtype.Text        `json:"activity"`
 	HistoryFlag           pgtype.Bool        `json:"history_flag"`
@@ -695,7 +684,6 @@ func (q *Queries) ListAssessmentsByUserPaginated(ctx context.Context, arg ListAs
 			&i.Systolic,
 			&i.Diastolic,
 			&i.WaistCircumference,
-			&i.RaceEthnicity,
 			&i.FamilyHistoryDiabetes,
 			&i.Activity,
 			&i.HistoryFlag,
@@ -731,7 +719,7 @@ func (q *Queries) ListAssessmentsByUserPaginated(ctx context.Context, arg ListAs
 
 const listAssessmentsLimited = `-- name: ListAssessmentsLimited :many
 SELECT id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-    waist_circumference, race_ethnicity, family_history_diabetes,
+    waist_circumference, family_history_diabetes,
     activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
     model_version, dataset_hash, validation_status, predicted_status, risk_label,
     cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
@@ -753,7 +741,6 @@ type ListAssessmentsLimitedRow struct {
 	Systolic              pgtype.Int4        `json:"systolic"`
 	Diastolic             pgtype.Int4        `json:"diastolic"`
 	WaistCircumference    pgtype.Numeric     `json:"waist_circumference"`
-	RaceEthnicity         pgtype.Int2        `json:"race_ethnicity"`
 	FamilyHistoryDiabetes bool               `json:"family_history_diabetes"`
 	Activity              pgtype.Text        `json:"activity"`
 	HistoryFlag           pgtype.Bool        `json:"history_flag"`
@@ -799,7 +786,6 @@ func (q *Queries) ListAssessmentsLimited(ctx context.Context, limit int32) ([]Li
 			&i.Systolic,
 			&i.Diastolic,
 			&i.WaistCircumference,
-			&i.RaceEthnicity,
 			&i.FamilyHistoryDiabetes,
 			&i.Activity,
 			&i.HistoryFlag,
@@ -916,29 +902,28 @@ SET user_id = $1,
     systolic = $8,
     diastolic = $9,
     waist_circumference = $10,
-    race_ethnicity = $11,
-    family_history_diabetes = $12,
-    activity = $13,
-    history_flag = $14,
-    smoking = $15,
-    hypertension = $16,
-    heart_disease = $17,
-    bmi = $18,
-    cluster = $19,
-    risk_score = $20,
-    model_version = $21,
-    dataset_hash = $22,
-    validation_status = $23,
-    predicted_status = $24,
-    risk_label = $25,
-    cluster_description = $26,
-    treatment_focus = $27,
-    at_risk_probability = $28,
-    notes = $29,
+    family_history_diabetes = $11,
+    activity = $12,
+    history_flag = $13,
+    smoking = $14,
+    hypertension = $15,
+    heart_disease = $16,
+    bmi = $17,
+    cluster = $18,
+    risk_score = $19,
+    model_version = $20,
+    dataset_hash = $21,
+    validation_status = $22,
+    predicted_status = $23,
+    risk_label = $24,
+    cluster_description = $25,
+    treatment_focus = $26,
+    at_risk_probability = $27,
+    notes = $28,
     updated_at = NOW()
-WHERE id = $30
+WHERE id = $29
 RETURNING id, user_id, fbs, hba1c, cholesterol, ldl, hdl, triglycerides, systolic, diastolic,
-          waist_circumference, race_ethnicity, family_history_diabetes,
+          waist_circumference, family_history_diabetes,
           activity, history_flag, smoking, hypertension, heart_disease, bmi, cluster, risk_score,
           model_version, dataset_hash, validation_status, predicted_status, risk_label,
           cluster_description, treatment_focus, at_risk_probability, is_self_reported, source, notes,
@@ -956,7 +941,6 @@ type UpdateAssessmentParams struct {
 	Systolic              pgtype.Int4    `json:"systolic"`
 	Diastolic             pgtype.Int4    `json:"diastolic"`
 	WaistCircumference    pgtype.Numeric `json:"waist_circumference"`
-	RaceEthnicity         pgtype.Int2    `json:"race_ethnicity"`
 	FamilyHistoryDiabetes bool           `json:"family_history_diabetes"`
 	Activity              pgtype.Text    `json:"activity"`
 	HistoryFlag           pgtype.Bool    `json:"history_flag"`
@@ -990,7 +974,6 @@ type UpdateAssessmentRow struct {
 	Systolic              pgtype.Int4        `json:"systolic"`
 	Diastolic             pgtype.Int4        `json:"diastolic"`
 	WaistCircumference    pgtype.Numeric     `json:"waist_circumference"`
-	RaceEthnicity         pgtype.Int2        `json:"race_ethnicity"`
 	FamilyHistoryDiabetes bool               `json:"family_history_diabetes"`
 	Activity              pgtype.Text        `json:"activity"`
 	HistoryFlag           pgtype.Bool        `json:"history_flag"`
@@ -1027,7 +1010,6 @@ func (q *Queries) UpdateAssessment(ctx context.Context, arg UpdateAssessmentPara
 		arg.Systolic,
 		arg.Diastolic,
 		arg.WaistCircumference,
-		arg.RaceEthnicity,
 		arg.FamilyHistoryDiabetes,
 		arg.Activity,
 		arg.HistoryFlag,
@@ -1061,7 +1043,6 @@ func (q *Queries) UpdateAssessment(ctx context.Context, arg UpdateAssessmentPara
 		&i.Systolic,
 		&i.Diastolic,
 		&i.WaistCircumference,
-		&i.RaceEthnicity,
 		&i.FamilyHistoryDiabetes,
 		&i.Activity,
 		&i.HistoryFlag,

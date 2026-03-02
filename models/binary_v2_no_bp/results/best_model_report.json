@@ -2,30 +2,30 @@
   "model_type": "binary_v2_no_bp",
   "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
   "best_model": "Logistic Regression",
-  "n_features": 13,
+  "n_features": 12,
   "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
   "decision_thresholds": {
-    "at_risk": 0.4566666666666665
+    "at_risk": 0.4499999999999998
   },
   "metrics": {
-    "auc_roc": 0.7199975383466177,
+    "auc_roc": 0.7202394594548711,
     "auc_ci_95": [
-      0.6934636505551639,
-      0.7462625668272029
+      0.6932609036715308,
+      0.7467684613056609
     ],
-    "accuracy": 0.6642441860465116,
-    "sensitivity": 0.7452316076294278,
+    "accuracy": 0.6366279069767442,
+    "sensitivity": 0.7356948228882834,
     "sensitivity_ci_95": [
-      0.7160157469717362,
-      0.7766897460302721
+      0.7049628031542925,
+      0.7663056176351076
     ],
-    "specificity": 0.5716510903426791,
-    "ppv": 0.6654501216545012,
-    "npv": 0.6624548736462094,
-    "f1": 0.7030848329048842,
-    "mean_threshold": 0.4566666666666665,
-    "inner_cv_auc_mean": 0.7264548032626262,
-    "inner_cv_auc_std": 0.005050764280707163
+    "specificity": 0.5233644859813084,
+    "ppv": 0.6382978723404256,
+    "npv": 0.6339622641509434,
+    "f1": 0.6835443037974684,
+    "mean_threshold": 0.4499999999999998,
+    "inner_cv_auc_mean": 0.7264148614930868,
+    "inner_cv_auc_std": 0.0047465284055860785
   },
   "features": [
     "bmi",
@@ -39,8 +39,7 @@
     "activity_encoded",
     "alcohol_encoded",
     "metabolic_syndrome_score",
-    "waist_circumference",
-    "race_encoded"
+    "waist_circumference"
   ],
   "clinical_rationale": "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). Prioritizes sensitivity for screening."
 }

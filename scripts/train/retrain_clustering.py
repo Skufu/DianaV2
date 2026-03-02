@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""
-Retrain K-Means Clustering Model with 13 Features
-
-This script retrains the K-means clustering model using the optimized
-13-feature set instead of the original 7 features.
-
-Usage: python scripts/train/retrain_clustering.py
-"""
+"""Retrain K-Means clustering with optimized features."""
 
 import pandas as pd
 import numpy as np
@@ -28,13 +21,11 @@ MODELS_DIR = Path("models/clinical")
 RESULTS_DIR = MODELS_DIR / "results"
 VIZ_DIR = MODELS_DIR / "visualizations"
 
-# 13 optimized features
 FEATURES = [
     'bmi', 'triglycerides', 'ldl', 'hdl', 'age',
-    'systolic', 'diastolic',
     'bmi_category', 'tg_hdl_ratio',
     'smoking_encoded', 'activity_encoded', 'alcohol_encoded',
-    'metabolic_syndrome_score'
+    'metabolic_syndrome_score', 'waist_circumference'
 ]
 
 # Ahlqvist subtype definitions (for reference)
@@ -63,31 +54,34 @@ AHLQVIST_SUBTYPES = {
 
 
 def engineer_features(df):
-    """Create engineered features"""
     df = df.copy()
     
-    # BMI category
-    df['bmi_category'] = pd.cut(df['bmi'], bins=[0, 18.5, 25, 30, 100], labels=[0, 1, 2, 3]).astype(float)
-    
-    # TG/HDL ratio
+    bmi_category = pd.cut(
+        df['bmi'],
+        bins=[0, 18.5, 25, 30, 100],
+        labels=[0, 1, 2, 3],
+    )
+    df['bmi_category'] = (
+        pd.Series(bmi_category, index=df.index)
+        .astype("float64")
+    )
+
     df['tg_hdl_ratio'] = df['triglycerides'] / df['hdl'].replace(0, np.nan)
-    
-    # Lifestyle encoding
+
     smoking_map = {'Never': 0, 'Former': 1, 'Current': 2, 'Unknown': 1}
     df['smoking_encoded'] = df['smoking_status'].map(smoking_map) if 'smoking_status' in df.columns else 1
-    
+
     activity_map = {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Unknown': 1}
     df['activity_encoded'] = df['physical_activity'].map(activity_map) if 'physical_activity' in df.columns else 1
-    
-    alcohol_map = {'None': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3}
+
+    alcohol_map = {'None': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
     df['alcohol_encoded'] = df['alcohol_use'].map(alcohol_map) if 'alcohol_use' in df.columns else 1
-    
-    # Metabolic syndrome score
+
     metabolic_criteria = pd.DataFrame({
         'high_tg': df['triglycerides'] > 150,
         'low_hdl': df['hdl'] < 50,
-        'high_bp': df['systolic'] >= 130,
-        'high_bmi': df['bmi'] >= 30,
+        'high_bmi': df['bmi'] >= 25,
+        'high_waist': df['waist_circumference'] >= 80 if 'waist_circumference' in df.columns else False,
     })
     df['metabolic_syndrome_score'] = metabolic_criteria.sum(axis=1)
     
@@ -95,29 +89,23 @@ def engineer_features(df):
 
 
 def assign_ahlqvist_labels(cluster_centers, feature_names):
-    """
-    Assign Ahlqvist subtype labels based on centroid characteristics.
-    """
     centers_df = pd.DataFrame(cluster_centers, columns=feature_names)
     available_clusters = list(range(len(cluster_centers)))
     final_labels = {}
     
-    # Get feature indices
     bmi_idx = feature_names.index('bmi') if 'bmi' in feature_names else None
     tg_idx = feature_names.index('triglycerides') if 'triglycerides' in feature_names else None
     hdl_idx = feature_names.index('hdl') if 'hdl' in feature_names else None
     age_idx = feature_names.index('age') if 'age' in feature_names else None
     
-    # 1. SIDD: Highest metabolic dysfunction (using metabolic_syndrome_score)
     if 'metabolic_syndrome_score' in feature_names:
         score_idx = feature_names.index('metabolic_syndrome_score')
         sidd_id = centers_df.loc[available_clusters].iloc[:, score_idx].idxmax()
     elif bmi_idx is not None and tg_idx is not None and hdl_idx is not None:
-        # Fallback: use BMI + TG - HDL as proxy
         scores = {}
         for cid in available_clusters:
             scores[cid] = centers_df.iloc[cid, bmi_idx] + centers_df.iloc[cid, tg_idx] - centers_df.iloc[cid, hdl_idx]
-        sidd_id = max(scores, key=scores.get)
+        sidd_id = max(scores, key=lambda key: scores[key])
     else:
         sidd_id = available_clusters[0]
     
@@ -127,7 +115,6 @@ def assign_ahlqvist_labels(cluster_centers, feature_names):
     if not available_clusters:
         return final_labels
     
-    # 2. SIRD: Highest BMI (insulin resistance marker)
     if bmi_idx is not None:
         sird_id = centers_df.loc[available_clusters].iloc[:, bmi_idx].idxmax()
     else:
@@ -139,7 +126,6 @@ def assign_ahlqvist_labels(cluster_centers, feature_names):
     if not available_clusters:
         return final_labels
     
-    # 3. MOD: Highest TG/HDL ratio (of remaining)
     if 'tg_hdl_ratio' in feature_names:
         tg_hdl_idx = feature_names.index('tg_hdl_ratio')
         mod_id = centers_df.loc[available_clusters].iloc[:, tg_hdl_idx].idxmax()
@@ -147,7 +133,7 @@ def assign_ahlqvist_labels(cluster_centers, feature_names):
         scores = {}
         for cid in available_clusters:
             scores[cid] = centers_df.iloc[cid, tg_idx] / max(centers_df.iloc[cid, hdl_idx], 1)
-        mod_id = max(scores, key=scores.get)
+        mod_id = max(scores, key=lambda key: scores[key])
     else:
         mod_id = available_clusters[0]
     
@@ -157,7 +143,6 @@ def assign_ahlqvist_labels(cluster_centers, feature_names):
     if not available_clusters:
         return final_labels
     
-    # 4. MARD: Remaining (typically oldest, lowest risk)
     if age_idx is not None:
         mard_id = centers_df.loc[available_clusters].iloc[:, age_idx].idxmax()
     else:
@@ -169,7 +154,6 @@ def assign_ahlqvist_labels(cluster_centers, feature_names):
 
 
 def create_cluster_profiles(df, cluster_labels, features, label_map):
-    """Create detailed cluster profiles"""
     df = df.copy()
     df['cluster_id'] = cluster_labels
     df['cluster_label'] = df['cluster_id'].map(label_map)
@@ -177,17 +161,18 @@ def create_cluster_profiles(df, cluster_labels, features, label_map):
     profiles = {}
     for cid, label in label_map.items():
         cluster_data = df[df['cluster_id'] == cid]
+        means: dict[str, float] = {}
         profile = {
             'label': label,
             'count': int(len(cluster_data)),
             'percentage': round(len(cluster_data) / len(df) * 100, 1),
-            'means': {},
-            'info': AHLQVIST_SUBTYPES.get(label, {})
+            'means': means,
+            'info': AHLQVIST_SUBTYPES.get(label, {}),
         }
         
         for feat in features:
             if feat in cluster_data.columns:
-                profile['means'][feat] = round(cluster_data[feat].mean(), 2)
+                means[feat] = round(cluster_data[feat].mean(), 2)
         
         profiles[label] = profile
     
@@ -196,7 +181,7 @@ def create_cluster_profiles(df, cluster_labels, features, label_map):
 
 def main():
     print("="*70)
-    print("K-MEANS CLUSTERING RETRAINING (13 Features)")
+    print("K-MEANS CLUSTERING RETRAINING (12 Features)")
     print("="*70)
     
     # Create directories
@@ -210,7 +195,7 @@ def main():
     print(f"   Records: {len(df)}")
     
     # Engineer features
-    print("\n[FEATURES] Engineering 13 features...")
+    print("\n[FEATURES] Engineering 12 features...")
     df = engineer_features(df)
     
     # Prepare data
@@ -229,7 +214,7 @@ def main():
     print("\n[K-ANALYSIS] Testing K=2 to K=6...")
     k_results = []
     for k in range(2, 7):
-        km = KMeans(n_clusters=k, random_state=42, n_init=10)
+        km = KMeans(n_clusters=k, random_state=42, n_init="auto")
         labels = km.fit_predict(X_scaled)
         sil = silhouette_score(X_scaled, labels)
         k_results.append({'k': k, 'silhouette': sil, 'model': km, 'labels': labels})
@@ -244,7 +229,7 @@ def main():
     k = 4
     print(f"\n[CLUSTERING] Using K={k} (Ahlqvist subtypes)...")
     
-    kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+    kmeans = KMeans(n_clusters=k, random_state=42, n_init="auto")
     cluster_labels = kmeans.fit_predict(X_scaled)
     
     final_silhouette = silhouette_score(X_scaled, cluster_labels)
@@ -289,7 +274,7 @@ def main():
     
     # Save analysis
     cluster_analysis = {
-        "methodology": "K-Means clustering with Ahlqvist subtype classification (13 features)",
+        "methodology": "K-Means clustering with Ahlqvist subtype classification (12 features)",
         "features_used": FEATURES,
         "n_samples": len(X),
         "k_selected": k,
@@ -299,7 +284,7 @@ def main():
             for r in k_results
         ],
         "cluster_profiles": profiles,
-        "note": "Retrained with optimized 13-feature set"
+        "note": "Retrained with optimized 12-feature set"
     }
     
     with open(RESULTS_DIR / "cluster_analysis.json", 'w') as f:

@@ -84,7 +84,6 @@ type Assessment struct {
 	Systolic              int     `json:"systolic,omitempty"`
 	Diastolic             int     `json:"diastolic,omitempty"`
 	WaistCircumference    float64 `json:"waist_circumference,omitempty"`
-	RaceEthnicity         int     `json:"race_ethnicity,omitempty"`
 	FamilyHistoryDiabetes bool    `json:"family_history_diabetes,omitempty"`
 	Age                   int     `json:"age,omitempty"`
 	Activity              string  `json:"activity,omitempty"`
@@ -227,7 +226,6 @@ type UpdateAssessmentRequest struct {
 	Systolic              *int     `json:"systolic" binding:"omitempty,min=50,max=300"`
 	Diastolic             *int     `json:"diastolic" binding:"omitempty,min=30,max=200"`
 	WaistCircumference    *float64 `json:"waist_circumference" binding:"omitempty,min=40,max=200"`
-	RaceEthnicity         *int     `json:"race_ethnicity" binding:"omitempty,min=1,max=6"`
 	FamilyHistoryDiabetes *bool    `json:"family_history_diabetes"`
 	Age                   *int     `json:"age" binding:"omitempty,min=18,max=120"`
 	Activity              string   `json:"activity" binding:"omitempty,max=50"`
@@ -238,7 +236,7 @@ type UpdateAssessmentRequest struct {
 	HeartDisease          string   `json:"heart_disease" binding:"omitempty,max=50"`
 	BMI                   *float64 `json:"bmi" binding:"omitempty,min=10,max=100"`
 	Notes                 string   `json:"notes" binding:"omitempty,max=2000"`
-	ModelType             string   `json:"model_type" binding:"omitempty,oneof=clinical ada binary_v2_no_bp binary_v2_bp clinical_3class"`
+	ModelType             string   `json:"model_type" binding:"omitempty,oneof=clinical ada binary_v2_no_bp binary_v2_bp"`
 }
 
 // -----------------------------------------------------------------------------

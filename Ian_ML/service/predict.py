@@ -17,11 +17,13 @@ import numpy as np
 import joblib
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Mapping
 from Ian_ML.common.paths import MODELS_ROOT
 from Ian_ML.common.feature_constants import (
     CLUSTER_FEATURES,
     CLINICAL_FEATURES,
+    CLINICAL_FEATURES_NO_BP,
+    CLINICAL_FEATURES_WITH_BP,
     CLUSTER_FEATURE_COUNT,
     CLINICAL_FEATURE_COUNT,
     ADA_FEATURES,
@@ -64,11 +66,6 @@ def _validate_model_dir(path: Path) -> Path:
     """Ensure model artifacts are present and consistent."""
     model_path = path / "best_model.joblib"
     if not model_path.exists():
-        # Fallback to clinical_3class if binary_v2_no_bp not available
-        fallback = MODELS_ROOT / "clinical_3class"
-        if fallback.exists() and (fallback / "best_model.joblib").exists():
-            logger.warning(f"Model not found at {path}, falling back to {fallback}")
-            return _validate_model_dir(fallback)
         raise FileNotFoundError(
             f"Model not found at {model_path}. Run training first."
         )
@@ -95,13 +92,13 @@ REQUIRED_FEATURES = [
     'bmi', 'triglycerides', 'ldl', 'hdl', 'age',
     'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded',
     'alcohol_encoded', 'metabolic_syndrome_score',
-    'waist_circumference',  'race_encoded'
+    'waist_circumference'
 ]
 
 # Raw input features (before engineering)
 RAW_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age',
                 'smoking_status', 'physical_activity', 'alcohol_use',
-                'waist_circumference',  'race_ethnicity']
+                'waist_circumference']
 
 
 def compute_file_hash(filepath: Path) -> str:
@@ -270,7 +267,7 @@ class DianaPredictor:
         except FileNotFoundError as e:
             logger.warning("ADA model artifacts missing, using ADA baseline rules: %s", e)
     
-    def validate_input(self, data: Dict[str, float]) -> tuple[bool, list]:
+    def validate_input(self, data: Mapping[str, Any]) -> tuple[bool, list[str]]:
         missing = [f for f in ADA_FEATURES if f not in data or data[f] is None]
         if missing:
             return False, missing
@@ -293,12 +290,12 @@ class DianaPredictor:
             return False, errors
         return True, []
     
-    def _engineer_features(self, data: Dict[str, float]) -> pd.DataFrame:
+    def _engineer_features(self, data: Mapping[str, Any]) -> pd.DataFrame:
         """Build ADA feature frame in training order."""
         df = pd.DataFrame([data])
-        return df[ADA_FEATURES]  # type: ignore[return-value]
+        return df.loc[:, ADA_FEATURES].copy()
     
-    def predict(self, data: Dict[str, float]) -> Dict[str, Any]:
+    def predict(self, data: Mapping[str, Any]) -> Dict[str, Any]:
         """
         Predict diabetes risk for a patient.
         
@@ -315,7 +312,7 @@ class DianaPredictor:
                 "error": f"Missing required features: {missing}"
             }
 
-        if not self.model_loaded:
+        if not self.model_loaded or self.scaler is None or self.classifier is None:
             hba1c = data.get("hba1c")
             fbs = data.get("fbs")
             status_by_hba1c = get_medical_status(hba1c) if hba1c is not None else "Normal"
@@ -420,7 +417,7 @@ class DianaPredictor:
         risk_map = {0: "High Risk", 1: "Low Risk", 2: "Moderate Risk"}
         return risk_map.get(cluster_id, f"Cluster-{cluster_id}")
     
-    def predict_batch(self, patients: list[Dict[str, float]]) -> list[Dict[str, Any]]:
+    def predict_batch(self, patients: list[Mapping[str, Any]]) -> list[Dict[str, Any]]:
         """Predict for multiple patients."""
         return [self.predict(p) for p in patients]
 
@@ -434,9 +431,9 @@ class DianaPredictor:
 CLINICAL_BASE_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
 
 # Optional enrichment features (model works without them via imputation)
-CLINICAL_ENRICHMENT_FEATURES = ['waist_circumference',  'race_ethnicity']
+CLINICAL_ENRICHMENT_FEATURES = ['waist_circumference']
 
-# Full feature set including engineered features (14 features for classifier, no BP)
+# Full feature set including engineered features (12 features for classifier, no BP)
 # IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
 # CLINICAL_FEATURES is now imported at the top of the file
 
@@ -461,12 +458,15 @@ class ClinicalPredictor:
         self.models_dir = resolve_clinical_models_dir(models_dir)
         self.model_type = model_type or "clinical"
         self.results_dir = self.models_dir / "results"
-        self.features = CLINICAL_FEATURES
-        
+        if self.model_type == "binary_v2_bp":
+            self.features = CLINICAL_FEATURES_WITH_BP
+        else:
+            self.features = CLINICAL_FEATURES_NO_BP
+
         if not (self.models_dir / "best_model.joblib").exists():
             raise FileNotFoundError(
                 f"Clinical models not found at {self.models_dir}. "
-                "Run 'python Ian_ML/training/train_v2.py' or 'python scripts/train/train_quick.py' first."
+                "Run 'python Ian_ML/training/train_binary_v2_no_bp.py' or 'python scripts/train/train_quick.py' first."
             )
         
         # Load or extract scaler (may be separate file or embedded in pipeline)
@@ -555,8 +555,8 @@ class ClinicalPredictor:
             self.metrics = {}
         self.decision_thresholds = self.metrics.get("decision_thresholds", {})
 
-    def _build_feature_vector(self, data: Dict[str, float]) -> np.ndarray:
-        """Build the 13-feature clinical vector in training order."""
+    def _build_feature_vector(self, data: Mapping[str, Any]) -> np.ndarray:
+        """Build the 12-feature clinical vector in training order."""
         bmi = data['bmi']
         tg = data['triglycerides']
         ldl = data['ldl']
@@ -604,13 +604,6 @@ class ClinicalPredictor:
         if not np.isnan(waist) and waist >= 80:
             metabolic_score += 1
 
-        # Race encoding
-
-        # Race encoding
-        race_map = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6}
-        race_raw = data.get('race_ethnicity', np.nan)
-        race_encoded = race_map.get(int(race_raw), np.nan) if not pd.isna(race_raw) and race_raw else np.nan
-
         # Enrichment features with safe defaults
         family_history = data.get('family_history_diabetes', np.nan)
         if family_history == 0 or family_history is None:
@@ -643,15 +636,13 @@ class ClinicalPredictor:
             'metabolic_syndrome_score': metabolic_score,
             'waist_circumference': waist,
             'family_history_diabetes': family_history,
-            'race_encoded': race_encoded,
-            'crp': crp,
         }
 
         feature_values = [feature_map.get(feature, np.nan) for feature in self.features]
 
         return np.array([feature_values], dtype=float)
 
-    def _build_cluster_vector(self, data: Dict[str, float]) -> np.ndarray:
+    def _build_cluster_vector(self, data: Mapping[str, Any]) -> np.ndarray:
         """Build the 5-feature cluster vector matching CLUSTER_FEATURES order."""
         return np.array([[data.get(f, 0) for f in self.cluster_features]], dtype=float)
 
@@ -676,7 +667,7 @@ class ClinicalPredictor:
             return self.scaler.transform(X_work)
         return X_work
     
-    def validate_input(self, data: Dict[str, float]) -> tuple[bool, list]:
+    def validate_input(self, data: Mapping[str, Any]) -> tuple[bool, list[str]]:
         # Only check for base features - engineered features are computed
         missing = [f for f in CLINICAL_BASE_FEATURES if f not in data or data[f] is None]
         if missing:
@@ -700,7 +691,7 @@ class ClinicalPredictor:
             return False, errors
         return True, []
     
-    def predict(self, data: Dict[str, float]) -> Dict[str, Any]:
+    def predict(self, data: Mapping[str, Any]) -> Dict[str, Any]:
         """
         Predict diabetes risk using clinical (metabolic) features only.
         
@@ -801,7 +792,6 @@ class ClinicalPredictor:
         note_by_type = {
             "binary_v2_no_bp": "Binary at-risk screening model (no HbA1c/FBS).",
             "binary_v2_bp": "Binary at-risk screening model with BP features (no HbA1c/FBS).",
-            "clinical_3class": "Three-class screening model (Normal/Pre-diabetic/Diabetic).",
             "clinical": "Clinical screening model (no HbA1c/FBS).",
         }
         return {
@@ -853,7 +843,7 @@ class ClinicalPredictor:
         cluster_info = self._get_cluster_info(cluster_id)
         return cluster_info.get("risk_label", cluster_info.get("label", f"Cluster-{cluster_id}"))
     
-    def predict_batch(self, patients: list[Dict[str, float]]) -> list[Dict[str, Any]]:
+    def predict_batch(self, patients: list[Mapping[str, Any]]) -> list[Dict[str, Any]]:
         """Predict for multiple patients."""
         return [self.predict(p) for p in patients]
 
@@ -877,8 +867,6 @@ def _resolve_clinical_models_dir_for_type(model_type: Optional[str]) -> Path:
         # Doctor model - includes blood pressure features
         return _validate_model_dir(MODELS_ROOT / "binary_v2_with_bp")
         return _validate_model_dir(MODELS_ROOT / "binary_v2_with_bp_archived" / "binary_v2")
-    if resolved_type == "clinical_3class":
-        return _validate_model_dir(MODELS_ROOT / "clinical_3class")
     if resolved_type == "clinical":
         return resolve_clinical_models_dir()
     return resolve_clinical_models_dir()
@@ -918,7 +906,7 @@ def predict(data: Dict[str, float], model_type: str = "ada") -> Dict[str, Any]:
         model_type: "binary_v2_no_bp" or "clinical" for binary at-risk screening model (default),
                    "ada" for baseline HbA1c/FBS-based model
     """
-    if model_type in ("binary_v2_no_bp", "clinical", "clinical_3class", "binary_v2_bp"):
+    if model_type in ("binary_v2_no_bp", "clinical", "binary_v2_bp"):
         return get_clinical_predictor_for(model_type).predict(data)
     return get_predictor().predict(data)
 

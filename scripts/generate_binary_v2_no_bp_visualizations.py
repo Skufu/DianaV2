@@ -83,7 +83,6 @@ def generate_confusion_matrix():
     
     # Default values for optional features
     df['waist_circumference'] = df.get('waist_circumference', np.nan)
-    df['race_encoded'] = df.get('race_ethnicity', np.nan)
     
     # Create target (binary: Normal vs At-Risk)
     df['target'] = ((df.get('hba1c', 0) >= 5.7) | (df.get('fbs', 0) >= 100)).astype(int)

@@ -15,7 +15,6 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 		systolic: '',
 		diastolic: '',
 		waist_circumference: '',
-		race_ethnicity: '',
 		family_history_diabetes: '',
 		triglycerides: '',
 		ldl: '',
@@ -87,7 +86,6 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 			systolic: '',
 			diastolic: '',
 			waist_circumference: '',
-			race_ethnicity: '',
 			family_history_diabetes: '',
 			triglycerides: '',
 			ldl: '',
@@ -109,13 +107,15 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 					next.fbs = '';
 					next.hba1c = '';
 				}
-				if (value !== 'binary_v2_bp' && value !== 'clinical_3class') {
+				if (value !== 'binary_v2_bp') {
 					next.systolic = '';
 					next.diastolic = '';
 				}
 				if (value === 'ada') {
 					next.waist_circumference = '';
-					next.race_ethnicity = '';
+					next.family_history_diabetes = '';
+				}
+				if (value === 'binary_v2_no_bp') {
 					next.family_history_diabetes = '';
 				}
 			}
@@ -131,7 +131,7 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 		if (formData.model_type === 'ada') {
 			requiredFields.push('fbs', 'hba1c');
 		}
-		if (formData.model_type === 'binary_v2_bp' || formData.model_type === 'clinical_3class') {
+		if (formData.model_type === 'binary_v2_bp') {
 			requiredFields.push('systolic', 'diastolic');
 		}
     const hasMissingRequired = requiredFields.some(field => !formData[field]);
@@ -158,48 +158,31 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 			smoking: formData.smoking_status || 'Unknown',
 			activity: formData.physical_activity || 'Unknown',
 			alcohol: formData.alcohol || 'Unknown',
-			notes: formData.notes || null
+			notes: formData.notes || null,
+			model_type: formData.model_type,
 		};
 
 		if (formData.waist_circumference) {
 			payload.waist_circumference = parseFloat(formData.waist_circumference);
 		}
-		if (formData.race_ethnicity) {
-			payload.race_ethnicity = parseInt(formData.race_ethnicity, 10);
+		if (formData.model_type !== 'binary_v2_no_bp') {
+			if (formData.family_history_diabetes === 'yes') {
+				payload.family_history_diabetes = true;
+			}
+			if (formData.family_history_diabetes === 'no') {
+				payload.family_history_diabetes = false;
+			}
 		}
-		if (formData.family_history_diabetes === 'yes') {
-			payload.family_history_diabetes = true;
-		}
-		if (formData.family_history_diabetes === 'no') {
-			payload.family_history_diabetes = false;
-		}
-
-		if (formData.waist_circumference) {
-			payload.waist_circumference = parseFloat(formData.waist_circumference);
-		}
-		if (formData.race_ethnicity) {
-			payload.race_ethnicity = parseInt(formData.race_ethnicity, 10);
-		}
-		if (formData.family_history_diabetes === 'yes') {
-			payload.family_history_diabetes = true;
-		}
-		if (formData.family_history_diabetes === 'no') {
-			payload.family_history_diabetes = false;
-		}
-
 		if (formData.model_type === 'ada') {
 			payload.fbs = parseFloat(formData.fbs);
 			payload.hba1c = parseFloat(formData.hba1c);
 		}
-		if (formData.model_type === 'binary_v2_bp' || formData.model_type === 'clinical_3class') {
+		if (formData.model_type === 'binary_v2_bp') {
 			payload.systolic = parseFloat(formData.systolic);
 			payload.diastolic = parseFloat(formData.diastolic);
 		}
 
 
-		if (showModelSelector) {
-			payload.model_type = formData.model_type;
-		}
 
     try {
       const result = await createAssessment.mutateAsync(payload);
@@ -268,7 +251,6 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 					>
 						<option value="binary_v2_no_bp">Screening (no BP)</option>
 						<option value="binary_v2_bp">Screening (with BP)</option>
-						<option value="clinical_3class">3-Class Clinical (with BP)</option>
 						<option value="ada">ADA (HbA1c + FBS)</option>
 					</select>
 				</div>
@@ -424,45 +406,26 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 							className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
 							placeholder="e.g. 88.0"
 						/>
-					</motion.div>
+            </motion.div>
 
-					<motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
-						<label htmlFor="race_ethnicity" className="block text-sm font-medium text-gray-600 mb-1">
-							Race/Ethnicity (NHANES code)
-						</label>
-						<select
-							id="race_ethnicity"
-							name="race_ethnicity"
-							value={formData.race_ethnicity}
-							onChange={handleChange}
-							className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-						>
-							<option value="">Unknown</option>
-							<option value="1">Mexican American (1)</option>
-							<option value="2">Other Hispanic (2)</option>
-							<option value="3">Non-Hispanic White (3)</option>
-							<option value="4">Non-Hispanic Black (4)</option>
-							<option value="5">Other Race (5)</option>
-							<option value="6">Non-Hispanic Asian (6)</option>
-						</select>
-					</motion.div>
-
-					<motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
-						<label htmlFor="family_history_diabetes" className="block text-sm font-medium text-gray-600 mb-1">
-							Family History of Diabetes
-						</label>
-						<select
-							id="family_history_diabetes"
-							name="family_history_diabetes"
-							value={formData.family_history_diabetes}
-							onChange={handleChange}
-							className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-						>
-							<option value="">Unknown</option>
-							<option value="yes">Yes</option>
-							<option value="no">No</option>
-						</select>
-					</motion.div>
+					{formData.model_type !== 'binary_v2_no_bp' && (
+						<motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+							<label htmlFor="family_history_diabetes" className="block text-sm font-medium text-gray-600 mb-1">
+								Family History of Diabetes
+							</label>
+							<select
+								id="family_history_diabetes"
+								name="family_history_diabetes"
+								value={formData.family_history_diabetes}
+								onChange={handleChange}
+								className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+							>
+								<option value="">Unknown</option>
+								<option value="yes">Yes</option>
+								<option value="no">No</option>
+							</select>
+						</motion.div>
+					)}
 				</div>
 			</div>
 			{(formData.model_type === 'binary_v2_bp' || formData.model_type === 'clinical_3class') && (

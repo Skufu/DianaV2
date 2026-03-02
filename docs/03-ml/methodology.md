@@ -80,11 +80,11 @@ For panel defense, also compute Information Gain using clinical thresholds.
 | Logistic Regression | C=0.1, balanced weights | Interpretable baseline, best AUC for binary screening |
 | Random Forest | n_estimators=500, max_depth=6, min_samples_leaf=15 | Captures nonlinear relationships |
 
-### Feature Engineering (13 features)
+### Feature Engineering (12 features)
 | Category | Features |
 |----------|----------|
 | Base | bmi, triglycerides, ldl, hdl, age |
-| Categorical | bmi_category, race_encoded |
+| Categorical | bmi_category |
 | Lipid Ratios | tg_hdl_ratio |
 | Advanced | metabolic_syndrome_score, waist_circumference |
 | Lifestyle | smoking_encoded, activity_encoded, alcohol_encoded |
@@ -156,7 +156,7 @@ Clusters labeled using rank-based assignment for NHANES postmenopausal populatio
 - **Expected AUC**: ~1.0 (circular - HbA1c defines labels)
 
 ### 2. Binary Screening Predictor (binary_v2_no_bp)
-- **Features**: 13-feature contract without HbA1c/FBS
+- **Features**: 12-feature contract without HbA1c/FBS
 - **Use Case**: Screening without diagnostic biomarkers
 - **Expected AUC**: ≥ 0.70 (Good discrimination for screening)
 - **Rationale**: See [rationale.md](rationale.md) for non-circular defense

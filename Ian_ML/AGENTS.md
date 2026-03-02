@@ -12,7 +12,7 @@ Flask ML prediction server for diabetes risk assessment. Dual predictor pattern:
 |------|----------|-------|
 | Inference server | `service/server.py` | Flask app, port 5001 |
 | Predictors | `service/predict.py` | DianaPredictor, ClinicalPredictor |
-| Training | `training/train_v2.py` | Defensible nested CV training |
+| Training | `training/train_binary_v2_no_bp.py` | Defensible nested CV training |
 | Clustering | `training/clustering.py` | K-Means (K=4 Ahlqvist subtypes) |
 | SHAP | `service/explainability.py` | Feature importance |
 | A/B testing | `service/ab_testing.py` | Model selection |
