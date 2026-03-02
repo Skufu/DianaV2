@@ -17,6 +17,7 @@ import base64
 import importlib
 import io
 import logging
+import math
 from typing import Any, List, Optional
 import numpy as np
 
@@ -41,6 +42,20 @@ except Exception:
     plt = None
 
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_number(value: Any) -> float | None:
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    if math.isnan(numeric) or math.isinf(numeric):
+        return None
+    return numeric
+
+
+def _sanitize_list(values: list[Any]) -> list[float | None]:
+    return [_sanitize_number(v) for v in values]
 
 
 def _extract_tree_model(model: Any) -> Any:
@@ -271,9 +286,9 @@ class SHAPExplainer:
             )
             
             return {
-                "base_value": float(base_value),
-                "shap_values": instance_shap.tolist(),
-                "feature_values": instance_features.tolist(),
+                "base_value": _sanitize_number(base_value),
+                "shap_values": _sanitize_list(instance_shap.tolist()),
+                "feature_values": _sanitize_list(instance_features.tolist()),
                 "feature_names": feature_names,
                 "contributions": contributions,
                 "explainer_type": self.model_type
@@ -298,25 +313,32 @@ class SHAPExplainer:
         contributions = []
         
         for i, name in enumerate(feature_names):
-            shap_val = float(shap_values[i])
-            feat_val = float(feature_values[i])
+            shap_val = _sanitize_number(shap_values[i])
+            feat_val = _sanitize_number(feature_values[i])
             
             # Determine direction
-            if abs(shap_val) < 0.01:
+            if shap_val is None or feat_val is None:
+                direction = "neutral"
+                description = f"{name} has unavailable data"
+                impact = 0.0
+            elif abs(shap_val) < 0.01:
                 direction = "neutral"
                 description = f"{name} has minimal impact"
+                impact = abs(shap_val)
             elif shap_val > 0:
                 direction = "increases risk"
                 description = f"{name} = {feat_val:.1f} increases risk"
+                impact = abs(shap_val)
             else:
                 direction = "decreases risk"
                 description = f"{name} = {feat_val:.1f} decreases risk"
+                impact = abs(shap_val)
             
             contributions.append({
                 "feature": name,
                 "value": feat_val,
                 "shap_value": shap_val,
-                "impact": abs(shap_val),
+                "impact": impact,
                 "direction": direction,
                 "description": description
             })
@@ -438,7 +460,10 @@ def generate_waterfall_plot(explanation: dict[str, Any], max_display: int = 10) 
         shap_values = np.array(explanation.get("shap_values", []), dtype=float)
         feature_values = np.array(explanation.get("feature_values", []), dtype=float)
         feature_names = explanation.get("feature_names", [])
-        base_value = float(explanation.get("base_value", 0.0))
+        base_value_raw = explanation.get("base_value", 0.0)
+        base_value = _sanitize_number(base_value_raw)
+        if base_value is None:
+            base_value = 0.0
 
         if shap_values.size == 0 or feature_values.size == 0:
             return None

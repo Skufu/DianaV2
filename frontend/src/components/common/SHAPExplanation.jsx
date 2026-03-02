@@ -29,6 +29,22 @@ const FEATURE_LABELS = {
     diastolic: 'Diastolic BP',
 };
 
+const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+
+const coerceNumber = (value) => {
+    if (isFiniteNumber(value)) return value;
+    if (typeof value === 'string' && value.trim() !== '') {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+    return null;
+};
+
+const formatNumber = (value, digits, fallback = 'N/A') => {
+    const numeric = coerceNumber(value);
+    return numeric == null ? fallback : numeric.toFixed(digits);
+};
+
 const SHAPExplanation = ({
     patientData,
     modelType = 'clinical',
@@ -66,11 +82,12 @@ const SHAPExplanation = ({
                 throw new Error(data.error);
             }
 
-            const predictionValue = data?.probability ?? data?.at_risk_probability ?? data?.prediction;
+            const predictionCandidates = [data?.probability, data?.at_risk_probability, data?.prediction];
+            const predictionValue = predictionCandidates.map(coerceNumber).find((value) => value != null) ?? null;
             const explanationPayload = data.explanation || data;
             setExplanation({
                 ...explanationPayload,
-                prediction: explanationPayload?.prediction ?? predictionValue,
+                prediction: coerceNumber(explanationPayload?.prediction) ?? predictionValue,
             });
         } catch (err) {
             if (err.name === 'AbortError') return;
@@ -102,12 +119,16 @@ const SHAPExplanation = ({
 
         if (isObjectShape) {
             return explanation.shap_values
-                .map(sv => ({
-                    feature: FEATURE_LABELS[sv.feature] || sv.feature,
-                    value: sv.shap_value,
-                    featureValue: sv.feature_value,
-                    absValue: Math.abs(sv.shap_value),
-                }))
+                .map(sv => {
+                    const numericValue = coerceNumber(sv.shap_value) ?? 0;
+                    const numericFeatureValue = coerceNumber(sv.feature_value);
+                    return {
+                        feature: FEATURE_LABELS[sv.feature] || sv.feature,
+                        value: numericValue,
+                        featureValue: numericFeatureValue,
+                        absValue: Math.abs(numericValue),
+                    };
+                })
                 .sort((a, b) => b.absValue - a.absValue);
         }
 
@@ -115,16 +136,22 @@ const SHAPExplanation = ({
         const featureValues = explanation.feature_values || [];
 
         return explanation.shap_values
-            .map((value, index) => ({
-                feature: FEATURE_LABELS[featureNames[index]] || featureNames[index] || `Feature ${index + 1}`,
-                value,
-                featureValue: featureValues[index],
-                absValue: Math.abs(value),
-            }))
+            .map((value, index) => {
+                const numericValue = coerceNumber(value) ?? 0;
+                const rawFeatureValue = featureValues[index];
+                const numericFeatureValue = coerceNumber(rawFeatureValue);
+                return {
+                    feature: FEATURE_LABELS[featureNames[index]] || featureNames[index] || `Feature ${index + 1}`,
+                    value: numericValue,
+                    featureValue: numericFeatureValue,
+                    absValue: Math.abs(numericValue),
+                };
+            })
             .sort((a, b) => b.absValue - a.absValue);
     };
 
     const chartData = getChartData();
+    const hasChartData = chartData.length > 0;
 
     if (loading) {
         return (
@@ -216,7 +243,7 @@ const SHAPExplanation = ({
                                         boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                                     }}
                                     formatter={(value, name, props) => [
-                                        `${value.toFixed(4)} (Value: ${props.payload.featureValue?.toFixed(1) ?? 'N/A'})`,
+                                        `${formatNumber(value, 4)} (Value: ${formatNumber(props.payload?.featureValue, 1)})`,
                                         'Contribution'
                                     ]}
                                 />
@@ -254,18 +281,23 @@ const SHAPExplanation = ({
                         <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                             <div className="text-xs font-medium text-slate-500 mb-1">Base Value</div>
                             <div className="text-xl font-bold text-slate-900">
-                                {explanation.base_value?.toFixed(3) ?? 'N/A'}
+                                {formatNumber(explanation.base_value, 3)}
                             </div>
                         </div>
                         <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                             <div className="text-xs font-medium text-slate-500 mb-1">Final Prediction</div>
                             <div className="text-xl font-bold text-slate-900">
-                                {explanation.prediction != null
-                                    ? `${(explanation.prediction * 100).toFixed(1)}%`
+                                {isFiniteNumber(explanation.prediction)
+                                    ? `${formatNumber(explanation.prediction * 100, 1)}%`
                                     : 'N/A'}
                             </div>
                         </div>
                     </div>
+                    {!hasChartData && (
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                            No SHAP feature contributions available for this assessment.
+                        </div>
+                    )}
                 </div>
             )}
         </div>
