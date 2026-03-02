@@ -37,6 +37,7 @@ import threading
 import functools
 import time
 import hmac
+import math
 from collections import defaultdict
 import numpy as np
 flask_module = importlib.import_module("flask")
@@ -969,6 +970,15 @@ def get_clinical_metrics():
 def get_information_gain():
     """Get Information Gain scores for feature importance."""
     try:
+        def safe_float(value):
+            try:
+                numeric = float(value)
+            except (TypeError, ValueError):
+                return 0.0
+            if math.isnan(numeric) or math.isinf(numeric):
+                return 0.0
+            return numeric
+
         # First try binary_v2_no_bp (active model)
         ig_path = MODELS_ROOT / "binary_v2_no_bp" / "results" / "information_gain_results.json"
         if ig_path.exists():
@@ -996,7 +1006,7 @@ def get_information_gain():
                 ig_scores = coefs
             
             feature_ranking = [
-                {"feature": features[i], "ig": float(ig_scores[i])}
+                {"feature": features[i], "ig": safe_float(ig_scores[i])}
                 for i in range(len(features)) if i < len(coefs)
             ]
             feature_ranking.sort(key=lambda x: x["ig"], reverse=True)
@@ -1011,7 +1021,7 @@ def get_information_gain():
             importances = clin.classifier.feature_importances_
             features = clin.features
             feature_ranking = [
-                {"feature": features[i], "ig": float(importances[i])}
+                {"feature": features[i], "ig": safe_float(importances[i])}
                 for i in range(len(features)) if i < len(importances)
             ]
             feature_ranking.sort(key=lambda x: x["ig"], reverse=True)
@@ -1021,7 +1031,12 @@ def get_information_gain():
                 "model_type": clin.model_type or "clinical"
             }
             return jsonify(result)
-        return jsonify({"error": "Information gain results not found"}), 404
+        return jsonify({
+            "feature_ranking": [],
+            "method": "unavailable",
+            "model_type": "clinical",
+            "error": "Information gain results not found"
+        })
     except Exception as e:
         logger.exception("Get information gain failed")
         return jsonify({"error": "Get information gain failed"}), 500
