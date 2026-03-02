@@ -467,7 +467,7 @@ h1 {
         </div>
         <div class="card">
           <div class="card__title"><code>predict.py</code></div>
-          <div class="card__desc">DianaPredictor + ClinicalPredictor. 16 features (sklearn RandomForest/LogisticRegression). Returns 3-class + cluster.</div>
+          <div class="card__desc">DianaPredictor + ClinicalPredictor. 12 features (binary_v2_no_bp) with clustering.</div>
           <div class="card__files"><code>service/predict.py</code></div>
         </div>
         <div class="card">
@@ -480,14 +480,14 @@ h1 {
     <div>
       <div class="grid-3">
         <div class="card">
-          <div class="card__title"><code> train_v2.py</code> 3-Class</div>
-          <div class="card__desc">3-class: Normal/Pre-diabetic/Diabetic. sklearn. WARNING: Low AUC - for screening only, NOT diagnostic.</div>
-          <div class="card__files"><code>training/train_v2.py</code></div>
+          <div class="card__title"><code>train_binary_v2_no_bp.py</code></div>
+          <div class="card__desc">Binary: Normal vs At-Risk (Pre-diabetic + Diabetic). Primary screening model (12 features).</div>
+          <div class="card__files"><code>training/train_binary_v2_no_bp.py</code></div>
         </div>
         <div class="card">
-          <div class="card__title"><code>train_binary_v2.py</code></div>
-          <div class="card__desc">Binary: Normal vs At-Risk (Pre-diabetic + Diabetic). Prioritizes sensitivity for screening.</div>
-          <div class="card__files"><code>training/train_binary_v2.py</code></div>
+          <div class="card__title"><code>train_binary_v2_with_bp.py</code></div>
+          <div class="card__desc">Binary: Normal vs At-Risk with BP features (16 features) for clinician model.</div>
+          <div class="card__files"><code>training/train_binary_v2_with_bp.py</code></div>
         </div>
         <div class="card">
           <div class="card__title"><code>clustering.py</code></div>

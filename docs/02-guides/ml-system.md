@@ -12,7 +12,7 @@ DIANA uses machine learning to predict Type 2 Diabetes risk in postmenopausal wo
 Ian_ML/
 ├── server.py             # Flask API server
 ├── predict.py            # DianaPredictor, ClinicalPredictor classes
-├── train.py              # Model training
+├── train_binary_v2_no_bp.py # Model training (binary_v2_no_bp)
 ├── clustering.py         # K-Means clustering (K=4 Ahlqvist)
 ├── data_processing.py    # Data preparation
 ├── explainability.py     # SHAP explanations
@@ -40,7 +40,7 @@ Note: Model files (best_model.joblib, scaler.joblib, kmeans_model.joblib, cluste
 | Aspect | Details |
 |--------|---------|
 | **Dataset** | NHANES 2009-2023 (6 cycles, 1,376 postmenopausal women) |
-| **Features** | 13 features: metabolic + engineered (no HbA1c/FBS for screening) |
+| **Features** | 12 features: metabolic + engineered (no HbA1c/FBS for screening) |
 | **Target** | Binary screening (Normal vs At‑Risk) with optional 3‑class clinician mode |
 | **Algorithms** | Logistic Regression, Random Forest |
 | **Best Model** | Logistic Regression (AUC-ROC: ~0.72, binary_v2_no_bp) |
@@ -62,7 +62,7 @@ REQUIRED_FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl']
 ### 2. Screening Model (Non-Circular)
 Uses non‑circular features, excluding HbA1c/FBS:
 ```python
-SCREENING_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score', 'waist_circumference', 'race_encoded']
+SCREENING_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score', 'waist_circumference']
 ```
 
 ---
@@ -81,7 +81,7 @@ class DianaPredictor:
 
 class ScreeningPredictor:
     """Non-circular predictor excluding HbA1c/FBS from features."""
-    FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score', 'waist_circumference', 'race_encoded']
+    FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score', 'waist_circumference']
     
     def predict(self, features: dict) -> dict:
         # Returns: predicted_status, risk_cluster, probability, risk_score
@@ -171,11 +171,10 @@ make ml
 source venv/bin/activate && ./scripts/dev/retrain-binary.sh
 
 # Or run individual steps:
-./venv/bin/python scripts/process_nhanes_multi.py
+./venv/bin/python scripts/data/process_nhanes_multi.py
 ./venv/bin/python Ian_ML/training/data_processing.py
-./venv/bin/python scripts/impute_missing_data.py
 ./venv/bin/python Ian_ML/training/train_binary_v2_no_bp.py
-./venv/bin/python scripts/train_clusters.py
+./venv/bin/python scripts/train/train_clusters.py
 
 # Start ML server
 ./venv/bin/python Ian_ML/service/server.py

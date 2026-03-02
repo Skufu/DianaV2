@@ -73,7 +73,7 @@ ml:
 	$(PYTHON) Ian_ML/service/server.py
 
 ml-train:
-	$(PYTHON) Ian_ML/training/train.py
+	$(PYTHON) Ian_ML/training/train_binary_v2_no_bp.py
 
 # Start all services (ML + Backend + Frontend)
 start-all:

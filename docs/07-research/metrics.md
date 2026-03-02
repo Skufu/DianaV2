@@ -21,7 +21,7 @@
 
 | Metric | Target | Actual | Notes |
 |--------|--------|--------|-------|
-| **AUC-ROC (Clinical)** | ≥ 0.70 | **0.694** | Acceptable for non-circular screening |
+| **AUC-ROC (Clinical)** | ≥ 0.70 | **0.720** | Acceptable for non-circular screening (binary_v2_no_bp) |
 | **AUC-ROC (ADA model)** | ~1.0 | ~1.0 | Expected when HbA1c is feature |
 | **Overfit Gap** | < 15% | **16.06%** | Train-Test accuracy difference (slightly over target) |
 

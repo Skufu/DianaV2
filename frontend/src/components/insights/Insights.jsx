@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   fetchClusterDistributionApi, fetchTrendInsightsApi, fetchAssessmentsApi,
   fetchMLMetricsApi, fetchMLInformationGainApi, fetchMLClustersApi
@@ -15,12 +15,19 @@ import BMIGlucoseCorrelation from './BMIGlucoseCorrelation';
 import RiskDistribution from './RiskDistribution';
 import BiomarkerTrends from './BiomarkerTrends';
 
-const Insights = ({ token, patients = [] }) => {
+const Insights = ({ token, patients }) => {
   const [clusters, setClusters] = useState([]);
   const [trends, setTrends] = useState([]);
   const [allAssessments, setAllAssessments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [rateLimited, setRateLimited] = useState(false);
+  const inFlightRef = useRef(false);
+  const lastAttemptRef = useRef(0);
+  const hasLoadedRef = useRef(false);
+  const tokenRef = useRef(null);
+  const rateLimitedRef = useRef(false);
 
   const [mlMetrics, setMlMetrics] = useState(null);
   const [mlIG, setMlIG] = useState(null);
@@ -28,11 +35,23 @@ const Insights = ({ token, patients = [] }) => {
   const [mlLoading, setMlLoading] = useState(false);
   const [mlError, setMlError] = useState(null);
 
+  const patientList = useMemo(() => (Array.isArray(patients) ? patients : []), [patients]);
+
   useEffect(() => {
     if (!token) return;
+    const now = Date.now();
+    const tokenChanged = tokenRef.current !== token;
+    if (inFlightRef.current) return;
+    if (!tokenChanged && hasLoadedRef.current && reloadKey === 0) return;
+    if (rateLimitedRef.current && reloadKey === 0) return;
+    if (now - lastAttemptRef.current < 1500) return;
+
     const load = async () => {
+      inFlightRef.current = true;
+      lastAttemptRef.current = Date.now();
       setLoading(true);
       setError(null);
+      tokenRef.current = token;
       try {
         const [cResult, tResult] = await Promise.allSettled([
           fetchClusterDistributionApi(token),
@@ -42,39 +61,50 @@ const Insights = ({ token, patients = [] }) => {
         const c = cResult.status === 'fulfilled' ? cResult.value : [];
         const t = tResult.status === 'fulfilled' ? tResult.value : [];
 
-        // Log specific errors
+        let sawRateLimit = false;
         if (cResult.status === 'rejected') {
           console.error('Cluster distribution failed:', cResult.reason);
+          sawRateLimit = cResult.reason?.status === 429 || String(cResult.reason?.message || cResult.reason || '').includes('rate limit');
         }
         if (tResult.status === 'rejected') {
           console.error('Biomarker trends failed:', tResult.reason);
+          sawRateLimit = sawRateLimit || tResult.reason?.status === 429 || String(tResult.reason?.message || tResult.reason || '').includes('rate limit');
         }
 
-        // Only set a global error if EVERYTHING critical fails
         if (cResult.status === 'rejected' && tResult.status === 'rejected') {
-          setError('Failed to load insights data');
+          setError(sawRateLimit ? 'Rate limited — please retry in a moment.' : 'Failed to load insights data');
         }
+        setRateLimited(sawRateLimit);
+        rateLimitedRef.current = sawRateLimit;
 
         setClusters(c || []);
         setTrends(t || []);
 
-        if (patients && patients.length > 0) {
-          const assessmentPromises = patients.map(p =>
+        if (patientList.length > 0) {
+          const assessmentPromises = patientList.map(p =>
             fetchAssessmentsApi(token, p.id).catch(() => [])
           );
           const assessmentArrays = await Promise.all(assessmentPromises);
           const flatAssessments = assessmentArrays.flat().filter(a => a != null);
           setAllAssessments(flatAssessments);
         }
+
+        if (!sawRateLimit) {
+          hasLoadedRef.current = true;
+          if (reloadKey !== 0) setReloadKey(0);
+        }
       } catch (err) {
         console.error('Unexpected error loading insights:', err);
         setError('Failed to load insights');
       } finally {
+        inFlightRef.current = false;
         setLoading(false);
       }
     };
+
     load();
-  }, [token, patients]);
+
+  }, [token, patientList, reloadKey]);
 
   useEffect(() => {
     const loadML = async () => {
@@ -112,23 +142,22 @@ const Insights = ({ token, patients = [] }) => {
       }));
     }
     return [
-      { factor: 'HbA1c', importance: 0.28, color: '#7C3AED' },
-      { factor: 'FBS', importance: 0.25, color: '#06B6D4' },
-      { factor: 'BMI', importance: 0.18, color: '#10B981' },
-      { factor: 'Age', importance: 0.12, color: '#F59E0B' },
-      { factor: 'Family History', importance: 0.10, color: '#F43F5E' },
-      { factor: 'Physical Activity', importance: 0.07, color: '#64748B' }
+      { factor: 'BMI', importance: 0.22, color: '#10B981' },
+      { factor: 'Triglycerides', importance: 0.18, color: '#F59E0B' },
+      { factor: 'LDL', importance: 0.16, color: '#7C3AED' },
+      { factor: 'HDL', importance: 0.14, color: '#06B6D4' },
+      { factor: 'Age', importance: 0.12, color: '#F43F5E' },
+      { factor: 'Lifestyle', importance: 0.08, color: '#64748B' }
     ];
   }, [mlIG]);
 
   const bmiGlucoseData = useMemo(() => {
-    if (!allAssessments.length || !patients.length) return [];
+    if (!allAssessments.length) return [];
     return allAssessments
       .map(assessment => {
-        const patient = patients.find(p => p.id === assessment.patient_id);
-        if (!patient || !patient.bmi || !assessment.fbs) return null;
+        if (!assessment?.bmi || !assessment?.fbs) return null;
         return {
-          bmi: parseFloat(patient.bmi),
+          bmi: parseFloat(assessment.bmi),
           fbs: parseFloat(assessment.fbs),
           hba1c: parseFloat(assessment.hba1c) || 0,
           risk: assessment.risk_score || 0
@@ -136,7 +165,7 @@ const Insights = ({ token, patients = [] }) => {
       })
       .filter(Boolean)
       .slice(0, 50);
-  }, [allAssessments, patients]);
+  }, [allAssessments]);
 
   const riskDistribution = useMemo(() => {
     if (!allAssessments.length) return [];
@@ -150,14 +179,32 @@ const Insights = ({ token, patients = [] }) => {
     ];
   }, [allAssessments]);
 
-  const totalAssessments = allAssessments.length;
+  const totalAssessments = allAssessments.length || clusters.reduce((sum, c) => sum + (c.count || 0), 0);
   const avgRiskScore = allAssessments.length > 0
     ? (allAssessments.reduce((sum, a) => sum + (a.risk_score || 0), 0) / allAssessments.length).toFixed(1)
-    : 0;
+    : clusters.length > 0
+      ? '—'
+      : 0;
 
   return (
     <div className="space-y-8 animate-fade-in pb-8">
       <InsightsHeader loading={loading} error={error} />
+      {rateLimited && (
+        <div className="glass-card border border-amber-400/40 p-4 flex items-start gap-3 text-amber-500">
+          <AlertCircle size={20} />
+          <div className="text-sm">
+            <p className="font-semibold">Rate limit reached</p>
+            <p className="text-amber-500/80">Wait 10–20 seconds, then retry.</p>
+            <button
+              type="button"
+              onClick={() => setReloadKey(Date.now())}
+              className="mt-2 inline-flex items-center gap-2 rounded-lg border border-amber-400/50 px-3 py-1 text-xs font-semibold text-amber-600 hover:bg-amber-50"
+            >
+              Retry now
+            </button>
+          </div>
+        </div>
+      )}
 
       <InsightsSummary
         totalAssessments={totalAssessments}

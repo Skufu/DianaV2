@@ -2,7 +2,7 @@
 
 > **Date:** February 22, 2026  
 > **Dataset:** `diana_dataset_final.csv` (n=1,376)  
-> **Model:** `binary_v2_no_bp` (14 features, no blood pressure)  
+> **Model:** `binary_v2_no_bp` (12 features, no blood pressure)
 > **Baseline AUC:** 0.7273 ± 0.0170 (5-Fold Stratified CV, Logistic Regression)
 
 ---
@@ -61,7 +61,7 @@ Each feature was removed one at a time and the model was re-evaluated:
 | 2 | `family_history_diabetes` | 83.0% | **+0.0002** | 🔴 Safe to remove |
 | 3 | `bmi_category` | 0.8% | -0.0002 | 🟡 Negligible impact |
 | 4 | `tg_hdl_ratio` | 21.1% | -0.0002 | 🟡 Negligible impact |
-| 5 | `race_encoded` | 0% | -0.0005 | 🟡 Minor contributor |
+| 5 | `race_encoded` | removed | removed | removed |
 | 6 | `metabolic_syndrome_score` | 0% | -0.0005 | 🟡 Minor contributor |
 | 7 | `ldl` | 4.0% | -0.0006 | 🟢 Keep |
 | 8 | `triglycerides` | 21.1% | -0.0018 | 🟢 Keep (despite gaps) |

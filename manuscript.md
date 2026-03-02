@@ -1801,9 +1801,11 @@ _Table 5 : Data Dictionary_
 Chapter 4: Results
 ```
 
-**4.1 Binary Screening Model Performance (Default)**
+This chapter reports the empirical performance of the DIANA screening model and the unsupervised subtype analysis. Results are derived from the NHANES postmenopausal cohort (n = 1,376) and intentionally reflect **non‑circular screening**, i.e., HbA1c and FBS are excluded from model inputs to prevent label leakage and preserve clinical defensibility.
 
-The default DIANA screening model is **binary (Normal vs At‑Risk)** using the **binary_v2_no_bp** artifacts. The best-performing classifier was **Logistic Regression**, evaluated under Nested Leave‑One‑Cycle‑Out validation. It achieved an AUC‑ROC of **0.7200** with a 95% CI of **0.6935–0.7463**, indicating stable discrimination for at‑risk screening without HbA1c/FBS.
+**4.1 Binary Screening Model Performance (Non‑Circular)**
+
+The default DIANA classifier is **binary (Normal vs At‑Risk)** and was trained using the **binary_v2_no_bp** feature contract. Logistic Regression emerged as the best‑performing model under **Nested LOGO** (outer) with **GroupKFold** (inner), using `class_weight='balanced'` to address class imbalance without introducing synthetic biomarker combinations. The resulting AUC‑ROC of **0.7200** (95% CI: **0.6935–0.7463**) indicates stable discrimination for screening when diagnostic biomarkers are withheld.
 
 **Binary Model Performance (Logistic Regression):**
 - **AUC‑ROC**: 0.7200 (95% CI: 0.6935–0.7463)
@@ -1814,33 +1816,62 @@ The default DIANA screening model is **binary (Normal vs At‑Risk)** using the 
 - **NPV**: 0.6625
 - **F1‑Score**: 0.7031
 
-The optimized **at‑risk threshold** was **0.4567**, selected from out‑of‑fold probabilities under LOGO‑CV to prioritize sensitivity and minimize false negatives in screening contexts where missed cases carry higher clinical cost than additional confirmatory testing.
+The optimized **at‑risk threshold** was **0.4567**, selected from out‑of‑fold probabilities to prioritize sensitivity and minimize false negatives—appropriate for a screening tool where missed cases carry greater clinical risk than additional confirmatory testing.
 
 **4.2 Temporal Validation (LOGO by NHANES Cycle)**
 
-Leave‑One‑Cycle‑Out results demonstrate temporal stability across cycles (2009–2023). For Logistic Regression, AUC ranged from **0.7063** to **0.7818**, with sensitivity ranging from **0.6429** to **0.9015** depending on the held‑out cycle.
+Leave‑One‑Cycle‑Out validation demonstrates temporal stability across NHANES cycles (2009–2023). For Logistic Regression, AUC ranged from **0.7063** to **0.7818**, with sensitivity spanning **0.6429–0.9015** across held‑out cycles. This variability reflects realistic cohort shifts while maintaining acceptable screening performance.
 
 **Model Comparison Summary (LOGO mean):**
 - **Logistic Regression**: AUC 0.7297 (σ=0.0270), Sensitivity 0.7430, Specificity 0.5837
-- **Random Forest**: AUC 0.7201 (σ=0.0207), Sensitivity 0.7142, Specificity 0.6255
+- **Random Forest**: AUC 0.7207 (σ=0.0206), Sensitivity 0.7356, Specificity 0.6096
 
 _Table 6 : Binary Model LOGO Summary by Algorithm_
 
-**Methodological Justification and Limitations.** The achieved AUC (~0.72) is consistent with realistic screening performance when diagnostic biomarkers are excluded. Because HbA1c and FBS are withheld from model inputs, the classifier must infer risk from non‑circular metabolic features, which is clinically safer but inherently more difficult. The approach is intended for **screening support**, not standalone diagnosis. Limitations include the use of U.S. NHANES data (requiring Philippine‑specific validation), the cross‑sectional nature of NHANES (predicting current undiagnosed status rather than future incidence), and moderate clustering separation that should be interpreted as exploratory subgrouping rather than definitive phenotypes.
+The marginal performance difference between Logistic Regression and Random Forest, coupled with interpretability advantages, justifies deployment of the linear model for clinical screening.
 
-**4.3 Clustering Results (K‑Means, K=4)**
+**4.3 Subtype Clustering (K‑Means, K=4)**
 
-K‑means clustering identified four subtypes aligned to Ahlqvist categories. Cluster sizes and risk distributions are shown below.
+K‑means clustering (K=4) was applied to the full imputed dataset (n = 1,376), producing four phenotypic subgroups aligned with Ahlqvist et al. (2018). Cluster sizes and biomarker profiles are summarized below.
 
-| Cluster Label | Size (n) | Diabetic Rate | Pre-diabetic Rate | Risk Level |
-|--------------|----------|---------------|-------------------|------------|
-| **SIDD** | 76 | 57.9% | 42.1% | High |
-| **SIRD** | 238 | 47.1% | 52.9% | High |
-| **MOD** | 220 | 28.2% | 71.8% | Moderate |
-| **MARD** | 200 | 29.5% | 70.5% | Low |
-_Table 7 : K‑Means Subtype Distribution (Binary Default Model)_
+| Subtype | n (%) | Mean HbA1c | Mean FBS | Mean BMI | Mean TG | Mean HDL |
+|---------|-------|------------|----------|----------|---------|----------|
+| **SIDD** | 97 (7.1%) | **9.24%** | **223.78** | 34.81 | 192.91 | 48.31 |
+| **SIRD** | 404 (29.4%) | 5.93% | 109.63 | **38.28** | 114.68 | 51.84 |
+| **MOD** | 370 (26.9%) | 5.80% | 104.56 | 29.58 | **176.37** | 50.24 |
+| **MARD** | 505 (36.7%) | 5.51% | 97.91 | 25.74 | 80.36 | **72.98** |
 
-The SIDD and SIRD clusters show the highest diabetic rates (57.9% and 47.1%), while MOD and MARD represent lower‑risk subtypes with higher pre‑diabetic proportions.
+_Table 7 : K‑Means Subtype Distribution and Biomarker Means (K=4)_
+
+SIDD exhibited the most severe glycemic dysfunction, while SIRD showed the highest BMI and insulin‑resistance profile. MOD reflected obesity‑related risk, and MARD represented the mildest phenotype with the highest HDL. Notably, SIRD exhibited the highest BMI in this menopausal cohort, consistent with postmenopausal metabolic shifts and a TG/HDL‑driven risk profile rather than BMI alone.
+
+**4.4 Summary of Findings**
+
+Taken together, the DIANA screening model achieved **AUC‑ROC ≈ 0.72** with strong sensitivity for at‑risk detection using non‑circular features, while K‑means clustering yielded four clinically interpretable subtypes with distinct metabolic signatures. These results support both population‑level screening and phenotype‑aware risk stratification in menopausal women.
+
+```
+Chapter 5: Discussion
+```
+
+**5.1 Interpretation of Screening Performance**
+
+The observed AUC (~0.72) should be interpreted in light of the non‑circular constraint: by excluding HbA1c and FBS (which define the outcome labels), the model is tasked with inferring risk from surrogate metabolic markers, a substantially harder and more clinically defensible problem. The resulting sensitivity of 0.745 reflects the system’s prioritization of case‑finding over specificity, which is appropriate for a screening workflow that channels flagged individuals toward confirmatory testing rather than diagnosis.
+
+**5.2 Clinical Implications and Risk Stratification**
+
+DIANA’s output is designed to support clinical triage. Risk probabilities are mapped to categories for decision support: **Low (0–33%)**, **Moderate (34–66%)**, and **High (67–100%)**, aligning with routine monitoring, enhanced screening, and priority intervention, respectively. The calibrated at‑risk threshold (0.4567) provides a practical operating point for maximizing sensitivity in real‑world screening contexts.
+
+**5.3 Strengths of the Study**
+
+Key strengths include (1) the deliberate use of **non‑circular predictors**, which prevents trivial label leakage and yields clinically meaningful screening performance; (2) the **Nested LOGO** validation strategy, which estimates temporal generalization across NHANES cycles; and (3) the selection of an interpretable Logistic Regression model, facilitating clinical transparency and explainability.
+
+**5.4 Limitations**
+
+Several limitations should be acknowledged. The development dataset is derived from U.S. NHANES cohorts, which necessitates Philippine‑specific external validation before clinical adoption. NHANES is cross‑sectional; therefore the model identifies **current undiagnosed risk** rather than prospective incidence. Finally, clustering separation is moderate, and subtype labels should be interpreted as **exploratory phenotypes** pending clinician validation and replication in local cohorts.
+
+**5.5 Future Work**
+
+Future work should prioritize external validation using Philippine hospital data, prospective cohort evaluation, and longitudinal monitoring of risk transitions. Additional improvements include calibration analysis in real‑world settings, incorporation of expanded lifestyle and family‑history variables, and systematic evaluation of deployment‑level impacts (e.g., cost‑effectiveness, workflow integration, and model drift monitoring).
 
 ```
 References

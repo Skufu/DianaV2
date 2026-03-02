@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Quick Training Script - Train CatBoost with 13 features (no grid search)
+Quick Training Script - Train CatBoost with 12 features (no grid search)
 
 This is a fast training script for immediate testing.
-For full training with all models and grid search, use train.py
+For full training with all models and grid search, use train_binary_v2_no_bp.py
 """
 
 import pandas as pd
@@ -31,13 +31,11 @@ except ImportError:
 DATA_PATH = Path("data/nhanes/processed/diana_dataset_imputed.csv")
 MODELS_DIR = Path("models/clinical")
 
-# 13 optimized features
 FEATURES = [
     'bmi', 'triglycerides', 'ldl', 'hdl', 'age',
-    'systolic', 'diastolic',
     'bmi_category', 'tg_hdl_ratio',
     'smoking_encoded', 'activity_encoded', 'alcohol_encoded',
-    'metabolic_syndrome_score'
+    'metabolic_syndrome_score', 'waist_circumference'
 ]
 
 def engineer_features(df):
@@ -73,7 +71,7 @@ def engineer_features(df):
 
 def main():
     print("="*60)
-    print("QUICK TRAINING - CatBoost with 13 Features")
+    print("QUICK TRAINING - CatBoost with 12 Features")
     print("="*60)
     
     # Load data
@@ -82,7 +80,7 @@ def main():
     print(f"   Records: {len(df)}")
     
     # Engineer features
-    print("\n[FEATURES] Engineering 13 features...")
+    print("\n[FEATURES] Engineering 12 features...")
     df = engineer_features(df)
     
     # Prepare data

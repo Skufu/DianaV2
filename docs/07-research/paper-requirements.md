@@ -50,7 +50,7 @@ A predictive **classification** model-based application that uses selected blood
 | **Age** | Continuous (years) | 45-60 range |
 | **BMI** | Continuous (kg/m²) | Calculated from height/weight |
 | **Menopausal Status** | Categorical | All Postmenopausal in cohort |
-| **Race/Ethnicity** | Categorical | NHANES RIDRETH harmonized |
+| **Race/Ethnicity** | Categorical | Removed from screening model |
 
 ### Lifestyle Factors (Encoded)
 | Factor | Type | Description |
@@ -91,7 +91,7 @@ Before model training, compute Information Gain (IG) for each feature:
 
 | Aspect | Details |
 |--------|---------|
-| **Features (Screening Model)** | 13‑feature non‑circular contract (excludes HbA1c/FBS) |
+| **Features (Screening Model)** | 12‑feature non‑circular contract (excludes HbA1c/FBS) |
 | **Target** | Binary risk (Normal vs At‑Risk) |
 | **Algorithms** | Logistic Regression (selected) and Random Forest (comparison) |
 

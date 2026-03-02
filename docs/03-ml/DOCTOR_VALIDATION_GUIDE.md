@@ -30,7 +30,6 @@ Required base inputs:
  - HDL
  - age
  - waist_circumference
- - race_encoded
 
 Optional lifestyle:
 
@@ -148,8 +147,8 @@ Primary serving path:
 
 - `backend/internal/http/handlers/assessments.go`
 - `backend/internal/ml/http_predictor.go`
-- `Ian_ML/service/server.py` (`/predict?model_type=binary`)
-- `Ian_ML/service/predict.py` (`BinaryPredictor`)
+- `Ian_ML/service/server.py` (`/predict?model_type=binary_v2_no_bp`)
+- `Ian_ML/service/predict.py` (`BinaryV2NoBPPredictor`)
 
 Age guardrail in backend assessment flow is enforced at `45-60` to match the target study population.
 
