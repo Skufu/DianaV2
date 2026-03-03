@@ -204,11 +204,16 @@ def get_medical_status(hba1c):
 
 class DianaPredictor:
     """
-    Diabetes risk prediction model for menopausal women.
+    ADA Baseline Comparator (not the primary DIANA model).
+    
+    Uses HbA1c/FBS thresholds per ADA guidelines for rule-based classification.
+    Exists as a baseline comparator for the thesis — the primary DIANA prediction
+    model is ClinicalPredictor, which uses ML on non-circular metabolic features.
+    
     Returns:
-    - Medical Status (Normal/Pre-diabetic/Diabetic) from HbA1c
-    - Risk Cluster (Low/Moderate/High Risk) from K-means
-    - Probability from supervised classifier
+    - Medical Status (Normal/Pre-diabetic/Diabetic) from HbA1c thresholds
+    - Risk Cluster (from K-means, if artifacts available)
+    - Probability from supervised classifier (if artifacts available)
     """
     
     def __init__(self, models_dir: Optional[Path] = None):
@@ -437,7 +442,7 @@ CLINICAL_ENRICHMENT_FEATURES = ['waist_circumference']
 # IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
 # CLINICAL_FEATURES is now imported at the top of the file
 
-# Features used for KMeans clustering (5 base clinical biomarkers)
+# Features used for KMeans clustering (6 base clinical biomarkers)
 # IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
 # CLUSTER_FEATURES is now imported at the top of the file
 
@@ -447,10 +452,11 @@ CLINICAL_RESULTS_DIR = CLINICAL_MODELS_DIR / "results"
 
 class ClinicalPredictor:
     """
-    Clinical diabetes risk prediction using metabolic biomarkers only.
-    Does NOT use HbA1c or FBS as features (avoids circular reasoning).
+    Primary DIANA ML Model — Clinical diabetes risk prediction.
     
-    Features: BMI, Triglycerides, LDL, HDL, Age
+    Uses metabolic biomarkers only (BMI, TG, LDL, HDL, Age, waist circumference)
+    without HbA1c or FBS to avoid circular reasoning with the diabetes diagnosis target.
+    This is the thesis contribution model; DianaPredictor is the ADA baseline comparator.
     """
     
     def __init__(self, models_dir: Optional[Path] = None, model_type: Optional[str] = None):
@@ -482,7 +488,7 @@ class ClinicalPredictor:
         else:
             self.imputer = None
 
-        # Cluster scaler is fitted on CLUSTER_FEATURES (5 features), not CLINICAL_FEATURES (13)
+        # Cluster scaler is fitted on CLUSTER_FEATURES (6 features), not CLINICAL_FEATURES (12+)
         self.cluster_features = CLUSTER_FEATURES
         self.cluster_scaler = None
         cluster_scaler_path = self.models_dir / "cluster_scaler.joblib"
@@ -643,7 +649,7 @@ class ClinicalPredictor:
         return np.array([feature_values], dtype=float)
 
     def _build_cluster_vector(self, data: Mapping[str, Any]) -> np.ndarray:
-        """Build the 5-feature cluster vector matching CLUSTER_FEATURES order."""
+        """Build the 6-feature cluster vector matching CLUSTER_FEATURES order."""
         return np.array([[data.get(f, 0) for f in self.cluster_features]], dtype=float)
 
     def _transform_features(self, X: np.ndarray) -> np.ndarray:
@@ -712,11 +718,18 @@ class ClinicalPredictor:
 
         # Build separate cluster feature vector (5 features for KMeans)
         X_cluster = self._build_cluster_vector(data)
-        X_cluster_scaled = (
-            self.cluster_scaler.transform(X_cluster)
-            if self.cluster_scaler is not None
-            else X_cluster  # Fallback: unscaled (KMeans will be less accurate)
-        )
+        if self.cluster_scaler is not None:
+            X_cluster_scaled = self.cluster_scaler.transform(X_cluster)
+        else:
+            # SAFETY: Do NOT feed raw unscaled features to KMeans.
+            # K-Means is distance-based; unscaled values (e.g. TG=150 vs Age=55)
+            # would produce statistically meaningless cluster assignments.
+            # Disable clustering entirely when scaler is unavailable.
+            logger.warning(
+                "Cluster scaler unavailable — skipping KMeans prediction. "
+                "Raw unscaled features would produce garbage cluster assignments."
+            )
+            X_cluster_scaled = None
 
         # Get prediction probabilities
         try:
@@ -758,8 +771,7 @@ class ClinicalPredictor:
         except Exception as e:
             return {"success": False, "error": str(e)}
         
-        # Get risk cluster info if kmeans is available
-        if self.kmeans is not None:
+        if self.kmeans is not None and X_cluster_scaled is not None:
             try:
                 cluster_id = int(self.kmeans.predict(X_cluster_scaled)[0])
                 cluster_info = self._get_cluster_info(cluster_id)
@@ -866,7 +878,6 @@ def _resolve_clinical_models_dir_for_type(model_type: Optional[str]) -> Path:
     if resolved_type == "binary_v2_bp":
         # Doctor model - includes blood pressure features
         return _validate_model_dir(MODELS_ROOT / "binary_v2_with_bp")
-        return _validate_model_dir(MODELS_ROOT / "binary_v2_with_bp_archived" / "binary_v2")
     if resolved_type == "clinical":
         return resolve_clinical_models_dir()
     return resolve_clinical_models_dir()

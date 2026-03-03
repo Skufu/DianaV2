@@ -164,7 +164,7 @@ AHLQVIST_SUBTYPES = {
     },
     'MOD': {
         'full_name': 'Mild Obesity-Related Diabetes',
-        'characteristics': 'High BMI (>30), moderate metabolic markers',
+        'characteristics': 'High BMI (>=25 Asia-Pacific WHO cutoff), moderate metabolic markers',
         'clinical_implication': 'Weight management primary intervention',
         'risk_level': 'MODERATE',
     },

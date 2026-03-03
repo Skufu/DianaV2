@@ -41,7 +41,10 @@ func (b *Broker) Subscribe(client chan Event) {
 func (b *Broker) Unsubscribe(client chan Event) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	delete(b.clients, client)
+	if b.clients[client] {
+		delete(b.clients, client)
+		close(client)
+	}
 }
 
 func (b *Broker) Publish(event Event) {
@@ -71,6 +74,21 @@ func (b *Broker) ClientCount() int {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 	return len(b.clients)
+}
+
+// Close closes all client channels and clears the buffer
+func (b *Broker) Close() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	// Close all client channels
+	for client := range b.clients {
+		close(client)
+		delete(b.clients, client)
+	}
+
+	// Clear buffer
+	b.buffer = b.buffer[:0]
 }
 
 func (b *Broker) PublishAuthEvent(eventType, email, ipAddress, userAgent string, success bool, metadata map[string]any) {
