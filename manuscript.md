@@ -576,8 +576,8 @@ the users to interpret predictive insights derived from the patient data
 
 processed by the type 2 diabetes risk prediction model. It displays two
 primary components: the risk factor importance chart, which ranks input
-variables such as Age, BMI, Blood Pressure, Glucose Level, and Physical
-Activity according to their computed contribution to the model’s predictive
+variables such as Age, BMI, Triglycerides, HDL, and Waist Circumference
+according to their computed contribution to the model’s predictive
 output and the BMI vs Glucose Correlation chart, which plots the
 relationship between body mass index and glucose level among patients to
 identify trends or potential risk associations. Data for this visualization are
@@ -1431,8 +1431,8 @@ _Figure 2 : General Prototyping Model_
 This phase focuses on acquiring, merging, and cleaning clinical data from the NHANES 2009-2023 datasets to build the dataset used for feature selection and model development. The records of postmenopausal women aged 45–60 will be filtered from the larger dataset, targeting a final cohort of approximately 1,376 records. Only records with complete core biomarkers and key demographic fields will be retained to ensure data quality.
 
 The dataset will include metabolic biomarkers and non‑blood variables used by the screening
-model (BMI, triglycerides, LDL‑C, HDL‑C, age, systolic/diastolic blood pressure, waist
-circumference) with engineered features such as TG/HDL ratio and metabolic syndrome score. HbA1c
+model (BMI, triglycerides, LDL‑C, HDL‑C, age, waist circumference)
+with engineered features such as TG/HDL ratio and metabolic syndrome score. HbA1c
 and FBS are retained only for ground‑truth labeling, not as input features for the primary screening
 model. This exclusion prevents circularity because HbA1c/FBS are themselves diagnostic criteria; a
 model that uses them would simply rediscover the label rather than detect undiagnosed risk. Each
@@ -1446,7 +1446,8 @@ established FBS and HbA1c cut‑offs summarized in Chapter 2. This label support
 selection and enables the optional 3‑class clinician output, while the primary screening model
 reformulates the outcome to binary At‑Risk vs Normal. Records with inconsistent or missing
 information for defining this label will be removed from the analytic dataset.
-Continuous predictors will then be discretized into clinically meaningful categories (for example,
+
+Prior to final discretization, missing continuous biomarker values are rigorously addressed using k-Nearest Neighbors (KNN) Imputation. This technique preserves the underlying physiological distributions without prematurely discarding valuable participant records. Continuous predictors will then be discretized into clinically meaningful categories (for example,
 normal, borderline, and high ranges for FBS, HbA1c, lipids, and BMI) to support entropy and
 Information Gain computation.
 
@@ -1486,7 +1487,7 @@ cycles to simulate deployment on future data and to avoid leakage across tempora
 records. Within each outer fold, GroupKFold is used to tune hyperparameters and compare
 algorithms, and a sensitivity‑biased decision threshold is applied to prioritize screening recall
 because the clinical cost of missing at‑risk patients outweighs the cost of additional follow‑up
-testing. Model training emphasizes techniques that balance predictive accuracy with clinical
+testing. To address the natural imbalance between healthy and at-risk groups, algorithmic class-weighting (`class_weight='balanced'`) is utilized rather than synthetic data generation (e.g., SMOTE), preserving the strict physiological reality of the biomarker associations. Model training emphasizes techniques that balance predictive accuracy with clinical
 interpretability and computational efficiency to facilitate practical integration into medical
 decision‑making tools.
 
@@ -1521,6 +1522,19 @@ a patient management system, risk prediction interface with probability outputs,
 visualization tools to display biomarker trends and risk levels. Secure authentication and role-
 based access control will also be implemented to ensure data confidentiality and appropriate
 system access for healthcare professionals.
+
+**System Architecture and Technology Stack**
+To achieve high performance, scalability, and maintainability, the DIANA web application employs a decoupled, service‐oriented architecture (SOA). The system is partitioned into four primary layers:
+1. **Frontend Presentation Layer (`React.js` and `Vite`):** The user interface is built as a Single Page Application (SPA) using React 18 and Vite. It leverages Tailwind CSS for responsive design, delivering the interactive Dashboard, Patient History, and Analytics interfaces.
+2. **Backend Application Layer (`Go` and `Gin`):** The core business logic, user authentication (via JWT), and data routing are handled by a high‐performance backend written in Go, utilizing the Gin HTTP framework. This layer acts as the secure gateway between the frontend and the data/ML layers.
+3. **Machine Learning Service (`Python` and `Flask`):** To isolate the heavy computational requirements of predictive modeling from standard web traffic, the ML models (Logistic Regression and K‑Means) are deployed in a dedicated Python microservice using Flask. The Go backend communicates with this service via internal REST APIs to request real‑time risk predictions, subtype classifications, and SHAP (SHapley Additive exPlanations) values.
+4. **Data Persistence Layer (`PostgreSQL` and `Redis`):** Persistent clinical records, user profiles, and assessment histories are stored securely in a relational PostgreSQL database. A Redis caching layer is utilized for session management, rate limiting, and optimizing frequently accessed dashboard statistics.
+
+**Data Security and Privacy**
+To protect sensitive medical data, the system implements a rigorous, stateless authentication flow. The Go backend utilizes JSON Web Tokens (JWT) signed using the HMAC SHA-256 (HS256) algorithm. Furthermore, a custom Role-Based Access Control (RBAC) middleware actively monitors and intercepts API requests to ensure that administrative actions and sensitive cohort data are strictly restricted to authorized clinical personnel.
+
+**Explainable AI (XAI) Integration**
+To mitigate the inherent "black box" nature of machine learning algorithms and foster clinical trust, the DIANA system integrates SHAP (SHapley Additive exPlanations) directly into the Python microservice (`explainability.py`). Upon generating a risk prediction, the system utilizes either `shap.TreeExplainer` or `shap.LinearExplainer` to calculate the exact, marginal contribution of each biomarker (e.g., Triglycerides, BMI) to the final risk probability. These values are returned to the React frontend and dynamically rendered as Waterfall plots and sorted feature-impact charts, empowering physicians to visibly interpret the rationale behind every "At-Risk" classification.
 
 _Figure 6 : Web Application Integration and Visualization Development Phase Flow_
 **Phase 4: Technical Testing and Validation**
@@ -1676,14 +1690,16 @@ false negatives, which is critical in healthcare applications where missing at-r
 have serious consequences. The F1-Score, which balances precision and recall, will provide a
 single metric for comparing models. Additionally, the Area Under the ROC Curve (AUC-ROC)
 will be calculated to evaluate the model's ability to discriminate between diabetic/prediabetic and
-non-diabetic cases across varying probability thresholds. A model with an AUC above 0.80 will
-be considered acceptable for clinical applications.
+non-diabetic cases across varying probability thresholds. Given the conscious exclusion of 
+diagnostic baseline markers (HbA1c and FBS) to prevent circular reasoning, a model with an AUC 
+above 0.70 will be considered acceptable for population screening applications.
 
 These probability scores, ranging from 0 to 1 and displayed as 0–100% in the application,
 represent the model’s estimated confidence that a given menopausal patient currently has
 undiagnosed Type 2 Diabetes or prediabetes based on her biomarker profile. All final performance
 metrics (accuracy, classification error rate, precision, recall, F1-score, and AUC-ROC) will be
-computed on this unseen 30% test set, providing an unbiased estimate of the model’s real-world
+computed across the held-out NHANES cycles during Nested Leave-One-Group-Out (LOGO) cross
+validation, providing an unbiased estimate of the model’s real-world
 performance and the reliability of DIANA’s risk predictions.
 
 𝑨𝒄𝒄𝒖𝒓𝒂𝒄𝒚= (^) 𝛴 (𝑇𝑃𝛴+^ (𝑇𝑁𝑇𝑃++𝑇𝑁𝐹𝑃)+𝐹𝑁)
@@ -1720,8 +1736,7 @@ accurately matches clinical patterns seen in our target population.
 
 ```
 Cluster Label Defining Features
-SOIRD Severe Obesity-Related
-and Insulin-Resistant
+SIRD Severe Insulin-Resistant
 Diabetes
 ```
 ```
@@ -1794,6 +1809,10 @@ Heart_disease Binary Have you ever been diagnosed with coronary heart disease,
 angina, or myocardial infarction? 0 = no, 1 = yes.
 PhysActivity Binary Physical activity in the past 30 days not including job-related
 activity: 0 = no, 1 = yes.
+Waist_Circumference Continuous Waist Circumference (cm). Central adiposity indicator.
+MetS_Score Integer Metabolic Syndrome Score. Computed sum (0-4) of risk factors:
+elevated TG, low HDL, high FPG, high Waist Circumference.
+tg_hdl_ratio Continuous Ratio of Triglycerides to HDL-C. Indicator of insulin resistance.
 _Table 5 : Data Dictionary_
 
 
