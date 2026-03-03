@@ -111,12 +111,26 @@ def classify_fbs(fbs):
 
 def assign_menopausal_status(age):
     """
-    Assign menopausal status based on age.
-    All women in our dataset are postmenopausal (filtered earlier).
-    For perimenopause, would need period regularity data.
+    Assign menopausal status.
+
+    DATASET LIMITATION: All women in this cohort were filtered by NHANES
+    RHQ031 == 2 ("no menstrual period in the past 12 months"), which by
+    WHO definition classifies them as postmenopausal. Therefore this
+    function returns a constant value — this is NOT an oversight.
+
+    Differentiating perimenopause from postmenopause would require at
+    least one of:
+      - FSH levels (>25 IU/L suggests perimenopause, >40 IU/L postmenopause)
+      - Menstrual cycle regularity data (variable cycle length = perimenopause)
+      - Anti-Müllerian hormone (AMH) levels
+    None of these are available in the NHANES variables used by DIANA.
+
+    This is explicitly acknowledged as a thesis limitation: DIANA does
+    not distinguish perimenopause from postmenopause in its current
+    data pipeline.
     """
-    # Since we filtered for RHQ031 == 2 (no period in 12 months),
-    # all are postmenopausal
+    # All subjects are postmenopausal per the RHQ031 == 2 inclusion filter.
+    # Perimenopause classification is not possible without FSH or cycle data.
     return "Postmenopausal"
 
 
@@ -273,7 +287,8 @@ def main():
             agreement = (df.loc[both_valid, 'diabetes_status'] == df.loc[both_valid, 'hba1c_status']).sum()
             total = both_valid.sum()
             print(f"   Self-reported/HbA1c agreement: {agreement}/{total} ({agreement/total*100:.1f}%)")
-            print(f"   [NOTE] Lower agreement = less data leakage (good!)")
+            print(f"   [NOTE] Disagreement reflects label noise (subjective self-report vs. objective HbA1c).")
+            print(f"          High agreement = more consistent, reliable labels.")
     else:
         # Fallback to HbA1c if DIQ010 not available
         print("   [WARN] DIQ010 not found - falling back to HbA1c-based labels")

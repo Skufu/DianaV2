@@ -23,45 +23,20 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 from Ian_ML.common.paths import CLINICAL_MODELS_DIR, NHANES_PROCESSED_ROOT
+from Ian_ML.common.feature_constants import CLUSTER_FEATURES, AHLQVIST_SUBTYPES
 
 DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
 MODELS_DIR = CLINICAL_MODELS_DIR
 RESULTS_DIR = MODELS_DIR / "results"
 VIZ_DIR = MODELS_DIR / "visualizations"
 
-# All features for clustering — non-circular clinical biomarkers only
-# No HbA1c/FBS to avoid circular reasoning with diabetes diagnosis
-ALL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
-# Clinical features only (same as ALL_FEATURES since HbA1c/FBS removed)
-CLINICAL_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+# All features for clustering — imported from feature_constants.py (single source of truth)
+# Never hardcode feature lists here; see feature_constants.py Bug History.
+ALL_FEATURES = CLUSTER_FEATURES
+CLINICAL_FEATURES = CLUSTER_FEATURES
 
-# Ahlqvist et al. T2DM Subtype definitions (adapted for non-circular features)
-AHLQVIST_SUBTYPES = {
-    'SIRD': {
-        'full_name': 'Severe Insulin-Resistant Diabetes',
-        'characteristics': 'High BMI, high TG, low HDL (metabolic syndrome pattern)',
-        'clinical_implication': 'Responds well to insulin sensitizers (metformin)',
-        'risk_level': 'HIGH'
-    },
-    'SIDD': {
-        'full_name': 'Severe Insulin-Deficient Diabetes',
-        'characteristics': 'High TG/HDL ratio (proxy — true SIDD requires HOMA2-B/C-peptide)',
-        'clinical_implication': 'May need early insulin therapy; SIDD/SIRD distinction is approximate without HOMA2',
-        'risk_level': 'HIGH'
-    },
-    'MOD': {
-        'full_name': 'Mild Obesity-Related Diabetes',
-        'characteristics': 'High BMI (>30), moderate metabolic markers',
-        'clinical_implication': 'Weight management primary intervention',
-        'risk_level': 'MODERATE'
-    },
-    'MARD': {
-        'full_name': 'Mild Age-Related Diabetes',
-        'characteristics': 'Older age at diagnosis, mild metabolic dysfunction',
-        'clinical_implication': 'Conservative management, slower progression',
-        'risk_level': 'LOW'
-    }
-}
+# Ahlqvist et al. T2DM Subtype definitions — imported from feature_constants.py
+# (single source of truth; do not redefine here)
 
 
 def analyze_k_range(X_scaled, k_range=(2, 7)):

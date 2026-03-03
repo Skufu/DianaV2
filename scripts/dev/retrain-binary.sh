@@ -119,13 +119,16 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}✓ Data cleaning complete${NC}"
 
-# Step 3: SKIP pre-imputation (handled inside CV pipeline for leakage-safe evaluation)
+# Step 3: Validate features and check for data leakage
 echo ""
-echo -e "${YELLOW}Step 3/5: Skipping pre-imputation (leakage-safe pipeline handles this)${NC}"
+echo -e "${BLUE}Step 3/5: Feature validation & leakage detection...${NC}"
 echo "------------------------------------------------------------"
-echo "  Pre-imputation SKIPPED - SimpleImputer in CV pipeline prevents leakage"
-echo "  See: train_binary_v2_no_bp.py uses diana_dataset_final.csv (not pre-imputed)"
-echo -e "${GREEN}✓ Proceeding with leakage-safe imputation${NC}"
+python Ian_ML/training/validate_no_leakage.py
+if [ $? -ne 0 ]; then
+    echo -e "${RED}ERROR: Leakage detected! Aborting training.${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ Feature validation passed (no leakage detected)${NC}"
 
 # Step 4: Train binary_v2_no_bp model (At-Risk vs Normal with nested CV)
 echo ""

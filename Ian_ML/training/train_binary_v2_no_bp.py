@@ -853,6 +853,87 @@ def generate_roc_curve(aggregated: dict[str, dict[str, object]], best_model_name
     print(f"[SAVED] ROC curve to {VIZ_DIR / 'roc_curve.png'}")
 
 
+def generate_shap_plots(
+    final_pipeline: Pipeline,
+    X: np.ndarray,
+    y: np.ndarray,
+    feature_names: list[str],
+) -> None:
+    """Generate SHAP summary plots for thesis."""
+    try:
+        import shap
+    except ImportError:
+        print("[SHAP] shap not installed — skipping. Install with: pip install shap")
+        return
+
+    print("\n[SHAP] Generating feature importance explanations...")
+
+    # Extract the raw model from the pipeline for TreeExplainer
+    model = final_pipeline.named_steps["model"]
+
+    # Pre-process X through the pipeline's imputer + scaler (but not the model)
+    X_processed = final_pipeline.named_steps["imputer"].transform(X)
+    X_processed = final_pipeline.named_steps["scaler"].transform(X_processed)
+
+    # Try TreeExplainer first (fast), fall back to KernelExplainer
+    try:
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(X_processed)
+        print("   Using TreeExplainer")
+    except Exception as e:
+        print(f"   TreeExplainer failed ({e}), falling back to KernelExplainer...")
+        # Sample background data for KernelExplainer (100 samples max)
+        bg_size = min(100, len(X_processed))
+        background = shap.sample(X_processed, bg_size)
+        predict_fn = model.predict_proba
+        explainer = shap.KernelExplainer(predict_fn, background)
+        shap_values = explainer.shap_values(X_processed[:200])  # Limit for speed
+        X_processed = X_processed[:200]
+        print("   Using KernelExplainer (limited to 200 samples)")
+
+    # Handle multi-output: for binary classification, use the positive class (At-Risk)
+    if isinstance(shap_values, list):
+        shap_values_pos = shap_values[1]  # At-Risk class
+    else:
+        shap_values_pos = shap_values
+
+    # 1. Bar plot — mean |SHAP| per feature
+    try:
+        plt.figure(figsize=(10, 6))
+        shap.summary_plot(
+            shap_values_pos,
+            X_processed,
+            feature_names=feature_names,
+            plot_type="bar",
+            show=False,
+        )
+        plt.title("SHAP Feature Importance (Mean |SHAP Value|)")
+        plt.tight_layout()
+        plt.savefig(VIZ_DIR / "shap_importance_bar.png", dpi=150, bbox_inches="tight")
+        plt.close()
+        print(f"   Saved: {VIZ_DIR / 'shap_importance_bar.png'}")
+    except Exception as e:
+        print(f"   [WARN] Bar plot failed: {e}")
+
+    # 2. Beeswarm plot — per-sample feature impact
+    try:
+        plt.figure(figsize=(10, 6))
+        shap.summary_plot(
+            shap_values_pos,
+            X_processed,
+            feature_names=feature_names,
+            show=False,
+        )
+        plt.title("SHAP Beeswarm — Feature Impact on At-Risk Prediction")
+        plt.tight_layout()
+        plt.savefig(VIZ_DIR / "shap_beeswarm.png", dpi=150, bbox_inches="tight")
+        plt.close()
+        print(f"   Saved: {VIZ_DIR / 'shap_beeswarm.png'}")
+    except Exception as e:
+        print(f"   [WARN] Beeswarm plot failed: {e}")
+
+    print("[SHAP] Done.")
+
 def main():
     """Main training pipeline."""
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
@@ -969,6 +1050,7 @@ def main():
     save_fold_metrics(fold_df)
     save_best_model_report(comparison_df, str(best_model_name))
     generate_roc_curve(aggregated, str(best_model_name))
+    generate_shap_plots(final_pipeline, X, y, FEATURES)
     
     print("\n" + "=" * 78)
     print("TRAINING COMPLETE")
