@@ -1756,11 +1756,11 @@ Diabetes Mellitus
 ```
 Oldest age at diagnosis; moderate BMI and HbA1c;
 moderate insulin release and resistance
-MIDD Mild Insulin-Deficient
+MOD Mild Obesity-Related
 Diabetes
 ```
-Lowest BMI, HbA1c, HOMA-IR; moderate age and
-HOMA-β
+High BMI (>=25 Asia-Pacific cutoff), moderate metabolic
+markers, weight management primary intervention
 _Table 4 : Initial Clustering Label_
 **Variable Definitions and Metadata for the DIANA Study Dataset.** The following table
 presents a proposed list of variables and their definitions for potential inclusion in the DIANA
@@ -1813,6 +1813,12 @@ Waist_Circumference Continuous Waist Circumference (cm). Central adiposity indic
 MetS_Score Integer Metabolic Syndrome Score. Computed sum (0-4) of risk factors:
 elevated TG, low HDL, high FPG, high Waist Circumference.
 tg_hdl_ratio Continuous Ratio of Triglycerides to HDL-C. Indicator of insulin resistance.
+Smoking_Encoded Integer Encoded smoking status from NHANES questionnaire.
+0 = never, 1 = former, 2 = current.
+Activity_Encoded Integer Encoded physical activity level from NHANES questionnaire.
+0 = inactive, 1 = active.
+Alcohol_Encoded Integer Encoded alcohol use from NHANES questionnaire.
+0 = never, 1 = former, 2 = current.
 _Table 5 : Data Dictionary_
 
 
