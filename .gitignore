@@ -129,6 +129,9 @@ __pycache__/
 *$py.class
 .Python
 
+# Pytest cache
+.pytest_cache/
+
 # MLflow
 mlruns/
 
@@ -161,3 +164,10 @@ catboost_info/
 ralph/*.txt
 ralph/tmp/
 .opencode
+
+# Nested repositories
+Neoron_ML/
+Neuron_ML/
+
+
+.setup-verification.txt

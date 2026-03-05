@@ -155,8 +155,8 @@ func TestInsightsHandler_ClusterDistribution_Success(t *testing.T) {
 }
 
 func TestInsightsHandler_ClusterDistribution_AuthRequired(t *testing.T) {
-	router, _ := setupInsightsRouter()
-	router = gin.New()
+	_, _ = setupInsightsRouter()
+	router := gin.New()
 	handler := NewInsightsHandler(&mockInsightsStore{
 		assessments: &mockAssessmentRepo{},
 	}, nil)
@@ -193,8 +193,8 @@ func TestInsightsHandler_BiomarkerTrends_Success(t *testing.T) {
 }
 
 func TestInsightsHandler_BiomarkerTrends_AuthRequired(t *testing.T) {
-	router, _ := setupInsightsRouter()
-	router = gin.New()
+	_, _ = setupInsightsRouter()
+	router := gin.New()
 	handler := NewInsightsHandler(&mockInsightsStore{
 		assessments: &mockAssessmentRepo{},
 	}, nil)

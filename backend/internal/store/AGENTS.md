@@ -156,8 +156,8 @@ LIMIT 1;
 
 ### Critical Issues
 - **No transaction support**: Multi-step operations lack atomicity
-- **Silent audit errors**: `_ = a.store.Audit().LogEvent(...)` discards failures
-- **interface{} usage**: Should use `any` (Go 1.18+)
+- **Async audit errors**: Audit goroutines log failures but don't block response
+- **interface{} usage**: Should use `any` (Go 1.18+) - 5 occurrences
 
 ### Technical Debt
 - **itoa manual numbering**: Prone to off-by-one errors in dynamic queries

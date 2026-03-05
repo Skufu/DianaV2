@@ -28,8 +28,7 @@ Security, observability, and request validation layer using Gin middleware.
 - **Redaction**: Sensitive fields (passwords, PII, biomarkers) MUST be redacted in `CaptureRequestBody`.
 
 ## ANTI-PATTERNS
-- **CRITICAL**: Silenced audit errors (`_ = a.store...`) - data loss is silent.
-- **CRITICAL**: Fire-and-forget goroutines (`go func()`) in `audit.go` without error recovery or logging.
+- **CRITICAL**: Fire-and-forget goroutines (`go func()`) in `audit.go` - errors are logged but don't block response.
 - **Drift**: `UserClaims` struct in `auth.go` is missing `Scope` field, causing compilation errors in `audit_test.go`.
 - **Legacy**: Use of `interface{}` instead of `any` (Go 1.18+).
 - **Inconsistency**: `cors.go` is referenced in root docs but implementation uses `github.com/gin-contrib/cors` directly in router.
