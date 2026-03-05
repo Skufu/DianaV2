@@ -26,10 +26,10 @@ def test_assign_ahlqvist_labels_basic_sird():
 
 
 def test_assign_ahlqvist_labels_basic_sidd():
-    """Test SIDD classification: Highest TG/HDL ratio after SIRD selection."""
+    """Test SIDD classification: Lowest BMI among remaining clusters (per Slieker validation)."""
     cluster_centers = np.array([
         [34.0, 200.0, 130.0, 40.0, 55.0],
-        [24.0, 250.0, 120.0, 30.0, 50.0],  # High TG/HDL
+        [24.0, 250.0, 120.0, 30.0, 50.0],  # Lowest BMI
         [28.0, 140.0, 110.0, 60.0, 60.0],
         [26.0, 120.0, 100.0, 65.0, 65.0],
     ])
