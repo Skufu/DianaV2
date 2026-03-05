@@ -352,7 +352,7 @@ func (q *Queries) GetAssessment(ctx context.Context, id int32) (GetAssessmentRow
 
 const getAssessmentTrendByUser = `-- name: GetAssessmentTrendByUser :many
 SELECT id, created_at, risk_score, cluster, hba1c, bmi, fbs, 
-    triglycerides, ldl, hdl
+    triglycerides, ldl, hdl, systolic, diastolic
 FROM assessments
 WHERE user_id = $1
 ORDER BY created_at ASC
@@ -369,6 +369,8 @@ type GetAssessmentTrendByUserRow struct {
 	Triglycerides pgtype.Int4        `json:"triglycerides"`
 	Ldl           pgtype.Int4        `json:"ldl"`
 	Hdl           pgtype.Int4        `json:"hdl"`
+	Systolic      pgtype.Int4        `json:"systolic"`
+	Diastolic     pgtype.Int4        `json:"diastolic"`
 }
 
 func (q *Queries) GetAssessmentTrendByUser(ctx context.Context, userID pgtype.Int4) ([]GetAssessmentTrendByUserRow, error) {
@@ -391,6 +393,8 @@ func (q *Queries) GetAssessmentTrendByUser(ctx context.Context, userID pgtype.In
 			&i.Triglycerides,
 			&i.Ldl,
 			&i.Hdl,
+			&i.Systolic,
+			&i.Diastolic,
 		); err != nil {
 			return nil, err
 		}

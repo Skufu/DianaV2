@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { AlertCircle, Lock, Mail, Eye, EyeOff, Activity, ShieldCheck, Database } from 'lucide-react';
+import { useState, useMemo, useRef, useCallback } from 'react';
+import { AlertCircle, Lock, Mail, Eye, EyeOff, Activity, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/logo-icon.png';
 import Button from '../common/Button';
@@ -15,16 +15,76 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Field-level validation state
+  const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
+  const [touched, setTouched] = useState({ email: false, password: false });
+
+  // Refs for auto-focus on error
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+
   const validateEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const validateField = useCallback((field, value) => {
+    switch (field) {
+      case 'email':
+        if (!value.trim()) return 'Email is required';
+        if (!validateEmail(value)) return 'Please enter a valid email address';
+        return '';
+      case 'password':
+        if (!value) return 'Password is required';
+        if (value.length < 8) return 'Password must be at least 8 characters';
+        return '';
+      default:
+        return '';
+    }
+  }, []);
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    // Clear field error as user types (if touched)
+    if (touched.email && fieldErrors.email) {
+      const err = validateField('email', value);
+      setFieldErrors(prev => ({ ...prev, email: err }));
+    }
+  };
+
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setPassword(value);
+    if (touched.password && fieldErrors.password) {
+      const err = validateField('password', value);
+      setFieldErrors(prev => ({ ...prev, password: err }));
+    }
+  };
+
+  const handleBlur = (field) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const value = field === 'email' ? email : password;
+    const err = validateField(field, value);
+    setFieldErrors(prev => ({ ...prev, [field]: err }));
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
     setError(null);
 
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
+    // Validate all fields
+    const emailErr = validateField('email', email);
+    const passwordErr = validateField('password', password);
+    setFieldErrors({ email: emailErr, password: passwordErr });
+    setTouched({ email: true, password: true });
+
+    if (emailErr || passwordErr) {
+      // Auto-focus first error field
+      if (emailErr) {
+        emailRef.current?.focus();
+      } else {
+        passwordRef.current?.focus();
+      }
       return;
     }
 
@@ -32,7 +92,24 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
     try {
       await onLogin(email, password);
     } catch (err) {
-      setError(err.message || 'Invalid credentials.');
+      // Parse structured backend errors
+      if (err.code === 'VALIDATION_ERROR' && err.details) {
+        const details = typeof err.details === 'object' ? err.details : {};
+        setFieldErrors({
+          email: details.email || '',
+          password: details.password || '',
+        });
+        if (details.email) emailRef.current?.focus();
+        else if (details.password) passwordRef.current?.focus();
+      } else if (err.code === 'INVALID_CREDENTIALS') {
+        setError('Invalid email or password. Please check your credentials and try again.');
+      } else if (err.code === 'ACCOUNT_INACTIVE') {
+        setError('Your account has been deactivated. Please contact support.');
+      } else if (err.status === 429) {
+        setError('Too many login attempts. Please wait a moment and try again.');
+      } else {
+        setError(err.message || 'Invalid credentials.');
+      }
     } finally {
       setLoading(false);
     }
@@ -145,7 +222,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2, delay: 0.1 }}
                 >
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-6" noValidate>
 
                     {/* Email Field */}
                     <div className="space-y-2">
@@ -155,18 +232,36 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                           <Mail size={20} />
                         </div>
                         <motion.input
+                          ref={emailRef}
                           whileFocus="focus"
                           variants={inputFocusVariants}
                           type="email"
                           id="login-email"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="block w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:bg-white transition-all shadow-sm"
+                          onChange={handleEmailChange}
+                          onBlur={() => handleBlur('email')}
+                          className={`block w-full pl-12 pr-4 py-3.5 bg-slate-50 border ${touched.email && fieldErrors.email ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500' : 'border-slate-300 focus:ring-blue-600/20 focus:border-blue-600'} rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all shadow-sm`}
                           placeholder="doctor@clinic.com"
-                          required
                           autoComplete="email"
+                          aria-invalid={touched.email && fieldErrors.email ? 'true' : 'false'}
+                          aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
                         />
                       </div>
+                      <AnimatePresence>
+                        {touched.email && fieldErrors.email && (
+                          <motion.p
+                            id="login-email-error"
+                            initial={{ opacity: 0, height: 0, y: -4 }}
+                            animate={{ opacity: 1, height: 'auto', y: 0 }}
+                            exit={{ opacity: 0, height: 0, y: -4 }}
+                            className="text-[13px] text-red-600 font-medium flex items-center gap-1.5 pl-1"
+                            role="alert"
+                          >
+                            <AlertCircle size={14} className="shrink-0" />
+                            {fieldErrors.email}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     {/* Password Field */}
@@ -187,16 +282,19 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                           <Lock size={20} />
                         </div>
                         <motion.input
+                          ref={passwordRef}
                           whileFocus="focus"
                           variants={inputFocusVariants}
                           type={showPassword ? "text" : "password"}
                           id="login-password"
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="block w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 focus:bg-white transition-all shadow-sm"
+                          onChange={handlePasswordChange}
+                          onBlur={() => handleBlur('password')}
+                          className={`block w-full pl-12 pr-12 py-3.5 bg-slate-50 border ${touched.password && fieldErrors.password ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500' : 'border-slate-300 focus:ring-blue-600/20 focus:border-blue-600'} rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all shadow-sm`}
                           placeholder="••••••••"
-                          required
                           autoComplete="current-password"
+                          aria-invalid={touched.password && fieldErrors.password ? 'true' : 'false'}
+                          aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
                         />
                         <button
                           type="button"
@@ -207,6 +305,21 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                           {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                       </div>
+                      <AnimatePresence>
+                        {touched.password && fieldErrors.password && (
+                          <motion.p
+                            id="login-password-error"
+                            initial={{ opacity: 0, height: 0, y: -4 }}
+                            animate={{ opacity: 1, height: 'auto', y: 0 }}
+                            exit={{ opacity: 0, height: 0, y: -4 }}
+                            className="text-[13px] text-red-600 font-medium flex items-center gap-1.5 pl-1"
+                            role="alert"
+                          >
+                            <AlertCircle size={14} className="shrink-0" />
+                            {fieldErrors.password}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     </div>
 
                     {/* Remember Me */}
@@ -221,7 +334,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                       </label>
                     </div>
 
-                    {/* Error Display */}
+                    {/* Error Display (Banner for non-field errors) */}
                     <AnimatePresence>
                       {displayError && (
                         <motion.div

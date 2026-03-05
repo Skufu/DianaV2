@@ -286,6 +286,8 @@ func (r *pgAssessmentRepo) GetTrend(ctx context.Context, patientID int64) ([]mod
 			Triglycerides: a.Triglycerides,
 			LDL:           a.LDL,
 			HDL:           a.HDL,
+			Systolic:      a.Systolic,
+			Diastolic:     a.Diastolic,
 		})
 	}
 	return trends, nil
