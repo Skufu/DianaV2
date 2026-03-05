@@ -140,6 +140,9 @@ class TestClinicalPredictor:
         assert 'probability' in result
         assert 'confidence' in result
         assert 'model_type' in result
+        # New fields per Tanabe 2024 confidence threshold
+        assert 'prediction_confidence' in result
+        assert 'confidence_note' in result
     
     def test_predict_clinical_uses_correct_features(self, clinical_predictor):
         data = {

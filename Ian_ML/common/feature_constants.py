@@ -159,7 +159,7 @@ AHLQVIST_SUBTYPES = {
     'SIDD': {
         'full_name': 'Severe Insulin-Deficient Diabetes',
         'characteristics': 'High TG/HDL ratio (proxy — true SIDD requires HOMA2-B/C-peptide)',
-        'clinical_implication': 'May need early insulin therapy; SIDD/SIRD distinction is approximate without HOMA2',
+        'clinical_implication': 'May need early insulin therapy; SIDD/SIRD distinction is approximate without HOMA2 (Ahlqvist-inspired adaptation)',
         'risk_level': 'HIGH',
     },
     'MOD': {
