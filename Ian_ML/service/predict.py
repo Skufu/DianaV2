@@ -389,11 +389,22 @@ class DianaPredictor:
         else:
             medical_status = "Diabetic"
 
+        # Apply confidence threshold per Tanabe et al. (2024) Diabetologia
+        CONFIDENCE_THRESHOLD = 0.60
+        if confidence < CONFIDENCE_THRESHOLD:
+            prediction_confidence = "Indeterminate"
+            confidence_note = f"Low confidence prediction ({confidence:.0%}). Consider clinical follow-up."
+        else:
+            prediction_confidence = "Confident"
+            confidence_note = None
+
         return {
             "success": True,
             "model_type": "ada",
             "medical_status": medical_status,
             "predicted_status": medical_status,
+            "prediction_confidence": prediction_confidence,
+            "confidence_note": confidence_note,
             "risk_cluster": cluster_label,
             "risk_level": risk_level,
             "risk_score": risk_score,
@@ -806,10 +817,25 @@ class ClinicalPredictor:
             "binary_v2_bp": "Binary at-risk screening model with BP features (no HbA1c/FBS).",
             "clinical": "Clinical screening model (no HbA1c/FBS).",
         }
+        
+        # Apply confidence threshold per Tanabe et al. (2024) Diabetologia
+        # If max probability < 0.60, flag as Indeterminate (undecidable cluster)
+        # This improves clinical validity by not forcing borderline predictions
+        CONFIDENCE_THRESHOLD = 0.60
+        if confidence < CONFIDENCE_THRESHOLD:
+            prediction_confidence = "Indeterminate"
+            confidence_note = f"Low confidence prediction ({confidence:.0%}). Consider clinical follow-up."
+        else:
+            prediction_confidence = "Confident"
+            confidence_note = None
+        
         return {
             "success": True,
             "model_type": model_type,
             "predicted_status": predicted_status,
+            # Prediction confidence flag (per Tanabe 2024 "undecidable" concept)
+            "prediction_confidence": prediction_confidence,
+            "confidence_note": confidence_note,
             # Ahlqvist subtype schema
             "risk_cluster": risk_cluster,
             "metabolic_subtype": metabolic_subtype,

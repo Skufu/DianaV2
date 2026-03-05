@@ -193,7 +193,9 @@ class TestAPIKeyAuthentication:
                 'medical_status': 'Diabetic',
                 'probability': [0.1, 0.2, 0.7],
                 'confidence': 'high',
-                'model_type': 'ada'
+                'model_type': 'ada',
+                'prediction_confidence': 'Confident',
+                'confidence_note': None
             }
 
             response = authenticated_client.post('/predict?model_type=ada',
