@@ -215,10 +215,10 @@ func printRoutes(r *gin.Engine) {
 		}
 	}
 
-	gin.DefaultWriter.Write([]byte("\n=== Registered Routes ===\n"))
+	_, _ = gin.DefaultWriter.Write([]byte("\n=== Registered Routes ===\n"))
 	for _, route := range routes {
 		method := route.Method + strings.Repeat(" ", maxMethod-len(route.Method))
-		gin.DefaultWriter.Write([]byte(method + " " + route.Path + "\n"))
+		_, _ = gin.DefaultWriter.Write([]byte(method + " " + route.Path + "\n"))
 	}
-	gin.DefaultWriter.Write([]byte("=========================\n\n"))
+	_, _ = gin.DefaultWriter.Write([]byte("=========================\n\n"))
 }

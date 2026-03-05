@@ -11,29 +11,6 @@ import (
 	sqlcgen "github.com/skufu/DianaV2/backend/internal/store/sqlc"
 )
 
-// ============================================================================
-// Timestamp Mappers
-// ============================================================================
-
-// timeToPgTimestamp converts a Go time.Time to pgtype.Timestamp.
-// Used when passing timestamps to SQLC generated queries.
-func timeToPgTimestamp(t time.Time) pgtype.Timestamp {
-	return pgtype.Timestamp{
-		Time:  t,
-		Valid: true,
-	}
-}
-
-// timestampVal converts a pgtype.Timestamp to *time.Time.
-// Returns nil if timestamp is NULL (Valid=false).
-// Used when converting SQLC result types to domain models.
-func timestampVal(ts pgtype.Timestamp) *time.Time {
-	if !ts.Valid {
-		return nil
-	}
-	return &ts.Time
-}
-
 // timeToPgTimestamptz converts a Go time.Time to pgtype.Timestamptz.
 func timeToPgTimestamptz(t time.Time) pgtype.Timestamptz {
 	return pgtype.Timestamptz{Time: t, Valid: true}
@@ -60,13 +37,6 @@ func intVal(v pgtype.Int4) int {
 	return int(v.Int32)
 }
 
-func int16Val(v pgtype.Int2) int {
-	if !v.Valid {
-		return 0
-	}
-	return int(v.Int16)
-}
-
 // int64Val converts a pgtype.Int4 to int64.
 // Returns 0 if value is NULL.
 func int64Val(v pgtype.Int4) int64 {
@@ -79,13 +49,6 @@ func int64Val(v pgtype.Int4) int64 {
 // intToPgInt converts an int to pgtype.Int4.
 func intToPgInt(v int) pgtype.Int4 {
 	return pgtype.Int4{Int32: int32(v), Valid: true}
-}
-
-func intToPgInt16(v int) pgtype.Int2 {
-	if v == 0 {
-		return pgtype.Int2{Valid: false}
-	}
-	return pgtype.Int2{Int16: int16(v), Valid: true}
 }
 
 // int64ToPgInt converts an int64 to pgtype.Int4.

@@ -359,16 +359,6 @@ func (g *ReportGenerator) getTGStatus(val int) string {
 	return "Normal"
 }
 
-func (g *ReportGenerator) getBPStatus(systolic, diastolic int) string {
-	if systolic >= 140 || diastolic >= 90 {
-		return "High"
-	}
-	if systolic >= 130 || diastolic >= 80 {
-		return "Elevated"
-	}
-	return "Normal"
-}
-
 func (g *ReportGenerator) getRecommendations(assessment models.Assessment) []string {
 	var recs []string
 	if assessment.HbA1c >= 6.5 {

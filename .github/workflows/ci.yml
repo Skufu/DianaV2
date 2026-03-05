@@ -13,6 +13,21 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: diana_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,7 +44,6 @@ jobs:
           version: latest
           working-directory: backend
           args: --timeout=5m
-        continue-on-error: true
 
       - name: Validate sqlc schema (detect API drift)
         run: |
@@ -52,6 +66,9 @@ jobs:
 
       - name: Test
         run: go test -v -race -coverprofile=coverage.out ./...
+        env:
+          DB_SOURCE: "postgres://postgres:postgres@localhost:5432/diana_test?sslmode=disable"
+          ENVIRONMENT: "test"
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -86,6 +103,9 @@ jobs:
           VITE_API_BASE: http://localhost:8080
           VITE_ML_BASE: http://localhost:5000
 
+      - name: Lint
+        run: npm run lint
+
   # Python ML server tests
   ml:
     runs-on: ubuntu-latest
@@ -111,7 +131,6 @@ jobs:
 
       - name: Lint with flake8
         run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        continue-on-error: true
 
       - name: Check import
         run: python -c "from service.predict import DianaPredictor; print('Import OK')"

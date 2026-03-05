@@ -256,8 +256,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 
 	// Reset last assessment reminder sent date (UpdateLastLogin as proxy, or ignore)
 	if err := h.store.Users().UpdateLastLogin(c.Request.Context(), int32(userID)); err != nil {
-		// Log but don't fail response - this is a non-critical update
-		// In production, this should be sent to monitoring
+		log.Printf("[WARN] Failed to update last login for user %d: %v", userID, err)
 	}
 
 	c.JSON(http.StatusCreated, assessment)

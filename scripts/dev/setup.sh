@@ -521,7 +521,9 @@ if $POSTGRES_READY; then
     export PATH="$PATH:$(go env GOPATH)/bin"
     
     if command -v goose &> /dev/null; then
-        if goose -dir ./backend/migrations postgres "${DB_DSN}" up 2>/dev/null; then
+        echo "Running migrations..."
+        goose -dir ./backend/migrations postgres "${DB_DSN}" up
+        if [ $? -eq 0 ]; then
             print_success "Database migrations complete"
         else
             print_warning "Migration may have already been applied or failed. You can run manually:"

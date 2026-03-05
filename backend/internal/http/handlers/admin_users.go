@@ -162,9 +162,7 @@ func (h *AdminUsersHandler) createUser(c *gin.Context) {
 			"role":  req.Role,
 		}),
 	}); err != nil {
-		// Log audit error but don't fail the response
-		// In production, this should be sent to a monitoring system
-		// TODO: Implement proper async audit logging with retry
+		log.Printf("[ERROR] Failed to create audit event for user create: %v", err)
 	}
 
 	// Publish user creation event for real-time tracking
@@ -267,8 +265,7 @@ func (h *AdminUsersHandler) updateUser(c *gin.Context) {
 			"role":  req.Role,
 		}),
 	}); err != nil {
-		// Log audit error but don't fail the response
-		// TODO: Implement proper async audit logging with retry
+		log.Printf("[ERROR] Failed to create audit event for user update: %v", err)
 	}
 
 	c.JSON(http.StatusOK, updatedUser)
@@ -316,8 +313,7 @@ func (h *AdminUsersHandler) deactivateUser(c *gin.Context) {
 		TargetType: "user",
 		TargetID:   int(id),
 	}); err != nil {
-		// Log audit error but don't fail the response
-		// TODO: Implement proper async audit logging with retry
+		log.Printf("[ERROR] Failed to create audit event for user deactivate: %v", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "user deactivated successfully"})
@@ -360,8 +356,7 @@ func (h *AdminUsersHandler) activateUser(c *gin.Context) {
 		TargetType: "user",
 		TargetID:   int(id),
 	}); err != nil {
-		// Log audit error but don't fail the response
-		// TODO: Implement proper async audit logging with retry
+		log.Printf("[ERROR] Failed to create audit event for user activate: %v", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "user activated successfully"})
