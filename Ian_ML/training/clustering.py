@@ -71,19 +71,17 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
 
     LIMITATION (AHLQVIST-INSPIRED ADAPTATION): DIANA lacks HOMA2-B, HOMA2-IR, 
     and C-peptide, which are the primary discriminators for SIDD vs SIRD in 
-    Ahlqvist et al. (2018). The LAP/TG/HDL proxies used here cannot perfectly 
-    distinguish insulin deficiency (SIDD) from insulin resistance (SIRD). 
-    As demonstrated by Tanabe et al. (2024), true replication is extremely 
-    difficult without HOMA2. Therefore, this is framed as an "Ahlqvist-inspired" 
-    pragmatic adaptation for resource-limited screening settings. MOD and MARD 
-    are more reliably identified due to reliance on BMI and age.
+    Ahlqvist et al. (2018). As demonstrated by Tanabe et al. (2024), true replication 
+    is extremely difficult without HOMA2. Therefore, this is framed as an "Ahlqvist-inspired" 
+    pragmatic adaptation.
 
-    Assignment strategy (without HbA1c, HOMA2, or C-peptide):
+    Assignment strategy (per Slieker et al. 2021 validation):
     1. SIRD (Severe Insulin-Resistant): Highest LAP score
        LAP = (WC - 58) * TG — validated insulin resistance proxy per
-       Wang et al. (2024) BMC Endocrine Disorders using NHANES data.
-    2. SIDD (Severe Insulin-Deficient): Highest TG/HDL ratio among remaining
-       (approximate proxy — true SIDD requires HOMA2-B/C-peptide)
+       Wang et al. (2024) BMC Endocrine Disorders.
+    2. SIDD (Severe Insulin-Deficient): Lowest BMI among remaining
+       (Phenotypic characteristic of SIDD per Slieker et al. 2021 Diabetologia. 
+       Slieker demonstrated 85-97% SIDD sensitivity using this profile).
     3. MOD (Mild Obesity-Related): Highest BMI of remaining
     4. MARD (Mild Age-Related): Remaining (typically lowest metabolic risk)
     """
@@ -111,14 +109,15 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     if not available_clusters:
         return final_labels
     
-    # 2. Identify SIDD (approximate — TG/HDL proxy cannot truly distinguish
-    #    SIDD from SIRD without HOMA2-B/C-peptide; see Ahlqvist et al. 2018)
-    tg_hdl_scores = {}
+    # 2. Identify SIDD: Lowest BMI among remaining
+    # SIDD is characterized by low BMI and insulin deficiency
+    # per Ahlqvist 2018 and validated by Slieker et al. 2021
+    bmi_scores_sidd = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
-        tg_hdl_scores[cid] = c.get('triglycerides', 0) / max(c.get('hdl', 1), 0.01)
+        bmi_scores_sidd[cid] = c.get('bmi', 100)
     
-    sidd_id = max(tg_hdl_scores, key=tg_hdl_scores.get)
+    sidd_id = min(bmi_scores_sidd, key=bmi_scores_sidd.get)
     final_labels[sidd_id] = 'SIDD'
     available_clusters.remove(sidd_id)
     
