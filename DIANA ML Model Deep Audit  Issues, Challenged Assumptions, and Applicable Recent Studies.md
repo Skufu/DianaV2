@@ -186,7 +186,7 @@ The data processing pipeline flags but retains outliers. This is generally good 
 
 | Category | Issue | Severity | Status |
 |----------|-------|----------|--------|
-| Subtype labeling | SIDD/SIRD distinction unreliable without HOMA2 | **High** | ✅ DEFENDED: Reframed as "Ahlqvist-inspired" using Slieker 2021 SIDD low-BMI characteristics |
+| Subtype labeling | SIDD/SIRD distinction unreliable without HOMA2 | **High** | ✅ FIXED: Rebranded to "Atherogenic/Lipid-Driven" phenotype using LDL proxy (see Part 6.3) |
 | IR composite | `BMI + TG/50 − HDL/10` has no literature basis | **Medium** | ✅ FIXED: Replaced with LAP formula (see Part 6.1) |
 | Greedy assignment | Sequential order creates bias | **Medium** | ⏳ FUTURE: Mention soft/probabilistic clustering as future work[^5] |
 | Label asymmetry | HbA1c-derived targets predicted without HbA1c | **Low** | ✅ DEFENDED: Frame as deliberate clinical screening design |
@@ -255,13 +255,21 @@ Where WC = waist circumference (cm), TG = triglycerides (mg/dL). This is the fem
 
 Added assertions for new `prediction_confidence` and `confidence_note` fields.
 
-### 6.4 SIDD Assignment Logic ✅ APPLIED
+### 6.4 SIDD → Atherogenic/Lipid-Driven Rebranding ✅ APPLIED
 
-**File:** `Ian_ML/training/clustering.py`
+**Files:** `Ian_ML/training/clustering.py`, `Ian_ML/common/feature_constants.py`, `Ian_ML/training/train_binary_v2_no_bp.py`, `Ian_ML/training/train_binary_v2_with_bp.py`
 
-**Change:** Updated `assign_ahlqvist_labels()` to assign SIDD based on the lowest BMI among remaining clusters (rather than the highest TG/HDL ratio).
+**Problem:** Using TG/HDL (an insulin RESISTANCE proxy) to identify SIDD (insulin DEFICIENCY) is biologically backwards. TG/HDL correlates with HOMA-IR but NOT with HOMA-β (beta-cell function).
 
-**Impact:** Resolves the cognitive dissonance of using an insulin resistance marker (TG/HDL) to identify insulin deficiency (SIDD). Aligns the sequential algorithmic logic strictly with the phenotypic findings from Slieker et al. (2021 Diabetologia), creating a highly defensible subtyping framework.
+**Fix Applied:**
+1. **Logic Change:** SIDD now assigned by **highest LDL cholesterol** among remaining clusters (atherogenic dyslipidemia marker), not TG/HDL or BMI
+2. **Rebranding:** Display name changed from "Severe Insulin-Deficient Diabetes" → **"Atherogenic / Lipid-Driven Diabetes"**
+3. **Code compatibility:** Internal code still uses `'SIDD'` key to avoid breaking API/frontend
+
+**Defense Talking Point:**
+> "Because we lacked beta-cell function data (HOMA2-B, C-peptide), we adapted the Ahlqvist framework to a routine phenotypic model. Rather than claiming to identify insulin deficiency — which would require invasive beta-cell testing — we identify the **atherogenic phenotype** characterized by severe dyslipidemia. This is clinically defensible and aligns with modern EHR-based phenotyping literature."
+
+**Impact:** Shields you from the "thermometer for weight" criticism. You're no longer claiming to measure insulin deficiency — you're measuring lipid-driven cardiovascular risk, which is what the data actually supports.
 
 ---
 

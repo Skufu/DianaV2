@@ -2,30 +2,30 @@
   "model_type": "binary_v2_no_bp",
   "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
   "best_model": "Logistic Regression",
-  "n_features": 12,
+  "n_features": 9,
   "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
   "decision_thresholds": {
-    "at_risk": 0.4499999999999998
+    "at_risk": 0.4549999999999998
   },
   "metrics": {
-    "auc_roc": 0.7202394594548711,
+    "auc_roc": 0.7224973897985688,
     "auc_ci_95": [
-      0.6932609036715308,
-      0.7467684613056609
+      0.6947465974682336,
+      0.7485178325602942
     ],
-    "accuracy": 0.6366279069767442,
-    "sensitivity": 0.7356948228882834,
+    "accuracy": 0.6693313953488372,
+    "sensitivity": 0.7534059945504087,
     "sensitivity_ci_95": [
-      0.7049628031542925,
-      0.7663056176351076
+      0.724527258209712,
+      0.7841240562479931
     ],
-    "specificity": 0.5233644859813084,
-    "ppv": 0.6382978723404256,
-    "npv": 0.6339622641509434,
-    "f1": 0.6835443037974684,
-    "mean_threshold": 0.4499999999999998,
-    "inner_cv_auc_mean": 0.7264148614930868,
-    "inner_cv_auc_std": 0.0047465284055860785
+    "specificity": 0.573208722741433,
+    "ppv": 0.6686819830713422,
+    "npv": 0.6703096539162113,
+    "f1": 0.7085201793721972,
+    "mean_threshold": 0.4549999999999998,
+    "inner_cv_auc_mean": 0.7284094310148873,
+    "inner_cv_auc_std": 0.004822567935973425
   },
   "features": [
     "bmi",
@@ -33,13 +33,10 @@
     "ldl",
     "hdl",
     "age",
-    "bmi_category",
-    "tg_hdl_ratio",
+    "waist_circumference",
     "smoking_encoded",
     "activity_encoded",
-    "alcohol_encoded",
-    "metabolic_syndrome_score",
-    "waist_circumference"
+    "alcohol_encoded"
   ],
-  "clinical_rationale": "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). Prioritizes sensitivity for screening."
+  "clinical_rationale": "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). Prioritizes sensitivity for screening. Uses 9 LR-safe features (continuous + ordinal only)."
 }
