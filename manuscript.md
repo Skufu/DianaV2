@@ -1431,8 +1431,8 @@ _Figure 2 : General Prototyping Model_
 This phase focuses on acquiring, merging, and cleaning clinical data from the NHANES 2009-2023 datasets to build the dataset used for feature selection and model development. The records of postmenopausal women aged 45–60 will be filtered from the larger dataset, targeting a final cohort of approximately 1,376 records. Only records with complete core biomarkers and key demographic fields will be retained to ensure data quality.
 
 The dataset will include metabolic biomarkers and non‑blood variables used by the screening
-model (BMI, triglycerides, LDL‑C, HDL‑C, age, waist circumference)
-with engineered features such as TG/HDL ratio and metabolic syndrome score. HbA1c
+model (BMI, triglycerides, LDL‑C, HDL‑C, age, waist circumference, smoking status, physical activity, alcohol use).
+HbA1c
 and FBS are retained only for ground‑truth labeling, not as input features for the primary screening
 model. This exclusion prevents circularity because HbA1c/FBS are themselves diagnostic criteria; a
 model that uses them would simply rediscover the label rather than detect undiagnosed risk. Each
@@ -1744,12 +1744,12 @@ Highest BMI, highest HOMA-β, highest HOMA-IR;
 moderate HbA1c; youngest age at diagnosis
 ```
 ```
-SIDD Severe Insulin-
-Deficient Diabetes
+SIDD Atherogenic /
+Lipid-Driven Diabetes
 ```
 ```
-Highest HbA1c, lowest HOMA-β; relatively high
-HOMA-IR; moderate BMI and age
+Highest LDL cholesterol, severe dyslipidemia;
+atherogenic phenotype; cardiovascular risk focus
 MARD Mild Age-Associated
 Diabetes Mellitus
 ```
@@ -1868,7 +1868,7 @@ K‑means clustering (K=4) was applied to the full imputed dataset (n = 1,376), 
 
 _Table 7 : K‑Means Subtype Distribution and Biomarker Means (K=4)_
 
-SIDD exhibited the most severe glycemic dysfunction, while SIRD showed the highest BMI and insulin‑resistance profile. MOD reflected obesity‑related risk, and MARD represented the mildest phenotype with the highest HDL. Notably, SIRD exhibited the highest BMI in this menopausal cohort, consistent with postmenopausal metabolic shifts and a TG/HDL‑driven risk profile rather than BMI alone.
+SIDD exhibited the most severe glycemic dysfunction, while SIRD showed the highest BMI and insulin‑resistance profile. MOD reflected obesity‑related risk, and MARD represented the mildest phenotype with the highest HDL. Notably, SIRD exhibited the highest BMI in this menopausal cohort, consistent with postmenopausal metabolic shifts characterized by severe insulin resistance and elevated metabolic risk.
 
 **4.4 Summary of Findings**
 
@@ -1886,7 +1886,7 @@ The observed AUC (~0.72) should be interpreted in light of the non‑circular co
 
 The DIANA predictive model-based application bridges the gap between raw biomarker data and actionable clinical insights through a dual-layered risk assessment approach. Primarily, the Logistic Regression screening output is designed to support clinical triage by mapping continuous risk probabilities into discrete, actionable categories: **Low (0–33%)**, **Moderate (34–66%)**, and **High (67–100%)**. These categories align with practical clinical workflows—specifically routine monitoring, enhanced screening, and priority medical intervention, respectively. The empirically calibrated at‑risk threshold of 0.4567 provides an optimized operating point that maximizes sensitivity, fulfilling the primary mandate of a screening tool to prioritize case-finding over perfect specificity.
 
-Furthermore, integrating K-Means clustering significantly enhances the clinical utility of the system by transitioning from generalized risk assessment to phenotype-aware personalized medicine. By stratifying the cohort into distinct subgroups (SIDD, SIRD, MOD, MARD), DIANA enables healthcare providers to visualize the underlying metabolic drivers of an individual's diabetes risk. For instance, classifying a menopausal patient into the SIRD (Severe Insulin-Resistant Diabetes) cluster—characterized in this study by elevated BMI and TG/HDL ratios—allows clinicians to proactively tailor interventions targeting insulin resistance and weight management, rather than relying on generalized glycemic control strategies. This subgroup-driven approach demonstrates how machine learning can operationalize complex metabolic phenotyping for personalized clinical care.
+Furthermore, integrating K-Means clustering significantly enhances the clinical utility of the system by transitioning from generalized risk assessment to phenotype-aware personalized medicine. By stratifying the cohort into distinct subgroups (SIDD, SIRD, MOD, MARD), DIANA enables healthcare providers to visualize the underlying metabolic drivers of an individual's diabetes risk. For instance, classifying a menopausal patient into the SIRD (Severe Insulin-Resistant Diabetes) cluster—characterized in this study by elevated BMI and severe insulin resistance—allows clinicians to proactively tailor interventions targeting insulin resistance and weight management, rather than relying on generalized glycemic control strategies. This subgroup-driven approach demonstrates how machine learning can operationalize complex metabolic phenotyping for personalized clinical care.
 
 **5.3 Strengths of the Study**
 

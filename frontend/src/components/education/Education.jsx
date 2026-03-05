@@ -16,7 +16,7 @@ import MARDLogo from '../../assets/clusters/mard.png';
 // Comprehensive cluster education data - using light mode compatible colors
 export const clusterEducation = {
     SIDD: {
-        name: 'Severe Insulin-Deficient Diabetes',
+        name: 'Atherogenic / Lipid-Driven Diabetes',
         shortDesc: 'Early onset, low BMI, poor metabolic control',
         color: '#DC2626', // red-600
         bgColor: 'bg-red-50',

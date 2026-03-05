@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { cardVariants, staggerContainer, slideUp } from '../../utils/animations';
 
 const subgroupInfo = {
-  'SIDD': { name: 'Severe Insulin-Deficient Diabetes', color: '#EE5D50', description: 'Early onset, low BMI, poor metabolic control' },
+  'SIDD': { name: 'Atherogenic / Lipid-Driven Diabetes', color: '#EE5D50', description: 'High LDL, severe dyslipidemia, atherogenic phenotype' },
   'SIRD': { name: 'Severe Insulin-Resistant Diabetes', color: '#FFB547', description: 'High insulin resistance, high risk of kidney disease' },
   'MOD': { name: 'Mild Obesity-Related Diabetes', color: '#6AD2FF', description: 'High BMI but relatively normal metabolic state' },
   'MARD': { name: 'Mild Age-Related Diabetes', color: '#05CD99', description: 'Older onset, modest metabolic derangements' }
