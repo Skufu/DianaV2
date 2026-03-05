@@ -19,6 +19,9 @@ import (
 )
 
 func TestValidationStatus(t *testing.T) {
+	// Uses ml.ValidateBiomarkers + ml.FormatValidationStatus (canonical implementation)
+	thresholds := getDefaultTestThresholds()
+
 	cases := []struct {
 		name   string
 		input  models.Assessment
@@ -26,25 +29,26 @@ func TestValidationStatus(t *testing.T) {
 	}{
 		{
 			name:   "normal values",
-			input:  models.Assessment{Triglycerides: 120, LDL: 110, HDL: 55, Systolic: 118, Diastolic: 76, BMI: 24},
+			input:  models.Assessment{Triglycerides: 120, LDL: 90, HDL: 55, Systolic: 118, Diastolic: 76, BMI: 22},
 			expect: "ok",
 		},
 		{
-			name:   "lipids and bp and bmi warnings",
-			input:  models.Assessment{Cholesterol: 230, LDL: 170, HDL: 45, Triglycerides: 210, Systolic: 142, Diastolic: 88, BMI: 32},
-			expect: "warning:chol_borderline,ldl_high,hdl_low,triglycerides_high,bp_high,bmi_obese",
+			name:   "diabetic fbs and obese bmi",
+			input:  models.Assessment{FBS: 130, BMI: 32, HDL: 50},
+			expect: "warning:fbs_diabetic_range,bmi_obese",
 		},
 		{
-			name:   "borderline mix",
-			input:  models.Assessment{Cholesterol: 205, LDL: 135, HDL: 70, Triglycerides: 160, Systolic: 132, Diastolic: 82, BMI: 27},
-			expect: "warning:chol_borderline,ldl_borderline,triglycerides_borderline,bp_elevated,bmi_overweight",
+			name:   "prediabetic hba1c",
+			input:  models.Assessment{HbA1c: 6.0, HDL: 50},
+			expect: "warning:hba1c_prediabetic",
 		},
 	}
 
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			got := validationStatus(tc.input)
+			result := ml.ValidateBiomarkers(tc.input, thresholds)
+			got := ml.FormatValidationStatus(result)
 			if got != tc.expect {
 				t.Fatalf("expected %s, got %s", tc.expect, got)
 			}

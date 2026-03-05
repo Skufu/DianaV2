@@ -161,7 +161,7 @@ ORDER BY label;
 
 -- name: GetAssessmentTrendByUser :many
 SELECT id, created_at, risk_score, cluster, hba1c, bmi, fbs, 
-    triglycerides, ldl, hdl
+    triglycerides, ldl, hdl, systolic, diastolic
 FROM assessments
 WHERE user_id = $1
 ORDER BY created_at ASC;

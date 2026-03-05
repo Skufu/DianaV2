@@ -386,7 +386,9 @@ def predict_explain():
                 "age": data.get("age", 54),
                 "smoking_status": data.get("smoking", "Unknown"),
                 "physical_activity": data.get("activity", "Unknown"),
-                "alcohol_use": data.get("alcohol", "Unknown")
+                "alcohol_use": data.get("alcohol", "Unknown"),
+                "waist_circumference": data.get("waist_circumference"),
+                "family_history_diabetes": data.get("family_history_diabetes"),
             }
             
             # Make prediction
@@ -815,7 +817,9 @@ def predict_batch():
                     "age": patient.get("age", 54),
                     "smoking_status": patient.get("smoking", "Unknown"),
                     "physical_activity": patient.get("activity", "Unknown"),
-                    "alcohol_use": patient.get("alcohol", "Unknown")
+                    "alcohol_use": patient.get("alcohol", "Unknown"),
+                    "waist_circumference": patient.get("waist_circumference"),
+                    "family_history_diabetes": patient.get("family_history_diabetes"),
                 }
                 results.append(clin_predictor.predict(patient_data))
         else:

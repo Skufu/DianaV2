@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image } from 'lucide-react';
 import { getMLVisualizationUrl } from '../../api';
 import { motion } from 'framer-motion';
@@ -10,6 +10,52 @@ const LoadingSkeleton = ({ className = '' }) => (
 
 const VisualizationCard = React.memo(({ title, visualizationName }) => {
   const [status, setStatus] = useState('loading');
+  const [imgSrc, setImgSrc] = useState('');
+
+  useEffect(() => {
+    let objectUrl = null;
+    let isMounted = true;
+
+    const fetchImage = async () => {
+      setStatus('loading');
+      try {
+        const url = getMLVisualizationUrl(visualizationName);
+        const apiKey = import.meta.env.VITE_ML_API_KEY || 'dev-ml-api-key';
+
+        const response = await fetch(url, {
+          headers: {
+            'X-API-Key': apiKey
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        objectUrl = URL.createObjectURL(blob);
+
+        if (isMounted) {
+          setImgSrc(objectUrl);
+          setStatus('loaded');
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Error loading visualization:", error);
+          setStatus('error');
+        }
+      }
+    };
+
+    fetchImage();
+
+    return () => {
+      isMounted = false;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [visualizationName]);
 
   return (
     <motion.div
@@ -25,11 +71,9 @@ const VisualizationCard = React.memo(({ title, visualizationName }) => {
         <LoadingSkeleton className="w-full h-64 !bg-diana-stone/50" />
       )}
       <img
-        src={getMLVisualizationUrl(visualizationName)}
+        src={imgSrc}
         alt={title}
         className={`w-full rounded-xl shadow-md border border-diana-stone ${status !== 'loaded' ? 'hidden' : ''}`}
-        onLoad={() => setStatus('loaded')}
-        onError={() => setStatus('error')}
         loading="lazy"
         decoding="async"
         width="800"

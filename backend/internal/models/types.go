@@ -148,6 +148,8 @@ type AssessmentTrend struct {
 	Triglycerides int       `json:"triglycerides"`
 	LDL           int       `json:"ldl"`
 	HDL           int       `json:"hdl"`
+	Systolic      int       `json:"systolic"`
+	Diastolic     int       `json:"diastolic"`
 }
 
 // UserProfile extends User with latest assessment info

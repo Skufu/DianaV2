@@ -4,11 +4,15 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"log"
 	"net/http"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/http/sse"
@@ -56,14 +60,93 @@ func (h *AuthHandler) Register(rg *gin.RouterGroup) {
 	rg.POST("/logout", h.logout)
 }
 
+// parseAuthValidationErrors converts Gin binding errors into user-friendly field-specific messages.
+func parseAuthValidationErrors(err error) map[string]string {
+	fieldErrors := make(map[string]string)
+	var ve validator.ValidationErrors
+	if !errors.As(err, &ve) {
+		return nil // not a validation error
+	}
+	for _, fe := range ve {
+		field := strings.ToLower(fe.Field())
+		switch field {
+		case "email":
+			switch fe.Tag() {
+			case "required":
+				fieldErrors["email"] = "Email is required"
+			case "email":
+				fieldErrors["email"] = "Please enter a valid email address"
+			case "max":
+				fieldErrors["email"] = "Email must be at most 255 characters"
+			default:
+				fieldErrors["email"] = "Invalid email"
+			}
+		case "password":
+			switch fe.Tag() {
+			case "required":
+				fieldErrors["password"] = "Password is required"
+			case "min":
+				fieldErrors["password"] = "Password must be at least 8 characters"
+			case "max":
+				fieldErrors["password"] = "Password must be at most 128 characters"
+			default:
+				fieldErrors["password"] = "Invalid password"
+			}
+		default:
+			fieldErrors[field] = "Invalid value"
+		}
+	}
+	return fieldErrors
+}
+
+// validatePasswordComplexity checks that a password contains at least one
+// uppercase letter, one lowercase letter, and one digit.
+func validatePasswordComplexity(password string) map[string]string {
+	var hasUpper, hasLower, hasDigit bool
+	for _, r := range password {
+		switch {
+		case unicode.IsUpper(r):
+			hasUpper = true
+		case unicode.IsLower(r):
+			hasLower = true
+		case unicode.IsDigit(r):
+			hasDigit = true
+		}
+	}
+	if hasUpper && hasLower && hasDigit {
+		return nil
+	}
+	missing := []string{}
+	if !hasUpper {
+		missing = append(missing, "an uppercase letter")
+	}
+	if !hasLower {
+		missing = append(missing, "a lowercase letter")
+	}
+	if !hasDigit {
+		missing = append(missing, "a number")
+	}
+	return map[string]string{
+		"password": "Password must contain " + strings.Join(missing, ", "),
+	}
+}
+
 func (h *AuthHandler) login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		if fieldErrors := parseAuthValidationErrors(err); fieldErrors != nil {
+			ErrValidation(c, fieldErrors)
+			return
+		}
 		ErrBadRequest(c, "invalid payload")
 		return
 	}
+
+	// Normalize email
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+
 	if req.Email == "" || req.Password == "" {
-		ErrBadRequest(c, "email and password are required")
+		ErrValidation(c, map[string]string{"email": "Email is required", "password": "Password is required"})
 		return
 	}
 	user, err := h.store.Users().FindByEmail(c.Request.Context(), req.Email)
@@ -158,18 +241,32 @@ func (h *AuthHandler) login(c *gin.Context) {
 func (h *AuthHandler) register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		if fieldErrors := parseAuthValidationErrors(err); fieldErrors != nil {
+			ErrValidation(c, fieldErrors)
+			return
+		}
 		ErrBadRequest(c, "invalid payload")
 		return
 	}
+
+	// Normalize email
+	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
+
 	if req.Email == "" || req.Password == "" {
-		ErrBadRequest(c, "email and password are required")
+		ErrValidation(c, map[string]string{"email": "Email is required", "password": "Password is required"})
+		return
+	}
+
+	// Password complexity check
+	if complexityErrors := validatePasswordComplexity(req.Password); complexityErrors != nil {
+		ErrValidation(c, complexityErrors)
 		return
 	}
 
 	existingUser, err := h.store.Users().FindByEmail(c.Request.Context(), req.Email)
 	if err == nil && existingUser != nil {
 		log.Printf("[WARN] Registration attempt with existing email: %s", req.Email)
-		ErrBadRequest(c, "email already registered")
+		ErrValidation(c, map[string]string{"email": "This email is already registered"})
 		return
 	}
 

@@ -104,83 +104,8 @@ func ageFromDOB(dob time.Time, now time.Time) int {
 	return age
 }
 
-func validationStatus(a models.Assessment) string {
-	var statuses []string
-
-	// FBS
-	if a.FBS >= 126 {
-		statuses = append(statuses, "fbs_diabetic_range")
-	} else if a.FBS >= 100 {
-		statuses = append(statuses, "fbs_prediabetic_range")
-	}
-
-	// HbA1c
-	if a.HbA1c >= 6.5 {
-		statuses = append(statuses, "hba1c_diabetic_range")
-	} else if a.HbA1c >= 5.7 {
-		statuses = append(statuses, "hba1c_prediabetic_range")
-	}
-
-	// Cholesterol
-	if a.Cholesterol >= 240 {
-		statuses = append(statuses, "chol_high")
-	} else if a.Cholesterol >= 200 {
-		statuses = append(statuses, "chol_borderline")
-	}
-
-	// LDL
-	if a.LDL >= 160 {
-		statuses = append(statuses, "ldl_high")
-	} else if a.LDL >= 130 {
-		statuses = append(statuses, "ldl_borderline")
-	}
-
-	// HDL
-	if a.HDL > 0 {
-		if a.HDL < 40 { // Common threshold, test expects 45 to be low?
-			statuses = append(statuses, "hdl_low")
-		} else if a.HDL < 50 && a.HDL >= 40 {
-			// Maybe test expects < 50 as low for women? Or generally?
-			// Test input HDL:45 gave "hdl_low". So threshold must be > 45.
-			statuses = append(statuses, "hdl_low")
-		}
-	}
-
-	// Triglycerides
-	if a.Triglycerides >= 200 {
-		statuses = append(statuses, "triglycerides_high")
-	} else if a.Triglycerides >= 150 {
-		statuses = append(statuses, "triglycerides_borderline")
-	}
-
-	// BP
-	if a.Systolic >= 140 || a.Diastolic >= 90 {
-		statuses = append(statuses, "bp_high")
-	} else if a.Systolic >= 120 || a.Diastolic >= 80 {
-		statuses = append(statuses, "bp_elevated")
-	}
-
-	// BMI
-	if a.BMI >= 30 {
-		statuses = append(statuses, "bmi_obese")
-	} else if a.BMI >= 25 {
-		statuses = append(statuses, "bmi_overweight")
-	}
-
-	if len(statuses) == 0 {
-		return "ok"
-	}
-
-	// Manual join to avoid importing strings if not already imported (it's not)
-	res := "warning:"
-	for i, s := range statuses {
-		if i > 0 {
-			res += ","
-		}
-		res += s
-	}
-	return res
-}
+// validationStatus is REMOVED — use ml.ValidateBiomarkers() + ml.FormatValidationStatus() instead.
+// See validation.go in the ml package for the canonical implementation.
 
 // Create creates a new assessment for the logged-in user
 func (h *AssessmentsHandler) Create(c *gin.Context) {

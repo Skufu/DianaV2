@@ -493,7 +493,7 @@ export const useClinicComparison = (options = {}) => {
 export const useAdminStats = () => {
   return useQuery({
     queryKey: ['admin', 'stats'],
-    queryFn: adminGetStatsApi,
+    queryFn: fetchAdminDashboardApi,
   });
 };
 
@@ -680,10 +680,7 @@ export const activateAdminUserApi = async (userId) => {
   });
 };
 
-// Get system statistics
-export const adminGetStatsApi = async () => {
-  return apiFetch('/admin/dashboard');
-};
+// adminGetStatsApi removed — was duplicate of fetchAdminDashboardApi (same /admin/dashboard endpoint)
 
 export const signupApi = async (email, password) => {
   return apiFetch('/auth/register', {

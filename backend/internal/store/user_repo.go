@@ -508,7 +508,9 @@ func (r *pgUserRepo) GetUserTrends(ctx context.Context, userID int64, months int
 		data.TriglyceridesValues = append(data.TriglyceridesValues, intVal(row.Triglycerides))
 		data.LDLValues = append(data.LDLValues, intVal(row.Ldl))
 		data.HDLValues = append(data.HDLValues, intVal(row.Hdl))
-		
+		data.SystolicValues = append(data.SystolicValues, intVal(row.Systolic))
+		data.DiastolicValues = append(data.DiastolicValues, intVal(row.Diastolic))
+
 		clusterStr := ""
 		if row.Cluster.Valid {
 			clusterStr = row.Cluster.String

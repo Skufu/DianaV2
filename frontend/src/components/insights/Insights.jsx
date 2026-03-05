@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  fetchClusterDistributionApi, fetchTrendInsightsApi, fetchAssessmentsApi,
+  fetchClusterDistributionApi, fetchTrendInsightsApi,
   fetchMLMetricsApi, fetchMLInformationGainApi, fetchMLClustersApi
 } from '../../api';
 import { AlertCircle } from 'lucide-react';
@@ -12,13 +12,13 @@ import SubgroupDistribution from './SubgroupDistribution';
 import ClusterComparison from './ClusterComparison';
 import VisualizationCard from './VisualizationCard';
 import BMIGlucoseCorrelation from './BMIGlucoseCorrelation';
+import ClusterBiomarkerRadar from './ClusterBiomarkerRadar';
 import RiskDistribution from './RiskDistribution';
 import BiomarkerTrends from './BiomarkerTrends';
 
 const Insights = ({ token, patients }) => {
   const [clusters, setClusters] = useState([]);
   const [trends, setTrends] = useState([]);
-  const [allAssessments, setAllAssessments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -35,7 +35,8 @@ const Insights = ({ token, patients }) => {
   const [mlLoading, setMlLoading] = useState(false);
   const [mlError, setMlError] = useState(null);
 
-  const patientList = useMemo(() => (Array.isArray(patients) ? patients : []), [patients]);
+  // patientList and allAssessments logic removed as per instructions
+  // const patientList = useMemo(() => (Array.isArray(patients) ? patients : []), [patients]);
 
   useEffect(() => {
     if (!token) return;
@@ -80,14 +81,15 @@ const Insights = ({ token, patients }) => {
         setClusters(c || []);
         setTrends(t || []);
 
-        if (patientList.length > 0) {
-          const assessmentPromises = patientList.map(p =>
-            fetchAssessmentsApi(token, p.id).catch(() => [])
-          );
-          const assessmentArrays = await Promise.all(assessmentPromises);
-          const flatAssessments = assessmentArrays.flat().filter(a => a != null);
-          setAllAssessments(flatAssessments);
-        }
+        // Removed fetchAssessmentsApi logic
+        // if (patientList.length > 0) {
+        //   const assessmentPromises = patientList.map(p =>
+        //     fetchAssessmentsApi(token, p.id).catch(() => [])
+        //   );
+        //   const assessmentArrays = await Promise.all(assessmentPromises);
+        //   const flatAssessments = assessmentArrays.flat().filter(a => a != null);
+        //   setAllAssessments(flatAssessments);
+        // }
 
         if (!sawRateLimit) {
           hasLoadedRef.current = true;
@@ -104,7 +106,7 @@ const Insights = ({ token, patients }) => {
 
     load();
 
-  }, [token, patientList, reloadKey]);
+  }, [token, reloadKey]); // Removed patientList from dependencies
 
   useEffect(() => {
     const loadML = async () => {
@@ -151,40 +153,33 @@ const Insights = ({ token, patients }) => {
     ];
   }, [mlIG]);
 
+  // bmiGlucoseData and riskDistribution now depend on mlClusters or other data if allAssessments is removed
+  // For now, they will return empty or default values if allAssessments is the only source.
+  // The instruction did not provide new logic for these, so they will be effectively empty.
   const bmiGlucoseData = useMemo(() => {
-    if (!allAssessments.length) return [];
-    return allAssessments
-      .map(assessment => {
-        if (!assessment?.bmi || !assessment?.fbs) return null;
-        return {
-          bmi: parseFloat(assessment.bmi),
-          fbs: parseFloat(assessment.fbs),
-          hba1c: parseFloat(assessment.hba1c) || 0,
-          risk: assessment.risk_score || 0
-        };
-      })
-      .filter(Boolean)
-      .slice(0, 50);
-  }, [allAssessments]);
+    // If there's no allAssessments, this will return an empty array.
+    // New logic for this data based on mlClusters or other sources would be needed if desired.
+    return [];
+  }, []);
 
   const riskDistribution = useMemo(() => {
-    if (!allAssessments.length) return [];
-    const lowRisk = allAssessments.filter(a => (a.risk_score || 0) < 34).length;
-    const moderateRisk = allAssessments.filter(a => (a.risk_score || 0) >= 34 && (a.risk_score || 0) < 67).length;
-    const highRisk = allAssessments.filter(a => (a.risk_score || 0) >= 67).length;
-    return [
-      { name: 'Low Risk', value: lowRisk, color: '#6AD2FF', percentage: ((lowRisk / allAssessments.length) * 100).toFixed(1) },
-      { name: 'Moderate Risk', value: moderateRisk, color: '#FFB547', percentage: ((moderateRisk / allAssessments.length) * 100).toFixed(1) },
-      { name: 'High Risk', value: highRisk, color: '#EE5D50', percentage: ((highRisk / allAssessments.length) * 100).toFixed(1) }
-    ];
-  }, [allAssessments]);
+    // If there's no allAssessments, this will return an empty array.
+    // New logic for this data based on mlClusters or other sources would be needed if desired.
+    return [];
+  }, []);
 
-  const totalAssessments = allAssessments.length || clusters.reduce((sum, c) => sum + (c.count || 0), 0);
-  const avgRiskScore = allAssessments.length > 0
-    ? (allAssessments.reduce((sum, a) => sum + (a.risk_score || 0), 0) / allAssessments.length).toFixed(1)
-    : clusters.length > 0
-      ? '—'
-      : 0;
+  const globalAvgRisk = useMemo(() => {
+    if (!mlClusters?.cluster_labels) return null;
+    let totalRisk = 0;
+    let totalSize = 0;
+    Object.values(mlClusters.cluster_labels).forEach(c => {
+      totalRisk += c.risk_score * c.size;
+      totalSize += c.size;
+    });
+    return totalSize > 0 ? (totalRisk / totalSize) : null; // Risk score is typically 0-100, so no * 100 needed here if it's already in that range
+  }, [mlClusters]);
+
+  const totalAssessments = mlClusters?.cluster_sizes ? Object.values(mlClusters.cluster_sizes).reduce((a, b) => a + b, 0) : 0;
 
   return (
     <div className="space-y-8 animate-fade-in pb-8">
@@ -208,7 +203,7 @@ const Insights = ({ token, patients }) => {
 
       <InsightsSummary
         totalAssessments={totalAssessments}
-        avgRiskScore={avgRiskScore}
+        avgRiskScore={globalAvgRisk !== null ? globalAvgRisk.toFixed(1) : '—'}
         clusterCount={mlClusters?.n_clusters || clusters.length || 3}
       />
 
@@ -238,7 +233,10 @@ const Insights = ({ token, patients }) => {
         <RiskDistribution data={riskDistribution} />
       </div>
 
-      <SubgroupDistribution clusters={clusters} isLoading={loading} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
+        <SubgroupDistribution clusters={clusters} isLoading={loading} />
+        <ClusterBiomarkerRadar clusterProfiles={mlClusters} isLoading={mlLoading} />
+      </div>
 
       <BiomarkerTrends trends={trends} />
 
