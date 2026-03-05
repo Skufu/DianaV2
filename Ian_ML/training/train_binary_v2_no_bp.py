@@ -637,24 +637,30 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4) -> dict[int, str
     available_clusters = list(range(k))
     final_labels: dict[int, str] = {}
     
-    # 1. Identify SIRD
+    # 1. Identify SIRD: Highest LAP score (validated insulin resistance proxy)
+    # LAP = (WC - 58) * TG — validated in Wang et al. (2024) BMC Endocrine Disorders
     ir_scores: dict[int, float] = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
-        ir_scores[cid] = c.get('bmi', 0) + (c.get('triglycerides', 0) / 50) - (c.get('hdl', 0) / 10)
+        waist = c.get('waist_circumference', 0)
+        tg = c.get('triglycerides', 0)
+        # LAP formula for women: (WC - 58) * TG (WC in cm, TG in mg/dL)
+        ir_scores[cid] = (waist - 58) * tg
     
     sird_id = max(ir_scores, key=lambda cid: float(ir_scores[cid]))
     final_labels[sird_id] = 'SIRD'
     available_clusters.remove(sird_id)
     
-    # 2. Identify SIDD (approximate — TG/HDL proxy cannot truly distinguish
-    #    SIDD from SIRD without HOMA2-B/C-peptide; see Ahlqvist et al. 2018)
-    tg_hdl_scores: dict[int, float] = {}
+    # 2. Identify SIDD → Rebranded as "Atherogenic/Lipid-Driven" phenotype:
+    # Highest LDL cholesterol (atherogenic dyslipidemia marker)
+    # Note: True SIDD requires HOMA2-B/C-peptide for beta-cell function.
+    # Without insulin metrics, we identify the lipid-driven phenotype instead.
+    ldl_scores: dict[int, float] = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
-        tg_hdl_scores[cid] = c.get('triglycerides', 0) / max(c.get('hdl', 1), 0.01)
+        ldl_scores[cid] = c.get('ldl', 0)
     
-    sidd_id = max(tg_hdl_scores, key=lambda cid: float(tg_hdl_scores[cid]))
+    sidd_id = max(ldl_scores, key=lambda cid: float(ldl_scores[cid]))
     final_labels[sidd_id] = 'SIDD'
     available_clusters.remove(sidd_id)
     
