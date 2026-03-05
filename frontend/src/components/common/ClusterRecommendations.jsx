@@ -16,7 +16,7 @@ const ClusterRecommendations = ({ cluster }) => {
       ],
     },
     'SIDD': {
-      title: 'Severe Insulin-Deficient Diabetes',
+      title: 'Atherogenic / Lipid-Driven Diabetes',
       description: 'High TG/HDL ratio — metabolic derangement pattern.',
       color: 'bg-red-100 text-red-800 border-red-200',
       icon: '🩸',

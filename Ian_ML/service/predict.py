@@ -574,7 +574,7 @@ class ClinicalPredictor:
         self.decision_thresholds = self.metrics.get("decision_thresholds", {})
 
     def _build_feature_vector(self, data: Mapping[str, Any]) -> np.ndarray:
-        """Build the 12-feature clinical vector in training order."""
+        """Build the feature vector in training order (determined by features.json)."""
         bmi = data['bmi']
         tg = data['triglycerides']
         ldl = data['ldl']
@@ -722,7 +722,7 @@ class ClinicalPredictor:
                 "error": f"Missing required features: {missing}"
             }
         
-        # Prepare model feature vector in training order (16 features for classifier).
+        # Prepare model feature vector in training order (features determined by features.json).
         X = self._build_feature_vector(data)
 
         # Transform features (handles both Pipeline and separate scaler/imputer)

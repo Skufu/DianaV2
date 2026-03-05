@@ -377,7 +377,7 @@ def predict_explain():
             if clin_predictor is None:
                 return jsonify({"error": "Clinical model not available"}), 503
             
-            # Extract base features + lifestyle data for 12-feature model
+            # Extract base features + lifestyle data for clinical screening model
             patient_data = {
                 "bmi": data.get("bmi"),
                 "triglycerides": data.get("triglycerides"),
