@@ -224,8 +224,8 @@ func TestAdminModelsHandler_ListModelRuns_StoreError(t *testing.T) {
 }
 
 func TestAdminModelsHandler_ListModelRuns_AuthRequired(t *testing.T) {
-	router, _ := setupAdminModelsRouter()
-	router = gin.New()
+	_, _ = setupAdminModelsRouter()
+	router := gin.New()
 
 	handler := NewAdminModelsHandler(&mockAdminStore{modelRuns: &mockModelRunRepo{}}, ml.NewMockPredictor())
 	handler.Register(router.Group("/admin"))
@@ -289,8 +289,8 @@ func TestAdminModelsHandler_GetActiveModel_StoreError(t *testing.T) {
 }
 
 func TestAdminModelsHandler_GetActiveModel_AuthRequired(t *testing.T) {
-	router, _ := setupAdminModelsRouter()
-	router = gin.New()
+	_, _ = setupAdminModelsRouter()
+	router := gin.New()
 
 	handler := NewAdminModelsHandler(&mockAdminStore{
 		modelRuns: &mockModelRunRepo{

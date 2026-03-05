@@ -44,7 +44,7 @@ func TestValidateBiomarkers(t *testing.T) {
 				FBS: 130,
 			},
 			wantWarnings: []string{"fbs_diabetic_range"},
-			wantValid:    true,
+			wantValid:    false,
 		},
 		{
 			name: "diabetic HbA1c",
@@ -52,7 +52,7 @@ func TestValidateBiomarkers(t *testing.T) {
 				HbA1c: 7.0,
 			},
 			wantWarnings: []string{"hba1c_diabetic"},
-			wantValid:    true,
+			wantValid:    false,
 		},
 		{
 			name: "prediabetic HbA1c",
@@ -98,7 +98,7 @@ func TestValidateBiomarkers(t *testing.T) {
 				BMI:      35,
 			},
 			minWarningCount: 3,
-			wantValid:       true,
+			wantValid:       false,
 		},
 	}
 

@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-01-28
-**Updated:** 2026-02-26
+**Generated:** 2026-03-05
+**Updated:** 2026-03-05
 **Commit:** 53f470c
 **Branch:** main
 
@@ -135,28 +135,26 @@ Comprehensive knowledge base documentation for all major directories:
 - `thesis/generate_executive_summary.py`: "Do NOT use as standalone diagnostic" - ML is screening tool, not diagnosis.
 - `thesis/generate_limitations.py`: "Do NOT replace clinical judgment" - Risk scores require clinician review.
 
+### Data Leakage & ML Safety (FORBIDDEN)
+- DO NOT use future biomarker values to predict past outcomes (temporal leakage)
+- DO NOT include test data in feature selection or model training
+- DO NOT use NHANES sampling weights improperly in CV splits
+- NEVER use resampling (SMOTE) without post-hoc calibration
+- NEVER trust probability outputs from models trained on resampled data
+- DO NOT use `diana_dataset_imputed.csv` for defensible model training
+
 ### Technical Debt (AVOID)
 HW|- Direct SQL in `postgres_admin.go` (`r.pool.QueryRow(ctx, sql, ...)`) - Use SQLC queries instead.
 NX|- Manual `strconv.Atoi` for pagination - Use `ParsePagination()` from utils.
-NH|- `interface{}` in Go 1.18+ - Use explicit interfaces or `any` with documentation.
-SK|- Silent failures in `audit.go` (`_ = a.store...`) - Log errors, don't discard.
+NH|- `interface{}` in Go 1.18+ - Use explicit interfaces or `any` with documentation (5 occurrences).
+SK|- Fire-and-forget goroutines in `audit.go` - errors are logged but don't block response (potential data loss if DB unavailable).
+XZ|- Manual `gin.H{"error": ...}` in handlers - Use `ErrBadRequest()`, `ErrInternal()` from utils.go.
+YB|- Manual `strconv.Atoi` in users.go:258, clinic_dashboard.go:63 - Use `ParsePagination()`.
 
 ### CI/CD Issues (CRITICAL)
 QX|- **Lint failures silently ignored**: `ci.yml` has `continue-on-error: true` on golangci-lint and flake8.
 BV|- **Deploy job is no-op**: `cd.yml` deploy job only echoes instructions, no actual deployment.
-MJ|- **Missing E2E tests**: Playwright tests exist but don't run in CI.
 KM|- **Makefile stale reference**: `ml-train` target calls `train.py` (should be `train_v2.py`).
-
-### Handler Violations (FIX)
-XZ|- Manual `gin.H{"error": ...}` in handlers - Use `ErrBadRequest()`, `ErrInternal()` from utils.go.
-YB|- Manual `strconv.Atoi` in users.go:258, clinic_dashboard.go:63 - Use `ParsePagination()`.
-
-### Frontend Violations (MEDIUM)
-JR|- Missing index.jsx exports in component domains (admin, auth, user, common, layout, education, export).
-- Direct SQL in `postgres_admin.go` (`r.pool.QueryRow(ctx, sql, ...)`) - Use SQLC queries instead.
-- Manual `strconv.Atoi` for pagination - Use `ParsePagination()` from utils.
-- `interface{}` in Go 1.18+ - Use explicit interfaces or `any` with documentation.
-- Silent failures in `audit.go` (`_ = a.store...`) - Log errors, don't discard.
 
 ### Legacy Patterns
 - `scripts/legacy/*.sh`: Python scripts superseded by Python versions - do not use in active workflows.
@@ -187,15 +185,11 @@ make lint
 ### Frontend (React)
 ```bash
 # Frontend has no 'test' command in package.json
-# Use Playwright E2E tests instead:
+# Playwright E2E tests are STALE (not maintained) - use at own risk
 
-cd frontend && npx playwright test
-
-# Run specific E2E test
-cd frontend && npx playwright test auth.spec.js
-
-# Run with headed mode (debugging)
-cd frontend && npx playwright test --headed
+# cd frontend && npx playwright test
+# cd frontend && npx playwright test auth.spec.js
+# cd frontend && npx playwright test --headed
 
 # Lint frontend
 npm run lint
@@ -322,6 +316,7 @@ make sqlc
 - **Experiment tracking**: Use MLflow for all hyperparameters and metrics
 - **SHAP explanations**: Use `ml.explainability` module for feature impact
 - **Deterministic mocks**: Mock predictor should use fixed rules for reproducible tests
+- **Feature constants**: Never hardcode - use `common.feature_constants`
 
 ## NOTES
 
@@ -347,3 +342,19 @@ ML server tracks prediction drift via `ml.drift_detection` and logs to MLflow (`
 
 ### API Contract
 Frontend `api.js` exports typed async functions. Backend handlers use structured errors (`ErrBadRequest`, `ErrInternal`). No manual `c.JSON(400, {...})` in handlers.
+
+### Git Hygiene (IMMEDIATE ACTION)
+Run these to fix committed artifacts:
+```bash
+# Remove committed cache directories
+git rm --cached -r venv/ __pycache__/ .pytest_cache/ mlruns/ catboost_info/
+git rm --cached backend/server.exe
+
+# Verify .gitignore has these patterns
+echo "venv/" >> .gitignore
+echo "__pycache__/" >> .gitignore
+echo ".pytest_cache/" >> .gitignore
+echo "mlruns/" >> .gitignore
+echo "catboost_info/" >> .gitignore
+echo "*.exe" >> .gitignore
+```

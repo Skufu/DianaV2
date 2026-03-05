@@ -143,7 +143,7 @@ func (h *HandlerName) MethodName(c *gin.Context) {
 - **Manual JSON responses**: Avoid `c.JSON(status, gin.H{...})` - use APIError struct
 - **Missing validation**: Not all handlers validate request before processing
 - **No transaction support**: Multi-step operations (onboarding, user+consent updates) lack atomicity
-- **interface{} usage**: Should use `any` (Go 1.18+)
+- **interface{} usage**: Should use `any` (Go 1.18+) - 5 occurrences
 
 ### Technical Debt
 - **Direct SQL in postgres_admin.go**: Some admin queries bypass SQLC with raw pgx

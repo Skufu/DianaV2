@@ -14,7 +14,6 @@ var (
 	textDark    = [3]int{30, 41, 59}    // Slate-800
 	textLight   = [3]int{100, 116, 139} // Slate-500
 	primary     = [3]int{15, 23, 42}    // Slate-900
-	bgLight     = [3]int{248, 250, 252} // Slate-50
 	borderLight = [3]int{226, 232, 240} // Slate-200
 
 	success = [3]int{22, 163, 74} // Green-600

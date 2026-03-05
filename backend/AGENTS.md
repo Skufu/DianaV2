@@ -70,9 +70,9 @@ Go/Gin REST API for DIANA diabetes risk assessment. PostgreSQL with SQLC, JWT au
 ## ANTI-PATTERNS (THIS PROJECT)
 
 **CRITICAL:**
-- `_ = err` on audit event creation (middleware, handlers) - failures hidden
-- Async audit goroutines without error handling - silent data loss
-- `interface{}` used instead of `any` (120+ occurrences)
+- `_ = err` on audit event creation (middleware, handlers) - failures are logged but async
+- Async audit goroutines without blocking - data loss possible if DB unavailable
+- `interface{}` used instead of `any` (5 occurrences)
 
 **TODO/DEPRECATED:**
 - `notification_service.go`: Email sending not implemented

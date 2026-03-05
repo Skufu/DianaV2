@@ -29,7 +29,7 @@ Integration layer for diabetes risk assessment, supporting external ML server ca
 
 **Configuration:**
 - `MODEL_URL`: ML server endpoint (empty triggers mock mode for local dev).
-- `MODEL_VERSION`: Tracked via `X-Model-Version` header (default `clinical_v2`).
+- `MODEL_VERSION`: Tracked via `X-Model-Version` header (default `binary_v2_no_bp`).
 - `MODEL_DATASET_HASH`: Used for data lineage tracking.
 - `MODEL_TIMEOUT_MS`: Default 2000ms, configurable via env.
 
