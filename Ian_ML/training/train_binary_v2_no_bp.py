@@ -30,6 +30,7 @@ from sklearn.model_selection import (
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
+from sklearn.compose import ColumnTransformer
 from typing import Any, cast
 
 import sys
@@ -62,14 +63,22 @@ VIZ_DIR = MODELS_DIR / "visualizations"
 N_JOBS = int(os.environ.get("ML_N_JOBS", "1"))
 BOOTSTRAP_SAMPLES = int(os.environ.get("ML_BOOTSTRAP_SAMPLES", "1000"))
 
-# 12 features (removed BP and race)
-FEATURES = [
+# 9 LR-safe features (Gemini-style: continuous + ordinal, no derived ratios/scores)
+MODEL_FEATURES = [
+    # Continuous biomarkers (6)
+    "bmi", "triglycerides", "ldl", "hdl", "age", "waist_circumference",
+    # Ordinal encodings (3)
+    "smoking_encoded", "activity_encoded", "alcohol_encoded",
+]
+
+# Legacy 12-feature list (kept for reference; not used in training)
+FEATURES_LEGACY = [
     # Original metabolic biomarkers (5)
     "bmi", "triglycerides", "ldl", "hdl", "age",
     # Derived features (6)
     "bmi_category", "tg_hdl_ratio", "smoking_encoded",
     "activity_encoded", "alcohol_encoded", "metabolic_syndrome_score",
-    # Enrichment features (2)
+    # Enrichment features (1)
     "waist_circumference",
 ]
 
@@ -83,9 +92,10 @@ AHLQVIST_SUBTYPES = {
         'risk_label': 'High Risk'
     },
     'SIDD': {
-        'full_name': 'Severe Insulin-Deficient Diabetes',
-        'characteristics': 'High TG/HDL ratio (proxy — true SIDD requires HOMA2-B/C-peptide)',
-        'clinical_implication': 'May need early insulin therapy; SIDD/SIRD distinction is approximate without HOMA2',
+        'full_name': 'Atherogenic / Lipid-Driven Diabetes',
+        'subtype': 'ATH',
+        'characteristics': 'High LDL cholesterol, severe dyslipidemia (atherogenic phenotype)',
+        'clinical_implication': 'Statin therapy indicated; cardiovascular risk management primary; identified via LDL proxy without HOMA2 (adaptation per Tanabe 2024)',
         'risk_level': 'HIGH',
         'risk_label': 'High Risk'
     },
@@ -175,6 +185,34 @@ def create_binary_v2_no_bp_target(df: pd.DataFrame) -> pd.DataFrame:
         print(f"    {label_name}: {count}")
     
     return df
+
+
+def get_preprocessing_pipeline() -> ColumnTransformer:
+    """
+    Build ColumnTransformer that scales only continuous features.
+    
+    Continuous features (indices 0-5): bmi, triglycerides, ldl, hdl, age, waist_circumference
+    Ordinal features (indices 6-8): smoking_encoded, activity_encoded, alcohol_encoded
+    
+    Returns:
+        ColumnTransformer with SimpleImputer + StandardScaler for continuous,
+        SimpleImputer + passthrough for ordinal.
+    """
+    continuous_indices = [0, 1, 2, 3, 4, 5]  # First 6 features
+    ordinal_indices = [6, 7, 8]  # Last 3 features
+    
+    return ColumnTransformer(
+        transformers=[
+            ("continuous", Pipeline([
+                ("imputer", SimpleImputer(strategy="median")),
+                ("scaler", StandardScaler()),
+            ]), continuous_indices),
+            ("ordinal", Pipeline([
+                ("imputer", SimpleImputer(strategy="median")),
+            ]), ordinal_indices),
+        ],
+        remainder="drop",  # No other features expected
+    )
 
 
 def get_inner_cv(groups: np.ndarray) -> GroupKFold:
@@ -401,8 +439,7 @@ def run_nested_logo_evaluation(
         print(f"\n[FOLD {fold_idx}/{split_count}] Holdout cycle: {test_cycle}")
         for model_name, cfg in model_registry.items():
             pipeline = Pipeline([
-                ("imputer", SimpleImputer(strategy="median")),
-                ("scaler", StandardScaler()),
+                ("preprocessor", get_preprocessing_pipeline()),
                 ("model", cfg["estimator"]),
             ])
             
@@ -734,8 +771,9 @@ def train_serving_kmeans(
     for k, prof in cluster_profiles.items():
         severity = prof.get("diabetic_rate", "?")
         sev_str = f", {severity:.0%} diabetic" if isinstance(severity, float) else ""
+        subtype_full = prof.get('subtype_full', prof['subtype'])
         print(
-            f"  Cluster {k}: {prof['subtype']} "
+            f"  Cluster {k}: {prof['subtype']} / {subtype_full} "
             f"(n={prof['size']}{sev_str})"
         )
 
@@ -745,10 +783,10 @@ def train_serving_kmeans(
 def save_feature_manifest() -> None:
     with open(MODELS_DIR / "features.json", "w") as f:
         json.dump({
-            "features": FEATURES,
-            "n_features": len(FEATURES),
+            "features": MODEL_FEATURES,
+            "n_features": len(MODEL_FEATURES),
             "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
-            "note": "Binary reformulation with 12 features (no BP), LOCO validation",
+            "note": "Binary reformulation with 9 LR-safe features (continuous + ordinal), LOCO validation",
         }, f, indent=2)
 
 
@@ -802,7 +840,7 @@ def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) ->
         "model_type": "binary_v2_no_bp",
         "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
         "best_model": best_model_name,
-        "n_features": len(FEATURES),
+        "n_features": len(MODEL_FEATURES),
         "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
         "decision_thresholds": {
             "at_risk": float(best_row["Mean_Threshold"])
@@ -821,8 +859,8 @@ def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) ->
             "inner_cv_auc_mean": float(best_row["Inner_CV_AUC_Mean"]),
             "inner_cv_auc_std": float(best_row["Inner_CV_AUC_Std"]),
         },
-        "features": FEATURES,
-        "clinical_rationale": "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). Prioritizes sensitivity for screening.",
+        "features": MODEL_FEATURES,
+        "clinical_rationale": "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). Prioritizes sensitivity for screening. Uses 9 LR-safe features (continuous + ordinal only).",
     }
     
     with open(RESULTS_DIR / "best_model_report.json", 'w') as f:
@@ -871,9 +909,8 @@ def generate_shap_plots(
     # Extract the raw model from the pipeline for TreeExplainer
     model = final_pipeline.named_steps["model"]
 
-    # Pre-process X through the pipeline's imputer + scaler (but not the model)
-    X_processed = final_pipeline.named_steps["imputer"].transform(X)
-    X_processed = final_pipeline.named_steps["scaler"].transform(X_processed)
+    # Pre-process X through the pipeline's preprocessor
+    X_processed = final_pipeline.named_steps["preprocessor"].transform(X)
 
     # Try TreeExplainer first (fast), fall back to KernelExplainer
     try:
@@ -942,7 +979,7 @@ def main():
 
     print("=" * 78)
     print("DIANA Binary Model Training V2 - Defensible Evaluation")
-    print("Binary: Normal vs At-Risk | 14 Features (no BP) | LOCO Validation")
+    print("Binary: Normal vs At-Risk | 9 LR-Safe Features | LOCO Validation")
     print("=" * 78)
     
     # Load data
@@ -961,24 +998,24 @@ def main():
     print(f"       Records after filtering: {len(df_clean)}")
     
     # Check for missing features
-    missing_cols = [f for f in FEATURES + ["at_risk_binary_v2_no_bp", "cycle"] if f not in df.columns]
+    missing_cols = [f for f in MODEL_FEATURES + ["at_risk_binary_v2_no_bp", "cycle"] if f not in df.columns]
     if missing_cols:
         raise ValueError(f"Missing columns: {missing_cols}")
     
     # Prepare data
-    X = df_clean[FEATURES].values.astype(float)
+    X = df_clean[MODEL_FEATURES].values.astype(float)
     y = df_clean["at_risk_binary_v2_no_bp"].values.astype(int)
     groups = df_clean["cycle"].astype(str).to_numpy()
     # Keep original 3-class labels for cluster profiling
     diabetes_labels = df_clean["diabetes_label"].values.astype(int)
     
     print(f"\n[DATA]")
-    print(f"       Features: {len(FEATURES)}")
+    print(f"       Features: {len(MODEL_FEATURES)}")
     print(f"       Samples: {len(X)}")
     print(f"       NHANES cycles: {list(np.unique(groups))}")
     
     # Train clustering (at-risk patients only — scientifically correct)
-    cluster_profiles = train_serving_kmeans(X, y, FEATURES, diabetes_labels)
+    cluster_profiles = train_serving_kmeans(X, y, MODEL_FEATURES, diabetes_labels)
     
     # Build model registry
     model_registry = build_model_registry()
@@ -1036,8 +1073,7 @@ def main():
     estimator = cast(Any, estimator).set_params(**native_params)
 
     final_pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
-        ("scaler", StandardScaler()),
+        ("preprocessor", get_preprocessing_pipeline()),
         ("model", estimator),
     ])
     
@@ -1050,7 +1086,7 @@ def main():
     save_fold_metrics(fold_df)
     save_best_model_report(comparison_df, str(best_model_name))
     generate_roc_curve(aggregated, str(best_model_name))
-    generate_shap_plots(final_pipeline, X, y, FEATURES)
+    generate_shap_plots(final_pipeline, X, y, MODEL_FEATURES)
     
     print("\n" + "=" * 78)
     print("TRAINING COMPLETE")

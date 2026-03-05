@@ -85,9 +85,10 @@ AHLQVIST_SUBTYPES = {
         'risk_label': 'High Risk'
     },
     'SIDD': {
-        'full_name': 'Severe Insulin-Deficient Diabetes',
-        'characteristics': 'High TG/HDL ratio (proxy — true SIDD requires HOMA2-B/C-peptide)',
-        'clinical_implication': 'May need early insulin therapy; SIDD/SIRD distinction is approximate without HOMA2',
+        'full_name': 'Atherogenic / Lipid-Driven Diabetes',
+        'subtype': 'ATH',
+        'characteristics': 'High LDL cholesterol, severe dyslipidemia (atherogenic phenotype)',
+        'clinical_implication': 'Statin therapy indicated; cardiovascular risk management primary; identified via LDL proxy without HOMA2 (adaptation per Tanabe 2024)',
         'risk_level': 'HIGH',
         'risk_label': 'High Risk'
     },

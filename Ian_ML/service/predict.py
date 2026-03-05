@@ -78,21 +78,22 @@ def _validate_model_dir(path: Path) -> Path:
 
     with open(features_path) as f:
         features_manifest = json.load(f)
-    n_features = features_manifest.get("n_features")
-    # Support 11-17 features (binary: 11 base, 16 with enrichment, clinical: 13-17)
-    if n_features is None or not (11 <= n_features <= 17):
+    # Artifact-driven validation: accept feature count from features.json when present
+    n_features = features_manifest.get("n_features") or len(
+        features_manifest.get("features", [])
+    )
+    if n_features is None or n_features == 0:
         raise ValueError(
-            f"Model requires 11-17 features, found {n_features} in {features_path}."
+            f"Model requires valid features manifest, found {n_features} features in {features_path}."
         )
 
     return path
 
 # Features expected by the model (binary - no hba1c/fbs to avoid circular reasoning, no BP)
+# Updated to 9 LR-safe features: 6 continuous + 3 ordinal (no derived ratios/scores)
 REQUIRED_FEATURES = [
-    'bmi', 'triglycerides', 'ldl', 'hdl', 'age',
-    'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded',
-    'alcohol_encoded', 'metabolic_syndrome_score',
-    'waist_circumference'
+    'bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference',
+    'smoking_encoded', 'activity_encoded', 'alcohol_encoded'
 ]
 
 # Raw input features (before engineering)

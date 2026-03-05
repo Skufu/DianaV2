@@ -2,37 +2,49 @@
   {
     "fold": 2,
     "test_cycle": "2011-2012",
-    "model": "Random Forest",
-    "auc_roc": 0.7054716117216118,
-    "accuracy": 0.6578947368421053,
-    "sensitivity": 0.8482142857142857,
-    "specificity": 0.38461538461538464,
-    "fpr": 0.6154,
-    "fnr": 0.1518,
-    "threshold": 0.3699999999999999
-  },
-  {
-    "fold": 2,
-    "test_cycle": "2011-2012",
     "model": "LightGBM",
-    "auc_roc": 0.6928800366300366,
-    "accuracy": 0.6368421052631579,
-    "sensitivity": 0.8214285714285714,
+    "auc_roc": 0.6893315018315018,
+    "accuracy": 0.631578947368421,
+    "sensitivity": 0.8125,
     "specificity": 0.3717948717948718,
     "fpr": 0.6282,
-    "fnr": 0.1786,
+    "fnr": 0.1875,
     "threshold": 0.3199999999999999
+  },
+  {
+    "fold": 3,
+    "test_cycle": "2013-2014",
+    "model": "Random Forest",
+    "auc_roc": 0.7196969696969697,
+    "accuracy": 0.652542372881356,
+    "sensitivity": 0.8787878787878788,
+    "specificity": 0.36538461538461536,
+    "fpr": 0.6346,
+    "fnr": 0.1212,
+    "threshold": 0.3599999999999999
   },
   {
     "fold": 6,
     "test_cycle": "2021-2023",
-    "model": "Logistic Regression",
-    "auc_roc": 0.722990891271763,
-    "accuracy": 0.5132075471698113,
-    "sensitivity": 0.9322033898305084,
-    "specificity": 0.17687074829931973,
-    "fpr": 0.8231,
-    "fnr": 0.0678,
-    "threshold": 0.3599999999999999
+    "model": "Random Forest",
+    "auc_roc": 0.7231638418079096,
+    "accuracy": 0.6037735849056604,
+    "sensitivity": 0.8898305084745762,
+    "specificity": 0.3741496598639456,
+    "fpr": 0.6259,
+    "fnr": 0.1102,
+    "threshold": 0.3799999999999999
+  },
+  {
+    "fold": 6,
+    "test_cycle": "2021-2023",
+    "model": "LightGBM",
+    "auc_roc": 0.7235385679695607,
+    "accuracy": 0.5622641509433962,
+    "sensitivity": 0.9067796610169492,
+    "specificity": 0.2857142857142857,
+    "fpr": 0.7143,
+    "fnr": 0.0932,
+    "threshold": 0.32999999999999985
   }
 ]
