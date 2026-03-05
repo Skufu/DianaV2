@@ -5,7 +5,7 @@ import { cardVariants } from '../../utils/animations';
 
 const subgroupInfo = {
   'SIDD': {
-    name: 'Severe Insulin-Deficient Diabetes',
+    name: 'Atherogenic / Lipid-Driven Diabetes',
     color: '#EE5D50',
     description: 'Early onset, low BMI, poor metabolic control',
     characteristics: [
