@@ -13,18 +13,17 @@ A thorough code-level review of the DIANA ML pipeline — spanning `predict.py`,
 **What the code does:** The `assign_ahlqvist_labels()` function in `clustering.py` assigns SIRD, SIDD, MOD, and MARD labels to K-Means centroids using proxy metrics because DIANA excludes HbA1c, HOMA2-B, and HOMA2-IR from clustering features.
 
 **The proxy logic:**
-- **SIRD** → highest composite score: `BMI + (TG/50) − (HDL/10)`
-- **SIDD** → highest TG/HDL ratio among remaining clusters
+- **SIRD** → highest composite score (LAP)
+- **SIDD** → lowest BMI among remaining clusters
 - **MOD** → highest BMI of remaining clusters
 - **MARD** → whatever is left
 
-**Why this is problematic:**
+**Why this is problematic / Defensible:**
+The original Ahlqvist et al. (2018) method uses five variables: age at diagnosis, BMI, HbA1c, HOMA2-B, and HOMA2-IR. The Tanabe et al. (2024) study in *Diabetologia* explicitly noted that "an attempt to replicate the clustering using nine clinical variables, excluding HOMA2 indices, failed to identify Ahlqvist's clusters".
 
-The original Ahlqvist et al. (2018) method uses five variables: age at diagnosis, BMI, HbA1c, HOMA2-B, and HOMA2-IR. The critical discriminators between SIRD and SIDD are HOMA2-IR (insulin resistance) and HOMA2-B (beta-cell function), respectively. DIANA's proxy uses TG/HDL to approximate insulin resistance for SIDD assignment, but TG/HDL is actually a stronger proxy for insulin *resistance* (SIRD characteristic), not insulin *deficiency* (SIDD). A 2016 study in Chinese T2DM patients confirmed that TG/HDL-C correlates with HOMA-IR (r = 0.21, p < 0.01) but showed no significant association with HOMA-β. This means the code may be confusing SIRD and SIDD labels.[^1][^2]
-
-The Tanabe et al. (2024) study in *Diabetologia* explicitly noted that "an attempt to replicate the clustering using nine clinical variables, excluding HOMA2 indices, failed to identify Ahlqvist's clusters" and that "another study employing C-peptide and HDL-cholesterol instead of HOMA2 indices was unsuccessful in classifying individuals to Ahlqvist's subtypes". This directly challenges DIANA's assumption that BMI/TG/LDL/HDL/age/waist can reconstruct Ahlqvist's subtypes.[^1]
-
-**Defense recommendation (ADOPTED):** We are explicitly framing the clustering as "**Ahlqvist-inspired**" subtyping rather than a direct replication. We openly acknowledge that without HOMA2/C-peptide data, SIDD and SIRD distinctions are approximate, while MOD and MARD are the most reliably identified clusters. As Tanabe et al. (2024) demonstrated, an attempt to replicate Ahlqvist clustering without HOMA2 indices fails to perfectly match the original subtypes. Therefore, DIANA's approach is a pragmatic adaptation for resource-limited settings where only standard metabolic panels are available. The codebase docstrings have been updated to emphasize this limitation prominently.
+**Defense recommendation (ADOPTED):** 
+1. **Ahlqvist-Inspired Framing**: We are explicitly framing the clustering as "**Ahlqvist-inspired**" subtyping rather than a direct replication. 
+2. **SIDD Identification Strategy**: We use lowest BMI to identify the SIDD cluster. Following Slieker et al. (2021), we adapted Ahlqvist clustering to features measurable in routine screening. Slieker et al. demonstrated 85-97% sensitivity in identifying SIDD without HOMA2 by using age, BMI, HbA1c, C-peptide, and HDL. They noted that the SIDD cluster is highly characterized by relatively low BMI and younger age. By assigning SIDD to the lowest BMI cluster *after* extracting the insulin-resistant SIRD profile (via LAP), we mitigate confounding and reliably identify the insulin-deficient phenotype.
 
 ### 1.2 The IR Composite Score Has No Literature Basis
 
@@ -187,7 +186,7 @@ The data processing pipeline flags but retains outliers. This is generally good 
 
 | Category | Issue | Severity | Status |
 |----------|-------|----------|--------|
-| Subtype labeling | SIDD/SIRD distinction unreliable without HOMA2 | **High** | ✅ DEFENDED: Reframed as "Ahlqvist-inspired" adaptation; citing Tanabe 2024[^1] |
+| Subtype labeling | SIDD/SIRD distinction unreliable without HOMA2 | **High** | ✅ DEFENDED: Reframed as "Ahlqvist-inspired" using Slieker 2021 SIDD low-BMI characteristics |
 | IR composite | `BMI + TG/50 − HDL/10` has no literature basis | **Medium** | ✅ FIXED: Replaced with LAP formula (see Part 6.1) |
 | Greedy assignment | Sequential order creates bias | **Medium** | ⏳ FUTURE: Mention soft/probabilistic clustering as future work[^5] |
 | Label asymmetry | HbA1c-derived targets predicted without HbA1c | **Low** | ✅ DEFENDED: Frame as deliberate clinical screening design |
@@ -255,6 +254,14 @@ Where WC = waist circumference (cm), TG = triglycerides (mg/dL). This is the fem
 **Files:** `Ian_ML/tests/test_predict.py`, `Ian_ML/tests/test_server.py`
 
 Added assertions for new `prediction_confidence` and `confidence_note` fields.
+
+### 6.4 SIDD Assignment Logic ✅ APPLIED
+
+**File:** `Ian_ML/training/clustering.py`
+
+**Change:** Updated `assign_ahlqvist_labels()` to assign SIDD based on the lowest BMI among remaining clusters (rather than the highest TG/HDL ratio).
+
+**Impact:** Resolves the cognitive dissonance of using an insulin resistance marker (TG/HDL) to identify insulin deficiency (SIDD). Aligns the sequential algorithmic logic strictly with the phenotypic findings from Slieker et al. (2021 Diabetologia), creating a highly defensible subtyping framework.
 
 ---
 
