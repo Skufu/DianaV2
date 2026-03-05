@@ -79,9 +79,10 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     1. SIRD (Severe Insulin-Resistant): Highest LAP score
        LAP = (WC - 58) * TG — validated insulin resistance proxy per
        Wang et al. (2024) BMC Endocrine Disorders.
-    2. SIDD (Severe Insulin-Deficient): Lowest BMI among remaining
-       (Phenotypic characteristic of SIDD per Slieker et al. 2021 Diabetologia. 
-       Slieker demonstrated 85-97% SIDD sensitivity using this profile).
+    2. SIDD → Rebranded as "Atherogenic/Lipid-Driven" phenotype:
+       Highest LDL cholesterol among remaining (atherogenic dyslipidemia marker).
+       This identifies the lipid-driven diabetes subtype without requiring
+       beta-cell function tests (HOMA2-B/C-peptide).
     3. MOD (Mild Obesity-Related): Highest BMI of remaining
     4. MARD (Mild Age-Related): Remaining (typically lowest metabolic risk)
     """
@@ -109,16 +110,17 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     if not available_clusters:
         return final_labels
     
-    # 2. Identify SIDD: Lowest BMI among remaining
-    # SIDD is characterized by low BMI and insulin deficiency
-    # per Ahlqvist 2018 and validated by Slieker et al. 2021
-    bmi_scores_sidd = {}
+    # 2. Identify Atherogenic/Lipid-Driven phenotype: Highest LDL among remaining
+    # This identifies the lipid-driven diabetes subtype without requiring
+    # beta-cell function tests (HOMA2-B/C-peptide). Rebranded from SIDD
+    # to reflect that we're identifying atherogenic dyslipidemia, not true insulin deficiency.
+    ldl_scores = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
-        bmi_scores_sidd[cid] = c.get('bmi', 100)
+        ldl_scores[cid] = c.get('ldl', 0)
     
-    sidd_id = min(bmi_scores_sidd, key=bmi_scores_sidd.get)
-    final_labels[sidd_id] = 'SIDD'
+    sidd_id = max(ldl_scores, key=ldl_scores.get)
+    final_labels[sidd_id] = 'SIDD'  # Keep code name for API compatibility
     available_clusters.remove(sidd_id)
     
     if not available_clusters:

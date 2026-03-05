@@ -15,6 +15,7 @@ Exit codes:
     1 = Leakage detected or validation failed
 """
 
+import json
 import sys
 from pathlib import Path
 from math import log2
@@ -24,7 +25,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from Ian_ML.common.paths import NHANES_PROCESSED_ROOT
+from Ian_ML.common.paths import NHANES_PROCESSED_ROOT, MODELS_ROOT
 from Ian_ML.common.feature_constants import (
     CLUSTER_FEATURES,
     CLINICAL_FEATURES,
@@ -32,6 +33,22 @@ from Ian_ML.common.feature_constants import (
     CLINICAL_FEATURES_WITH_BP,
     ADA_FEATURES,
 )
+
+
+def load_model_features(model_name: str = "binary_v2_no_bp") -> list[str] | None:
+    """
+    Load model features from features.json artifact if present.
+    Returns None if file doesn't exist (fallback to CLINICAL_FEATURES).
+    """
+    features_path = MODELS_ROOT / model_name / "features.json"
+    if features_path.exists():
+        try:
+            with open(features_path) as f:
+                data = json.load(f)
+                return data.get("features")
+        except (json.JSONDecodeError, IOError):
+            return None
+    return None
 
 
 DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
@@ -314,10 +331,18 @@ def main() -> int:
 
         ig_df = rank_features_by_ig(df, all_features, target)
 
+        # Load model features from artifact if available, fallback to CLINICAL_FEATURES
+        model_features = load_model_features("binary_v2_no_bp")
+        if model_features is None:
+            model_features = CLINICAL_FEATURES
+            print(f"   [INFO] Using CLINICAL_FEATURES fallback (features.json not found)")
+        else:
+            print(f"   [INFO] Using MODEL_FEATURES from features.json ({len(model_features)} features)")
+
         print(f"\n   {'Rank':<6} {'Feature':<30} {'Type':<10} {'IG':<12} {'IG %':<8}")
         print(f"   {'-'*70}")
         for _, row in ig_df.iterrows():
-            in_model = " [IN MODEL]" if row["Feature"] in set(CLINICAL_FEATURES) else ""
+            in_model = " [IN MODEL]" if row["Feature"] in set(model_features) else ""
             in_cluster = " [CLUSTER]" if row["Feature"] in set(CLUSTER_FEATURES) else ""
             print(
                 f"   {row['Rank']:<6} {row['Feature']:<30} {row['Type']:<10} "
@@ -326,7 +351,7 @@ def main() -> int:
             )
 
         # Warn if any non-selected feature has higher IG than a selected one
-        selected_features = set(CLINICAL_FEATURES) & set(all_features)
+        selected_features = set(model_features) & set(all_features)
         if selected_features:
             min_selected_ig = ig_df[ig_df["Feature"].isin(selected_features)]["Information_Gain"].min()
             non_selected = ig_df[~ig_df["Feature"].isin(selected_features)]
