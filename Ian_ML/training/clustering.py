@@ -1,9 +1,12 @@
 """
-DIANA Clinical Clustering Script (K=4 Ahlqvist Subtype Classification)
-K-Means clustering for T2DM subtype identification per Ahlqvist et al. (2018).
+DIANA Clinical Clustering Script (K=4 Ahlqvist-Inspired Subtype Classification)
+K-Means clustering for T2DM subtype identification adapted from Ahlqvist et al. (2018).
 
 Clusters: SIRD, SIDD, MOD, MARD (4 T2DM subtypes per Ahlqvist et al. 2018)
 Features: All biomarkers (standardized)
+*DEFENSE NOTE: This is an "Ahlqvist-inspired" approach. By excluding HOMA2/C-peptide 
+(unavailable in routine screening), SIDD and SIRD distinctions are approximate proxy 
+metrics, which aligns with findings from Tanabe et al. (2024).*
 
 Also generates K=2 through K=6 analysis for thesis documentation.
 
@@ -66,14 +69,19 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     Assign Ahlqvist-inspired subtype labels to clusters based on centroid characteristics.
     Uses proxy metrics since HbA1c/FBS are excluded from clustering features.
 
-    LIMITATION: DIANA lacks HOMA2-B, HOMA2-IR, and C-peptide, which are the
-    primary discriminators for SIDD vs SIRD in Ahlqvist et al. (2018). The TG/HDL
-    proxy used here cannot truly distinguish insulin deficiency (SIDD) from
-    insulin resistance (SIRD). MOD and MARD are more reliably identified.
+    LIMITATION (AHLQVIST-INSPIRED ADAPTATION): DIANA lacks HOMA2-B, HOMA2-IR, 
+    and C-peptide, which are the primary discriminators for SIDD vs SIRD in 
+    Ahlqvist et al. (2018). The LAP/TG/HDL proxies used here cannot perfectly 
+    distinguish insulin deficiency (SIDD) from insulin resistance (SIRD). 
+    As demonstrated by Tanabe et al. (2024), true replication is extremely 
+    difficult without HOMA2. Therefore, this is framed as an "Ahlqvist-inspired" 
+    pragmatic adaptation for resource-limited screening settings. MOD and MARD 
+    are more reliably identified due to reliance on BMI and age.
 
     Assignment strategy (without HbA1c, HOMA2, or C-peptide):
-    1. SIRD (Severe Insulin-Resistant): Highest insulin resistance composite
-       (BMI + TG/50 - HDL/10)
+    1. SIRD (Severe Insulin-Resistant): Highest LAP score
+       LAP = (WC - 58) * TG — validated insulin resistance proxy per
+       Wang et al. (2024) BMC Endocrine Disorders using NHANES data.
     2. SIDD (Severe Insulin-Deficient): Highest TG/HDL ratio among remaining
        (approximate proxy — true SIDD requires HOMA2-B/C-peptide)
     3. MOD (Mild Obesity-Related): Highest BMI of remaining
@@ -83,11 +91,18 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     available_clusters = list(range(k))
     final_labels = {}
     
-    # 1. Identify SIRD: Highest insulin resistance composite score
+    # 1. Identify SIRD: Highest LAP score (validated insulin resistance proxy)
+    # LAP = (WC - 58) * TG for women — validated in 2024 NHANES study
+    # Reference: Wang et al. (2024) "Lipid Accumulation Product as a Predictor of
+    # Prediabetes and Diabetes: Insights From NHANES Data" BMC Endocrine Disorders
     ir_scores = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
-        ir_scores[cid] = c.get('bmi', 0) + (c.get('triglycerides', 0) / 50) - (c.get('hdl', 0) / 10)
+        waist = c.get('waist_circumference', 0)
+        tg = c.get('triglycerides', 0)
+        # LAP formula for women: (WC - 58) * TG
+        # WC in cm, TG in mg/dL
+        ir_scores[cid] = (waist - 58) * tg
     
     sird_id = max(ir_scores, key=ir_scores.get)
     final_labels[sird_id] = 'SIRD'
