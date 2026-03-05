@@ -59,7 +59,7 @@ const ModelPerformance = React.memo(({ mlMetrics, isLoading = false }) => {
         <h3 className="text-2xl font-serif font-bold text-diana-text-primary">ML Model Performance</h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-3 gap-6">
         <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
           <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2">Best Model</p>
           <p className="text-2xl font-serif font-bold text-diana-forest">
@@ -81,7 +81,25 @@ const ModelPerformance = React.memo(({ mlMetrics, isLoading = false }) => {
         <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
           <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2">F1-Score</p>
           <p className="text-3xl font-serif font-bold text-diana-forest">
-            {formatMetric(metrics?.best_model?.metrics?.f1_score, true)}
+            {formatMetric(metrics?.best_model?.metrics?.f1, true)}
+          </p>
+        </div>
+        <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
+          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2" title="True Positive Rate (ability to correctly identify At-Risk patients)">Sensitivity</p>
+          <p className="text-3xl font-serif font-bold text-diana-forest">
+            {formatMetric(metrics?.best_model?.metrics?.sensitivity, true)}
+          </p>
+        </div>
+        <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
+          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2" title="True Negative Rate (ability to correctly identify Normal patients)">Specificity</p>
+          <p className="text-3xl font-serif font-bold text-diana-forest">
+            {formatMetric(metrics?.best_model?.metrics?.specificity, true)}
+          </p>
+        </div>
+        <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
+          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2" title="Negative Predictive Value (confidence when predicting Normal)">NPV</p>
+          <p className="text-3xl font-serif font-bold text-diana-forest">
+            {formatMetric(metrics?.best_model?.metrics?.npv, true)}
           </p>
         </div>
       </div>

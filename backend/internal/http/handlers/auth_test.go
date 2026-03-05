@@ -724,31 +724,31 @@ func TestLogin_EmptyEmail_ReturnsValidationError(t *testing.T) {
 		name           string
 		body           string
 		expectedStatus int
-		expectedError  string
+		expectedCode   string
 	}{
 		{
 			name:           "empty email with valid password",
 			body:           `{"email":"","password":"password123"}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 		{
 			name:           "whitespace only email",
 			body:           `{"email":"   ","password":"password123"}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 		{
 			name:           "missing email field",
 			body:           `{"password":"password123"}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 		{
 			name:           "invalid email format",
 			body:           `{"email":"not-an-email","password":"password123"}`,
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 	}
 
@@ -766,13 +766,18 @@ func TestLogin_EmptyEmail_ReturnsValidationError(t *testing.T) {
 			var response map[string]any
 			json.Unmarshal(w.Body.Bytes(), &response)
 
-			if response["message"] == nil {
-				t.Fatal("expected message in response")
+			code, _ := response["code"].(string)
+			if code != tc.expectedCode {
+				t.Errorf("expected code '%s', got '%s': body=%s", tc.expectedCode, code, w.Body.String())
 			}
 
-			message := response["message"].(string)
-			if message != tc.expectedError {
-				t.Errorf("expected status %d, got %d: body=%s", tc.expectedStatus, w.Code, w.Body.String())
+			// Verify details contains field-specific errors
+			details, _ := response["details"].(map[string]any)
+			if details == nil {
+				t.Fatal("expected details field with field-specific errors")
+			}
+			if details["email"] == nil {
+				t.Error("expected email error in details")
 			}
 		})
 	}
@@ -792,49 +797,49 @@ func TestLogin_InvalidEmailFormat_ReturnsValidationError(t *testing.T) {
 		email          string
 		password       string
 		expectedStatus int
-		expectedError  string
+		expectedCode   string
 	}{
 		{
 			name:           "missing @ symbol",
 			email:          "not-an-email",
 			password:       "password123",
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 		{
 			name:           "missing domain",
 			email:          "user@",
 			password:       "password123",
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 		{
 			name:           "missing local part",
 			email:          "@example.com",
 			password:       "password123",
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 		{
 			name:           "multiple @ symbols",
 			email:          "user@name@example.com",
 			password:       "password123",
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 		{
 			name:           "invalid characters",
 			email:          "user name@example.com",
 			password:       "password123",
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 		{
 			name:           "no TLD",
 			email:          "user@example",
 			password:       "password123",
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 	}
 
@@ -853,13 +858,18 @@ func TestLogin_InvalidEmailFormat_ReturnsValidationError(t *testing.T) {
 			var response map[string]any
 			json.Unmarshal(w.Body.Bytes(), &response)
 
-			if response["message"] == nil {
-				t.Fatal("expected message in response")
+			code, _ := response["code"].(string)
+			if code != tc.expectedCode {
+				t.Errorf("expected code '%s', got '%s': body=%s", tc.expectedCode, code, w.Body.String())
 			}
 
-			message := response["message"].(string)
-			if message != tc.expectedError {
-				t.Errorf("expected error '%s', got '%s': body=%s", tc.expectedError, message, w.Body.String())
+			// Verify details contains email-specific error
+			details, _ := response["details"].(map[string]any)
+			if details == nil {
+				t.Fatal("expected details field with field-specific errors")
+			}
+			if details["email"] == nil {
+				t.Error("expected email error in details")
 			}
 		})
 	}
@@ -880,28 +890,28 @@ func TestLogin_TooLongPassword_ReturnsValidationError(t *testing.T) {
 		email          string
 		password       string
 		expectedStatus int
-		expectedError  string
+		expectedCode   string
 	}{
 		{
 			name:           "password exceeds max length by 1 char (129 chars)",
 			email:          "test@example.com",
 			password:       generatePassword(129),
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 		{
 			name:           "password greatly exceeds max length (256 chars)",
 			email:          "test@example.com",
 			password:       generatePassword(256),
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 		{
 			name:           "password greatly exceeds max length (512 chars)",
 			email:          "test@example.com",
 			password:       generatePassword(512),
 			expectedStatus: http.StatusBadRequest,
-			expectedError:  "invalid payload",
+			expectedCode:   "VALIDATION_ERROR",
 		},
 	}
 
@@ -924,13 +934,17 @@ func TestLogin_TooLongPassword_ReturnsValidationError(t *testing.T) {
 			var response map[string]any
 			json.Unmarshal(w.Body.Bytes(), &response)
 
-			if response["message"] == nil {
-				t.Fatal("expected message in response")
+			code, _ := response["code"].(string)
+			if code != tc.expectedCode {
+				t.Errorf("expected code '%s', got '%s': body=%s", tc.expectedCode, code, w.Body.String())
 			}
 
-			message := response["message"].(string)
-			if message != tc.expectedError {
-				t.Errorf("expected error '%s', got '%s': body=%s", tc.expectedError, message, w.Body.String())
+			details, _ := response["details"].(map[string]any)
+			if details == nil {
+				t.Fatal("expected details field with field-specific errors")
+			}
+			if details["password"] == nil {
+				t.Error("expected password error in details")
 			}
 		})
 	}

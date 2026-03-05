@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { AlertCircle, CheckCircle2, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/logo-icon.png';
@@ -14,12 +14,32 @@ const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
   const [success, setSuccess] = useState(null);
   const forgotPasswordMutation = useForgotPassword();
 
+  // Field validation state
+  const [fieldError, setFieldError] = useState('');
+  const [touched, setTouched] = useState(false);
+  const emailRef = useRef(null);
+
   useEffect(() => {
     if (initialEmail) setEmail(initialEmail);
   }, [initialEmail]);
 
   const validateEmail = (value) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    if (!value.trim()) return 'Email is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
+    return '';
+  };
+
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (touched && fieldError) {
+      setFieldError(validateEmail(value));
+    }
+  };
+
+  const handleBlur = () => {
+    setTouched(true);
+    setFieldError(validateEmail(email));
   };
 
   const handleSubmit = async (event) => {
@@ -27,8 +47,12 @@ const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
     setError(null);
     setSuccess(null);
 
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address.');
+    const err = validateEmail(email);
+    setFieldError(err);
+    setTouched(true);
+
+    if (err) {
+      emailRef.current?.focus();
       return;
     }
 
@@ -36,7 +60,11 @@ const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
       await forgotPasswordMutation.mutateAsync({ email });
       setSuccess("If an account exists for this email, you'll receive a reset link shortly.");
     } catch (err) {
-      setError(err.message || 'Unable to send reset link. Please try again.');
+      if (err.status === 429) {
+        setError('Too many attempts. Please wait a moment and try again.');
+      } else {
+        setError(err.message || 'Unable to send reset link. Please try again.');
+      }
     }
   };
 
@@ -63,24 +91,44 @@ const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
           animate="onscreen"
           className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8"
         >
-          <motion.form onSubmit={handleSubmit} className="space-y-5" initial={false}>
+          <motion.form onSubmit={handleSubmit} className="space-y-5" initial={false} noValidate>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Email Address</label>
+              <label htmlFor="forgot-email" className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Email Address</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-diana-forest-light transition-colors">
                   <Mail size={18} />
                 </div>
                 <motion.input
+                  ref={emailRef}
                   whileFocus="focus"
                   variants={inputFocusVariants}
                   type="email"
+                  id="forgot-email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm"
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`block w-full pl-10 pr-3 py-3 bg-white border ${touched && fieldError ? 'border-red-300' : 'border-slate-200'} rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm`}
                   placeholder="Enter your email"
-                  required
+                  autoComplete="email"
+                  aria-invalid={touched && fieldError ? 'true' : 'false'}
+                  aria-describedby={fieldError ? 'forgot-email-error' : undefined}
                 />
               </div>
+              <AnimatePresence>
+                {touched && fieldError && (
+                  <motion.p
+                    id="forgot-email-error"
+                    initial={{ opacity: 0, height: 0, y: -4 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -4 }}
+                    className="text-[13px] text-red-600 font-medium flex items-center gap-1.5 pl-1"
+                    role="alert"
+                  >
+                    <AlertCircle size={14} className="shrink-0" />
+                    {fieldError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
 
             <AnimatePresence>

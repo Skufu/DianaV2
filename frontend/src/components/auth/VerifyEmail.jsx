@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { AlertCircle, CheckCircle2, Mail, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/logo-icon.png';
@@ -17,6 +17,14 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
   const verifyMutation = useVerifyEmail();
   const resendMutation = useResendVerification();
 
+  // Field validation
+  const [tokenError, setTokenError] = useState('');
+  const [tokenTouched, setTokenTouched] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [emailTouched, setEmailTouched] = useState(false);
+  const tokenRef = useRef(null);
+  const emailRef = useRef(null);
+
   useEffect(() => {
     if (initialToken) setToken(initialToken);
   }, [initialToken]);
@@ -26,7 +34,30 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
   }, [initialEmail]);
 
   const validateEmail = (value) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    if (!value.trim()) return 'Email is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
+    return '';
+  };
+
+  const validateToken = (value) => {
+    if (!value.trim()) return 'Please enter the verification token';
+    return '';
+  };
+
+  const handleTokenChange = (e) => {
+    const value = e.target.value;
+    setToken(value);
+    if (tokenTouched && tokenError) {
+      setTokenError(validateToken(value));
+    }
+  };
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    if (emailTouched && emailError) {
+      setEmailError(validateEmail(value));
+    }
   };
 
   const handleVerify = async (event) => {
@@ -34,8 +65,12 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
     setError(null);
     setSuccess(null);
 
-    if (!token.trim()) {
-      setError('Please enter the verification token.');
+    const err = validateToken(token);
+    setTokenError(err);
+    setTokenTouched(true);
+
+    if (err) {
+      tokenRef.current?.focus();
       return;
     }
 
@@ -43,7 +78,11 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
       await verifyMutation.mutateAsync({ token: token.trim() });
       setSuccess('Email verified! You can now sign in.');
     } catch (err) {
-      setError(err.message || 'Verification failed. Please try again.');
+      if (err.status === 429) {
+        setError('Too many attempts. Please wait a moment and try again.');
+      } else {
+        setError(err.message || 'Verification failed. Please try again.');
+      }
     }
   };
 
@@ -52,8 +91,12 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
     setError(null);
     setResendMessage(null);
 
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address.');
+    const err = validateEmail(email);
+    setEmailError(err);
+    setEmailTouched(true);
+
+    if (err) {
+      emailRef.current?.focus();
       return;
     }
 
@@ -61,7 +104,11 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
       await resendMutation.mutateAsync({ email });
       setResendMessage('Verification email sent. Please check your inbox.');
     } catch (err) {
-      setError(err.message || 'Unable to resend verification email.');
+      if (err.status === 429) {
+        setError('Too many attempts. Please wait a moment and try again.');
+      } else {
+        setError(err.message || 'Unable to resend verification email.');
+      }
     }
   };
 
@@ -88,24 +135,43 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
           animate="onscreen"
           className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8"
         >
-          <form onSubmit={handleVerify} className="space-y-5">
+          <form onSubmit={handleVerify} className="space-y-5" noValidate>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Verification Token</label>
+              <label htmlFor="verify-token" className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Verification Token</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-diana-forest-light transition-colors">
                   <ShieldCheck size={18} />
                 </div>
                 <motion.input
+                  ref={tokenRef}
                   whileFocus="focus"
                   variants={inputFocusVariants}
                   type="text"
+                  id="verify-token"
                   value={token}
-                  onChange={(event) => setToken(event.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm"
+                  onChange={handleTokenChange}
+                  onBlur={() => { setTokenTouched(true); setTokenError(validateToken(token)); }}
+                  className={`block w-full pl-10 pr-3 py-3 bg-white border ${tokenTouched && tokenError ? 'border-red-300' : 'border-slate-200'} rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm`}
                   placeholder="Enter verification token"
-                  required
+                  aria-invalid={tokenTouched && tokenError ? 'true' : 'false'}
+                  aria-describedby={tokenError ? 'verify-token-error' : undefined}
                 />
               </div>
+              <AnimatePresence>
+                {tokenTouched && tokenError && (
+                  <motion.p
+                    id="verify-token-error"
+                    initial={{ opacity: 0, height: 0, y: -4 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -4 }}
+                    className="text-[13px] text-red-600 font-medium flex items-center gap-1.5 pl-1"
+                    role="alert"
+                  >
+                    <AlertCircle size={14} className="shrink-0" />
+                    {tokenError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
 
             <AnimatePresence>
@@ -151,24 +217,44 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
 
           <div className="my-6 border-t border-slate-100" />
 
-          <form onSubmit={handleResend} className="space-y-4">
+          <form onSubmit={handleResend} className="space-y-4" noValidate>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Resend verification</label>
+              <label htmlFor="verify-email" className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Resend verification</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-diana-forest-light transition-colors">
                   <Mail size={18} />
                 </div>
                 <motion.input
+                  ref={emailRef}
                   whileFocus="focus"
                   variants={inputFocusVariants}
                   type="email"
+                  id="verify-email"
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm"
+                  onChange={handleEmailChange}
+                  onBlur={() => { setEmailTouched(true); setEmailError(validateEmail(email)); }}
+                  className={`block w-full pl-10 pr-3 py-3 bg-white border ${emailTouched && emailError ? 'border-red-300' : 'border-slate-200'} rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm`}
                   placeholder="Email address"
-                  required
+                  autoComplete="email"
+                  aria-invalid={emailTouched && emailError ? 'true' : 'false'}
+                  aria-describedby={emailError ? 'verify-email-error' : undefined}
                 />
               </div>
+              <AnimatePresence>
+                {emailTouched && emailError && (
+                  <motion.p
+                    id="verify-email-error"
+                    initial={{ opacity: 0, height: 0, y: -4 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -4 }}
+                    className="text-[13px] text-red-600 font-medium flex items-center gap-1.5 pl-1"
+                    role="alert"
+                  >
+                    <AlertCircle size={14} className="shrink-0" />
+                    {emailError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
             </div>
 
             <AnimatePresence>
