@@ -24,7 +24,7 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 from Ian_ML.common.paths import CLINICAL_MODELS_DIR, NHANES_PROCESSED_ROOT
 from Ian_ML.common.feature_constants import CLUSTER_FEATURES, AHLQVIST_SUBTYPES
 
@@ -51,15 +51,19 @@ def analyze_k_range(X_scaled, k_range=(2, 7)):
         km = KMeans(n_clusters=k, random_state=42, n_init=10)
         labels = km.fit_predict(X_scaled)
         sil = silhouette_score(X_scaled, labels)
+        dbi = davies_bouldin_score(X_scaled, labels)
+        chi = calinski_harabasz_score(X_scaled, labels)
         wcss = km.inertia_
         results.append({
             'k': k, 
             'silhouette': round(sil, 4), 
+            'dbi': round(dbi, 4),
+            'chi': round(chi, 4),
             'wcss': round(wcss, 2),
             'labels': labels,
             'model': km
         })
-        print(f"   K={k}: Silhouette={sil:.4f}, WCSS={wcss:.1f}")
+        print(f"   K={k}: Silhouette={sil:.4f}, DBI={dbi:.4f}, CHI={chi:.4f}, WCSS={wcss:.1f}")
     
     return results
 
@@ -364,7 +368,11 @@ def main(k=4):
     cluster_labels = kmeans.fit_predict(X_scaled)
     
     final_silhouette = silhouette_score(X_scaled, cluster_labels)
+    final_dbi = davies_bouldin_score(X_scaled, cluster_labels)
+    final_chi = calinski_harabasz_score(X_scaled, cluster_labels)
     print(f"   Silhouette Score: {final_silhouette:.4f}")
+    print(f"   Davies-Bouldin Index: {final_dbi:.4f}")
+    print(f"   Calinski-Harabasz Index: {final_chi:.4f}")
     
     # Assign Ahlqvist subtype labels
     label_map = assign_ahlqvist_labels(kmeans.cluster_centers_, available_features, k)
@@ -417,8 +425,10 @@ def main(k=4):
         "k_selected": k,
         "k_optimal_by_silhouette": best_sil_k,
         "silhouette_score": round(final_silhouette, 4),
+        "davies_bouldin_index": round(final_dbi, 4),
+        "calinski_harabasz_index": round(final_chi, 4),
         "k_range_analysis": [
-            {"k": r['k'], "silhouette": r['silhouette'], "wcss": r['wcss']}
+            {"k": r['k'], "silhouette": r['silhouette'], "dbi": r['dbi'], "chi": r['chi'], "wcss": r['wcss']}
             for r in k_results
         ],
         "cluster_profiles": profiles,

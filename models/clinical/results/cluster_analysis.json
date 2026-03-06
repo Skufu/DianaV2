@@ -1,43 +1,166 @@
 {
-  "method": "kmeans_k4_on_scaled_clinical_features",
-  "cluster_labels": {
-    "1": {
-      "label": "High Risk",
-      "risk_level": "HIGH",
-      "diabetic_rate": 0.3768844221105528,
-      "pre_diabetic_rate": 0.3869346733668342,
-      "risk_score": 0.5703517587939699,
-      "size": 199
+  "methodology": "K-Means clustering with Ahlqvist et al. (2018) subtype classification",
+  "features_used": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age",
+    "waist_circumference"
+  ],
+  "n_samples": 1047,
+  "k_selected": 4,
+  "k_optimal_by_silhouette": 2,
+  "silhouette_score": 0.1843,
+  "davies_bouldin_index": 1.526,
+  "calinski_harabasz_index": 259.6488,
+  "k_range_analysis": [
+    {
+      "k": 2,
+      "silhouette": 0.2265,
+      "dbi": 1.6373,
+      "chi": 342.3657,
+      "wcss": 4731.77
     },
-    "0": {
-      "label": "Moderate Risk",
-      "risk_level": "MODERATE",
-      "diabetic_rate": 0.32865168539325845,
-      "pre_diabetic_rate": 0.3848314606741573,
-      "risk_score": 0.5210674157303371,
-      "size": 356
+    {
+      "k": 3,
+      "silhouette": 0.2125,
+      "dbi": 1.5348,
+      "chi": 302.1563,
+      "wcss": 3978.86
     },
-    "3": {
-      "label": "Low-Moderate Risk",
-      "risk_level": "LOW_MODERATE",
-      "diabetic_rate": 0.1316270566727605,
-      "pre_diabetic_rate": 0.3126142595978062,
-      "risk_score": 0.2879341864716636,
-      "size": 547
+    {
+      "k": 4,
+      "silhouette": 0.1843,
+      "dbi": 1.526,
+      "chi": 259.6488,
+      "wcss": 3596.22
     },
-    "2": {
-      "label": "Low Risk",
-      "risk_level": "LOW",
-      "diabetic_rate": 0.04744525547445255,
-      "pre_diabetic_rate": 0.26277372262773724,
-      "risk_score": 0.17883211678832117,
-      "size": 274
+    {
+      "k": 5,
+      "silhouette": 0.1692,
+      "dbi": 1.4933,
+      "chi": 238.735,
+      "wcss": 3277.94
+    },
+    {
+      "k": 6,
+      "silhouette": 0.1746,
+      "dbi": 1.396,
+      "chi": 228.8374,
+      "wcss": 2992.68
+    }
+  ],
+  "cluster_profiles": {
+    "SIRD": {
+      "label": "SIRD",
+      "count": 326,
+      "percentage": 31.1,
+      "means": {
+        "bmi": 25.32,
+        "triglycerides": 81.39,
+        "ldl": 120.14,
+        "hdl": 72.92,
+        "age": 56.58,
+        "waist_circumference": 88.77
+      },
+      "medians": {
+        "bmi": 24.9,
+        "triglycerides": 76.5,
+        "ldl": 119.0,
+        "hdl": 71.0,
+        "age": 57.0,
+        "waist_circumference": 88.5
+      },
+      "info": {
+        "full_name": "Severe Insulin-Resistant Diabetes",
+        "characteristics": "High BMI, high TG, low HDL (metabolic syndrome pattern)",
+        "clinical_implication": "Responds well to insulin sensitizers (metformin)",
+        "risk_level": "HIGH"
+      }
+    },
+    "SIDD": {
+      "label": "SIDD",
+      "count": 267,
+      "percentage": 25.5,
+      "means": {
+        "bmi": 29.86,
+        "triglycerides": 194.04,
+        "ldl": 153.09,
+        "hdl": 47.99,
+        "age": 55.53,
+        "waist_circumference": 100.74
+      },
+      "medians": {
+        "bmi": 29.45,
+        "triglycerides": 180.0,
+        "ldl": 152.0,
+        "hdl": 48.0,
+        "age": 56.0,
+        "waist_circumference": 101.2
+      },
+      "info": {
+        "full_name": "Atherogenic / Lipid-Driven Diabetes",
+        "subtype": "ATH",
+        "characteristics": "High LDL cholesterol, severe dyslipidemia (atherogenic phenotype)",
+        "clinical_implication": "Statin therapy indicated; cardiovascular risk management primary; identified via LDL proxy without HOMA2 (adaptation per Tanabe 2024)",
+        "risk_level": "HIGH"
+      }
+    },
+    "MOD": {
+      "label": "MOD",
+      "count": 234,
+      "percentage": 22.3,
+      "means": {
+        "bmi": 41.64,
+        "triglycerides": 119.22,
+        "ldl": 111.79,
+        "hdl": 52.59,
+        "age": 54.82,
+        "waist_circumference": 123.94
+      },
+      "medians": {
+        "bmi": 40.77,
+        "triglycerides": 108.0,
+        "ldl": 112.5,
+        "hdl": 50.0,
+        "age": 55.0,
+        "waist_circumference": 122.1
+      },
+      "info": {
+        "full_name": "Mild Obesity-Related Diabetes",
+        "characteristics": "High BMI (>=25 Asia-Pacific WHO cutoff), moderate metabolic markers",
+        "clinical_implication": "Weight management primary intervention",
+        "risk_level": "MODERATE"
+      }
+    },
+    "MARD": {
+      "label": "MARD",
+      "count": 220,
+      "percentage": 21.0,
+      "means": {
+        "bmi": 29.38,
+        "triglycerides": 92.07,
+        "ldl": 119.7,
+        "hdl": 57.49,
+        "age": 49.78,
+        "waist_circumference": 97.2
+      },
+      "medians": {
+        "bmi": 29.13,
+        "triglycerides": 89.5,
+        "ldl": 118.0,
+        "hdl": 57.0,
+        "age": 50.0,
+        "waist_circumference": 97.85
+      },
+      "info": {
+        "full_name": "Mild Age-Related Diabetes",
+        "characteristics": "Older age at diagnosis, mild metabolic dysfunction",
+        "clinical_implication": "Conservative management, slower progression",
+        "risk_level": "LOW"
+      }
     }
   },
-  "cluster_sizes": {
-    "Moderate Risk": 356,
-    "High Risk": 199,
-    "Low Risk": 274,
-    "Low-Moderate Risk": 547
-  }
+  "note": "K=4 selected to match Ahlqvist literature. Silhouette analysis suggested K=2. This may indicate menopausal population-specific clustering patterns."
 }

@@ -212,7 +212,7 @@ const SHAPExplanation = ({
                     <div className="flex items-start gap-2 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
                         <Info className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
                         <p className="text-sm text-indigo-700">
-                            SHAP values show how each feature contributes to the prediction.
+                            SHAP values show how each feature contributes to the prediction in a standardized feature space (mean=0, std=1).
                             <span className="text-emerald-600 font-medium"> Green bars</span> increase risk,
                             <span className="text-rose-600 font-medium"> red bars</span> decrease risk.
                         </p>

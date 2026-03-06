@@ -123,27 +123,27 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     # Philippine (Asia-Pacific WHO) BMI cutoffs:
     # Underweight <18.5, Normal 18.5-22.9, Overweight 23-24.9, Obese ≥25
     bmi_category = pd.cut(
-        df["bmi"], bins=[0, 18.5, 23, 25, 100], labels=[0, 1, 2, 3]
+        df["bmi"], bins=[-np.inf, 18.5, 23, 25, np.inf], labels=[0, 1, 2, 3], right=False
     )
     df["bmi_category"] = pd.Series(bmi_category, index=df.index, dtype="float64")
     df["tg_hdl_ratio"] = df["triglycerides"] / df["hdl"].replace(0, np.nan)
 
     smoking_map = {"Never": 0, "Former": 1, "Current": 2, "Unknown": 1}
     if "smoking_status" in df.columns:
-        df["smoking_encoded"] = df["smoking_status"].map(
-            lambda value: smoking_map.get(value, 1)
+        df["smoking_encoded"] = df["smoking_status"].fillna("Unknown").map(
+            lambda value: smoking_map.get(str(value).strip().title() if str(value).strip().lower() != 'unknown' else 'Unknown', 1)
         )
 
     activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2, "Unknown": 1}
     if "physical_activity" in df.columns:
-        df["activity_encoded"] = df["physical_activity"].map(
-            lambda value: activity_map.get(value, 1)
+        df["activity_encoded"] = df["physical_activity"].fillna("Unknown").map(
+            lambda value: activity_map.get(str(value).strip().title() if str(value).strip().lower() != 'unknown' else 'Unknown', 1)
         )
 
-    alcohol_map = {"None": 0, "Light": 1, "Moderate": 2, "Heavy": 3}
+    alcohol_map = {"None": 0, "Light": 1, "Moderate": 2, "Heavy": 3, "Unknown": 1}
     if "alcohol_use" in df.columns:
-        df["alcohol_encoded"] = df["alcohol_use"].map(
-            lambda value: alcohol_map.get(value, 0)
+        df["alcohol_encoded"] = df["alcohol_use"].fillna("Unknown").map(
+            lambda value: alcohol_map.get(str(value).strip().title() if str(value).strip().lower() != 'none' else 'None', 1)
         )
 
     metabolic_criteria = pd.DataFrame(
