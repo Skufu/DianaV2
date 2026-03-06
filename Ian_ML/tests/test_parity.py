@@ -1,3 +1,19 @@
+"""
+Feature Parity Tests
+
+This module ensures that the feature engineering logic used during model training
+exactly matches the feature extraction logic used during model serving/inference.
+
+Why is this important?
+- Training often uses batch processing (e.g., Pandas DataFrames).
+- Serving often uses single-record processing (e.g., dictionaries/JSON).
+- If the calculations (like BMI categorization or TG/HDL ratio) differ even
+  slightly between these two environments, it introduces "training-serving skew".
+  This skew can cause a model to perform well in training but poorly in production.
+  
+These tests guarantee that given the same raw input data, both paths produce the 
+exact same derived features.
+"""
 import pytest
 import pandas as pd
 import numpy as np

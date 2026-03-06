@@ -1,6 +1,6 @@
 ,AUC_ROC,AUC_ROC,AUC_ROC,AUC_ROC,Sensitivity,Sensitivity,Specificity,Specificity,Balanced_Accuracy,Balanced_Accuracy
 ,mean,std,min,max,mean,std,mean,std,mean,std
 Model,,,,,,,,,,
-LightGBM,0.705,0.0139,0.6893,0.7235,0.7768,0.0844,0.4963,0.149,0.6365,0.0362
-Logistic Regression,0.731,0.0261,0.7089,0.7808,0.7537,0.0932,0.5694,0.1192,0.6616,0.0375
-Random Forest,0.7139,0.0207,0.6878,0.7443,0.7602,0.0971,0.557,0.1495,0.6586,0.0341
+LightGBM,0.7026,0.0163,0.6809,0.7262,0.7807,0.068,0.5011,0.0827,0.6409,0.0181
+Logistic Regression,0.7306,0.0248,0.703,0.7761,0.7495,0.1257,0.5786,0.183,0.664,0.0428
+Random Forest,0.7142,0.0207,0.6892,0.7462,0.759,0.1014,0.5574,0.1433,0.6582,0.0256
