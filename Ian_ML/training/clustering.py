@@ -114,12 +114,13 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     # This identifies the lipid-driven diabetes subtype without requiring
     # beta-cell function tests (HOMA2-B/C-peptide). Rebranded from SIDD
     # to reflect that we're identifying atherogenic dyslipidemia, not true insulin deficiency.
+    # We use high LDL as a proxy.
     ldl_scores = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
         ldl_scores[cid] = c.get('ldl', 0)
     
-    sidd_id = max(ldl_scores, key=ldl_scores.get)
+    sidd_id = max(ldl_scores, key=lambda cid: float(ldl_scores[cid]))
     final_labels[sidd_id] = 'SIDD'  # Keep code name for API compatibility
     available_clusters.remove(sidd_id)
     

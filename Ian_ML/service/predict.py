@@ -503,6 +503,7 @@ class ClinicalPredictor:
         # Cluster scaler is fitted on CLUSTER_FEATURES (6 features), not CLINICAL_FEATURES (12+)
         self.cluster_features = CLUSTER_FEATURES
         self.cluster_scaler = None
+        self.cluster_imputer = None
         cluster_scaler_path = self.models_dir / "cluster_scaler.joblib"
         if cluster_scaler_path.exists():
             cluster_scaler = safe_load_model(cluster_scaler_path)
@@ -516,6 +517,11 @@ class ClinicalPredictor:
                     expected_features,
                     len(self.cluster_features),
                 )
+        
+        # Load cluster imputer for handling missing values in clustering
+        cluster_imputer_path = self.models_dir / "cluster_imputer.joblib"
+        if cluster_imputer_path.exists():
+            self.cluster_imputer = safe_load_model(cluster_imputer_path)
         
         self.classifier = safe_load_model(self.models_dir / "best_model.joblib")
         # Backward compatibility for callers expecting `.model`.
@@ -728,18 +734,22 @@ class ClinicalPredictor:
         # Transform features (handles both Pipeline and separate scaler/imputer)
         X_scaled = self._transform_features(X)
 
-        # Build separate cluster feature vector (5 features for KMeans)
+        # Build separate cluster feature vector (6 features for KMeans)
         X_cluster = self._build_cluster_vector(data)
-        if self.cluster_scaler is not None:
-            X_cluster_scaled = self.cluster_scaler.transform(X_cluster)
+        if self.cluster_scaler is not None and self.cluster_imputer is not None:
+            # Impute NaNs first, then scale
+            X_cluster_imputed = self.cluster_imputer.transform(X_cluster)
+            X_cluster_scaled = self.cluster_scaler.transform(X_cluster_imputed)
         else:
             # SAFETY: Do NOT feed raw unscaled features to KMeans.
             # K-Means is distance-based; unscaled values (e.g. TG=150 vs Age=55)
             # would produce statistically meaningless cluster assignments.
-            # Disable clustering entirely when scaler is unavailable.
+            # Disable clustering entirely when scaler or imputer is unavailable.
+            missing_artifact = "imputer" if self.cluster_imputer is None else "scaler"
             logger.warning(
-                "Cluster scaler unavailable — skipping KMeans prediction. "
-                "Raw unscaled features would produce garbage cluster assignments."
+                "Cluster %s unavailable — skipping KMeans prediction. "
+                "Raw unscaled features would produce garbage cluster assignments.",
+                missing_artifact
             )
             X_cluster_scaled = None
 

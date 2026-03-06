@@ -63,6 +63,8 @@ jobs:
 
       - name: Run API drift detection script
         run: bash scripts/dev/check-api-drift.sh
+        working-directory: .
+
 
       - name: Test
         run: go test -v -race -coverprofile=coverage.out ./...

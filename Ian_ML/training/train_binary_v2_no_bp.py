@@ -652,9 +652,9 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4) -> dict[int, str
     available_clusters.remove(sird_id)
     
     # 2. Identify SIDD → Rebranded as "Atherogenic/Lipid-Driven" phenotype:
-    # Highest LDL cholesterol (atherogenic dyslipidemia marker)
+    # Highest LDL among remaining (reflecting the atherogenic driver of this subtype)
     # Note: True SIDD requires HOMA2-B/C-peptide for beta-cell function.
-    # Without insulin metrics, we identify the lipid-driven phenotype instead.
+    # Without insulin metrics, we use high LDL as a proxy for the atherogenic phenotype.
     ldl_scores: dict[int, float] = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
@@ -718,8 +718,10 @@ def train_serving_kmeans(
     clusters = kmeans.fit_predict(X_scaled)
 
     # Assign Ahlqvist labels based on centroid characteristics
+    # Inverse transform Z-scores back to raw clinical values for proper LAP calculation
+    raw_cluster_centers = scaler.inverse_transform(kmeans.cluster_centers_)
     label_map = assign_ahlqvist_labels(
-        kmeans.cluster_centers_, cluster_features, k=4
+        raw_cluster_centers, cluster_features, k=4
     )
 
     # ── Build cluster profiles (at-risk patients only) ───────────────
@@ -769,6 +771,7 @@ def train_serving_kmeans(
     # Save artifacts
     joblib.dump(kmeans, MODELS_DIR / "kmeans_model.joblib")
     joblib.dump(scaler, MODELS_DIR / "cluster_scaler.joblib")
+    joblib.dump(imputer, MODELS_DIR / "cluster_imputer.joblib")
 
     with open(MODELS_DIR / "cluster_labels.json", 'w') as f:
         json.dump(cluster_profiles, f, indent=2)
