@@ -1,34 +1,31 @@
 {
-  "1": {
-    "label": "High Risk",
-    "risk_level": "HIGH",
-    "diabetic_rate": 0.3768844221105528,
-    "pre_diabetic_rate": 0.3869346733668342,
-    "risk_score": 0.5703517587939699,
-    "size": 199
-  },
-  "0": {
-    "label": "Moderate Risk",
-    "risk_level": "MODERATE",
-    "diabetic_rate": 0.32865168539325845,
-    "pre_diabetic_rate": 0.3848314606741573,
-    "risk_score": 0.5210674157303371,
-    "size": 356
-  },
   "3": {
-    "label": "Low-Moderate Risk",
-    "risk_level": "LOW_MODERATE",
-    "diabetic_rate": 0.1316270566727605,
-    "pre_diabetic_rate": 0.3126142595978062,
-    "risk_score": 0.2879341864716636,
-    "size": 547
+    "label": "SIRD",
+    "full_name": "Severe Insulin-Resistant Diabetes",
+    "characteristics": "High BMI, high TG, low HDL (metabolic syndrome pattern)",
+    "clinical_implication": "Responds well to insulin sensitizers (metformin)",
+    "risk_level": "HIGH"
   },
   "2": {
-    "label": "Low Risk",
-    "risk_level": "LOW",
-    "diabetic_rate": 0.04744525547445255,
-    "pre_diabetic_rate": 0.26277372262773724,
-    "risk_score": 0.17883211678832117,
-    "size": 274
+    "label": "SIDD",
+    "full_name": "Atherogenic / Lipid-Driven Diabetes",
+    "subtype": "ATH",
+    "characteristics": "High LDL cholesterol, severe dyslipidemia (atherogenic phenotype)",
+    "clinical_implication": "Statin therapy indicated; cardiovascular risk management primary; identified via LDL proxy without HOMA2 (adaptation per Tanabe 2024)",
+    "risk_level": "HIGH"
+  },
+  "0": {
+    "label": "MOD",
+    "full_name": "Mild Obesity-Related Diabetes",
+    "characteristics": "High BMI (>=25 Asia-Pacific WHO cutoff), moderate metabolic markers",
+    "clinical_implication": "Weight management primary intervention",
+    "risk_level": "MODERATE"
+  },
+  "1": {
+    "label": "MARD",
+    "full_name": "Mild Age-Related Diabetes",
+    "characteristics": "Older age at diagnosis, mild metabolic dysfunction",
+    "clinical_implication": "Conservative management, slower progression",
+    "risk_level": "LOW"
   }
 }
