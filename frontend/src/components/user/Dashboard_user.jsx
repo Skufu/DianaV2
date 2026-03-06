@@ -93,6 +93,34 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
     setSelectedAssessment(null);
   };
 
+  const getTableRiskLevel = (score, existingLevel) => {
+    if (existingLevel && existingLevel !== 'UNKNOWN') return existingLevel;
+    if (score >= 67) return 'high';
+    if (score >= 34) return 'moderate';
+    if (score >= 0) return 'low';
+    return 'Unknown';
+  };
+
+  const renderRiskLevelBadge = (score, existingLevel) => {
+    const level = getTableRiskLevel(score, existingLevel);
+    return (
+      <span
+        className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase ${level === 'low'
+          ? 'bg-teal-50 text-teal-700 border border-teal-100'
+          : level === 'medium' || level === 'moderate'
+            ? 'bg-amber-50 text-amber-700 border border-amber-100'
+            : level === 'high'
+              ? 'bg-rose-50 text-rose-700 border border-rose-100'
+              : 'bg-slate-50 text-slate-700 border border-slate-100'
+          }`}
+      >
+        {level || 'Unknown'}
+      </span>
+    );
+  };
+
+  const riskScoreBadgeClass = 'inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 font-bold text-base';
+
 
   return (
     <motion.div
@@ -429,16 +457,58 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                   {assessments.length} Assessment{assessments.length !== 1 ? 's' : ''}
                 </span>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="space-y-4 md:hidden">
+                {assessments.slice(0, 10).map((assessment) => (
+                  <motion.div
+                    key={assessment.id}
+                    whileHover={{ backgroundColor: '#f8fafc' }}
+                    className="border border-slate-100 rounded-2xl p-5 shadow-sm transition-colors cursor-pointer"
+                    onClick={() => handleViewAssessment(assessment)}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Date</div>
+                        <div className="text-sm font-semibold text-slate-700 mt-1">
+                          {assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : 'N/A'}
+                        </div>
+                      </div>
+                      <span className={riskScoreBadgeClass}>{assessment.risk_score || 0}</span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-[96px,1fr] gap-y-3 text-sm">
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Level</div>
+                      <div className="flex items-center">{renderRiskLevelBadge(assessment.risk_score, assessment.risk_level)}</div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Profile</div>
+                      <div className="font-semibold text-slate-700">{assessment.cluster || 'N/A'}</div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">BMI</div>
+                      <div className="font-semibold text-slate-700">{assessment.bmi ? `${assessment.bmi} kg/m²` : 'N/A'}</div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-end">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewAssessment(assessment);
+                        }}
+                        className="p-3 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors"
+                        title="View details"
+                      >
+                        <Eye size={18} />
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full min-w-[720px]">
                   <thead>
                     <tr className="border-b border-slate-100">
                       <th className="text-left py-4 px-4 text-base font-semibold text-slate-500">Date</th>
-                      <th className="text-left py-4 px-4 text-base font-semibold text-slate-500">Risk Score</th>
+                      <th className="text-center py-4 px-4 text-base font-semibold text-slate-500">Risk Score</th>
                       <th className="text-left py-4 px-4 text-base font-semibold text-slate-500">Level</th>
                       <th className="text-left py-4 px-4 text-base font-semibold text-slate-500">Profile</th>
                       <th className="text-left py-4 px-4 text-base font-semibold text-slate-500">BMI</th>
-                      <th className="text-left py-4 px-4 text-base font-semibold text-slate-500">Action</th>
+                      <th className="text-right py-4 px-4 text-base font-semibold text-slate-500">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -449,45 +519,24 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                         className="border-b border-slate-50 last:border-0 cursor-pointer"
                         onClick={() => handleViewAssessment(assessment)}
                       >
-                        <td className="py-4 px-4 text-base font-medium text-slate-700">
+                        <td className="py-4 px-4 text-base font-medium text-slate-700 align-middle">
                           {assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : 'N/A'}
                         </td>
-                        <td className="py-4 px-4">
-                          <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 font-bold text-base">
-                            {assessment.risk_score || 0}
-                          </span>
+                        <td className="py-4 px-4 align-middle">
+                          <div className="flex items-center justify-center">
+                            <span className={riskScoreBadgeClass}>{assessment.risk_score || 0}</span>
+                          </div>
                         </td>
-                        <td className="py-5 px-4">
-                          {(() => {
-                            const getCalculatedRiskLevel = (score, existingLevel) => {
-                              if (existingLevel && existingLevel !== 'UNKNOWN') return existingLevel;
-                              if (score >= 67) return 'high';
-                              if (score >= 34) return 'moderate';
-                              if (score >= 0) return 'low';
-                              return 'Unknown';
-                            };
-                            const level = getCalculatedRiskLevel(assessment.risk_score, assessment.risk_level);
-                            return (
-                              <span className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase ${level === 'low'
-                                ? 'bg-teal-50 text-teal-700 border border-teal-100'
-                                : level === 'medium' || level === 'moderate'
-                                  ? 'bg-amber-50 text-amber-700 border border-amber-100'
-                                  : level === 'high'
-                                    ? 'bg-rose-50 text-rose-700 border border-rose-100'
-                                    : 'bg-slate-50 text-slate-700 border border-slate-100'
-                                }`}>
-                                {level || 'Unknown'}
-                              </span>
-                            );
-                          })()}
+                        <td className="py-5 px-4 align-middle">
+                          {renderRiskLevelBadge(assessment.risk_score, assessment.risk_level)}
                         </td>
-                        <td className="py-4 px-4 text-base font-medium text-slate-700">
+                        <td className="py-4 px-4 text-base font-medium text-slate-700 align-middle">
                           {assessment.cluster || 'N/A'}
                         </td>
-                        <td className="py-4 px-4 text-base font-medium text-slate-700">
+                        <td className="py-4 px-4 text-base font-medium text-slate-700 align-middle">
                           {assessment.bmi ? `${assessment.bmi} kg/m²` : 'N/A'}
                         </td>
-                        <td className="py-4 px-4">
+                        <td className="py-4 px-4 text-right align-middle">
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.95 }}

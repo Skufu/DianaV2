@@ -1,7 +1,7 @@
 // Education: comprehensive educational content about diabetes clusters and risk assessment
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, slideUp } from '../../utils/animations';
+import { staggerContainer, slideUp, useReducedMotion } from '../../utils/animations';
 import {
     BookOpen, ChevronDown, ChevronUp, Heart, Activity,
     AlertTriangle, Info, HelpCircle, Lightbulb, Target
@@ -240,6 +240,7 @@ const faqData = [
 // Expandable card component with Framer Motion
 const ExpandableCard = ({ title, children, defaultOpen = false, icon: Icon, colorTheme = "forest" }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
+    const isReduced = useReducedMotion();
 
     const themeMap = {
         forest: {
@@ -261,13 +262,15 @@ const ExpandableCard = ({ title, children, defaultOpen = false, icon: Icon, colo
     return (
         <motion.div
             variants={slideUp}
-            whileHover={{ scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            whileHover={isReduced ? undefined : { scale: 1.01 }}
+            transition={isReduced ? { duration: 0 } : { type: "spring", stiffness: 400, damping: 25 }}
             className={`glass-card bg-white rounded-3xl border transition-all duration-300 ${isOpen ? `${theme.border} shadow-lg` : 'border-diana-sand hover:border-gray-300 shadow-sm overflow-hidden'}`}
         >
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full p-6 md:p-8 flex items-center justify-between transition-colors text-left gap-4 ${isOpen ? theme.bg + " rounded-t-3xl" : 'hover:bg-gray-50'}`}
+                aria-expanded={isOpen}
+                aria-controls={`expandable-card-${title.replace(/\s+/g, '-').toLowerCase()}`}
+                className={`w-full p-6 md:p-8 flex items-center justify-between transition-colors text-left gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diana-forest/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${isOpen ? theme.bg + " rounded-t-3xl" : 'hover:bg-gray-50'}`}
             >
                 <div className="flex items-center gap-5">
                     {Icon && (
@@ -278,8 +281,8 @@ const ExpandableCard = ({ title, children, defaultOpen = false, icon: Icon, colo
                     <h3 className={`text-xl md:text-2xl font-bold transition-colors ${isOpen ? 'text-gray-900' : 'text-gray-700'}`}>{title}</h3>
                 </div>
                 <motion.span
-                    animate={{ rotate: isOpen ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
+                    animate={isReduced ? { rotate: 0 } : { rotate: isOpen ? 180 : 0 }}
+                    transition={isReduced ? { duration: 0 } : { duration: 0.2 }}
                     className={`flex-shrink-0 p-3 rounded-full transition-colors ${isOpen ? theme.iconBg : 'bg-gray-50'}`}
                 >
                     <ChevronDown size={24} className={isOpen ? theme.icon : 'text-gray-400'} />
@@ -288,13 +291,13 @@ const ExpandableCard = ({ title, children, defaultOpen = false, icon: Icon, colo
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ height: 0, opacity: 0 }}
+                        initial={isReduced ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30, opacity: { duration: 0.2 } }}
+                        exit={isReduced ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
+                        transition={isReduced ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30, opacity: { duration: 0.2 } }}
                         className="overflow-hidden"
                     >
-                        <div className={`px-6 md:px-12 pb-8 pt-6 border-t ${theme.border} bg-white rounded-b-3xl`}>
+                        <div id={`expandable-card-${title.replace(/\s+/g, '-').toLowerCase()}`} className={`px-6 md:px-12 pb-8 pt-6 border-t ${theme.border} bg-white rounded-b-3xl`}>
                             {children}
                         </div>
                     </motion.div>
@@ -307,6 +310,10 @@ const ExpandableCard = ({ title, children, defaultOpen = false, icon: Icon, colo
 // Main Education component
 const Education = () => {
     const [activeCluster, setActiveCluster] = useState(null);
+    const isReduced = useReducedMotion();
+    const staggerContainerReduced = isReduced
+        ? { hidden: { opacity: 1 }, visible: { opacity: 1, transition: { staggerChildren: 0, delayChildren: 0 } } }
+        : staggerContainer;
 
     return (
         <div className="space-y-8 animate-fade-in pb-8">
@@ -340,7 +347,7 @@ const Education = () => {
                     Diabetes Clusters Explained
                 </h3>
                 <motion.div
-                    variants={staggerContainer}
+                    variants={staggerContainerReduced}
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.1 }}
@@ -350,7 +357,7 @@ const Education = () => {
                         <motion.div
                             key={key}
                             variants={slideUp}
-                            whileHover={activeCluster === key ? {} : {
+                            whileHover={isReduced || activeCluster === key ? undefined : {
                                 scale: 1.02,
                                 y: -5,
                                 borderColor: 'rgba(75, 85, 99, 0.5)',
@@ -367,13 +374,13 @@ const Education = () => {
                             }}
                         >
                             <div className="p-6 md:p-8">
-                                <div className={`flex items-start justify-between mb-4 ${activeCluster === key && 'cursor-pointer'}`} onClick={(e) => {
+                                <div className={`flex flex-wrap items-start justify-between gap-4 mb-4 ${activeCluster === key && 'cursor-pointer'}`} onClick={(e) => {
                                     if (activeCluster === key) {
                                         e.stopPropagation();
                                         setActiveCluster(null);
                                     }
                                 }}>
-                                    <div className="flex items-center gap-5">
+                                    <div className="flex items-center gap-5 min-w-0 flex-1">
                                         <img
                                             src={cluster.logo}
                                             alt={`${key} logo`}
@@ -383,28 +390,28 @@ const Education = () => {
                                             width="64"
                                             height="64"
                                         />
-                                        <div>
-                                            <h4 className="font-bold text-2xl text-diana-text-primary">{key}</h4>
-                                            <p className="text-base text-diana-text-secondary font-medium">{cluster.name}</p>
+                                        <div className="min-w-0">
+                                            <h4 className="font-bold text-2xl text-diana-text-primary break-words">{key}</h4>
+                                            <p className="text-base text-diana-text-secondary font-medium break-words">{cluster.name}</p>
                                         </div>
                                     </div>
-                                    <motion.span
-                                        animate={{ rotate: activeCluster === key ? 180 : 0 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="mt-2"
-                                    >
-                                        <ChevronDown size={28} className="text-diana-text-muted" />
-                                    </motion.span>
+                                <motion.span
+                                    animate={isReduced ? { rotate: 0 } : { rotate: activeCluster === key ? 180 : 0 }}
+                                    transition={isReduced ? { duration: 0 } : { duration: 0.2 }}
+                                    className="mt-2"
+                                >
+                                    <ChevronDown size={28} className="text-diana-text-muted" />
+                                </motion.span>
                                 </div>
                                 <p className="text-diana-text-primary text-lg mb-2 leading-relaxed font-medium">{cluster.shortDesc}</p>
 
                                 <AnimatePresence>
                                     {activeCluster === key && (
                                         <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
+                                            initial={isReduced ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
                                             animate={{ height: 'auto', opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ type: "spring", stiffness: 300, damping: 30, opacity: { duration: 0.2 } }}
+                                            exit={isReduced ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
+                                            transition={isReduced ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30, opacity: { duration: 0.2 } }}
                                             className="overflow-hidden"
                                         >
                                             <div className="mt-6 pt-6 border-t border-diana-sand space-y-8">
@@ -460,7 +467,34 @@ const Education = () => {
 
             {/* Biomarker Reference */}
             <ExpandableCard title="Biomarker Reference Guide" icon={Activity} defaultOpen={true}>
-                <div className="overflow-x-auto">
+                <div className="space-y-4 md:hidden">
+                    {biomarkerReference.map((bio) => (
+                        <div key={bio.name} className="rounded-2xl border border-diana-sand/80 bg-white/80 p-5 shadow-sm">
+                            <div className="space-y-2">
+                                <div className="font-bold text-lg text-diana-text-primary">
+                                    {bio.name}
+                                    {bio.unit && <span className="text-sm font-medium text-diana-text-muted"> ({bio.unit})</span>}
+                                </div>
+                                <p className="text-sm text-diana-text-secondary leading-relaxed">{bio.description}</p>
+                            </div>
+                            <div className="mt-4 grid grid-cols-1 gap-3">
+                                <div className="flex items-center justify-between rounded-xl bg-green-50/70 px-4 py-3">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-green-700">Optimal / Normal</span>
+                                    <span className="text-base font-bold text-green-700">{bio.normal}</span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-amber-50/70 px-4 py-3">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-amber-700">Borderline / At-Risk</span>
+                                    <span className="text-base font-bold text-amber-700">{bio.prediabetic}</span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-red-50/70 px-4 py-3">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-red-700">Elevated / High Risk</span>
+                                    <span className="text-base font-bold text-red-700">{bio.diabetic}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b-2 border-diana-sand text-lg">
@@ -525,7 +559,7 @@ const Education = () => {
                     Frequently Asked Questions
                 </h3>
                 <motion.div
-                    variants={staggerContainer}
+                    variants={staggerContainerReduced}
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, amount: 0.1 }}
