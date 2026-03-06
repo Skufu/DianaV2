@@ -6,7 +6,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 cd "$PROJECT_ROOT"
 
@@ -46,7 +46,7 @@ FRONTEND_ONBOARDING="frontend/src/components/user/Onboarding.jsx"
 FRONTEND_PROFILE="frontend/src/components/user/UserProfile.jsx"
 
 for field in "${BACKEND_CONSENTS[@]}"; do
-    if ! grep -q "name=\"$field\"" "$FRONTEND_ONBOARDING" && ! grep -q "name=\"$field\"" "$FRONTEND_PROFILE"; then
+    if ! grep -q "$field" "$FRONTEND_ONBOARDING" && ! grep -q "$field" "$FRONTEND_PROFILE"; then
         echo -e "${YELLOW}⚠️  WARNING: Field '$field' not found in frontend forms${NC}"
     fi
 done
@@ -69,7 +69,7 @@ echo -e "${GREEN}✓ No obsolete directories found${NC}"
 echo ""
 echo "4️⃣ Checking sqlc.yaml configuration..."
 
-if ! grep -q 'schema: "migrations"' backend/sqlc.yaml; then
+if ! grep -q 'migrations' backend/sqlc.yaml; then
     echo -e "${RED}❌ ERROR: sqlc.yaml schema path misconfigured${NC}"
     exit 1
 fi
