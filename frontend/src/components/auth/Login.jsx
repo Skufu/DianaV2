@@ -151,7 +151,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
 
           <div className="relative z-10 flex items-center gap-3 mb-10">
             <img src={logoIcon} alt="DIANA Logo" className="h-6 w-6" />
-            
+
             <span className="text-white font-bold tracking-[0.15em] text-lg mt-0.5 uppercase">DIANA</span>
           </div>
 
@@ -400,7 +400,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                       onClick={onShowSignup}
                       className="text-[15px] font-normal text-gray-600 hover:text-gray-700 transition-colors focus:outline-none"
                     >
-                      Don't have an acount? <span className="font-bold text-blue-600 hover:text-blue-700 underline">Sign up</span>
+                      Don&apos;t have an account? <span className="font-bold text-blue-600 hover:text-blue-700 underline">Sign up</span>
                     </button>
                   </div>
                 </motion.div>
