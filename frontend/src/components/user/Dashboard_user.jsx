@@ -107,7 +107,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
           <div className="relative z-10">
             <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3">Welcome to DIANA</h1>
             <p className="text-blue-100 text-lg max-w-xl leading-relaxed mb-6">
-              Your personal diabetes risk assessment platform. Start by logging your first health assessment to unlock personalized clinical insights.
+              Check whether you may be at risk of Type 2 Diabetes in menopause. Log your first assessment to get your risk estimate.
             </p>
             <motion.button
               whileHover={{ scale: isReduced ? 1 : 1.05 }}
@@ -243,7 +243,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                 <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-teal-500">
                   <TrendingUp size={24} />
                 </div>
-                <span className="text-slate-700 font-semibold text-lg">Risk Level</span>
+                <span className="text-slate-700 font-semibold text-lg">Estimated Risk Level</span>
               </div>
               {latestAssessment ? (
                 <div className="mt-1">
@@ -264,7 +264,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                 </div>
                 <div className="text-3xl font-light tracking-tight text-slate-800 mt-4">
                   {!latestAssessment
-                    ? 'No Assessment'
+                    ? 'No Risk Estimate Yet'
                     : latestAssessment.risk_score >= 67
                       ? 'Action Needed'
                       : latestAssessment.risk_score >= 34
@@ -273,7 +273,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                 </div>
               </div>
               <div className="text-base font-medium text-slate-400 mt-4">
-                {latestAssessment ? 'Based on latest biomarker analysis' : 'Log your first assessment to begin'}
+                {latestAssessment ? 'Based on latest biomarker analysis' : 'Log your first assessment to generate a risk estimate.'}
               </div>
             </motion.div>
           </motion.div>
@@ -328,7 +328,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-slate-800 mb-2 group-hover:text-amber-600 transition-colors">Health Report</h3>
-                  <p className="text-slate-500 text-base leading-relaxed font-medium">Download a PDF summary for your clinician.</p>
+                  <p className="text-slate-500 text-base leading-relaxed font-medium">Download a PDF summary you can share with your clinician.</p>
                 </div>
               </div>
             </motion.button>
