@@ -419,11 +419,13 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     final_labels[sird_id] = 'SIRD'
     available_clusters.remove(sird_id)
     
-    tg_hdl_scores = {cid: centers_df.iloc[cid].get('triglycerides', 0) / max(centers_df.iloc[cid].get('hdl', 1), 0.01) for cid in available_clusters}
-    sidd_id = max(tg_hdl_scores, key=tg_hdl_scores.get)
+    # 2. Identify Atherogenic/Lipid-Driven phenotype: Highest LDL among remaining
+    ldl_scores = {cid: centers_df.iloc[cid].get('ldl', 0) for cid in available_clusters}
+    sidd_id = max(ldl_scores, key=lambda cid: float(ldl_scores[cid]))
     final_labels[sidd_id] = 'SIDD'
     available_clusters.remove(sidd_id)
     
+    # 3. Identify MOD: Highest BMI among remaining
     mod_scores = {cid: centers_df.iloc[cid].get('bmi', 0) for cid in available_clusters}
     mod_id = max(mod_scores, key=mod_scores.get)
     final_labels[mod_id] = 'MOD'
