@@ -1762,6 +1762,9 @@ Diabetes
 High BMI (>=25 Asia-Pacific cutoff), moderate metabolic
 markers, weight management primary intervention
 _Table 4 : Initial Clustering Label_
+
+To ensure backend compatibility with the foundational Ahlqvist clustering architecture, the internal system key 'SIDD' was retained. However, because routine clinical datasets lack HOMA2-B or C-peptide data, true insulin deficiency cannot be definitively diagnosed. Therefore, this study adapts the Ahlqvist framework into a lipid-driven phenotypic model, specifically operationalizing this cluster as the **Atherogenic / Lipid-Driven (ATH) subtype**. This adaptation aligns with recent clinical ML literature (Tanabe et al., 2024), which demonstrates that Ahlqvist-style subtypes can be successfully approximated using readily available, non-glycemic clinical variables.
+
 **Variable Definitions and Metadata for the DIANA Study Dataset.** The following table
 presents a proposed list of variables and their definitions for potential inclusion in the DIANA
 Machine Learning dataset. These variables represent key clinical, demographic, and behavioral
@@ -1841,7 +1844,7 @@ The default DIANA classifier is **binary (Normal vs At‑Risk)** and was trained
 - **NPV**: 0.6625
 - **F1‑Score**: 0.7031
 
-The optimized **at‑risk threshold** was **0.4567**, selected from out‑of‑fold probabilities to prioritize sensitivity and minimize false negatives—appropriate for a screening tool where missed cases carry greater clinical risk than additional confirmatory testing.
+The optimized **at‑risk threshold** was **0.4567**, selected from out‑of‑fold probabilities to prioritize sensitivity and minimize false negatives—appropriate for a screening tool where missed cases carry greater clinical risk than additional confirmatory testing. To optimize the decision boundary for clinical utility, a composite thresholding metric was applied. The formula weighted Sensitivity (0.35), Specificity (0.30), F1-Score (0.25), and Accuracy (0.10). These weights were researcher-defined screening priorities rather than externally learned cost coefficients. Because the system is designed as a first-line screening tool, the weights deliberately penalize false negatives higher than false positives, reflecting the greater clinical cost of missing an at-risk patient.
 
 **4.2 Temporal Validation (LOGO by NHANES Cycle)**
 
@@ -1894,7 +1897,7 @@ Key strengths include (1) the deliberate use of **non‑circular predictors**, w
 
 **5.4 Limitations**
 
-Several limitations should be acknowledged. The development dataset is derived from U.S. NHANES cohorts, which necessitates Philippine‑specific external validation before clinical adoption. NHANES is cross‑sectional; therefore the model identifies **current undiagnosed risk** rather than prospective incidence. Finally, clustering separation is moderate, and subtype labels should be interpreted as **exploratory phenotypes** pending clinician validation and replication in local cohorts.
+Several limitations should be acknowledged. The development dataset is derived from U.S. NHANES cohorts, which necessitates Philippine‑specific external validation before clinical adoption. NHANES is cross‑sectional; therefore the model identifies **current undiagnosed risk** rather than prospective incidence. Finally, clustering separation is moderate, and subtype labels should be interpreted as **exploratory phenotypes** pending clinician validation and replication in local cohorts. A methodological limitation of the clustering pipeline involves the heuristic assignment of the Severe Insulin-Resistant (SIRD) centroid. The assignment utilizes a Lipid Accumulation Product (LAP)-style proxy, which incorporates a baseline waist circumference subtraction constant (58 cm) originally derived from Western cohorts. In this study, this formula was not utilized as a population-specific diagnostic threshold or absolute clinical cutoff for Filipino patients. Rather, it was applied uniformly across the pre-computed K-Means centroids strictly as a relative heuristic to rank and label the clusters. While effective for relative discriminative sorting within the algorithm, future iterations should calibrate this baseline constant to region-specific anthropometric standards.
 
 **5.5 Future Work**
 
