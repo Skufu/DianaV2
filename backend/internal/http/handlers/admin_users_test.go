@@ -309,6 +309,9 @@ func TestAdminGetUsers_NoPasswordHashExposed(t *testing.T) {
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
+		// Wait for async audit goroutine to complete to avoid race condition
+		time.Sleep(50 * time.Millisecond)
+
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var user models.User
