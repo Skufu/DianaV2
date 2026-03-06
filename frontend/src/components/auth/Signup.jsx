@@ -176,7 +176,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
             <span className="text-2xl font-bold text-diana-navy tracking-tight">DIANA</span>
           </motion.div>
           <motion.h1 variants={fadeIn} className="text-2xl font-semibold text-diana-midnight tracking-tight text-center">Create an account</motion.h1>
-          <motion.p variants={fadeIn} className="text-sm text-slate-500 mt-2 text-center">Start your journey to clinical precision</motion.p>
+          <motion.p variants={fadeIn} className="text-sm text-slate-500 mt-2 text-center">Check whether you may be at risk of Type 2 Diabetes in menopause.</motion.p>
         </div>
 
         {/* Main Card */}

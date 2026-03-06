@@ -150,9 +150,8 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
           <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay" />
 
           <div className="relative z-10 flex items-center gap-3 mb-10">
-            <div className="bg-white/10 p-2.5 rounded-xl backdrop-blur-sm border border-white/20">
-              <Activity className="text-white h-6 w-6" />
-            </div>
+            <img src={logoIcon} alt="DIANA Logo" className="h-6 w-6" />
+            
             <span className="text-white font-bold tracking-[0.15em] text-lg mt-0.5 uppercase">DIANA</span>
           </div>
 
@@ -163,8 +162,8 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
             className="space-y-6 relative z-10"
           >
             <h2 className="text-3xl lg:text-4xl text-white font-semibold leading-[1.2] tracking-tight">
-              Clinical insights for <br />
-              <span className="text-teal-100 font-serif italic pr-2 font-medium">menopausal care.</span>
+              Personal Diabetes Risk Insights for <br />
+              <span className="text-teal-100 font-serif italic pr-2 font-medium">menopausal women.</span>
             </h2>
 
             <motion.div
@@ -181,7 +180,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
           </motion.div>
 
           <div className="mt-14 lg:mt-0 relative z-10">
-            <p className="text-blue-200/80 text-[11px] font-bold tracking-[0.15em] uppercase">clinical decision support system</p>
+            <p className="text-blue-200/80 text-[11px] font-bold tracking-[0.15em] uppercase">Diabetes Risk Self‑Assessment Tool for Menopausal Women</p>
           </div>
         </div>
 
@@ -192,7 +191,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
             {/* Mobile-only branding backup (if stacked) */}
             <div className="lg:hidden flex items-center gap-3 mb-4">
               <div className="bg-diana-forest p-2 rounded-lg">
-                <Activity className="text-white h-5 w-5" />
+                <img src={logoIcon} alt="DIANA Logo" className="h-5 w-5" />
               </div>
             </div>
 
@@ -241,7 +240,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                           onChange={handleEmailChange}
                           onBlur={() => handleBlur('email')}
                           className={`block w-full pl-12 pr-4 py-3.5 bg-slate-50 border ${touched.email && fieldErrors.email ? 'border-red-400 focus:ring-red-500/20 focus:border-red-500' : 'border-slate-300 focus:ring-blue-600/20 focus:border-blue-600'} rounded-xl text-slate-900 text-[16px] placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all shadow-sm`}
-                          placeholder="doctor@clinic.com"
+                          placeholder="user@example.com"
                           autoComplete="email"
                           aria-invalid={touched.email && fieldErrors.email ? 'true' : 'false'}
                           aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
@@ -375,7 +374,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                     </div>
                   </form>
 
-                  {/* Divider */}
+                  {/* Divider 
                   <div className="relative my-8">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-slate-200" />
@@ -385,23 +384,23 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                     </div>
                   </div>
 
-                  {/* SSO Button */}
+                  SSO Button 
                   <button
                     type="button"
                     className="w-full flex justify-center items-center gap-3 py-3.5 px-4 border border-slate-300 rounded-xl shadow-sm bg-white text-[15px] font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-100 transition-all h-[54px]"
                   >
                     <Activity className="h-5 w-5 text-slate-500" />
                     <span>Institutional SSO</span>
-                  </button>
+                  </button> */}
 
                   {/* Signup Link */}
                   <div className="mt-8 text-center">
                     <button
                       type="button"
                       onClick={onShowSignup}
-                      className="text-[15px] font-bold text-blue-600 hover:text-blue-700 transition-colors focus:outline-none"
+                      className="text-[15px] font-normal text-gray-600 hover:text-gray-700 transition-colors focus:outline-none"
                     >
-                      signup
+                      Don't have an acount? <span className="font-bold text-blue-600 hover:text-blue-700 underline">Sign up</span>
                     </button>
                   </div>
                 </motion.div>
