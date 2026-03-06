@@ -1,12 +1,18 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { fadeIn, scaleIn } from '../../utils/animations';
+import { fadeIn, scaleIn, useReducedMotion } from '../../utils/animations';
 
 const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
   const [displayScore, setDisplayScore] = useState(0);
+  const isReduced = useReducedMotion();
 
   // Count-up animation for risk score
   useEffect(() => {
+    if (isReduced) {
+      setDisplayScore(riskScore);
+      return;
+    }
+
     if (riskScore === displayScore) return;
 
     const duration = 1000; // 1 second animation
@@ -32,7 +38,7 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
         cancelAnimationFrame(rafId);
       }
     };
-  }, [riskScore]);
+  }, [riskScore, displayScore, isReduced]);
 
   const getRiskColor = (level) => {
     switch (level) {
@@ -62,11 +68,23 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
     }
   };
 
+  const fadeInVariants = isReduced
+    ? { hidden: { opacity: 1 }, visible: { opacity: 1 } }
+    : fadeIn;
+  const scaleInVariants = isReduced
+    ? { hidden: { opacity: 1, scale: 1 }, visible: { opacity: 1, scale: 1 } }
+    : scaleIn;
+
   return (
-    <motion.div variants={fadeIn} initial="offscreen" animate="onscreen" className="space-y-3">
+    <motion.div
+      variants={fadeInVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-3"
+    >
       {/* Risk Score */}
       <motion.div
-        variants={scaleIn}
+        variants={scaleInVariants}
       >
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xl font-semibold text-slate-800">Diabetes Risk Score</h3>
@@ -74,7 +92,7 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
 
         <div className="flex items-baseline gap-2 mb-5">
           <motion.span
-            className={`text-[80px] leading-none font-light tracking-tighter text-slate-800`}
+            className="text-[56px] leading-none font-light tracking-tighter text-slate-800 sm:text-[64px] md:text-[72px] lg:text-[80px]"
           >
             {displayScore}
           </motion.span>
@@ -82,9 +100,9 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
 
         <motion.div
           className="flex items-center space-x-3"
-          initial={{ opacity: 0 }}
+          initial={isReduced ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.3 }}
+          transition={isReduced ? { duration: 0 } : { delay: 0.3, duration: 0.3 }}
         >
           <span className="text-base font-semibold text-slate-700">Risk Level:</span>
           <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${getRiskColor(riskLevel)}`}>
@@ -96,11 +114,11 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
       {/* Cluster Assignment */}
       {cluster && (
         <motion.div
-          variants={scaleIn}
+          variants={scaleInVariants}
           className="mt-6 pt-6 border-t border-slate-100"
-          initial={{ opacity: 0 }}
+          initial={isReduced ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.3 }}
+          transition={isReduced ? { duration: 0 } : { delay: 0.1, duration: 0.3 }}
         >
           <div className="flex items-center space-x-3">
             <span className="text-base font-semibold text-slate-700">Metabolic Profile:</span>

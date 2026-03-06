@@ -42,8 +42,31 @@ const PersonalTrends = ({ onStartAssessment }) => {
     }
   };
 
+  const riskTierStyles = {
+    low: 'bg-emerald-100 text-emerald-800',
+    medium: 'bg-amber-100 text-amber-800',
+    high: 'bg-rose-100 text-rose-800',
+  };
+
+  const getRiskTier = (score) => {
+    if (score < 34) return 'low';
+    if (score < 67) return 'medium';
+    return 'high';
+  };
+
   if (isLoading) {
-    return <motion.div key="loading_trends" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12 text-diana-text-muted">Loading your trends...</motion.div>;
+    return (
+      <motion.div
+        key="loading_trends"
+        initial={isReduced ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={isReduced ? { duration: 0 } : { duration: 0.3 }}
+        className="text-center py-12 text-diana-text-muted"
+      >
+        Loading your trends...
+      </motion.div>
+    );
   }
 
   return (
@@ -70,11 +93,11 @@ const PersonalTrends = ({ onStartAssessment }) => {
             {timeOptions.map(option => (
               <motion.button
                 key={option.value}
-                whileHover={{ scale: isReduced ? 1 : 1.05 }}
-                whileTap={{ scale: isReduced ? 1 : 0.95 }}
-                whileFocus={{ scale: isReduced ? 1 : 1.05, boxShadow: "0px 0px 0px 2px #10B981" }}
+                whileHover={isReduced ? undefined : { scale: 1.05 }}
+                whileTap={isReduced ? undefined : { scale: 0.95 }}
+                whileFocus={isReduced ? undefined : { scale: 1.05, boxShadow: "0px 0px 0px 2px #10B981" }}
                 onClick={() => setSelectedMonths(option.value)}
-                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm ${selectedMonths === option.value
+                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${selectedMonths === option.value
                   ? 'bg-diana-forest text-white shadow-diana-forest/30'
                   : 'bg-white text-diana-text-secondary hover:bg-slate-50 border border-slate-200'
                   }`}
@@ -141,47 +164,47 @@ const PersonalTrends = ({ onStartAssessment }) => {
 
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6">Previous Assessments</h2>
           <div className="space-y-3">
-            {activeTrends.clusterHistory.map((entry, index) => (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.3 }}
-                whileHover={{ scale: isReduced ? 1 : 1.01, x: isReduced ? 0 : 4 }}
-                whileTap={{ scale: isReduced ? 1 : 0.98 }}
-                key={`${entry.date}-${entry.cluster}`}
-                className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group"
-              >
-                <div className="flex items-center gap-4">
+            {activeTrends.clusterHistory.map((entry, index) => {
+              const riskTier = getRiskTier(entry.riskScore);
+              const riskLabel = riskTier === 'low' ? 'Low' : riskTier === 'medium' ? 'Medium' : 'High';
+
+              return (
+            <motion.div
+              initial={isReduced ? false : { opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={isReduced ? { duration: 0 } : { delay: index * 0.1, duration: 0.3 }}
+              whileHover={isReduced ? undefined : { scale: 1.01, x: 4 }}
+              whileTap={isReduced ? undefined : { scale: 0.98 }}
+              key={`${entry.date}-${entry.cluster}`}
+              className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer group"
+            >
+                <div className="flex min-w-0 flex-1 items-center gap-4">
                   <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 text-diana-forest group-hover:bg-diana-forest group-hover:text-white transition-colors">
                     <Calendar size={18} />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-diana-text-primary font-bold block">{new Date(entry.date).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
                     <span className="text-slate-500 text-sm mt-0.5 block">{entry.cluster} Profile</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:flex-nowrap sm:justify-end">
                   <div className="text-right hidden sm:block">
                     <span className="text-slate-500 text-xs uppercase tracking-wider font-bold block">Score</span>
                     <span className="text-diana-text-primary font-bold text-lg">{entry.riskScore}</span>
                   </div>
+                  <div className="text-right sm:hidden">
+                    <span className="text-slate-500 text-[11px] uppercase tracking-wider font-bold block">Score</span>
+                    <span className="text-diana-text-primary font-bold text-base">{entry.riskScore}</span>
+                  </div>
                   <div
-                    className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${entry.riskScore < 30
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : entry.riskScore < 70
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-rose-100 text-rose-800'
-                      }`}
+                    className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider whitespace-nowrap ${riskTierStyles[riskTier]}`}
                   >
-                    {entry.riskScore < 30
-                      ? 'Low'
-                      : entry.riskScore < 70
-                        ? 'Moderate'
-                        : 'High'}
+                    {riskLabel}
                   </div>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       )}
@@ -193,7 +216,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
             A quick summary of your past assessments. The goal is to keep your numbers in the green &quot;Healthy Baseline&quot; zone by maintaining steady habits.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 w-full">
-            <motion.div whileHover={{ scale: isReduced ? 1 : 1.02 }} className="text-center p-6 bg-emerald-50 rounded-2xl border border-emerald-100/50">
+          <motion.div whileHover={isReduced ? undefined : { scale: 1.02 }} className="text-center p-6 bg-emerald-50 rounded-2xl border border-emerald-100/50">
               <Activity size={28} className="mx-auto text-emerald-500 mb-3" />
               <div className="text-4xl font-serif font-bold text-emerald-700 mb-1">
                 {activeTrends.riskLevels?.low || 0}
@@ -201,15 +224,15 @@ const PersonalTrends = ({ onStartAssessment }) => {
               <p className="text-sm font-bold text-emerald-800 uppercase tracking-wide">Low Risk Results</p>
               <p className="text-xs text-emerald-600/70 mt-1 font-medium">Healthy Baseline</p>
             </motion.div>
-            <motion.div whileHover={{ scale: isReduced ? 1 : 1.02 }} className="text-center p-6 bg-amber-50 rounded-2xl border border-amber-100/50">
+          <motion.div whileHover={isReduced ? undefined : { scale: 1.02 }} className="text-center p-6 bg-amber-50 rounded-2xl border border-amber-100/50">
               <Activity size={28} className="mx-auto text-amber-500 mb-3" />
               <div className="text-4xl font-serif font-bold text-amber-700 mb-1">
                 {activeTrends.riskLevels?.medium || 0}
               </div>
-              <p className="text-sm font-bold text-amber-800 uppercase tracking-wide">Elevated Results</p>
-              <p className="text-xs text-amber-600/70 mt-1 font-medium">Early Warning Signs</p>
+              <p className="text-sm font-bold text-amber-800 uppercase tracking-wide">Medium Risk Results</p>
+              <p className="text-xs text-amber-600/70 mt-1 font-medium">Monitor Closely</p>
             </motion.div>
-            <motion.div whileHover={{ scale: isReduced ? 1 : 1.02 }} className="text-center p-6 bg-rose-50 rounded-2xl border border-rose-100/50">
+          <motion.div whileHover={isReduced ? undefined : { scale: 1.02 }} className="text-center p-6 bg-rose-50 rounded-2xl border border-rose-100/50">
               <Activity size={28} className="mx-auto text-rose-500 mb-3" />
               <div className="text-4xl font-serif font-bold text-rose-700 mb-1">
                 {activeTrends.riskLevels?.high || 0}
@@ -232,10 +255,10 @@ const PersonalTrends = ({ onStartAssessment }) => {
             You&apos;ll see trends, risk analysis, and personalized insights here.
           </p>
           <motion.button
-            whileHover={{ scale: isReduced ? 1 : 1.05 }}
-            whileTap={{ scale: isReduced ? 1 : 0.95 }}
+            whileHover={isReduced ? undefined : { scale: 1.05 }}
+            whileTap={isReduced ? undefined : { scale: 0.95 }}
             onClick={handleLogAssessment}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-diana-forest text-white font-bold rounded-xl hover:bg-diana-forest-light transition-all shadow-lg"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-diana-forest text-white font-bold rounded-xl hover:bg-diana-forest-light transition-all shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           >
             <Plus size={20} />
             Log Your First Assessment
