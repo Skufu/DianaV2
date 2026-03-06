@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,14 +18,27 @@ import (
 )
 
 type mockAuditStore struct {
+	mu     sync.Mutex
 	events []models.AuditEvent
 }
 
 func (m *mockAuditStore) AuditEvents() store.AuditEventRepository { return m }
 
 func (m *mockAuditStore) Create(ctx context.Context, event models.AuditEvent) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.events = append(m.events, event)
 	return nil
+}
+
+// GetEvents returns a copy of events (thread-safe read)
+func (m *mockAuditStore) GetEvents() []models.AuditEvent {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	// Return a copy to avoid race conditions
+	result := make([]models.AuditEvent, len(m.events))
+	copy(result, m.events)
+	return result
 }
 
 // Implement remaining Store interface methods
@@ -70,20 +84,21 @@ func TestAuditLogger_LogAction_Success(t *testing.T) {
 	// Wait for async goroutine to complete
 	time.Sleep(10 * time.Millisecond)
 
-	if len(store.events) != 1 {
-		t.Errorf("expected 1 audit event, got %d", len(store.events))
+	events := store.GetEvents()
+	if len(events) != 1 {
+		t.Errorf("expected 1 audit event, got %d", len(events))
 	}
 
-	if store.events[0].Action != "user.create" {
-		t.Errorf("expected action user.create, got %s", store.events[0].Action)
+	if events[0].Action != "user.create" {
+		t.Errorf("expected action user.create, got %s", events[0].Action)
 	}
 
-	if store.events[0].TargetType != "user" {
-		t.Errorf("expected target type user, got %s", store.events[0].TargetType)
+	if events[0].TargetType != "user" {
+		t.Errorf("expected target type user, got %s", events[0].TargetType)
 	}
 
-	if store.events[0].Actor != "admin@example.com" {
-		t.Errorf("expected actor admin@example.com, got %s", store.events[0].Actor)
+	if events[0].Actor != "admin@example.com" {
+		t.Errorf("expected actor admin@example.com, got %s", events[0].Actor)
 	}
 }
 
@@ -301,20 +316,21 @@ func TestAuditLog_PersistsAfterHandlerComplete(t *testing.T) {
 	// so it should persist even if original request context is cancelled after handler returns.
 	time.Sleep(50 * time.Millisecond)
 
-	if len(store.events) != 1 {
-		t.Errorf("expected 1 audit event to persist, got %d", len(store.events))
+	events := store.GetEvents()
+	if len(events) != 1 {
+		t.Errorf("expected 1 audit event to persist, got %d", len(events))
 	}
 
-	if store.events[0].Action != "test.action" {
-		t.Errorf("expected action test.action, got %s", store.events[0].Action)
+	if events[0].Action != "test.action" {
+		t.Errorf("expected action test.action, got %s", events[0].Action)
 	}
 
-	if store.events[0].TargetType != "test" {
-		t.Errorf("expected target type test, got %s", store.events[0].TargetType)
+	if events[0].TargetType != "test" {
+		t.Errorf("expected target type test, got %s", events[0].TargetType)
 	}
 
-	if store.events[0].Actor != "admin@example.com" {
-		t.Errorf("expected actor admin@example.com, got %s", store.events[0].Actor)
+	if events[0].Actor != "admin@example.com" {
+		t.Errorf("expected actor admin@example.com, got %s", events[0].Actor)
 	}
 }
 
