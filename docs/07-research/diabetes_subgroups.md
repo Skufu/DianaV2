@@ -1,15 +1,15 @@
 # T2DM Subgroups (Clustering Labels)
 
-> Based on Ahlqvist et al. (2018) classification adapted for DIANA
+> This document includes both paper-context taxonomy and DIANA runtime semantics.
 
 ---
 
-## Primary Cluster Labels
+## Runtime Cluster Labels (DIANA)
 
 | Label | Full Name | Defining Features |
 |-------|-----------|-------------------|
 | **SIRD** | Severe Insulin-Resistant Diabetes | High BMI, high HOMA-IR, high TG, low HDL |
-| **SIDD** | Severe Insulin-Deficient Diabetes | High HbA1c, low HOMA-β, moderate BMI |
+| **SIDD** | Atherogenic / Lipid-Driven Diabetes | High LDL, severe dyslipidemia pattern |
 | **MOD** | Mild Obesity-Related Diabetes | High BMI (>30), moderate HbA1c |
 | **MARD** | Mild Age-Related Diabetes | Older age (>55), mild elevations across markers |
 
@@ -22,10 +22,10 @@
 - **Age Profile**: Often younger onset
 - **Clinical Implication**: Responds to insulin sensitizers (metformin)
 
-### SIDD (Severe Insulin-Deficient Diabetes)
-- **Key Indicators**: Highest HbA1c, lowest beta-cell function
+### SIDD (Atherogenic / Lipid-Driven Diabetes)
+- **Key Indicators**: High LDL and dyslipidemia profile
 - **Age Profile**: Variable
-- **Clinical Implication**: May need early insulin
+- **Clinical Implication**: Cardiovascular risk management and lipid-focused intervention
 
 ### MOD (Mild Obesity-Related Diabetes)
 - **Key Indicators**: BMI >30, moderate glucose elevation
@@ -39,7 +39,7 @@
 
 ---
 
-## Paper's Cluster Labels (Alternative)
+## Paper Taxonomy (Original Ahlqvist Context)
 
 The paper also mentions these labels in Table 4:
 
@@ -50,7 +50,13 @@ The paper also mentions these labels in Table 4:
 | **MARD** | Mild Age-Associated Diabetes Mellitus |
 | **MIDD** | Mild Insulin-Deficient Diabetes |
 
-> **Note**: Both classification schemes are valid. The codebase currently uses SIRD, SIDD, MOD, MARD.
+> **Important**: Use this table only when discussing paper taxonomy. Runtime behavior should follow `../03-ml/assessment-contract.md`.
+
+## Runtime vs Paper Naming
+
+- **Runtime semantic authority**: `../03-ml/assessment-contract.md`
+- **Paper-context naming**: Ahlqvist-derived labels and table variants in manuscript references
+- **DIANA adaptation**: Runtime SIDD is intentionally represented as an atherogenic/lipid-driven phenotype
 
 ---
 

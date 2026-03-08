@@ -487,17 +487,18 @@ func (r *pgUserRepo) GetUserTrends(ctx context.Context, userID int64, months int
 	}
 
 	data := &models.TrendData{
-		Dates:               []string{},
-		HbA1cValues:         []float64{},
-		BMIValues:           []float64{},
-		SystolicValues:      []int{},
-		DiastolicValues:     []int{},
-		LDLValues:           []int{},
-		HDLValues:           []int{},
-		TriglyceridesValues: []int{},
-		FBSValues:           []float64{},
-		RiskScores:          []string{},
-		Clusters:            []string{},
+		Dates:                    []string{},
+		HbA1cValues:              []float64{},
+		BMIValues:                []float64{},
+		SystolicValues:           []int{},
+		DiastolicValues:          []int{},
+		LDLValues:                []int{},
+		HDLValues:                []int{},
+		TriglyceridesValues:      []int{},
+		FBSValues:                []float64{},
+		WaistCircumferenceValues: []float64{},
+		RiskScores:               []string{},
+		Clusters:                 []string{},
 	}
 
 	for _, row := range rows {
@@ -510,6 +511,7 @@ func (r *pgUserRepo) GetUserTrends(ctx context.Context, userID int64, months int
 		data.HDLValues = append(data.HDLValues, intVal(row.Hdl))
 		data.SystolicValues = append(data.SystolicValues, intVal(row.Systolic))
 		data.DiastolicValues = append(data.DiastolicValues, intVal(row.Diastolic))
+		data.WaistCircumferenceValues = append(data.WaistCircumferenceValues, numericVal(row.WaistCircumference))
 
 		clusterStr := ""
 		if row.Cluster.Valid {

@@ -176,17 +176,18 @@ type ConsentSettings struct {
 
 // TrendData represents biomarker trends over time
 type TrendData struct {
-	Dates               []string  `json:"dates"`
-	HbA1cValues         []float64 `json:"hba1c_values"`
-	BMIValues           []float64 `json:"bmi_values"`
-	SystolicValues      []int     `json:"systolic_values"`
-	DiastolicValues     []int     `json:"diastolic_values"`
-	LDLValues           []int     `json:"ldl_values"`
-	HDLValues           []int     `json:"hdl_values"`
-	TriglyceridesValues []int     `json:"triglycerides_values"`
-	FBSValues           []float64 `json:"fbs_values"`
-	RiskScores          []string  `json:"risk_scores"` // 'low', 'medium', 'high'
-	Clusters            []string  `json:"clusters"`
+	Dates                    []string  `json:"dates"`
+	HbA1cValues              []float64 `json:"hba1c_values"`
+	BMIValues                []float64 `json:"bmi_values"`
+	SystolicValues           []int     `json:"systolic_values"`
+	DiastolicValues          []int     `json:"diastolic_values"`
+	LDLValues                []int     `json:"ldl_values"`
+	HDLValues                []int     `json:"hdl_values"`
+	TriglyceridesValues      []int     `json:"triglycerides_values"`
+	FBSValues                []float64 `json:"fbs_values"`
+	WaistCircumferenceValues []float64 `json:"waist_circumference_values"`
+	RiskScores               []string  `json:"risk_scores"` // 'low', 'medium', 'high'
+	Clusters                 []string  `json:"clusters"`
 }
 
 // OnboardingRequest represents onboarding data

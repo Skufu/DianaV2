@@ -1,250 +1,55 @@
 # Backend Guide (Go/Gin)
 
-## Directory Structure
+## Purpose
+This guide explains backend responsibilities and integration boundaries.
 
-```
-backend/
-├── cmd/
-│   ├── server/main.go     # Entry point
-│   ├── migrate/main.go    # Database migrations
-│   └── seed/              # Seed data
-├── internal/
-│   ├── config/            # Environment config
-│   ├── http/
-│   │   ├── router/        # Route definitions
-│   │   ├── handlers/      # Request handlers
-│   │   └── middleware/    # Auth, rate limiting
-│   ├── ml/                # ML server client
-│   ├── models/            # Domain models
-│   └── store/             # Database layer
-│       └── sqlc/          # Generated queries
-├── migrations/            # SQL migration files
-└── sqlc.yaml              # SQLC configuration
-```
+Canonical assessment semantics are defined in:
+- `../03-ml/assessment-contract.md`
 
----
+Transport details for backend-to-ML calls are defined in:
+- `../03-ml/api-contract.md`
 
-## Key Concepts
+## Backend Role In Assessment Flow
+Backend is the normalization boundary between frontend and ML service:
 
-### 1. Router (`internal/http/router/router.go`)
+1. Receive assessment request from frontend
+2. Validate request and population constraints
+3. Route request to selected model type
+4. Normalize raw ML response into canonical assessment shape
+5. Persist normalized result
+6. Return canonical result payload to frontend
 
-All routes are defined here:
+Frontend should treat backend response as source of truth for risk and subtype semantics.
 
-```go
-api := r.Group("/api/v1")
+## Key Backend Areas
+- Router and middleware: `backend/internal/http/router/` and `backend/internal/http/middleware/`
+- Assessment endpoint handling: `backend/internal/http/handlers/assessments.go`
+- ML transport client: `backend/internal/ml/http_predictor.go`
+- Validation rules and warning codes: `backend/internal/ml/validation.go`
+- Persistence model types: `backend/internal/models/types.go`
+- SQLC storage layer: `backend/internal/store/` and `backend/internal/store/sqlc/`
 
-// Global middleware applied to all routes
-r.Use(middleware.Recovery())
-r.Use(middleware.RequestID())
-r.Use(middleware.Logger())
-r.Use(middleware.SecurityHeaders())
-r.Use(middleware.RateLimit(rateLimiter))
-r.Use(middleware.MaxBodySize(1 << 20))  // 1MB max
+## Model Type Handling
+Backend assessment flow supports:
+- `binary_v2_no_bp` (active non-circular screening path)
+- `binary_v2_bp`
+- `ada`
+- `clinical` (compatibility alias, not preferred for new integrations)
 
-// Public routes
-handlers.RegisterHealth(api)
-authHandler.Register(authGroup)  // /auth/login, /auth/register
+## Validation And Contract Highlights
+- Population age constraints in assessment flow are enforced by backend.
+- Backend emits canonical risk and cluster semantics after normalization.
+- Backend warning transport is contract-controlled; frontend should render warnings from backend output instead of inferring from raw ML response.
 
-// Protected routes (require JWT)
-protected := api.Group("")
-protected.Use(middleware.Auth(cfg.JWTSecret))
+## Integration Rule Of Thumb
+When implementing backend changes:
+- update canonical contract docs first (`assessment-contract.md` and `api-contract.md`)
+- then update handler/validation code
+- then update frontend consumers if output contract changed
 
-usersHandler.Register(protected.Group("/users/me"))
-assessmentsHandler.Register(protected.Group("/users/me/assessments"))
-exportHandler.Register(protected.Group("/users/me/export"))
-insightsHandler.Register(protected.Group("/insights"))
-analyticsHandler.Register(protected.Group("/analytics"))
-```
-
-### 2. Handlers (`internal/http/handlers/`)
-
-Each handler follows this pattern:
-
-```go
-type UsersHandler struct {
-    store store.Store
-    cache *cache.Cache
-}
-
-func NewUsersHandler(store store.Store, cache *cache.Cache) *UsersHandler {
-    return &UsersHandler{store: store, cache: cache}
-}
-
-func (h *UsersHandler) Register(rg *gin.RouterGroup) {
-    rg.GET("/profile", h.GetUserProfile)
-    rg.PUT("/profile", h.UpdateUserProfile)
-    rg.POST("/onboarding", h.CompleteOnboarding)
-}
-
-func (h *UsersHandler) GetUserProfile(c *gin.Context) {
-    claims, exists := c.Get("user")
-    if !exists {
-        ErrUnauthorized(c)
-        return
-    }
-    userClaims := claims.(middleware.UserClaims)
-    userID := userClaims.UserID
-    
-    user, err := h.store.Users().GetUserByID(c.Request.Context(), int32(userID))
-    // ...
-}
-```
-
-### 3. ML Integration (`internal/ml/http_predictor.go`)
-
-Backend calls ML server via HTTP:
-
-```go
-type HTTPPredictor struct {
-    client  *http.Client
-    url     string
-    version string
-    apiKey  string
-}
-
-func NewHTTPPredictor(url, version, apiKey string, timeout time.Duration) *HTTPPredictor {
-    return &HTTPPredictor{
-        client:  &http.Client{Timeout: timeout},
-        url:     url,
-        version: version,
-        apiKey:  apiKey,
-    }
-}
-
-func (p *HTTPPredictor) Predict(ctx context.Context, input models.Assessment) (string, int, error) {
-    body, _ := json.Marshal(input)
-    mlURL := p.url + "?model_type=ada"
-    req, _ := http.NewRequestWithContext(ctx, http.MethodPost, mlURL, bytes.NewReader(body))
-    req.Header.Set("Content-Type", "application/json")
-    if p.apiKey != "" {
-        req.Header.Set("X-API-Key", p.apiKey)
-    }
-    if p.version != "" {
-        req.Header.Set("X-Model-Version", p.version)
-    }
-    resp, err := p.client.Do(req)
-    // ...
-}
-```
-
-### 4. Database (SQLC)
-
-Queries are generated by SQLC into `backend/internal/store/sqlc/*.sql.go` files. Example queries:
-
-```sql
--- name: GetPatient :one
-SELECT * FROM patients WHERE id = $1 AND user_id = $2;
-
--- name: CreateAssessment :one
-INSERT INTO patient_assessments (...) VALUES (...) RETURNING *;
-```
-
-SQLC generates type-safe Go code automatically.
-
----
-
-## API Endpoints
-
-| Method | Path | Handler | Description |
-|--------|------|---------|-------------|
-| GET | /healthz | health | Health check |
-| GET | /livez | health | Liveness probe |
-| POST | /auth/register | authHandler | Create account |
-| POST | /auth/login | authHandler | Get JWT token |
-| POST | /auth/refresh | authHandler | Refresh token |
-| POST | /auth/logout | authHandler | Logout (invalidate token) |
-| GET | /users/me/profile | usersHandler | Get current user profile |
-| PUT | /users/me/profile | usersHandler | Update user profile |
-| POST | /users/me/onboarding | usersHandler | Complete onboarding flow |
-| GET | /users/me/consent | usersHandler | Get consent settings |
-| PUT | /users/me/consent | usersHandler | Update consent settings |
-| GET | /users/me/trends | usersHandler | Get assessment trends |
-| DELETE | /users/me/account | usersHandler | Delete user account |
-| GET | /users/me/assessments | assessmentsHandler | List user assessments |
-| POST | /users/me/assessments | assessmentsHandler | Create assessment (calls ML) |
-| GET | /users/me/assessments/:assessmentID | assessmentsHandler | Get single assessment |
-| PUT | /users/me/assessments/:assessmentID | assessmentsHandler | Update assessment |
-| DELETE | /users/me/assessments/:assessmentID | assessmentsHandler | Delete assessment |
-| GET | /users/me/export/pdf | exportHandler | Export PDF health report |
-| GET | /insights/cluster-distribution | insightsHandler | Risk cluster data |
-| GET | /insights/biomarker-trends | insightsHandler | Biomarker trends over time |
-| GET | /insights/cohort | cohortHandler | Cohort analysis stats |
-| GET | /analytics/summary | analyticsHandler | Dashboard stats |
-| GET | /clinics | clinicDashboardHandler | List user's clinics |
-| GET | /clinics/:id/dashboard | clinicDashboardHandler | Clinic-level dashboard stats |
-
-### Admin Endpoints (Admin Role Required)
-
-| Method | Path | Handler | Description |
-|--------|------|---------|-------------|
-| GET | /admin/events/stream | authEventHandler | SSE stream for auth events |
-| GET | /admin/dashboard | adminDashboardHandler | System-wide stats |
-| GET | /admin/clinics | adminDashboardHandler | List all clinics |
-| GET | /admin/clinics/comparison | adminDashboardHandler | Clinic comparison |
-| GET | /admin/users | adminUsersHandler | List users |
-| POST | /admin/users | adminUsersHandler | Create user |
-| GET | /admin/users/:id | adminUsersHandler | Get user |
-| PUT | /admin/users/:id | adminUsersHandler | Update user |
-| DELETE | /admin/users/:id | adminUsersHandler | Deactivate user |
-| POST | /admin/users/:id/activate | adminUsersHandler | Activate user |
-| GET | /admin/audit | adminAuditHandler | Audit logs |
-| GET | /admin/models | adminModelsHandler | ML model history |
-| GET | /admin/models/active | adminModelsHandler | Get active model |
-
-Admin routes use `middleware.RoleRequired("admin")` for access control.
-
----
-
-## Authentication Flow
-
-1. **Login:** `POST /auth/login` → Returns `access_token` (15min) + `refresh_token` (7d)
-2. **Use Token:** All protected routes require `Authorization: Bearer <token>`
-3. **Refresh:** When access token expires, `POST /auth/refresh` with refresh token
-4. **Middleware:** `middleware.Auth()` validates JWT and extracts `user_id`
-
----
-
-## Testing
-
-The backend includes comprehensive unit tests for core packages:
-
-| Package | Test File | Coverage |
-|---------|-----------|----------|
-| `config/` | `config_test.go` | Environment loading, defaults |
-| `internal/ml/` | `mock_test.go`, `validation_test.go` | Predictor, biomarker validation |
-| `middleware/` | `auth_test.go`, `ratelimit_test.go`, `rbac_test.go`, `security_test.go`, `audit_test.go` | JWT, rate limiting, RBAC, security headers, audit logging |
-| `handlers/` | `assessments_test.go`, `router_test.go`, `users_test.go`, `auth_test.go`, `insights_test.go`, `analytics_test.go`, `export_test.go`, `cohort_test.go`, `clinic_dashboard_test.go`, `admin_users_test.go`, `admin_dashboard_test.go`, `admin_audit_test.go`, `admin_models_test.go`, `auth_events_test.go`, `health_test.go` | HTTP handlers, validation, API endpoints |
-| `handlers/` | `error_response_test.go`, `utils_test.go`, `analytics_load_test.go`, `p99_load_test.go`, `pool_exhaustion_test.go` | Error handling, utilities, load testing |
-
-### Running Tests
-
-```bash
-# Run all tests
-go test ./...
-
-# Run with verbose output
-go test ./... -v
-
-# Run specific package
-go test ./internal/ml/...
-
-# Run with coverage
-go test ./... -cover
-```
-
----
-
-## Running
-
-```bash
-cd backend
-
-# Development
-go run ./cmd/server
-
-# Build
-go build -o server ./cmd/server
-
-# Run migrations
-go run ./cmd/migrate up
-```
+## Related Docs
+- `../03-ml/assessment-contract.md`
+- `../03-ml/api-contract.md`
+- `../03-ml/feature-documentation.md`
+- `../03-ml/methodology.md`
+- `../06-operations/deployment.md`

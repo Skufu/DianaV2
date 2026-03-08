@@ -352,25 +352,26 @@ func (q *Queries) GetAssessment(ctx context.Context, id int32) (GetAssessmentRow
 
 const getAssessmentTrendByUser = `-- name: GetAssessmentTrendByUser :many
 SELECT id, created_at, risk_score, cluster, hba1c, bmi, fbs, 
-    triglycerides, ldl, hdl, systolic, diastolic
+    triglycerides, ldl, hdl, systolic, diastolic, waist_circumference
 FROM assessments
 WHERE user_id = $1
 ORDER BY created_at ASC
 `
 
 type GetAssessmentTrendByUserRow struct {
-	ID            int32              `json:"id"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
-	RiskScore     pgtype.Int4        `json:"risk_score"`
-	Cluster       pgtype.Text        `json:"cluster"`
-	Hba1c         pgtype.Numeric     `json:"hba1c"`
-	Bmi           pgtype.Numeric     `json:"bmi"`
-	Fbs           pgtype.Numeric     `json:"fbs"`
-	Triglycerides pgtype.Int4        `json:"triglycerides"`
-	Ldl           pgtype.Int4        `json:"ldl"`
-	Hdl           pgtype.Int4        `json:"hdl"`
-	Systolic      pgtype.Int4        `json:"systolic"`
-	Diastolic     pgtype.Int4        `json:"diastolic"`
+	ID                 int32              `json:"id"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	RiskScore          pgtype.Int4        `json:"risk_score"`
+	Cluster            pgtype.Text        `json:"cluster"`
+	Hba1c              pgtype.Numeric     `json:"hba1c"`
+	Bmi                pgtype.Numeric     `json:"bmi"`
+	Fbs                pgtype.Numeric     `json:"fbs"`
+	Triglycerides      pgtype.Int4        `json:"triglycerides"`
+	Ldl                pgtype.Int4        `json:"ldl"`
+	Hdl                pgtype.Int4        `json:"hdl"`
+	Systolic           pgtype.Int4        `json:"systolic"`
+	Diastolic          pgtype.Int4        `json:"diastolic"`
+	WaistCircumference pgtype.Numeric     `json:"waist_circumference"`
 }
 
 func (q *Queries) GetAssessmentTrendByUser(ctx context.Context, userID pgtype.Int4) ([]GetAssessmentTrendByUserRow, error) {
@@ -395,6 +396,7 @@ func (q *Queries) GetAssessmentTrendByUser(ctx context.Context, userID pgtype.In
 			&i.Hdl,
 			&i.Systolic,
 			&i.Diastolic,
+			&i.WaistCircumference,
 		); err != nil {
 			return nil, err
 		}

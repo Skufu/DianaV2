@@ -9,6 +9,8 @@ import { slideUp } from '../../utils/animations';
 const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = false }) => {
 	const [formData, setFormData] = useState({
 		age: '',
+		height: '',
+		weight: '',
 		bmi: '',
 		fbs: '',
 		hba1c: '',
@@ -80,6 +82,8 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 	const resetForm = () => {
 		setFormData({
 			age: '',
+			height: '',
+			weight: '',
 			bmi: '',
 			fbs: '',
 			hba1c: '',
@@ -102,6 +106,21 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 		const { name, value } = e.target;
 		setFormData(prev => {
 			const next = { ...prev, [name]: value };
+			
+			// Auto-calculate BMI when height or weight changes
+			if (name === 'height' || name === 'weight') {
+				const heightCm = name === 'height' ? value : prev.height;
+				const weightKg = name === 'weight' ? value : prev.weight;
+				
+				if (heightCm && weightKg) {
+					const heightM = parseFloat(heightCm) / 100;
+					const bmi = parseFloat(weightKg) / (heightM * heightM);
+					next.bmi = bmi.toFixed(1); // Round to 1 decimal place
+				} else {
+					next.bmi = '';
+				}
+			}
+			
 			if (name === 'model_type') {
 				if (value !== 'ada') {
 					next.fbs = '';
@@ -127,7 +146,7 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
     e.preventDefault();
     setError(null);
 
-		const requiredFields = ['age', 'bmi', 'triglycerides', 'ldl', 'hdl'];
+		const requiredFields = ['age', 'height', 'weight', 'triglycerides', 'ldl', 'hdl'];
 		if (formData.model_type === 'ada') {
 			requiredFields.push('fbs', 'hba1c');
 		}
@@ -148,6 +167,14 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
       setError('Age must be between 45-60 years for postmenopausal women. This application is designed for this specific population.');
       return;
     }
+	
+	// Validate BMI range after calculation
+	const bmi = parseFloat(formData.bmi);
+	if (!bmi || bmi < 15 || bmi > 60) {
+		setIsSubmitting(false);
+		setError('BMI must be between 15-60 kg/m². Please check your height and weight values.');
+		return;
+	}
 
 		const payload = {
 			age: age,
@@ -256,88 +283,153 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 				</div>
 			)}
           {/* Body Metrics Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* BMI Field */}
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-				<label htmlFor="bmi" className="block text-sm font-semibold text-gray-700 mb-1">
-					BMI (kg/m²) <span className="text-rose-500">*</span>
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Body Metrics</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              {/* Height Field */}
+              <motion.div
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.2 }}
+                className="col-span-1"
+              >
+				<label htmlFor="height" className="block text-xs md:text-sm font-semibold text-gray-700 mb-1">
+					Height (cm) <span className="text-rose-500">*</span>
 				</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Save size={18} />
-                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Save size={16} className="md:w-5 md:h-5" />
+                  </div>
 					<input
 						type="number"
+						id="height"
+						name="height"
+                      step="0.1"
+                      min="100"
+                      max="220"
+                      value={formData.height}
+                      onChange={handleChange}
+                      className="w-full pl-9 pr-2 md:pr-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      placeholder="160"
+                      required
+                    />
+                </div>
+              </motion.div>
+
+              {/* Weight Field */}
+              <motion.div
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.2 }}
+                className="col-span-1"
+              >
+				<label htmlFor="weight" className="block text-xs md:text-sm font-semibold text-gray-700 mb-1">
+					Weight (kg) <span className="text-rose-500">*</span>
+				</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Save size={16} className="md:w-5 md:h-5" />
+                  </div>
+					<input
+						type="number"
+						id="weight"
+						name="weight"
+                      step="0.1"
+                      min="30"
+                      max="200"
+                      value={formData.weight}
+                      onChange={handleChange}
+                      className="w-full pl-9 pr-2 md:pr-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      placeholder="65"
+                      required
+                    />
+                </div>
+              </motion.div>
+
+              {/* BMI Display (Auto-calculated) */}
+              <motion.div
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.2 }}
+                className="col-span-2 md:col-span-1"
+              >
+				<label htmlFor="bmi" className="block text-xs md:text-sm font-semibold text-gray-700 mb-1">
+					BMI (kg/m²) <span className="text-rose-500">*</span>
+				</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Save size={16} className="md:w-5 md:h-5" />
+                  </div>
+					<input
+						type="text"
 						id="bmi"
 						name="bmi"
-                  step="0.1"
-                  min="15"
-                  max="60"
-                  value={formData.bmi}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="Enter BMI (15.0 - 60.0)"
-                  required
-                />
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-            >
-				<label htmlFor="age" className="block text-sm font-semibold text-gray-700 mb-1">
-					Age (years) <span className="text-rose-500">*</span>
-				</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Activity size={18} />
+                      value={formData.bmi || '—'}
+                      readOnly
+                      className={`w-full pl-9 pr-2 md:pr-3 py-2 md:py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none transition-all shadow-sm ${
+												formData.bmi ? 'text-slate-700 font-medium' : 'text-slate-400 italic'
+											}`}
+                      placeholder="Auto"
+                    />
                 </div>
+              </motion.div>
+
+              {/* Age Field */}
+              <motion.div
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.2 }}
+                className="col-span-2 md:col-span-1"
+              >
+				<label htmlFor="age" className="block text-xs md:text-sm font-semibold text-gray-700 mb-1">
+					Age <span className="text-rose-500">*</span>
+				</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Activity size={16} className="md:w-5 md:h-5" />
+                  </div>
 					<input
 						type="number"
 						id="age"
 						name="age"
-                  step="1"
-                  min="45"
-                  max="60"
-                  value={formData.age}
-                  onChange={handleChange}
-                  className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="Age 45-60 (postmenopausal)"
-                  required
-                />
-              </div>
-            </motion.div>
+                      step="1"
+                      min="45"
+                      max="60"
+                      value={formData.age}
+                      onChange={handleChange}
+                      className="w-full pl-9 pr-2 md:pr-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      placeholder="45-60"
+                      required
+                    />
+                </div>
+              </motion.div>
+            </div>
+						<p className="text-xs text-slate-500 mt-2 text-center md:text-left">
+							💡 BMI auto-calculated from height & weight
+						</p>
           </div>
 
           {/* Lipid Profile Section */}
-			<div>
-				<h3 className="text-sm font-semibold text-gray-700 mb-3">Lipid Profile</h3>
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div>
+						<h3 className="text-sm font-semibold text-gray-700 mb-3">Lipid Profile</h3>
+						<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
               {/* Triglycerides Field */}
               <motion.div
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-				<label htmlFor="triglycerides" className="block text-sm font-medium text-gray-600 mb-1">
+				<label htmlFor="triglycerides" className="block text-xs md:text-sm font-medium text-gray-600 mb-1">
 					Triglycerides (mg/dL) <span className="text-rose-500">*</span>
 				</label>
 					<input
 						type="number"
 						id="triglycerides"
 						name="triglycerides"
-                  step="0.1"
-                  min="30"
-                  max="500"
-                  value={formData.triglycerides}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="30 - 500"
-                  required
-                />
+                      step="0.1"
+                      min="30"
+                      max="500"
+                      value={formData.triglycerides}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      placeholder="30-500"
+                      required
+                    />
               </motion.div>
 
               {/* LDL Field */}
@@ -345,22 +437,22 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-				<label htmlFor="ldl" className="block text-sm font-medium text-gray-600 mb-1">
-					LDL Cholesterol (mg/dL) <span className="text-rose-500">*</span>
+				<label htmlFor="ldl" className="block text-xs md:text-sm font-medium text-gray-600 mb-1">
+					LDL (mg/dL) <span className="text-rose-500">*</span>
 				</label>
 					<input
 						type="number"
 						id="ldl"
 						name="ldl"
-                  step="0.1"
-                  min="30"
-                  max="300"
-                  value={formData.ldl}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="30 - 300"
-                  required
-                />
+                      step="0.1"
+                      min="30"
+                      max="300"
+                      value={formData.ldl}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      placeholder="30-300"
+                      required
+                    />
               </motion.div>
 
               {/* HDL Field */}
@@ -368,66 +460,66 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
                 whileHover={{ y: -2 }}
                 transition={{ duration: 0.2 }}
               >
-				<label htmlFor="hdl" className="block text-sm font-medium text-gray-600 mb-1">
-					HDL Cholesterol (mg/dL) <span className="text-rose-500">*</span>
+				<label htmlFor="hdl" className="block text-xs md:text-sm font-medium text-gray-600 mb-1">
+					HDL (mg/dL) <span className="text-rose-500">*</span>
 				</label>
 					<input
 						type="number"
 						id="hdl"
 						name="hdl"
-                  step="0.1"
-                  min="20"
-                  max="150"
-                  value={formData.hdl}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="20 - 150"
-                  required
-                />
+                      step="0.1"
+                      min="20"
+                      max="150"
+                      value={formData.hdl}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      placeholder="20-150"
+                      required
+                    />
               </motion.div>
-			</div>
+					</div>
 
-			<div>
-				<h3 className="text-sm font-semibold text-gray-700 mb-3">Enrichment (Optional)</h3>
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
-						<label htmlFor="waist_circumference" className="block text-sm font-medium text-gray-600 mb-1">
-							Waist Circumference (cm)
-						</label>
-						<input
-							type="number"
-							id="waist_circumference"
-							name="waist_circumference"
-							step="0.1"
-							min="40"
-							max="200"
-							value={formData.waist_circumference}
-							onChange={handleChange}
-							className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-							placeholder="e.g. 88.0"
-						/>
-            </motion.div>
+					<div>
+						<h3 className="text-sm font-semibold text-gray-700 mb-3">Enrichment (Optional)</h3>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+							<motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+								<label htmlFor="waist_circumference" className="block text-xs md:text-sm font-medium text-gray-600 mb-1">
+									Waist Circumference (cm)
+								</label>
+								<input
+									type="number"
+									id="waist_circumference"
+									name="waist_circumference"
+									step="0.1"
+									min="40"
+									max="200"
+									value={formData.waist_circumference}
+									onChange={handleChange}
+									className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+									placeholder="e.g. 88"
+								/>
+              </motion.div>
 
-					{formData.model_type !== 'binary_v2_no_bp' && (
-						<motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
-							<label htmlFor="family_history_diabetes" className="block text-sm font-medium text-gray-600 mb-1">
-								Family History of Diabetes
-							</label>
-							<select
-								id="family_history_diabetes"
-								name="family_history_diabetes"
-								value={formData.family_history_diabetes}
-								onChange={handleChange}
-								className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-							>
-								<option value="">Unknown</option>
-								<option value="yes">Yes</option>
-								<option value="no">No</option>
-							</select>
-						</motion.div>
-					)}
-				</div>
-			</div>
+							{formData.model_type !== 'binary_v2_no_bp' && (
+								<motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
+									<label htmlFor="family_history_diabetes" className="block text-xs md:text-sm font-medium text-gray-600 mb-1">
+										Family History
+									</label>
+									<select
+										id="family_history_diabetes"
+										name="family_history_diabetes"
+										value={formData.family_history_diabetes}
+										onChange={handleChange}
+										className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+									>
+										<option value="">Unknown</option>
+										<option value="yes">Yes</option>
+										<option value="no">No</option>
+									</select>
+								</motion.div>
+							)}
+						</div>
+					</div>
 			{formData.model_type === 'binary_v2_bp' && (
 				<div>
 					<h3 className="text-sm font-semibold text-gray-700 mb-3">Blood Pressure</h3>

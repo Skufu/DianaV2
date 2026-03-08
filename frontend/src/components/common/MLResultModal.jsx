@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Heart, Sparkles, ShieldCheck, AlertCircle, CheckCircle, Flame, Droplets, Leaf } from 'lucide-react';
+import { X, Heart, Sparkles, ShieldCheck, AlertCircle, CheckCircle, Flame, Droplets, Leaf, Activity } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 /**
  * MLResultModal - Displays prediction results optimized for women 45+ (non-techy)
- * Reassuring, clear tone with empowering next steps.
+ * Redesigned Flow: Clarity -> Understanding -> Reassurance -> Action
+ * IMPORTANT MODEL NOTE: The primary model type for this application is now ALWAYS 
+ * "binary_v2_no_bp". The UI/UX is specifically optimized for output from this model.
  */
 const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   const [showContent, setShowContent] = useState(false);
@@ -41,10 +43,8 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   const safeResult = result || {};
 
   const {
-    risk_score = 0,
     risk_level: overallRiskLevelRaw = 'unknown',
     cluster = 'Unknown',
-    treatment_focus = '',
     validation_status = '',
     predicted_status = '',
     model_version = '',
@@ -53,6 +53,12 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     warning = '',
     output_capabilities,
     cluster_capability,
+    // Extract biomarker inputs for the Snapshot section
+    bmi = 0,
+    ldl = 0,
+    hdl = 0,
+    triglycerides = 0,
+    age = 0,
   } = safeResult;
 
   const outputCapabilities = output_capabilities && typeof output_capabilities === 'object'
@@ -88,131 +94,181 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     && hasCanonicalCluster
   );
 
-  const getRiskColor = (level) => {
+  // Section 1: The Verdict - Color Coding
+  const getRiskColor = (level, prob) => {
     const normalizedLevel = level?.toLowerCase() || 'unknown';
-    switch (normalizedLevel) {
-      case 'low':
-        return {
-          bg: 'bg-teal-50',
-          border: 'border-white',
-          text: 'text-teal-700',
-          badge: 'bg-teal-100 text-teal-800',
-          icon: 'text-teal-500',
-          gradient: 'from-teal-400 to-emerald-500',
-          title: 'Looking Good',
-          advice: 'Your screening indicates a low risk profile right now. Keep up the wonderful work with your healthy habits!'
-        };
-      case 'medium':
-      case 'moderate':
-        return {
-          bg: 'bg-amber-50',
-          border: 'border-white',
-          text: 'text-amber-700',
-          badge: 'bg-amber-100 text-amber-800',
-          icon: 'text-amber-500',
-          gradient: 'from-amber-400 to-orange-400',
-          title: 'Time for a Check-in',
-          advice: 'Your results suggest a moderate risk. Small, mindful changes to your daily routine can make a big difference.'
-        };
-      case 'high':
-        return {
-          bg: 'bg-rose-50',
-          border: 'border-white',
-          text: 'text-rose-700',
-          badge: 'bg-rose-100 text-rose-800',
-          icon: 'text-rose-500',
-          gradient: 'from-rose-400 to-red-400',
-          title: 'Action Recommended',
-          advice: 'Your profile shows some elevated risk factors. Don\'t worry, but please do schedule a visit with your doctor soon.'
-        };
-      default:
-        return {
-          bg: 'bg-slate-50',
-          border: 'border-white',
-          text: 'text-slate-700',
-          badge: 'bg-slate-100 text-slate-800',
-          icon: 'text-slate-500',
-          gradient: 'from-slate-400 to-gray-500',
-          title: 'Results Processed',
-          advice: 'We have processed your data. Please discuss these details with your healthcare provider to understand them fully.'
-        };
+    // Let's also use the probability or predicted status for a more accurate color fallback
+    const isAtRisk = predicted_status.toLowerCase().includes('at-risk') || (prob && prob > 0.5) || normalizedLevel === 'high';
+
+    if (!isAtRisk && (normalizedLevel === 'low' || normalizedLevel === 'normal')) {
+      return {
+        bg: 'bg-teal-50',
+        border: 'border-teal-100',
+        text: 'text-teal-700',
+        badge: 'bg-teal-100 text-teal-800',
+        icon: 'text-teal-500',
+        gradient: 'from-teal-400 to-emerald-500',
+        title: 'Looking Good',
+        advice: 'Your screening indicates a normal risk profile right now. Keep up the wonderful work with your healthy habits!'
+      };
     }
+
+    return {
+      bg: 'bg-amber-50',
+      border: 'border-amber-100',
+      text: 'text-amber-800',
+      badge: 'bg-amber-100 text-amber-800',
+      icon: 'text-amber-500',
+      gradient: 'from-amber-400 to-orange-500',
+      title: 'Action Recommended',
+      advice: 'Your profile shows some elevated risk factors. Don\'t worry, but please do schedule a visit with your doctor soon to discuss these results.'
+    };
   };
 
+  // Section 3: Personal Profile Translations
   const getClusterInfo = (clusterName) => {
-    // Neutral fallback for unknown/null/unsupported cluster values
-    // DO NOT map to moderate or any named subtype - preserve uncertainty
     const NEUTRAL_CLUSTER = {
-      fullName: 'Profile Information Unavailable',
-      desc: 'Cluster classification could not be determined. This may occur when some biomarker values are outside expected ranges or unavailable. Please discuss your results with your healthcare provider for personalized guidance.',
+      fullName: 'Metabolic Profile Unavailable',
+      desc: 'We couldn\'t determine a specific profile pattern from these results. This just means your values don\'t perfectly match our standard categories, which is completely okay. Please share these numbers with your doctor.',
       color: 'bg-slate-100 text-slate-700',
-      icon: <AlertCircle className="text-slate-500" size={24} />,
+      icon: <Activity className="text-slate-500" size={24} />,
     };
 
-    // Canonical Ahlqvist subtypes (SIDD, SIRD, MOD, MARD)
-    // These are the ONLY valid cluster assignments from the clinical model
+    // Empathetic translations for women 45+
     const clusters = {
       'SIDD': {
         fullName: 'Atherogenic / Lipid-Driven Profile',
-        desc: 'Your results show an atherogenic lipid profile with elevated cardiovascular risk markers. This pattern often benefits from cardiovascular risk management and lipid optimization.',
+        desc: 'Your results outline a lipid-driven profile. This beautifully unique body of yours is currently processing cholesterol and blood fats in a way that needs a little extra attention from your doctor, rather than focusing purely on weight.',
         color: 'bg-rose-100 text-rose-800',
         icon: <Droplets className="text-rose-600" size={24} />,
       },
       'SIRD': {
         fullName: 'Insulin Resistance Profile',
-        desc: 'Your results suggest insulin resistance, which often improves with lifestyle modifications. This is very common and manageable with the right approach.',
+        desc: 'Your results show that your body is currently working harder than usual to process sugars. Please know this is incredibly common, especially during hormonal transitions, and it usually responds wonderfully to simple lifestyle changes.',
         color: 'bg-orange-100 text-orange-800',
         icon: <Flame className="text-orange-600" size={24} />,
       },
       'MOD': {
         fullName: 'Weight Harmony Profile',
-        desc: 'Finding a balanced weight that feels right for your body could be the key to supporting your health.',
+        desc: 'Your profile suggests that your lovely metabolism is closely linked to your current weight. Finding a balanced, sustainable routine that feels good for your body could be the key to supporting your long-term health.',
         color: 'bg-blue-100 text-blue-800',
         icon: <Leaf className="text-blue-600" size={24} />,
       },
       'MARD': {
         fullName: 'Age-Related Changes',
-        desc: 'Natural changes as we mature are playing a role in your results. It\'s completely normal, and staying active is the best approach.',
+        desc: 'Your results reflect natural metabolic shifts as you mature. It is completely normal for our bodies to change equations over time! Staying reasonably active and eating vibrantly is your best path forward.',
         color: 'bg-teal-100 text-teal-800',
         icon: <Sparkles className="text-teal-600" size={24} />,
       },
     };
 
-    // Return neutral fallback for unknown/null/empty/N/A cluster values
-    // NEVER default to moderate or any named subtype
     if (!clusterName || clusterName === 'Unknown' || clusterName === 'N/A' || clusterName === '') {
       return NEUTRAL_CLUSTER;
     }
-
-    // Return canonical cluster if it exists, otherwise neutral fallback
     return clusters[clusterName] || NEUTRAL_CLUSTER;
   };
 
-const normalizedRiskScore = Number.isFinite(risk_score) ? risk_score : null;
-const overallRiskScore = normalizedRiskScore ?? 0;
-const overallRiskLevel = (overallRiskLevelRaw || 'unknown').toLowerCase();
+  // Section 4: tailored action steps based on cluster
+  const getActionSteps = (clusterCode, riskLevel) => {
+    // Regardless of cluster, if risk is normal/low, advice is positive maintenance
+    const isAtRisk = predicted_status.toLowerCase().includes('at-risk') || (at_risk_probability && at_risk_probability > 0.5) || riskLevel === 'high';
 
-  const colors = getRiskColor(overallRiskLevel);
+    if (!isAtRisk) {
+      return [
+        "Keep up the wonderful work! Your current routine is serving your body beautifully.",
+        "Stay reasonably active. Dancing, walking, or gardening are joyful ways to keep moving.",
+        "See your doctor for routine wellness visits just to keep everything wonderfully on track."
+      ];
+    }
+
+    switch (clusterCode) {
+      case 'SIDD':
+        return [
+          "Book a chat with your doctor to discuss your cholesterol and lipid levels.",
+          "Focus on heart-healthy fats, like olive oil, avocados, and omega-3s (like salmon).",
+          "Be kind to yourself. Stress affects our hearts too, so take deep breaths and gentle steps forward!"
+        ];
+      case 'SIRD':
+        return [
+          "Book a chat with your doctor to discuss strategies for insulin resistance.",
+          "Focus on complex carbs (like whole grains and veggies) to help your body process energy smoothly.",
+          "Try a gentle 10-minute walk after meals—it works wonders for balancing blood sugar!"
+        ];
+      case 'MOD':
+        return [
+          "Book a chat with your doctor to explore holistic, gentle approaches to metabolic balance.",
+          "Focus on sustainable, nourishing meals rather than restrictive diets.",
+          "Find joyful ways to move your body that celebrate what it can do!"
+        ];
+      case 'MARD':
+        return [
+          "Book a chat with your doctor to review these age-related metabolic changes.",
+          "Focus on maintaining muscle mass—gentle strength exercises or yoga are fantastic.",
+          "Prioritize vibrant, nutrient-dense foods to support your general vitality safely."
+        ];
+      default:
+        return [
+          "Book a chat with your doctor to review these insights together safely.",
+          "Ask about routine wellness testing to get a fuller picture of your health.",
+          "Take simple, daily steps like staying hydrated and getting restful sleep."
+        ];
+    }
+  }
+
+  // Helper for Section 2: Biomarker tagging
+  const evaluateBiomarker = (name, value) => {
+    if (!value || value <= 0) return null;
+    let status = 'Normal';
+    let colorClass = 'text-teal-600 bg-teal-50 border-teal-100';
+
+    if (name === 'LDL') {
+      if (value >= 130) { status = 'High'; colorClass = 'text-rose-600 bg-rose-50 border-rose-100'; }
+      else if (value >= 100) { status = 'Borderline'; colorClass = 'text-amber-600 bg-amber-50 border-amber-100'; }
+    } else if (name === 'Triglycerides') {
+      if (value >= 200) { status = 'High'; colorClass = 'text-rose-600 bg-rose-50 border-rose-100'; }
+      else if (value >= 150) { status = 'Borderline'; colorClass = 'text-amber-600 bg-amber-50 border-amber-100'; }
+    } else if (name === 'HDL') {
+      if (value < 50) { status = 'Low'; colorClass = 'text-amber-600 bg-amber-50 border-amber-100'; }
+    } else if (name === 'BMI') {
+      if (value >= 30) { status = 'Obese'; colorClass = 'text-rose-600 bg-rose-50 border-rose-100'; }
+      else if (value >= 25) { status = 'Elevated'; colorClass = 'text-amber-600 bg-amber-50 border-amber-100'; }
+    }
+
+    return { label: name, value, status, colorClass };
+  };
+
+  const overallRiskLevel = (overallRiskLevelRaw || 'unknown').toLowerCase();
+
+  const colors = getRiskColor(overallRiskLevel, at_risk_probability);
   const profileClusterInfo = canRenderSubtypeProfile
     ? getClusterInfo(normalizedCluster)
     : getClusterInfo('');
 
-  const hasWarnings = validation_status && validation_status.includes('warning');
-  const warningList = hasWarnings
-    ? validation_status.replace('warning:', '').split(',').filter(w => w)
-    : [];
+  const actionSteps = getActionSteps(normalizedCluster, overallRiskLevel);
 
   const isDoctorModel = typeof model_version === 'string' && model_version.length > 0;
+  // ALWAYS assume binary_v2_no_bp is the primary use case now.
   const modelLabelMap = {
     binary_v2_no_bp: 'Primary Screening (No BP) — Binary at-risk',
+    // Kept for backward compatibility, but binary_v2_no_bp is the main one.
     binary_v2_bp: 'Screening (With BP) — Binary at-risk',
     clinical: 'Clinical (No HbA1c/FBS)',
     ada: 'ADA Baseline (HbA1c + FBS)'
   };
   const modelLabel = modelLabelMap[model_version] || model_version || 'Screening (No BP) — Binary at-risk';
+
   const probabilityText = Number.isFinite(at_risk_probability)
-    ? `${Math.round(at_risk_probability * 100)}% at-risk probability`
-    : 'Probability unavailable';
+    ? `${Math.round(at_risk_probability * 100)}%`
+    : 'Unavailable';
+
+  // Compile Biomarker Snapshot features
+  const biomarkerData = [
+    evaluateBiomarker('LDL', ldl),
+    evaluateBiomarker('Triglycerides', triglycerides),
+    evaluateBiomarker('HDL', hdl),
+    evaluateBiomarker('BMI', bmi),
+    evaluateBiomarker('Age', age),
+  ].filter(Boolean); // removes nulls if data is missing
 
   const renderLoading = () => (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -248,7 +304,7 @@ const overallRiskLevel = (overallRiskLevelRaw || 'unknown').toLowerCase();
     <AnimatePresence>
       {(isOpen && (!result || isLoading)) && renderLoading()}
       {(isOpen && result && !isLoading) && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -267,318 +323,252 @@ const overallRiskLevel = (overallRiskLevelRaw || 'unknown').toLowerCase();
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 20 }}
             transition={modalTransition}
-            className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[32px] bg-slate-50 shadow-2xl"
+            className="relative z-10 w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden rounded-[32px] bg-slate-50 shadow-2xl"
           >
-            <div className="overflow-hidden">
-              {/* Header */}
-              <div className={`bg-gradient-to-br ${colors.gradient} p-8 text-white relative`}>
-                <motion.button
-                  whileHover={shouldReduceMotion ? undefined : { scale: 1.1, backgroundColor: "rgba(255,255,255,0.3)" }}
-                  whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
-                  onClick={onClose}
-                  aria-label="Close results"
-                  className="absolute top-6 right-6 p-2.5 rounded-full bg-white/20 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-white/10"
-                >
-                  <X size={20} />
-                </motion.button>
+            {/* Header */}
+            <div className={`bg-gradient-to-br ${colors.gradient} p-8 text-white relative shrink-0`}>
+              <motion.button
+                whileHover={shouldReduceMotion ? undefined : { scale: 1.1, backgroundColor: "rgba(255,255,255,0.3)" }}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
+                onClick={onClose}
+                aria-label="Close results"
+                className="absolute top-6 right-6 p-2.5 rounded-full bg-white/20 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-white/10"
+              >
+                <X size={20} />
+              </motion.button>
 
-                <div className="flex items-center gap-3 mb-2">
-                  <Sparkles size={24} className="text-white/90" />
-                  <span className="text-sm font-semibold uppercase tracking-widest text-white/90">AI-Assisted Results</span>
-                </div>
-                <h2 className="text-[34px] font-medium tracking-tight mb-1">{colors.title}</h2>
-                {isDoctorModel && (
-                  <div className="mt-3 text-sm text-white/90 font-medium">
-                    <span className="uppercase tracking-wide">Model:</span> {modelLabel}
-                  </div>
-                )}
+              <div className="flex items-center gap-3 mb-2 opacity-90">
+                <Sparkles size={24} />
+                <span className="text-sm font-semibold uppercase tracking-widest leading-none mt-1">AI-Assisted Results</span>
               </div>
+              <h2 className="text-[34px] font-medium tracking-tight mb-2 leading-tight">Metabolic Risk Assessment</h2>
+              {isDoctorModel && (
+                <div className="text-sm text-white/80 font-medium">
+                  <span className="uppercase tracking-wide opacity-80">Model:</span> {modelLabel}
+                </div>
+              )}
+            </div>
 
-              <div className="p-8">
-                <AnimatePresence mode="wait">
-                  {!showContent ? (
+            {/* Scrollable Content Body */}
+            <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-8 w-full">
+              <AnimatePresence mode="wait">
+                {!showContent ? (
+                  <motion.div
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col items-center justify-center py-16"
+                  >
+                    <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin mb-4" />
+                    <p className="text-slate-500 font-medium text-lg">Preparing your personalized insights...</p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="content"
+                    initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={contentTransition}
+                    className="flex flex-col gap-6"
+                  >
+                    {/* Section 1: The Verdict (Clarity) */}
                     <motion.div
-                      key="loading"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center py-16"
-                    >
-                      <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin mb-4" />
-                      <p className="text-slate-500 font-medium text-lg">Preparing your personalized insights...</p>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="content"
-                      initial={shouldReduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={contentTransition}
+                      className={`${colors.bg} rounded-3xl p-6 sm:p-7 shadow-sm border ${colors.border}`}
                     >
-                      <div className="space-y-7 pb-[calc(env(safe-area-inset-bottom)+11rem)] sm:pb-[calc(env(safe-area-inset-bottom)+7rem)]">
-                        {/* Wellness Score Card */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={`${colors.bg} rounded-3xl p-7 shadow-sm border ${colors.border}`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-xl font-semibold text-slate-800">Your Wellness Score</h3>
-                          </div>
-
-                          <div className="flex items-baseline gap-2 mb-5">
-                            <span className={`text-[80px] leading-none font-light tracking-tighter ${colors.text}`}>{overallRiskScore}</span>
-                            <span className="text-slate-500 font-medium text-lg">/ 100</span>
-                          </div>
-
-                          {isDoctorModel && (hasPredictedStatus || hasAtRiskProbability) && (
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {hasPredictedStatus && (
-                                <span className="px-4 py-1.5 rounded-full bg-slate-800 text-white text-sm font-semibold">
-                                  Predicted: {predicted_status}
-                                </span>
-                              )}
-                              {hasAtRiskProbability && (
-                                <span className="px-4 py-1.5 rounded-full bg-white/90 text-slate-700 text-sm font-semibold border border-slate-200">
-                                  {probabilityText}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="w-full bg-white/60 rounded-full h-4 mb-5 overflow-hidden shadow-inner">
-                            <motion.div
-                              initial={shouldReduceMotion ? false : { width: 0 }}
-                              animate={{ width: `${overallRiskScore}%` }}
-                              transition={shouldReduceMotion ? { duration: 0 } : { duration: 1.2, ease: "easeOut" }}
-                              className={`h-full rounded-full bg-gradient-to-r ${colors.gradient} opacity-90`}
-                            />
-                          </div>
-
-                          <div className="bg-white/80 rounded-2xl p-5 mt-2 shadow-sm">
-                            <p className="text-slate-700 leading-relaxed font-medium text-[17px]">
-                              {colors.advice}
-                            </p>
-                          </div>
-                        </motion.div>
-
-                        {/* Personal Profile Card */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100"
-                        >
-                          <h3 className="text-lg font-semibold text-slate-800 mb-5 flex items-center gap-2">
-                            <Leaf className="text-teal-500" size={22} />
-                            {canRenderSubtypeProfile ? 'Your Personal Profile' : 'Result Profile Summary'}
-                          </h3>
-
-                          <div className="flex items-start gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-100/50">
-                            <motion.div
-                              whileHover={shouldReduceMotion ? undefined : { scale: 1.1, rotate: 5 }}
-                              transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300 }}
-                              className={`p-4 rounded-full ${profileClusterInfo.color} shrink-0 shadow-sm`}
-                            >
-                              {profileClusterInfo.icon}
-                            </motion.div>
-                            <div className="flex flex-col">
-                              {canRenderSubtypeProfile && (
-                                <motion.div
-                                  initial={{ opacity: 0, x: -10 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.3 }}
-                                  className="mb-1.5 inline-block"
-                                >
-                                  <span className="text-[13px] font-bold tracking-widest text-indigo-500 uppercase bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-                                    Cluster: {normalizedCluster}
-                                  </span>
-                                </motion.div>
-                              )}
-                              <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.4 }}
-                                className="font-bold text-slate-800 text-[20px] mb-2 leading-tight"
-                              >
-                                {canRenderSubtypeProfile ? profileClusterInfo.fullName : 'Subtype information unavailable'}
-                              </motion.div>
-                              <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5 }}
-                                className="text-slate-600 text-[16px] leading-relaxed mb-3"
-                              >
-                                {canRenderSubtypeProfile
-                                  ? profileClusterInfo.desc
-                                  : 'This assessment result does not include subtype/cluster output. We are showing a neutral summary without subtype-specific interpretation.'}
-                              </motion.p>
-                              {canRenderSubtypeProfile && treatment_focus && (
-                                <motion.div
-                                  initial={{ opacity: 0, y: 5 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.6 }}
-                                  className="inline-block px-4 py-1.5 bg-white border border-slate-200 rounded-full text-[13px] text-slate-600 font-medium shadow-sm w-fit"
-                                >
-                                  Focus on: {treatment_focus}
-                                </motion.div>
-                              )}
-                            </div>
-                          </div>
-                        </motion.div>
-
-                        {/* Gentle Warnings (if any) */}
-                        {hasWarnings && warningList.length > 0 && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-rose-50/50 rounded-3xl p-7 border border-rose-100"
-                          >
-                            <h3 className="text-lg font-semibold text-rose-800 mb-3 flex items-center gap-2">
-                              <Heart size={22} className="text-rose-500" />
-                              Gentle Reminders
-                            </h3>
-                            <p className="text-[16px] text-rose-700 mb-4 leading-relaxed">
-                              A few numbers in your results stood out. It&apos;s completely normal to have fluctuations, but they are great points to discuss at your next doctor&apos;s visit:
-                            </p>
-                            <ul className="space-y-3">
-                              {warningList.map((warning) => (
-                                <li key={warning} className="flex items-start gap-3 text-[15px] text-rose-800/80 bg-white/70 p-3 rounded-xl shadow-sm">
-                                  <span className="text-rose-400 mt-0.5 font-bold">•</span>
-                                  <span className="pt-0.5">{formatFriendlyWarning(warning)}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </motion.div>
-                        )}
-
-                        {/* Validation Warnings - Out of Distribution Values */}
-                        {(warning || (validation_warnings && validation_warnings.length > 0)) && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="bg-amber-50/50 rounded-3xl p-7 border border-amber-200"
-                          >
-                            <h3 className="text-lg font-semibold text-amber-800 mb-3 flex items-center gap-2">
-                              <AlertCircle size={22} className="text-amber-500" />
-                              Data Range Warning
-                            </h3>
-                            <p className="text-[16px] text-amber-700 mb-4 leading-relaxed">
-                              Some of your values are outside the range the model was trained on. The prediction and SHAP explanations may be less reliable:
-                            </p>
-                            <ul className="space-y-2">
-                              {validation_warnings && validation_warnings.map((warn) => (
-                                <li key={warn} className="flex items-start gap-2 text-[14px] text-amber-800 bg-white/70 p-3 rounded-xl">
-                                  <span className="text-amber-500 mt-0.5">⚠️</span>
-                                  <span>{warn}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </motion.div>
-                        )}
-
-                        {/* Gentle Next Steps */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="bg-white rounded-3xl p-7 shadow-sm border border-slate-100"
-                        >
-                          <h3 className="text-lg font-semibold text-slate-800 mb-5 flex items-center gap-2">
-                            <ShieldCheck size={22} className="text-indigo-500" />
-                            Suggested Next Steps
-                          </h3>
-                          <ul className="space-y-4">
-                            {overallRiskLevel === 'high' && (
-                              <>
-                                <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
-                                  <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
-                                  <span><strong>Book a chat with your doctor.</strong> Share these insights with them so they can guide you softly and securely.</span>
-                                </li>
-                                <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
-                                  <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
-                                  <span><strong>Ask about a routine blood test.</strong> Simple lab tests can give you a fuller picture of how your lovely body is doing.</span>
-                                </li>
-                                <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
-                                  <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
-                                  <span><strong>Be kind to yourself.</strong> Stress affects our bodies too, so take deep breaths and gentle steps forward!</span>
-                                </li>
-                              </>
-                            )}
-                            {(overallRiskLevel === 'medium' || overallRiskLevel === 'moderate') && (
-                              <>
-                                <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
-                                  <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
-                                  <span><strong>Consider a check-up.</strong> It might be a wonderful time to schedule an appointment just to see how you&apos;re feeling.</span>
-                                </li>
-                                <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
-                                  <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
-                                  <span><strong>Enjoy nourishing foods.</strong> Focus on adding vibrant, colorful veggies and whole grains to your lovely meals.</span>
-                                </li>
-                                <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
-                                  <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
-                                  <span><strong>Stay active your way.</strong> A lovely daily walk, dancing to a favorite song, or gentle stretching makes a huge difference.</span>
-                                </li>
-                              </>
-                            )}
-                            {overallRiskLevel === 'low' && (
-                              <>
-                                <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
-                                  <div className="mt-1 bg-green-50 text-green-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
-                                  <span><strong>Keep up the wonderful work!</strong> Your current routine is serving your body beautifully.</span>
-                                </li>
-                                <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
-                                  <div className="mt-1 bg-green-50 text-green-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
-                                  <span><strong>Stay reasonably active.</strong> Dancing, walking, or gardening are joyful ways to keep moving.</span>
-                                </li>
-                                <li className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
-                                  <div className="mt-1 bg-green-50 text-green-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
-                                  <span><strong>See your doctor for routine wellness visits</strong> just to keep everything wonderfully on track.</span>
-                                </li>
-                              </>
-                            )}
-                          </ul>
-                        </motion.div>
-
-                        <div className="bg-slate-100 rounded-2xl p-6">
-                          <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-3">Clinical Guardrails</h4>
-                          <ul className="text-[15px] text-slate-600 leading-relaxed font-medium space-y-2">
-                            <li>• AI-assisted screening support — not a diagnosis. Clinical judgment remains primary.</li>
-                            <li>• Model trained on NHANES postmenopausal cohort; external generalization may be limited.</li>
-                            <li>• False positives are expected for screening sensitivity. Confirm with HbA1c/FBS when appropriate.</li>
-                            <li>• Use with clinical context (history, symptoms, and confirmatory labs).</li>
-                          </ul>
+                      {hasPredictedStatus && (
+                        <div className="mb-3">
+                          <span className="inline-block px-4 py-1.5 rounded-full bg-slate-800 text-white text-[15px] font-semibold tracking-wide">
+                            Predicted Status: {predicted_status}
+                          </span>
                         </div>
+                      )}
+                      <div className="flex items-baseline gap-3 mb-4 flex-wrap">
+                        <span className="text-lg font-medium text-slate-700">Risk Probability:</span>
+                        {hasAtRiskProbability ? (
+                          <span className={`text-[56px] leading-[1.1] font-light tracking-tighter ${colors.text}`}>{probabilityText}</span>
+                        ) : (
+                          <span className={`text-[36px] leading-[1.1] font-light ${colors.text}`}>{probabilityText}</span>
+                        )}
                       </div>
 
-                      {/* Action Buttons */}
-                      <motion.div
-                        initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 24 }}
-                        className="sticky bottom-0 mt-6 border-t border-slate-200/70 bg-slate-50/95 pt-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] backdrop-blur"
-                      >
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
-                          <motion.button
-                            whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
-                            whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
-                            onClick={onClose}
-                            className="w-full py-4 text-slate-500 font-semibold text-[17px] rounded-2xl hover:bg-slate-100 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50"
-                          >
-                            Close
-                          </motion.button>
-                          <motion.button
-                            whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
-                            whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
-                            onClick={onConfirm}
-                            className="w-full py-4 bg-slate-800 text-white font-semibold text-[17px] rounded-2xl shadow-xl shadow-slate-800/10 hover:bg-slate-700 transition-all tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50"
-                          >
-                            Save My Results
-                          </motion.button>
-                        </div>
-                      </motion.div>
+                      <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-white">
+                        <p className="text-slate-700 leading-relaxed font-medium text-[16px]">
+                          {colors.advice}
+                        </p>
+                      </div>
                     </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+
+                    {/* Section 2: Biomarker Snapshot (Understanding) */}
+                    {biomarkerData.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100"
+                      >
+                        <h3 className="text-[19px] font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                          <Activity className="text-indigo-400" size={20} />
+                          Your Biomarker Snapshot
+                        </h3>
+                        <p className="text-[15px] text-slate-600 mb-4">Here are the key numbers we analyzed to generate your result:</p>
+                        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {biomarkerData.map((marker) => (
+                            <li key={marker.label} className="bg-slate-50 p-3.5 rounded-2xl flex justify-between items-center border border-slate-100/50">
+                              <span className="text-slate-700 font-medium">{marker.label}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-slate-900 font-bold">{marker.value}</span>
+                                <span className={`text-[12px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${marker.colorClass}`}>
+                                  {marker.status}
+                                </span>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </motion.div>
+                    )}
+
+
+                    {/* Section 3: Personal Profile Card (Reassurance) */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100"
+                    >
+                      <h3 className="text-[19px] font-semibold text-slate-800 mb-5 flex items-center gap-2">
+                        <Leaf className="text-teal-500" size={20} />
+                        {canRenderSubtypeProfile ? 'Your Personal Profile' : 'Result Profile Summary'}
+                      </h3>
+
+                      <div className="flex flex-col sm:flex-row items-start gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-100/50">
+                        <motion.div
+                          whileHover={shouldReduceMotion ? undefined : { scale: 1.1, rotate: 5 }}
+                          transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300 }}
+                          className={`p-4 rounded-full ${profileClusterInfo.color} shrink-0 shadow-sm mx-auto sm:mx-0`}
+                        >
+                          {profileClusterInfo.icon}
+                        </motion.div>
+                        <div className="flex flex-col text-center sm:text-left">
+                          {canRenderSubtypeProfile && (
+                            <motion.div
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.3 }}
+                              className="mb-2"
+                            >
+                              <span className="text-[12px] font-bold tracking-widest text-indigo-600 uppercase bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
+                                Cluster: {normalizedCluster}
+                              </span>
+                            </motion.div>
+                          )}
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.4 }}
+                            className="font-bold text-slate-800 text-[20px] mb-2 leading-tight"
+                          >
+                            {canRenderSubtypeProfile ? profileClusterInfo.fullName : 'Subtype information unavailable'}
+                          </motion.div>
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5 }}
+                            className="text-slate-600 text-[16px] leading-relaxed"
+                          >
+                            {canRenderSubtypeProfile
+                              ? profileClusterInfo.desc
+                              : 'This assessment result does not include subtype/cluster output. We are showing a neutral summary without subtype-specific interpretation.'}
+                          </motion.p>
+                        </div>
+                      </div>
+                    </motion.div>
+
+
+                    {/* Validation Warnings (Optional Context) */}
+                    {(warning || (validation_warnings && validation_warnings.length > 0)) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-amber-50/50 rounded-3xl p-6 border border-amber-200"
+                      >
+                        <h3 className="text-base font-semibold text-amber-800 mb-2 flex items-center gap-2">
+                          <AlertCircle size={20} className="text-amber-500" />
+                          Data Note
+                        </h3>
+                        <p className="text-[15px] text-amber-700 mb-3 leading-relaxed">
+                          Some of your values are slightly outside the typical range our AI has seen before. Please discuss these with your doctor:
+                        </p>
+                        <ul className="space-y-2">
+                          {validation_warnings && validation_warnings.map((warn) => (
+                            <li key={warn} className="flex items-start gap-2 text-[14px] text-amber-800 bg-white/70 p-3 rounded-xl border border-amber-100/50">
+                              <span className="text-amber-500 mt-0.5">⚠️</span>
+                              <span>{warn}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </motion.div>
+                    )}
+
+
+                    {/* Section 4: Actionable Next Steps (Action) */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100"
+                    >
+                      <h3 className="text-[19px] font-semibold text-slate-800 mb-5 flex items-center gap-2">
+                        <ShieldCheck size={20} className="text-indigo-500" />
+                        Actionable Next Steps
+                      </h3>
+                      <ul className="space-y-4">
+                        {actionSteps.map((step) => (
+                          <li key={step} className="flex gap-4 items-start text-slate-700 text-[16px] leading-relaxed">
+                            <div className="mt-1 bg-indigo-50 text-indigo-500 p-1.5 rounded-full shrink-0"><CheckCircle size={18} /></div>
+                            <span>{step}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
+
+                    {/* Clinical Guardrails (Footer Context) */}
+                    <div className="bg-slate-100/70 border border-slate-200/50 rounded-2xl p-5 mb-4">
+                      <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-widest mb-2">Clinical Guardrails</h4>
+                      <p className="text-[13px] text-slate-500 leading-relaxed font-medium">
+                        AI-assisted screening support — not a diagnosis. Use with clinical context.
+                      </p>
+                    </div>
+
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+
+            {/* Action Buttons Footer - Pinned to bottom, independent of scroll */}
+            <motion.div
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 260, damping: 24 }}
+              className="shrink-0 border-t border-slate-200/70 bg-white/95 px-6 sm:px-8 py-5 backdrop-blur-md rounded-b-[32px] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+            >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                <motion.button
+                  whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
+                  whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+                  onClick={onClose}
+                  className="w-full py-3.5 text-slate-500 font-semibold text-[16px] rounded-xl hover:bg-slate-100 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+                >
+                  Close
+                </motion.button>
+                <motion.button
+                  whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
+                  whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
+                  onClick={onConfirm}
+                  className="w-full py-3.5 bg-slate-800 text-white font-semibold text-[16px] rounded-xl shadow-lg shadow-slate-800/10 hover:bg-slate-700 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+                >
+                  Save My Results
+                </motion.button>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       )}
@@ -586,28 +576,6 @@ const overallRiskLevel = (overallRiskLevelRaw || 'unknown').toLowerCase();
   );
 
   return createPortal(modalContent, document.body);
-};
-
-// Friendly warning translations
-const formatFriendlyWarning = (warning) => {
-  const warningMap = {
-    'fbs_diabetic_range': 'Your fasting blood sugar was a bit elevated.',
-    'fbs_prediabetic_range': 'Your fasting blood sugar is slightly higher than usual.',
-    'hba1c_diabetic_range': 'Your recent blood sugar average (HbA1c) is a bit high.',
-    'hba1c_prediabetic_range': 'Your recent blood sugar average (HbA1c) is slightly elevated.',
-    'chol_high': 'Your total cholesterol is on the higher side.',
-    'chol_borderline': 'Your total cholesterol is slightly elevated.',
-    'ldl_high': 'Your LDL (often called "bad") cholesterol is a bit high.',
-    'ldl_borderline': 'Your LDL cholesterol is slightly above the ideal range.',
-    'hdl_low': 'Your HDL (often called "good") cholesterol is a little low.',
-    'triglycerides_high': 'Your triglycerides (a type of fat in blood) are high.',
-    'triglycerides_borderline': 'Your triglycerides are slightly elevated.',
-    'bp_high': 'Your blood pressure is running a little high.',
-    'bp_elevated': 'Your blood pressure is slightly elevated.',
-    'bmi_obese': 'Your BMI indicates it might be good to discuss weight management with your doctor.',
-    'bmi_overweight': 'Your BMI is slightly above the typical range.'
-  };
-  return warningMap[warning] || warning.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 export default MLResultModal;
