@@ -1,16 +1,51 @@
-import React, { useMemo, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { Activity, TrendingUp, AlertCircle, Plus, Download, RefreshCw, User as UserIcon, Calendar, Eye, FileText } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Activity, TrendingUp, AlertCircle, Plus, RefreshCw, User as UserIcon, Calendar, Eye, FileText } from 'lucide-react';
 import RiskIndicator from '../common/RiskIndicator';
 import MLResultModal from '../common/MLResultModal';
 import { useAssessments } from '../../api';
-import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
+import { motion } from 'framer-motion';
+import { staggerContainer, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
-const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
+const CANONICAL_CLUSTERS = new Set(['SIDD', 'SIRD', 'MOD', 'MARD']);
+
+const capabilityOrFalse = (capabilityValue) => capabilityValue === true;
+
+const getAssessmentClusterContext = (assessment) => {
+  if (!assessment || typeof assessment !== 'object') {
+    return {
+      canRenderSubtypeProfile: false,
+      normalizedCluster: '',
+    };
+  }
+
+  const outputCapabilities = assessment.output_capabilities
+    && typeof assessment.output_capabilities === 'object'
+    ? assessment.output_capabilities
+    : null;
+  const clusterCapability = assessment.cluster_capability
+    && typeof assessment.cluster_capability === 'object'
+    ? assessment.cluster_capability
+    : null;
+  const hasExplicitCapabilityContract = Boolean(outputCapabilities || clusterCapability);
+
+  const subtypeCapabilitySupported = hasExplicitCapabilityContract
+    && capabilityOrFalse(outputCapabilities?.metabolic_subtype)
+    && capabilityOrFalse(clusterCapability?.supported);
+
+  const normalizedCluster = typeof assessment.cluster === 'string'
+    ? assessment.cluster.trim().toUpperCase()
+    : '';
+  const hasCanonicalCluster = CANONICAL_CLUSTERS.has(normalizedCluster);
+
+  return {
+    canRenderSubtypeProfile: Boolean(subtypeCapabilitySupported && hasCanonicalCluster),
+    normalizedCluster,
+  };
+};
+
+const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
   const isReduced = useReducedMotion();
-  const queryClient = useQueryClient();
   const { data: rawAssessments, isLoading, error, refetch } = useAssessments();
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [showAssessmentModal, setShowAssessmentModal] = useState(false);
@@ -26,8 +61,8 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
   const getCalculatedRiskLevel = (score, level) => {
     if (level && String(level).toUpperCase() !== 'UNKNOWN' && String(level).trim() !== '') return String(level).toLowerCase();
     if (score === undefined || score === null) return 'unknown';
-    if (score < 34) return 'low';
-    if (score < 67) return 'medium';
+    if (score < 30) return 'low';
+    if (score < 70) return 'medium';
     return 'high';
   };
 
@@ -42,15 +77,23 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
   }, [assessments]);
 
   // --- NEW: Health Tip Logic ---
+  const latestClusterContext = useMemo(
+    () => getAssessmentClusterContext(latestAssessment),
+    [latestAssessment],
+  );
+  const canUseClusterSemantics = latestClusterContext.canRenderSubtypeProfile;
+  const latestCluster = canUseClusterSemantics ? latestClusterContext.normalizedCluster : '';
+
   const healthTip = useMemo(() => {
     if (!latestAssessment) return null;
-    const cluster = latestAssessment.cluster;
+    const cluster = latestCluster;
 
     // Simple mapping for now - can be expanded later or moved to a utility
     const tips = {
       'SIDD': {
-        title: "Focus on Insulin Sensitivity",
-        text: "Your profile suggests insulin deficiency. Prioritize strength training to improve muscle glucose uptake.",
+        title: "Optimize Cardiovascular & Lipid Health", 
+        text: "Your profile suggests a lipid-driven risk pattern. Focus on heart health and cholesterol optimization: prioritize aerobic exercise, healthy fats, and regular lipid monitoring. Consult your clinician for personalized cardiovascular guidance.",
+        // comma added above to fix syntax
         icon: Activity,
         color: "text-rose-600 bg-rose-50 border-rose-100"
       },
@@ -81,7 +124,7 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
       icon: Activity,
       color: "text-diana-forest bg-diana-forest/5 border-diana-forest/10"
     };
-  }, [latestAssessment]);
+  }, [latestAssessment, latestCluster]);
 
   const handleViewAssessment = (assessment) => {
     setSelectedAssessment(assessment);
@@ -95,8 +138,8 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
 
   const getTableRiskLevel = (score, existingLevel) => {
     if (existingLevel && existingLevel !== 'UNKNOWN') return existingLevel;
-    if (score >= 67) return 'high';
-    if (score >= 34) return 'moderate';
+    if (score >= 70) return 'high';
+    if (score >= 30) return 'medium';
     if (score >= 0) return 'low';
     return 'Unknown';
   };
@@ -275,7 +318,11 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
               </div>
               {latestAssessment ? (
                 <div className="mt-1">
-                  <RiskIndicator riskScore={latestAssessment.risk_score || 0} riskLevel={getCalculatedRiskLevel(latestAssessment.risk_score, latestAssessment.risk_level)} cluster={latestAssessment.cluster} />
+                  <RiskIndicator
+                    riskScore={latestAssessment.risk_score || 0}
+                    riskLevel={getCalculatedRiskLevel(latestAssessment.risk_score, latestAssessment.risk_level)}
+                    cluster={latestCluster}
+                  />
                 </div>
               ) : (
                 <div className="text-slate-400 text-base italic font-medium mt-3">No data yet</div>
@@ -293,9 +340,9 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                 <div className="text-3xl font-light tracking-tight text-slate-800 mt-4">
                   {!latestAssessment
                     ? 'No Risk Estimate Yet'
-                    : latestAssessment.risk_score >= 67
+                    : latestAssessment.risk_score >= 70
                       ? 'Action Needed'
-                      : latestAssessment.risk_score >= 34
+                      : latestAssessment.risk_score >= 30
                         ? 'Monitor Closely'
                         : 'Optimal Range'}
                 </div>
@@ -441,8 +488,8 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                 </div>
                 <div>
                   <div className="text-base font-semibold text-slate-500 mb-2">Profile</div>
-                  <div className="text-xl font-medium text-indigo-600 bg-indigo-50 px-4 py-1.5 rounded-xl inline-block">
-                    {latestAssessment.cluster || 'Pending'}
+                  <div className={`text-xl font-medium px-4 py-1.5 rounded-xl inline-block ${canUseClusterSemantics ? 'text-indigo-600 bg-indigo-50' : 'text-slate-500 bg-slate-100'}`}>
+                    {canUseClusterSemantics ? latestCluster : 'N/A'}
                   </div>
                 </div>
               </div>
@@ -458,46 +505,53 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                 </span>
               </div>
               <div className="space-y-4 md:hidden">
-                {assessments.slice(0, 10).map((assessment) => (
-                  <motion.div
-                    key={assessment.id}
-                    whileHover={{ backgroundColor: '#f8fafc' }}
-                    className="border border-slate-100 rounded-2xl p-5 shadow-sm transition-colors cursor-pointer"
-                    onClick={() => handleViewAssessment(assessment)}
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Date</div>
-                        <div className="text-sm font-semibold text-slate-700 mt-1">
-                          {assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : 'N/A'}
+                {assessments.slice(0, 10).map((assessment) => {
+                  const assessmentClusterContext = getAssessmentClusterContext(assessment);
+                  const assessmentClusterDisplay = assessmentClusterContext.canRenderSubtypeProfile
+                    ? assessmentClusterContext.normalizedCluster
+                    : 'N/A';
+
+                  return (
+                    <motion.div
+                      key={assessment.id}
+                      whileHover={{ backgroundColor: '#f8fafc' }}
+                      className="border border-slate-100 rounded-2xl p-5 shadow-sm transition-colors cursor-pointer"
+                      onClick={() => handleViewAssessment(assessment)}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Date</div>
+                          <div className="text-sm font-semibold text-slate-700 mt-1">
+                            {assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : 'N/A'}
+                          </div>
                         </div>
+                        <span className={riskScoreBadgeClass}>{assessment.risk_score || 0}</span>
                       </div>
-                      <span className={riskScoreBadgeClass}>{assessment.risk_score || 0}</span>
-                    </div>
-                    <div className="mt-4 grid grid-cols-[96px,1fr] gap-y-3 text-sm">
-                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Level</div>
-                      <div className="flex items-center">{renderRiskLevelBadge(assessment.risk_score, assessment.risk_level)}</div>
-                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Profile</div>
-                      <div className="font-semibold text-slate-700">{assessment.cluster || 'N/A'}</div>
-                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">BMI</div>
-                      <div className="font-semibold text-slate-700">{assessment.bmi ? `${assessment.bmi} kg/m²` : 'N/A'}</div>
-                    </div>
-                    <div className="mt-4 flex items-center justify-end">
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewAssessment(assessment);
-                        }}
-                        className="p-3 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors"
-                        title="View details"
-                      >
-                        <Eye size={18} />
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                ))}
+                      <div className="mt-4 grid grid-cols-[96px,1fr] gap-y-3 text-sm">
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Level</div>
+                        <div className="flex items-center">{renderRiskLevelBadge(assessment.risk_score, assessment.risk_level)}</div>
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Profile</div>
+                        <div className="font-semibold text-slate-700">{assessmentClusterDisplay}</div>
+                        <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">BMI</div>
+                        <div className="font-semibold text-slate-700">{assessment.bmi ? `${assessment.bmi} kg/m²` : 'N/A'}</div>
+                      </div>
+                      <div className="mt-4 flex items-center justify-end">
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewAssessment(assessment);
+                          }}
+                          className="p-3 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors"
+                          title="View details"
+                        >
+                          <Eye size={18} />
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full min-w-[720px]">
@@ -512,46 +566,53 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {assessments.slice(0, 10).map((assessment) => (
-                      <motion.tr
-                        key={assessment.id}
-                        whileHover={{ backgroundColor: '#f8fafc' }}
-                        className="border-b border-slate-50 last:border-0 cursor-pointer"
-                        onClick={() => handleViewAssessment(assessment)}
-                      >
-                        <td className="py-4 px-4 text-base font-medium text-slate-700 align-middle">
-                          {assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td className="py-4 px-4 align-middle">
-                          <div className="flex items-center justify-center">
-                            <span className={riskScoreBadgeClass}>{assessment.risk_score || 0}</span>
-                          </div>
-                        </td>
-                        <td className="py-5 px-4 align-middle">
-                          {renderRiskLevelBadge(assessment.risk_score, assessment.risk_level)}
-                        </td>
-                        <td className="py-4 px-4 text-base font-medium text-slate-700 align-middle">
-                          {assessment.cluster || 'N/A'}
-                        </td>
-                        <td className="py-4 px-4 text-base font-medium text-slate-700 align-middle">
-                          {assessment.bmi ? `${assessment.bmi} kg/m²` : 'N/A'}
-                        </td>
-                        <td className="py-4 px-4 text-right align-middle">
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewAssessment(assessment);
-                            }}
-                            className="p-3 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors"
-                            title="View details"
-                          >
-                            <Eye size={20} />
-                          </motion.button>
-                        </td>
-                      </motion.tr>
-                    ))}
+                    {assessments.slice(0, 10).map((assessment) => {
+                      const assessmentClusterContext = getAssessmentClusterContext(assessment);
+                      const assessmentClusterDisplay = assessmentClusterContext.canRenderSubtypeProfile
+                        ? assessmentClusterContext.normalizedCluster
+                        : 'N/A';
+
+                      return (
+                        <motion.tr
+                          key={assessment.id}
+                          whileHover={{ backgroundColor: '#f8fafc' }}
+                          className="border-b border-slate-50 last:border-0 cursor-pointer"
+                          onClick={() => handleViewAssessment(assessment)}
+                        >
+                          <td className="py-4 px-4 text-base font-medium text-slate-700 align-middle">
+                            {assessment.created_at ? new Date(assessment.created_at).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="py-4 px-4 align-middle">
+                            <div className="flex items-center justify-center">
+                              <span className={riskScoreBadgeClass}>{assessment.risk_score || 0}</span>
+                            </div>
+                          </td>
+                          <td className="py-5 px-4 align-middle">
+                            {renderRiskLevelBadge(assessment.risk_score, assessment.risk_level)}
+                          </td>
+                          <td className="py-4 px-4 text-base font-medium text-slate-700 align-middle">
+                            {assessmentClusterDisplay}
+                          </td>
+                          <td className="py-4 px-4 text-base font-medium text-slate-700 align-middle">
+                            {assessment.bmi ? `${assessment.bmi} kg/m²` : 'N/A'}
+                          </td>
+                          <td className="py-4 px-4 text-right align-middle">
+                            <motion.button
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewAssessment(assessment);
+                              }}
+                              className="p-3 rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors"
+                              title="View details"
+                            >
+                              <Eye size={20} />
+                            </motion.button>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -578,7 +639,15 @@ const Dashboard_user = ({ userId, setActiveTab, onStartAssessment }) => {
           risk_score: selectedAssessment.risk_score,
           risk_level: selectedAssessment.risk_level,
           predicted_status: selectedAssessment.predicted_status,
+          at_risk_probability: selectedAssessment.at_risk_probability,
           cluster: selectedAssessment.cluster,
+          cluster_description: selectedAssessment.cluster_description,
+          treatment_focus: selectedAssessment.treatment_focus,
+          validation_status: selectedAssessment.validation_status,
+          validation_warnings: selectedAssessment.validation_warnings,
+          warning: selectedAssessment.warning,
+          output_capabilities: selectedAssessment.output_capabilities,
+          cluster_capability: selectedAssessment.cluster_capability,
           model_version: selectedAssessment.model_version,
           fbs: selectedAssessment.fbs,
           hba1c: selectedAssessment.hba1c,

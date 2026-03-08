@@ -199,11 +199,11 @@ func TestConfigLoad_ClinicalThresholdsDefaults(t *testing.T) {
 	if cfg.ClinicalThresholds.FBSNormal != 100 {
 		t.Errorf("FBSNormal = %v, want 100", cfg.ClinicalThresholds.FBSNormal)
 	}
-	if cfg.ClinicalThresholds.FBSPrediabetic != 126 {
-		t.Errorf("FBSPrediabetic = %v, want 126", cfg.ClinicalThresholds.FBSPrediabetic)
+	if cfg.ClinicalThresholds.FBSPrediabetic != 100 {
+		t.Errorf("FBSPrediabetic = %v, want 100", cfg.ClinicalThresholds.FBSPrediabetic)
 	}
-	if cfg.ClinicalThresholds.FBSDiabetic != 126 {
-		t.Errorf("FBSDiabetic = %v, want 126", cfg.ClinicalThresholds.FBSDiabetic)
+if cfg.ClinicalThresholds.FBSDiabetic != 126 {
+t.Errorf("FBSDiabetic = %v, want 126", cfg.ClinicalThresholds.FBSDiabetic)
 	}
 	if cfg.ClinicalThresholds.BPSysNormal != 120 {
 		t.Errorf("BPSysNormal = %d, want 120", cfg.ClinicalThresholds.BPSysNormal)

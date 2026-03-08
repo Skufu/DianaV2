@@ -175,8 +175,9 @@ The API returns different response structures depending on the model type:
 | `error` | string | Error message if `success` is false |
 
 ## Error & Timeout Handling (backend behavior)
-- Any non-200 status, network error, timeout, JSON decode failure, or empty `cluster` results in the backend treating the model call as failed.
-- Failure mapping: `cluster="error"`, `risk_score=0`. The assessment is still stored with these values.
+- Any non-200 status, network error, timeout, JSON decode failure, or validation error results in the backend returning an error response to the client.
+- The assessment is NOT stored when the ML prediction fails; the client receives an error and must retry or handle the failure.
+- Backend validates biomarker ranges before calling the ML server and returns validation errors if inputs are out of clinical range.
 
 ## Versioning & Mock Mode
 - `X-Model-Version` header and `model_version` body field are populated from `MODEL_VERSION` when set.
@@ -184,8 +185,8 @@ The API returns different response structures depending on the model type:
 
 ## Expectations for Model Service
 - Respond with HTTP 200 and the response schema above for valid requests.
-- Prefer returning meaningful 4xx/5xx on validation/server errors; the backend will map any non-200 to the failure behavior described above.
-- Keep latency within `MODEL_TIMEOUT_MS`; otherwise the backend will time out and record the failure mapping.
+- Prefer returning meaningful 4xx/5xx on validation/server errors; the backend will return an error response to the client.
+- Keep latency within `MODEL_TIMEOUT_MS`; otherwise the backend will time out and return an error response.
 
 ## Cluster Definitions
 
@@ -195,7 +196,7 @@ The clinical model returns cluster labels based on Ahlqvist diabetes subtypes:
 | Cluster | Full Name | Description | Treatment Focus |
 |---------|-----------|-------------|-----------------|
 | **SIRD** | Severe Insulin-Resistant Diabetes | High BMI, severe insulin resistance, obesity-related | Focus on insulin sensitivity and cardiovascular risk reduction; consider metformin + lifestyle |
-| **SIDD** | Severe Insulin-Deficient Diabetes | Low BMI, high HbA1c, insulin deficiency | Prioritize glycemic control and beta-cell preservation; consider insulin therapy |
+| **SIDD** | Atherogenic / Lipid-Driven Diabetes | High LDL cholesterol, severe dyslipidemia (atherogenic phenotype) | Statin therapy indicated; cardiovascular risk management primary; identified via LDL proxy without HOMA2 (adaptation per Tanabe 2024) |
 | **MOD** | Mild Obesity-Related Diabetes | Moderate BMI elevation, mild glucose intolerance | Weight management and lifestyle optimization; monitor quarterly |
 | **MARD** | Mild Age-Related Diabetes | Older onset, mild metabolic dysfunction | Maintain current health habits and regular monitoring |
 

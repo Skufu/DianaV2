@@ -295,20 +295,15 @@ class DianaPredictor:
         if errors:
             return False, errors
         return True, []
-    
-    def _engineer_features(self, data: Mapping[str, Any]) -> pd.DataFrame:
-        """Build ADA feature frame in training order."""
-        df = pd.DataFrame([data])
-        return df.loc[:, ADA_FEATURES].copy()
-    
     def predict(self, data: Mapping[str, Any]) -> Dict[str, Any]:
         """
         Predict diabetes risk for a patient.
         
         Returns:
             Dictionary with:
-            - medical_status: Normal/Pre-diabetic/Diabetic (based on model prediction)
-            - risk_cluster: Low/Moderate/High Risk (from K-means)
+            - medical_status: Normal/Pre-diabetic/Diabetic (based on HbA1c/FBS thresholds or classifier)
+            - risk_cluster: Cluster label from K-means if available, otherwise "ADA Baseline"
+            - risk_level: HIGH/MODERATE/LOW based on cluster labels or computed from probability
             - probability: Diabetes probability (from classifier)
         """
         valid, missing = self.validate_input(data)
@@ -371,7 +366,6 @@ class DianaPredictor:
             cluster_info = self.cluster_labels.get(str(cluster_id), {})
             cluster_label = cluster_info.get("label", f"Cluster-{cluster_id}")
             risk_level = cluster_info.get("risk_level", "UNKNOWN")
-
         try:
             proba = self.classifier.predict_proba(X_scaled)[0]
             diabetes_prob = float(proba[2]) if len(proba) == 3 else float(max(proba))
@@ -408,7 +402,6 @@ class DianaPredictor:
             "confidence_note": confidence_note,
             "risk_cluster": cluster_label,
             "risk_level": risk_level,
-            "risk_score": risk_score,
             "probability": round(diabetes_prob, 3),
             "at_risk_probability": round(diabetes_prob, 3),
             "confidence": confidence,
@@ -828,6 +821,38 @@ class ClinicalPredictor:
             "binary_v2_bp": "Binary at-risk screening model with BP features (no HbA1c/FBS).",
             "clinical": "Clinical screening model (no HbA1c/FBS).",
         }
+
+        cluster_supported = bool(
+            self.kmeans is not None
+            and self.cluster_scaler is not None
+            and self.cluster_imputer is not None
+            and isinstance(self.cluster_labels, dict)
+            and len(self.cluster_labels) > 0
+        )
+
+        output_capabilities = {
+            "predicted_status": True,
+            "risk_score": True,
+            "at_risk_probability": True,
+            "prediction_confidence": True,
+            "metabolic_subtype": cluster_supported,
+            "risk_label": True,
+            "cluster_description": cluster_supported,
+            "treatment_focus": cluster_supported,
+        }
+
+        cluster_capability = {
+            "supported": cluster_supported,
+            "required_inputs": self.cluster_features,
+            "output_field": "metabolic_subtype",
+            "alias_field": "risk_cluster",
+        }
+
+        feature_set = {
+            "features": self.features,
+            "feature_count": len(self.features),
+            "source": "features.json",
+        }
         
         # Apply confidence threshold per Tanabe et al. (2024) Diabetologia
         # If max probability < 0.60, flag as Indeterminate (undecidable cluster)
@@ -861,6 +886,9 @@ class ClinicalPredictor:
             "at_risk_probability": float(round(at_risk_prob, 3)),
             "risk_score": int(risk_score),
             "confidence": float(confidence),
+            "feature_set": feature_set,
+            "cluster_capability": cluster_capability,
+            "output_capabilities": output_capabilities,
             "model_info": {
                 "classifier": self.metrics.get("best_model", "Unknown"),
                 "auc_roc": float(self.metrics.get("metrics", {}).get("auc_roc", 0)),

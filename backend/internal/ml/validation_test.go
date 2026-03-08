@@ -177,7 +177,7 @@ func getDefaultThresholds() config.ClinicalThresholds {
 		HbA1cPrediabetic:        6.5,
 		HbA1cDiabetic:           6.5,
 		FBSNormal:               100,
-		FBSPrediabetic:          126,
+		FBSPrediabetic:          100,
 		FBSDiabetic:             126,
 		BPSysNormal:             120,
 		BPSysElevated:           140,

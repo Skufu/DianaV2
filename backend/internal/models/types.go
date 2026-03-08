@@ -95,16 +95,20 @@ type Assessment struct {
 	BMI                   float64 `json:"bmi,omitempty"`
 
 	// ML Results
-	Cluster            string  `json:"cluster,omitempty"`
-	RiskScore          int     `json:"risk_score,omitempty"`
-	RiskLabel          string  `json:"risk_label,omitempty"`
-	ClusterDescription string  `json:"cluster_description,omitempty"`
-	TreatmentFocus     string  `json:"treatment_focus,omitempty"`
-	PredictedStatus    string  `json:"predicted_status,omitempty"`
-	AtRiskProbability  float64 `json:"at_risk_probability,omitempty"`
-	ModelVersion       string  `json:"model_version,omitempty"`
-	DatasetHash        string  `json:"dataset_hash,omitempty"`
-	ValidationStatus   string  `json:"validation_status,omitempty"`
+	Cluster            string         `json:"cluster,omitempty"`
+	RiskScore          int            `json:"risk_score,omitempty"`
+	RiskLabel          string         `json:"risk_label,omitempty"`
+	ClusterDescription string         `json:"cluster_description,omitempty"`
+	TreatmentFocus     string         `json:"treatment_focus,omitempty"`
+	PredictedStatus    string         `json:"predicted_status,omitempty"`
+	AtRiskProbability  float64        `json:"at_risk_probability,omitempty"`
+	ModelVersion       string         `json:"model_version,omitempty"`
+	DatasetHash        string         `json:"dataset_hash,omitempty"`
+	DriftBaseline      map[string]any `json:"drift_baseline,omitempty"`
+	ValidationStatus   string         `json:"validation_status,omitempty"`
+	FeatureSet         map[string]any `json:"feature_set,omitempty"`
+	ClusterCapability  map[string]any `json:"cluster_capability,omitempty"`
+	OutputCapabilities map[string]any `json:"output_capabilities,omitempty"`
 
 	// Self-assessment fields
 	IsSelfReported bool   `json:"is_self_reported,omitempty"`

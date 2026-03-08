@@ -9,6 +9,8 @@ from collections import defaultdict
 from pathlib import Path
 
 import joblib
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -915,37 +917,74 @@ def generate_shap_plots(
 
     print("\n[SHAP] Generating feature importance explanations...")
 
-    # Extract the raw model from the pipeline for TreeExplainer
+    # Extract the raw model from the pipeline for explainer
     model = final_pipeline.named_steps["model"]
 
     # Pre-process X through the pipeline's preprocessor
     X_processed = final_pipeline.named_steps["preprocessor"].transform(X)
 
-    # Try TreeExplainer first (fast), fall back to KernelExplainer
+    # Choose the right explainer for the model type
+    shap_values_pos = None
+    
+    # 1. Try LinearExplainer first (best for logistic regression)
     try:
-        explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(X_processed)
-        print("   Using TreeExplainer")
+        explainer = shap.LinearExplainer(model, X_processed)
+        shap_values_raw = explainer.shap_values(X_processed)
+        print("   Using LinearExplainer")
+        # LinearExplainer returns (n_samples, n_features) for binary — already correct
+        shap_values_pos = np.array(shap_values_raw)
+        if shap_values_pos.ndim == 3:
+            shap_values_pos = shap_values_pos[:, :, 1]
     except Exception as e:
-        print(f"   TreeExplainer failed ({e}), falling back to KernelExplainer...")
-        # Sample background data for KernelExplainer (100 samples max)
-        bg_size = min(100, len(X_processed))
-        background = shap.sample(X_processed, bg_size)
-        predict_fn = model.predict_proba
-        explainer = shap.KernelExplainer(predict_fn, background)
-        shap_values = explainer.shap_values(X_processed[:200])  # Limit for speed
-        X_processed = X_processed[:200]
-        print("   Using KernelExplainer (limited to 200 samples)")
+        print(f"   LinearExplainer failed ({e})")
 
-    # Handle multi-output: for binary classification, use the positive class (At-Risk)
-    if isinstance(shap_values, list):
-        shap_values_pos = shap_values[1]  # At-Risk class
-    else:
-        shap_values_pos = shap_values
+    # 2. Try TreeExplainer (for tree-based models)
+    if shap_values_pos is None:
+        try:
+            explainer = shap.TreeExplainer(model)
+            shap_values_raw = explainer.shap_values(X_processed)
+            print("   Using TreeExplainer")
+            if isinstance(shap_values_raw, list) and len(shap_values_raw) > 1:
+                shap_values_pos = np.array(shap_values_raw[1])
+            else:
+                shap_values_pos = np.array(shap_values_raw)
+                if shap_values_pos.ndim == 3:
+                    shap_values_pos = shap_values_pos[:, :, 1]
+        except Exception as e:
+            print(f"   TreeExplainer failed ({e})")
+
+    # 3. Fall back to KernelExplainer (universal but slow)
+    if shap_values_pos is None:
+        try:
+            print("   Falling back to KernelExplainer...")
+            bg_size = min(100, len(X_processed))
+            background = shap.sample(X_processed, bg_size)
+            explainer = shap.KernelExplainer(model.predict_proba, background)
+            shap_values_raw = explainer.shap_values(X_processed[:200])
+            X_processed = X_processed[:200]
+            print("   Using KernelExplainer (limited to 200 samples)")
+            
+            shap_values_pos = np.array(shap_values_raw)
+            # KernelExplainer with predict_proba returns (n_samples, n_features, n_outputs)
+            if isinstance(shap_values_raw, list) and len(shap_values_raw) > 1:
+                shap_values_pos = np.array(shap_values_raw[1])
+            elif shap_values_pos.ndim == 3:
+                shap_values_pos = shap_values_pos[:, :, 1]
+        except Exception as e:
+            print(f"   KernelExplainer also failed ({e})")
+            print("[SHAP] Could not compute SHAP values with any explainer.")
+            return
+
+    # Final safety check: ensure 2D
+    shap_values_pos = np.array(shap_values_pos)
+    if shap_values_pos.ndim != 2:
+        print(f"   [WARN] Unexpected SHAP values shape: {shap_values_pos.shape}, skipping plots")
+        return
+    print(f"   SHAP values shape: {shap_values_pos.shape}")
 
     # 1. Bar plot — mean |SHAP| per feature
     try:
-        plt.figure(figsize=(10, 6))
+        plt.close("all")
         shap.summary_plot(
             shap_values_pos,
             X_processed,
@@ -953,27 +992,31 @@ def generate_shap_plots(
             plot_type="bar",
             show=False,
         )
-        plt.title("SHAP Feature Importance (Mean |SHAP Value|)")
-        plt.tight_layout()
-        plt.savefig(VIZ_DIR / "shap_importance_bar.png", dpi=150, bbox_inches="tight")
-        plt.close()
+        fig = plt.gcf()
+        fig.set_size_inches(10, 6)
+        fig.suptitle("SHAP Feature Importance (Mean |SHAP Value|)", y=1.02)
+        fig.tight_layout()
+        fig.savefig(str(VIZ_DIR / "shap_importance_bar.png"), dpi=150, bbox_inches="tight")
+        plt.close("all")
         print(f"   Saved: {VIZ_DIR / 'shap_importance_bar.png'}")
     except Exception as e:
         print(f"   [WARN] Bar plot failed: {e}")
 
     # 2. Beeswarm plot — per-sample feature impact
     try:
-        plt.figure(figsize=(10, 6))
+        plt.close("all")
         shap.summary_plot(
             shap_values_pos,
             X_processed,
             feature_names=feature_names,
             show=False,
         )
-        plt.title("SHAP Beeswarm — Feature Impact on At-Risk Prediction")
-        plt.tight_layout()
-        plt.savefig(VIZ_DIR / "shap_beeswarm.png", dpi=150, bbox_inches="tight")
-        plt.close()
+        fig = plt.gcf()
+        fig.set_size_inches(10, 6)
+        fig.suptitle("SHAP Beeswarm — Feature Impact on At-Risk Prediction", y=1.02)
+        fig.tight_layout()
+        fig.savefig(str(VIZ_DIR / "shap_beeswarm.png"), dpi=150, bbox_inches="tight")
+        plt.close("all")
         print(f"   Saved: {VIZ_DIR / 'shap_beeswarm.png'}")
     except Exception as e:
         print(f"   [WARN] Beeswarm plot failed: {e}")

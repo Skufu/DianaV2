@@ -18,6 +18,45 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
+type fakeAdminPredictor struct {
+	status    *ml.DriftStatus
+	statusErr error
+	alerts    *ml.DriftAlertsEnvelope
+	alertsErr error
+}
+
+func (f *fakeAdminPredictor) Predict(ctx context.Context, input models.Assessment) (ml.Prediction, error) {
+	return ml.Prediction{}, nil
+}
+
+func (f *fakeAdminPredictor) PredictWithModelType(ctx context.Context, input models.Assessment, modelType string) (ml.Prediction, error) {
+	return ml.Prediction{}, nil
+}
+
+func (f *fakeAdminPredictor) GetActiveModelMetadata(ctx context.Context) (*ml.ModelMetadata, error) {
+	return (&ml.MockPredictor{}).GetActiveModelMetadata(ctx)
+}
+
+func (f *fakeAdminPredictor) GetDriftStatus(ctx context.Context) (*ml.DriftStatus, error) {
+	if f.statusErr != nil {
+		return nil, f.statusErr
+	}
+	if f.status != nil {
+		return f.status, nil
+	}
+	return (&ml.MockPredictor{}).GetDriftStatus(ctx)
+}
+
+func (f *fakeAdminPredictor) GetDriftAlerts(ctx context.Context, unacknowledgedOnly bool, limit int) (*ml.DriftAlertsEnvelope, error) {
+	if f.alertsErr != nil {
+		return nil, f.alertsErr
+	}
+	if f.alerts != nil {
+		return f.alerts, nil
+	}
+	return (&ml.MockPredictor{}).GetDriftAlerts(ctx, unacknowledgedOnly, limit)
+}
+
 type mockAdminStore struct {
 	modelRuns *mockModelRunRepo
 }
@@ -364,4 +403,138 @@ func TestAdminModelsHandler_ResponseStructure(t *testing.T) {
 			t.Error("expected CreatedAt to not be zero")
 		}
 	})
+}
+
+func TestAdminModelsHandler_GetDriftStatus_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("user", middleware.UserClaims{UserID: 123, Email: "admin@example.com", Role: "admin"})
+	})
+
+	lastCheck := "2026-03-08T09:00:00Z"
+	handler := NewAdminModelsHandler(&mockAdminStore{modelRuns: &mockModelRunRepo{}}, &fakeAdminPredictor{
+		status: &ml.DriftStatus{
+			ReferenceFeatures:    []string{"bmi", "ldl"},
+			ReferenceSet:         true,
+			TotalAlerts:          4,
+			UnacknowledgedAlerts: 2,
+			LastCheck:            &lastCheck,
+			ScipyAvailable:       true,
+			ActiveLineage: ml.DriftActiveLineage{
+				ModelVersion:         "binary_v2_no_bp",
+				DatasetHash:          "dataset-123",
+				FeatureSchemaVersion: "features:5",
+			},
+			DriftBaseline: ml.DriftBaselineMetadata{
+				BaselineID:           "baseline-2026q1",
+				BaselineVersion:      "7",
+				ModelVersion:         "binary_v2_no_bp",
+				DatasetHash:          "dataset-123",
+				FeatureSchemaVersion: "features:5",
+				SourceKind:           "release_holdout",
+				CreatedAt:            "2026-03-01T00:00:00Z",
+				StaleAfter:           "2026-06-01T00:00:00Z",
+				SampleCount:          500,
+				ReferenceFeatures:    []string{"bmi", "ldl"},
+				LineageStatus:        "healthy",
+			},
+		},
+	})
+	handler.Register(router.Group("/admin"))
+
+	req, _ := http.NewRequest("GET", "/admin/models/drift", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var response map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.Equal(t, true, response["reference_set"])
+	assert.Equal(t, float64(4), response["total_alerts"])
+	assert.Equal(t, float64(2), response["unacknowledged_alerts"])
+
+	activeLineage, ok := response["active_lineage"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected active_lineage object, got %#v", response["active_lineage"])
+	}
+	assert.Equal(t, "binary_v2_no_bp", activeLineage["model_version"])
+	assert.Equal(t, "dataset-123", activeLineage["dataset_hash"])
+
+	driftBaseline, ok := response["drift_baseline"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected drift_baseline object, got %#v", response["drift_baseline"])
+	}
+	assert.Equal(t, "baseline-2026q1", driftBaseline["baseline_id"])
+	assert.Equal(t, "7", driftBaseline["baseline_version"])
+	assert.Equal(t, "healthy", driftBaseline["lineage_status"])
+}
+
+func TestAdminModelsHandler_GetDriftAlerts_Success(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Set("user", middleware.UserClaims{UserID: 123, Email: "admin@example.com", Role: "admin"})
+	})
+
+	handler := NewAdminModelsHandler(&mockAdminStore{modelRuns: &mockModelRunRepo{}}, &fakeAdminPredictor{
+		alerts: &ml.DriftAlertsEnvelope{
+			Alerts: []ml.DriftAlert{
+				{
+					Timestamp:    "2026-03-08T09:00:00Z",
+					AlertType:    "drift",
+					Severity:     "high",
+					Message:      "Drift detected in bmi",
+					Details:      map[string]any{"features": []string{"bmi"}},
+					Acknowledged: false,
+				},
+			},
+			ActiveLineage: ml.DriftActiveLineage{
+				ModelVersion:         "binary_v2_no_bp",
+				DatasetHash:          "dataset-123",
+				FeatureSchemaVersion: "features:5",
+			},
+			DriftBaseline: ml.DriftBaselineMetadata{
+				BaselineID:           "baseline-2026q1",
+				BaselineVersion:      "7",
+				ModelVersion:         "binary_v2_no_bp",
+				DatasetHash:          "dataset-123",
+				FeatureSchemaVersion: "features:5",
+				LineageStatus:        "healthy",
+			},
+		},
+	})
+	handler.Register(router.Group("/admin"))
+
+	req, _ := http.NewRequest("GET", "/admin/models/drift/alerts?unacknowledged=true&limit=10", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var response map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &response)
+
+	alerts, ok := response["alerts"].([]any)
+	if !ok || len(alerts) != 1 {
+		t.Fatalf("expected one alert, got %#v", response["alerts"])
+	}
+	alert, ok := alerts[0].(map[string]any)
+	if !ok {
+		t.Fatalf("expected alert object, got %#v", alerts[0])
+	}
+	assert.Equal(t, "high", alert["severity"])
+	assert.Equal(t, "Drift detected in bmi", alert["message"])
+
+	activeLineage, ok := response["active_lineage"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected active_lineage object, got %#v", response["active_lineage"])
+	}
+	assert.Equal(t, "binary_v2_no_bp", activeLineage["model_version"])
+
+	driftBaseline, ok := response["drift_baseline"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected drift_baseline object, got %#v", response["drift_baseline"])
+	}
+	assert.Equal(t, "baseline-2026q1", driftBaseline["baseline_id"])
+	assert.Equal(t, "7", driftBaseline["baseline_version"])
 }

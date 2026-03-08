@@ -143,9 +143,9 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
     setIsSubmitting(true);
 
     const age = parseInt(formData.age, 10);
-    if (!age || age < 45 || age > 100) {
+    if (!age || age < 45 || age > 60) {
       setIsSubmitting(false);
-      setError('This application is designed for postmenopausal women aged 45 and above. Please enter a valid age.');
+      setError('Age must be between 45-60 years for postmenopausal women. This application is designed for this specific population.');
       return;
     }
 
@@ -302,11 +302,11 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 						name="age"
                   step="1"
                   min="45"
-                  max="100"
+                  max="60"
                   value={formData.age}
                   onChange={handleChange}
                   className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
-                  placeholder="Age 45+ (postmenopausal)"
+                  placeholder="Age 45-60 (postmenopausal)"
                   required
                 />
               </div>
@@ -428,7 +428,7 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 					)}
 				</div>
 			</div>
-			{(formData.model_type === 'binary_v2_bp' || formData.model_type === 'clinical_3class') && (
+			{formData.model_type === 'binary_v2_bp' && (
 				<div>
 					<h3 className="text-sm font-semibold text-gray-700 mb-3">Blood Pressure</h3>
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
