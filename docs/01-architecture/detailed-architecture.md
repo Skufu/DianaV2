@@ -31,7 +31,7 @@ Backend components (Go)
   - Health: liveness/readiness.
 - ML: `internal/ml`
   - Predictor interface.
-  - `HTTPPredictor` posts assessment JSON to `MODEL_URL` with `X-Model-Version`; timeout `MODEL_TIMEOUT_MS`; any error/non-200 -> `cluster="error", risk=0`.
+  - `HTTPPredictor` posts assessment JSON to `MODEL_URL` with `X-Model-Version`; timeout `MODEL_TIMEOUT_MS`; on any error/non-200, backend returns error response and does NOT create the assessment.
   - `MockPredictor` deterministic clusters for stable dev/test when `MODEL_URL` is empty (not for production use).
 - Store: `internal/store`
   - Interfaces in `store.go`; Postgres impl in `postgres.go` using sqlc (`internal/store/sqlc`).
@@ -83,8 +83,8 @@ Runtime behaviors & failure modes
 - Startup: optional pgx pool connect/ping; logs warning when `DB_DSN` is unset (store will error on use).
 - Shutdown: graceful HTTP shutdown with 5s timeout; pgx pool close.
 - Auth errors: missing/invalid bearer -> 401.
-- Model failures/timeouts/non-200: stored as `cluster="error", risk=0`; request still succeeds (201).
-- Validation warnings: prefixed `warning:` and returned; does not block creation.
+- Model failures/timeouts/non-200: backend returns error response and does NOT create the assessment.
+- Validation warnings: prefixed `warning:` and returned via `validation_status`; does not block creation.
 - Export caps: CSV limited by `EXPORT_MAX_ROWS`.
 - CORS: enforced via configured origins.
 

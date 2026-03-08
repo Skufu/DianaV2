@@ -51,7 +51,42 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     at_risk_probability,
     validation_warnings = [],
     warning = '',
+    output_capabilities,
+    cluster_capability,
   } = safeResult;
+
+  const outputCapabilities = output_capabilities && typeof output_capabilities === 'object'
+    ? output_capabilities
+    : null;
+  const clusterCapability = cluster_capability && typeof cluster_capability === 'object'
+    ? cluster_capability
+    : null;
+
+  const capabilityOrFalse = (capabilityValue) => capabilityValue === true;
+
+  const canonicalClusters = new Set(['SIDD', 'SIRD', 'MOD', 'MARD']);
+  const normalizedCluster = typeof cluster === 'string' ? cluster.trim().toUpperCase() : '';
+  const hasCanonicalCluster = canonicalClusters.has(normalizedCluster);
+
+  const hasExplicitCapabilityContract = Boolean(outputCapabilities || clusterCapability);
+
+  const hasPredictedStatus = hasExplicitCapabilityContract
+    && capabilityOrFalse(outputCapabilities?.predicted_status)
+    && typeof predicted_status === 'string'
+    && predicted_status.trim().length > 0;
+
+  const hasAtRiskProbability = hasExplicitCapabilityContract
+    && capabilityOrFalse(outputCapabilities?.at_risk_probability)
+    && Number.isFinite(at_risk_probability);
+
+  const subtypeCapability = hasExplicitCapabilityContract
+    && capabilityOrFalse(clusterCapability?.supported)
+    && capabilityOrFalse(outputCapabilities?.metabolic_subtype);
+
+  const canRenderSubtypeProfile = Boolean(
+    subtypeCapability
+    && hasCanonicalCluster
+  );
 
   const getRiskColor = (level) => {
     const normalizedLevel = level?.toLowerCase() || 'unknown';
@@ -105,16 +140,27 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   };
 
   const getClusterInfo = (clusterName) => {
+    // Neutral fallback for unknown/null/unsupported cluster values
+    // DO NOT map to moderate or any named subtype - preserve uncertainty
+    const NEUTRAL_CLUSTER = {
+      fullName: 'Profile Information Unavailable',
+      desc: 'Cluster classification could not be determined. This may occur when some biomarker values are outside expected ranges or unavailable. Please discuss your results with your healthcare provider for personalized guidance.',
+      color: 'bg-slate-100 text-slate-700',
+      icon: <AlertCircle className="text-slate-500" size={24} />,
+    };
+
+    // Canonical Ahlqvist subtypes (SIDD, SIRD, MOD, MARD)
+    // These are the ONLY valid cluster assignments from the clinical model
     const clusters = {
       'SIDD': {
-        fullName: 'Insulin Sensitivity Profile',
-        desc: 'Your body might need a little extra help utilizing insulin properly. This is very common and manageable.',
+        fullName: 'Atherogenic / Lipid-Driven Profile',
+        desc: 'Your results show an atherogenic lipid profile with elevated cardiovascular risk markers. This pattern often benefits from cardiovascular risk management and lipid optimization.',
         color: 'bg-rose-100 text-rose-800',
         icon: <Droplets className="text-rose-600" size={24} />,
       },
       'SIRD': {
-        fullName: 'Metabolic Balance Profile',
-        desc: 'Your results point toward insulin resistance, which often improves beautifully with gentle lifestyle adjustments.',
+        fullName: 'Insulin Resistance Profile',
+        desc: 'Your results suggest insulin resistance, which often improves with lifestyle modifications. This is very common and manageable with the right approach.',
         color: 'bg-orange-100 text-orange-800',
         icon: <Flame className="text-orange-600" size={24} />,
       },
@@ -130,36 +176,26 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
         color: 'bg-teal-100 text-teal-800',
         icon: <Sparkles className="text-teal-600" size={24} />,
       },
-      'Low Risk': {
-        fullName: 'Balanced Wellness Profile',
-        desc: 'Your health markers are looking beautifully balanced right now.',
-        color: 'bg-teal-100 text-teal-800',
-        icon: <Heart className="text-teal-600" size={24} />,
-      },
-      'Moderate Risk': {
-        fullName: 'Attention Needed Profile',
-        desc: 'Some of your markers are slightly elevated and could use some nurturing.',
-        color: 'bg-amber-100 text-amber-800',
-        icon: <AlertCircle className="text-amber-600" size={24} />,
-      },
-      'High Risk': {
-        fullName: 'Care Priority Profile',
-        desc: 'Your markers are elevated. Partnering closely with your doctor is the best and safest next step.',
-        color: 'bg-rose-100 text-rose-800',
-        icon: <ShieldCheck className="text-rose-600" size={24} />,
-      }
     };
-    return clusters[clusterName] || clusters['Moderate Risk'];
+
+    // Return neutral fallback for unknown/null/empty/N/A cluster values
+    // NEVER default to moderate or any named subtype
+    if (!clusterName || clusterName === 'Unknown' || clusterName === 'N/A' || clusterName === '') {
+      return NEUTRAL_CLUSTER;
+    }
+
+    // Return canonical cluster if it exists, otherwise neutral fallback
+    return clusters[clusterName] || NEUTRAL_CLUSTER;
   };
 
-  const normalizedRiskScore = Number.isFinite(risk_score) ? risk_score : null;
-  const overallRiskScore = normalizedRiskScore ?? 0;
-  const overallRiskLevel = normalizedRiskScore !== null
-    ? (overallRiskScore >= 67 ? 'high' : overallRiskScore >= 34 ? 'moderate' : 'low')
-    : (overallRiskLevelRaw || 'unknown').toLowerCase();
+const normalizedRiskScore = Number.isFinite(risk_score) ? risk_score : null;
+const overallRiskScore = normalizedRiskScore ?? 0;
+const overallRiskLevel = (overallRiskLevelRaw || 'unknown').toLowerCase();
 
   const colors = getRiskColor(overallRiskLevel);
-  const clusterInfo = getClusterInfo(cluster);
+  const profileClusterInfo = canRenderSubtypeProfile
+    ? getClusterInfo(normalizedCluster)
+    : getClusterInfo('');
 
   const hasWarnings = validation_status && validation_status.includes('warning');
   const warningList = hasWarnings
@@ -294,14 +330,18 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                             <span className="text-slate-500 font-medium text-lg">/ 100</span>
                           </div>
 
-                          {isDoctorModel && predicted_status && (
+                          {isDoctorModel && (hasPredictedStatus || hasAtRiskProbability) && (
                             <div className="flex flex-wrap gap-2 mb-4">
-                              <span className="px-4 py-1.5 rounded-full bg-slate-800 text-white text-sm font-semibold">
-                                Predicted: {predicted_status}
-                              </span>
-                              <span className="px-4 py-1.5 rounded-full bg-white/90 text-slate-700 text-sm font-semibold border border-slate-200">
-                                {probabilityText}
-                              </span>
+                              {hasPredictedStatus && (
+                                <span className="px-4 py-1.5 rounded-full bg-slate-800 text-white text-sm font-semibold">
+                                  Predicted: {predicted_status}
+                                </span>
+                              )}
+                              {hasAtRiskProbability && (
+                                <span className="px-4 py-1.5 rounded-full bg-white/90 text-slate-700 text-sm font-semibold border border-slate-200">
+                                  {probabilityText}
+                                </span>
+                              )}
                             </div>
                           )}
 
@@ -329,19 +369,19 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                         >
                           <h3 className="text-lg font-semibold text-slate-800 mb-5 flex items-center gap-2">
                             <Leaf className="text-teal-500" size={22} />
-                            Your Personal Profile
+                            {canRenderSubtypeProfile ? 'Your Personal Profile' : 'Result Profile Summary'}
                           </h3>
 
                           <div className="flex items-start gap-5 p-5 bg-slate-50 rounded-2xl border border-slate-100/50">
                             <motion.div
                               whileHover={shouldReduceMotion ? undefined : { scale: 1.1, rotate: 5 }}
                               transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300 }}
-                              className={`p-4 rounded-full ${clusterInfo.color} shrink-0 shadow-sm`}
+                              className={`p-4 rounded-full ${profileClusterInfo.color} shrink-0 shadow-sm`}
                             >
-                              {clusterInfo.icon}
+                              {profileClusterInfo.icon}
                             </motion.div>
                             <div className="flex flex-col">
-                              {['SIDD', 'SIRD', 'MOD', 'MARD'].includes(cluster) && (
+                              {canRenderSubtypeProfile && (
                                 <motion.div
                                   initial={{ opacity: 0, x: -10 }}
                                   animate={{ opacity: 1, x: 0 }}
@@ -349,7 +389,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                                   className="mb-1.5 inline-block"
                                 >
                                   <span className="text-[13px] font-bold tracking-widest text-indigo-500 uppercase bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-                                    Cluster: {cluster}
+                                    Cluster: {normalizedCluster}
                                   </span>
                                 </motion.div>
                               )}
@@ -359,7 +399,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                                 transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.4 }}
                                 className="font-bold text-slate-800 text-[20px] mb-2 leading-tight"
                               >
-                                {clusterInfo.fullName}
+                                {canRenderSubtypeProfile ? profileClusterInfo.fullName : 'Subtype information unavailable'}
                               </motion.div>
                               <motion.p
                                 initial={{ opacity: 0 }}
@@ -367,9 +407,11 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                                 transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5 }}
                                 className="text-slate-600 text-[16px] leading-relaxed mb-3"
                               >
-                                {clusterInfo.desc}
+                                {canRenderSubtypeProfile
+                                  ? profileClusterInfo.desc
+                                  : 'This assessment result does not include subtype/cluster output. We are showing a neutral summary without subtype-specific interpretation.'}
                               </motion.p>
-                              {treatment_focus && (
+                              {canRenderSubtypeProfile && treatment_focus && (
                                 <motion.div
                                   initial={{ opacity: 0, y: 5 }}
                                   animate={{ opacity: 1, y: 0 }}

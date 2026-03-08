@@ -108,6 +108,93 @@ ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:8080,http://l
 CORS(app, origins=ALLOWED_ORIGINS if os.environ.get('ENV') == 'production' else '*')
 
 
+def _dataset_hash_from_metrics(metrics):
+    if isinstance(metrics, dict):
+        value = metrics.get("dataset_hash")
+        if value is not None and str(value).strip() != "":
+            return str(value).strip()
+    return os.environ.get("MODEL_DATASET_HASH", "").strip()
+
+
+def _normalize_model_version(value: str) -> str:
+    normalized = str(value or "").strip()
+    aliases = {
+        "binary_v2_with_bp": "binary_v2_bp",
+    }
+    return aliases.get(normalized, normalized)
+
+
+def _resolve_model_version_for_lineage(resolved: str, predictor) -> str:
+    model_version = _normalize_model_version(getattr(predictor, "model_type", ""))
+    if model_version and model_version != "clinical":
+        return model_version
+
+    models_dir = getattr(predictor, "models_dir", None)
+    models_dir_name = _normalize_model_version(getattr(models_dir, "name", ""))
+    if models_dir_name and models_dir_name != "clinical":
+        return models_dir_name
+
+    if model_version:
+        return model_version
+
+    return _normalize_model_version(resolved)
+
+
+def _lineage_for_model_type(model_type: str, clinical_predictor=None):
+    resolved = model_type or "clinical"
+    if resolved in ('clinical', 'binary_v2_no_bp', 'binary_v2_bp'):
+        predictor = clinical_predictor
+        if predictor is None:
+            predictor = get_clinical_predictor_for(resolved)
+        if predictor is None:
+            return (resolved, "", "")
+        model_version = _resolve_model_version_for_lineage(resolved, predictor)
+        dataset_hash = _dataset_hash_from_metrics(getattr(predictor, "metrics", {}))
+        feature_schema_version = f"features:{len(getattr(predictor, 'features', []) or [])}"
+        return (model_version, dataset_hash, feature_schema_version)
+
+    predictor = get_predictor()
+    model_version = "ada"
+    dataset_hash = _dataset_hash_from_metrics(getattr(predictor, "metrics", {}))
+    feature_schema_version = "features:6"
+    return (model_version, dataset_hash, feature_schema_version)
+
+
+def _drift_baseline_for_lineage(model_version: str, dataset_hash: str, feature_schema_version: str):
+    default = {
+        "baseline_id": "",
+        "baseline_version": "",
+        "model_version": model_version or "",
+        "dataset_hash": dataset_hash or "",
+        "feature_schema_version": feature_schema_version or "",
+        "source_kind": "",
+        "created_at": "",
+        "refreshed_at": "",
+        "stale_after": "",
+        "sample_count": 0,
+        "reference_features": [],
+        "lineage_status": "missing_reference",
+    }
+
+    if not drift_available or get_drift_monitor is None:
+        return default
+
+    monitor = get_drift_monitor()
+    baseline = monitor.get_baseline_metadata(
+        active_model_version=model_version,
+        active_dataset_hash=dataset_hash,
+        active_feature_schema_version=feature_schema_version,
+    )
+
+    if model_version and not baseline.get("model_version"):
+        baseline["model_version"] = model_version
+    if dataset_hash and not baseline.get("dataset_hash"):
+        baseline["dataset_hash"] = dataset_hash
+    if feature_schema_version and not baseline.get("feature_schema_version"):
+        baseline["feature_schema_version"] = feature_schema_version
+    return baseline
+
+
 class RateLimiter:
     def __init__(self, requests_per_minute=60, requests_per_second=10):
         self.requests_per_minute = requests_per_minute
@@ -289,6 +376,9 @@ def predict():
     try:
         data = request.get_json()
         model_type = request.args.get('model_type', 'clinical')
+        lineage_model_version = ""
+        lineage_dataset_hash = ""
+        lineage_feature_schema_version = ""
         
         if not data:
             return jsonify({"error": "No data provided"}), 400
@@ -317,8 +407,10 @@ def predict():
                 "family_history_diabetes": data.get("family_history_diabetes"),
             }
             result = clin_predictor.predict(patient_data)
+            lineage_model_version, lineage_dataset_hash, lineage_feature_schema_version = _lineage_for_model_type(model_type, clin_predictor)
         else:
             # Use ADA baseline model
+            ada_predictor = get_predictor()
             patient_data = {
                 "hba1c": data.get("hba1c"),
                 "fbs": data.get("fbs"),
@@ -327,10 +419,27 @@ def predict():
                 "ldl": data.get("ldl"),
                 "hdl": data.get("hdl")
             }
-            result = get_predictor().predict(patient_data)
+            result = ada_predictor.predict(patient_data)
+            lineage_model_version = "ada"
+            lineage_dataset_hash = _dataset_hash_from_metrics(getattr(ada_predictor, "metrics", {}))
+            lineage_feature_schema_version = "features:6"
         
         if not result.get("success"):
             return jsonify({"error": result.get("error")}), 400
+
+        if not result.get("model_version"):
+            result["model_version"] = lineage_model_version
+        if not result.get("dataset_hash"):
+            result["dataset_hash"] = lineage_dataset_hash
+
+        lineage_model_version = result.get("model_version") or lineage_model_version
+        lineage_dataset_hash = result.get("dataset_hash") or lineage_dataset_hash
+        if not result.get("drift_baseline"):
+            result["drift_baseline"] = _drift_baseline_for_lineage(
+                lineage_model_version,
+                lineage_dataset_hash,
+                lineage_feature_schema_version,
+            )
 
         result["model_type"] = model_type
         return jsonify(result)
@@ -584,7 +693,15 @@ def drift_status():
         return jsonify({"error": "Drift detection not available"}), 503
     
     monitor = get_drift_monitor()
-    return jsonify(monitor.get_status())
+    model_version, dataset_hash, feature_schema_version = _lineage_for_model_type("clinical")
+    status = monitor.get_status()
+    status["active_lineage"] = {
+        "model_version": model_version,
+        "dataset_hash": dataset_hash,
+        "feature_schema_version": feature_schema_version,
+    }
+    status["drift_baseline"] = _drift_baseline_for_lineage(model_version, dataset_hash, feature_schema_version)
+    return jsonify(status)
 
 
 @app.route('/monitoring/drift/check', methods=['POST'])
@@ -639,10 +756,40 @@ def set_drift_reference():
         reference_data = {
             k: np.array(v) for k, v in data['features'].items()
         }
-        
-        monitor.set_reference(reference_data)
-        
-        return jsonify({"success": True, "features": list(reference_data.keys())})
+
+        requested_model_type = str(data.get("model_type") or request.headers.get("X-Model-Version") or "clinical")
+        model_version, dataset_hash, feature_schema_version = _lineage_for_model_type(requested_model_type)
+        metadata = dict(data.get("metadata") or {})
+        if data.get("baseline_id") is not None:
+            metadata["baseline_id"] = data.get("baseline_id")
+        if data.get("baseline_version") is not None:
+            metadata["baseline_version"] = data.get("baseline_version")
+        if data.get("source_kind") is not None:
+            metadata["source_kind"] = data.get("source_kind")
+        if data.get("stale_after") is not None:
+            metadata["stale_after"] = data.get("stale_after")
+        if data.get("created_at") is not None:
+            metadata["created_at"] = data.get("created_at")
+        if data.get("refreshed_at") is not None:
+            metadata["refreshed_at"] = data.get("refreshed_at")
+        metadata.setdefault("model_version", model_version)
+        metadata.setdefault("dataset_hash", dataset_hash)
+        metadata.setdefault("feature_schema_version", feature_schema_version)
+        metadata.setdefault("reference_features", list(reference_data.keys()))
+        metadata.setdefault("sample_count", min((len(v) for v in reference_data.values()), default=0))
+
+        monitor.set_reference(reference_data, metadata=metadata)
+        baseline = monitor.get_baseline_metadata(
+            active_model_version=model_version,
+            active_dataset_hash=dataset_hash,
+            active_feature_schema_version=feature_schema_version,
+        )
+
+        return jsonify({
+            "success": True,
+            "features": list(reference_data.keys()),
+            "drift_baseline": baseline,
+        })
         
     except Exception as e:
         logger.exception("Set reference failed")
@@ -876,17 +1023,53 @@ def active_model_metadata():
                  "error": "Clinical model not available."
              }), 503
         
-        # Determine model version/name based on the directory it was loaded from
-        model_version = "clinical_v2"
-        if "binary_v2_no_bp" in str(clin_predictor.models_dir):
-            model_version = "binary_v2_no_bp"
+        model_version = _resolve_model_version_for_lineage("clinical", clin_predictor)
+        dataset_hash = _dataset_hash_from_metrics(clin_predictor.metrics)
+        feature_schema_version = f"features:{len(clin_predictor.features)}"
+
+        cluster_supported = bool(
+            clin_predictor.kmeans is not None
+            and clin_predictor.cluster_scaler is not None
+            and clin_predictor.cluster_imputer is not None
+            and isinstance(clin_predictor.cluster_labels, dict)
+            and len(clin_predictor.cluster_labels) > 0
+        )
+
+        feature_set = {
+            "features": clin_predictor.features,
+            "feature_count": len(clin_predictor.features),
+            "source": "features.json",
+        }
+
+        cluster_capability = {
+            "supported": cluster_supported,
+            "required_inputs": clin_predictor.cluster_features,
+            "output_field": "metabolic_subtype",
+            "alias_field": "risk_cluster",
+        }
+
+        output_capabilities = {
+            "predicted_status": True,
+            "risk_score": True,
+            "at_risk_probability": True,
+            "prediction_confidence": True,
+            "metabolic_subtype": cluster_supported,
+            "risk_label": True,
+            "cluster_description": cluster_supported,
+            "treatment_focus": cluster_supported,
+        }
+
+        drift_baseline = _drift_baseline_for_lineage(model_version, dataset_hash, feature_schema_version)
             
         return jsonify({
             "model_version": model_version,
             "features": clin_predictor.features,
+            "feature_set": feature_set,
+            "cluster_capability": cluster_capability,
+            "output_capabilities": output_capabilities,
             "metrics": clin_predictor.metrics,
-            # Generate a pseudo-hash based on features and model if no dataset_hash is present
-            "dataset_hash": clin_predictor.metrics.get("dataset_hash", "N/A"),
+            "dataset_hash": dataset_hash,
+            "drift_baseline": drift_baseline,
             "notes": f"Active {model_version} screening model"
         })
     except Exception as e:

@@ -17,15 +17,15 @@ import logging
 from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional, cast
 import numpy as np
 
 try:
-    from scipy import stats
-    SCIPY_AVAILABLE = True
+    from scipy import stats as scipy_stats
 except ImportError:
-    SCIPY_AVAILABLE = False
-    stats = None
+    scipy_stats = None
+
+SCIPY_AVAILABLE = scipy_stats is not None
 
 logger = logging.getLogger(__name__)
 
@@ -40,11 +40,11 @@ class DriftReport:
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
     has_drift: bool = False
     severity: str = "none"  # "none", "low", "medium", "high"
-    feature_drifts: Dict[str, Dict] = field(default_factory=dict)
-    prediction_drift: Optional[Dict] = None
-    recommendations: List[str] = field(default_factory=list)
+    feature_drifts: dict[str, dict[str, Any]] = field(default_factory=dict)
+    prediction_drift: Optional[dict[str, Any]] = None
+    recommendations: list[str] = field(default_factory=list)
     
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
@@ -55,7 +55,7 @@ class Alert:
     alert_type: str = "drift"  # "drift", "performance", "error"
     severity: str = "low"
     message: str = ""
-    details: Dict = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     acknowledged: bool = False
 
 
@@ -78,7 +78,7 @@ class DriftMonitor:
     
     def __init__(
         self,
-        reference_data: Optional[Dict[str, np.ndarray]] = None,
+        reference_data: Optional[dict[str, np.ndarray]] = None,
         reference_path: Optional[Path] = None,
         alerts_path: Optional[Path] = None
     ):
@@ -96,8 +96,9 @@ class DriftMonitor:
         # Ensure directories exist
         self.reference_path.parent.mkdir(parents=True, exist_ok=True)
         
-        self.reference_data: Dict[str, np.ndarray] = {}
-        self.alerts: List[Alert] = []
+        self.reference_data: dict[str, np.ndarray] = {}
+        self.reference_metadata: dict[str, Any] = {}
+        self.alerts: list[Alert] = []
         
         if reference_data:
             self.set_reference(reference_data)
@@ -115,9 +116,16 @@ class DriftMonitor:
             try:
                 with open(self.reference_path, 'r') as f:
                     data = json.load(f)
-                    self.reference_data = {
-                        k: np.array(v) for k, v in data.items()
-                    }
+                    if isinstance(data, dict) and isinstance(data.get("features"), dict):
+                        self.reference_data = {
+                            k: np.array(v) for k, v in data.get("features", {}).items()
+                        }
+                        self.reference_metadata = data.get("metadata") or {}
+                    else:
+                        self.reference_data = {
+                            k: np.array(v) for k, v in data.items()
+                        }
+                        self.reference_metadata = {}
                 logger.info(f"Loaded reference data: {list(self.reference_data.keys())}")
             except Exception as e:
                 logger.error(f"Failed to load reference data: {e}")
@@ -125,9 +133,12 @@ class DriftMonitor:
     def _save_reference(self):
         """Save reference data to file."""
         try:
-            data = {k: v.tolist() for k, v in self.reference_data.items()}
+            data = {
+                "metadata": self.reference_metadata,
+                "features": {k: v.tolist() for k, v in self.reference_data.items()},
+            }
             with open(self.reference_path, 'w') as f:
-                json.dump(data, f)
+                json.dump(data, f, indent=2)
         except Exception as e:
             logger.error(f"Failed to save reference data: {e}")
     
@@ -149,7 +160,107 @@ class DriftMonitor:
         except Exception as e:
             logger.error(f"Failed to save alerts: {e}")
     
-    def set_reference(self, data: Dict[str, np.ndarray]) -> None:
+    @staticmethod
+    def _parse_iso8601(value: Optional[str]) -> Optional[datetime]:
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except Exception:
+            return None
+
+    def _normalize_baseline_metadata(
+        self,
+        metadata: Optional[dict[str, Any]],
+        reference_features: list[str],
+        sample_count: int,
+    ) -> dict[str, Any]:
+        md = dict(metadata or {})
+        now = datetime.now().isoformat()
+
+        def _str(name: str, fallback: str = "") -> str:
+            value = md.get(name, fallback)
+            return str(value).strip() if value is not None else fallback
+
+        default_stale_after = datetime.fromtimestamp(datetime.now().timestamp() + 90 * 24 * 3600).isoformat()
+
+        normalized = {
+            "baseline_id": _str("baseline_id"),
+            "baseline_version": _str("baseline_version"),
+            "model_version": _str("model_version"),
+            "dataset_hash": _str("dataset_hash"),
+            "feature_schema_version": _str("feature_schema_version"),
+            "source_kind": _str("source_kind", "manual_reference"),
+            "created_at": _str("created_at", now),
+            "refreshed_at": _str("refreshed_at"),
+            "stale_after": _str("stale_after", default_stale_after),
+            "sample_count": int(md.get("sample_count") or sample_count),
+            "reference_features": md.get("reference_features") or reference_features,
+        }
+
+        if not normalized["baseline_id"]:
+            normalized["baseline_id"] = f"local-{normalized['created_at']}"
+        if not normalized["baseline_version"]:
+            normalized["baseline_version"] = "v1"
+        if not normalized["feature_schema_version"]:
+            normalized["feature_schema_version"] = f"features:{len(reference_features)}"
+
+        return normalized
+
+    def get_baseline_metadata(
+        self,
+        active_model_version: Optional[str] = None,
+        active_dataset_hash: Optional[str] = None,
+        active_feature_schema_version: Optional[str] = None,
+    ) -> dict[str, Any]:
+        if not self.reference_data:
+            return {
+                "baseline_id": "",
+                "baseline_version": "",
+                "model_version": "",
+                "dataset_hash": "",
+                "feature_schema_version": "",
+                "source_kind": "",
+                "created_at": "",
+                "refreshed_at": "",
+                "stale_after": "",
+                "sample_count": 0,
+                "reference_features": [],
+                "lineage_status": "missing_reference",
+            }
+
+        sample_count = min((len(v) for v in self.reference_data.values()), default=0)
+        reference_features = list(self.reference_data.keys())
+        md = self._normalize_baseline_metadata(self.reference_metadata, reference_features, sample_count)
+
+        lineage_status = "healthy"
+
+        stale_after_dt = self._parse_iso8601(md.get("stale_after"))
+        if stale_after_dt is not None and datetime.now(stale_after_dt.tzinfo) > stale_after_dt:
+            lineage_status = "stale_reference"
+
+        baseline_model_version = str(md.get("model_version") or "").strip()
+        if active_model_version and baseline_model_version and baseline_model_version != active_model_version:
+            lineage_status = "reference_mismatch"
+
+        baseline_dataset_hash = str(md.get("dataset_hash") or "").strip()
+        if active_dataset_hash:
+            if not baseline_dataset_hash:
+                lineage_status = "lineage_incomplete"
+            elif baseline_dataset_hash != active_dataset_hash:
+                lineage_status = "reference_mismatch"
+
+        baseline_schema_version = str(md.get("feature_schema_version") or "").strip()
+        if active_feature_schema_version and baseline_schema_version and baseline_schema_version != active_feature_schema_version:
+            lineage_status = "reference_mismatch"
+
+        if not md.get("reference_features"):
+            lineage_status = "partial_reference"
+
+        md["lineage_status"] = lineage_status
+        return md
+
+    def set_reference(self, data: dict[str, np.ndarray], metadata: Optional[dict[str, Any]] = None) -> None:
         """
         Set reference data for comparison.
         
@@ -160,6 +271,13 @@ class DriftMonitor:
             k: np.array(v) if not isinstance(v, np.ndarray) else v
             for k, v in data.items()
         }
+        sample_count = min((len(v) for v in self.reference_data.values()), default=0)
+        reference_features = list(self.reference_data.keys())
+        self.reference_metadata = self._normalize_baseline_metadata(
+            metadata,
+            reference_features,
+            sample_count,
+        )
         self._save_reference()
         logger.info(f"Reference data set: {list(self.reference_data.keys())}")
     
@@ -205,7 +323,7 @@ class DriftMonitor:
         self,
         reference: np.ndarray,
         current: np.ndarray
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """
         Perform Kolmogorov-Smirnov test.
         
@@ -216,19 +334,19 @@ class DriftMonitor:
         Returns:
             Tuple of (statistic, p-value)
         """
-        if not SCIPY_AVAILABLE:
+        if not SCIPY_AVAILABLE or scipy_stats is None:
             return (0.0, 1.0)
-        
+
         try:
-            statistic, p_value = stats.ks_2samp(reference, current)
-            return (float(statistic), float(p_value))
+            statistic, p_value = scipy_stats.ks_2samp(reference, current)
+            return (float(cast(float, statistic)), float(cast(float, p_value)))
         except Exception as e:
             logger.error(f"KS-test failed: {e}")
             return (0.0, 1.0)
     
     def check_feature_drift(
         self,
-        current_data: Dict[str, np.ndarray]
+        current_data: dict[str, np.ndarray]
     ) -> DriftReport:
         """
         Check for drift in feature distributions.
@@ -301,7 +419,7 @@ class DriftMonitor:
         self,
         current_predictions: np.ndarray,
         reference_predictions: Optional[np.ndarray] = None
-    ) -> Dict:
+    ) -> dict[str, Any]:
         """
         Check for drift in prediction distribution.
         
@@ -333,7 +451,7 @@ class DriftMonitor:
             "current_mean": float(np.mean(current_array))
         }
     
-    def _generate_recommendations(self, feature_drifts: Dict) -> List[str]:
+    def _generate_recommendations(self, feature_drifts: dict[str, dict[str, Any]]) -> list[str]:
         """Generate recommendations based on detected drift."""
         recommendations = []
         
@@ -410,7 +528,7 @@ class DriftMonitor:
         self,
         unacknowledged_only: bool = False,
         limit: int = 50
-    ) -> List[Dict]:
+    ) -> list[dict[str, Any]]:
         """
         Get recent alerts.
         
@@ -448,7 +566,7 @@ class DriftMonitor:
                 return True
         return False
     
-    def get_status(self) -> Dict:
+    def get_status(self) -> dict[str, Any]:
         """
         Get current monitoring status.
         
@@ -463,7 +581,8 @@ class DriftMonitor:
             "total_alerts": len(self.alerts),
             "unacknowledged_alerts": unacked_alerts,
             "last_check": self.alerts[-1].timestamp if self.alerts else None,
-            "scipy_available": SCIPY_AVAILABLE
+            "scipy_available": SCIPY_AVAILABLE,
+            "drift_baseline": self.get_baseline_metadata(),
         }
 
 
@@ -521,4 +640,5 @@ if __name__ == "__main__":
     # Create alert
     if report.has_drift:
         alert = monitor.create_alert(report)
-        print(f"\nAlert created: {alert.message}")
+        if alert is not None:
+            print(f"\nAlert created: {alert.message}")

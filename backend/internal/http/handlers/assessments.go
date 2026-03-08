@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,12 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
+const (
+	canonicalAssessmentMinAge = 45
+	canonicalAssessmentMaxAge = 60
+	canonicalAssessmentAgeErr = "Age must be between 45-60 years for postmenopausal women. This application is designed for this specific population."
+)
+
 type AssessmentsHandler struct {
 	store       store.Store
 	predictor   ml.Predictor
@@ -24,6 +31,109 @@ type AssessmentsHandler struct {
 	modelVer    string
 	datasetHash string
 	thresholds  config.ClinicalThresholds
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed != "" {
+			return trimmed
+		}
+	}
+
+	return ""
+}
+
+func driftBaselineMap(b ml.DriftBaselineMetadata) map[string]any {
+	if b.BaselineID == "" &&
+		b.BaselineVersion == "" &&
+		b.ModelVersion == "" &&
+		b.DatasetHash == "" &&
+		b.FeatureSchemaVersion == "" &&
+		b.SourceKind == "" &&
+		b.CreatedAt == "" &&
+		b.RefreshedAt == "" &&
+		b.StaleAfter == "" &&
+		b.SampleCount == 0 &&
+		len(b.ReferenceFeatures) == 0 &&
+		b.LineageStatus == "" {
+		return nil
+	}
+
+	return map[string]any{
+		"baseline_id":            b.BaselineID,
+		"baseline_version":       b.BaselineVersion,
+		"model_version":          b.ModelVersion,
+		"dataset_hash":           b.DatasetHash,
+		"feature_schema_version": b.FeatureSchemaVersion,
+		"source_kind":            b.SourceKind,
+		"created_at":             b.CreatedAt,
+		"refreshed_at":           b.RefreshedAt,
+		"stale_after":            b.StaleAfter,
+		"sample_count":           b.SampleCount,
+		"reference_features":     b.ReferenceFeatures,
+		"lineage_status":         b.LineageStatus,
+	}
+}
+
+func ensureAssessmentLineage(assessment *models.Assessment, fallbackModelVersion, fallbackDatasetHash string) {
+	if assessment == nil {
+		return
+	}
+
+	assessment.ModelVersion = firstNonEmpty(assessment.ModelVersion, fallbackModelVersion)
+	assessment.DatasetHash = firstNonEmpty(assessment.DatasetHash, fallbackDatasetHash)
+
+	if assessment.DriftBaseline == nil {
+		assessment.DriftBaseline = map[string]any{
+			"baseline_id":            "",
+			"baseline_version":       "",
+			"model_version":          assessment.ModelVersion,
+			"dataset_hash":           assessment.DatasetHash,
+			"feature_schema_version": "",
+			"source_kind":            "",
+			"created_at":             "",
+			"refreshed_at":           "",
+			"stale_after":            "",
+			"sample_count":           0,
+			"reference_features":     []string{},
+			"lineage_status":         "lineage_incomplete",
+		}
+	}
+
+	if _, ok := assessment.DriftBaseline["model_version"]; !ok {
+		assessment.DriftBaseline["model_version"] = assessment.ModelVersion
+	}
+	if _, ok := assessment.DriftBaseline["dataset_hash"]; !ok {
+		assessment.DriftBaseline["dataset_hash"] = assessment.DatasetHash
+	}
+
+	baselineModelVersion := strings.TrimSpace(fmt.Sprintf("%v", assessment.DriftBaseline["model_version"]))
+	baselineDatasetHash := strings.TrimSpace(fmt.Sprintf("%v", assessment.DriftBaseline["dataset_hash"]))
+	if baselineModelVersion == "" || baselineModelVersion == "<nil>" {
+		assessment.DriftBaseline["model_version"] = assessment.ModelVersion
+		baselineModelVersion = assessment.ModelVersion
+	}
+	if baselineDatasetHash == "" || baselineDatasetHash == "<nil>" {
+		assessment.DriftBaseline["dataset_hash"] = assessment.DatasetHash
+		baselineDatasetHash = assessment.DatasetHash
+	}
+
+	lineageStatus := strings.TrimSpace(fmt.Sprintf("%v", assessment.DriftBaseline["lineage_status"]))
+	if lineageStatus == "" || lineageStatus == "<nil>" {
+		lineageStatus = "lineage_incomplete"
+	}
+
+	switch {
+	case baselineModelVersion != "" && assessment.ModelVersion != "" && baselineModelVersion != assessment.ModelVersion:
+		lineageStatus = "reference_mismatch"
+	case baselineDatasetHash != "" && assessment.DatasetHash != "" && baselineDatasetHash != assessment.DatasetHash:
+		lineageStatus = "reference_mismatch"
+	case lineageStatus == "healthy" && (baselineModelVersion == "" || (assessment.DatasetHash != "" && baselineDatasetHash == "")):
+		lineageStatus = "lineage_incomplete"
+	}
+
+	assessment.DriftBaseline["lineage_status"] = lineageStatus
 }
 
 func NewAssessmentsHandler(store store.Store, predictor ml.Predictor, cache *cache.Cache, modelVer, datasetHash string, thresholds config.ClinicalThresholds) *AssessmentsHandler {
@@ -87,6 +197,9 @@ func (h *AssessmentsHandler) invalidateUserCache(ctx context.Context, userID int
 
 // Helper function to calculate risk level (local version to avoid conflict/undefined issues)
 func calculateRiskLevel(score int) string {
+	if score < 0 || score > 100 {
+		return "unknown"
+	}
 	if score < 30 {
 		return "low"
 	} else if score < 70 {
@@ -96,12 +209,134 @@ func calculateRiskLevel(score int) string {
 	}
 }
 
+func canonicalRiskLabel(riskLevel string, fallback string) string {
+	switch riskLevel {
+	case "low":
+		return "Low Risk"
+	case "medium":
+		return "Moderate Risk"
+	case "high":
+		return "High Risk"
+	default:
+		if fallback != "" {
+			return fallback
+		}
+		return "Unknown Risk"
+	}
+}
+
 func ageFromDOB(dob time.Time, now time.Time) int {
 	age := now.Year() - dob.Year()
 	if now.Month() < dob.Month() || (now.Month() == dob.Month() && now.Day() < dob.Day()) {
 		age--
 	}
 	return age
+}
+
+func (h *AssessmentsHandler) resolveAssessmentAge(ctx context.Context, userID int64, requestedAge *int, fallbackAge int) (int, error) {
+	age := fallbackAge
+	if requestedAge != nil {
+		age = *requestedAge
+	}
+	if age > 0 {
+		return age, nil
+	}
+
+	user, err := h.store.Users().FindByID(ctx, int32(userID))
+	if err != nil {
+		return 0, err
+	}
+	if user != nil && user.DateOfBirth != nil {
+		return ageFromDOB(*user.DateOfBirth, time.Now().UTC()), nil
+	}
+
+	return age, nil
+}
+
+func applyValidationStatus(assessment *models.Assessment, validationResult ml.ValidationResult) {
+	assessment.ValidationStatus = ml.FormatValidationStatus(validationResult)
+}
+
+func applyCapabilityContract(assessment *models.Assessment, featureSet ml.FeatureSet, clusterCapability ml.ClusterCapability, outputCapabilities ml.OutputCapabilities) {
+	assessment.FeatureSet = map[string]any{
+		"features":      featureSet.Features,
+		"feature_count": featureSet.FeatureCount,
+		"source":        featureSet.Source,
+	}
+	assessment.ClusterCapability = map[string]any{
+		"supported":       clusterCapability.Supported,
+		"required_inputs": clusterCapability.RequiredInputs,
+		"output_field":    clusterCapability.OutputField,
+		"alias_field":     clusterCapability.AliasField,
+	}
+	assessment.OutputCapabilities = map[string]any{
+		"predicted_status":      outputCapabilities.PredictedStatus,
+		"risk_score":            outputCapabilities.RiskScore,
+		"at_risk_probability":   outputCapabilities.AtRiskProbability,
+		"prediction_confidence": outputCapabilities.PredictionConfidence,
+		"metabolic_subtype":     outputCapabilities.MetabolicSubtype,
+		"risk_label":            outputCapabilities.RiskLabel,
+		"cluster_description":   outputCapabilities.ClusterDescription,
+		"treatment_focus":       outputCapabilities.TreatmentFocus,
+	}
+}
+
+func applyResultCapabilities(assessment *models.Assessment, prediction ml.Prediction) {
+	applyCapabilityContract(assessment, prediction.FeatureSet, prediction.ClusterCapability, prediction.OutputCapabilities)
+}
+
+func (h *AssessmentsHandler) ensureAssessmentCapabilities(ctx context.Context, assessment *models.Assessment, metadata *ml.ModelMetadata) {
+	if assessment == nil {
+		return
+	}
+	if assessment.FeatureSet != nil && assessment.ClusterCapability != nil && assessment.OutputCapabilities != nil && assessment.DriftBaseline != nil {
+		return
+	}
+
+	if metadata != nil {
+		applyCapabilityContract(assessment, metadata.FeatureSet, metadata.ClusterCapability, metadata.OutputCapabilities)
+		ensureAssessmentLineage(assessment, metadata.ModelVersion, metadata.DatasetHash)
+		return
+	}
+
+	fetchedMetadata, err := h.predictor.GetActiveModelMetadata(ctx)
+	if err != nil || fetchedMetadata == nil {
+		ensureAssessmentLineage(assessment, assessment.ModelVersion, assessment.DatasetHash)
+		return
+	}
+	applyCapabilityContract(assessment, fetchedMetadata.FeatureSet, fetchedMetadata.ClusterCapability, fetchedMetadata.OutputCapabilities)
+	ensureAssessmentLineage(assessment, fetchedMetadata.ModelVersion, fetchedMetadata.DatasetHash)
+}
+
+func applyCanonicalPredictionResult(assessment *models.Assessment, prediction ml.Prediction) {
+	clusterCapabilitySupported := prediction.ClusterCapability.Supported
+	hasClusterCode := strings.TrimSpace(prediction.Cluster) != ""
+
+	if clusterCapabilitySupported && hasClusterCode {
+		assessment.Cluster = prediction.Cluster
+	} else {
+		assessment.Cluster = ""
+	}
+
+	assessment.RiskScore = prediction.RiskScore
+	assessment.PredictedStatus = prediction.PredictedStatus
+	if clusterCapabilitySupported && hasClusterCode {
+		assessment.ClusterDescription = prediction.ClusterDescription
+		assessment.TreatmentFocus = prediction.TreatmentFocus
+	} else {
+		assessment.ClusterDescription = ""
+		assessment.TreatmentFocus = ""
+	}
+	assessment.AtRiskProbability = prediction.AtRiskProbability
+	assessment.ModelVersion = firstNonEmpty(prediction.ModelVersion, assessment.ModelVersion)
+	assessment.DatasetHash = firstNonEmpty(prediction.DatasetHash, assessment.DatasetHash)
+	if baseline := driftBaselineMap(prediction.DriftBaseline); baseline != nil {
+		assessment.DriftBaseline = baseline
+	}
+	applyResultCapabilities(assessment, prediction)
+
+	assessment.RiskLevel = calculateRiskLevel(assessment.RiskScore)
+	assessment.RiskLabel = canonicalRiskLabel(assessment.RiskLevel, prediction.RiskLabel)
 }
 
 // validationStatus is REMOVED — use ml.ValidateBiomarkers() + ml.FormatValidationStatus() instead.
@@ -167,20 +402,14 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	age := coalesceInt(req.Age, 0)
-	if age <= 0 {
-		user, userErr := h.store.Users().FindByID(c.Request.Context(), int32(userID))
-		if userErr != nil {
-			log.Printf("[ERROR] Failed to resolve user age for assessment: %v", userErr)
-			ErrInternal(c, "Failed to resolve age for prediction")
-			return
-		}
-		if user != nil && user.DateOfBirth != nil {
-			age = ageFromDOB(*user.DateOfBirth, time.Now().UTC())
-		}
+	age, err := h.resolveAssessmentAge(c.Request.Context(), userID, req.Age, 0)
+	if err != nil {
+		log.Printf("[ERROR] Failed to resolve user age for assessment: %v", err)
+		ErrInternal(c, "Failed to resolve age for prediction")
+		return
 	}
-	if age < 45 || age > 60 {
-		ErrBadRequest(c, "Age must be between 45-60 years for postmenopausal women. This application is designed for this specific population.")
+	if age < canonicalAssessmentMinAge || age > canonicalAssessmentMaxAge {
+		ErrBadRequest(c, canonicalAssessmentAgeErr)
 		return
 	}
 
@@ -214,7 +443,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 
 	// Validate biomarker ranges before ML prediction (clinical safety)
 	validationResult := ml.ValidateBiomarkers(assessment, h.thresholds)
-	assessment.ValidationStatus = ml.FormatValidationStatus(validationResult)
+	applyValidationStatus(&assessment, validationResult)
 
 	// Get prediction from ML server
 	// Pass request context for cancellation support
@@ -225,16 +454,12 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	assessment.Cluster = prediction.Cluster
-	assessment.RiskScore = prediction.RiskScore
-	assessment.PredictedStatus = prediction.PredictedStatus
-	assessment.RiskLabel = prediction.RiskLabel
-	assessment.ClusterDescription = prediction.ClusterDescription
-	assessment.TreatmentFocus = prediction.TreatmentFocus
-	assessment.AtRiskProbability = prediction.AtRiskProbability
-
-	// Add risk level
-	assessment.RiskLevel = calculateRiskLevel(assessment.RiskScore)
+	responseModelVersion := h.modelVer
+	if req.ModelType != "" {
+		responseModelVersion = req.ModelType
+	}
+	applyCanonicalPredictionResult(&assessment, prediction)
+	ensureAssessmentLineage(&assessment, responseModelVersion, h.datasetHash)
 
 	// Create assessment in database
 	created, err := h.store.Assessments().Create(c.Request.Context(), assessment)
@@ -246,11 +471,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 
 	// Get full assessment with model info
 	assessment.ID = created.ID
-	assessment.ModelVersion = h.modelVer
-	if req.ModelType != "" {
-		assessment.ModelVersion = req.ModelType
-	}
-	assessment.DatasetHash = h.datasetHash
+	ensureAssessmentLineage(&assessment, responseModelVersion, h.datasetHash)
 
 	h.invalidateUserCache(c.Request.Context(), userID)
 
@@ -275,6 +496,13 @@ func (h *AssessmentsHandler) List(c *gin.Context) {
 		log.Printf("[ERROR] Failed to list assessments: %v", err)
 		ErrInternal(c, "Failed to retrieve assessments")
 		return
+	}
+	activeModelMetadata, metadataErr := h.predictor.GetActiveModelMetadata(c.Request.Context())
+	if metadataErr != nil {
+		log.Printf("[WARN] Failed to fetch active model metadata for assessment capabilities: %v", metadataErr)
+	}
+	for i := range assessments {
+		h.ensureAssessmentCapabilities(c.Request.Context(), &assessments[i], activeModelMetadata)
 	}
 
 	c.JSON(http.StatusOK, assessments)
@@ -305,6 +533,8 @@ func (h *AssessmentsHandler) Get(c *gin.Context) {
 		ErrForbidden(c)
 		return
 	}
+
+	h.ensureAssessmentCapabilities(c.Request.Context(), assessment, nil)
 
 	c.JSON(http.StatusOK, assessment)
 }
@@ -361,21 +591,15 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	assessment.HeartDisease = req.HeartDisease
 	assessment.BMI = coalesceFloat64(req.BMI, assessment.BMI)
 	assessment.Notes = req.Notes
-	assessment.Age = coalesceInt(req.Age, assessment.Age)
-
-	if assessment.Age <= 0 {
-		user, userErr := h.store.Users().FindByID(c.Request.Context(), int32(userID))
-		if userErr != nil {
-			log.Printf("[ERROR] Failed to resolve user age for assessment update: %v", userErr)
-			ErrInternal(c, "Failed to resolve age for prediction")
-			return
-		}
-		if user != nil && user.DateOfBirth != nil {
-			assessment.Age = ageFromDOB(*user.DateOfBirth, time.Now().UTC())
-		}
+	resolvedAge, resolveAgeErr := h.resolveAssessmentAge(c.Request.Context(), userID, req.Age, assessment.Age)
+	if resolveAgeErr != nil {
+		log.Printf("[ERROR] Failed to resolve user age for assessment update: %v", resolveAgeErr)
+		ErrInternal(c, "Failed to resolve age for prediction")
+		return
 	}
-	if assessment.Age < 45 || assessment.Age > 60 {
-		ErrBadRequest(c, "Age must be between 45-60 years for postmenopausal women. This application is designed for this specific population.")
+	assessment.Age = resolvedAge
+	if assessment.Age < canonicalAssessmentMinAge || assessment.Age > canonicalAssessmentMaxAge {
+		ErrBadRequest(c, canonicalAssessmentAgeErr)
 		return
 	}
 	if assessment.Alcohol == "" {
@@ -397,7 +621,7 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	}
 
 	validationResult := ml.ValidateBiomarkers(*assessment, h.thresholds)
-	assessment.ValidationStatus = ml.FormatValidationStatus(validationResult)
+	applyValidationStatus(assessment, validationResult)
 
 	// Re-predict with updated values
 	// Pass request context for cancellation support
@@ -408,14 +632,8 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	assessment.Cluster = prediction.Cluster
-	assessment.RiskScore = prediction.RiskScore
-	assessment.PredictedStatus = prediction.PredictedStatus
-	assessment.RiskLabel = prediction.RiskLabel
-	assessment.ClusterDescription = prediction.ClusterDescription
-	assessment.TreatmentFocus = prediction.TreatmentFocus
-	assessment.AtRiskProbability = prediction.AtRiskProbability
-	assessment.RiskLevel = calculateRiskLevel(assessment.RiskScore)
+	applyCanonicalPredictionResult(assessment, prediction)
+	ensureAssessmentLineage(assessment, modelType, h.datasetHash)
 
 	updated, err := h.store.Assessments().Update(c.Request.Context(), *assessment)
 	if err != nil {
@@ -425,8 +643,7 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	}
 
 	assessment.ID = updated.ID
-	assessment.ModelVersion = modelType
-	assessment.DatasetHash = h.datasetHash
+	ensureAssessmentLineage(assessment, modelType, h.datasetHash)
 
 	h.invalidateUserCache(c.Request.Context(), userID)
 

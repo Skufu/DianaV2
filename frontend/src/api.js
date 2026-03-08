@@ -573,10 +573,19 @@ export const fetchAssessmentsApi = getAssessmentsApi;
 
 // Create new assessment for logged-in user
 export const createAssessmentApi = async (data) => {
-  return apiFetch('/users/me/assessments', {
+  const response = await apiFetch('/users/me/assessments', {
     method: 'POST',
     body: data,
   });
+
+  if (Array.isArray(response)) {
+    if (response.length === 0) {
+      throw new Error('Invalid assessment response: empty array');
+    }
+    return response[0];
+  }
+
+  return response;
 };
 
 // Get single assessment

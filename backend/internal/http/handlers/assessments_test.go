@@ -56,6 +56,54 @@ func TestValidationStatus(t *testing.T) {
 	}
 }
 
+func TestCalculateRiskLevel(t *testing.T) {
+	cases := []struct {
+		name  string
+		score int
+		want  string
+	}{
+		{name: "unknown when score below range", score: -1, want: "unknown"},
+		{name: "low below 30", score: 29, want: "low"},
+		{name: "medium at lower bound", score: 30, want: "medium"},
+		{name: "medium below upper bound", score: 69, want: "medium"},
+		{name: "high at upper tier", score: 70, want: "high"},
+		{name: "unknown when score above range", score: 101, want: "unknown"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if got := calculateRiskLevel(tc.score); got != tc.want {
+				t.Fatalf("expected %s, got %s", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestCanonicalRiskLabel(t *testing.T) {
+	cases := []struct {
+		name      string
+		riskLevel string
+		fallback  string
+		want      string
+	}{
+		{name: "low label", riskLevel: "low", fallback: "Lower risk", want: "Low Risk"},
+		{name: "medium label", riskLevel: "medium", fallback: "Moderate risk", want: "Moderate Risk"},
+		{name: "high label", riskLevel: "high", fallback: "High risk", want: "High Risk"},
+		{name: "unknown uses fallback when present", riskLevel: "unknown", fallback: "Service fallback", want: "Service fallback"},
+		{name: "unknown uses canonical default", riskLevel: "unknown", fallback: "", want: "Unknown Risk"},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if got := canonicalRiskLabel(tc.riskLevel, tc.fallback); got != tc.want {
+				t.Fatalf("expected %s, got %s", tc.want, got)
+			}
+		})
+	}
+}
+
 func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -67,6 +115,14 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"risk_cluster": "SIDD",
 			"risk_score":   87,
+			"cluster_capability": map[string]any{
+				"supported": true,
+			},
+			"output_capabilities": map[string]any{
+				"metabolic_subtype":   true,
+				"cluster_description": true,
+				"treatment_focus":     true,
+			},
 		})
 	}))
 	defer modelSrv.Close()
@@ -90,6 +146,183 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 	}
 	if repo.last.Cluster != "SIDD" || repo.last.RiskScore != 87 {
 		t.Fatalf("expected predictor output stored, got cluster=%s risk=%d", repo.last.Cluster, repo.last.RiskScore)
+	}
+	if repo.last.ModelVersion != "v1" {
+		t.Fatalf("expected model version fallback v1, got %s", repo.last.ModelVersion)
+	}
+	if repo.last.DatasetHash != "hash123" {
+		t.Fatalf("expected dataset hash fallback hash123, got %s", repo.last.DatasetHash)
+	}
+	if repo.last.DriftBaseline == nil {
+		t.Fatalf("expected drift baseline map to be initialized")
+	}
+}
+
+func TestAssessmentsHandler_Create_RejectsAgeOutsideCanonicalRange(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name string
+		age  int
+	}{
+		{name: "below canonical minimum", age: 44},
+		{name: "above canonical maximum", age: 61},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &fakeAssessmentRepo{}
+			h := NewAssessmentsHandler(&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}}, &fakePredictor{}, nil, "v1", "hash123", getDefaultTestThresholds())
+
+			r := gin.New()
+			r.Use(mockAuthMiddleware())
+			r.POST("/:id/assessments", h.Create)
+
+			payload, _ := json.Marshal(map[string]any{
+				"age":           tt.age,
+				"bmi":           25,
+				"triglycerides": 150,
+				"ldl":           120,
+				"hdl":           50,
+				"systolic":      120,
+				"diastolic":     80,
+			})
+			req, _ := http.NewRequest(http.MethodPost, "/123/assessments", bytes.NewReader(payload))
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("expected status 400 for age=%d, got %d", tt.age, w.Code)
+			}
+			if !strings.Contains(w.Body.String(), canonicalAssessmentAgeErr) {
+				t.Fatalf("expected canonical age policy message, got %s", w.Body.String())
+			}
+			if repo.last.ID != 0 {
+				t.Fatalf("expected no assessment to be persisted on invalid age")
+			}
+		})
+	}
+}
+
+func TestAssessmentsHandler_Create_AcceptsCanonicalAgeBoundaries(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name string
+		age  int
+	}{
+		{name: "accepts lower boundary", age: 45},
+		{name: "accepts upper boundary", age: 60},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &fakeAssessmentRepo{}
+			h := NewAssessmentsHandler(
+				&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+				&fakePredictor{},
+				nil,
+				"v1",
+				"hash123",
+				getDefaultTestThresholds(),
+			)
+
+			r := gin.New()
+			r.Use(mockAuthMiddleware())
+			r.POST("/:id/assessments", h.Create)
+
+			payload, _ := json.Marshal(map[string]any{
+				"age":           tt.age,
+				"bmi":           25,
+				"triglycerides": 150,
+				"ldl":           120,
+				"hdl":           50,
+				"systolic":      120,
+				"diastolic":     80,
+			})
+			req, _ := http.NewRequest(http.MethodPost, "/123/assessments", bytes.NewReader(payload))
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != http.StatusCreated {
+				t.Fatalf("expected status 201 for age=%d, got %d", tt.age, w.Code)
+			}
+			if repo.last.Age != tt.age {
+				t.Fatalf("expected persisted age=%d, got %d", tt.age, repo.last.Age)
+			}
+		})
+	}
+}
+
+func TestAssessmentsHandler_Create_TransportsCanonicalWarningStatus(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	repo := &fakeAssessmentRepo{}
+	h := NewAssessmentsHandler(
+		&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+		&fakePredictor{},
+		nil,
+		"v1",
+		"hash123",
+		getDefaultTestThresholds(),
+	)
+
+	r := gin.New()
+	r.Use(mockAuthMiddleware())
+	r.POST("/:id/assessments", h.Create)
+
+	payload, _ := json.Marshal(map[string]any{
+		"age":           55,
+		"bmi":           32,
+		"fbs":           130,
+		"triglycerides": 120,
+		"ldl":           90,
+		"hdl":           50,
+		"systolic":      120,
+		"diastolic":     80,
+	})
+	req, _ := http.NewRequest(http.MethodPost, "/123/assessments", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", w.Code)
+	}
+
+	var response map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to decode response body: %v", err)
+	}
+
+	rawValidationStatus, ok := response["validation_status"].(string)
+	if !ok || rawValidationStatus == "" {
+		t.Fatalf("expected canonical validation_status string in response, got %#v", response["validation_status"])
+	}
+	if !strings.HasPrefix(rawValidationStatus, "warning:") {
+		t.Fatalf("expected canonical warning transport prefix warning:, got %q", rawValidationStatus)
+	}
+	if !strings.Contains(rawValidationStatus, "fbs_diabetic_range") {
+		t.Fatalf("expected validation_status to include fbs_diabetic_range, got %q", rawValidationStatus)
+	}
+	if !strings.Contains(rawValidationStatus, "bmi_obese") {
+		t.Fatalf("expected validation_status to include bmi_obese, got %q", rawValidationStatus)
+	}
+	if _, exists := response["validation_warnings"]; exists {
+		t.Fatalf("did not expect legacy validation_warnings field in response")
+	}
+	if _, exists := response["warning"]; exists {
+		t.Fatalf("did not expect legacy warning field in response")
+	}
+	if repo.last.ValidationStatus != rawValidationStatus {
+		t.Fatalf("expected persisted validation_status %q to match response %q", repo.last.ValidationStatus, rawValidationStatus)
 	}
 }
 
@@ -134,6 +367,42 @@ func TestAssessmentsHandler_Create_StoresPredictionFromRealValues(t *testing.T) 
 			"cluster_description": "Severe insulin-resistant diabetes profile.",
 			"treatment_focus":     "Lifestyle + insulin sensitivity",
 			"at_risk_probability": 0.82,
+			"model_version":       "binary_v2_no_bp@2026.03",
+			"dataset_hash":        "dataset-sha-abc",
+			"drift_baseline": map[string]any{
+				"baseline_id":            "baseline-2026q1",
+				"baseline_version":       "3",
+				"model_version":          "binary_v2_no_bp@2026.03",
+				"dataset_hash":           "dataset-sha-abc",
+				"feature_schema_version": "features:9",
+				"source_kind":            "release_holdout",
+				"created_at":             "2026-03-01T00:00:00Z",
+				"stale_after":            "2026-06-01T00:00:00Z",
+				"sample_count":           412,
+				"reference_features":     []string{"bmi", "triglycerides", "ldl", "hdl", "age"},
+				"lineage_status":         "healthy",
+			},
+			"feature_set": map[string]any{
+				"features":      []string{"bmi", "triglycerides", "ldl", "hdl", "age"},
+				"feature_count": 5,
+				"source":        "features.json",
+			},
+			"cluster_capability": map[string]any{
+				"supported":       true,
+				"required_inputs": []string{"bmi", "triglycerides", "ldl", "hdl", "age", "waist_circumference"},
+				"output_field":    "metabolic_subtype",
+				"alias_field":     "risk_cluster",
+			},
+			"output_capabilities": map[string]any{
+				"predicted_status":      true,
+				"risk_score":            true,
+				"at_risk_probability":   true,
+				"prediction_confidence": true,
+				"metabolic_subtype":     true,
+				"risk_label":            true,
+				"cluster_description":   true,
+				"treatment_focus":       true,
+			},
 		})
 	}))
 	defer modelSrv.Close()
@@ -174,8 +443,8 @@ func TestAssessmentsHandler_Create_StoresPredictionFromRealValues(t *testing.T) 
 	if repo.last.PredictedStatus != "Diabetic" {
 		t.Fatalf("expected predicted status Diabetic, got %s", repo.last.PredictedStatus)
 	}
-	if repo.last.RiskLabel != "High risk" {
-		t.Fatalf("expected risk label High risk, got %s", repo.last.RiskLabel)
+	if repo.last.RiskLabel != "High Risk" {
+		t.Fatalf("expected canonical risk label High Risk, got %s", repo.last.RiskLabel)
 	}
 	if repo.last.ClusterDescription == "" || repo.last.TreatmentFocus == "" {
 		t.Fatalf("expected cluster metadata populated")
@@ -183,12 +452,199 @@ func TestAssessmentsHandler_Create_StoresPredictionFromRealValues(t *testing.T) 
 	if repo.last.AtRiskProbability <= 0 {
 		t.Fatalf("expected at risk probability to be set")
 	}
+	if repo.last.ModelVersion != "binary_v2_no_bp@2026.03" {
+		t.Fatalf("expected lineage model version from ML response, got %s", repo.last.ModelVersion)
+	}
+	if repo.last.DatasetHash != "dataset-sha-abc" {
+		t.Fatalf("expected lineage dataset hash from ML response, got %s", repo.last.DatasetHash)
+	}
+	if repo.last.DriftBaseline == nil {
+		t.Fatalf("expected drift baseline lineage metadata to be set")
+	}
+	if baselineID, ok := repo.last.DriftBaseline["baseline_id"].(string); !ok || baselineID != "baseline-2026q1" {
+		t.Fatalf("expected drift baseline id baseline-2026q1, got %v", repo.last.DriftBaseline["baseline_id"])
+	}
+	if lineageStatus, ok := repo.last.DriftBaseline["lineage_status"].(string); !ok || lineageStatus != "healthy" {
+		t.Fatalf("expected drift baseline lineage status healthy, got %v", repo.last.DriftBaseline["lineage_status"])
+	}
+	if repo.last.OutputCapabilities == nil {
+		t.Fatalf("expected output capabilities to be populated")
+	}
+	if supported, ok := repo.last.OutputCapabilities["metabolic_subtype"].(bool); !ok || !supported {
+		t.Fatalf("expected metabolic_subtype output capability to be true")
+	}
+	if repo.last.ClusterCapability == nil {
+		t.Fatalf("expected cluster capability to be populated")
+	}
+	if supported, ok := repo.last.ClusterCapability["supported"].(bool); !ok || !supported {
+		t.Fatalf("expected cluster capability supported=true")
+	}
+	if repo.last.FeatureSet == nil {
+		t.Fatalf("expected feature set metadata to be populated")
+	}
+	if source, ok := repo.last.FeatureSet["source"].(string); !ok || source == "" {
+		t.Fatalf("expected feature set source metadata")
+	}
 	if !strings.Contains(repo.last.ValidationStatus, "bmi_obese") {
 		t.Fatalf("expected validation status to include bmi_obese, got %s", repo.last.ValidationStatus)
 	}
 	if !strings.Contains(repo.last.ValidationStatus, "hba1c_diabetic") {
 		t.Fatalf("expected validation status to include hba1c_diabetic, got %s", repo.last.ValidationStatus)
 	}
+}
+
+func TestAssessmentsHandler_Create_LineageUsesPredictionAndFlagsBaselineMismatch(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	modelSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"risk_cluster":     "SIRD",
+			"risk_score":       72,
+			"predicted_status": "Diabetic",
+			"cluster_capability": map[string]any{
+				"supported": true,
+			},
+			"output_capabilities": map[string]any{
+				"metabolic_subtype": true,
+			},
+			"model_version": "binary_v2_no_bp",
+			"dataset_hash":  "dataset_v2026_03",
+			"drift_baseline": map[string]any{
+				"baseline_id":            "baseline-123",
+				"baseline_version":       "v4",
+				"model_version":          "binary_v2_bp",
+				"dataset_hash":           "dataset_v2026_03",
+				"feature_schema_version": "features:5",
+				"lineage_status":         "healthy",
+			},
+		})
+	}))
+	defer modelSrv.Close()
+
+	repo := &fakeAssessmentRepo{}
+	h := NewAssessmentsHandler(
+		&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+		ml.NewHTTPPredictor(modelSrv.URL, "binary_v2_no_bp", "", defaultTestTimeout),
+		nil,
+		"binary_v2_no_bp",
+		"config_dataset_hash",
+		getDefaultTestThresholds(),
+	)
+
+	r := gin.New()
+	r.Use(mockAuthMiddleware())
+	r.POST("/:id/assessments", h.Create)
+
+	body := bytes.NewBufferString(`{"age":55,"bmi":32,"triglycerides":210,"ldl":160,"hdl":42,"systolic":142,"diastolic":90,"hba1c":6.5,"fbs":126}`)
+	req, _ := http.NewRequest(http.MethodPost, "/1/assessments", body)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", w.Code)
+	}
+	if repo.last.ModelVersion != "binary_v2_no_bp" {
+		t.Fatalf("expected prediction model_version to be preserved, got %s", repo.last.ModelVersion)
+	}
+	if repo.last.DatasetHash != "dataset_v2026_03" {
+		t.Fatalf("expected prediction dataset_hash to be preserved, got %s", repo.last.DatasetHash)
+	}
+	if repo.last.DriftBaseline == nil {
+		t.Fatalf("expected drift baseline metadata to be present")
+	}
+	if status, ok := repo.last.DriftBaseline["lineage_status"].(string); !ok || status != "reference_mismatch" {
+		t.Fatalf("expected drift baseline lineage_status=reference_mismatch, got %#v", repo.last.DriftBaseline["lineage_status"])
+	}
+	if baselineVersion, ok := repo.last.DriftBaseline["baseline_version"].(string); !ok || baselineVersion != "v4" {
+		t.Fatalf("expected drift baseline version to be preserved, got %#v", repo.last.DriftBaseline["baseline_version"])
+	}
+}
+
+func TestEnsureAssessmentLineage_DefaultBaselineIsHonest(t *testing.T) {
+	assessment := &models.Assessment{
+		ModelVersion: "binary_v2_no_bp",
+		DatasetHash:  "dataset_v2026_03",
+	}
+
+	ensureAssessmentLineage(assessment, "", "")
+
+	if assessment.DriftBaseline == nil {
+		t.Fatalf("expected default drift baseline")
+	}
+	if status, ok := assessment.DriftBaseline["lineage_status"].(string); !ok || status != "lineage_incomplete" {
+		t.Fatalf("expected default lineage_status=lineage_incomplete, got %#v", assessment.DriftBaseline["lineage_status"])
+	}
+	if modelVersion, ok := assessment.DriftBaseline["model_version"].(string); !ok || modelVersion != "binary_v2_no_bp" {
+		t.Fatalf("expected drift baseline model_version to mirror assessment, got %#v", assessment.DriftBaseline["model_version"])
+	}
+	if datasetHash, ok := assessment.DriftBaseline["dataset_hash"].(string); !ok || datasetHash != "dataset_v2026_03" {
+		t.Fatalf("expected drift baseline dataset_hash to mirror assessment, got %#v", assessment.DriftBaseline["dataset_hash"])
+	}
+}
+
+func TestApplyCanonicalPredictionResult_GatesClusterSemanticsByCapability(t *testing.T) {
+	t.Run("clears cluster semantics when capability unsupported", func(t *testing.T) {
+		assessment := &models.Assessment{}
+		applyCanonicalPredictionResult(assessment, ml.Prediction{
+			Cluster:            "SIRD",
+			RiskScore:          64,
+			PredictedStatus:    "At-Risk",
+			ClusterDescription: "Insulin-resistant profile",
+			TreatmentFocus:     "Weight and lipid management",
+			OutputCapabilities: ml.OutputCapabilities{
+				MetabolicSubtype:   false,
+				ClusterDescription: false,
+				TreatmentFocus:     false,
+			},
+			ClusterCapability: ml.ClusterCapability{Supported: false},
+		})
+
+		if assessment.Cluster != "" {
+			t.Fatalf("expected cluster to be blank when unsupported, got %q", assessment.Cluster)
+		}
+		if assessment.ClusterDescription != "" {
+			t.Fatalf("expected cluster description to be blank when unsupported, got %q", assessment.ClusterDescription)
+		}
+		if assessment.TreatmentFocus != "" {
+			t.Fatalf("expected treatment focus to be blank when unsupported, got %q", assessment.TreatmentFocus)
+		}
+		if assessment.RiskLevel != "medium" {
+			t.Fatalf("expected risk level to still be computed from risk score, got %q", assessment.RiskLevel)
+		}
+	})
+
+	t.Run("preserves cluster semantics when capability supported", func(t *testing.T) {
+		assessment := &models.Assessment{}
+		applyCanonicalPredictionResult(assessment, ml.Prediction{
+			Cluster:            "SIRD",
+			RiskScore:          82,
+			PredictedStatus:    "At-Risk",
+			ClusterDescription: "Insulin-resistant profile",
+			TreatmentFocus:     "Weight and lipid management",
+			OutputCapabilities: ml.OutputCapabilities{
+				MetabolicSubtype:   true,
+				ClusterDescription: true,
+				TreatmentFocus:     true,
+			},
+			ClusterCapability: ml.ClusterCapability{Supported: true},
+		})
+
+		if assessment.Cluster != "SIRD" {
+			t.Fatalf("expected cluster to be preserved, got %q", assessment.Cluster)
+		}
+		if assessment.ClusterDescription != "Insulin-resistant profile" {
+			t.Fatalf("expected cluster description to be preserved, got %q", assessment.ClusterDescription)
+		}
+		if assessment.TreatmentFocus != "Weight and lipid management" {
+			t.Fatalf("expected treatment focus to be preserved, got %q", assessment.TreatmentFocus)
+		}
+		if assessment.RiskLevel != "high" {
+			t.Fatalf("expected risk level high for score 82, got %q", assessment.RiskLevel)
+		}
+	})
 }
 
 const defaultTestTimeout = 2 * time.Second
@@ -199,7 +655,7 @@ func getDefaultTestThresholds() config.ClinicalThresholds {
 		HbA1cPrediabetic:        6.5,
 		HbA1cDiabetic:           6.5,
 		FBSNormal:               100,
-		FBSPrediabetic:          126,
+		FBSPrediabetic:          100,
 		FBSDiabetic:             126,
 		BPSysNormal:             120,
 		BPSysElevated:           140,
@@ -215,6 +671,28 @@ func getDefaultTestThresholds() config.ClinicalThresholds {
 		TriglyceridesHigh:       150,
 		TriglyceridesBorderline: 150,
 	}
+}
+
+type fakePredictor struct{}
+
+func (f *fakePredictor) Predict(ctx context.Context, input models.Assessment) (ml.Prediction, error) {
+	return ml.Prediction{}, nil
+}
+
+func (f *fakePredictor) PredictWithModelType(ctx context.Context, input models.Assessment, modelType string) (ml.Prediction, error) {
+	return ml.Prediction{}, nil
+}
+
+func (f *fakePredictor) GetActiveModelMetadata(ctx context.Context) (*ml.ModelMetadata, error) {
+	return nil, nil
+}
+
+func (f *fakePredictor) GetDriftStatus(ctx context.Context) (*ml.DriftStatus, error) {
+	return nil, nil
+}
+
+func (f *fakePredictor) GetDriftAlerts(ctx context.Context, unacknowledgedOnly bool, limit int) (*ml.DriftAlertsEnvelope, error) {
+	return nil, nil
 }
 
 type fakeStore struct {

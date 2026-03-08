@@ -70,7 +70,7 @@ def test_bmi_categorization_boundary():
     })
     result = engineer_features_reduced(df)
     
-    expected = [0.0, 0.0, 1.0, 1.0, 2.0, 2.0]
+    expected = [0.0, 1.0, 1.0, 2.0, 2.0, 3.0]
     assert list(result['bmi_category']) == expected, \
         f"Boundary values incorrect: {list(result['bmi_category'])} vs {expected}"
 

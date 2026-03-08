@@ -7,6 +7,8 @@ See `docs/03-ml/api-contract.md` for the full contract. Summary:
   - `risk_cluster`, `metabolic_subtype`, `risk_score`
   - `risk_level`, `risk_label`, `cluster_description`, `treatment_focus`
   - `at_risk_probability`, `predicted_status`
-- Any non-200/timeout/decode/empty cluster -> backend records `cluster="error", risk_score=0` and leaves ML metadata empty.
+- Any non-200/timeout/decode error -> backend returns error response and does NOT create the assessment.
+- Successful predictions are persisted with `cluster`, `risk_score`, `risk_level`, and ML metadata.
+- After successful prediction, backend queues a non-blocking drift check in background.
 - Timeout: `MODEL_TIMEOUT_MS` applies to the entire request.
 - If `MODEL_URL` is empty, the mock predictor is used (no external call).

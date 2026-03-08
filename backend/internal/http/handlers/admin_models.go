@@ -3,6 +3,7 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/ml"
@@ -30,6 +31,8 @@ func (h *AdminModelsHandler) Register(rg *gin.RouterGroup) {
 	{
 		models.GET("", h.listModelRuns)
 		models.GET("/active", h.getActiveModel)
+		models.GET("/drift", h.getDriftStatus)
+		models.GET("/drift/alerts", h.getDriftAlerts)
 		models.POST("/sync", h.syncModelRuns)
 	}
 }
@@ -96,6 +99,51 @@ func isNotFoundError(err error) bool {
 	return containsString(err.Error(), "no active model") ||
 		containsString(err.Error(), "not found") ||
 		containsString(err.Error(), "no rows in result set")
+}
+
+func (h *AdminModelsHandler) getDriftStatus(c *gin.Context) {
+	if h.predictor == nil {
+		ErrInternal(c, "ML Predictor is not configured")
+		return
+	}
+
+	status, err := h.predictor.GetDriftStatus(c.Request.Context())
+	if err != nil {
+		log.Printf("[ERROR] Failed to fetch drift status: %v", err)
+		ErrInternal(c, "Failed to fetch drift status")
+		return
+	}
+
+	c.JSON(http.StatusOK, status)
+}
+
+func (h *AdminModelsHandler) getDriftAlerts(c *gin.Context) {
+	if h.predictor == nil {
+		ErrInternal(c, "ML Predictor is not configured")
+		return
+	}
+
+	unacknowledgedOnly := c.Query("unacknowledged") == "true"
+	limit := 50
+	if rawLimit := c.Query("limit"); rawLimit != "" {
+		parsed, err := strconv.Atoi(rawLimit)
+		if err == nil && parsed > 0 {
+			if parsed > 100 {
+				limit = 100
+			} else {
+				limit = parsed
+			}
+		}
+	}
+
+	alerts, err := h.predictor.GetDriftAlerts(c.Request.Context(), unacknowledgedOnly, limit)
+	if err != nil {
+		log.Printf("[ERROR] Failed to fetch drift alerts: %v", err)
+		ErrInternal(c, "Failed to fetch drift alerts")
+		return
+	}
+
+	c.JSON(http.StatusOK, alerts)
 }
 
 // syncModelRuns fetchesthe latest active model from the ML server and creates a record if it doesn't exist

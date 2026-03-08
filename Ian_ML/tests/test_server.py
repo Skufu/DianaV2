@@ -6,6 +6,7 @@ import pytest
 import sys
 import os
 import json
+from types import SimpleNamespace
 from unittest.mock import patch
 
 
@@ -108,6 +109,31 @@ class TestPredictEndpoint:
         assert data['success'] is True
         assert data['risk_cluster'] == 'SIRD'
         assert data['model_type'] == 'clinical'
+
+    def test_predict_includes_lineage_fields(self, mock_client, mock_predictor):
+        mock_predictor.model_type = 'binary_v2_no_bp'
+        mock_predictor.metrics = {'dataset_hash': 'dataset-sha-abc'}
+        with patch('Ian_ML.service.server.get_clinical_predictor_for') as mock_get_clinical:
+            mock_get_clinical.return_value = mock_predictor
+            mock_predictor.predict.return_value = {
+                'success': True,
+                'risk_cluster': 'SIRD',
+                'risk_score': 50,
+                'predicted_status': 'At-Risk',
+            }
+            response = mock_client.post('/predict?model_type=clinical',
+                json={
+                    'bmi': 32.0,
+                    'triglycerides': 150.0,
+                    'ldl': 130.0,
+                    'hdl': 50.0,
+                    'age': 55
+                })
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['model_version'] == 'binary_v2_no_bp'
+        assert data['dataset_hash'] == 'dataset-sha-abc'
 
 
 class TestPredictBatchEndpoint:
@@ -218,3 +244,419 @@ class TestAPIKeyAuthentication:
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data['status'] == 'healthy'
+
+
+class TestDriftLineageMetadata:
+
+    def test_set_drift_reference_returns_drift_baseline_metadata(self, mock_client):
+        fake_monitor = SimpleNamespace()
+
+        captured = {}
+        def _set_reference(reference_data, metadata=None):
+            captured['features'] = list(reference_data.keys())
+            captured['metadata'] = metadata or {}
+
+        def _get_baseline_metadata(active_model_version=None, active_dataset_hash=None, active_feature_schema_version=None):
+            return {
+                'baseline_id': captured['metadata'].get('baseline_id', ''),
+                'baseline_version': captured['metadata'].get('baseline_version', ''),
+                'model_version': active_model_version or '',
+                'dataset_hash': active_dataset_hash or '',
+                'feature_schema_version': active_feature_schema_version or '',
+                'source_kind': captured['metadata'].get('source_kind', ''),
+                'created_at': captured['metadata'].get('created_at', ''),
+                'refreshed_at': captured['metadata'].get('refreshed_at', ''),
+                'stale_after': captured['metadata'].get('stale_after', ''),
+                'sample_count': captured['metadata'].get('sample_count', 0),
+                'reference_features': captured['metadata'].get('reference_features', []),
+                'lineage_status': 'healthy',
+            }
+
+        fake_monitor.set_reference = _set_reference
+        fake_monitor.get_baseline_metadata = _get_baseline_metadata
+
+        fake_predictor = SimpleNamespace()
+        fake_predictor.model_type = 'binary_v2_no_bp'
+        fake_predictor.metrics = {'dataset_hash': 'dataset-sha-abc'}
+        fake_predictor.features = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+
+        with patch('Ian_ML.service.server.get_drift_monitor', return_value=fake_monitor):
+            with patch('Ian_ML.service.server.get_clinical_predictor_for', return_value=fake_predictor):
+                response = mock_client.post('/monitoring/drift/reference', json={
+                    'model_type': 'clinical',
+                    'baseline_id': 'baseline-2026q1',
+                    'baseline_version': '3',
+                    'source_kind': 'release_holdout',
+                    'features': {
+                        'bmi': [25.0, 27.0],
+                        'triglycerides': [150.0, 180.0],
+                    }
+                })
+
+        assert response.status_code == 200
+        payload = json.loads(response.data)
+        assert payload['success'] is True
+        assert payload['drift_baseline']['baseline_id'] == 'baseline-2026q1'
+        assert payload['drift_baseline']['baseline_version'] == '3'
+        assert payload['drift_baseline']['model_version'] == 'binary_v2_no_bp'
+        assert payload['drift_baseline']['dataset_hash'] == 'dataset-sha-abc'
+
+    def test_active_model_metadata_includes_drift_baseline(self, mock_client):
+        fake_predictor = SimpleNamespace()
+        fake_predictor.model_type = 'binary_v2_no_bp'
+        fake_predictor.kmeans = object()
+        fake_predictor.cluster_scaler = object()
+        fake_predictor.cluster_imputer = object()
+        fake_predictor.cluster_labels = {'0': {'label': 'SIRD'}}
+        fake_predictor.features = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+        fake_predictor.cluster_features = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference']
+        fake_predictor.metrics = {'dataset_hash': 'dataset-sha-abc'}
+
+        fake_monitor = SimpleNamespace()
+        fake_monitor.get_baseline_metadata = lambda **kwargs: {
+            'baseline_id': 'baseline-2026q1',
+            'baseline_version': '3',
+            'model_version': kwargs.get('active_model_version') or '',
+            'dataset_hash': kwargs.get('active_dataset_hash') or '',
+            'feature_schema_version': kwargs.get('active_feature_schema_version') or '',
+            'source_kind': 'release_holdout',
+            'created_at': '2026-03-01T00:00:00Z',
+            'refreshed_at': '',
+            'stale_after': '2026-06-01T00:00:00Z',
+            'sample_count': 412,
+            'reference_features': ['bmi', 'triglycerides', 'ldl', 'hdl', 'age'],
+            'lineage_status': 'healthy',
+        }
+
+        with patch('Ian_ML.service.server.get_clinical_predictor', return_value=fake_predictor):
+            with patch('Ian_ML.service.server.get_drift_monitor', return_value=fake_monitor):
+                response = mock_client.get('/model/active/metadata')
+
+        assert response.status_code == 200
+        payload = json.loads(response.data)
+        assert payload['model_version'] == 'binary_v2_no_bp'
+        assert payload['dataset_hash'] == 'dataset-sha-abc'
+        assert payload['drift_baseline']['baseline_id'] == 'baseline-2026q1'
+        assert payload['drift_baseline']['baseline_version'] == '3'
+        assert payload['drift_baseline']['lineage_status'] == 'healthy'
+
+    def test_lineage_resolves_binary_bp_alias_from_model_directory(self):
+        from ..service import server as ml_server
+
+        predictor = SimpleNamespace(
+            model_type='clinical',
+            models_dir=SimpleNamespace(name='binary_v2_with_bp'),
+            metrics={'dataset_hash': 'dataset-sha-abc'},
+            features=['bmi', 'triglycerides', 'ldl', 'hdl', 'age'],
+        )
+
+        model_version, dataset_hash, feature_schema_version = ml_server._lineage_for_model_type('clinical', predictor)
+
+        assert model_version == 'binary_v2_bp'
+        assert dataset_hash == 'dataset-sha-abc'
+        assert feature_schema_version == 'features:5'
+
+    def test_predict_injects_lineage_and_drift_baseline_when_model_response_omits_them(self, mock_client):
+        fake_predictor = SimpleNamespace(
+            model_type='clinical',
+            models_dir=SimpleNamespace(name='binary_v2_with_bp'),
+            metrics={'dataset_hash': 'dataset-sha-abc'},
+            features=['bmi', 'triglycerides', 'ldl', 'hdl', 'age'],
+            predict=lambda data: {
+                'success': True,
+                'risk_cluster': 'SIRD',
+                'risk_score': 72,
+                'predicted_status': 'At-Risk',
+            },
+        )
+
+        expected_baseline = {
+            'baseline_id': 'baseline-2026q2',
+            'baseline_version': '5',
+            'model_version': 'binary_v2_bp',
+            'dataset_hash': 'dataset-sha-abc',
+            'feature_schema_version': 'features:5',
+            'lineage_status': 'lineage_incomplete',
+        }
+
+        with patch('Ian_ML.service.server.get_clinical_predictor_for', return_value=fake_predictor):
+            with patch('Ian_ML.service.server._drift_baseline_for_lineage', return_value=expected_baseline):
+                response = mock_client.post('/predict?model_type=clinical', json={
+                    'bmi': 32.0,
+                    'triglycerides': 180.0,
+                    'ldl': 130.0,
+                    'hdl': 50.0,
+                    'age': 55,
+                })
+
+        assert response.status_code == 200
+        payload = json.loads(response.data)
+        assert payload['model_version'] == 'binary_v2_bp'
+        assert payload['dataset_hash'] == 'dataset-sha-abc'
+        assert payload['drift_baseline']['baseline_id'] == 'baseline-2026q2'
+        assert payload['drift_baseline']['baseline_version'] == '5'
+        assert payload['drift_baseline']['model_version'] == 'binary_v2_bp'
+        assert payload['drift_baseline']['dataset_hash'] == 'dataset-sha-abc'
+
+    def test_active_model_metadata_exposes_capability_and_lineage_contract(self, mock_client):
+        fake_predictor = SimpleNamespace(
+            model_type='binary_v2_no_bp',
+            kmeans=object(),
+            cluster_scaler=object(),
+            cluster_imputer=object(),
+            cluster_labels={'0': {'label': 'SIRD'}},
+            features=['bmi', 'triglycerides', 'ldl', 'hdl', 'age'],
+            cluster_features=['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference'],
+            metrics={'dataset_hash': 'dataset-sha-abc'},
+        )
+
+        fake_monitor = SimpleNamespace(
+            get_baseline_metadata=lambda **kwargs: {
+                'baseline_id': 'baseline-2026q3',
+                'baseline_version': '7',
+                'model_version': kwargs.get('active_model_version') or '',
+                'dataset_hash': kwargs.get('active_dataset_hash') or '',
+                'feature_schema_version': kwargs.get('active_feature_schema_version') or '',
+                'lineage_status': 'healthy',
+            }
+        )
+
+        with patch('Ian_ML.service.server.get_clinical_predictor', return_value=fake_predictor):
+            with patch('Ian_ML.service.server.get_drift_monitor', return_value=fake_monitor):
+                response = mock_client.get('/model/active/metadata')
+
+        assert response.status_code == 200
+        payload = json.loads(response.data)
+
+        assert payload['model_version'] == 'binary_v2_no_bp'
+        assert payload['dataset_hash'] == 'dataset-sha-abc'
+        assert payload['feature_set']['features'] == ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
+        assert payload['feature_set']['feature_count'] == 5
+        assert payload['feature_set']['source'] == 'features.json'
+
+        assert payload['cluster_capability']['supported'] is True
+        assert payload['cluster_capability']['required_inputs'] == ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference']
+        assert payload['cluster_capability']['output_field'] == 'metabolic_subtype'
+        assert payload['cluster_capability']['alias_field'] == 'risk_cluster'
+
+        assert payload['output_capabilities']['predicted_status'] is True
+        assert payload['output_capabilities']['risk_score'] is True
+        assert payload['output_capabilities']['at_risk_probability'] is True
+        assert payload['output_capabilities']['prediction_confidence'] is True
+        assert payload['output_capabilities']['metabolic_subtype'] is True
+        assert payload['output_capabilities']['risk_label'] is True
+        assert payload['output_capabilities']['cluster_description'] is True
+        assert payload['output_capabilities']['treatment_focus'] is True
+
+        assert payload['drift_baseline']['baseline_id'] == 'baseline-2026q3'
+        assert payload['drift_baseline']['baseline_version'] == '7'
+        assert payload['drift_baseline']['model_version'] == 'binary_v2_no_bp'
+        assert payload['drift_baseline']['dataset_hash'] == 'dataset-sha-abc'
+        assert payload['drift_baseline']['feature_schema_version'] == 'features:5'
+        assert payload['drift_baseline']['lineage_status'] == 'healthy'
+
+    def test_active_model_metadata_cluster_disabled_degrades_capabilities_safely(self, mock_client):
+        fake_predictor = SimpleNamespace(
+            model_type='binary_v2_no_bp',
+            kmeans=None,
+            cluster_scaler=None,
+            cluster_imputer=None,
+            cluster_labels={},
+            features=['bmi', 'triglycerides', 'ldl', 'hdl', 'age'],
+            cluster_features=['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference'],
+            metrics={'dataset_hash': 'dataset-sha-abc'},
+        )
+
+        fake_monitor = SimpleNamespace(
+            get_baseline_metadata=lambda **kwargs: {
+                'baseline_id': '',
+                'baseline_version': '',
+                'model_version': kwargs.get('active_model_version') or '',
+                'dataset_hash': kwargs.get('active_dataset_hash') or '',
+                'feature_schema_version': kwargs.get('active_feature_schema_version') or '',
+                'lineage_status': 'missing_reference',
+            }
+        )
+
+        with patch('Ian_ML.service.server.get_clinical_predictor', return_value=fake_predictor):
+            with patch('Ian_ML.service.server.get_drift_monitor', return_value=fake_monitor):
+                response = mock_client.get('/model/active/metadata')
+
+        assert response.status_code == 200
+        payload = json.loads(response.data)
+
+        assert payload['cluster_capability']['supported'] is False
+        assert payload['cluster_capability']['required_inputs'] == ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference']
+        assert payload['output_capabilities']['metabolic_subtype'] is False
+        assert payload['output_capabilities']['cluster_description'] is False
+        assert payload['output_capabilities']['treatment_focus'] is False
+        assert payload['output_capabilities']['risk_score'] is True
+        assert payload['drift_baseline']['lineage_status'] == 'missing_reference'
+
+    def test_predict_response_shape_keeps_capability_and_lineage_contract(self, mock_client):
+        fake_predictor = SimpleNamespace(
+            model_type='binary_v2_no_bp',
+            metrics={'dataset_hash': 'dataset-sha-abc'},
+            features=['bmi', 'triglycerides', 'ldl', 'hdl', 'age'],
+            predict=lambda data: {
+                'success': True,
+                'risk_cluster': 'SIRD',
+                'metabolic_subtype': 'SIRD',
+                'metabolic_subtype_full': 'Severe Insulin-Resistant Diabetes',
+                'risk_level': 'HIGH',
+                'risk_label': 'High Risk',
+                'cluster_description': 'Insulin resistance dominant profile',
+                'treatment_focus': 'Insulin sensitivity and triglyceride control',
+                'risk_score': 81,
+                'at_risk_probability': 0.81,
+                'prediction_confidence': 'Confident',
+                'output_capabilities': {
+                    'predicted_status': True,
+                    'risk_score': True,
+                    'at_risk_probability': True,
+                    'prediction_confidence': True,
+                    'metabolic_subtype': True,
+                    'risk_label': True,
+                    'cluster_description': True,
+                    'treatment_focus': True,
+                },
+                'cluster_capability': {
+                    'supported': True,
+                    'required_inputs': ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference'],
+                    'output_field': 'metabolic_subtype',
+                    'alias_field': 'risk_cluster',
+                },
+                'model_version': 'binary_v2_no_bp',
+                'dataset_hash': 'dataset-sha-abc',
+                'drift_baseline': {
+                    'baseline_id': 'baseline-2026q3',
+                    'baseline_version': '7',
+                    'model_version': 'binary_v2_no_bp',
+                    'dataset_hash': 'dataset-sha-abc',
+                    'feature_schema_version': 'features:5',
+                    'lineage_status': 'healthy',
+                },
+            },
+        )
+
+        with patch('Ian_ML.service.server.get_clinical_predictor_for', return_value=fake_predictor):
+            response = mock_client.post('/predict?model_type=clinical', json={
+                'bmi': 32.0,
+                'triglycerides': 180.0,
+                'ldl': 130.0,
+                'hdl': 50.0,
+                'age': 55,
+                'waist_circumference': 89,
+            })
+
+        assert response.status_code == 200
+        payload = json.loads(response.data)
+
+        assert payload['model_type'] == 'clinical'
+        assert payload['model_version'] == 'binary_v2_no_bp'
+        assert payload['dataset_hash'] == 'dataset-sha-abc'
+        assert payload['risk_cluster'] == 'SIRD'
+        assert payload['metabolic_subtype'] == 'SIRD'
+        assert payload['cluster_capability']['supported'] is True
+        assert payload['cluster_capability']['output_field'] == 'metabolic_subtype'
+        assert payload['cluster_capability']['alias_field'] == 'risk_cluster'
+        assert payload['output_capabilities']['metabolic_subtype'] is True
+        assert payload['output_capabilities']['cluster_description'] is True
+        assert payload['output_capabilities']['treatment_focus'] is True
+        assert payload['drift_baseline']['baseline_id'] == 'baseline-2026q3'
+        assert payload['drift_baseline']['lineage_status'] == 'healthy'
+
+    def test_predict_cluster_disabled_shape_stays_neutral_without_subtype_overclaim(self, mock_client):
+        fake_predictor = SimpleNamespace(
+            model_type='binary_v2_no_bp',
+            metrics={'dataset_hash': 'dataset-sha-abc'},
+            features=['bmi', 'triglycerides', 'ldl', 'hdl', 'age'],
+            predict=lambda data: {
+                'success': True,
+                'risk_cluster': 'N/A',
+                'metabolic_subtype': 'N/A',
+                'metabolic_subtype_full': 'N/A',
+                'risk_level': 'UNKNOWN',
+                'risk_label': 'N/A',
+                'cluster_description': '',
+                'treatment_focus': '',
+                'risk_score': 62,
+                'at_risk_probability': 0.62,
+                'prediction_confidence': 'Confident',
+                'output_capabilities': {
+                    'predicted_status': True,
+                    'risk_score': True,
+                    'at_risk_probability': True,
+                    'prediction_confidence': True,
+                    'metabolic_subtype': False,
+                    'risk_label': True,
+                    'cluster_description': False,
+                    'treatment_focus': False,
+                },
+                'cluster_capability': {
+                    'supported': False,
+                    'required_inputs': ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference'],
+                    'output_field': 'metabolic_subtype',
+                    'alias_field': 'risk_cluster',
+                },
+            },
+        )
+
+        expected_baseline = {
+            'baseline_id': '',
+            'baseline_version': '',
+            'model_version': 'binary_v2_no_bp',
+            'dataset_hash': 'dataset-sha-abc',
+            'feature_schema_version': 'features:5',
+            'lineage_status': 'missing_reference',
+        }
+
+        with patch('Ian_ML.service.server.get_clinical_predictor_for', return_value=fake_predictor):
+            with patch('Ian_ML.service.server._drift_baseline_for_lineage', return_value=expected_baseline):
+                response = mock_client.post('/predict?model_type=clinical', json={
+                    'bmi': 32.0,
+                    'triglycerides': 180.0,
+                    'ldl': 130.0,
+                    'hdl': 50.0,
+                    'age': 55,
+                })
+
+        assert response.status_code == 200
+        payload = json.loads(response.data)
+
+        assert payload['risk_cluster'] == 'N/A'
+        assert payload['metabolic_subtype'] == 'N/A'
+        assert payload['metabolic_subtype_full'] == 'N/A'
+        assert payload['cluster_description'] == ''
+        assert payload['treatment_focus'] == ''
+        assert payload['cluster_capability']['supported'] is False
+        assert payload['output_capabilities']['metabolic_subtype'] is False
+        assert payload['output_capabilities']['cluster_description'] is False
+        assert payload['output_capabilities']['treatment_focus'] is False
+        assert payload['drift_baseline']['lineage_status'] == 'missing_reference'
+
+    def test_drift_baseline_backfills_lineage_identity_fields(self):
+        from ..service import server as ml_server
+
+        fake_monitor = SimpleNamespace(
+            get_baseline_metadata=lambda **kwargs: {
+                'baseline_id': 'baseline-2026q4',
+                'baseline_version': '9',
+                'lineage_status': 'healthy',
+            }
+        )
+
+        with patch('Ian_ML.service.server.drift_available', True):
+            with patch('Ian_ML.service.server.get_drift_monitor', return_value=fake_monitor):
+                baseline = ml_server._drift_baseline_for_lineage(
+                    'binary_v2_bp',
+                    'dataset-sha-xyz',
+                    'features:6',
+                )
+
+        assert baseline['baseline_id'] == 'baseline-2026q4'
+        assert baseline['baseline_version'] == '9'
+        assert baseline['model_version'] == 'binary_v2_bp'
+        assert baseline['dataset_hash'] == 'dataset-sha-xyz'
+        assert baseline['feature_schema_version'] == 'features:6'
+        assert baseline['lineage_status'] == 'healthy'
