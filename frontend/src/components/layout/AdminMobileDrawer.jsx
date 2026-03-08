@@ -143,15 +143,17 @@ const AdminMobileDrawer = ({
                   <p className="text-sm font-semibold text-slate-900">Navigation</p>
                 </div>
               </div>
-                <button
+                <motion.button
                   type="button"
                   onClick={onClose}
+                  whileHover={isReduced ? undefined : { scale: 1.1, rotate: 90 }}
+                  whileTap={isReduced ? undefined : { scale: 0.9 }}
                   className="min-h-[44px] min-w-[44px] rounded-xl border border-indigo-100 text-indigo-600 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2"
                   aria-label="Close navigation"
                   data-drawer-focus
                 >
                   <X size={18} />
-                </button>
+                </motion.button>
             </div>
 
             <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
@@ -159,10 +161,12 @@ const AdminMobileDrawer = ({
                 const Icon = item.icon;
                 const isActive = activeView === item.id;
                 return (
-                    <button
+                    <motion.button
                       key={item.id}
                       type="button"
                       onClick={() => handleNavigate(item.id)}
+                      whileHover={isReduced ? undefined : { scale: 1.02, x: 4 }}
+                      whileTap={isReduced ? undefined : { scale: 0.98 }}
                       className={`w-full min-h-[48px] px-4 py-3 rounded-2xl flex items-center justify-between text-left border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 ${
                         isActive
                           ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
@@ -177,22 +181,24 @@ const AdminMobileDrawer = ({
                       </span>
                       <span className="text-sm font-semibold">{item.label}</span>
                     </span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </nav>
 
             <div className="border-t border-indigo-100 p-4">
-              <button
+              <motion.button
                 type="button"
                 onClick={handleLogout}
+                whileHover={isReduced ? undefined : { scale: 1.02 }}
+                whileTap={isReduced ? undefined : { scale: 0.98 }}
                 className="w-full min-h-[48px] px-4 py-3 rounded-2xl flex items-center gap-3 text-left text-rose-600 bg-rose-50 border border-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 focus-visible:ring-offset-2"
               >
                 <span className="w-9 h-9 rounded-xl bg-white flex items-center justify-center">
                   <LogOut size={18} />
                 </span>
                 <span className="text-sm font-semibold">Log Out</span>
-              </button>
+              </motion.button>
             </div>
           </motion.aside>
         </motion.div>

@@ -352,17 +352,13 @@ export const useTrends = (months = 12) => {
       const data = await getTrendsApi(months);
 
       // Transform backend TrendData format to frontend-expected format
-      // Backend returns parallel arrays, frontend expects array of objects
       const biomarkerHistory = data.dates.map((date, index) => ({
         date,
-        hba1c: data.hba1c_values?.[index] || null,
         bmi: data.bmi_values?.[index] || null,
-        fbs: data.fbs_values?.[index] || null,
         triglycerides: data.triglycerides_values?.[index] || null,
         ldl: data.ldl_values?.[index] || null,
         hdl: data.hdl_values?.[index] || null,
-        systolic: data.systolic_values?.[index] || null,
-        diastolic: data.diastolic_values?.[index] || null,
+        waist_circumference: data.waist_circumference_values?.[index] || null,
       }));
 
       const clusterHistory = data.dates.map((date, index) => {

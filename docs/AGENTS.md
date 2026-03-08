@@ -1,33 +1,38 @@
-# DOCUMENTATION KNOWLEDGE BASE
+# Documentation Knowledge Base
 
-## OVERVIEW
-Centralized documentation hub for system architecture, research defense, and operational guides.
+## Overview
+This folder contains DIANA V2 documentation for architecture, implementation guides, ML contract and rationale, operations, and research support.
 
-## STRUCTURE
+The top-level docs map is maintained in `docs/README.md`.
+
+## Canonical Authority Model
+Use one source of truth per domain to avoid drift:
+
+| Domain | Canonical Document | What It Owns |
+|---|---|---|
+| Assessment result contract | `03-ml/assessment-contract.md` | Backend-normalized result shape, cluster/risk semantics, warning contract, model capability rules |
+| ML inference transport | `03-ml/api-contract.md` | HTTP contract between backend and ML service (`/predict`, `/predict/explain`) |
+| Feature rationale | `03-ml/feature-documentation.md` | Active no-HbA1c/FBS screening features and engineering rationale |
+| Method narrative | `03-ml/methodology.md` | Research-method summary aligned to active implementation |
+| Backend integration | `02-guides/backend.md` | How backend validates, calls ML, and returns canonical results |
+| Frontend integration | `02-guides/frontend.md` | How frontend submits assessments and renders backend contract fields |
+
+Rule: if two docs disagree, align non-canonical docs to the canonical owner above.
+
+## Current Structure
 ```
 docs/
-├── 01-architecture/    # System design and request flow diagrams
-├── 02-guides/          # Developer handbooks for backend, frontend, and ML
-├── 03-ml/              # Model rationale and API contract specifications
-├── 04-development/     # Environment setup and API drift prevention
-├── 05-planning/        # Feature PRDs and refactoring roadmaps
-├── 06-operations/      # Deployment guides and logging strategies
-└── 07-research/        # Thesis manuscript updates and clinical biomarker data
+├── 00-legacy/          # Historical references (not part of primary map)
+├── 01-architecture/    # System design and boundaries
+├── 02-guides/          # Backend/frontend/database/admin/security guides
+├── 03-ml/              # ML contracts, methodology, feature documentation
+├── 05-planning/        # PRDs and planning notes
+├── 06-operations/      # Deployment and logging guides
+├── 07-research/        # Manuscript and research support docs
+└── 08-fixes/           # Point-in-time fix logs (historical)
 ```
 
-## KEY DOCS
-| Document | Purpose |
-|----------|---------|
-| `README.md` | Primary index for the documentation hub |
-| `02-guides/backend.md` | Handlers, routes, and middleware implementation details |
-| `03-ml/api-contract.md` | Request/response formats for ML server integration |
-| `03-ml/rationale.md` | Defense-ready justification for ML methodology |
-| `04-development/api-drift-prevention.md` | Strategies for keeping Go, SQL, and Python in sync |
-| `07-research/biomarkers.md` | Clinical ranges and validation logic for assessments |
-| `07-research/paper-requirements.md` | Checklist for thesis defense and manuscript figures |
-
-## PATTERNS
-- **Numbered Subdirectories**: Content is organized by lifecycle stage (01-Architecture to 07-Research).
-- **Defense-First**: Heavy emphasis on ML rationale and clinical alignment for thesis verification.
-- **Drift Awareness**: Documentation includes explicit strategies to prevent schema mismatch between tiers.
-- **Agent Instructions**: Guidelines for AI assistance are stored in `04-development/claude-instructions.md`.
+## Notes For Maintenance
+- Keep `docs/README.md` limited to real, current docs only.
+- Do not place legacy/fix notes in the primary navigation sections.
+- Prefer linking to canonical docs instead of duplicating technical truth in multiple files.

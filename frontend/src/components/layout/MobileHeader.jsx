@@ -14,16 +14,18 @@ const MobileHeader = ({ onOpen, isOpen, userInitials = 'U' }) => {
     >
       <div className="h-14 sm:h-16 bg-white/90 backdrop-blur-xl border-b border-diana-sand shadow-sm">
         <div className="h-full px-4 sm:px-6 flex items-center justify-between">
-          <button
+          <motion.button
             type="button"
             onClick={onOpen}
+            whileHover={isReduced ? undefined : { scale: 1.05, rotate: 90 }}
+            whileTap={isReduced ? undefined : { scale: 0.95 }}
             aria-label="Open navigation menu"
             aria-controls="user-mobile-drawer"
             aria-expanded={isOpen}
             className="w-11 h-11 rounded-xl border border-diana-sand bg-white text-diana-forest flex items-center justify-center shadow-sm hover:bg-diana-stone/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diana-forest/30 focus-visible:ring-offset-2"
           >
             <Menu size={22} />
-          </button>
+          </motion.button>
 
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-diana-forest to-diana-forest-light text-white flex items-center justify-center font-serif font-bold tracking-wide">

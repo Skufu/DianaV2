@@ -124,15 +124,17 @@ const MobileDrawer = ({
                     <div className="text-lg font-serif font-bold text-diana-forest">Navigation</div>
                   </div>
                 </div>
-                <button
+                <motion.button
                   ref={closeButtonRef}
                   type="button"
                   onClick={onClose}
+                  whileHover={isReduced ? undefined : { scale: 1.1, rotate: 90 }}
+                  whileTap={isReduced ? undefined : { scale: 0.9 }}
                   aria-label="Close navigation menu"
                   className="w-11 h-11 rounded-xl border border-diana-sand bg-white text-diana-forest flex items-center justify-center hover:bg-diana-stone/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diana-forest/30 focus-visible:ring-offset-2"
                 >
                   <X size={18} />
-                </button>
+                </motion.button>
               </div>
             </div>
 
@@ -149,14 +151,16 @@ const MobileDrawer = ({
             </div>
 
             <div className="px-5">
-              <button
+              <motion.button
                 type="button"
                 onClick={handleAssessmentClick}
+                whileHover={isReduced ? undefined : { scale: 1.02 }}
+                whileTap={isReduced ? undefined : { scale: 0.98 }}
                 className="w-full min-h-[48px] flex items-center justify-center gap-3 rounded-2xl bg-diana-forest text-white font-bold shadow-md shadow-blue-900/20 hover:bg-diana-forest-light transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diana-forest/30 focus-visible:ring-offset-2"
               >
                 <Plus size={18} className="stroke-[3px]" />
                 Log Assessment
-              </button>
+              </motion.button>
             </div>
 
             <nav className="flex-1 px-4 py-4 space-y-2">
@@ -164,10 +168,12 @@ const MobileDrawer = ({
                 const isActive = activeTab === item.id;
                 const Icon = item.icon;
                 return (
-                  <button
+                  <motion.button
                     key={item.id}
                     type="button"
                     onClick={() => handleNavClick(item.id)}
+                    whileHover={isReduced ? undefined : { scale: 1.02, x: 4 }}
+                    whileTap={isReduced ? undefined : { scale: 0.98 }}
                     className={`w-full min-h-[48px] px-4 rounded-2xl flex items-center gap-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diana-forest/30 focus-visible:ring-offset-2 ${
                       isActive
                         ? 'bg-diana-forest/10 text-diana-forest'
@@ -176,23 +182,25 @@ const MobileDrawer = ({
                   >
                     <Icon size={20} className={isActive ? 'text-diana-forest' : 'text-diana-text-muted'} />
                     <span className={`font-medium ${isActive ? 'font-bold' : ''}`}>{item.label}</span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </nav>
 
             <div className="px-5 pb-6 border-t border-diana-sand">
-              <button
+              <motion.button
                 type="button"
                 onClick={() => {
                   onLogout();
                   onClose();
                 }}
+                whileHover={isReduced ? undefined : { scale: 1.02 }}
+                whileTap={isReduced ? undefined : { scale: 0.98 }}
                 className="mt-4 w-full min-h-[48px] flex items-center justify-center gap-3 rounded-2xl border border-rose-200 text-rose-600 hover:bg-rose-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 focus-visible:ring-offset-2"
               >
                 <LogOut size={18} />
                 Log Out
-              </button>
+              </motion.button>
             </div>
           </motion.aside>
         </div>

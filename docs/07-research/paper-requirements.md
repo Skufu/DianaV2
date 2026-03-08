@@ -155,7 +155,9 @@ Before model training, compute Information Gain (IG) for each feature:
 | **MARD** | Mild Age-Associated Diabetes Mellitus | Oldest age at diagnosis; moderate BMI and HbA1c; moderate insulin release/resistance |
 | **MIDD** | Mild Insulin-Deficient Diabetes | Lowest BMI, HbA1c, HOMA-IR; moderate age and HOMA-β |
 
-> **Note**: Final cluster labels will be validated by licensed physicians/endocrinologists.
+> **Note**: This table preserves paper-context taxonomy.
+>
+> **Runtime distinction**: DIANA runtime uses `SIRD/SIDD/MOD/MARD` with adapted SIDD semantics (atherogenic/lipid-driven profile) per `../03-ml/assessment-contract.md`. Use paper labels for manuscript context, and runtime labels for implementation/contract discussions.
 
 ---
 

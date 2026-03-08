@@ -101,7 +101,7 @@ const UserProfile = ({ setActiveTab }) => {
   }
 
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="max-w-4xl mx-auto space-y-6">
+    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="max-w-4xl mx-auto space-y-6 pt-4 lg:pt-0">
       <motion.div variants={slideUp} className="bg-gradient-to-r from-diana-forest to-diana-forest-light rounded-3xl p-8 shadow-lg text-white">
         <div className="flex items-center gap-4 mb-2">
           <Button

@@ -1,39 +1,30 @@
-# DIANA Paper RAG Reference
+# DIANA Research Reference
 
-> **Purpose**: Token-efficient reference documents for AI-assisted development aligned with the research paper.
+> Purpose: research/manuscript support docs for DIANA V2
 
-## Quick Index
+## Scope
+This folder supports manuscript writing and defense preparation. For runtime implementation truth, use:
+- `../03-ml/assessment-contract.md`
+- `../03-ml/feature-documentation.md`
+- `../03-ml/methodology.md`
 
+## Current Index
 | Document | Purpose | Key Content |
-|----------|---------|-------------|
-| [biomarkers.md](biomarkers.md) | Blood & non-blood biomarkers | FBS, HbA1c, TG, LDL, HDL, TC, BMI, Age |
-| [diabetes_subgroups.md](diabetes_subgroups.md) | T2DM cluster classification | SIDD, SIRD, MOD, MARD definitions |
-| [ml_algorithms.md](ml_algorithms.md) | ML model requirements | LR, RF, K-Means specs |
-| [feature_selection.md](feature_selection.md) | Entropy & Information Gain | IG formulas, feature ranking |
-| [data_pipeline.md](data_pipeline.md) | Data processing steps | NHANES → Training data flow |
-| [metrics.md](metrics.md) | Evaluation metrics | Accuracy, F1, AUC-ROC thresholds |
-| [ui_requirements.md](ui_requirements.md) | Application interface | Dashboard, Analytics, Visualization |
-| [codebase_alignment.md](codebase_alignment.md) | Paper ↔ Code mapping | What's implemented vs needed |
-| [paper-requirements.md](paper-requirements.md) | Complete paper reference | DIANA project overview, population, methods |
-| [paper_alignment_analysis.md](paper_alignment_analysis.md) | Implementation analysis | Ian_ML vs Neoron_ML alignment with requirements |
-| [manuscript-updates.md](manuscript-updates.md) | Manuscript revisions | Updated results, performance metrics, findings |
+|---|---|---|
+| `paper-requirements.md` | Paper checklist and requirements | Thesis structure, required figures/tables |
+| `manuscript-updates.md` | Ready-to-paste manuscript revisions | Results and discussion updates |
+| `ml_algorithms.md` | Algorithm framing for manuscript | LR, RF, K-means narrative |
+| `metrics.md` | Metric definitions and interpretation | AUC, F1, sensitivity and related measures |
+| `data_pipeline.md` | Data processing narrative | NHANES pipeline and preparation story |
+| `diabetes_subgroups.md` | Subtype narrative support | SIRD, SIDD, MOD, MARD discussion |
+| `ui_requirements.md` | UI requirements for research alignment | Dashboard and figure alignment notes |
 
----
+## Important Alignment Notes
+- Active screening model discussion should align with `binary_v2_no_bp` (non-circular screening).
+- Do not present HbA1c/FBS as active screening inputs for `binary_v2_no_bp`.
+- If manuscript language conflicts with runtime behavior, align wording to `../03-ml/assessment-contract.md`.
 
-## Usage for AI
-
-1. **Finding specific requirements**: Search this folder for keywords
-2. **Quick reference**: Each file is self-contained and concise
-3. **Code changes**: Always check `codebase_alignment.md` first
-
-## Paper Source
-
-- **Title**: DIANA: A Predictive Model-Based Application Using Selected Blood Biomarkers for Cluster-Based Identification of Type 2 Diabetes Risk in Menopausal Women
-- **Population**: Postmenopausal women aged 45-60 years
-- **Data Source**: NHANES (development), Philippine hospital records (target)
-
----
-
-## Search Keywords
-
-`DIANA` `diabetes` `menopausal` `postmenopausal` `biomarkers` `HbA1c` `FBS` `lipid` `K-Means` `clustering` `SIDD` `SIRD` `MARD` `MOD` `Random Forest` `Logistic Regression` `Information Gain` `entropy` `AUC-ROC` `risk prediction` `NHANES`
+## Paper Source Context
+- Title: DIANA: A Predictive Model-Based Application Using Selected Blood Biomarkers for Cluster-Based Identification of Type 2 Diabetes Risk in Menopausal Women
+- Target population: postmenopausal women aged 45-60
+- Development dataset: NHANES

@@ -3,6 +3,10 @@ import { useUserProfile, useLogin, useLogout, useAssessments } from './api';
 import { useQueryClient } from '@tanstack/react-query';
 import Sidebar from './components/layout/Sidebar';
 import AdminSidebar from './components/layout/AdminSidebar';
+import MobileHeader from './components/layout/MobileHeader';
+import MobileDrawer from './components/layout/MobileDrawer';
+import AdminMobileHeader from './components/layout/AdminMobileHeader';
+import AdminMobileDrawer from './components/layout/AdminMobileDrawer';
 import Login from './components/auth/Login';
 import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
@@ -61,7 +65,8 @@ const App = () => {
   const [authToken, setAuthToken] = useState('');
   const [showAssessmentModal, setShowAssessmentModal] = useState(false);
 
-const [authError, setAuthError] = useState(null);
+  const [authError, setAuthError] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // React Query hooks
   // React Query hooks - only fetch profile when authenticated
@@ -295,13 +300,40 @@ const [authError, setAuthError] = useState(null);
       ) : isAdmin ? (
         // Admin Layout - Clean & Distinct
         <motion.div key="admin" className="flex min-h-screen relative overflow-hidden bg-diana-stone">
+          {/* Admin Mobile Header - Animated */}
+          <AnimatePresence>
+            <motion.div
+              initial={{ y: isReduced ? 0 : -16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: isReduced ? 0 : 0.2 }}
+            >
+              <AdminMobileHeader
+                activeView={adminView}
+                setActiveView={setAdminView}
+                isOpen={isMobileMenuOpen}
+                onOpen={() => setIsMobileMenuOpen(true)}
+                userRole={userRole}
+              />
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Admin Mobile Drawer - Already has AnimatePresence internally */}
+          <AdminMobileDrawer
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
+            activeView={adminView}
+            setActiveView={setAdminView}
+            onLogout={handleLogout}
+            userRole={userRole}
+          />
+
           <AnimatePresence mode="wait">
             <motion.div
               initial={{ x: isReduced ? 0 : -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: isReduced ? 0 : -300, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed left-0 top-0 z-50"
+              className="fixed left-0 top-0 z-50 hidden lg:block"
             >
               <AdminSidebar
                 activeView={adminView}
@@ -314,7 +346,7 @@ const [authError, setAuthError] = useState(null);
             </motion.div>
           </AnimatePresence>
 
-          <main className={`relative z-10 flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'ml-20' : 'ml-20 lg:ml-72'} p-6 lg:p-8`}>
+          <main className={`relative z-10 flex-1 transition-all duration-300 lg:ml-72 p-6 lg:p-8`}>
             <ErrorBoundary section={adminView}>
               <AnimatePresence mode="wait">
                 <motion.div
@@ -335,6 +367,31 @@ const [authError, setAuthError] = useState(null);
       ) : (
         // User Layout - Soft Modernism (Light Mode)
         <motion.div key="user" className="flex min-h-screen relative overflow-hidden bg-diana-cream">
+          {/* Mobile Header - Animated */}
+          <AnimatePresence>
+            <motion.div
+              initial={{ y: isReduced ? 0 : -16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: isReduced ? 0 : 0.2 }}
+            >
+              <MobileHeader
+                isOpen={isMobileMenuOpen}
+                onOpen={() => setIsMobileMenuOpen(true)}
+              />
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Mobile Drawer - Already has AnimatePresence internally */}
+          <MobileDrawer
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onStartAssessment={handleStartAssessment}
+            onLogout={handleLogout}
+            userInitials={profile?.email?.charAt(0).toUpperCase() || 'U'}
+          />
+
           {/* Subtle Grain or Pattern could go here if needed, keeping it clean for now */}
 
           <AnimatePresence>
@@ -344,7 +401,7 @@ const [authError, setAuthError] = useState(null);
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: isReduced ? 0 : -300, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="fixed left-0 top-0 z-50"
+                className="fixed left-0 top-0 z-50 hidden lg:block"
               >
                 <Sidebar
                   activeTab={activeTab}
@@ -361,7 +418,7 @@ const [authError, setAuthError] = useState(null);
           </AnimatePresence>
 
           <main
-            className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? (isSidebarCollapsed ? 'ml-20' : 'ml-20 lg:ml-72') + ' p-6 lg:p-8' : ''}`}
+            className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? 'lg:ml-72 p-6 lg:p-8' : ''}`}
           >
             <ErrorBoundary section={activeTab}>
               <Suspense fallback={<LoadingSkeleton />}>

@@ -1538,15 +1538,448 @@ To achieve high performance, scalability, and maintainability, the DIANA web app
 1. **Frontend Presentation Layer (`React.js` and `Vite`):** The user interface is engineered as a Single Page Application (SPA) utilizing React 18 and the Vite build tool. This layer leverages Tailwind CSS to enforce a highly responsive, accessibility-compliant design system. By rendering the interactive Dashboard, Patient History archives, and visual Analytics directly in the client browser, the SPA architecture minimizes server round-trips and provides clinicians with fluid, immediate data exploration capabilities.
 2. **Backend Application Layer (`Go` and `Gin`):** The core business logic, user authentication routing, and transactional data flows are orchestrated by a high‑performance backend developed in Go, utilizing the Gin HTTP framework. Go was selected for its exceptional concurrency models and minimal latency, allowing this layer to act as a robust, secure gateway that efficiently brokers communication between the frontend client and the underlying data and predictive services.
 3. **Machine Learning Service (`Python` and `Flask`):** To preserve the integrity and performance of predictive execution, the analytical models (Logistic Regression for binary screening and K‑Means for subtype classification) are isolated within a dedicated Python microservice powered by Flask. This decoupling allows the Python environment to exclusively manage data science dependencies (such as `scikit-learn` and `shap`). The Go backend communicates with this service via internal REST APIs to request real‑time risk predictions and subtype inferences without blocking main application threads.
-4. **Data Persistence Layer (`PostgreSQL` and `Redis`):** The secure storage of clinical records, user profiles, and historical biomarker assessments is managed by a relational PostgreSQL database, chosen for its strict ACID (Atomicity, Consistency, Isolation, Durability) compliance which is critical for medical data. Concurrently, a Redis in-memory caching layer is implemented to optimize session management, enforce rate limiting against malicious traffic spikes, and rapidly serve frequently accessed dashboard aggregates.
+4. **Data Persistence Layer (`NeonDB` and `Redis`):** The secure storage of clinical records, user profiles, and historical biomarker assessments is managed by a relational PostgreSQL database via NeonDB's serverless platform, chosen for its strict ACID (Atomicity, Consistency, Isolation, Durability) compliance which is critical for medical data. NeonDB provides automatic scaling, branchable databases for development/production parity, and efficient connection pooling. Concurrently, a Redis in-memory caching layer is implemented to optimize session management, enforce rate limiting against malicious traffic spikes, and rapidly serve frequently accessed dashboard aggregates.
 
-**Data Security and Privacy**
+**Architecture Diagram**
+
+Figure 3.X illustrates the four-layer service-oriented architecture with deployment providers:
+
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend Layer - Vercel"]
+        A[React 18 SPA<br/>Vite + Tailwind CSS]
+    end
+    
+    subgraph Backend["Backend Layer - Render"]
+        B[Go 1.24 + Gin<br/>JWT Auth + RBAC]
+    end
+    
+    subgraph ML["ML Microservice - Render"]
+        C[Python 3.12 + Flask<br/>Logistic Regression + K-Means]
+    end
+    
+    subgraph Data["Data Layer - NeonDB + Redis"]
+        D[(NeonDB<br/>Serverless PostgreSQL)]
+        E[(Redis 7<br/>Cache + Rate Limiting)]
+    end
+    
+    A -->|HTTPS API Calls| B
+    B -->|Internal REST| C
+    B -->|SQL Queries| D
+    B -->|Cache Operations| E
+    C -->|Model Inference| D
+```
+
+**Figure 3.X**: Four-layer service-oriented architecture showing deployment providers (Vercel, Render, NeonDB) and inter-service communication patterns.
+
+**Technology Stack Justification**
+
+Table 3.X presents the complete technology stack with rationale for each component selection:
+
+| Component | Technology | Justification |
+|-----------|------------|---------------|
+| Frontend | React 18 + Vite | SPA for responsive clinician UI; Vite for fast builds and hot module replacement (HMR) |
+| Backend | Go 1.24 + Gin | High concurrency (goroutines), low latency for API gateway; superior to Node.js for CPU-bound tasks |
+| ML Service | Python 3.12 + Flask | scikit-learn ecosystem; isolated from Go backend for independent scaling |
+| Database | NeonDB (Serverless PostgreSQL 15) | ACID compliance for medical records; automatic scaling; branchable databases for dev/prod parity; pay-per-use pricing |
+| Cache | Redis 7 | Session management, rate limiting (100 req/min), analytics caching (5-min TTL) |
+| Auth | JWT (HS256) | Stateless authentication; 24h expiration; HMAC-SHA256 for cryptographic security |
+| Styling | Tailwind CSS | Utility-first CSS for responsive design; consistent design system across breakpoints |
+| Charts | Recharts + Plotly | Interactive visualizations for biomarker trends and SHAP waterfall plots |
+
+**Table 3.X**: Technology stack components with selection rationale.
+
+**Footnote**: Go was selected over Node.js for the backend due to its superior concurrency model (goroutines) and lower memory footprint, critical for handling concurrent clinician requests without performance degradation. Python was retained for the ML service to leverage the scikit-learn ecosystem without polluting Go dependencies.
+
+### 3.10 Authentication and Authorization (RBAC)
+
+DIANA implements a two-tier Role-Based Access Control (RBAC) system enforced via JWT middleware within the Go backend. The authentication architecture ensures secure, stateless session management while maintaining strict access controls for sensitive clinical data.
+
+**Role Structure**
+
+The system defines two distinct user roles with differentiated access privileges:
+
+| Role | Permissions | Protected Endpoints |
+|------|-------------|---------------------|
+| **Clinician** | View patient records, request predictions, export individual reports, view analytics dashboard | `/api/v1/users/me/*`, `/api/v1/assessments/*`, `/api/v1/analytics/*` |
+| **Admin** | Full clinician access + user management, system analytics, audit log viewing, model traceability | `/api/v1/admin/users`, `/api/v1/admin/audit`, `/api/v1/admin/models`, `/api/v1/admin/dashboard` |
+
+**JWT Token Structure**
+
+Authentication tokens are implemented using the JSON Web Token (JWT) standard (RFC 7519) with the following configuration:
+
+- **Signing Algorithm**: HMAC-SHA256 (HS256)
+- **Secret Management**: JWT_SECRET environment variable (32+ characters, cryptographically random)
+- **Token Expiration**: 24 hours from issuance
+- **Payload Claims**:
+  ```json
+  {
+    "user_id": 42,
+    "email": "clinician@hospital.ph",
+    "role": "clinician",
+    "exp": 1678901234
+  }
+  ```
+
+**Implementation Details**
+
+The JWT middleware (`backend/internal/http/middleware/auth.go`) performs the following validation steps:
+
+1. Extract token from `Authorization: Bearer <token>` header
+2. Parse and validate token signature using HMAC-SHA256
+3. Verify expiration claim (`exp`) against current timestamp
+4. Extract user claims and inject into Gin context (`c.Set("user", claims)`)
+5. Pass validated request to next middleware/handler
+
+The RBAC middleware (`backend/internal/http/middleware/rbac.go`) enforces role-based restrictions using the `RoleRequired` function:
+
+```go
+func RoleRequired(allowedRoles ...string) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        claims := getUserClaims(c)
+        for _, role := range allowedRoles {
+            if claims.Role == role {
+                c.Next()
+                return
+            }
+        }
+        c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+            "error": "access denied - insufficient permissions"
+        })
+    }
+}
+```
+
+**Password Security**
+
+User credentials are protected using industry-standard security measures:
+
+- **Hashing Algorithm**: bcrypt with cost factor 12
+- **Salt**: Automatically generated per-user (22-character random salt)
+- **Storage**: Only bcrypt hash stored in database (`password_hash` column)
+- **Validation**: `bcrypt.CompareHashAndPassword()` during login
+
+**Rate Limiting**
+
+API rate limiting is enforced via Redis-based token bucket algorithm:
+
+- **Algorithm**: Token bucket with fixed refill rate
+- **Limit**: 100 requests per minute per user
+- **Implementation**: Redis INCR with TTL (60 seconds)
+- **Response**: HTTP 429 (Too Many Requests) when limit exceeded
+
+**CORS Configuration**
+
+Cross-Origin Resource Sharing (CORS) is restricted to authorized domains:
+
+- **Production**: Vercel deployment domain (e.g., `https://diana.vercel.app`)
+- **Development**: `http://localhost:4000`
+- **Headers**: `Authorization`, `Content-Type`, `X-Model-Version`
+- **Methods**: `GET`, `POST`, `PUT`, `DELETE`
+
+**Security Measures Summary**
+
+Table 3.Y summarizes the security controls implemented in DIANA:
+
+| Security Control | Implementation | Purpose |
+|-----------------|----------------|---------|
+| Token Signing | HMAC-SHA256 | Cryptographic integrity |
+| Token Expiration | 24-hour TTL | Session timeout enforcement |
+| Password Hashing | bcrypt (cost 12) | Credential protection at rest |
+| Rate Limiting | Redis token bucket | DoS protection |
+| CORS | Whitelist enforcement | Cross-origin request filtering |
+| RBAC | Middleware enforcement | Least privilege access control |
+
+**Table 3.Y**: Security controls with implementation details and purpose.
+
+### 3.11 API Endpoints Documentation
+
+The DIANA backend exposes a RESTful API for frontend consumption and third-party integration. This section documents key endpoints; complete API documentation (21 endpoints) is available in `backend/README.md` and follows OpenAPI 3.0 standards.
+
+**Authentication Endpoints**
+
+**POST /api/v1/auth/login**
+
+Authenticates user credentials and returns JWT access token.
+
+| Property | Value |
+|----------|-------|
+| **Authentication** | None (public endpoint) |
+| **Request Body** | `{"email": "clinician@hospital.ph", "password": "securePassword123"}` |
+| **Response** | `{"access_token": "eyJhbG...", "refresh_token": "dG9r...", "token_type": "bearer", "expires_in": 86400}` |
+| **Status Codes** | `200 OK` (success), `401 Unauthorized` (invalid credentials) |
+
+**Protected Endpoints**
+
+**GET /api/v1/users/me/assessments**
+
+Retrieves authenticated user's assessment history with latest risk predictions.
+
+| Property | Value |
+|----------|-------|
+| **Authentication** | JWT required (clinician role) |
+| **Query Parameters** | `limit` (default: 10), `offset` (default: 0) |
+| **Response** | Paginated array of assessment objects with biomarker values, risk scores, and cluster assignments |
+| **Caching** | 5-minute Redis cache for performance |
+
+**POST /api/v1/users/me/assessments**
+
+Creates new biomarker assessment and triggers ML prediction.
+
+| Property | Value |
+|----------|-------|
+| **Authentication** | JWT required (clinician role) |
+| **Request Body** | Biomarker values (BMI, triglycerides, LDL, HDL, waist_circumference, age) |
+| **Response** | Assessment object with ML prediction (risk_score, cluster_label, shap_values) |
+| **ML Integration** | Calls Flask ML service via internal REST API |
+
+**Prediction Endpoint (Full Specification)**
+
+**POST /predict** (ML Service Internal Endpoint)
+
+This endpoint is called by the Go backend to obtain risk predictions from the ML microservice. It is not exposed to the frontend directly.
+
+**Request Schema**:
+```json
+{
+  "bmi": 28.5,
+  "triglycerides": 180,
+  "ldl": 140,
+  "hdl": 45,
+  "waist_circumference": 95,
+  "age": 54,
+  "menopausal_status": 1,
+  "family_history": 0,
+  "smoking_history": 1,
+  "hypertension": 0,
+  "heart_disease": 0,
+  "phys_activity": 1
+}
+```
+
+**Response Schema**:
+```json
+{
+  "prediction": 1,
+  "probability": 0.72,
+  "risk_label": "High",
+  "cluster": "SIRD",
+  "shap_values": {
+    "triglycerides": 0.15,
+    "waist_circumference": 0.12,
+    "bmi": 0.08,
+    "ldl": 0.05,
+    "age": 0.03,
+    "hdl": -0.02,
+    "phys_activity": -0.01,
+    "smoking_history": 0.01,
+    "family_history": 0.0
+  },
+  "model_version": "binary_v2_no_bp",
+  "dataset_hash": "nhanes_postmenopausal_2011_2024"
+}
+```
+
+**Response Field Descriptions**:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `prediction` | integer | Binary classification (0=Normal, 1=At-Risk) |
+| `probability` | float | Risk probability (0.0-1.0) |
+| `risk_label` | string | Human-readable risk category (Normal/Moderate/High) |
+| `cluster` | string | Ahlqvist subtype (SIRD/SIDD/MOD/MARD) |
+| `shap_values` | object | Feature contributions (positive=increase risk, negative=decrease risk) |
+| `model_version` | string | Trained model identifier |
+| `dataset_hash` | string | Training dataset fingerprint |
+
+**Example Request/Response**
+
+**Request**:
+```bash
+curl -X POST http://localhost:5001/predict \
+  -H "Content-Type: application/json" \
+  -H "X-Model-Version: binary_v2_no_bp" \
+  -d '{
+    "bmi": 28.5,
+    "triglycerides": 180,
+    "ldl": 140,
+    "hdl": 45,
+    "waist_circumference": 95,
+    "age": 54
+  }'
+```
+
+**Response**:
+```json
+{
+  "prediction": 1,
+  "probability": 0.72,
+  "risk_label": "High",
+  "cluster": "SIRD",
+  "shap_values": {
+    "triglycerides": 0.15,
+    "waist_circumference": 0.12,
+    "bmi": 0.08
+  },
+  "model_version": "binary_v2_no_bp",
+  "dataset_hash": "nhanes_postmenopausal_2011_2024"
+}
+```
+
+**Complete API Reference**
+
+The full API specification includes 21 endpoints across the following resource categories:
+
+- **Authentication** (4 endpoints): `/api/v1/auth/*`
+- **User Management** (7 endpoints): `/api/v1/users/me/*`
+- **Assessments** (5 endpoints): `/api/v1/users/me/assessments/*`
+- **Analytics** (2 endpoints): `/api/v1/analytics/*`
+- **Admin** (4 endpoints): `/api/v1/admin/*`
+
+Complete documentation is available in `backend/README.md` and `docs/api-spec.yaml`.
+
+**Footnote**: Complete API documentation (21 endpoints) is available in `backend/README.md` and `docs/api-spec.yaml` following OpenAPI 3.0 standards.
+
+**Explainable AI (XAI) Integration**
 Given the sensitive nature of clinical biomarker data, the system architecture incorporates rigorous, defense-in-depth security mechanisms. The application enforces a stateless authentication architecture utilizing JSON Web Tokens (JWT) signed with the HMAC SHA-256 (HS256) cryptographic algorithm. This approach ensures that user sessions cannot be easily mathematically forged or tampered with by external actors. Furthermore, a custom Role-Based Access Control (RBAC) middleware layer is deployed within the Go backend. This middleware actively intercepts and evaluates all incoming API requests, guaranteeing that administrative functions and broad cohort data access are strictly limited to authenticated personnel holding the appropriate clinical authorization, thereby enforcing the principle of least privilege.
 
 **Explainable AI (XAI) Integration**
 A primary barrier to the clinical adoption of machine learning models is their inherent "black box" opaqueness. To mitigate this and foster clinical trust, the DIANA system integrates SHAP (SHapley Additive exPlanations) directly into the predictive microservice pipeline. Rooted in cooperative game theory, SHAP provides a mathematically rigorous framework for interpretability. Upon generating a diabetic risk prediction, the system utilizes specialized explainers (`shap.TreeExplainer` or `shap.LinearExplainer`, depending on the algorithm) to calculate the exact, marginal contribution of each individual biomarker (e.g., Triglycerides, BMI, Age) to the final risk probability for that specific patient. These patient-specific SHAP values are transmitted to the React frontend where they are dynamically rendered as interactive Waterfall plots. This local, instance-level explainability empowers physicians to visually deconstruct the algorithmic reasoning, understanding precisely *why* a particular menopausal patient was classified as "At-Risk," which directly supports evidence-based intervention planning.
 
 _Figure 6 : Web Application Integration and Visualization Development Phase Flow_
+
+### 3.12 Deployment Architecture
+
+The DIANA application is deployed using a modern cloud-native stack optimized for scalability, cost-efficiency, and developer productivity. The deployment architecture leverages Platform-as-a-Service (PaaS) providers to minimize operational overhead while maintaining production-grade reliability.
+
+**Deployment Stack**
+
+Table 3.Z presents the complete deployment infrastructure:
+
+| Component | Provider | Configuration | Rationale |
+|-----------|----------|---------------|-----------|
+| **Frontend Hosting** | Vercel | React SPA (static build) | Automatic CI/CD from GitHub, edge CDN, zero-config HTTPS |
+| **Backend API** | Render | Go binary (Docker container) | Managed scaling, automatic SSL, PostgreSQL integration |
+| **ML Service** | Render | Python Flask (Gunicorn WSGI) | Isolated compute for ML inference, independent scaling |
+| **Database** | NeonDB | Serverless PostgreSQL 15 | Branchable databases, automatic connection pooling, pay-per-use pricing |
+| **Cache** | Render Redis | Redis 7 (managed) | Session storage, rate limiting, analytics caching |
+| **SSL/TLS** | Let's Encrypt | Auto-renewed certificates | Free, automated certificate management |
+
+**Table 3.Z**: Deployment stack with providers and rationale.
+
+**Deployment Diagram**
+
+Figure 3.Y illustrates the deployment architecture with service providers:
+
+```mermaid
+flowchart TB
+    subgraph Internet["Internet"]
+        A[HTTPS Traffic]
+    end
+    
+    subgraph Vercel["Vercel (Frontend)"]
+        B[React SPA<br/>Edge CDN]
+    end
+    
+    subgraph Render["Render (Backend + ML)"]
+        C[Go Backend Service<br/>Port 8080]
+        D[Flask ML Service<br/>Port 5001]
+    end
+    
+    subgraph NeonDB["NeonDB"]
+        E[(Serverless<br/>PostgreSQL)]
+    end
+    
+    subgraph Redis["Render Redis"]
+        F[(Redis 7<br/>Cache + Rate Limiting)]
+    end
+    
+    A -->|HTTPS| B
+    B -->|API Calls| C
+    C -->|Internal REST| D
+    C -->|SQL Queries| E
+    C -->|Cache Ops| F
+    D -->|Model State| E
+```
+
+**Figure 3.Y**: Deployment architecture showing Vercel (frontend), Render (backend + ML), NeonDB (database), and Redis (cache).
+
+**Deployment Flow**
+
+Deployment is automated via GitHub Actions with the following flow:
+
+1. **Push to main**: Triggers build and deployment workflow
+2. **Backend tests**: Run `go test ./...` (must pass)
+3. **ML tests**: Run `pytest -v` (must pass)
+4. **Docker build**: Build Go backend and Flask ML service images
+5. **Deploy to Render**: Push images, trigger rolling update (zero-downtime)
+6. **Deploy to Vercel**: Automatic via Vercel GitHub integration
+7. **Run migrations**: Goose migrations applied to NeonDB
+8. **Health check**: Verify deployment success via `/api/v1/healthz`
+
+**Environment Configuration**
+
+Environment variables are managed separately for each deployment target:
+
+**Vercel (Frontend)**:
+```bash
+VITE_API_BASE=https://diana-api.onrender.com
+VITE_ML_BASE=https://diana-ml.onrender.com
+```
+
+**Render (Backend)**:
+```bash
+PORT=8080
+ENV=production
+DATABASE_URL=postgres://neondb_connection_string
+JWT_SECRET=<secure-random-32-chars>
+MODEL_URL=https://diana-ml.onrender.com/predict
+REDIS_URL=redis://render-redis-url:6379
+CORS_ORIGINS=https://diana.vercel.app
+```
+
+**Render (ML Service)**:
+```bash
+PORT=5001
+MODEL_PATH=/app/models/lr_model.joblib
+MLFLOW_TRACKING_URI=<mlflow-uri>
+API_KEY=<secure-ml-api-key>
+```
+
+**NeonDB (Database)**:
+
+NeonDB provides serverless PostgreSQL with automatic scaling:
+
+- **Connection String**: `postgres://user:password@ep-xxx.region.aws.neon.tech/dbname?sslmode=require`
+- **Branching**: Development branch (`dev`) automatically created from production (`main`)
+- **Connection Pooling**: Built-in PgBouncer for efficient connection management
+- **Backups**: Automatic daily backups with 7-day retention
+
+**Security Configuration**
+
+| Security Control | Implementation |
+|-----------------|----------------|
+| **Firewall** | Render-managed security groups (ports 80, 443 only) |
+| **Database SSL** | `sslmode=require` enforced for all connections |
+| **CORS** | Restricted to Vercel domain |
+| **Rate Limiting** | 100 req/min per user (Redis-backed) |
+| **JWT Expiration** | 24-hour token TTL |
+
+**Scalability Considerations**
+
+- **Frontend**: Vercel Edge CDN handles global traffic (no scaling concerns)
+- **Backend**: Render auto-scales based on CPU/memory (configured: 512MB RAM, 0.1 CPU)
+- **ML Service**: Independently scalable (configured: 1GB RAM, 0.25 CPU for inference)
+- **Database**: NeonDB auto-scales compute based on query load
+- **Cache**: Render Redis (250MB plan, sufficient for session + rate limiting)
+
+**Monitoring and Observability**
+
+- **Render Logs**: Real-time log streaming via Render dashboard
+- **Vercel Analytics**: Built-in web vitals and performance monitoring
+- **NeonDB Metrics**: Connection count, query latency, storage usage
+- **Health Endpoints**: `/api/v1/healthz` (backend), `/health` (ML service)
+
 **Phase 4: Technical Testing and Validation**
 
 This phase encompasses comprehensive evaluation of the system's technical performance
@@ -2068,8 +2501,88 @@ The application provides clinicians with a unified interface for entering patien
 
 In this chapter, the complete results of the DIANA predictive model pipeline were presented. The dataset comprised 1,376 postmenopausal women from the NHANES 2009–2023 cohort. Feature selection via Mutual Information (Information Gain) identified HDL-C, TG/HDL Ratio, and Metabolic Syndrome Score as the most informative non-circular predictors. The binary screening model (Logistic Regression) achieved an AUC-ROC of 0.7267 (95% CI: 0.6995–0.7526) with sensitivity of 0.7480 utilizing non-circular features, demonstrating stable temporal generalization across six NHANES cycles via Nested LOGO validation (AUC range: 0.7030–0.7761). K-means clustering yielded four clinically interpretable subtypes—SIDD, SIRD, MOD, and MARD—with distinct metabolic signatures identified using the LAP heuristic for insulin resistance approximation. SHAP analysis confirmed feature importance rankings and enabled patient-level explainability. These results collectively provide empirical support for population-level screening and phenotype-aware risk stratification for menopausal women.
 
+**4.10 Functional Testing Results**
 
-Chapter 5: Discussion
+Functional testing was conducted using Go's built-in `testing` package and Python's `pytest` framework to validate core system functionalities. All tests were executed on 2026-03-08 to ensure current validity.
+
+**Backend Test Results**
+
+The Go backend test suite comprises 10 test packages covering configuration, caching, HTTP handlers, middleware, ML integration, data models, PDF generation, services, and data access layers.
+
+**Table 4.X: Backend API Test Results**
+
+| Test Package | Tests Run | Status | Execution Time | Coverage Area |
+|--------------|-----------|--------|----------------|---------------|
+| `internal/cache` | 4 | ✅ PASS (3 skipped*) | 9.065s | Redis cache operations, metrics tracking |
+| `internal/config` | 8 | ✅ PASS | 0.734s | Environment variable loading, validation |
+| `internal/http/handlers` | 24 | ✅ PASS | 1.368s | Auth, users, assessments, admin endpoints |
+| `internal/http/middleware` | 15 | ✅ PASS | 0.253s | JWT auth, RBAC, rate limiting, security headers |
+| `internal/http/sse` | 6 | ✅ PASS | 0.517s | Server-Sent Events broker |
+| `internal/ml` | 12 | ✅ PASS | 0.581s | ML predictor client, biomarker validation |
+| `internal/models` | 5 | ✅ PASS | 0.938s | Domain type definitions |
+| `internal/pdf` | 3 | ✅ PASS | 0.601s | PDF report generation |
+| `internal/services` | 18 | ✅ PASS | 0.380s | Business logic, validation, export |
+| `internal/store` | 22 | ✅ PASS | 0.740s | Repository pattern, SQLC queries |
+
+*Note: Redis cache tests skipped due to Redis not running in local test environment (acceptable for development; integration tests require Redis instance).
+
+**ML Service Test Results**
+
+The Python ML service test suite comprises 65 tests covering clustering algorithms, data leakage prevention, feature parity, prediction endpoints, server functionality, API key authentication, drift detection, and training utilities.
+
+**Table 4.Y: ML Service Test Results**
+
+| Test Module | Tests Run | Status | Coverage Area |
+|-------------|-----------|--------|---------------|
+| `test_clustering.py` | 9 | ✅ PASS | Ahlqvist subtype labeling (SIRD/SIDD/MOD/MARD) |
+| `test_leakage.py` | 8 | ✅ PASS | Data leakage prevention, feature set validation |
+| `test_parity.py` | 4 | ✅ PASS | Feature computation parity across implementations |
+| `test_predict.py` | 10 | ✅ PASS | ClinicalPredictor inference, edge cases |
+| `test_server.py` | 20 | ✅ PASS | Flask endpoints, API key auth, drift lineage metadata |
+| `test_train.py` | 14 | ✅ PASS | Feature engineering, BMI categorization, MetS scoring |
+
+**Test Execution**: Backend: `cd backend && go test ./... -v` (all PASS); ML: `cd Ian_ML && python -m pytest -v` (65 passed in 5.44s).
+
+**4.11 System Performance Metrics**
+
+This section documents the procedures for measuring system performance. Actual benchmark results should be captured during production deployment.
+
+**Measurement Procedures**:
+1. **API Response Time**: Apache Bench (`ab -n 1000 -c 50`); Target <200ms
+2. **ML Inference Latency**: curl timing; Target <500ms for prediction + SHAP
+3. **Database Query Performance**: PostgreSQL `EXPLAIN ANALYZE`; Target <50ms for 95% of queries
+4. **Frontend Load Performance**: Google Lighthouse; Target >90/100 score
+
+**Load Testing Results Template**: Results to be filled during production deployment with metrics for API response time, ML prediction latency, database query time, concurrent users supported, and Lighthouse scores.
+
+**4.12 UI/UX Design Validation**
+
+The DIANA user interface was designed following established UX principles and accessibility guidelines.
+
+**Gestalt Principles Applied**:
+
+| Principle | Implementation in DIANA |
+|-----------|------------------------|
+| **Proximity** | Patient biomarker cards grouped visually in dashboard |
+| **Similarity** | Risk levels color-coded: Green (Normal), Yellow (Moderate), Red (High) |
+| **Figure-Ground** | High-risk patients highlighted with bold red cards |
+| **Focal Point** | Risk score displayed as large, bold number on patient detail page |
+| **Continuity** | Biomarker trend charts use continuous lines for temporal progression |
+| **Closure** | Progress indicators for onboarding flow |
+| **Common Region** | Card-based layout groups related information |
+
+**Accessibility Compliance**: WCAG 2.1 Level AA; color-blind safe risk indicators; keyboard navigation; ARIA labels on charts.
+
+**Responsive Design**: Mobile-first using Tailwind CSS breakpoints (sm: 640px, md: 768px, lg: 1024px, xl: 1280px).
+
+**User Acceptance Testing Framework**:
+- **End Users**: "Usapang Perimenopause at Menopause" Facebook group (n=30)
+- **Clinical Evaluators**: Licensed endocrinologists and OB-GYN specialists (n=2)
+- **Instruments**: System Usability Scale (SUS), Clinical Validity Assessment (5-point Likert), Task Completion Metrics
+
+**UI Screenshots**: *[TODO: Insert screenshots during final manuscript preparation - Dashboard, Assessment Form, Analytics Dashboard with SHAP, Patient History Timeline]*
+
+**Chapter 5: Discussion**
 
 **5.1 Interpretation of Screening Performance (Non-Circular Methodology)**
 

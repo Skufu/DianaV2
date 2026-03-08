@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react';
 import { Menu, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '../../utils/animations';
 
 const AdminMobileHeader = ({ activeView, userRole, isOpen, onOpen }) => {
+  const isReduced = useReducedMotion();
   const adminNavItems = [
     { id: 'overview', label: 'Overview' },
     { id: 'users', label: 'User Management' },
@@ -48,7 +50,8 @@ const AdminMobileHeader = ({ activeView, userRole, isOpen, onOpen }) => {
         <motion.button
           type="button"
           onClick={onOpen}
-          whileTap={{ scale: 0.96 }}
+          whileHover={isReduced ? undefined : { scale: 1.05, rotate: 90 }}
+          whileTap={isReduced ? undefined : { scale: 0.95 }}
           className="min-h-[44px] min-w-[44px] rounded-xl border border-indigo-100 bg-white text-indigo-600 shadow-sm flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2"
           aria-label="Open admin navigation"
           aria-controls="admin-mobile-drawer"

@@ -7,30 +7,15 @@ DIANA uses machine learning to predict Type 2 Diabetes risk in postmenopausal wo
 ---
 
 ## Directory Structure
-
-```
+```text
 Ian_ML/
-├── server.py             # Flask API server
-├── predict.py            # DianaPredictor, ClinicalPredictor classes
-├── train_binary_v2_no_bp.py # Model training (binary_v2_no_bp)
-├── clustering.py         # K-Means clustering (K=4 Ahlqvist)
-├── data_processing.py    # Data preparation
-├── explainability.py     # SHAP explanations
-├── explainer.py          # Additional explainability utilities
-├── ab_testing.py         # A/B testing infrastructure
-├── drift_detection.py    # Model drift monitoring
-└── mlflow_config.py      # MLflow experiment tracking
-
-scripts/
-├── remove_bg.py           # Background removal utility
-└── check-api-drift.sh    # API drift monitoring script
+├── service/                 # Flask serving layer
+├── training/                # Training pipeline scripts
+├── common/                  # Shared constants and schema
+└── requirements.txt
 
 models/
-└── binary_v2_no_bp/          # Binary model artifacts (created after training)
-    ├── results/              # Metrics and reports
-    └── visualizations/       # PNG plots
-
-Note: Model files (best_model.joblib, scaler.joblib, kmeans_model.joblib, cluster_labels.json) are created after running the training pipeline.
+└── binary_v2_no_bp/         # Active screening artifacts, reports, plots
 ```
 
 ---
@@ -41,7 +26,7 @@ Note: Model files (best_model.joblib, scaler.joblib, kmeans_model.joblib, cluste
 |--------|---------|
 | **Dataset** | NHANES 2009-2023 (6 cycles, 1,376 postmenopausal women) |
 | **Features** | 12 features: metabolic + engineered (no HbA1c/FBS for screening) |
-| **Target** | Binary screening (Normal vs At‑Risk) with optional 3‑class clinician mode |
+| **Target** | Binary screening (Normal vs At‑Risk) |
 | **Algorithms** | Logistic Regression, Random Forest |
 | **Best Model** | Logistic Regression (AUC-ROC: ~0.72, binary_v2_no_bp) |
 | **Clustering** | K-Means with K=4 (Ahlqvist diabetes subtypes) |
@@ -69,23 +54,8 @@ SCREENING_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'bmi_category
 
 ## Key Files
 
-### `predict.py`
-
-```python
-class DianaPredictor:
-    """Diabetes risk predictor using all biomarkers."""
-    FEATURES = ['hba1c', 'fbs', 'bmi', 'triglycerides', 'ldl', 'hdl']
-    
-    def predict(self, features: dict) -> dict:
-        # Returns: medical_status, risk_cluster, probability, risk_score
-
-class ScreeningPredictor:
-    """Non-circular predictor excluding HbA1c/FBS from features."""
-    FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 'activity_encoded', 'alcohol_encoded', 'metabolic_syndrome_score', 'waist_circumference']
-    
-    def predict(self, features: dict) -> dict:
-        # Returns: predicted_status, risk_cluster, probability, risk_score
-```
+### `service/predict.py`
+Contains serving-time predictor logic and model loading for screening and ADA contexts.
 
 ### `server.py`
  
@@ -98,7 +68,6 @@ Flask API with these endpoints:
 | `/predict/batch` | POST | Multiple predictions |
 | `/predict/explain` | POST | Prediction with SHAP explanation |
 | `/insights/metrics` | GET | Model metrics (both ADA and clinical) |
-| `/insights/metrics/clinical` | GET | Clinical model metrics only |
 | `/insights/clusters` | GET | Cluster analysis |
 | `/insights/information-gain` | GET | Feature importance |
 | `/insights/visualizations/<name>` | GET | PNG images |
@@ -132,16 +101,16 @@ The system provides **two complementary outputs** that serve different clinical 
 - **Source**: K-Means Clustering (K=4, per Ahlqvist et al. 2018)
 - **Output**: SIRD, SIDD, MOD, or MARD cluster assignment
 - **Clinical Meaning**: Based on full biomarker profile (metabolic phenotype pattern)
-- **Literature Backing**: Ahlqvist et al. identified 4 T2DM subtypes in Swedish cohort
+- **Runtime semantic note**: DIANA runtime uses an adapted SIDD meaning (atherogenic/lipid-driven) as documented in `../03-ml/assessment-contract.md`
 
 ### Why Both Outputs Are Complementary
 
 | Aspect | Classifier | Clustering |
 |--------|-----------|------------|
 | **Primary Goal** | Predict current diabetes status | Identify metabolic phenotype |
-| **Strength** | High accuracy when HbA1c/FBS included | Reveals subtype patterns |
-| **Limitation** | Circular (HbA1c defines diagnosis) | No probability output |
-| **Key Finding** | SIRD patients (high BMI, normal HbA1c) receive **low** classifier probability but are classified as **HIGH risk** by clustering |
+| **Strength** | High discrimination for screening with non-circular features | Reveals subtype patterns |
+| **Limitation** | Screening model is not diagnostic confirmation | No direct probability output |
+| **Key Finding** | Classifier probability and subtype assignment can carry different but complementary clinical signals |
 | **Clinical Value** | Detects metabolic risk patterns classifier would miss | Enables phenotype-specific treatment |
 
 This dual-output architecture enables clinicians to understand:
@@ -180,20 +149,22 @@ source venv/bin/activate && ./scripts/dev/retrain-binary.sh
 ./venv/bin/python Ian_ML/service/server.py
 ```
 
-> **See**: [rationale.md](../03-ml/rationale.md) for methodology justification
+> **See**: `../03-ml/methodology.md` and `../03-ml/assessment-contract.md` for canonical methodology and runtime semantics.
 
 ---
 
-## Cluster Definitions (Verified)
+## Cluster Definitions (Runtime-Aligned)
 
 Based on Ahlqvist et al. diabetes subtype classification with DIANA NHANES results:
 
 | Cluster | Full Name | n (%) | Key Biomarkers | Risk |
 |---------|-----------|-------|----------------|------|
-| **SIDD** | Severe Insulin-Deficient Diabetes | 97 (7.1%) | HbA1c=9.24%, FBS=223.78 | High |
+| **SIDD** | Atherogenic / Lipid-Driven Diabetes | 97 (7.1%) | High LDL / severe dyslipidemia pattern | High |
 | **SIRD** | Severe Insulin-Resistant Diabetes | 404 (29.4%) | BMI=38.28, TG=114.68 | High |
 | **MOD** | Mild Obesity-Related Diabetes | 370 (26.9%) | BMI=29.58, TG=176.37 | Moderate |
 | **MARD** | Mild Age-Related Diabetes | 505 (36.7%) | BMI=25.74, HDL=72.98 | Low |
+
+> If discussing the original paper taxonomy (e.g., SOIRD/MIDD variants), label it explicitly as paper-context naming and not runtime semantics.
 
 ---
 
@@ -243,10 +214,10 @@ versions = manager.get_model_versions("diana-clinical")
 ## Defense Points
 
 1. **"Why is accuracy so high?"**
-   > Because HbA1c is both a predictive feature AND the primary diagnostic criterion per ADA guidelines. The model correctly learns and applies these thresholds.
+   > Clarify model context first. ADA baseline may show near-perfect behavior due to diagnostic-feature inclusion; non-circular screening performance is expected around AUC ~0.72.
 
 2. **"Is this circular reasoning?"**
-   > The goal is to demonstrate a working diabetes classification system for menopausal women. The model correctly applies ADA diagnostic criteria, which is the expected behavior for a clinical decision support tool.
+   > Not for the active screening model. The screening path explicitly excludes HbA1c/FBS and is intended for triage support, not diagnosis.
 
 3. **"What's the clinical utility?"**
    > The system provides cluster-based risk stratification (SIRD/SIDD/MOD/MARD) beyond simple diagnosis, helping identify treatment-relevant subgroups.

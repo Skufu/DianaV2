@@ -1,218 +1,68 @@
 # DIANA ML Methodology
 
-## Overview
+## Purpose
+This document summarizes the active ML methodology used in DIANA V2.
 
-This document describes the machine learning methodology used in DIANA, aligned with the research paper requirements.
+Canonical implementation contract and result semantics are defined in:
+- `assessment-contract.md`
+- `api-contract.md`
+- `feature-documentation.md`
 
-> **For detailed RAG references, see [`docs/07-research/`](../07-research/README.md)**
+## Method Framing
+DIANA uses two model contexts:
 
----
+1. **Non-circular screening** (`binary_v2_no_bp`): operational screening path
+2. **ADA-oriented reference/diagnostic context** (`ada`): includes diagnostic glucose markers
 
-## Data Strategy
+The operational focus is the non-circular screening path.
 
-### Development Dataset: NHANES
-Due to Philippine hospital data collection challenges, we use NHANES (US National Health and Nutrition Examination Survey) 2009-2023 as our development dataset. This allows us to:
-1. Build and test the complete ML pipeline
-2. Validate the clustering methodology
-3. Create a working demo with 1,376 records
+## Population And Data Strategy
+- Development cohort: NHANES postmenopausal women
+- Population constraints: female, age 45-60, postmenopausal context
+- Objective: maintain a deployable screening pipeline while local target datasets are still evolving
 
-### Swap to Philippine Data
-When Philippine hospital records become available:
-1. Format data to match the same schema (see [docs/07-research/biomarkers.md](../07-research/biomarkers.md))
-2. Re-run `process_nhanes.py` equivalent 
-3. Re-run training scripts
-4. Update cluster profiles (patterns may differ between populations)
+## Labeling Vs Screening Inputs
+Critical distinction:
+- HbA1c and FBS are used in diagnostic/labeling contexts
+- HbA1c and FBS are not active screening inputs for `binary_v2_no_bp`
 
----
+This separation prevents circular prediction logic in screening mode.
 
-## Inclusion Criteria
+## Active Screening Feature Set
+The active no-BP screening model uses a 12-feature contract:
+- Core biomarkers/demographics: `bmi`, `triglycerides`, `ldl`, `hdl`, `age`
+- Engineered features: `bmi_category`, `tg_hdl_ratio`, `metabolic_syndrome_score`
+- Lifestyle encodings: `smoking_encoded`, `activity_encoded`, `alcohol_encoded`
+- Additional clinical variable: `waist_circumference`
 
-| Criterion | Value | NHANES Variable |
-|-----------|-------|-----------------|
-| Sex | Female | RIAGENDR=2 |
-| Age | 45-60 years | RIDAGEYR |
-| Menopausal Status | Postmenopausal | RHQ031=2 |
-| Required Biomarkers | FBS + HbA1c | Non-null LBXGLU, LBXGH |
+For feature definitions and derivation details, use `feature-documentation.md`.
 
----
+## Training And Evaluation Strategy
+- Candidate classifiers: Logistic Regression and Random Forest
+- Class imbalance approach: class weighting and threshold strategy (no synthetic oversampling in active no-BP path)
+- Validation strategy: nested LOGO (outer) plus GroupKFold (inner)
+- Primary model selection metric: AUC-ROC
+- Secondary criteria: F1 and interpretability
 
-## Feature Selection
+## Current Performance Position
+- Non-circular screening performance around AUC ~0.72 is treated as acceptable for this use case
+- Clinical objective is sensitivity-aware screening, not replacement of diagnostic testing
 
-### Primary Method: Mutual Information (sklearn)
-Using `mutual_info_classif()` which handles continuous features natively via k-NN estimation.
+## Clustering Methodology
+- K-means with k=4 is used for subtype-oriented grouping (SIDD, SIRD, MOD, MARD)
+- Clustering requires the cluster feature set defined in runtime constants
+- Assessment-level cluster output may be unavailable if required clustering inputs are missing
 
-### Secondary Validation: Clinical Discretization
-For panel defense, also compute Information Gain using clinical thresholds.
+Cluster semantics and frontend/backend expectations are canonicalized in `assessment-contract.md`.
 
-### Process
-1. **Compute** Mutual Information for all features using sklearn
-2. **Cross-validate** with Random Forest feature importance
-3. **Compare** rankings for consensus
-4. **Document** both methods for thesis
+## Reproducibility Notes
+- Keep random seeds fixed for comparability across retraining runs
+- Keep training/evaluation artifacts versioned with model lineage metadata
+- Ensure docs and runtime metadata stay aligned when model artifacts change
 
-### Expected Feature Importance (verified)
-1. HbA1c: 1.0076 (defines label directly - circular for ADA model)
-2. FBS: 0.3168 (secondary diagnostic criteria)
-3. BMI: 0.0605 (metabolic indicator)
-4. HDL: 0.0465 (lipid profile)
-5. Triglycerides: 0.0278
-
-> **See**: [rationale.md](rationale.md) for full methodology justification
-
----
-
-## Feature Preprocessing
-
-| Aspect | Method |
-|--------|--------|
-| **Standardization** | Z-score (StandardScaler) |
-| **Rationale** | Per paper: "k-means applied to standardized versions" |
-| **Weighting** | Equal (no differential weighting) |
-| **Missing Data** | Exclude records missing core biomarkers |
-
----
-
-## Supervised Classification
-
-### Algorithms (Current Screening Pipeline)
-| Model | Parameters | Purpose |
-|-------|------------|---------|
-| Logistic Regression | C=0.1, balanced weights | Interpretable baseline, best AUC for binary screening |
-| Random Forest | n_estimators=500, max_depth=6, min_samples_leaf=15 | Captures nonlinear relationships |
-
-### Feature Engineering (12 features)
-| Category | Features |
-|----------|----------|
-| Base | bmi, triglycerides, ldl, hdl, age |
-| Categorical | bmi_category |
-| Lipid Ratios | tg_hdl_ratio |
-| Advanced | metabolic_syndrome_score, waist_circumference |
-| Lifestyle | smoking_encoded, activity_encoded, alcohol_encoded |
-
-### Class Imbalance
-- **Method**: No SMOTE/Tomek in binary_v2_no_bp; prefer class weights and thresholding
-- **Rationale**: Avoid synthetic samples and preserve calibration for screening
-
-### Data Splitting
-| Split | Portion | Purpose |
-|-------|---------|---------|
-| Training | Nested LOGO (outer) | Temporal validation across NHANES cycles |
-| Validation | GroupKFold (inner) | Hyperparameter tuning and model selection |
-
-### Cross-Validation
-- **Method**: Nested LOGO (outer) + GroupKFold (inner)
-- **Scoring**: AUC-ROC
-- **Purpose**: Hyperparameter tuning, temporal generalization
-
----
-
-## Unsupervised Clustering
-
-### K-Means Configuration
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| K | 4 | Matches T2DM subtypes (SIRD, SIDD, MOD, MARD) |
-| K Range Tested | 2-6 | Per paper methodology (optimization plots generated) |
-| Selection | Fixed K=4 | Enforced for clinical alignment (Ahlqvist) |
-| Distance | Euclidean | Standard K-Means |
-| random_state | 42 | Reproducibility |
-
-### Cluster Labeling (Verified Results)
-Clusters labeled using rank-based assignment for NHANES postmenopausal population:
-
-| Label | n (%) | Key Biomarkers | Characteristics |
-|-------|-------|----------------|------------------|
-| **SIDD-like** | 97 (7.1%) | HbA1c=9.24%, FBS=223.78 | Highest hyperglycemia |
-| **SIRD-like** | 404 (29.4%) | BMI=38.28, TG=114.68, HDL=51.84 | Highest metabolic risk |
-| **MOD-like** | 370 (26.9%) | BMI=29.58, TG=176.37, HbA1c=5.80% | Moderate obesity, high TG |
-| **MARD-like** | 505 (36.7%) | BMI=25.74, HDL=72.98, HbA1c=5.51% | Healthiest profile |
-
-> **See**: [docs/07-research/diabetes_subgroups.md](../07-research/diabetes_subgroups.md)
-
----
-
-## Model Selection
-
-### Criteria (in priority order)
-1. **AUC-ROC** (primary) - discrimination ability
-2. **F1-Score** (secondary) - balance of precision/recall
-3. **Clinical Interpretability** (tertiary) - explainability
-
-### Target Performance (Actual Results)
-| Model Type | AUC Target | Best Model | Test AUC | Notes |
-|------------|------------|------------|----------|-------|
-| ADA Predictor | ~1.0 | N/A | ~1.0 | HbA1c feature = circular, validates implementation |
-| **Binary Screening** | ≥ 0.70 | **Logistic Regression** | **~0.72** | Best non-circular screening model |
-
-> **Note**: AUC ~0.72 is realistic and acceptable for non‑circular screening (comparable to CDC tools at 0.72-0.79).
-
----
-
-## Model Types in Codebase
-
-### 1. ADA Predictor (DianaPredictor)
-- **Features**: HbA1c, FBS, BMI, TG, LDL, HDL, Age
-- **Use Case**: Diagnostic confirmation
-- **Expected AUC**: ~1.0 (circular - HbA1c defines labels)
-
-### 2. Binary Screening Predictor (binary_v2_no_bp)
-- **Features**: 12-feature contract without HbA1c/FBS
-- **Use Case**: Screening without diagnostic biomarkers
-- **Expected AUC**: ≥ 0.70 (Good discrimination for screening)
-- **Rationale**: See [rationale.md](rationale.md) for non-circular defense
-
----
-
-## Reproducibility
-
-All random operations use `random_state=42` for reproducibility.
-
-### Model Artifacts Location
-| Artifact | Path |
-|----------|------|
-| StandardScaler | `models/legacy/artifacts/scaler.joblib` |
-| K-Means Model | `models/legacy/artifacts/kmeans_model.joblib` |
-| Cluster Labels | `models/legacy/artifacts/cluster_labels.json` |
-| Cluster Profiles | `models/legacy/results/cluster_profiles.csv` |
-| Clinical Models | `models/clinical/*.joblib` |
-| Results | `models/clinical/results/` |
-| Visualizations | `models/clinical/visualizations/` |
-
----
-
-## Training Pipeline
-
-```bash
-# 1. Download NHANES data
-python scripts/download_nhanes_multi.py
-
-# 2. Complete pipeline (Recommended)
-source venv/bin/activate && ./scripts/retrain_all.sh
-
-# Individual steps:
-# 3. Process and Clean
-python scripts/process_nhanes_multi.py
-python Ian_ML/training/data_processing.py
-
-# 4. Impute
-python scripts/impute_missing_data.py
-
-# 5. Train and Cluster
-python Ian_ML/training/train_binary_v2_no_bp.py
-python scripts/train/train_clusters.py
-
-# 6. Start ML server
-python Ian_ML/service/server.py
-```
-
----
-
-## RAG Reference Index
-
-| Topic | Document |
-|-------|----------|
-| All Details | [docs/07-research/README.md](../07-research/README.md) |
-| ML Algorithms | [docs/07-research/ml_algorithms.md](../07-research/ml_algorithms.md) |
-| Metrics | [docs/07-research/metrics.md](../07-research/metrics.md) |
-| Data Pipeline | [docs/07-research/data_pipeline.md](../07-research/data_pipeline.md) |
-| Code Alignment | [docs/07-research/codebase_alignment.md](../07-research/codebase_alignment.md) |
+## Related References
+- `assessment-contract.md`
+- `api-contract.md`
+- `feature-documentation.md`
+- `../07-research/manuscript-updates.md`
+- `../07-research/paper-requirements.md`
