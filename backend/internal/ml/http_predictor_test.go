@@ -351,6 +351,35 @@ func TestHTTPPredictor_Predict_RejectsUnsupportedMetabolicSubtype(t *testing.T) 
 	}
 }
 
+func TestHTTPPredictor_Predict_AcceptsLikeSuffix(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]any{
+			"metabolic_subtype": "SIRD-like",
+			"risk_cluster":      "SIRD-like",
+			"risk_score":        75,
+			"cluster_capability": map[string]any{
+				"supported": true,
+			},
+			"output_capabilities": map[string]any{
+				"metabolic_subtype": true,
+			},
+		})
+	}))
+	defer server.Close()
+
+	p := NewHTTPPredictor(server.URL+"/predict", "v1", "", 5*time.Second)
+	input := validAssessmentInput()
+
+	result, err := p.Predict(context.Background(), input)
+	if err != nil {
+		t.Fatalf("Predict() should accept -like suffix: %v", err)
+	}
+	if result.Cluster != "SIRD" {
+		t.Errorf("Expected canonical cluster 'SIRD', got %q", result.Cluster)
+	}
+}
+
 func TestHTTPPredictor_Predict_Timeout(t *testing.T) {
 	delay := 100 * time.Millisecond
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
