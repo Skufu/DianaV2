@@ -27,19 +27,23 @@ const getAssessmentClusterContext = (assessment) => {
     && typeof assessment.cluster_capability === 'object'
     ? assessment.cluster_capability
     : null;
-  const hasExplicitCapabilityContract = Boolean(outputCapabilities || clusterCapability);
-
-  const subtypeCapabilitySupported = hasExplicitCapabilityContract
-    && capabilityOrFalse(outputCapabilities?.metabolic_subtype)
-    && capabilityOrFalse(clusterCapability?.supported);
 
   const normalizedCluster = typeof assessment.cluster === 'string'
     ? assessment.cluster.trim().toUpperCase()
     : '';
   const hasCanonicalCluster = CANONICAL_CLUSTERS.has(normalizedCluster);
 
+  // Check if capability is explicitly disabled (not just missing)
+  const capabilityExplicitlyDisabled = (outputCapabilities !== null || clusterCapability !== null)
+    && (!capabilityOrFalse(outputCapabilities?.metabolic_subtype) || !capabilityOrFalse(clusterCapability?.supported));
+
+  // Render cluster if:
+  // 1. We have a canonical cluster (SIDD, SIRD, MOD, MARD)
+  // 2. AND capability is not explicitly disabled
+  const canRenderSubtypeProfile = hasCanonicalCluster && !capabilityExplicitlyDisabled;
+
   return {
-    canRenderSubtypeProfile: Boolean(subtypeCapabilitySupported && hasCanonicalCluster),
+    canRenderSubtypeProfile,
     normalizedCluster,
   };
 };

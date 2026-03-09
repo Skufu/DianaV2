@@ -73,6 +73,15 @@ func canonicalClusterCode(raw string) (string, bool) {
 	}
 }
 
+func isNeutralClusterSentinel(raw string) bool {
+	switch strings.ToUpper(strings.TrimSpace(raw)) {
+	case "N/A", "NA":
+		return true
+	default:
+		return false
+	}
+}
+
 func clusteringCapabilityEnabled(out predictResp) bool {
 	capabilityMetadataProvided := out.ClusterCapability.Supported ||
 		len(out.ClusterCapability.RequiredInputs) > 0 ||
@@ -129,6 +138,16 @@ func resolveClusterAlias(out predictResp) (string, error) {
 
 	metabolicSubtypeRaw := strings.TrimSpace(out.MetabolicSubtype)
 	riskClusterRaw := strings.TrimSpace(out.RiskCluster)
+	metabolicSubtypeNeutral := isNeutralClusterSentinel(metabolicSubtypeRaw)
+	riskClusterNeutral := isNeutralClusterSentinel(riskClusterRaw)
+
+	if metabolicSubtypeNeutral && (riskClusterNeutral || riskClusterRaw == "") {
+		return "", nil
+	}
+
+	if riskClusterNeutral && metabolicSubtypeRaw == "" {
+		return "", nil
+	}
 
 	metabolicSubtype, hasMetabolicSubtype := canonicalClusterCode(metabolicSubtypeRaw)
 	riskCluster, hasRiskCluster := canonicalClusterCode(riskClusterRaw)
@@ -136,6 +155,8 @@ func resolveClusterAlias(out predictResp) (string, error) {
 	if hasMetabolicSubtype {
 		switch {
 		case riskClusterRaw == "":
+		case riskClusterNeutral:
+			return "", fmt.Errorf("ml response contained inconsistent risk_cluster %q for canonical metabolic_subtype %q", out.RiskCluster, out.MetabolicSubtype)
 		case hasRiskCluster && riskCluster != metabolicSubtype:
 			log.Printf("[ML] Cluster alias mismatch: metabolic_subtype=%q risk_cluster=%q; using metabolic_subtype", out.MetabolicSubtype, out.RiskCluster)
 		case !hasRiskCluster:
@@ -147,6 +168,10 @@ func resolveClusterAlias(out predictResp) (string, error) {
 
 	if metabolicSubtypeRaw != "" {
 		return "", fmt.Errorf("ml response contained unsupported metabolic_subtype %q", out.MetabolicSubtype)
+	}
+
+	if riskClusterNeutral {
+		return "", nil
 	}
 
 	if hasRiskCluster {

@@ -55,10 +55,10 @@ Expected payload fields include diagnostic glucose markers:
 ML response may include:
 - status/prediction fields (`predicted_status`, `probability`, `at_risk_probability`, etc.)
 - subtype fields (`metabolic_subtype` and/or `risk_cluster`)
+- **Runtime gating behavior:** Subtype clustering only executes when `predicted_status == "At-Risk"`. Normal predictions receive neutral sentinel values: `risk_cluster="N/A"`, `metabolic_subtype="N/A"`, `metabolic_subtype_full="N/A"`, `cluster_description=""`, `treatment_focus=""`.
 - optional explainability payload for `/predict/explain`
 
-Backend performs normalization before exposing result to frontend.
-Frontend should not bind directly to raw ML transport assumptions.
+Backend performs normalization before exposing result to frontend, including canonicalizing neutral sentinels to blank values at persistence. Frontend should not bind directly to raw ML transport assumptions.
 
 ## Canonicalization Boundary
 Backend normalization rules are authoritative and documented in `assessment-contract.md`, including:
@@ -80,12 +80,14 @@ Do not hardcode warning semantics from stale docs; align with backend validation
 ## Cluster Semantics (Reference)
 Cluster semantics expected by current system:
 
-| Cluster | Full Name | Risk |
-|---|---|---|
-| SIDD | Atherogenic / Lipid-Driven Diabetes | HIGH |
-| SIRD | Severe Insulin-Resistant Diabetes | HIGH |
-| MOD | Mild Obesity-Related Diabetes | MODERATE |
-| MARD | Mild Age-Related Diabetes | LOW |
+| Cluster | Full Name | Risk | Clinical Context |
+|---|---|---|------------------|
+| SIDD | Atherogenic / Lipid-Driven Diabetes | HIGH | **Heuristic proxy:** Uses high LDL as proxy for atherogenic dyslipidemia phenotype (Tanabe 2024 adaptation), not insulin-deficiency diagnosis. Requires HOMA2-B or C-peptide for true SIDD identification (unavailable in NHANES). |
+| SIRD | Severe Insulin-Resistant Diabetes | HIGH | Heuristic classification based on LAP score and metabolic syndrome patterns |
+| MOD | Mild Obesity-Related Diabetes | MODERATE | Heuristic classification based on BMI using Asia-Pacific WHO cutoff (BMI >= 25 kg/m²) |
+| MARD | Mild Age-Related Diabetes | LOW | **Heuristic residual category:** Cases not clearly aligned with primary metabolic drivers; "mild" reflects metabolic severity within at-risk cohort, not clinical trajectory |
+
+**Important:** These Ahlqvist-inspired subtype labels are heuristic proxy labels derived from clustering biomarker patterns in NHANES data. They should be interpreted as screening stratification tools for identifying dominant metabolic patterns within at-risk populations, not as validated biological subtype diagnoses or definitive treatment prescriptions. They inform clinical prioritization but do not replace clinical judgment, confirmatory diagnostic testing, or specialist evaluation.
 
 ## Operational Notes
 - Use explicit model types (`binary_v2_no_bp`, `binary_v2_bp`, `ada`) in new integrations.

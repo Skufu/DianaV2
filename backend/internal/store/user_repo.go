@@ -498,6 +498,7 @@ func (r *pgUserRepo) GetUserTrends(ctx context.Context, userID int64, months int
 		FBSValues:                []float64{},
 		WaistCircumferenceValues: []float64{},
 		RiskScores:               []string{},
+		RiskScoreValues:          []int{},
 		Clusters:                 []string{},
 	}
 
@@ -520,6 +521,8 @@ func (r *pgUserRepo) GetUserTrends(ctx context.Context, userID int64, months int
 		data.Clusters = append(data.Clusters, clusterStr)
 
 		rs := intVal(row.RiskScore)
+		data.RiskScoreValues = append(data.RiskScoreValues, rs)
+
 		level := "high"
 		if rs < 30 {
 			level = "low"

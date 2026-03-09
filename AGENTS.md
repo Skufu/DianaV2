@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-03-05
-**Updated:** 2026-03-05
-**Commit:** 53f470c
+**Updated:** 2026-03-09
+**Commit:** c56c602
 **Branch:** main
 
 ## OVERVIEW
@@ -51,9 +51,10 @@ Comprehensive knowledge base documentation for all major directories:
 | `backend/migrations/` | ✅ Complete | Goose migrations, schema evolution |
 | `frontend/src/` | ✅ Complete | App architecture, routing, auth state, performance |
 | `frontend/src/components/` | ✅ Complete | All UI components, patterns, conventions |
-| `frontend/src/components/education/` | ✅ Complete | Education components for diabetes prevention education |
-| `frontend/src/components/export/` | ✅ Complete | Export components for PDF download functionality |
 | `frontend/e2e/` | ✅ Complete | Playwright E2E tests, fixtures, integration tests |
+| `Ian_ML/` | ✅ Complete | ML service: Flask server, dual predictor, API endpoints |
+| `Ian_ML/training/` | ✅ Complete | ML training: defensible CV, K-Means clustering, features |
+| `scripts/` | ✅ Complete | Data pipeline, ML training orchestration, thesis generation |
 | `docs/` | ✅ Complete | Documentation hub, architecture guides, thesis defense |
 
 ## WHERE TO LOOK
