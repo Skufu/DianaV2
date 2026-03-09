@@ -2,9 +2,10 @@
 # =============================================================================
 # DIANA ML Pipeline - Binary Retrain Script
 # Runs all steps: process raw data → label → train binary_v2_no_bp model (At-Risk vs Normal)
+# → weighted K-Means clustering for Ahlqvist-inspired subtypes
 #
 # Usage: source venv/bin/activate (Mac/Linux) or source venv/Scripts/activate (Windows)
-#        Then run: ./scripts/dev/retrain-binary_v2_no_bp.sh
+#        Then run: ./scripts/dev/retrain-binary.sh
 # =============================================================================
 
 set -e  # Exit on first error
@@ -61,7 +62,7 @@ fi
 # STEP 0: Verify ML Dependencies
 # =============================================================================
 echo ""
-echo -e "${CYAN}Step 0/5: Verifying ML dependencies...${NC}"
+echo -e "${CYAN}Step 0/6: Verifying ML dependencies...${NC}"
 echo "------------------------------------------------------------"
 
 MISSING_DEPS=""
@@ -99,7 +100,7 @@ fi
 
 # Step 1: Process raw NHANES data
 echo ""
-echo -e "${BLUE}Step 1/5: Processing raw NHANES data...${NC}"
+echo -e "${BLUE}Step 1/6: Processing raw NHANES data...${NC}"
 echo "------------------------------------------------------------"
 python scripts/data/process_nhanes_multi.py
 if [ $? -ne 0 ]; then
@@ -110,7 +111,7 @@ echo -e "${GREEN}✓ Raw data processing complete${NC}"
 
 # Step 2: Run data cleaning/labeling
 echo ""
-echo -e "${BLUE}Step 2/5: Cleaning and labeling data...${NC}"
+echo -e "${BLUE}Step 2/6: Cleaning and labeling data...${NC}"
 echo "------------------------------------------------------------"
 python Ian_ML/training/data_processing.py
 if [ $? -ne 0 ]; then
@@ -121,7 +122,7 @@ echo -e "${GREEN}✓ Data cleaning complete${NC}"
 
 # Step 3: Validate features and check for data leakage
 echo ""
-echo -e "${BLUE}Step 3/5: Feature validation & leakage detection...${NC}"
+echo -e "${BLUE}Step 3/6: Feature validation & leakage detection...${NC}"
 echo "------------------------------------------------------------"
 python Ian_ML/training/validate_no_leakage.py
 if [ $? -ne 0 ]; then
@@ -132,7 +133,7 @@ echo -e "${GREEN}✓ Feature validation passed (no leakage detected)${NC}"
 
 # Step 4: Train binary_v2_no_bp model (At-Risk vs Normal with nested CV)
 echo ""
-echo -e "${BLUE}Step 4/5: Training Binary ML model (At-Risk vs Normal)...${NC}"
+echo -e "${BLUE}Step 4/6: Training Binary ML model (At-Risk vs Normal)...${NC}"
 echo "------------------------------------------------------------"
 python Ian_ML/training/train_binary_v2_no_bp.py
 if [ $? -ne 0 ]; then
@@ -141,28 +142,53 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}✓ Binary model training complete${NC}"
 
+# Step 5: Train Weighted K-Means clustering (Ahlqvist-inspired subtypes)
+echo ""
+echo -e "${BLUE}Step 5/6: Training Weighted K-Means clustering...${NC}"
+echo "------------------------------------------------------------"
+echo ""
+echo -e "${CYAN}Expert Feature Weights (Dr. Margarette Rose Pajanel, MD-MBA, FPCP, DPCEDM):${NC}"
+echo "  bmi=1.5, triglycerides=2.0, ldl=2.5, hdl=1.2, age=1.0, waist_circumference=2.0"
+echo ""
+python Ian_ML/training/clustering.py --k 4
+if [ $? -ne 0 ]; then
+    echo -e "${RED}ERROR: Weighted K-Means clustering failed${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ Weighted K-Means clustering complete${NC}"
+
 # =============================================================================
-# STEP 5: Validate Output & Report Actual Results
+# STEP 6: Validate Output & Report Actual Results
 # =============================================================================
 echo ""
-echo -e "${CYAN}Step 5/5: Validating outputs...${NC}"
+echo -e "${CYAN}Step 6/6: Validating outputs...${NC}"
 echo "------------------------------------------------------------"
 
 # Check which models were actually created
-echo ""
-echo "Models created:"
 MODELS_DIR="models/binary_v2_no_bp"
 
+echo ""
+echo "Classifier Artifacts:"
+
 if [ -f "$MODELS_DIR/best_model.joblib" ]; then
-    echo -e "  ${GREEN}✓ Best Model (Pipeline)${NC}"
+    echo -e "  ${GREEN}✓ Best Model (Pipeline with embedded scaler)${NC}"
 else
     echo -e "  ${RED}✗ Best Model${NC}"
 fi
 
-if [ -f "$MODELS_DIR/kmeans_model.joblib" ]; then
-    echo -e "  ${GREEN}✓ K-Means Clustering${NC}"
+if [ -f "$MODELS_DIR/features.json" ]; then
+    echo -e "  ${GREEN}✓ Feature Manifest${NC}"
 else
-    echo -e "  ${RED}✗ K-Means Clustering${NC}"
+    echo -e "  ${RED}✗ Feature Manifest${NC}"
+fi
+
+echo ""
+echo "Clustering Artifacts:"
+
+if [ -f "$MODELS_DIR/weighted_kmeans_model.joblib" ]; then
+    echo -e "  ${GREEN}✓ Weighted K-Means Model${NC}"
+else
+    echo -e "  ${RED}✗ Weighted K-Means Model${NC}"
 fi
 
 if [ -f "$MODELS_DIR/cluster_scaler.joblib" ]; then
@@ -171,16 +197,22 @@ else
     echo -e "  ${RED}✗ Cluster Scaler${NC}"
 fi
 
+if [ -f "$MODELS_DIR/cluster_imputer.joblib" ]; then
+    echo -e "  ${GREEN}✓ Cluster Imputer${NC}"
+else
+    echo -e "  ${RED}✗ Cluster Imputer${NC}"
+fi
+
 if [ -f "$MODELS_DIR/cluster_labels.json" ]; then
     echo -e "  ${GREEN}✓ Cluster Labels${NC}"
 else
     echo -e "  ${RED}✗ Cluster Labels${NC}"
 fi
 
-if [ -f "$MODELS_DIR/features.json" ]; then
-    echo -e "  ${GREEN}✓ Feature Manifest${NC}"
+if [ -f "$MODELS_DIR/feature_weights.json" ]; then
+    echo -e "  ${GREEN}✓ Feature Weights${NC}"
 else
-    echo -e "  ${RED}✗ Feature Manifest${NC}"
+    echo -e "  ${RED}✗ Feature Weights${NC}"
 fi
 
 # Extract and display actual metrics from best_model_report.json
@@ -232,8 +264,14 @@ echo "Outputs:"
 echo "  - Processed data:  data/nhanes/processed/diana_training_data_multi.csv"
 echo "  - Final dataset:   data/nhanes/processed/diana_dataset_final.csv (leakage-safe)"
 echo "  - Binary Models:   models/binary_v2_no_bp/*.joblib"
+echo "  - Clustering:      models/binary_v2_no_bp/weighted_kmeans_model.joblib"
+echo "  - Feature Weights: models/binary_v2_no_bp/feature_weights.json"
 echo "  - Visualizations:  models/binary_v2_no_bp/visualizations/"
 echo "  - Results:         models/binary_v2_no_bp/results/"
+echo ""
+echo -e "${CYAN}Expert Weights Used for Clustering:${NC}"
+echo "  bmi=1.5, triglycerides=2.0, ldl=2.5, hdl=1.2, age=1.0, waist_circumference=2.0"
+echo "  Source: Dr. Margarette Rose Pajanel (MD-MBA, FPCP, DPCEDM)"
 echo ""
 echo -e "${YELLOW}IMPORTANT: Check the actual results above before updating documentation!${NC}"
 echo ""
