@@ -85,14 +85,10 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     && capabilityOrFalse(outputCapabilities?.at_risk_probability)
     && Number.isFinite(at_risk_probability);
 
-  const subtypeCapability = hasExplicitCapabilityContract
-    && capabilityOrFalse(clusterCapability?.supported)
-    && capabilityOrFalse(outputCapabilities?.metabolic_subtype);
+  const capabilityExplicitlyDisabled = hasExplicitCapabilityContract
+    && (!capabilityOrFalse(outputCapabilities?.metabolic_subtype) || !capabilityOrFalse(clusterCapability?.supported));
 
-  const canRenderSubtypeProfile = Boolean(
-    subtypeCapability
-    && hasCanonicalCluster
-  );
+  const canRenderSubtypeProfile = hasCanonicalCluster && !capabilityExplicitlyDisabled;
 
   // Section 1: The Verdict - Color Coding
   const getRiskColor = (level, prob) => {

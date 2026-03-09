@@ -351,30 +351,28 @@ export const useTrends = (months = 12) => {
     queryFn: async () => {
       const data = await getTrendsApi(months);
 
-      // Transform backend TrendData format to frontend-expected format
       const biomarkerHistory = data.dates.map((date, index) => ({
         date,
-        bmi: data.bmi_values?.[index] || null,
-        triglycerides: data.triglycerides_values?.[index] || null,
-        ldl: data.ldl_values?.[index] || null,
-        hdl: data.hdl_values?.[index] || null,
-        waist_circumference: data.waist_circumference_values?.[index] || null,
+        bmi: data.bmi_values?.[index] ?? null,
+        triglycerides: data.triglycerides_values?.[index] ?? null,
+        ldl: data.ldl_values?.[index] ?? null,
+        hdl: data.hdl_values?.[index] ?? null,
+        waist_circumference: data.waist_circumference_values?.[index] ?? null,
       }));
 
-      const clusterHistory = data.dates.map((date, index) => {
-        const riskLevel = data.risk_scores?.[index] || 'low';
-        const riskScoreMap = { low: 20, medium: 50, high: 80 };
-        return {
-          date,
-          cluster: data.clusters?.[index] || 'Unknown',
-          riskScore: riskScoreMap[riskLevel] || 0,
-        };
-      });
+      const clusterHistory = data.dates.map((date, index) => ({
+        date,
+        cluster: data.clusters?.[index] || '',
+        riskScore: data.risk_score_values?.[index] ?? 0,
+      }));
 
       const riskLevels = data.dates.length > 0 ? {
-        low: data.risk_scores?.filter(r => r === 'low').length || 0,
-        medium: data.risk_scores?.filter(r => r === 'medium').length || 0,
-        high: data.risk_scores?.filter(r => r === 'high').length || 0,
+        low: data.risk_score_values?.filter((_, i) => (data.risk_score_values?.[i] ?? 0) < 30).length || 0,
+        medium: data.risk_score_values?.filter((_, i) => {
+          const score = data.risk_score_values?.[i] ?? 0;
+          return score >= 30 && score < 70;
+        }).length || 0,
+        high: data.risk_score_values?.filter((_, i) => (data.risk_score_values?.[i] ?? 0) >= 70).length || 0,
       } : null;
 
       return {

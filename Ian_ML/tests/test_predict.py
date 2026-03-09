@@ -1,157 +1,204 @@
+import numpy as np
 import pytest
-from ..service.predict import DianaPredictor, ClinicalPredictor
+
+from ..service.predict import ClinicalPredictor
 
 
-class TestClinicalPredictor:
-    
-    @pytest.fixture
-    def clinical_predictor(self):
-        return ClinicalPredictor()
-    
-    @pytest.fixture
-    def ada_predictor(self):
-        return DianaPredictor()
-    
-    def test_predict_normal_clinical(self, clinical_predictor):
-        data = {
-            'bmi': 22.0,
-            'triglycerides': 100.0,
-            'ldl': 100.0,
-            'hdl': 65.0,
-            'age': 45
+ACTIVE_AT_RISK_THRESHOLD = 0.4483333333333331
+EPSILON = 1e-7
+
+
+class _IdentityTransformer:
+    def __init__(self):
+        self.calls = 0
+
+    def transform(self, x):
+        self.calls += 1
+        return x
+
+
+class _FixedBinaryClassifier:
+    def __init__(self, at_risk_probability):
+        self.at_risk_probability = float(at_risk_probability)
+
+    def predict_proba(self, _x):
+        return np.array([[1.0 - self.at_risk_probability, self.at_risk_probability]], dtype=float)
+
+
+class _RecordingKMeans:
+    def __init__(self, cluster_id):
+        self.cluster_id = int(cluster_id)
+        self.calls = 0
+
+    def predict(self, _x):
+        self.calls += 1
+        return np.array([self.cluster_id], dtype=int)
+
+
+def _default_cluster_labels(cluster_id):
+    return {
+        str(cluster_id): {
+            "label": "MARD",
+            "risk_level": "MODERATE",
+            "risk_label": "Moderate Risk",
+            "subtype": "MARD",
+            "subtype_full": "Mild Age-Related Diabetes",
+            "description": "Older age at diagnosis, mild metabolic dysfunction",
+            "treatment_focus": "Conservative management, slower progression",
         }
-        result = clinical_predictor.predict(data)
-        
-        assert result['success'] is True
-        assert result['predicted_status'] in {'Normal', 'At-Risk'}
-        assert 'risk_level' in result
-        assert 0 <= result['risk_score'] <= 100
-    
-    def test_predict_prediabetic_clinical(self, clinical_predictor):
-        data = {
-            'bmi': 27.0,
-            'triglycerides': 150.0,
-            'ldl': 130.0,
-            'hdl': 50.0,
-            'age': 55
+    }
+
+
+def _build_stub_predictor(at_risk_probability, *, threshold, cluster_id=2, cluster_labels=None):
+    predictor = object.__new__(ClinicalPredictor)
+    predictor.model_type = "binary_v2_no_bp"
+    predictor.features = ["bmi", "triglycerides", "ldl", "hdl", "age"]
+    predictor.cluster_features = [
+        "bmi",
+        "triglycerides",
+        "ldl",
+        "hdl",
+        "age",
+        "waist_circumference",
+    ]
+    predictor.metrics = {}
+    predictor.decision_thresholds = {} if threshold is None else {"at_risk": float(threshold)}
+    predictor.classifier = _FixedBinaryClassifier(at_risk_probability)
+    predictor.scaler = None
+    predictor.imputer = None
+    predictor.cluster_imputer = _IdentityTransformer()
+    predictor.cluster_scaler = _IdentityTransformer()
+    predictor.kmeans = _RecordingKMeans(cluster_id)
+    predictor.cluster_labels = cluster_labels or _default_cluster_labels(cluster_id)
+    predictor.cluster_analysis = {}
+
+    predictor._build_feature_vector = lambda data: np.zeros((1, 5), dtype=float)
+    predictor._transform_features = lambda X: X
+    predictor._build_cluster_vector = lambda data: np.zeros((1, 6), dtype=float)
+    return predictor
+
+
+@pytest.fixture
+def patient_input():
+    return {
+        "bmi": 27.4,
+        "triglycerides": 178.0,
+        "ldl": 131.0,
+        "hdl": 44.0,
+        "age": 52,
+        "waist_circumference": 89.0,
+    }
+
+
+@pytest.fixture
+def cluster_fixture():
+    return {
+        "2": {
+            "label": "SIRD",
+            "risk_level": "HIGH",
+            "risk_label": "High Risk",
+            "subtype": "SIRD",
+            "subtype_full": "Severe Insulin-Resistant Diabetes",
+            "description": "Insulin resistance dominant profile",
+            "treatment_focus": "Insulin sensitivity and triglyceride control",
         }
-        result = clinical_predictor.predict(data)
-        
-        assert result['success'] is True
-        assert result['predicted_status'] in {'Normal', 'At-Risk', 'Pre-diabetic', 'Diabetic'}
-        assert 0 <= result['risk_score'] <= 100
-    
-    def test_predict_diabetic_clinical_mod_cluster(self, clinical_predictor):
-        data = {
-            'bmi': 31.0,
-            'triglycerides': 200.0,
-            'ldl': 150.0,
-            'hdl': 45.0,
-            'age': 50
+    }
+
+
+class TestClinicalPredictorClusterGatingRegression:
+    @pytest.mark.parametrize(
+        "proba, expected_status, expected_kmeans_calls",
+        [
+            (ACTIVE_AT_RISK_THRESHOLD - EPSILON, "Normal", 0),
+            (ACTIVE_AT_RISK_THRESHOLD, "At-Risk", 1),
+            (ACTIVE_AT_RISK_THRESHOLD + EPSILON, "At-Risk", 1),
+        ],
+    )
+    def test_threshold_boundary_t_minus_e_t_t_plus_e(
+        self,
+        patient_input,
+        proba,
+        expected_status,
+        expected_kmeans_calls,
+    ):
+        predictor = _build_stub_predictor(proba, threshold=ACTIVE_AT_RISK_THRESHOLD)
+
+        result = predictor.predict(patient_input)
+
+        assert result["success"] is True
+        assert result["predicted_status"] == expected_status
+        kmeans_calls = getattr(predictor.kmeans, "calls", None)
+        assert isinstance(kmeans_calls, int)
+        assert kmeans_calls == expected_kmeans_calls
+
+    def test_threshold_gating_uses_raw_probability_before_rounding(self, patient_input):
+        below = _build_stub_predictor(
+            ACTIVE_AT_RISK_THRESHOLD - EPSILON,
+            threshold=ACTIVE_AT_RISK_THRESHOLD,
+        )
+        at_threshold = _build_stub_predictor(
+            ACTIVE_AT_RISK_THRESHOLD,
+            threshold=ACTIVE_AT_RISK_THRESHOLD,
+        )
+
+        below_result = below.predict(patient_input)
+        at_threshold_result = at_threshold.predict(patient_input)
+
+        assert below_result["at_risk_probability"] == 0.448
+        assert at_threshold_result["at_risk_probability"] == 0.448
+        assert below_result["predicted_status"] == "Normal"
+        assert at_threshold_result["predicted_status"] == "At-Risk"
+
+    def test_threshold_source_falls_back_to_point_five_when_missing(self, patient_input):
+        below_fallback = _build_stub_predictor(0.5 - EPSILON, threshold=None)
+        at_fallback = _build_stub_predictor(0.5, threshold=None)
+
+        below_result = below_fallback.predict(patient_input)
+        at_result = at_fallback.predict(patient_input)
+
+        assert below_result["predicted_status"] == "Normal"
+        assert at_result["predicted_status"] == "At-Risk"
+
+    def test_normal_prediction_returns_neutral_cluster_fields(self, patient_input):
+        predictor = _build_stub_predictor(
+            ACTIVE_AT_RISK_THRESHOLD - EPSILON,
+            threshold=ACTIVE_AT_RISK_THRESHOLD,
+        )
+
+        result = predictor.predict(patient_input)
+
+        assert result["predicted_status"] == "Normal"
+        kmeans_calls = getattr(predictor.kmeans, "calls", None)
+        assert isinstance(kmeans_calls, int)
+        assert kmeans_calls == 0
+        assert result["risk_cluster"] == "N/A"
+        assert result["metabolic_subtype"] == "N/A"
+        assert result["metabolic_subtype_full"] == "N/A"
+        assert result["cluster_description"] == ""
+        assert result["treatment_focus"] == ""
+
+    def test_at_risk_path_preserves_subtype_mapping_for_eligible_case(self, patient_input, cluster_fixture):
+        predictor = _build_stub_predictor(
+            ACTIVE_AT_RISK_THRESHOLD + 0.2,
+            threshold=ACTIVE_AT_RISK_THRESHOLD,
+            cluster_id=2,
+            cluster_labels=cluster_fixture,
+        )
+
+        result = predictor.predict(patient_input)
+
+        expected_cluster_fields = {
+            "risk_cluster": "SIRD",
+            "risk_level": "HIGH",
+            "risk_label": "High Risk",
+            "metabolic_subtype": "SIRD",
+            "metabolic_subtype_full": "Severe Insulin-Resistant Diabetes",
+            "cluster_description": "Insulin resistance dominant profile",
+            "treatment_focus": "Insulin sensitivity and triglyceride control",
         }
-        result = clinical_predictor.predict(data)
-        
-        assert result['success'] is True
-        assert result['predicted_status'] in {'Normal', 'At-Risk', 'Pre-diabetic', 'Diabetic'}
-        assert 'risk_cluster' in result
-        assert 'risk_level' in result
-    
-    def test_predict_diabetic_clinical_mard_cluster(self, clinical_predictor):
-        data = {
-            'bmi': 26.0,
-            'triglycerides': 120.0,
-            'ldl': 130.0,
-            'hdl': 60.0,
-            'age': 70
-        }
-        result = clinical_predictor.predict(data)
-        
-        assert result['success'] is True
-        assert result['predicted_status'] in {'Normal', 'At-Risk', 'Pre-diabetic', 'Diabetic'}
-        assert 'risk_cluster' in result
-        assert 0 <= result['risk_score'] <= 100
-    
-    def test_predict_diabetic_clinical_sird_cluster(self, clinical_predictor):
-        data = {
-            'bmi': 35.0,
-            'triglycerides': 180.0,
-            'ldl': 140.0,
-            'hdl': 40.0,
-            'age': 50
-        }
-        result = clinical_predictor.predict(data)
-        
-        assert result['success'] is True
-        assert result['predicted_status'] in {'Normal', 'At-Risk', 'Pre-diabetic', 'Diabetic'}
-        assert 'risk_cluster' in result
-        assert 'risk_level' in result
-    
-    def test_predict_diabetic_clinical_sidd_cluster(self, clinical_predictor):
-        data = {
-            'bmi': 30.0,
-            'triglycerides': 220.0,
-            'ldl': 150.0,
-            'hdl': 40.0,
-            'age': 45
-        }
-        result = clinical_predictor.predict(data)
-        
-        assert result['success'] is True
-        assert result['predicted_status'] in {'Normal', 'At-Risk', 'Pre-diabetic', 'Diabetic'}
-        assert 'risk_cluster' in result
-        assert 0 <= result['risk_score'] <= 100
-    
-    def test_predict_missing_clinical_features(self, clinical_predictor):
-        data = {'bmi': 30.0}
-        result = clinical_predictor.predict(data)
-        
-        assert result['success'] is False
-        assert 'error' in result
-    
-    def test_predict_very_high_clinical_risk(self, clinical_predictor):
-        data = {
-            'bmi': 40.0,
-            'triglycerides': 250.0,
-            'ldl': 180.0,
-            'hdl': 30.0,
-            'age': 55
-        }
-        result = clinical_predictor.predict(data)
-        
-        assert result['success'] is True
-        assert result['predicted_status'] in {'Normal', 'At-Risk', 'Pre-diabetic', 'Diabetic'}
-        assert 0 <= result['risk_score'] <= 100
-    
-    def test_predict_returns_all_fields_clinical(self, clinical_predictor):
-        data = {
-            'bmi': 30.0,
-            'triglycerides': 150.0,
-            'ldl': 130.0,
-            'hdl': 50.0,
-            'age': 50
-        }
-        result = clinical_predictor.predict(data)
-        
-        assert result['success'] is True
-        assert 'predicted_status' in result
-        assert 'risk_cluster' in result
-        assert 'risk_level' in result
-        assert 'risk_score' in result
-        assert 'probability' in result
-        assert 'confidence' in result
-        assert 'model_type' in result
-        # New fields per Tanabe 2024 confidence threshold
-        assert 'prediction_confidence' in result
-        assert 'confidence_note' in result
-    
-    def test_predict_clinical_uses_correct_features(self, clinical_predictor):
-        data = {
-            'bmi': 30.0,
-            'triglycerides': 150.0,
-            'ldl': 130.0,
-            'hdl': 50.0,
-            'age': 50
-        }
-        result = clinical_predictor.predict(data)
-        
-        assert result['model_type'] == 'clinical'
+
+        assert result["predicted_status"] == "At-Risk"
+        kmeans_calls = getattr(predictor.kmeans, "calls", None)
+        assert isinstance(kmeans_calls, int)
+        assert kmeans_calls == 1
+        assert {k: result[k] for k in expected_cluster_fields} == expected_cluster_fields

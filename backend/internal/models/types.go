@@ -186,7 +186,8 @@ type TrendData struct {
 	TriglyceridesValues      []int     `json:"triglycerides_values"`
 	FBSValues                []float64 `json:"fbs_values"`
 	WaistCircumferenceValues []float64 `json:"waist_circumference_values"`
-	RiskScores               []string  `json:"risk_scores"` // 'low', 'medium', 'high'
+	RiskScores               []string  `json:"risk_scores"`       // 'low', 'medium', 'high' (deprecated, kept for backward compatibility)
+	RiskScoreValues          []int     `json:"risk_score_values"` // Actual numeric risk scores (0-100)
 	Clusters                 []string  `json:"clusters"`
 }
 

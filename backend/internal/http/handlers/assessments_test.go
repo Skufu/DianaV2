@@ -563,6 +563,172 @@ func TestAssessmentsHandler_Create_LineageUsesPredictionAndFlagsBaselineMismatch
 	}
 }
 
+func TestAssessmentsHandler_Create_PersistsBlankClusterForNeutralSentinelWithoutCategoryNoise(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	modelSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"risk_cluster":        "N/A",
+			"metabolic_subtype":   "N/A",
+			"risk_score":          18,
+			"predicted_status":    "Normal",
+			"risk_label":          "N/A",
+			"cluster_description": "",
+			"treatment_focus":     "",
+			"cluster_capability": map[string]any{
+				"supported":    true,
+				"output_field": "metabolic_subtype",
+				"alias_field":  "risk_cluster",
+			},
+			"output_capabilities": map[string]any{
+				"predicted_status":    true,
+				"risk_score":          true,
+				"metabolic_subtype":   false,
+				"cluster_description": false,
+				"treatment_focus":     false,
+			},
+		})
+	}))
+	defer modelSrv.Close()
+
+	repo := &fakeAssessmentRepo{}
+	h := NewAssessmentsHandler(
+		&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+		ml.NewHTTPPredictor(modelSrv.URL, "binary_v2_no_bp", "", defaultTestTimeout),
+		nil,
+		"binary_v2_no_bp",
+		"dataset-hash-fallback",
+		getDefaultTestThresholds(),
+	)
+
+	r := gin.New()
+	r.Use(mockAuthMiddleware())
+	r.POST("/:id/assessments", h.Create)
+
+	body := bytes.NewBufferString(`{"age":55,"bmi":24.6,"triglycerides":110,"ldl":115,"hdl":58,"systolic":118,"diastolic":76,"hba1c":5.3,"fbs":92}`)
+	req, _ := http.NewRequest(http.MethodPost, "/1/assessments", body)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", w.Code)
+	}
+
+	if repo.last.Cluster != "" {
+		t.Fatalf("expected persisted cluster to stay blank for neutral sentinel path, got %q", repo.last.Cluster)
+	}
+	if repo.last.Cluster == "N/A" || repo.last.Cluster == "UNKNOWN" {
+		t.Fatalf("expected no sentinel/category noise persisted in cluster field, got %q", repo.last.Cluster)
+	}
+	if repo.last.ClusterDescription != "" {
+		t.Fatalf("expected blank cluster_description for neutral sentinel path, got %q", repo.last.ClusterDescription)
+	}
+	if repo.last.TreatmentFocus != "" {
+		t.Fatalf("expected blank treatment_focus for neutral sentinel path, got %q", repo.last.TreatmentFocus)
+	}
+	if repo.last.RiskScore != 18 {
+		t.Fatalf("expected risk score persistence unaffected, got %d", repo.last.RiskScore)
+	}
+	if repo.last.PredictedStatus != "Normal" {
+		t.Fatalf("expected predicted status persistence unaffected, got %q", repo.last.PredictedStatus)
+	}
+	if repo.last.RiskLevel != "low" {
+		t.Fatalf("expected risk level still derived from risk score, got %q", repo.last.RiskLevel)
+	}
+	if repo.last.RiskLabel != "Low Risk" {
+		t.Fatalf("expected canonical risk label to be derived from risk score tier, got %q", repo.last.RiskLabel)
+	}
+
+	if repo.last.ClusterCapability == nil {
+		t.Fatalf("expected cluster capability payload to persist")
+	}
+	if supported, ok := repo.last.ClusterCapability["supported"].(bool); !ok || supported {
+		t.Fatalf("expected normalized cluster capability supported=false for neutral path, got %#v", repo.last.ClusterCapability["supported"])
+	}
+	if repo.last.OutputCapabilities == nil {
+		t.Fatalf("expected output capabilities payload to persist")
+	}
+	if enabled, ok := repo.last.OutputCapabilities["metabolic_subtype"].(bool); !ok || enabled {
+		t.Fatalf("expected normalized output capability metabolic_subtype=false for neutral path, got %#v", repo.last.OutputCapabilities["metabolic_subtype"])
+	}
+}
+
+func TestAssessmentsHandler_Create_PersistsAtRiskSubtypeWhenCapabilitySupported(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	modelSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"risk_cluster":        "SIRD",
+			"metabolic_subtype":   " sird ",
+			"risk_score":          79,
+			"predicted_status":    "At-Risk",
+			"risk_label":          "High Risk",
+			"cluster_description": "Insulin resistance dominant profile",
+			"treatment_focus":     "Insulin sensitivity and triglyceride control",
+			"cluster_capability": map[string]any{
+				"supported":    true,
+				"output_field": "metabolic_subtype",
+				"alias_field":  "risk_cluster",
+			},
+			"output_capabilities": map[string]any{
+				"predicted_status":    true,
+				"risk_score":          true,
+				"metabolic_subtype":   true,
+				"cluster_description": true,
+				"treatment_focus":     true,
+			},
+		})
+	}))
+	defer modelSrv.Close()
+
+	repo := &fakeAssessmentRepo{}
+	h := NewAssessmentsHandler(
+		&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+		ml.NewHTTPPredictor(modelSrv.URL, "binary_v2_no_bp", "", defaultTestTimeout),
+		nil,
+		"binary_v2_no_bp",
+		"dataset-hash-fallback",
+		getDefaultTestThresholds(),
+	)
+
+	r := gin.New()
+	r.Use(mockAuthMiddleware())
+	r.POST("/:id/assessments", h.Create)
+
+	body := bytes.NewBufferString(`{"age":55,"bmi":32,"triglycerides":210,"ldl":160,"hdl":42,"systolic":142,"diastolic":90,"hba1c":6.5,"fbs":126}`)
+	req, _ := http.NewRequest(http.MethodPost, "/1/assessments", body)
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", w.Code)
+	}
+	if repo.last.Cluster != "SIRD" {
+		t.Fatalf("expected at-risk canonical subtype to persist, got %q", repo.last.Cluster)
+	}
+	if repo.last.RiskScore != 79 {
+		t.Fatalf("expected risk score persistence unaffected, got %d", repo.last.RiskScore)
+	}
+	if repo.last.PredictedStatus != "At-Risk" {
+		t.Fatalf("expected predicted status persistence unaffected, got %q", repo.last.PredictedStatus)
+	}
+	if repo.last.ClusterDescription == "" {
+		t.Fatalf("expected cluster_description to persist for supported at-risk subtype path")
+	}
+	if repo.last.TreatmentFocus == "" {
+		t.Fatalf("expected treatment_focus to persist for supported at-risk subtype path")
+	}
+	if repo.last.RiskLevel != "high" {
+		t.Fatalf("expected risk level derived from risk score, got %q", repo.last.RiskLevel)
+	}
+}
+
 func TestEnsureAssessmentLineage_DefaultBaselineIsHonest(t *testing.T) {
 	assessment := &models.Assessment{
 		ModelVersion: "binary_v2_no_bp",

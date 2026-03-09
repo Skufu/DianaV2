@@ -52,6 +52,8 @@ For feature definitions and derivation details, use `feature-documentation.md`.
 - K-means with k=4 is used for subtype-oriented grouping (SIDD, SIRD, MOD, MARD)
 - Clustering requires the cluster feature set defined in runtime constants
 - Assessment-level cluster output may be unavailable if required clustering inputs are missing
+- **Critical Runtime Gating:** Subtype clustering is performed **only for At-Risk predictions** (predicted_status = "At-Risk"). Normal predictions receive neutral sentinel subtype semantics (risk_cluster="N/A", metabolic_subtype="N/A", empty description and treatment focus) at the ML response boundary, which the backend canonicalizes to blank values at persistence.
+- **Heuristic Proxy Context:** The Ahlqvist-inspired subtype labels (SIRD, SIDD, MOD, MARD) are heuristic proxy labels derived from clustering biomarker patterns in NHANES data. They should be interpreted as screening stratification tools for identifying dominant metabolic patterns within at-risk populations, not as validated biological subtype diagnoses or definitive treatment prescriptions. These labels inform clinical prioritization but do not replace clinical judgment, confirmatory diagnostic testing, or specialist evaluation.
 
 Cluster semantics and frontend/backend expectations are canonicalized in `assessment-contract.md`.
 

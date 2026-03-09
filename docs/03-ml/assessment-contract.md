@@ -11,18 +11,20 @@ The backend normalization boundary is defined as the point where the ML server r
 
 ### Canonical Output Fields (Frontend-Facing)
 The backend guarantees the following fields in the assessment result returned to the frontend:
-- `cluster`: Canonical cluster assignment (SIDD, SIRD, MOD, MARD, or neutral fallback)
+- `cluster`: Canonical cluster assignment (SIDD, SIRD, MOD, MARD, or blank for neutral). **Neutral sentinel:** The ML service returns `risk_cluster="N/A"` and `metabolic_subtype="N/A"` for Normal predictions; the backend canonicalizes these neutral sentinels to blank string at persistence.
 - `risk_score`: Integer 0-100, computed from at-risk probability
 - `risk_level`: One of `low`, `medium`, `high`, or `unknown` (see Risk Level Semantics)
 - `risk_label`: Display label for risk level
 - `predicted_status`: `Normal` or `At-Risk` (binary classification)
-- `cluster_description`: Narrative description of cluster/subtype
-- `treatment_focus`: Recommended clinical focus for assigned cluster
+- `cluster_description`: Narrative description of cluster/subtype (blank for neutral predictions)
+- `treatment_focus`: Recommended clinical focus for assigned cluster (blank for neutral predictions)
 - `at_risk_probability`: Float probability (0.0-1.0) of at-risk status
 - `model_version`: Exact deployed artifact identifier
 - `dataset_hash`: Stable training dataset lineage identifier
 - `validation_status`: Canonical warning output (see Warning Payload Schema)
 All other fields (notes, metrics) are supplemental and not contract-guaranteed.
+
+**Runtime Gating for Subtype Enrichment:** The ML service enforces that subtype clustering (K-Means prediction) only runs when `predicted_status == "At-Risk"`. Normal predictions return neutral sentinel subtype fields at the ML response boundary, which the backend canonicalizes to blank values at persistence. This gating prevents Normal assessments from carrying subtype cluster semantics in the database.
 
 ### Alias Resolution Policy
 The backend resolves cluster assignment as follows:
@@ -153,18 +155,26 @@ warnings: [
 ### Ahlqvist Subtype Clusters
 The clinical model returns metabolic subtype clusters based on Ahlqvist diabetes subtypes. The following definitions are from the active constants:
 
-| Cluster Code | Full Name | Risk Level | Treatment Focus |
-|--------------|-----------|------------|-----------------|
-| **SIDD** | Atherogenic / Lipid-Driven Diabetes | HIGH | Statin therapy indicated; cardiovascular risk management primary |
-| **SIRD** | Severe Insulin-Resistant Diabetes | HIGH | Responds well to insulin sensitizers (metformin) |
-| **MOD** | Mild Obesity-Related Diabetes | MODERATE | Weight management primary intervention |
-| **MARD** | Mild Age-Related Diabetes | LOW | Conservative management, slower progression |
+| Cluster Code | Full Name | Risk Level | Treatment Focus | Clinical Context |
+|--------------|-----------|------------|-----------------|------------------|
+| **SIDD** | Atherogenic / Lipid-Driven Diabetes | HIGH | Statin therapy indicated; cardiovascular risk management primary | **Heuristic proxy:** True SIDD identification requires HOMA2-B or C-peptide (unavailable in NHANES). This subtype uses high LDL as a proxy for the atherogenic dyslipidemia phenotype (Tanabe 2024 adaptation). It is a lipid-driven heuristic classification, not an insulin-deficiency diagnosis. |
+| **SIRD** | Severe Insulin-Resistant Diabetes | HIGH | Responds well to insulin sensitizers (metformin) | Heuristic classification based on LAP score and metabolic syndrome patterns |
+| **MOD** | Mild Obesity-Related Diabetes | MODERATE | Weight management primary intervention | Heuristic classification based on BMI using Asia-Pacific WHO cutoff (BMI >= 25 kg/m²) |
+| **MARD** | Mild Age-Related Diabetes | LOW | Conservative management, slower progression | **Heuristic residual category:** Cases not clearly aligned with primary metabolic drivers; "mild" reflects metabolic severity within at-risk cohort, not clinical trajectory |
 
 ### Key Characteristics (from active constants)
-- **SIDD** (Atherogenic): High LDL cholesterol, severe dyslipidemia; identified via LDL proxy without HOMA2 (adaptation per Tanabe 2024)
+- **SIDD** (Atherogenic proxy): High LDL cholesterol, severe dyslipidemia; identified via LDL proxy without HOMA2 (adaptation per Tanabe 2024). This is explicitly a lipid-driven phenotype proxy, not an insulin-deficiency diagnosis.
 - **SIRD** (Insulin-Resistant): High BMI, high TG, low HDL (metabolic syndrome pattern)
 - **MOD** (Obesity-Related): High BMI (≥25 Asia-Pacific WHO cutoff), moderate metabolic markers
-- **MARD** (Age-Related): Older age at diagnosis, mild metabolic dysfunction
+- **MARD** (Age-Related): Older age at diagnosis, milder metabolic dysfunction; residual category for non-aligned metabolic patterns
+
+### Subtype Label Interpretation (Critical Safety Context)
+The Ahlqvist-inspired subtype labels (SIRD, SIDD, MOD, MARD) are **heuristic proxy labels**, not validated biological subtype diagnoses. They are derived from clustering biomarker patterns in NHANES data and should be interpreted as:
+- **Screening stratification tools** for identifying dominant metabolic patterns within at-risk populations
+- **Hypothesis-generating indicators** that may inform clinical prioritization, not definitive treatment prescriptions
+- **Ahlqvist-inspired classifications** adapted for the available biomarker set (no HOMA2-B or C-peptide)
+
+These subtype labels do **not** replace clinical judgment, confirmatory diagnostic testing, or specialist evaluation. They are intended to support clinical decision-making by highlighting metabolic patterns, not to dictate treatment pathways independently of clinician assessment.
 
 ### Alias Resolution
 The ML service may return both `risk_cluster` and `metabolic_subtype` fields. Backend prefers:

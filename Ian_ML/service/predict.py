@@ -786,34 +786,50 @@ class ClinicalPredictor:
         except Exception as e:
             return {"success": False, "error": str(e)}
         
-        if self.kmeans is not None and X_cluster_scaled is not None:
-            try:
-                cluster_id = int(self.kmeans.predict(X_cluster_scaled)[0])
-                cluster_info = self._get_cluster_info(cluster_id)
-                risk_cluster = cluster_info.get("label", f"Cluster-{cluster_id}")
-                risk_level = cluster_info.get("risk_level", "UNKNOWN")
-                risk_label = cluster_info.get("risk_label", risk_cluster)
-                metabolic_subtype = cluster_info.get("subtype", risk_cluster)
-                metabolic_subtype_full = cluster_info.get("subtype_full", "N/A")
-                cluster_description = cluster_info.get("description", "")
-                treatment_focus = cluster_info.get("treatment_focus", "")
-            except Exception as e:
-                logger.warning("KMeans prediction failed: %s", e)
-                risk_cluster = "N/A"
-                risk_level = "UNKNOWN"
-                risk_label = "N/A"
-                metabolic_subtype = "N/A"
-                metabolic_subtype_full = "N/A"
-                cluster_description = ""
-                treatment_focus = ""
-        else:
-            risk_cluster = "N/A"
-            risk_level = "UNKNOWN"
-            risk_label = "N/A"
-            metabolic_subtype = "N/A"
-            metabolic_subtype_full = "N/A"
-            cluster_description = ""
-            treatment_focus = ""
+        # Neutral sentinel defaults for non-eligible predictions.
+        risk_cluster = "N/A"
+        risk_level = "UNKNOWN"
+        risk_label = "N/A"
+        metabolic_subtype = "N/A"
+        metabolic_subtype_full = "N/A"
+        cluster_description = ""
+        treatment_focus = ""
+
+        # Heuristic subtype enrichment is only emitted for eligible At-Risk predictions.
+        subtype_eligible = predicted_status == "At-Risk"
+        cluster_method = "none"
+        
+        if subtype_eligible and self.kmeans is not None and X_cluster_scaled is not None:
+            # First check for clinical override (extreme biomarker values)
+            should_override, override_label, override_info = self._apply_clinical_override(data)
+            
+            if should_override and override_label:
+                # Use clinical override assignment
+                cluster_id, cluster_info = self._get_cluster_by_label(override_label)
+                if cluster_info:
+                    risk_cluster = cluster_info.get("label", override_label)
+                    risk_level = cluster_info.get("risk_level", "UNKNOWN")
+                    risk_label = cluster_info.get("risk_label", risk_cluster)
+                    metabolic_subtype = cluster_info.get("subtype", risk_cluster)
+                    metabolic_subtype_full = cluster_info.get("subtype_full", "N/A")
+                    cluster_description = cluster_info.get("description", "")
+                    treatment_focus = cluster_info.get("treatment_focus", "")
+                    cluster_method = "clinical_override"
+            else:
+                # Use K-Means cluster prediction
+                try:
+                    cluster_id = int(self.kmeans.predict(X_cluster_scaled)[0])
+                    cluster_info = self._get_cluster_info(cluster_id)
+                    risk_cluster = cluster_info.get("label", f"Cluster-{cluster_id}")
+                    risk_level = cluster_info.get("risk_level", "UNKNOWN")
+                    risk_label = cluster_info.get("risk_label", risk_cluster)
+                    metabolic_subtype = cluster_info.get("subtype", risk_cluster)
+                    metabolic_subtype_full = cluster_info.get("subtype_full", "N/A")
+                    cluster_description = cluster_info.get("description", "")
+                    treatment_focus = cluster_info.get("treatment_focus", "")
+                    cluster_method = "kmeans"
+                except Exception as e:
+                    logger.warning("KMeans prediction failed: %s", e)
         
         model_type = self.model_type or "clinical"
         note_by_type = {
@@ -914,6 +930,49 @@ class ClinicalPredictor:
         if str(cluster_id) in cluster_analysis_labels:
             return cluster_analysis_labels[str(cluster_id)]
         return {"label": f"Cluster-{cluster_id}", "risk_level": "UNKNOWN"}
+    
+    def _compute_lap(self, wc: float, tg: float) -> float:
+        """Compute Lipid Accumulation Product (validated IR proxy for women)."""
+        return (wc - 58) * tg if wc > 58 else 0
+    
+    def _apply_clinical_override(self, data: Mapping[str, Any]) -> tuple[bool, Optional[str], Optional[Dict]]:
+        """
+        Apply clinical override rules based on extreme biomarker values.
+        
+        Priority order (highest clinical urgency first):
+        1. SIRD: LAP > 10000 (extreme insulin resistance)
+        2. SIDD: LDL > 160 mg/dL (severe dyslipidemia)
+        3. MOD: BMI >= 30 (WHO obesity class I threshold)
+        
+        Returns: (should_override, override_label, override_info)
+        """
+        bmi = data.get('bmi', 0)
+        tg = data.get('triglycerides', 0)
+        ldl = data.get('ldl', 0)
+        wc = data.get('waist_circumference', 0)
+        
+        lap = self._compute_lap(wc, tg)
+        
+        # 1. SIRD: Extreme insulin resistance (LAP > 10000)
+        if lap > 10000:
+            return True, 'SIRD', {'method': 'clinical_override', 'lap': lap}
+        
+        # 2. SIDD: Severe dyslipidemia (LDL > 160 mg/dL)
+        if ldl > 160:
+            return True, 'SIDD', {'method': 'clinical_override', 'ldl': ldl}
+        
+        # 3. MOD: Obesity (BMI >= 30) - WHO obesity class I threshold
+        if bmi >= 30:
+            return True, 'MOD', {'method': 'clinical_override', 'bmi': bmi}
+        
+        return False, None, None
+    
+    def _get_cluster_by_label(self, label: str) -> tuple[Optional[int], Dict[str, Any]]:
+        """Find cluster ID and info by label name."""
+        for cid, info in self.cluster_labels.items():
+            if info.get('label') == label:
+                return int(cid), info
+        return None, {'label': label, 'risk_level': 'UNKNOWN'}
     
     def _get_risk_label(self, cluster_id: int) -> str:
         """Map cluster ID to risk label."""

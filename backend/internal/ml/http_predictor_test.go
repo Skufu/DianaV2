@@ -591,6 +591,47 @@ func TestResolveClusterAlias(t *testing.T) {
 			},
 			want: "",
 		},
+		{
+			name: "allow neutral sentinel when capability enabled and both aliases neutral",
+			resp: predictResp{
+				MetabolicSubtype: "N/A",
+				RiskCluster:      "N/A",
+				ClusterCapability: ClusterCapability{
+					Supported: true,
+				},
+				OutputCapabilities: OutputCapabilities{
+					MetabolicSubtype: true,
+				},
+			},
+			want: "",
+		},
+		{
+			name: "allow neutral sentinel fallback alias when metabolic_subtype omitted",
+			resp: predictResp{
+				RiskCluster: "N/A",
+				ClusterCapability: ClusterCapability{
+					Supported: true,
+				},
+				OutputCapabilities: OutputCapabilities{
+					MetabolicSubtype: true,
+				},
+			},
+			want: "",
+		},
+		{
+			name: "reject mixed canonical and neutral alias mismatch",
+			resp: predictResp{
+				MetabolicSubtype: "SIRD",
+				RiskCluster:      "N/A",
+				ClusterCapability: ClusterCapability{
+					Supported: true,
+				},
+				OutputCapabilities: OutputCapabilities{
+					MetabolicSubtype: true,
+				},
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -610,6 +651,53 @@ func TestResolveClusterAlias(t *testing.T) {
 				t.Fatalf("resolveClusterAlias() = %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestHTTPPredictor_Predict_NormalNeutralSentinel_WithCapabilitiesEnabled_NoError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"risk_cluster":      "N/A",
+			"metabolic_subtype": "N/A",
+			"risk_score":        18,
+			"predicted_status":  "Normal",
+			"cluster_capability": map[string]any{
+				"supported":    true,
+				"output_field": "metabolic_subtype",
+				"alias_field":  "risk_cluster",
+			},
+			"output_capabilities": map[string]any{
+				"predicted_status":    true,
+				"risk_score":          true,
+				"metabolic_subtype":   true,
+				"cluster_description": true,
+				"treatment_focus":     true,
+			},
+		})
+	}))
+	defer server.Close()
+
+	p := NewHTTPPredictor(server.URL+"/predict", "binary_v2_no_bp", "", 5*time.Second)
+	prediction, err := p.Predict(context.Background(), validAssessmentInput())
+	if err != nil {
+		t.Fatalf("Predict() returned unexpected error: %v", err)
+	}
+
+	if prediction.Cluster != "" {
+		t.Fatalf("expected neutral sentinel cluster to normalize to blank, got %q", prediction.Cluster)
+	}
+	if prediction.PredictedStatus != "Normal" {
+		t.Fatalf("expected predicted status to remain Normal, got %q", prediction.PredictedStatus)
+	}
+	if prediction.RiskScore != 18 {
+		t.Fatalf("expected risk score to remain intact, got %d", prediction.RiskScore)
+	}
+	if !prediction.ClusterCapability.Supported {
+		t.Fatalf("expected capability metadata to remain supported=true when response declares support")
+	}
+	if !prediction.OutputCapabilities.MetabolicSubtype {
+		t.Fatalf("expected output capability metabolic_subtype=true to remain intact")
 	}
 }
 
@@ -656,6 +744,119 @@ func TestHTTPPredictor_Predict_DisablesClusterSemanticsWhenCapabilityUnsupported
 	}
 	if prediction.OutputCapabilities.TreatmentFocus {
 		t.Fatalf("expected treatment_focus capability=false when unsupported")
+	}
+}
+
+func TestHTTPPredictor_Predict_NormalNeutralSentinel_DoesNotMaterializeClusterNoise(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"risk_cluster":        "N/A",
+			"metabolic_subtype":   "N/A",
+			"risk_score":          18,
+			"predicted_status":    "Normal",
+			"cluster_description": "",
+			"treatment_focus":     "",
+			"cluster_capability": map[string]any{
+				"supported":    true,
+				"output_field": "metabolic_subtype",
+				"alias_field":  "risk_cluster",
+			},
+			"output_capabilities": map[string]any{
+				"predicted_status":    true,
+				"risk_score":          true,
+				"metabolic_subtype":   false,
+				"cluster_description": false,
+				"treatment_focus":     false,
+			},
+		})
+	}))
+	defer server.Close()
+
+	p := NewHTTPPredictor(server.URL+"/predict", "binary_v2_no_bp", "", 5*time.Second)
+	prediction, err := p.Predict(context.Background(), validAssessmentInput())
+	if err != nil {
+		t.Fatalf("Predict() returned unexpected error: %v", err)
+	}
+
+	if prediction.Cluster != "" {
+		t.Fatalf("expected neutral sentinel cluster to normalize to blank, got %q", prediction.Cluster)
+	}
+	if prediction.Cluster == "N/A" || prediction.Cluster == "UNKNOWN" {
+		t.Fatalf("expected no category-noise sentinel propagation, got %q", prediction.Cluster)
+	}
+	if prediction.ClusterDescription != "" {
+		t.Fatalf("expected blank cluster description for neutral path, got %q", prediction.ClusterDescription)
+	}
+	if prediction.TreatmentFocus != "" {
+		t.Fatalf("expected blank treatment focus for neutral path, got %q", prediction.TreatmentFocus)
+	}
+	if prediction.RiskScore != 18 {
+		t.Fatalf("expected risk score persistence to remain intact, got %d", prediction.RiskScore)
+	}
+	if prediction.PredictedStatus != "Normal" {
+		t.Fatalf("expected predicted status persistence to remain intact, got %q", prediction.PredictedStatus)
+	}
+	if prediction.ClusterCapability.Supported {
+		t.Fatalf("expected normalized cluster capability supported=false for neutral unsupported semantics")
+	}
+	if prediction.OutputCapabilities.MetabolicSubtype {
+		t.Fatalf("expected normalized metabolic_subtype capability=false for neutral unsupported semantics")
+	}
+}
+
+func TestHTTPPredictor_Predict_AtRiskCanonicalSubtypeAliasesRemainStable(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"risk_cluster":        "SIRD",
+			"metabolic_subtype":   " sird ",
+			"risk_score":          79,
+			"predicted_status":    "At-Risk",
+			"cluster_description": "Insulin-resistant profile",
+			"treatment_focus":     "Weight and lipid management",
+			"cluster_capability": map[string]any{
+				"supported":    true,
+				"output_field": "metabolic_subtype",
+				"alias_field":  "risk_cluster",
+			},
+			"output_capabilities": map[string]any{
+				"predicted_status":    true,
+				"risk_score":          true,
+				"metabolic_subtype":   true,
+				"cluster_description": true,
+				"treatment_focus":     true,
+			},
+		})
+	}))
+	defer server.Close()
+
+	p := NewHTTPPredictor(server.URL+"/predict", "binary_v2_no_bp", "", 5*time.Second)
+	prediction, err := p.Predict(context.Background(), validAssessmentInput())
+	if err != nil {
+		t.Fatalf("Predict() returned unexpected error: %v", err)
+	}
+
+	if prediction.Cluster != "SIRD" {
+		t.Fatalf("expected canonical subtype alias resolution to preserve SIRD, got %q", prediction.Cluster)
+	}
+	if prediction.RiskScore != 79 {
+		t.Fatalf("expected risk score persistence to remain intact, got %d", prediction.RiskScore)
+	}
+	if prediction.PredictedStatus != "At-Risk" {
+		t.Fatalf("expected predicted status persistence to remain intact, got %q", prediction.PredictedStatus)
+	}
+	if !prediction.ClusterCapability.Supported {
+		t.Fatalf("expected cluster capability supported=true for at-risk subtype path")
+	}
+	if !prediction.OutputCapabilities.MetabolicSubtype {
+		t.Fatalf("expected metabolic_subtype capability=true for at-risk subtype path")
+	}
+	if prediction.ClusterDescription == "" {
+		t.Fatalf("expected cluster description to remain populated for at-risk subtype path")
+	}
+	if prediction.TreatmentFocus == "" {
+		t.Fatalf("expected treatment focus to remain populated for at-risk subtype path")
 	}
 }
 
