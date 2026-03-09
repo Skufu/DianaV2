@@ -65,6 +65,9 @@ type driftCheckReq struct {
 func canonicalClusterCode(raw string) (string, bool) {
 	cluster := strings.ToUpper(strings.TrimSpace(raw))
 
+	// Strip "-like" suffix if present (ML service returns "SIRD-like", "SIDD-like", etc.)
+	cluster = strings.TrimSuffix(cluster, "-LIKE")
+
 	switch cluster {
 	case "SIDD", "SIRD", "MOD", "MARD":
 		return cluster, true
