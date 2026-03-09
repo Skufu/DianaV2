@@ -1,8 +1,23 @@
+---
+**⚠️ DEPRECATED / SUPERSEDED - 2026-03-10**
+
+This document describes a **historical clinical override approach** that has been superseded by the current **weighted K-Means methodology**.
+
+**Current Methodology:** The system now uses expert-elicited weighted K-Means clustering (single-expert weights applied post-standardization) for subtype assignment, with no serving-time clinical override logic.
+
+**Key Differences:**
+- **Historical (this doc):** Standard K-Means + serving-time clinical override rules based on extreme biomarker thresholds (LAP > 10,000, LDL > 160, BMI >= 30)
+- **Current (superseded):** Weighted K-Means with expert-specified feature weights baked into the clustering distance metric; raw-centroid label assignment without override logic
+
+**For Current Implementation:** See `../03-ml/methodology.md` and `ch3+4.md` section 3.7 for the weighted K-Means methodology.
+
+---
+
 # Clinical Override Fix for K-Means Cluster Assignment
 
 **Date:** 2026-03-09
 **Issue:** K-Means clustering misclassifying patients with extreme biomarker values
-**Status:** Fixed
+**Status:** Superseded by weighted K-Means methodology (2026-03-10)
 
 ---
 

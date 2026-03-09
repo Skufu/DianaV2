@@ -1,5 +1,5 @@
 {
-  "methodology": "K-Means clustering with Ahlqvist et al. (2018) subtype classification",
+  "methodology": "Weighted K-Means clustering with Ahlqvist et al. (2018) subtype classification",
   "features_used": [
     "bmi",
     "triglycerides",
@@ -8,69 +8,77 @@
     "age",
     "waist_circumference"
   ],
+  "feature_weights": {
+    "bmi": 1.2,
+    "triglycerides": 1.4,
+    "ldl": 1.2,
+    "hdl": 1.1,
+    "age": 0.9,
+    "waist_circumference": 1.5
+  },
   "n_samples": 1047,
   "k_selected": 4,
   "k_optimal_by_silhouette": 2,
-  "silhouette_score": 0.1843,
-  "davies_bouldin_index": 1.526,
-  "calinski_harabasz_index": 259.6488,
+  "silhouette_score": 0.1731,
+  "davies_bouldin_index": 1.6481,
+  "calinski_harabasz_index": 254.6397,
   "k_range_analysis": [
     {
       "k": 2,
-      "silhouette": 0.2265,
-      "dbi": 1.6373,
-      "chi": 342.3657,
-      "wcss": 4731.77
+      "silhouette": 0.2264,
+      "dbi": 1.6392,
+      "chi": 341.6618,
+      "wcss": 5596.64
     },
     {
       "k": 3,
-      "silhouette": 0.2125,
-      "dbi": 1.5348,
-      "chi": 302.1563,
-      "wcss": 3978.86
+      "silhouette": 0.2152,
+      "dbi": 1.5233,
+      "chi": 301.1315,
+      "wcss": 4625.64
     },
     {
       "k": 4,
-      "silhouette": 0.1843,
-      "dbi": 1.526,
-      "chi": 259.6488,
-      "wcss": 3596.22
+      "silhouette": 0.1731,
+      "dbi": 1.6481,
+      "chi": 254.6397,
+      "wcss": 4183.93
     },
     {
       "k": 5,
-      "silhouette": 0.1692,
-      "dbi": 1.4933,
-      "chi": 238.735,
-      "wcss": 3277.94
+      "silhouette": 0.1682,
+      "dbi": 1.5654,
+      "chi": 234.492,
+      "wcss": 3789.38
     },
     {
       "k": 6,
-      "silhouette": 0.1746,
-      "dbi": 1.396,
-      "chi": 228.8374,
-      "wcss": 2992.68
+      "silhouette": 0.1527,
+      "dbi": 1.6313,
+      "chi": 213.9051,
+      "wcss": 3539.98
     }
   ],
   "cluster_profiles": {
     "SIRD": {
       "label": "SIRD",
-      "count": 326,
-      "percentage": 31.1,
+      "count": 316,
+      "percentage": 30.2,
       "means": {
-        "bmi": 25.32,
-        "triglycerides": 81.39,
-        "ldl": 120.14,
-        "hdl": 72.92,
-        "age": 56.58,
-        "waist_circumference": 88.77
+        "bmi": 25.09,
+        "triglycerides": 75.77,
+        "ldl": 109.99,
+        "hdl": 74.59,
+        "age": 54.51,
+        "waist_circumference": 87.98
       },
       "medians": {
-        "bmi": 24.9,
-        "triglycerides": 76.5,
-        "ldl": 119.0,
-        "hdl": 71.0,
-        "age": 57.0,
-        "waist_circumference": 88.5
+        "bmi": 24.84,
+        "triglycerides": 72.5,
+        "ldl": 110.5,
+        "hdl": 73.0,
+        "age": 55.0,
+        "waist_circumference": 87.25
       },
       "info": {
         "full_name": "Severe Insulin-Resistant Diabetes",
@@ -81,23 +89,23 @@
     },
     "SIDD": {
       "label": "SIDD",
-      "count": 267,
-      "percentage": 25.5,
+      "count": 312,
+      "percentage": 29.8,
       "means": {
-        "bmi": 29.86,
-        "triglycerides": 194.04,
-        "ldl": 153.09,
-        "hdl": 47.99,
-        "age": 55.53,
-        "waist_circumference": 100.74
+        "bmi": 27.85,
+        "triglycerides": 122.82,
+        "ldl": 153.41,
+        "hdl": 54.26,
+        "age": 54.93,
+        "waist_circumference": 95.15
       },
       "medians": {
-        "bmi": 29.45,
-        "triglycerides": 180.0,
-        "ldl": 152.0,
-        "hdl": 48.0,
-        "age": 56.0,
-        "waist_circumference": 101.2
+        "bmi": 27.88,
+        "triglycerides": 119.5,
+        "ldl": 151.0,
+        "hdl": 54.0,
+        "age": 55.0,
+        "waist_circumference": 95.8
       },
       "info": {
         "full_name": "Atherogenic / Lipid-Driven Diabetes",
@@ -109,23 +117,23 @@
     },
     "MOD": {
       "label": "MOD",
-      "count": 234,
-      "percentage": 22.3,
+      "count": 264,
+      "percentage": 25.2,
       "means": {
-        "bmi": 41.64,
-        "triglycerides": 119.22,
-        "ldl": 111.79,
-        "hdl": 52.59,
-        "age": 54.82,
-        "waist_circumference": 123.94
+        "bmi": 40.66,
+        "triglycerides": 104.28,
+        "ldl": 112.21,
+        "hdl": 54.04,
+        "age": 53.77,
+        "waist_circumference": 121.2
       },
       "medians": {
-        "bmi": 40.77,
-        "triglycerides": 108.0,
-        "ldl": 112.5,
-        "hdl": 50.0,
-        "age": 55.0,
-        "waist_circumference": 122.1
+        "bmi": 39.3,
+        "triglycerides": 101.0,
+        "ldl": 112.0,
+        "hdl": 52.0,
+        "age": 54.0,
+        "waist_circumference": 120.05
       },
       "info": {
         "full_name": "Mild Obesity-Related Diabetes",
@@ -136,23 +144,23 @@
     },
     "MARD": {
       "label": "MARD",
-      "count": 220,
-      "percentage": 21.0,
+      "count": 155,
+      "percentage": 14.8,
       "means": {
-        "bmi": 29.38,
-        "triglycerides": 92.07,
-        "ldl": 119.7,
-        "hdl": 57.49,
-        "age": 49.78,
-        "waist_circumference": 97.2
+        "bmi": 32.78,
+        "triglycerides": 236.79,
+        "ldl": 130.92,
+        "hdl": 43.71,
+        "age": 54.81,
+        "waist_circumference": 107.98
       },
       "medians": {
-        "bmi": 29.13,
-        "triglycerides": 89.5,
-        "ldl": 118.0,
-        "hdl": 57.0,
-        "age": 50.0,
-        "waist_circumference": 97.85
+        "bmi": 32.3,
+        "triglycerides": 226.0,
+        "ldl": 128.0,
+        "hdl": 42.0,
+        "age": 55.0,
+        "waist_circumference": 106.6
       },
       "info": {
         "full_name": "Mild Age-Related Diabetes",

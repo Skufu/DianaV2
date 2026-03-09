@@ -29,7 +29,7 @@ models/
 | **Target** | Binary screening (Normal vs At‑Risk) |
 | **Algorithms** | Logistic Regression, Random Forest |
 | **Best Model** | Logistic Regression (AUC-ROC: ~0.72, binary_v2_no_bp) |
-| **Clustering** | K-Means with K=4 (Ahlqvist diabetes subtypes) |
+| **Clustering** | Weighted K-Means with K=4 (Ahlqvist diabetes subtypes with expert-elicited weights) |
 | **Imputation** | Median/GroupKFold pipeline imputation (no SMOTE) |
 
 > **Note on AUC**: The binary screening model achieves ~0.72 AUC (Logistic Regression), which is realistic for non‑circular prediction that excludes HbA1c/FBS. This is comparable to CDC diabetes risk calculators (AUC 0.72–0.79) and is intended for screening rather than diagnosis.
@@ -98,10 +98,10 @@ The system provides **two complementary outputs** that serve different clinical 
 - **Example**: 72% probability for a patient with elevated TG/low HDL → At‑Risk screening flag
 
 ### Output 2: Metabolic Subtype (Qualitative Phenotype Classification)
-- **Source**: K-Means Clustering (K=4, per Ahlqvist et al. 2018)
-- **Output**: SIRD, SIDD, MOD, or MARD cluster assignment
+- **Source**: Weighted K-Means Clustering (K=4, per Ahlqvist et al. 2018 with expert-elicited feature weights)
+- **Output**: SIRD-like, SIDD-like, MOD-like, or MARD-like cluster assignment
 - **Clinical Meaning**: Based on full biomarker profile (metabolic phenotype pattern)
-- **Runtime semantic note**: DIANA runtime uses an adapted SIDD meaning (atherogenic/lipid-driven) as documented in `../03-ml/assessment-contract.md`
+- **Runtime semantic note**: DIANA runtime uses an adapted SIDD meaning (atherogenic/lipid-driven) as documented in `../03-ml/assessment-contract.md`. The "-like" suffix emphasizes heuristic proxy status rather than validated subtype diagnosis.
 
 ### Why Both Outputs Are Complementary
 

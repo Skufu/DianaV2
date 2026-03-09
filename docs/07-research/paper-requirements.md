@@ -141,11 +141,23 @@ Before model training, compute Information Gain (IG) for each feature:
 
 | Parameter | Value |
 |-----------|-------|
-| Algorithm | K-Means |
+| Algorithm | Weighted K-Means |
 | Features | All biomarkers (standardized) |
 | K | 4 clusters (fixed based on clinical evidence) |
-| Distance Metric | Euclidean |
+| Distance Metric | Weighted Euclidean (expert-elicited feature weights) |
 | Validation | Elbow method + Silhouette score |
+
+**Expert-Elicited Feature Weights (Single-Expert):**
+- `triglycerides`: 2.0 (lipid dysregulation marker)
+- `ldl`: 2.5 (atherogenic risk - highest weight)
+- `hdl`: 1.2 (protective lipid factor)
+- `bmi`: 1.5 (obesity driver)
+- `waist_circumference`: 2.0 (visceral adiposity proxy)
+- `age`: 1.0 (baseline weight)
+
+**Weighted Distance Computation:** Distance is computed post-standardization as: `d(x, c) = sqrt(sum(w_j * (x_j - c_j)^2))` for each sample x and centroid c, where w_j is the expert-specified weight for feature j. This preserves the mathematical properties of K-Means while incorporating domain-informed feature importance.
+
+**Expert Elicitation Limitation:** The weight configuration represents single-expert elicitation, not multi-specialist consensus or clinical validation. This is a methodological limitation acknowledged openly—weights reflect one specialist's clinical judgment rather than empirically validated importance. Future work should expand elicitation to a multi-expert Delphi process for more robust weight derivation.
 
 ### Cluster Labels (per Paper Table 4)
 | Cluster | Full Name | Defining Features |
