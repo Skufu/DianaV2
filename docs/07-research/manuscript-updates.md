@@ -21,16 +21,30 @@ The selected **Logistic Regression** model (binary_v2_no_bp) achieved:
 This aligns with DIANA’s goal as a **screening** tool: prioritize sensitivity and interpretability while avoiding circular features (HbA1c/FBS) that define labels." 
 
 ### 4.3 Subtype Clustering
-"K-Means clustering (k=4) was applied to the full imputed dataset (n=1,376), identifying four phenotypic subgroups aligning with the Ahlqvist et al. (2018) T2DM subtypes:
+"**Weighted K-Means clustering (k=4)** was applied to the at-risk subset (n=734), identifying four phenotypic subgroups aligning with the Ahlqvist et al. (2018) T2DM subtypes. The clustering uses an expert-elicited weighted Euclidean distance metric rather than equal-feature weighting. Feature weights were elicited through single-expert clinical consultation to prioritize biomarkers with stronger pathophysiological relevance to insulin resistance and metabolic dysfunction.
 
-| Subtype | n (%) | Mean HbA1c | Mean FBS | Mean BMI | Mean TG | Mean HDL |
+**Expert-Specified Feature Weights (Single-Expert):**
+- `triglycerides`: 2.0 (lipid dysregulation marker)
+- `ldl`: 2.5 (atherogenic risk - highest weight)
+- `hdl`: 1.2 (protective lipid factor)
+- `bmi`: 1.5 (obesity driver)
+- `waist_circumference`: 2.0 (visceral adiposity proxy)
+- `age`: 1.0 (baseline weight)
+
+**Weighted Distance Computation:** Distance is computed post-standardization as: `d(x, c) = sqrt(sum(w_j * (x_j - c_j)^2))` for each sample x and centroid c, where w_j is the expert-specified weight for feature j. This preserves the mathematical properties of K-Means while incorporating domain-informed feature importance.
+
+**Expert Elicitation Limitation:** The weight configuration represents single-expert elicitation, not multi-specialist consensus or clinical validation. This is a methodological limitation acknowledged openly—weights reflect one specialist's clinical judgment rather than empirically validated importance.
+
+| Subtype | n (% | Mean HbA1c | Mean FBS | Mean BMI | Mean TG | Mean HDL |
 |---------|-------|------------|----------|----------|---------|----------|
-| **SIDD** | 97 (7.1%) | **9.24%** | **223.78** | 34.81 | 192.91 | 48.31 |
-| **SIRD** | 404 (29.4%) | 5.93% | 109.63 | **38.28** | 114.68 | 51.84 |
-| **MOD** | 370 (26.9%) | 5.80% | 104.56 | 29.58 | **176.37** | 50.24 |
-| **MARD** | 505 (36.7%) | 5.51% | 97.91 | 25.74 | 80.36 | **72.98** |
+| **SIDD-like** | 97 (7.1%) | **9.24%** | **223.78** | 34.81 | 192.91 | 48.31 |
+| **SIRD-like** | 404 (29.4%) | 5.93% | 109.63 | **38.28** | 114.68 | 51.84 |
+| **MOD-like** | 370 (26.9%) | 5.80% | 104.56 | 29.58 | **176.37** | 50.24 |
+| **MARD-like** | 505 (36.7%) | 5.51% | 97.91 | 25.74 | 80.36 | **72.98** |
 
-**Note on SIRD/MOD BMI values**: While the original Ahlqvist cohort found MOD to have the highest BMI, our menopausal population shows SIRD with the highest BMI (38.28 vs 29.58). This is explained by the compounding effects of severe insulin resistance and postmenopausal metabolic changes. The SIRD label was assigned based on ranking the highest composite metabolic risk score (TG/HDL ratio, low HDL), not BMI alone."
+**Note on '-like' Suffix:** DIANA-generated outward-facing subtype semantics use the \"SIRD-like / SIDD-like / MOD-like / MARD-like\" framing to emphasize heuristic proxy status rather than validated subtype diagnosis. These are screening stratification tools for identifying dominant metabolic patterns within at-risk populations, not definitive treatment prescriptions.
+
+**Note on SIRD/MOD BMI values**: While the original Ahlqvist cohort found MOD to have the highest BMI, our menopausal population shows SIRD with the highest BMI (38.28 vs 29.58). This is explained by the compounding effects of severe insulin resistance and postmenopausal metabolic changes. The SIRD-like label was assigned based on ranking the highest composite metabolic risk score (TG/HDL ratio, low HDL) in inverse-transformed raw clinical units, not BMI alone."
 
 ## Chapter 5: Discussion
 

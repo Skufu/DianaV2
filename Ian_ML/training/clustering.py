@@ -1,6 +1,7 @@
+# pyright: reportGeneralTypeIssues=false, reportArgumentType=false, reportCallIssue=false, reportIndexIssue=false, reportMissingTypeArgument=false, reportAttributeAccessIssue=false
 """
 DIANA Clinical Clustering Script (K=4 Ahlqvist-Inspired Subtype Classification)
-K-Means clustering for T2DM subtype identification adapted from Ahlqvist et al. (2018).
+Weighted K-Means clustering for T2DM subtype identification adapted from Ahlqvist et al. (2018).
 
 Clusters: SIRD, SIDD, MOD, MARD (4 T2DM subtypes per Ahlqvist et al. 2018)
 Features: All biomarkers (standardized)
@@ -15,21 +16,37 @@ Usage: python Ian_ML/training/clustering.py [--k 4]
 
 import pandas as pd
 import numpy as np
-from pathlib import Path
 import json
 import joblib
 import argparse
+from pathlib import Path
+from collections.abc import Mapping, Sequence
+from typing import Any, cast
+from numpy.typing import NDArray
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
+from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
-from Ian_ML.common.paths import CLINICAL_MODELS_DIR, NHANES_PROCESSED_ROOT
-from Ian_ML.common.feature_constants import CLUSTER_FEATURES, AHLQVIST_SUBTYPES
+
+try:
+    from Ian_ML.common.paths import MODELS_ROOT, NHANES_PROCESSED_ROOT
+    from Ian_ML.common.feature_constants import CLUSTER_FEATURES, AHLQVIST_SUBTYPES
+    from Ian_ML.common.weighted_kmeans import WeightedKMeans
+except ModuleNotFoundError:
+    import sys
+
+    sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from Ian_ML.common.paths import MODELS_ROOT, NHANES_PROCESSED_ROOT
+    from Ian_ML.common.feature_constants import CLUSTER_FEATURES, AHLQVIST_SUBTYPES
+    from Ian_ML.common.weighted_kmeans import WeightedKMeans
+
+FloatArray = NDArray[np.float64]
+IntArray = NDArray[np.int64]
 
 DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
-MODELS_DIR = CLINICAL_MODELS_DIR
+MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp"
 RESULTS_DIR = MODELS_DIR / "results"
 VIZ_DIR = MODELS_DIR / "visualizations"
 
@@ -38,22 +55,54 @@ VIZ_DIR = MODELS_DIR / "visualizations"
 ALL_FEATURES = CLUSTER_FEATURES
 CLINICAL_FEATURES = CLUSTER_FEATURES
 
+# Expert-elicited, domain-informed feature weights.
+# Order must follow CLUSTER_FEATURES exactly when converted to a vector.
+EXPERT_FEATURE_WEIGHTS = {
+    'bmi': 1.5,
+    'triglycerides': 2.0,
+    'ldl': 2.5,
+    'hdl': 1.2,
+    'age': 1.0,
+    'waist_circumference': 2.0,
+}
+
 # Ahlqvist et al. T2DM Subtype definitions — imported from feature_constants.py
 # (single source of truth; do not redefine here)
 
 
-def analyze_k_range(X_scaled, k_range=(2, 7)):
+def build_feature_weight_vector(feature_names: Sequence[str]) -> list[float]:
+    """Build ordered weight vector matching the exact feature ordering."""
+    missing = [f for f in feature_names if f not in EXPERT_FEATURE_WEIGHTS]
+    if missing:
+        raise ValueError(f"Missing expert feature weights for: {missing}")
+    return [float(EXPERT_FEATURE_WEIGHTS[f]) for f in feature_names]
+
+
+def analyze_k_range(
+    X_scaled: FloatArray,
+    feature_weights: Sequence[float],
+    k_range: tuple[int, int] = (2, 7),
+) -> list[dict[str, Any]]:
     """Test multiple K values and return metrics for optimal selection."""
-    results = []
+    results: list[dict[str, Any]] = []
     print("[ANALYZE] Testing K values for optimal cluster count...")
     
     for k in range(k_range[0], k_range[1]):
-        km = KMeans(n_clusters=k, random_state=42, n_init=10)
-        labels = km.fit_predict(X_scaled)
+        km = WeightedKMeans(
+            n_clusters=k,
+            weights=feature_weights,
+            random_state=42,
+            n_init=10,
+        )
+        labels = km.fit(X_scaled).labels_
+        if labels is None:
+            raise RuntimeError("WeightedKMeans returned no labels during K-range analysis.")
         sil = silhouette_score(X_scaled, labels)
         dbi = davies_bouldin_score(X_scaled, labels)
         chi = calinski_harabasz_score(X_scaled, labels)
-        wcss = km.inertia_
+        if km.inertia_ is None:
+            raise RuntimeError("WeightedKMeans returned no inertia during K-range analysis.")
+        wcss = float(km.inertia_)
         results.append({
             'k': k, 
             'silhouette': round(sil, 4), 
@@ -68,7 +117,11 @@ def analyze_k_range(X_scaled, k_range=(2, 7)):
     return results
 
 
-def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
+def assign_ahlqvist_labels(
+    cluster_centers: FloatArray,
+    feature_names: Sequence[str],
+    k: int = 4,
+) -> dict[int, str]:
     """
     Assign Ahlqvist-inspired subtype labels to clusters based on centroid characteristics.
     Uses proxy metrics since HbA1c/FBS are excluded from clustering features.
@@ -90,24 +143,24 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     3. MOD (Mild Obesity-Related): Highest BMI of remaining
     4. MARD (Mild Age-Related): Remaining (typically lowest metabolic risk)
     """
-    centers_df = pd.DataFrame(cluster_centers, columns=feature_names)
-    available_clusters = list(range(k))
-    final_labels = {}
+    centers_df = pd.DataFrame(cast(Any, cluster_centers), columns=cast(Any, list(feature_names)))
+    available_clusters: list[int] = list(range(k))
+    final_labels: dict[int, str] = {}
     
     # 1. Identify SIRD: Highest LAP score (validated insulin resistance proxy)
     # LAP = (WC - 58) * TG for women — validated in 2024 NHANES study
     # Reference: Wang et al. (2024) "Lipid Accumulation Product as a Predictor of
     # Prediabetes and Diabetes: Insights From NHANES Data" BMC Endocrine Disorders
-    ir_scores = {}
+    ir_scores: dict[int, float] = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
-        waist = c.get('waist_circumference', 0)
-        tg = c.get('triglycerides', 0)
+        waist = float(c.get('waist_circumference', 0.0))
+        tg = float(c.get('triglycerides', 0.0))
         # LAP formula for women: (WC - 58) * TG
         # WC in cm, TG in mg/dL
         ir_scores[cid] = (waist - 58) * tg
     
-    sird_id = max(ir_scores, key=ir_scores.get)
+    sird_id = max(ir_scores, key=lambda cid: ir_scores[cid])
     final_labels[sird_id] = 'SIRD'
     available_clusters.remove(sird_id)
     
@@ -119,10 +172,10 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     # beta-cell function tests (HOMA2-B/C-peptide). Rebranded from SIDD
     # to reflect that we're identifying atherogenic dyslipidemia, not true insulin deficiency.
     # We use high LDL as a proxy.
-    ldl_scores = {}
+    ldl_scores: dict[int, float] = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
-        ldl_scores[cid] = c.get('ldl', 0)
+        ldl_scores[cid] = float(c.get('ldl', 0.0))
     
     sidd_id = max(ldl_scores, key=lambda cid: float(ldl_scores[cid]))
     final_labels[sidd_id] = 'SIDD'  # Keep code name for API compatibility
@@ -132,11 +185,11 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
         return final_labels
 
     # 3. Identify MOD: Highest BMI of the remaining
-    mod_scores = {}
+    mod_scores: dict[int, float] = {}
     for cid in available_clusters:
-        mod_scores[cid] = centers_df.iloc[cid].get('bmi', 0)
+        mod_scores[cid] = float(centers_df.iloc[cid].get('bmi', 0.0))
         
-    mod_id = max(mod_scores, key=mod_scores.get)
+    mod_id = max(mod_scores, key=lambda cid: mod_scores[cid])
     final_labels[mod_id] = 'MOD'
     available_clusters.remove(mod_id)
     
@@ -150,35 +203,44 @@ def assign_ahlqvist_labels(cluster_centers, feature_names, k=4):
     return final_labels
 
 
-def create_cluster_profiles(df, cluster_labels, features, label_map):
+def create_cluster_profiles(
+    df: pd.DataFrame,
+    cluster_labels: IntArray,
+    features: Sequence[str],
+    label_map: Mapping[int, str],
+) -> dict[str, dict[str, Any]]:
     """Create detailed cluster profiles with statistics."""
     df = df.copy()
     df['cluster_id'] = cluster_labels
-    df['cluster_label'] = df['cluster_id'].map(label_map)
+    label_lookup = {int(cid): lbl for cid, lbl in label_map.items()}
+    df['cluster_label'] = cast(Any, df['cluster_id']).map(cast(Any, label_lookup))
     
-    profiles = {}
+    profiles: dict[str, dict[str, Any]] = {}
     for cid, label in label_map.items():
         cluster_data = df[df['cluster_id'] == cid]
-        profile = {
+        means: dict[str, float] = {}
+        medians: dict[str, float] = {}
+        profile: dict[str, Any] = {
             'label': label,
             'count': int(len(cluster_data)),
             'percentage': round(len(cluster_data) / len(df) * 100, 1),
-            'means': {},
-            'medians': {},
+            'means': means,
+            'medians': medians,
             'info': AHLQVIST_SUBTYPES.get(label, {})
         }
         
         for feat in features:
             if feat in cluster_data.columns:
-                profile['means'][feat] = round(cluster_data[feat].mean(), 2)
-                profile['medians'][feat] = round(cluster_data[feat].median(), 2)
+                feature_series = cast(Any, cluster_data[feat])
+                means[feat] = round(float(feature_series.mean()), 2)
+                medians[feat] = round(float(feature_series.median()), 2)
         
         profiles[label] = profile
     
     return profiles
 
 
-def plot_k_optimization(k_results, selected_k, output_path):
+def plot_k_optimization(k_results: Sequence[Mapping[str, Any]], selected_k: int, output_path: str | Any):
     """Create elbow method and silhouette analysis plots."""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     
@@ -217,16 +279,21 @@ def plot_k_optimization(k_results, selected_k, output_path):
     print(f"   K-optimization plot saved to {output_path}")
 
 
-def plot_cluster_heatmap(profiles, features, output_path):
+def plot_cluster_heatmap(
+    profiles: Mapping[str, Mapping[str, Any]],
+    features: Sequence[str],
+    output_path: str | Any,
+):
     """Create heatmap of cluster centroid values."""
     # Build matrix of mean values
-    labels = list(profiles.keys())
-    data = []
+    labels: list[str] = list(profiles.keys())
+    data: list[list[float]] = []
     for label in labels:
-        row = [profiles[label]['means'].get(f, 0) for f in features]
+        means = cast(dict[str, float], profiles[label].get('means', {}))
+        row = [float(means.get(f, 0.0)) for f in features]
         data.append(row)
     
-    df_heat = pd.DataFrame(data, index=labels, columns=features)
+    df_heat = pd.DataFrame(cast(Any, data), index=cast(Any, labels), columns=cast(Any, list(features)))
     
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.heatmap(df_heat, annot=True, fmt='.1f', cmap='RdYlGn_r',
@@ -241,7 +308,12 @@ def plot_cluster_heatmap(profiles, features, output_path):
     print(f"   Heatmap saved to {output_path}")
 
 
-def plot_cluster_scatter(X_scaled, cluster_labels, label_map, output_path):
+def plot_cluster_scatter(
+    X_scaled: FloatArray,
+    cluster_labels: IntArray,
+    label_map: Mapping[int, str],
+    output_path: str | Any,
+):
     """Create PCA scatter plot of clusters."""
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X_scaled)
@@ -275,7 +347,7 @@ def plot_cluster_scatter(X_scaled, cluster_labels, label_map, output_path):
     print(f"   PCA scatter saved to {output_path}")
 
 
-def plot_cluster_distribution(profiles, output_path):
+def plot_cluster_distribution(profiles: Mapping[str, Mapping[str, Any]], output_path: str | Any):
     """Create bar chart of cluster sizes."""
     labels = list(profiles.keys())
     counts = [profiles[l]['count'] for l in labels]
@@ -311,7 +383,7 @@ def plot_cluster_distribution(profiles, output_path):
     print(f"   Distribution chart saved to {output_path}")
 
 
-def main(k=4):
+def main(k: int = 4):
     """Main clustering pipeline."""
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -330,15 +402,31 @@ def main(k=4):
     # Determine which features to use
     available_features = [f for f in ALL_FEATURES if f in df.columns]
     print(f"   Available features: {available_features}")
+
+    # Align with active binary_v2_no_bp subtype methodology:
+    # fit subtype clustering on At-Risk population only (pre-diabetic + diabetic).
+    if 'diabetes_label' not in df.columns:
+        raise ValueError("Missing required column 'diabetes_label' for at-risk-only subtype clustering.")
+    at_risk_mask = df['diabetes_label'] >= 1
+    df_at_risk = df.loc[at_risk_mask].copy()
+    print(f"   At-risk records (diabetes_label >= 1): {len(df_at_risk)} / {len(df)}")
     
-    # Prepare data
-    df_clean = df.dropna(subset=available_features)
+    # Prepare data on at-risk subset (preserve complete-case clustering flow)
+    df_clean = df_at_risk.dropna(subset=available_features)
     X = df_clean[available_features].values
-    print(f"   Complete records: {len(X)}")
-    
+    print(f"   At-risk complete records: {len(X)}")
+
+    # Keep canonical imputer artifact for inference compatibility.
+    # Fit on the complete-case clustering matrix to preserve current behavior.
+    imputer = SimpleImputer(strategy='median')
+    X_imputed = imputer.fit_transform(X)
+
     # Standardize
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    X_scaled = scaler.fit_transform(X_imputed)
+
+    # Build ordered expert feature weight vector (post-standardization distance metric).
+    feature_weights = build_feature_weight_vector(available_features)
     
     # =============================================
     # K RANGE ANALYSIS (for thesis documentation)
@@ -347,7 +435,7 @@ def main(k=4):
     print("K RANGE ANALYSIS (K=2 to K=6)")
     print("=" * 60)
     
-    k_results = analyze_k_range(X_scaled, k_range=(2, 7))
+    k_results = analyze_k_range(X_scaled, feature_weights=feature_weights, k_range=(2, 7))
     
     # Find optimal by silhouette
     best_sil_idx = max(range(len(k_results)), key=lambda i: k_results[i]['silhouette'])
@@ -364,8 +452,15 @@ def main(k=4):
     print(f"FINAL CLUSTERING (K={k})")
     print("=" * 60)
     
-    kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
-    cluster_labels = kmeans.fit_predict(X_scaled)
+    kmeans = WeightedKMeans(
+        n_clusters=k,
+        weights=feature_weights,
+        random_state=42,
+        n_init=10,
+    )
+    cluster_labels = kmeans.fit(X_scaled).labels_
+    if cluster_labels is None:
+        raise RuntimeError("WeightedKMeans returned no labels for final clustering.")
     
     final_silhouette = silhouette_score(X_scaled, cluster_labels)
     final_dbi = davies_bouldin_score(X_scaled, cluster_labels)
@@ -374,8 +469,12 @@ def main(k=4):
     print(f"   Davies-Bouldin Index: {final_dbi:.4f}")
     print(f"   Calinski-Harabasz Index: {final_chi:.4f}")
     
-    # Assign Ahlqvist subtype labels
-    label_map = assign_ahlqvist_labels(kmeans.cluster_centers_, available_features, k)
+    # Assign Ahlqvist subtype labels using raw (inverse-transformed) centroids.
+    # Weighted K-Means fitting remains on standardized data.
+    if kmeans.cluster_centers_ is None:
+        raise RuntimeError("WeightedKMeans returned no cluster centers for label assignment.")
+    raw_cluster_centers = scaler.inverse_transform(kmeans.cluster_centers_)
+    label_map = assign_ahlqvist_labels(raw_cluster_centers, available_features, k)
     print(f"\n[LABELS] Cluster assignments:")
     for cid, label in label_map.items():
         count = (cluster_labels == cid).sum()
@@ -400,10 +499,23 @@ def main(k=4):
     print("SAVING ARTIFACTS")
     print("=" * 60)
     
-    # Save models
-    joblib.dump(kmeans, MODELS_DIR / "kmeans_model.joblib")
+    # Save models and preprocessing artifacts
+    joblib.dump(kmeans, MODELS_DIR / "weighted_kmeans_model.joblib")
     joblib.dump(scaler, MODELS_DIR / "cluster_scaler.joblib")
-    print("   Saved kmeans_model.joblib and cluster_scaler.joblib")
+    joblib.dump(imputer, MODELS_DIR / "cluster_imputer.joblib")
+    print("   Saved weighted_kmeans_model.joblib, cluster_scaler.joblib, and cluster_imputer.joblib")
+
+    # Save feature weights metadata
+    weights_payload = {
+        "method": "expert-elicited weighted euclidean distance after standardization",
+        "feature_order": available_features,
+        "weights": {feature: float(EXPERT_FEATURE_WEIGHTS[feature]) for feature in available_features},
+        "weight_vector": [float(w) for w in feature_weights],
+        "k": int(k),
+    }
+    with open(MODELS_DIR / "feature_weights.json", 'w') as f:
+        json.dump(weights_payload, f, indent=2)
+    print("   Saved feature_weights.json")
     
     # Save cluster labels mapping
     cluster_labels_json = {
@@ -419,9 +531,10 @@ def main(k=4):
     
     # Save full analysis results
     cluster_analysis = {
-        "methodology": "K-Means clustering with Ahlqvist et al. (2018) subtype classification",
-        "features_used": available_features,
-        "n_samples": len(X),
+        "methodology": "Weighted K-Means clustering with Ahlqvist et al. (2018) subtype classification",
+         "features_used": available_features,
+         "feature_weights": {feature: float(EXPERT_FEATURE_WEIGHTS[feature]) for feature in available_features},
+         "n_samples": len(X),
         "k_selected": k,
         "k_optimal_by_silhouette": best_sil_k,
         "silhouette_score": round(final_silhouette, 4),

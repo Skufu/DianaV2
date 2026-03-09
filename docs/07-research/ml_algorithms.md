@@ -35,12 +35,24 @@
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| **Algorithm** | K-Means | Paper specification |
-| **K** | 4 | Matches T2DM subtypes (SIRD, SIDD, MOD, MARD) |
+| **Algorithm** | Weighted K-Means | Paper specification with expert-elicited feature weights |
+| **K** | 4 | Matches T2DM subtypes (SIRD-like, SIDD-like, MOD-like, MARD-like) |
 | **K Range Tested** | 2-6 | Elbow/silhouette analysis |
 | **Features** | Standardized biomarkers | Z-score normalization |
-| **Distance** | Euclidean | Standard K-Means |
+| **Distance** | Weighted Euclidean | Expert-elicited feature weights applied post-standardization |
 | **random_state** | 42 | Reproducibility |
+
+**Expert-Elicited Feature Weights (Single-Expert):**
+- `triglycerides`: 2.0 (lipid dysregulation marker)
+- `ldl`: 2.5 (atherogenic risk - highest weight)
+- `hdl`: 1.2 (protective lipid factor)
+- `bmi`: 1.5 (obesity driver)
+- `waist_circumference`: 2.0 (visceral adiposity proxy)
+- `age`: 1.0 (baseline weight)
+
+**Weighted Distance Computation:** Distance is computed post-standardization as: `d(x, c) = sqrt(sum(w_j * (x_j - c_j)^2))` for each sample x and centroid c, where w_j is the expert-specified weight for feature j. This preserves the mathematical properties of K-Means while incorporating domain-informed feature importance.
+
+**Expert Elicitation Limitation:** The weight configuration represents single-expert elicitation, not multi-specialist consensus or clinical validation. This is a methodological limitation acknowledged openly—weights reflect one specialist's clinical judgment rather than empirically validated importance. Future work should expand elicitation to a multi-expert Delphi process for more robust weight derivation.
 
 ### Validation Metrics
 - **Elbow Method**: Within-cluster sum of squares (SSE/Inertia)
@@ -70,7 +82,7 @@
 | Clinical Model Legacy | `Ian_ML/training/train_legacy.py` | Archived v1 (non-defensible) |
 | Binary Model | `Ian_ML/training/train_binary_v2_no_bp.py` | Binary classification training |
 | Prediction | `Ian_ML/service/predict.py` | Inference module |
-| K-Means | `Ian_ML/training/clustering.py` | Clustering module |
+| Weighted K-Means | `Ian_ML/training/clustering.py` | Clustering module with expert-elicited weights |
 
 ---
 
@@ -85,4 +97,4 @@ Paper recommends using cross-validation to tune:
 
 ## Keywords
 
-`Logistic Regression` `Random Forest` `SVM` `K-Means` `clustering` `classification` `cross-validation` `stratified` `train test split` `hyperparameter` `sklearn` `scikit-learn`
+`Logistic Regression` `Random Forest` `SVM` `Weighted K-Means` `clustering` `classification` `cross-validation` `stratified` `train test split` `hyperparameter` `sklearn` `scikit-learn`

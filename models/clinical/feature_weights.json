@@ -1,0 +1,28 @@
+{
+  "method": "expert-elicited weighted euclidean distance after standardization",
+  "feature_order": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age",
+    "waist_circumference"
+  ],
+  "weights": {
+    "bmi": 1.2,
+    "triglycerides": 1.4,
+    "ldl": 1.2,
+    "hdl": 1.1,
+    "age": 0.9,
+    "waist_circumference": 1.5
+  },
+  "weight_vector": [
+    1.2,
+    1.4,
+    1.2,
+    1.1,
+    0.9,
+    1.5
+  ],
+  "k": 4
+}

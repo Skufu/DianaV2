@@ -11,7 +11,7 @@ The backend normalization boundary is defined as the point where the ML server r
 
 ### Canonical Output Fields (Frontend-Facing)
 The backend guarantees the following fields in the assessment result returned to the frontend:
-- `cluster`: Canonical cluster assignment (SIDD, SIRD, MOD, MARD, or blank for neutral). **Neutral sentinel:** The ML service returns `risk_cluster="N/A"` and `metabolic_subtype="N/A"` for Normal predictions; the backend canonicalizes these neutral sentinels to blank string at persistence.
+- `cluster`: Canonical cluster assignment (SIDD-like, SIRD-like, MOD-like, MARD-like, or blank for neutral). **Neutral sentinel:** The ML service returns `risk_cluster="N/A"` and `metabolic_subtype="N/A"` for Normal predictions; the backend canonicalizes these neutral sentinels to blank string at persistence.
 - `risk_score`: Integer 0-100, computed from at-risk probability
 - `risk_level`: One of `low`, `medium`, `high`, or `unknown` (see Risk Level Semantics)
 - `risk_label`: Display label for risk level
@@ -23,6 +23,8 @@ The backend guarantees the following fields in the assessment result returned to
 - `dataset_hash`: Stable training dataset lineage identifier
 - `validation_status`: Canonical warning output (see Warning Payload Schema)
 All other fields (notes, metrics) are supplemental and not contract-guaranteed.
+
+**Note on `-like` Subtype Semantics:** DIANA-generated outward-facing subtype fields use the `SIRD-like`, `SIDD-like`, `MOD-like`, `MARD-like` naming convention with `-like` suffix to emphasize heuristic proxy status. These are screening stratification tools for identifying dominant metabolic patterns within at-risk populations, not validated biological subtype diagnoses. The canonical cluster codes for alias resolution remain `SIRD`, `SIDD`, `MOD`, `MARD` internally, but outward-facing display should use the `-like` variants.
 
 **Runtime Gating for Subtype Enrichment:** The ML service enforces that subtype clustering (K-Means prediction) only runs when `predicted_status == "At-Risk"`. Normal predictions return neutral sentinel subtype fields at the ML response boundary, which the backend canonicalizes to blank values at persistence. This gating prevents Normal assessments from carrying subtype cluster semantics in the database.
 
@@ -155,48 +157,56 @@ warnings: [
 ### Ahlqvist Subtype Clusters
 The clinical model returns metabolic subtype clusters based on Ahlqvist diabetes subtypes. The following definitions are from the active constants:
 
-| Cluster Code | Full Name | Risk Level | Treatment Focus | Clinical Context |
-|--------------|-----------|------------|-----------------|------------------|
-| **SIDD** | Atherogenic / Lipid-Driven Diabetes | HIGH | Statin therapy indicated; cardiovascular risk management primary | **Heuristic proxy:** True SIDD identification requires HOMA2-B or C-peptide (unavailable in NHANES). This subtype uses high LDL as a proxy for the atherogenic dyslipidemia phenotype (Tanabe 2024 adaptation). It is a lipid-driven heuristic classification, not an insulin-deficiency diagnosis. |
-| **SIRD** | Severe Insulin-Resistant Diabetes | HIGH | Responds well to insulin sensitizers (metformin) | Heuristic classification based on LAP score and metabolic syndrome patterns |
-| **MOD** | Mild Obesity-Related Diabetes | MODERATE | Weight management primary intervention | Heuristic classification based on BMI using Asia-Pacific WHO cutoff (BMI >= 25 kg/m²) |
-| **MARD** | Mild Age-Related Diabetes | LOW | Conservative management, slower progression | **Heuristic residual category:** Cases not clearly aligned with primary metabolic drivers; "mild" reflects metabolic severity within at-risk cohort, not clinical trajectory |
+| Cluster Code | Outward-Facing Display | Full Name | Risk Level | Treatment Focus | Clinical Context |
+|--------------|---------------------|-----------|------------|-----------------|------------------|
+| **SIDD** | SIDD-like | Atherogenic / Lipid-Driven Diabetes | HIGH | Statin therapy indicated; cardiovascular risk management primary | **Heuristic proxy:** True SIDD identification requires HOMA2-B or C-peptide (unavailable in NHANES). This subtype uses high LDL as a proxy for the atherogenic dyslipidemia phenotype (Tanabe 2024 adaptation). It is a lipid-driven heuristic classification, not an insulin-deficiency diagnosis. |
+| **SIRD** | SIRD-like | Severe Insulin-Resistant Diabetes | HIGH | Responds well to insulin sensitizers (metformin) | Heuristic classification based on LAP score and metabolic syndrome patterns |
+| **MOD** | MOD-like | Mild Obesity-Related Diabetes | MODERATE | Weight management primary intervention | Heuristic classification based on relative BMI ranking (highest BMI among remaining clusters after SIRD/SIDD assignment). Deterministic centroid-based assignment without absolute BMI threshold. |
+| **MARD** | MARD-like | Mild Age-Related Diabetes | LOW | Conservative management, slower progression | **Heuristic residual category:** Cases not clearly aligned with primary metabolic drivers; "mild" reflects metabolic severity within at-risk cohort, not clinical trajectory |
+
+**Note:** Internal canonical cluster codes for alias resolution remain `SIRD`, `SIDD`, `MOD`, `MARD` (without `-like` suffix), but outward-facing display fields (`cluster`, `metabolic_subtype`, `metabolic_subtype_full`) use the `-like` variants to emphasize heuristic proxy status.
 
 ### Key Characteristics (from active constants)
 - **SIDD** (Atherogenic proxy): High LDL cholesterol, severe dyslipidemia; identified via LDL proxy without HOMA2 (adaptation per Tanabe 2024). This is explicitly a lipid-driven phenotype proxy, not an insulin-deficiency diagnosis.
 - **SIRD** (Insulin-Resistant): High BMI, high TG, low HDL (metabolic syndrome pattern)
-- **MOD** (Obesity-Related): High BMI (≥25 Asia-Pacific WHO cutoff), moderate metabolic markers
+- **MOD** (Obesity-Related): Highest BMI among remaining clusters after SIRD/SIDD assignment; relative ranking, not absolute threshold
 - **MARD** (Age-Related): Older age at diagnosis, milder metabolic dysfunction; residual category for non-aligned metabolic patterns
 
 ### Subtype Label Interpretation (Critical Safety Context)
-The Ahlqvist-inspired subtype labels (SIRD, SIDD, MOD, MARD) are **heuristic proxy labels**, not validated biological subtype diagnoses. They are derived from clustering biomarker patterns in NHANES data and should be interpreted as:
+The Ahlqvist-inspired subtype labels (SIRD-like, SIDD-like, MOD-like, MARD-like) are **heuristic proxy labels**, not validated biological subtype diagnoses. They are derived from clustering biomarker patterns in NHANES data and should be interpreted as:
 - **Screening stratification tools** for identifying dominant metabolic patterns within at-risk populations
 - **Hypothesis-generating indicators** that may inform clinical prioritization, not definitive treatment prescriptions
 - **Ahlqvist-inspired classifications** adapted for the available biomarker set (no HOMA2-B or C-peptide)
 
 These subtype labels do **not** replace clinical judgment, confirmatory diagnostic testing, or specialist evaluation. They are intended to support clinical decision-making by highlighting metabolic patterns, not to dictate treatment pathways independently of clinician assessment.
 
+**Note on `-like` Suffix:** The `-like` suffix (e.g., `SIRD-like`, `SIDD-like`) is used in DIANA-generated outward-facing subtype fields to emphasize that these are heuristic proxy phenotypes derived from clustering, not validated Ahlqvist subtypes. Internal canonical codes remain `SIRD`, `SIDD`, `MOD`, `MARD` for alias resolution and data integrity.
+
 ### Alias Resolution
-The ML service may return both `risk_cluster` and `metabolic_subtype` fields. Backend prefers:
+The ML service may return both `risk_cluster` and `metabolic_subtype` fields with `-like` suffix (e.g., `SIRD-like`, `SIDD-like`, `MOD-like`, `MARD-like`). Backend resolves these to internal canonical codes:
 
 ```go
-// Prefer metabolic subtype (SIDD/SIRD/MOD/MARD) over risk cluster
+// Prefer metabolic subtype (SIRD/SIDD/MOD/MARD canonical codes) over risk cluster
 cluster := out.MetabolicSubtype
 if cluster == "" {
     cluster = out.RiskCluster
 }
+// Backend strips `-like` suffix if present for canonicalization
+// Frontend should preserve `-like` display for outward-facing semantics
 ```
 
-**Rule**: Use `metabolic_subtype` when available; fall back to `risk_cluster`. Both should map to the same canonical cluster codes (SIDD, SIRD, MOD, MARD).
+**Rule**: Use `metabolic_subtype` when available; fall back to `risk_cluster`. Both should map to the same canonical cluster codes (SIRD, SIDD, MOD, MARD) internally, while outward-facing display uses `-like` variants (SIRD-like, SIDD-like, MOD-like, MARD-like).
 
 ### Frontend Cluster Info
-Frontend `MLResultModal.jsx` cluster definitions must align with active constants:
-- SIDD: Atherogenic/lipid-driven profile (HIGH risk) - **NOT** insulin-deficient
-- SIRD: Insulin resistance profile (HIGH risk)
-- MOD: Obesity-related profile (MODERATE risk)
-- MARD: Age-related profile (LOW risk)
+Frontend `MLResultModal.jsx` cluster definitions must align with active constants (using `-like` display):
+- SIDD-like: Atherogenic/lipid-driven profile (HIGH risk) - **NOT** insulin-deficient
+- SIRD-like: Insulin resistance profile (HIGH risk)
+- MOD-like: Obesity-related profile (MODERATE risk)
+- MARD-like: Age-related profile (LOW risk)
 
-**Critical**: Frontend SIDD narrative currently says "might need a little extra help utilizing insulin" - this is **stale and incorrect**. Active constants define SIDD as **atherogenic/lipid-driven** (identified via LDL proxy), not insulin-deficient. Frontend must migrate to reflect lipid-driven phenotype and cardiovascular risk management focus.
+**Critical:** Frontend SIDD narrative currently says "might need a little extra help utilizing insulin" - this is **stale and incorrect**. Active constants define SIDD as **atherogenic/lipid-driven** (identified via LDL proxy), not insulin-deficient. Frontend must migrate to reflect lipid-driven phenotype and cardiovascular risk management focus.
+
+**Note on Display:** Frontend should use the `-like` variants (SIDD-like, SIRD-like, MOD-like, MARD-like) for outward-facing display to emphasize heuristic proxy status, while internally resolving to canonical codes (SIDD, SIRD, MOD, MARD) for data integrity.
 ---
 
 ## 5. Model Capability Rules and Active Metadata Wiring

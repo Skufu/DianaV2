@@ -80,12 +80,14 @@ Do not hardcode warning semantics from stale docs; align with backend validation
 ## Cluster Semantics (Reference)
 Cluster semantics expected by current system:
 
-| Cluster | Full Name | Risk | Clinical Context |
-|---|---|---|------------------|
-| SIDD | Atherogenic / Lipid-Driven Diabetes | HIGH | **Heuristic proxy:** Uses high LDL as proxy for atherogenic dyslipidemia phenotype (Tanabe 2024 adaptation), not insulin-deficiency diagnosis. Requires HOMA2-B or C-peptide for true SIDD identification (unavailable in NHANES). |
-| SIRD | Severe Insulin-Resistant Diabetes | HIGH | Heuristic classification based on LAP score and metabolic syndrome patterns |
-| MOD | Mild Obesity-Related Diabetes | MODERATE | Heuristic classification based on BMI using Asia-Pacific WHO cutoff (BMI >= 25 kg/m²) |
-| MARD | Mild Age-Related Diabetes | LOW | **Heuristic residual category:** Cases not clearly aligned with primary metabolic drivers; "mild" reflects metabolic severity within at-risk cohort, not clinical trajectory |
+| Cluster | Outward-Facing Display | Full Name | Risk | Clinical Context |
+|---|---------------------|-----------|------|------------------|
+| SIDD | SIDD-like | Atherogenic / Lipid-Driven Diabetes | HIGH | **Heuristic proxy:** Uses high LDL as proxy for atherogenic dyslipidemia phenotype (Tanabe 2024 adaptation), not insulin-deficiency diagnosis. Requires HOMA2-B or C-peptide for true SIDD identification (unavailable in NHANES). |
+| SIRD | SIRD-like | Severe Insulin-Resistant Diabetes | HIGH | Heuristic classification based on LAP score and metabolic syndrome patterns |
+| MOD | MOD-like | Mild Obesity-Related Diabetes | MODERATE | Heuristic classification based on relative BMI ranking (highest BMI among remaining clusters after SIRD/SIDD assignment). Deterministic centroid-based assignment without absolute BMI threshold. |
+| MARD | MARD-like | Mild Age-Related Diabetes | LOW | **Heuristic residual category:** Cases not clearly aligned with primary metabolic drivers; "mild" reflects metabolic severity within at-risk cohort, not clinical trajectory |
+
+**Note on `-like` Subtype Semantics:** DIANA-generated outward-facing subtype fields use the `SIRD-like`, `SIDD-like`, `MOD-like`, `MARD-like` naming convention with `-like` suffix to emphasize heuristic proxy status. These are screening stratification tools for identifying dominant metabolic patterns within at-risk populations, not validated biological subtype diagnoses. Internal canonical codes for alias resolution remain `SIRD`, `SIDD`, `MOD`, `MARD` (without `-like` suffix), but outward-facing display should use the `-like` variants.
 
 **Important:** These Ahlqvist-inspired subtype labels are heuristic proxy labels derived from clustering biomarker patterns in NHANES data. They should be interpreted as screening stratification tools for identifying dominant metabolic patterns within at-risk populations, not as validated biological subtype diagnoses or definitive treatment prescriptions. They inform clinical prioritization but do not replace clinical judgment, confirmatory diagnostic testing, or specialist evaluation.
 

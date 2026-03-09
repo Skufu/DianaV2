@@ -6,7 +6,7 @@
     "clinical_implication": "Responds well to insulin sensitizers (metformin)",
     "risk_level": "HIGH"
   },
-  "2": {
+  "1": {
     "label": "SIDD",
     "full_name": "Atherogenic / Lipid-Driven Diabetes",
     "subtype": "ATH",
@@ -21,7 +21,7 @@
     "clinical_implication": "Weight management primary intervention",
     "risk_level": "MODERATE"
   },
-  "1": {
+  "2": {
     "label": "MARD",
     "full_name": "Mild Age-Related Diabetes",
     "characteristics": "Older age at diagnosis, mild metabolic dysfunction",
