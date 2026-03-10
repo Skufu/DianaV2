@@ -17,11 +17,11 @@ export const ToastProvider = ({ children }) => {
       setToasts(prev => prev.filter(toast => toast.id !== id));
       timeoutRefs.current = timeoutRefs.current.filter(tid => tid !== timeoutId);
     }, duration);
-    
+
     timeoutRefs.current.push(timeoutId);
   };
 
-  const removeToast = (id) => {
+  const removeToast = id => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
@@ -50,7 +50,7 @@ export const useToast = () => {
 const toastVariants = {
   hidden: { y: -100, opacity: 0 },
   visible: { y: 0, opacity: 1 },
-  exit: { y: -100, opacity: 0 }
+  exit: { y: -100, opacity: 0 },
 };
 
 const Toast = ({ id, type, message, onRemove }) => {
@@ -127,11 +127,7 @@ const ToastContainer = () => {
       <div className="flex flex-col gap-2 items-end">
         <AnimatePresence mode="popLayout">
           {toasts.map(toast => (
-            <Toast
-              key={toast.id}
-              {...toast}
-              onRemove={removeToast}
-            />
+            <Toast key={toast.id} {...toast} onRemove={removeToast} />
           ))}
         </AnimatePresence>
       </div>

@@ -24,7 +24,9 @@ test.describe('Admin User Management - List with Pagination', () => {
 
   test('should list users with pagination (first page)', async ({ page }) => {
     // Verify User Management section is visible
-    await expect(page.locator('text=User Management').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'User Management' })).toBeVisible({
+      timeout: 10000,
+    });
     
     // Wait for table to load
     const table = page.locator('table').first();
@@ -33,17 +35,19 @@ test.describe('Admin User Management - List with Pagination', () => {
     // Check that table has headers
     const headerCount = await page.locator('th').count();
     expect(headerCount).toBeGreaterThan(0);
+
+    // Pagination summary should be present for paged admin list
+    await expect(page.getByText(/Showing\s+\d+\s+to\s+\d+\s+of\s+\d+/i)).toBeVisible();
   });
 
   test('should show seeded users in list', async ({ page }) => {
     // Wait for table to load
     await expect(page.locator('table').first()).toBeVisible({ timeout: 10000 });
 
-    // Check for seeded users from the database
-    const pageContent = await page.textContent('body');
-    
-    // Should contain admin-related content
-    expect(pageContent).toContain('admin');
+    // At least one user email should be rendered
+    const firstEmailCell = page.locator('tbody tr td').first();
+    await expect(firstEmailCell).toBeVisible({ timeout: 10000 });
+    await expect(firstEmailCell).toContainText('@');
   });
 
   test('should display user roles correctly', async ({ page }) => {

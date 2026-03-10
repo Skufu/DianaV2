@@ -34,23 +34,45 @@ const PDFExport = () => {
       <button
         onClick={handleExport}
         disabled={isExporting}
-        className={`w-full px-4 py-3 rounded-md text-white font-medium transition-colors ${isExporting
+        className={`w-full px-4 py-3 rounded-md text-white font-medium transition-colors ${
+          isExporting
             ? 'bg-gray-400 cursor-not-allowed'
             : 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-          }`}
+        }`}
       >
         {isExporting ? (
           <span className="flex items-center">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8 12 0 0110a8 018-8 018-8a8a8v11.2c0-.5 1-.5 0-.5-.5-2.5l-4.5-4.5 4.5-7.5a4 4 0 018-8 8a8a8v11.2c0-.4.4-1 0 0z" />
+            <svg
+              className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8 12 0 0110a8 018-8 018-8a8a8v11.2c0-.5 1-.5 0-.5-.5-2.5l-4.5-4.5 4.5-7.5a4 4 0 018-8 8a8a8v11.2c0-.4.4-1 0 0z"
+              />
             </svg>
             Exporting...
           </span>
         ) : (
           <span className="flex items-center">
             <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l6 6m-6-6l6 6M14 4h-2m0 0l-4-4m0 0l4 4" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l6 6m-6-6l6 6M14 4h-2m0 0l-4-4m0 0l4 4"
+              />
             </svg>
             Download PDF Report
           </span>

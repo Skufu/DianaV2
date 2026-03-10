@@ -65,36 +65,21 @@ kill_on_port() {
     fi
 }
 
-# Check if ML models exist (clinical_3class is the current model version)
-if [ ! -f "models/clinical_3class/best_model.joblib" ] && [ ! -f "models/clinical_3class/imputer.joblib" ] && [ ! -f "models/clinical_3class/scaler.joblib" ]; then
-    echo -e "${RED}ML models not found. Run 'bash scripts/dev/retrain-clinical.sh' first.${NC}"
+# Determine model version (default to binary_v2_no_bp - the current deployed screening model)
+MODEL_VERSION="${MODEL_VERSION:-binary_v2_no_bp}"
+MODEL_DIR="models/$MODEL_VERSION"
+
+# Check if ML models exist for the configured model version
+if [ ! -f "$MODEL_DIR/best_model.joblib" ]; then
+    echo -e "${RED}ML models not found at $MODEL_DIR/${NC}"
+    echo -e "${YELLOW}Run 'bash scripts/dev/retrain-binary.sh' to train the screening model.${NC}"
     exit 1
 fi
 
-if ! "$PYTHON" - <<'PY'
-import sys
-from pathlib import Path
-import joblib
-
-models_dir = Path("models/clinical_3class")
-kmeans_path = models_dir / "kmeans_model.joblib"
-cluster_scaler_path = models_dir / "cluster_scaler.joblib"
-
-if not kmeans_path.exists() or not cluster_scaler_path.exists():
-    sys.exit(1)
-
-kmeans = joblib.load(kmeans_path)
-cluster_scaler = joblib.load(cluster_scaler_path)
-
-expected = 5  # CLUSTER_FEATURES: bmi, triglycerides, ldl, hdl, age
-if getattr(kmeans, "n_features_in_", None) != expected:
-    sys.exit(1)
-if getattr(cluster_scaler, "n_features_in_", None) != expected:
-    sys.exit(1)
-PY
-then
-    echo -e "${YELLOW}Clinical v2 clustering artifacts out of date. Retraining...${NC}"
-    "$PYTHON" "scripts/train/retrain_clinical_3class_kmeans.py" || exit 1
+# Check clustering artifacts exist
+if [ ! -f "$MODEL_DIR/weighted_kmeans_model.joblib" ] || [ ! -f "$MODEL_DIR/cluster_scaler.joblib" ]; then
+    echo -e "${YELLOW}Clustering artifacts not found. Training clustering...${NC}"
+    "$PYTHON" "Ian_ML/training/clustering.py" || exit 1
 fi
 
 # Load environment

@@ -2,7 +2,7 @@ import React from 'react';
 
 const ClusterRecommendations = ({ cluster }) => {
   const recommendations = {
-    'SIRD': {
+    SIRD: {
       title: 'Severe Insulin-Resistant Diabetes',
       description: 'High BMI, high triglycerides, low HDL — insulin resistance pattern.',
       color: 'bg-purple-100 text-purple-800 border-purple-200',
@@ -15,7 +15,7 @@ const ClusterRecommendations = ({ cluster }) => {
         'Screen for sleep apnea',
       ],
     },
-    'SIDD': {
+    SIDD: {
       title: 'Atherogenic / Lipid-Driven Diabetes',
       description: 'High TG/HDL ratio — metabolic derangement pattern.',
       color: 'bg-red-100 text-red-800 border-red-200',
@@ -29,7 +29,7 @@ const ClusterRecommendations = ({ cluster }) => {
         'Foot care education',
       ],
     },
-    'MOD': {
+    MOD: {
       title: 'Mild Obesity-Related Diabetes',
       description: 'Elevated BMI with moderate metabolic markers — obesity-driven pattern.',
       color: 'bg-orange-100 text-orange-800 border-orange-200',
@@ -42,7 +42,7 @@ const ClusterRecommendations = ({ cluster }) => {
         'Consider metformin or similar medications',
       ],
     },
-    'MARD': {
+    MARD: {
       title: 'Mild Age-Related Diabetes',
       description: 'Older age with mild metabolic values — age-related pattern.',
       color: 'bg-green-100 text-green-800 border-green-200',
@@ -67,17 +67,13 @@ const ClusterRecommendations = ({ cluster }) => {
       <div className="flex items-start space-x-3">
         <span className="text-2xl">{clusterInfo.icon}</span>
         <div className="flex-1">
-          <h3 className="text-lg font-bold text-gray-900 mb-2">
-            {clusterInfo.title}
-          </h3>
-          <p className="text-sm text-gray-600 mb-3">
-            {clusterInfo.description}
-          </p>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{clusterInfo.title}</h3>
+          <p className="text-sm text-gray-600 mb-3">{clusterInfo.description}</p>
 
           <div className="space-y-2">
             <h4 className="text-sm font-semibold text-gray-700">Focus Areas:</h4>
             <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-              {clusterInfo.focus.map((item) => (
+              {clusterInfo.focus.map(item => (
                 <li key={item}>{item}</li>
               ))}
             </ul>

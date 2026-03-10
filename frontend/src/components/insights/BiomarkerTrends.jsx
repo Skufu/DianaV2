@@ -1,13 +1,18 @@
 import React from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  Legend, ResponsiveContainer
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { cardVariants } from '../../utils/animations';
 
 const BiomarkerTrends = React.memo(({ trends = [] }) => {
-
   return (
     <motion.div
       variants={cardVariants}
@@ -18,7 +23,9 @@ const BiomarkerTrends = React.memo(({ trends = [] }) => {
       className="glass-card p-8 bg-white border border-diana-stone/50"
     >
       <div className="mb-6">
-        <h3 className="text-2xl font-serif font-bold text-diana-text-primary">Biomarker Trends Over Time</h3>
+        <h3 className="text-2xl font-serif font-bold text-diana-text-primary">
+          Biomarker Trends Over Time
+        </h3>
         <p className="text-diana-text-secondary text-sm mt-2">
           Monthly averages of key biomarkers across the cohort
         </p>
@@ -35,7 +42,7 @@ const BiomarkerTrends = React.memo(({ trends = [] }) => {
                 border: '1px solid #e2e8f0',
                 borderRadius: '12px',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                color: '#0f172a'
+                color: '#0f172a',
               }}
             />
             <Legend iconType="circle" />

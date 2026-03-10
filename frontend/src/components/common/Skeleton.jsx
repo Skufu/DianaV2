@@ -1,12 +1,7 @@
 import { memo } from 'react';
 
-export const Skeleton = memo(({ className = "", ...props }) => {
-  return (
-    <div 
-      className={`animate-pulse bg-slate-200 rounded-lg ${className}`} 
-      {...props} 
-    />
-  );
+export const Skeleton = memo(({ className = '', ...props }) => {
+  return <div className={`animate-pulse bg-slate-200 rounded-lg ${className}`} {...props} />;
 });
 
 Skeleton.displayName = 'Skeleton';

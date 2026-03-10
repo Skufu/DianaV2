@@ -6,7 +6,7 @@
 export const PERF_TIER = {
   HIGH: 'HIGH',
   MEDIUM: 'MEDIUM',
-  LOW: 'LOW'
+  LOW: 'LOW',
 };
 
 export const getPerformanceTier = () => {

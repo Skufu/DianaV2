@@ -1,9 +1,26 @@
 import { useState } from 'react';
-import { User, Heart, Shield, FileText, Check, ChevronRight, ChevronLeft, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  User,
+  Heart,
+  Shield,
+  FileText,
+  Check,
+  ChevronRight,
+  ChevronLeft,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
+} from 'lucide-react';
 import { useCompleteOnboarding } from '../../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../common/Button';
-import { slideUp, fadeIn, staggerContainer, useReducedMotion, SPRING_GENTLE } from '../../utils/animations';
+import {
+  slideUp,
+  fadeIn,
+  staggerContainer,
+  useReducedMotion,
+  SPRING_GENTLE,
+} from '../../utils/animations';
 
 const Onboarding = ({ onComplete }) => {
   const isReduced = useReducedMotion();
@@ -29,7 +46,7 @@ const Onboarding = ({ onComplete }) => {
     consent_personal_data: false,
   });
 
-  const handleInputChange = (e) => {
+  const handleInputChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -46,9 +63,7 @@ const Onboarding = ({ onComplete }) => {
     try {
       const ageNum = parseInt(formData.age, 10);
       const validAge = !isNaN(ageNum) && ageNum > 0 && ageNum < 150;
-      const computedDateOfBirth = validAge
-        ? `${new Date().getFullYear() - ageNum}-06-15`
-        : null;
+      const computedDateOfBirth = validAge ? `${new Date().getFullYear() - ageNum}-06-15` : null;
 
       const payload = {
         first_name: formData.first_name,
@@ -73,7 +88,7 @@ const Onboarding = ({ onComplete }) => {
     }
   };
 
-  const validateStep = (stepNum) => {
+  const validateStep = stepNum => {
     switch (stepNum) {
       case 1: {
         if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.age) {
@@ -110,7 +125,7 @@ const Onboarding = ({ onComplete }) => {
   const prevStep = () => {
     setError(null);
     setDirection(-1);
-    setStep(prev => prev - 1)
+    setStep(prev => prev - 1);
   };
 
   const steps = [
@@ -121,26 +136,26 @@ const Onboarding = ({ onComplete }) => {
   ];
 
   const stepVariants = {
-    enter: (direction) => ({
-      x: isReduced ? 0 : (direction > 0 ? 50 : -50),
-      opacity: 0
+    enter: direction => ({
+      x: isReduced ? 0 : direction > 0 ? 50 : -50,
+      opacity: 0,
     }),
     center: {
       x: 0,
       opacity: 1,
       transition: {
         x: SPRING_GENTLE,
-        opacity: { duration: 0.2 }
-      }
+        opacity: { duration: 0.2 },
+      },
     },
-    exit: (direction) => ({
-      x: isReduced ? 0 : (direction > 0 ? -50 : 50),
+    exit: direction => ({
+      x: isReduced ? 0 : direction > 0 ? -50 : 50,
       opacity: 0,
       transition: {
         x: SPRING_GENTLE,
-        opacity: { duration: 0.2 }
-      }
-    })
+        opacity: { duration: 0.2 },
+      },
+    }),
   };
 
   return (
@@ -151,11 +166,12 @@ const Onboarding = ({ onComplete }) => {
         variants={slideUp}
         className="w-full max-w-2xl bg-white shadow-xl border border-slate-200 rounded-2xl p-8 md:p-10"
       >
-
         {/* Header & Progress */}
         <div className="mb-10">
           <div className="flex items-center justify-between mb-8">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Step {step} of 4</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Step {step} of 4
+            </span>
             <motion.span
               key={step} // Animate text change
               initial={{ opacity: 0, y: -5 }}
@@ -173,7 +189,7 @@ const Onboarding = ({ onComplete }) => {
               className="h-full bg-diana-navy"
               initial={{ width: 0 }}
               animate={{ width: `${(step / 4) * 100}%` }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              transition={{ duration: 0.5, ease: 'easeInOut' }}
             />
           </div>
 
@@ -187,16 +203,18 @@ const Onboarding = ({ onComplete }) => {
               aria-live="polite"
             >
               <h1 className="text-2xl font-semibold text-diana-midnight mb-2">
-                {step === 1 && "Start your clinical profile"}
-                {step === 2 && "Menopausal health status"}
-                {step === 3 && "Medical history overview"}
-                {step === 4 && "Privacy & Consent"}
+                {step === 1 && 'Start your clinical profile'}
+                {step === 2 && 'Menopausal health status'}
+                {step === 3 && 'Medical history overview'}
+                {step === 4 && 'Privacy & Consent'}
               </h1>
               <p className="text-slate-500">
-                {step === 1 && "We need a few basic details to personalize your care plan."}
-                {step === 2 && "Understanding where you are in your journey helps us tailor recommendations."}
-                {step === 3 && "This information creates the baseline for your clinical risk assessment."}
-                {step === 4 && "Please review how your data will be used and protected."}
+                {step === 1 && 'We need a few basic details to personalize your care plan.'}
+                {step === 2 &&
+                  'Understanding where you are in your journey helps us tailor recommendations.'}
+                {step === 3 &&
+                  'This information creates the baseline for your clinical risk assessment.'}
+                {step === 4 && 'Please review how your data will be used and protected.'}
               </p>
             </motion.div>
           </AnimatePresence>
@@ -228,10 +246,20 @@ const Onboarding = ({ onComplete }) => {
               className="w-full"
             >
               {step === 1 && (
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-6"
+                >
                   <div className="grid grid-cols-2 gap-5">
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label htmlFor="onboarding-first-name" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">First Name</label>
+                      <label
+                        htmlFor="onboarding-first-name"
+                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                      >
+                        First Name
+                      </label>
                       <input
                         type="text"
                         id="onboarding-first-name"
@@ -243,7 +271,12 @@ const Onboarding = ({ onComplete }) => {
                       />
                     </motion.div>
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label htmlFor="onboarding-last-name" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Last Name</label>
+                      <label
+                        htmlFor="onboarding-last-name"
+                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                      >
+                        Last Name
+                      </label>
                       <input
                         type="text"
                         id="onboarding-last-name"
@@ -257,7 +290,12 @@ const Onboarding = ({ onComplete }) => {
                   </div>
 
                   <motion.div variants={fadeIn} className="group space-y-1.5">
-                    <label htmlFor="onboarding-age" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Age</label>
+                    <label
+                      htmlFor="onboarding-age"
+                      className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                    >
+                      Age
+                    </label>
                     <input
                       type="number"
                       id="onboarding-age"
@@ -269,15 +307,27 @@ const Onboarding = ({ onComplete }) => {
                       className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm"
                       placeholder="Enter your age (45-80)"
                     />
-                    <p className="text-[10px] text-slate-400">DIANA is designed for women aged 45-80</p>
+                    <p className="text-[10px] text-slate-400">
+                      DIANA is designed for women aged 45-80
+                    </p>
                   </motion.div>
                 </motion.div>
               )}
 
               {step === 2 && (
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-6"
+                >
                   <motion.div variants={fadeIn} className="group space-y-1.5">
-                    <label htmlFor="onboarding-menopause-status" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Menopause Status</label>
+                    <label
+                      htmlFor="onboarding-menopause-status"
+                      className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                    >
+                      Menopause Status
+                    </label>
                     <div className="relative">
                       <select
                         id="onboarding-menopause-status"
@@ -292,12 +342,18 @@ const Onboarding = ({ onComplete }) => {
                         <option value="post">Postmenopausal (completed)</option>
                         <option value="surgical">Surgical Menopause</option>
                       </select>
-                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                      <ChevronRight
+                        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
+                        size={16}
+                      />
                     </div>
-                    <p className="text-[10px] text-slate-400">This helps us understand your hormonal health stage</p>
+                    <p className="text-[10px] text-slate-400">
+                      This helps us understand your hormonal health stage
+                    </p>
                   </motion.div>
 
-                  {(formData.menopause_status === 'post' || formData.menopause_status === 'surgical') && (
+                  {(formData.menopause_status === 'post' ||
+                    formData.menopause_status === 'surgical') && (
                     <motion.div
                       variants={fadeIn}
                       initial={{ opacity: 0, height: 0 }}
@@ -305,7 +361,10 @@ const Onboarding = ({ onComplete }) => {
                       exit={{ opacity: 0, height: 0 }}
                       className="group space-y-1.5"
                     >
-                      <label htmlFor="onboarding-years-menopause" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      <label
+                        htmlFor="onboarding-years-menopause"
+                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                      >
                         Years Since Menopause
                       </label>
                       <input
@@ -319,17 +378,29 @@ const Onboarding = ({ onComplete }) => {
                         className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm"
                         placeholder="How many years?"
                       />
-                      <p className="text-[10px] text-slate-400">Time since menopause affects diabetes risk factors</p>
+                      <p className="text-[10px] text-slate-400">
+                        Time since menopause affects diabetes risk factors
+                      </p>
                     </motion.div>
                   )}
                 </motion.div>
               )}
 
               {step === 3 && (
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-5">
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-5"
+                >
                   <div className="grid grid-cols-2 gap-5">
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label htmlFor="onboarding-hypertension" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Hypertension</label>
+                      <label
+                        htmlFor="onboarding-hypertension"
+                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                      >
+                        Hypertension
+                      </label>
                       <div className="relative">
                         <select
                           id="onboarding-hypertension"
@@ -343,12 +414,20 @@ const Onboarding = ({ onComplete }) => {
                           <option value="controlled">Yes (Controlled)</option>
                           <option value="uncontrolled">Yes (Uncontrolled)</option>
                         </select>
-                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                        <ChevronRight
+                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
+                          size={16}
+                        />
                       </div>
                     </motion.div>
 
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label htmlFor="onboarding-heart-disease" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Heart Disease</label>
+                      <label
+                        htmlFor="onboarding-heart-disease"
+                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                      >
+                        Heart Disease
+                      </label>
                       <div className="relative">
                         <select
                           id="onboarding-heart-disease"
@@ -361,7 +440,10 @@ const Onboarding = ({ onComplete }) => {
                           <option value="no">No</option>
                           <option value="yes">Yes</option>
                         </select>
-                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                        <ChevronRight
+                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
+                          size={16}
+                        />
                       </div>
                     </motion.div>
                   </div>
@@ -370,7 +452,12 @@ const Onboarding = ({ onComplete }) => {
                     {/* Family History removed based on gap analysis */}
 
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label htmlFor="onboarding-smoking-status" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Smoking Status</label>
+                      <label
+                        htmlFor="onboarding-smoking-status"
+                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                      >
+                        Smoking Status
+                      </label>
                       <div className="relative">
                         <select
                           id="onboarding-smoking-status"
@@ -384,14 +471,22 @@ const Onboarding = ({ onComplete }) => {
                           <option value="former">Former Smoker</option>
                           <option value="current">Current Smoker</option>
                         </select>
-                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                        <ChevronRight
+                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
+                          size={16}
+                        />
                       </div>
                     </motion.div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-5">
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label htmlFor="onboarding-physical-activity" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Physical Activity</label>
+                      <label
+                        htmlFor="onboarding-physical-activity"
+                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                      >
+                        Physical Activity
+                      </label>
                       <div className="relative">
                         <select
                           id="onboarding-physical-activity"
@@ -406,12 +501,20 @@ const Onboarding = ({ onComplete }) => {
                           <option value="Moderate">Moderate (1-3 days/week)</option>
                           <option value="Active">Active (4+ days/week)</option>
                         </select>
-                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                        <ChevronRight
+                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
+                          size={16}
+                        />
                       </div>
                     </motion.div>
 
                     <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label htmlFor="onboarding-alcohol" className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Alcohol Use</label>
+                      <label
+                        htmlFor="onboarding-alcohol"
+                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
+                      >
+                        Alcohol Use
+                      </label>
                       <div className="relative">
                         <select
                           id="onboarding-alcohol"
@@ -427,7 +530,10 @@ const Onboarding = ({ onComplete }) => {
                           <option value="Moderate">Moderate</option>
                           <option value="Heavy">Heavy</option>
                         </select>
-                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90" size={16} />
+                        <ChevronRight
+                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
+                          size={16}
+                        />
                       </div>
                     </motion.div>
                   </div>
@@ -435,14 +541,39 @@ const Onboarding = ({ onComplete }) => {
               )}
 
               {step === 4 && (
-                <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-4">
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-4"
+                >
                   {[
-                    { name: 'consent_research_participation', label: 'Research Participation', sub: 'Allow anonymized data contribution to diabetes research.' },
-                    { name: 'consent_email_updates', label: 'Email Communications', sub: 'Receive health tips and platform updates.' },
-                    { name: 'consent_analytics', label: 'Analytics', sub: 'Help us improve by sharing usage data.' },
-                    { name: 'consent_personal_data', label: 'Data Usage Agreement', sub: 'I agree to the secure processing of my health data.', required: true }
-                  ].map((item) => (
-                    <label key={item.name} className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-diana-forest-light/30 cursor-pointer transition-all group">
+                    {
+                      name: 'consent_research_participation',
+                      label: 'Research Participation',
+                      sub: 'Allow anonymized data contribution to diabetes research.',
+                    },
+                    {
+                      name: 'consent_email_updates',
+                      label: 'Email Communications',
+                      sub: 'Receive health tips and platform updates.',
+                    },
+                    {
+                      name: 'consent_analytics',
+                      label: 'Analytics',
+                      sub: 'Help us improve by sharing usage data.',
+                    },
+                    {
+                      name: 'consent_personal_data',
+                      label: 'Data Usage Agreement',
+                      sub: 'I agree to the secure processing of my health data.',
+                      required: true,
+                    },
+                  ].map(item => (
+                    <label
+                      key={item.name}
+                      className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-diana-forest-light/30 cursor-pointer transition-all group"
+                    >
                       <div className="relative flex items-center pt-0.5">
                         <input
                           type="checkbox"
@@ -453,13 +584,25 @@ const Onboarding = ({ onComplete }) => {
                           className="peer sr-only"
                         />
                         <div className="w-4 h-4 rounded border border-slate-300 bg-white flex items-center justify-center peer-checked:bg-diana-forest-light peer-checked:border-diana-forest-light transition-all">
-                          <Check size={10} className="text-white opacity-0 peer-checked:opacity-100" strokeWidth={3} />
+                          <Check
+                            size={10}
+                            className="text-white opacity-0 peer-checked:opacity-100"
+                            strokeWidth={3}
+                          />
                         </div>
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className={`text-sm font-medium transition-colors ${formData[item.name] ? 'text-diana-forest-light' : 'text-slate-700'}`}>{item.label}</span>
-                          {item.required && <span className="text-[10px] font-bold text-diana-forest-light/60 bg-diana-forest-light/5 px-1.5 py-0.5 rounded uppercase">Required</span>}
+                          <span
+                            className={`text-sm font-medium transition-colors ${formData[item.name] ? 'text-diana-forest-light' : 'text-slate-700'}`}
+                          >
+                            {item.label}
+                          </span>
+                          {item.required && (
+                            <span className="text-[10px] font-bold text-diana-forest-light/60 bg-diana-forest-light/5 px-1.5 py-0.5 rounded uppercase">
+                              Required
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-500 mt-0.5">{item.sub}</p>
                       </div>
@@ -483,20 +626,13 @@ const Onboarding = ({ onComplete }) => {
 
           <div className="flex gap-3">
             {step > 1 && (
-              <Button
-                variant="ghost"
-                onClick={prevStep}
-                icon={ChevronLeft}
-              >
+              <Button variant="ghost" onClick={prevStep} icon={ChevronLeft}>
                 Back
               </Button>
             )}
 
             {step < 4 ? (
-              <Button
-                variant="blue"
-                onClick={nextStep}
-              >
+              <Button variant="blue" onClick={nextStep}>
                 Next Step
                 <ArrowRight size={16} className="ml-1.5" />
               </Button>

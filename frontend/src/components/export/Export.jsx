@@ -11,7 +11,9 @@ const Export = () => {
   return (
     <div className="space-y-6 animate-fade-in pb-8">
       <header className="mb-8">
-        <h4 className="text-diana-text-muted font-medium text-sm mb-1 uppercase tracking-wider">Reports</h4>
+        <h4 className="text-diana-text-muted font-medium text-sm mb-1 uppercase tracking-wider">
+          Reports
+        </h4>
         <h2 className="text-3xl font-bold text-diana-text-primary">Health Report</h2>
         <p className="text-diana-text-secondary text-sm mt-1">
           Download a summary of your health data for your records or to share with your doctor
@@ -20,8 +22,8 @@ const Export = () => {
 
       {/* Insights Report */}
       <motion.div
-        whileHover={{ scale: 1.01, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.1)" }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        whileHover={{ scale: 1.01, boxShadow: '0 10px 30px -10px rgba(0,0,0,0.1)' }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         className="glass-card p-6 bg-white"
       >
         <div className="flex items-center gap-2 mb-4">
@@ -31,7 +33,8 @@ const Export = () => {
           <h3 className="text-xl font-bold text-diana-text-primary">Download Health Report</h3>
         </div>
         <p className="text-diana-text-secondary text-sm mb-6">
-          Generate a detailed PDF report of your health history, risk assessments, and clinical summary.
+          Generate a detailed PDF report of your health history, risk assessments, and clinical
+          summary.
         </p>
 
         <div className="p-4 border-2 border-diana-sand rounded-xl hover:border-diana-forest transition-all">
@@ -39,7 +42,8 @@ const Export = () => {
             <div className="flex-1">
               <h4 className="font-bold text-diana-text-primary mb-1">My Personal Health Report</h4>
               <p className="text-sm text-diana-text-secondary">
-                A complete summary of your latest biomarkers, diabetes risk analysis, and historical trends.
+                A complete summary of your latest biomarkers, diabetes risk analysis, and historical
+                trends.
               </p>
               <p className="text-xs text-diana-text-muted mt-2">
                 Ideal for sharing with your healthcare provider during check-ups.

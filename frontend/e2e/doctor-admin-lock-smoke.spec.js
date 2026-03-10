@@ -190,26 +190,22 @@ test.describe('Doctor/Admin model selector lock smoke', () => {
     await page.screenshot({ path: './e2e/screenshots/doctor-explainability-locked-no-bp.png', fullPage: true });
   });
 
-  test('admin retains model selectors in assessment and explainability views', async ({ page }) => {
+  test('admin workspace stays governance-only (no clinical tools)', async ({ page }) => {
     await mockRoleAuth(page, 'admin');
     await login(page, 'admin');
 
     await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 10000 });
 
     const sidebar = page.locator('nav').first();
+    await expect(sidebar.locator('button:has-text("Overview")')).toBeVisible();
     await expect(sidebar.locator('button:has-text("User Management")')).toBeVisible();
+    await expect(sidebar.locator('button:has-text("Audit Logs")')).toBeVisible();
+    await expect(sidebar.locator('button:has-text("Auth Events")')).toBeVisible();
     await expect(sidebar.locator('button:has-text("Model Tracking")')).toBeVisible();
 
-    await sidebar.locator('button:has-text("Log Assessment")').click();
-    await expect(page.locator('#model_type')).toBeVisible();
-    await expect(page.locator('#model_type option[value="binary_v2_no_bp"]')).toHaveCount(1);
-    await expect(page.locator('#model_type option[value="binary_v2_bp"]')).toHaveCount(1);
-    await expect(page.locator('#model_type option[value="ada"]')).toHaveCount(1);
-
-    await sidebar.locator('button:has-text("Clinical Explainability")').click();
-    await expect(page.locator('#modelType')).toBeVisible();
-    await expect(page.locator('#modelType option[value="binary_v2_no_bp"]')).toHaveCount(1);
-    await expect(page.locator('#modelType option[value="binary_v2_bp"]')).toHaveCount(1);
-    await expect(page.locator('#modelType option[value="ada"]')).toHaveCount(1);
+    await expect(sidebar.locator('button:has-text("Log Assessment")')).toHaveCount(0);
+    await expect(sidebar.locator('button:has-text("Clinical Explainability")')).toHaveCount(0);
+    await expect(sidebar.locator('button:has-text("Insights")')).toHaveCount(0);
+    await expect(sidebar.locator('button:has-text("Model Rationale")')).toHaveCount(0);
   });
 });

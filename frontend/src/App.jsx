@@ -26,15 +26,10 @@ const Export = lazy(() => import('./components/export/Export'));
 const Onboarding = lazy(() => import('./components/user/Onboarding'));
 const Signup = lazy(() => import('./components/auth/Signup'));
 
-
 // Loading skeleton for lazy components
 const LoadingSkeleton = memo(function LoadingSkeleton() {
   return (
-    <motion.div
-      variants={breathing}
-      animate="animate"
-      className="space-y-4"
-    >
+    <motion.div variants={breathing} animate="animate" className="space-y-4">
       <div className="h-8 w-48 bg-slate-700/50 rounded" />
       <div className="h-4 w-full max-w-md bg-slate-700/30 rounded" />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
@@ -46,10 +41,11 @@ const LoadingSkeleton = memo(function LoadingSkeleton() {
   );
 });
 
-
 const App = () => {
   const isReduced = useReducedMotion();
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('diana_token'));
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => !!localStorage.getItem('diana_token')
+  );
   const [token, setToken] = useState(() => localStorage.getItem('diana_token'));
   const [refreshToken, setRefreshToken] = useState(null);
   const [userRole, setUserRole] = useState(null);
@@ -71,43 +67,50 @@ const App = () => {
   // React Query hooks
   // React Query hooks - only fetch profile when authenticated
   const queryClient = useQueryClient();
-  const { data: profile, isLoading: profileLoading, error: profileError } = useUserProfile(isAuthenticated);
+  const {
+    data: profile,
+    isLoading: profileLoading,
+    error: profileError,
+  } = useUserProfile(isAuthenticated);
   const { data: assessments } = useAssessments(isAuthenticated);
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
 
   const [loginError, setLoginError] = useState(null);
 
-  const handleLogin = useCallback(async (email, password) => {
-    setLoginError(null);
-    try {
-      const res = await loginMutation.mutateAsync({ email, password });
-      if (!res?.user) throw new Error('login failed');
+  const handleLogin = useCallback(
+    async (email, password) => {
+      setLoginError(null);
+      try {
+        const res = await loginMutation.mutateAsync({ email, password });
+        if (!res?.user) throw new Error('login failed');
 
-      // Store tokens in localStorage for API authentication
-      localStorage.setItem('diana_token', res.access_token);
-      localStorage.setItem('diana_refresh_token', res.refresh_token);
+        // Store tokens in localStorage for API authentication
+        localStorage.setItem('diana_token', res.access_token);
+        localStorage.setItem('diana_refresh_token', res.refresh_token);
 
-      const role = res.user.role || 'user';
-      const userIsStaff = role === 'admin' || role === 'doctor';
+        const role = res.user.role || 'user';
+        const userIsStaff = role === 'admin' || role === 'doctor';
 
-      setToken(res.access_token);
-      setRefreshToken(res.refresh_token);
-      setUserRole(role);
-      setIsAdmin(userIsStaff);
-      setUserId(res.user.id);
-      setIsAuthenticated(true);
+        setToken(res.access_token);
+        setRefreshToken(res.refresh_token);
+        setUserRole(role);
+        setIsAdmin(userIsStaff);
+        setUserId(res.user.id);
+        setIsAuthenticated(true);
 
-      if (userIsStaff) {
-        setActiveTab('admin');
-        if (role === 'doctor') {
-          setAdminView('assessment');
+        if (userIsStaff) {
+          setActiveTab('admin');
+          if (role === 'doctor') {
+            setAdminView('assessment');
+          }
         }
+      } catch (err) {
+        setLoginError(err);
       }
-    } catch (err) {
-      setLoginError(err);
-    }
-  }, [loginMutation]);
+    },
+    [loginMutation]
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -152,9 +155,9 @@ const App = () => {
     setUserId(null);
 
     logoutMutation.mutate(null, {
-      onError: (err) => {
+      onError: err => {
         console.error('Logout API error:', err);
-      }
+      },
     });
   }, [logoutMutation, queryClient]);
 
@@ -194,12 +197,9 @@ const App = () => {
     }
   }, [profile, profileLoading, profileError, isAuthenticated, assessments]);
 
-
-
   const handleStartAssessment = useCallback(() => {
     setShowAssessmentModal(true);
   }, []);
-
 
   // Render content for regular users
   const renderUserContent = useCallback(() => {
@@ -209,7 +209,13 @@ const App = () => {
 
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard_user userId={userId} setActiveTab={setActiveTab} onStartAssessment={handleStartAssessment} />;
+        return (
+          <Dashboard_user
+            userId={userId}
+            setActiveTab={setActiveTab}
+            onStartAssessment={handleStartAssessment}
+          />
+        );
       case 'profile':
         return <UserProfile userId={userId} setActiveTab={setActiveTab} />;
       case 'trends':
@@ -225,10 +231,17 @@ const App = () => {
 
   // Render content for admin users
   const renderAdminContent = useCallback(() => {
-    return <AdminDashboard userRole={userRole} activeView={adminView} setActiveView={setAdminView} token={token} />;
+    return (
+      <AdminDashboard
+        userRole={userRole}
+        activeView={adminView}
+        setActiveView={setAdminView}
+        token={token}
+      />
+    );
   }, [userRole, adminView, token]);
 
-  const handleSignupSuccess = useCallback((res) => {
+  const handleSignupSuccess = useCallback(res => {
     if (!res?.user) throw new Error('signup failed');
 
     if (res.email_verification_required === true) {
@@ -257,23 +270,19 @@ const App = () => {
   return (
     <AnimatePresence mode="wait">
       {!isAuthenticated ? (
-        <motion.div key="auth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <motion.div
+          key="auth"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
           <Suspense fallback={<LoadingSkeleton />}>
             {authView === 'signup' ? (
-              <Signup
-                onSignup={handleSignupSuccess}
-                onShowLogin={() => setAuthView('login')}
-              />
+              <Signup onSignup={handleSignupSuccess} onShowLogin={() => setAuthView('login')} />
             ) : authView === 'forgot' ? (
-              <ForgotPassword
-                onShowLogin={() => setAuthView('login')}
-                initialEmail={authEmail}
-              />
+              <ForgotPassword onShowLogin={() => setAuthView('login')} initialEmail={authEmail} />
             ) : authView === 'reset' ? (
-              <ResetPassword
-                onShowLogin={() => setAuthView('login')}
-                initialToken={authToken}
-              />
+              <ResetPassword onShowLogin={() => setAuthView('login')} initialToken={authToken} />
             ) : authView === 'verify' ? (
               <VerifyEmail
                 onShowLogin={() => setAuthView('login')}
@@ -284,11 +293,11 @@ const App = () => {
               <Login
                 onLogin={handleLogin}
                 onShowSignup={() => setAuthView('signup')}
-                onShowForgotPassword={(email) => {
+                onShowForgotPassword={email => {
                   if (email) setAuthEmail(email);
                   setAuthView('forgot');
                 }}
-                onShowVerify={(email) => {
+                onShowVerify={email => {
                   if (email) setAuthEmail(email);
                   setAuthView('verify');
                 }}
@@ -299,7 +308,10 @@ const App = () => {
         </motion.div>
       ) : isAdmin ? (
         // Admin Layout - Clean & Distinct
-        <motion.div key="admin" className="flex min-h-screen relative overflow-hidden bg-diana-stone">
+        <motion.div
+          key="admin"
+          className="flex min-h-screen relative overflow-hidden bg-diana-stone"
+        >
           {/* Admin Mobile Header - Animated */}
           <AnimatePresence>
             <motion.div
@@ -332,7 +344,7 @@ const App = () => {
               initial={{ x: isReduced ? 0 : -300, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: isReduced ? 0 : -300, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="fixed left-0 top-0 z-50 hidden lg:block"
             >
               <AdminSidebar
@@ -356,9 +368,7 @@ const App = () => {
                   animate="animate"
                   exit="exit"
                 >
-                  <Suspense fallback={<LoadingSkeleton />}>
-                    {renderAdminContent()}
-                  </Suspense>
+                  <Suspense fallback={<LoadingSkeleton />}>{renderAdminContent()}</Suspense>
                 </motion.div>
               </AnimatePresence>
             </ErrorBoundary>
@@ -366,7 +376,10 @@ const App = () => {
         </motion.div>
       ) : (
         // User Layout - Soft Modernism (Light Mode)
-        <motion.div key="user" className="flex min-h-screen relative overflow-hidden bg-diana-cream">
+        <motion.div
+          key="user"
+          className="flex min-h-screen relative overflow-hidden bg-diana-cream"
+        >
           {/* Mobile Header - Animated */}
           <AnimatePresence>
             <motion.div
@@ -374,10 +387,7 @@ const App = () => {
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: isReduced ? 0 : 0.2 }}
             >
-              <MobileHeader
-                isOpen={isMobileMenuOpen}
-                onOpen={() => setIsMobileMenuOpen(true)}
-              />
+              <MobileHeader isOpen={isMobileMenuOpen} onOpen={() => setIsMobileMenuOpen(true)} />
             </motion.div>
           </AnimatePresence>
 
@@ -400,7 +410,7 @@ const App = () => {
                 initial={{ x: isReduced ? 0 : -300, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 exit={{ x: isReduced ? 0 : -300, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 className="fixed left-0 top-0 z-50 hidden lg:block"
               >
                 <Sidebar
@@ -442,12 +452,16 @@ const App = () => {
             {showAssessmentModal && (
               <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                 <motion.div
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   className="absolute inset-0 bg-diana-forest/20 backdrop-blur-sm"
                   onClick={() => setShowAssessmentModal(false)}
                 />
                 <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
                   className="relative z-10 w-full max-w-2xl"
                 >
                   <AssessmentForm

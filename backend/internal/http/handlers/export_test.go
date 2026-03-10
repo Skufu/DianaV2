@@ -187,6 +187,20 @@ func (m *mockPDFGenerator) GenerateHealthReport(user models.UserProfile, assessm
 	return m.data, nil
 }
 
+type capturePDFGenerator struct {
+	data            []byte
+	called          bool
+	lastUser        models.UserProfile
+	lastAssessments []models.Assessment
+}
+
+func (m *capturePDFGenerator) GenerateHealthReport(user models.UserProfile, assessments []models.Assessment) ([]byte, error) {
+	m.called = true
+	m.lastUser = user
+	m.lastAssessments = assessments
+	return m.data, nil
+}
+
 func setupExportRouter(role string, store store.Store, pdf PDFReportGenerator) *gin.Engine {
 	gin.SetMode(gin.TestMode)
 
@@ -299,4 +313,56 @@ func TestExportHandler_ExportPDF_GenerationError(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 	assert.Contains(t, w.Body.String(), "Failed to generate PDF report")
+}
+
+func TestExportHandler_ExportPDF_UsesStoredAssessmentContract(t *testing.T) {
+	user := &models.User{
+		ID:        1,
+		FirstName: "Jane",
+		LastName:  "Doe",
+		Email:     "jane.doe@example.com",
+	}
+	storedAssessment := models.Assessment{
+		ID:                 7,
+		UserID:             1,
+		RiskScore:          68,
+		RiskLevel:          "medium",
+		RiskLabel:          "Moderate Risk",
+		Cluster:            "SIRD",
+		ClusterDescription: "Insulin resistance dominant pattern",
+		TreatmentFocus:     "insulin sensitivity",
+		AtRiskProbability:  0.68,
+		PredictedStatus:    "at-risk",
+		ValidationStatus:   "validated_within_range",
+		ModelVersion:       "binary_v2_no_bp",
+		FBS:                114,
+		HbA1c:              6.1,
+		LDL:                128,
+		HDL:                49,
+		Triglycerides:      176,
+		BMI:                29.2,
+		CreatedAt:          time.Now(),
+	}
+
+	usersRepo := &mockExportUserRepo{user: user}
+	assessmentsRepo := &mockExportAssessmentRepo{assessments: []models.Assessment{storedAssessment}}
+	pdf := &capturePDFGenerator{data: []byte("pdf-data")}
+	st := &mockExportStore{users: usersRepo, assessments: assessmentsRepo}
+	router := setupExportRouter("user", st, pdf)
+
+	req, _ := http.NewRequest("GET", "/export/pdf", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, pdf.called)
+	assert.Equal(t, int64(1), pdf.lastUser.User.ID)
+	assert.Len(t, pdf.lastAssessments, 1)
+	assert.Equal(t, storedAssessment.ID, pdf.lastAssessments[0].ID)
+	assert.Equal(t, storedAssessment.RiskScore, pdf.lastAssessments[0].RiskScore)
+	assert.Equal(t, storedAssessment.Cluster, pdf.lastAssessments[0].Cluster)
+	assert.Equal(t, storedAssessment.ClusterDescription, pdf.lastAssessments[0].ClusterDescription)
+	assert.Equal(t, storedAssessment.TreatmentFocus, pdf.lastAssessments[0].TreatmentFocus)
+	assert.Equal(t, storedAssessment.ModelVersion, pdf.lastAssessments[0].ModelVersion)
+	assert.Equal(t, storedAssessment.ValidationStatus, pdf.lastAssessments[0].ValidationStatus)
 }

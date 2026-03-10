@@ -126,7 +126,7 @@ const completeOnboardingIfNeeded = async page => {
 };
 
 const waitForAppShell = async page => {
-  const sidebar = page.locator('text=Health Report').locator('..').locator('..').locator('..');
+  const sidebar = page.locator('nav').first();
   const onboardingHeader = page.locator('text=Welcome to DIANA');
 
   await Promise.race([
@@ -151,11 +151,11 @@ test.describe('Export Page Tests', () => {
     await page.goto('/');
     await waitForAppShell(page);
     await completeOnboardingIfNeeded(page);
-    await expect(page.locator('text=Health Report').locator('..').locator('..').locator('..')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('nav').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('should navigate to health report tab and display content', async ({ page }) => {
-    const sidebar = page.locator('text=Health Report').locator('..').locator('..').locator('..');
+    const sidebar = page.locator('nav').first();
     const exportTab = sidebar.locator('button:has-text("Health Report")');
 
     await exportTab.click();
@@ -167,7 +167,7 @@ test.describe('Export Page Tests', () => {
   });
 
   test('should generate PDF report and trigger download', async ({ page, context }) => {
-    const sidebar = page.locator('text=Health Report').locator('..').locator('..').locator('..');
+    const sidebar = page.locator('nav').first();
     const exportTab = sidebar.locator('button:has-text("Health Report")');
 
     await exportTab.click();

@@ -29,7 +29,7 @@ except ImportError:
 
 # Paths
 DATA_PATH = Path("data/nhanes/processed/diana_dataset_imputed.csv")
-MODELS_DIR = Path("models/clinical")
+MODELS_DIR = Path("models/binary_v2_no_bp")
 
 FEATURES = [
     'bmi', 'triglycerides', 'ldl', 'hdl', 'age',

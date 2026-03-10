@@ -15,14 +15,15 @@ const defaultFormState = {
   fbs: '',
   systolic: '',
   diastolic: '',
+  waist_circumference: '',
   smoking: 'Unknown',
   activity: 'Unknown',
   alcohol: 'Unknown',
 };
 
 const lifestyleOptions = ['Unknown', 'Never', 'Former', 'Current'];
-const activityOptions = ['Unknown', 'Low', 'Moderate', 'High'];
-const alcoholOptions = ['Unknown', 'None', 'Occasional', 'Regular'];
+const activityOptions = ['Unknown', 'Sedentary', 'Moderate', 'Active'];
+const alcoholOptions = ['Unknown', 'None', 'Light', 'Moderate', 'Heavy'];
 const DOCTOR_LOCKED_MODEL_TYPE = 'binary_v2_no_bp';
 
 const ClinicalExplainability = ({ userRole = 'admin' }) => {
@@ -53,6 +54,7 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
       hdl: Number(submittedData.hdl),
       systolic: submittedData.systolic ? Number(submittedData.systolic) : undefined,
       diastolic: submittedData.diastolic ? Number(submittedData.diastolic) : undefined,
+      waist_circumference: submittedData.waist_circumference ? Number(submittedData.waist_circumference) : undefined,
       smoking: submittedData.smoking,
       activity: submittedData.activity,
       alcohol: submittedData.alcohol,
@@ -72,7 +74,7 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
     return payload;
   }, [isDoctor, submittedData]);
 
-  const handleChange = (event) => {
+  const handleChange = event => {
     const { name, value } = event.target;
     setFormData(prev => {
       const next = { ...prev, [name]: value };
@@ -90,11 +92,11 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
     });
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = event => {
     event.preventDefault();
     setError(null);
 
-    const missing = requiredFields.filter((field) => !formData[field]);
+    const missing = requiredFields.filter(field => !formData[field]);
     if (missing.length > 0) {
       setError('Please complete all required biomarker fields to generate an explanation.');
       return;
@@ -119,8 +121,16 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
   };
 
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-8">
-      <motion.div variants={slideUp} className="glass-card bg-white rounded-3xl border border-slate-200/60 p-8">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="space-y-8"
+    >
+      <motion.div
+        variants={slideUp}
+        className="glass-card bg-white rounded-3xl border border-slate-200/60 p-8"
+      >
         <div className="flex items-start justify-between gap-6">
           <div>
             <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
@@ -130,8 +140,9 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
               Clinical Explainability
             </h3>
             <p className="text-slate-500 mt-2 max-w-2xl">
-              Generate SHAP-based feature contributions for a single clinical assessment. This view is
-              intended for clinicians to validate model reasoning and communicate biomarker-driven risk.
+              Generate SHAP-based feature contributions for a single clinical assessment. This view
+              is intended for clinicians to validate model reasoning and communicate
+              biomarker-driven risk.
             </p>
           </div>
           <div className="hidden md:flex items-center gap-2 text-emerald-600 text-sm font-medium">
@@ -168,7 +179,12 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
             </div>
           ) : (
             <div>
-              <label htmlFor="modelType" className="block text-sm font-semibold text-slate-700 mb-1">Model Type</label>
+              <label
+                htmlFor="modelType"
+                className="block text-sm font-semibold text-slate-700 mb-1"
+              >
+                Model Type
+              </label>
               <select
                 id="modelType"
                 name="modelType"
@@ -183,7 +199,9 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
             </div>
           )}
           <div>
-            <label htmlFor="age" className="block text-sm font-semibold text-slate-700 mb-1">Age *</label>
+            <label htmlFor="age" className="block text-sm font-semibold text-slate-700 mb-1">
+              Age *
+            </label>
             <input
               id="age"
               name="age"
@@ -195,7 +213,9 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
             />
           </div>
           <div>
-            <label htmlFor="bmi" className="block text-sm font-semibold text-slate-700 mb-1">BMI *</label>
+            <label htmlFor="bmi" className="block text-sm font-semibold text-slate-700 mb-1">
+              BMI *
+            </label>
             <input
               id="bmi"
               name="bmi"
@@ -207,7 +227,12 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
             />
           </div>
           <div>
-            <label htmlFor="triglycerides" className="block text-sm font-semibold text-slate-700 mb-1">Triglycerides (mg/dL) *</label>
+            <label
+              htmlFor="triglycerides"
+              className="block text-sm font-semibold text-slate-700 mb-1"
+            >
+              Triglycerides (mg/dL) *
+            </label>
             <input
               id="triglycerides"
               name="triglycerides"
@@ -218,7 +243,9 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
             />
           </div>
           <div>
-            <label htmlFor="ldl" className="block text-sm font-semibold text-slate-700 mb-1">LDL (mg/dL) *</label>
+            <label htmlFor="ldl" className="block text-sm font-semibold text-slate-700 mb-1">
+              LDL (mg/dL) *
+            </label>
             <input
               id="ldl"
               name="ldl"
@@ -229,7 +256,9 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
             />
           </div>
           <div>
-            <label htmlFor="hdl" className="block text-sm font-semibold text-slate-700 mb-1">HDL (mg/dL) *</label>
+            <label htmlFor="hdl" className="block text-sm font-semibold text-slate-700 mb-1">
+              HDL (mg/dL) *
+            </label>
             <input
               id="hdl"
               name="hdl"
@@ -239,10 +268,35 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-700"
             />
           </div>
+          <div>
+            <label
+              htmlFor="waist_circumference"
+              className="block text-sm font-semibold text-slate-700 mb-1"
+            >
+              Waist Circumference (cm)
+            </label>
+            <input
+              id="waist_circumference"
+              name="waist_circumference"
+              type="number"
+              value={formData.waist_circumference}
+              onChange={handleChange}
+              step="0.1"
+              min="40"
+              max="200"
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-700"
+              placeholder="Optional"
+            />
+          </div>
           {activeModelType === 'binary_v2_bp' && (
             <>
               <div>
-                <label htmlFor="systolic" className="block text-sm font-semibold text-slate-700 mb-1">Systolic (mmHg) *</label>
+                <label
+                  htmlFor="systolic"
+                  className="block text-sm font-semibold text-slate-700 mb-1"
+                >
+                  Systolic (mmHg) *
+                </label>
                 <input
                   id="systolic"
                   name="systolic"
@@ -253,7 +307,12 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
                 />
               </div>
               <div>
-                <label htmlFor="diastolic" className="block text-sm font-semibold text-slate-700 mb-1">Diastolic (mmHg) *</label>
+                <label
+                  htmlFor="diastolic"
+                  className="block text-sm font-semibold text-slate-700 mb-1"
+                >
+                  Diastolic (mmHg) *
+                </label>
                 <input
                   id="diastolic"
                   name="diastolic"
@@ -268,7 +327,9 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
           {activeModelType === 'ada' && (
             <>
               <div>
-                <label htmlFor="hba1c" className="block text-sm font-semibold text-slate-700 mb-1">HbA1c (%) *</label>
+                <label htmlFor="hba1c" className="block text-sm font-semibold text-slate-700 mb-1">
+                  HbA1c (%) *
+                </label>
                 <input
                   id="hba1c"
                   name="hba1c"
@@ -280,7 +341,9 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
                 />
               </div>
               <div>
-                <label htmlFor="fbs" className="block text-sm font-semibold text-slate-700 mb-1">FBS (mg/dL) *</label>
+                <label htmlFor="fbs" className="block text-sm font-semibold text-slate-700 mb-1">
+                  FBS (mg/dL) *
+                </label>
                 <input
                   id="fbs"
                   name="fbs"
@@ -293,7 +356,9 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
             </>
           )}
           <div>
-            <label htmlFor="smoking" className="block text-sm font-semibold text-slate-700 mb-1">Smoking Status</label>
+            <label htmlFor="smoking" className="block text-sm font-semibold text-slate-700 mb-1">
+              Smoking Status
+            </label>
             <select
               id="smoking"
               name="smoking"
@@ -302,12 +367,16 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-700"
             >
               {lifestyleOptions.map(option => (
-                <option key={option} value={option}>{option}</option>
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label htmlFor="activity" className="block text-sm font-semibold text-slate-700 mb-1">Physical Activity</label>
+            <label htmlFor="activity" className="block text-sm font-semibold text-slate-700 mb-1">
+              Physical Activity
+            </label>
             <select
               id="activity"
               name="activity"
@@ -316,12 +385,16 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-700"
             >
               {activityOptions.map(option => (
-                <option key={option} value={option}>{option}</option>
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label htmlFor="alcohol" className="block text-sm font-semibold text-slate-700 mb-1">Alcohol Use</label>
+            <label htmlFor="alcohol" className="block text-sm font-semibold text-slate-700 mb-1">
+              Alcohol Use
+            </label>
             <select
               id="alcohol"
               name="alcohol"
@@ -330,7 +403,9 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-700"
             >
               {alcoholOptions.map(option => (
-                <option key={option} value={option}>{option}</option>
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
           </div>

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -153,14 +154,28 @@ func (m *mockUserStore) GetUsersForNotification(ctx context.Context) ([]models.U
 	return nil, nil
 }
 
-type mockAuditEventStore struct{}
+type mockAuditEventStore struct {
+	mu     sync.Mutex
+	events []models.AuditEvent
+}
 
 func (m *mockAuditEventStore) Create(ctx context.Context, event models.AuditEvent) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.events = append(m.events, event)
 	return nil
 }
 
 func (m *mockAuditEventStore) List(ctx context.Context, params models.AuditListParams) ([]models.AuditEvent, int, error) {
 	return nil, 0, nil
+}
+
+func (m *mockAuditEventStore) Events() []models.AuditEvent {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]models.AuditEvent, len(m.events))
+	copy(out, m.events)
+	return out
 }
 
 type mockAdminUsersStore struct {
@@ -320,4 +335,77 @@ func TestAdminGetUsers_NoPasswordHashExposed(t *testing.T) {
 
 		assert.Empty(t, user.PasswordHash, "password_hash should not be returned after update")
 	})
+}
+
+func TestAdminListUsers_PaginationMetadata(t *testing.T) {
+	router, st := setupAdminUsersRouter()
+
+	t.Run("returns total_pages as at least 1 when list is empty", func(t *testing.T) {
+		st.users = []models.User{}
+		st.total = 0
+
+		req, _ := http.NewRequest("GET", "/admin/users?page=1&page_size=10", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response models.PaginatedResponse
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, 0, response.Total)
+		assert.Equal(t, 1, response.TotalPages)
+		assert.Equal(t, 1, response.Page)
+		assert.Equal(t, 10, response.PageSize)
+	})
+
+	t.Run("returns expected total_pages for multi-page datasets", func(t *testing.T) {
+		st.total = 25
+		req, _ := http.NewRequest("GET", "/admin/users?page=2&page_size=10", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var response models.PaginatedResponse
+		err := json.Unmarshal(w.Body.Bytes(), &response)
+		assert.NoError(t, err)
+		assert.Equal(t, 25, response.Total)
+		assert.Equal(t, 3, response.TotalPages)
+		assert.Equal(t, 2, response.Page)
+		assert.Equal(t, 10, response.PageSize)
+	})
+}
+
+func TestAdminCreateUser_AuditTargetIDMatchesCreatedUser(t *testing.T) {
+	router, st := setupAdminUsersRouter()
+
+	reqBody := CreateUserRequest{
+		Email:    "audit-target@example.com",
+		Password: "password123",
+		Role:     "user",
+	}
+	reqBytes, _ := json.Marshal(reqBody)
+	req, _ := http.NewRequest("POST", "/admin/users", bytes.NewReader(reqBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var created models.User
+	err := json.Unmarshal(w.Body.Bytes(), &created)
+	assert.NoError(t, err)
+	assert.NotZero(t, created.ID)
+
+	// Audit logging runs asynchronously in middleware.
+	time.Sleep(50 * time.Millisecond)
+
+	events := st.auditEvents.Events()
+	assert.NotEmpty(t, events)
+
+	last := events[len(events)-1]
+	assert.Equal(t, "user.create", last.Action)
+	assert.Equal(t, "user", last.TargetType)
+	assert.Equal(t, int(created.ID), last.TargetID)
 }

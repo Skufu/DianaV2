@@ -1,17 +1,23 @@
 import React, { useMemo } from 'react';
 import {
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  ResponsiveContainer, Tooltip, Legend
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
 } from 'recharts';
 import { Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cardVariants } from '../../utils/animations';
 
 const subgroupInfo = {
-  'SIRD': { name: 'Severe Insulin-Resistant', color: '#FFB547' },
-  'SIDD': { name: 'Severe Insulin-Deficient', color: '#EE5D50' },
-  'MOD': { name: 'Mild Obesity-Related', color: '#6AD2FF' },
-  'MARD': { name: 'Mild Age-Related', color: '#05CD99' }
+  SIRD: { name: 'Severe Insulin-Resistant', color: '#FFB547' },
+  SIDD: { name: 'Severe Insulin-Deficient', color: '#EE5D50' },
+  MOD: { name: 'Mild Obesity-Related', color: '#6AD2FF' },
+  MARD: { name: 'Mild Age-Related', color: '#05CD99' },
 };
 
 const ClusterBiomarkerRadar = React.memo(({ clusterProfiles = null, isLoading = false }) => {
@@ -34,10 +40,10 @@ const ClusterBiomarkerRadar = React.memo(({ clusterProfiles = null, isLoading = 
 
     // Define the metrics we want to visualize, with human-readable names
     // scaled down/up if necessary to make the radar chart look balanced,
-    // though Recharts can handle varying scales if we use multiple axes or 
+    // though Recharts can handle varying scales if we use multiple axes or
     // normalize the data. We'll simply use raw values since Recharts automatically
-    // scales the polar radius axis, but we may need to normalize them to 0-100% 
-    // of the maximum value across all clusters so the chart isn't dominated by 
+    // scales the polar radius axis, but we may need to normalize them to 0-100%
+    // of the maximum value across all clusters so the chart isn't dominated by
     // Triglycerides (which can be 200+) vs Age (which is ~50).
 
     const metrics = [
@@ -46,7 +52,7 @@ const ClusterBiomarkerRadar = React.memo(({ clusterProfiles = null, isLoading = 
       { key: 'ldl', label: 'LDL Chol.' },
       { key: 'hdl', label: 'HDL Chol.' },
       { key: 'age', label: 'Age' },
-      { key: 'waist_circumference', label: 'Waist Circ.' }
+      { key: 'waist_circumference', label: 'Waist Circ.' },
     ];
 
     const subgroups = Object.keys(profiles);
@@ -68,7 +74,7 @@ const ClusterBiomarkerRadar = React.memo(({ clusterProfiles = null, isLoading = 
     return metrics.map(m => {
       const dataPoint = {
         metric: m.label,
-        fullMark: 100
+        fullMark: 100,
       };
 
       subgroups.forEach(sg => {
@@ -83,7 +89,6 @@ const ClusterBiomarkerRadar = React.memo(({ clusterProfiles = null, isLoading = 
 
       return dataPoint;
     });
-
   }, [clusterProfiles]);
 
   if (isLoading) {
@@ -110,9 +115,7 @@ const ClusterBiomarkerRadar = React.memo(({ clusterProfiles = null, isLoading = 
       >
         <div className="mb-6">
           <h3 className="text-2xl font-bold text-white">Cluster Biomarker Profiles</h3>
-          <p className="text-slate-400 text-sm mt-2">
-            Ahlqvist subtype clinical characteristics
-          </p>
+          <p className="text-slate-400 text-sm mt-2">Ahlqvist subtype clinical characteristics</p>
         </div>
         <div className="text-center py-12 text-slate-400">
           ML cluster analysis data unavailable. Ensure the model has been trained on clinical data.
@@ -129,13 +132,18 @@ const ClusterBiomarkerRadar = React.memo(({ clusterProfiles = null, isLoading = 
       return (
         <div className="bg-white p-3 border border-slate-200 rounded-lg shadow-sm">
           <p className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-1">{label}</p>
-          {payload.map((entry) => {
+          {payload.map(entry => {
             // Retrieve the raw value we tucked into the data object earlier
             const rawVal = entry.payload[`${entry.dataKey}_raw`];
             return (
-              <div key={`${entry.dataKey}-${entry.color}`} className="flex items-center gap-2 text-sm my-1">
+              <div
+                key={`${entry.dataKey}-${entry.color}`}
+                className="flex items-center gap-2 text-sm my-1"
+              >
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                <span className="text-slate-600">{subgroupInfo[entry.dataKey]?.name || entry.dataKey}:</span>
+                <span className="text-slate-600">
+                  {subgroupInfo[entry.dataKey]?.name || entry.dataKey}:
+                </span>
                 <span className="font-bold text-slate-800">{rawVal}</span>
               </div>
             );
@@ -158,7 +166,9 @@ const ClusterBiomarkerRadar = React.memo(({ clusterProfiles = null, isLoading = 
       <div className="mb-6 flex-shrink-0">
         <div className="flex items-center gap-3">
           <Activity size={28} className="text-diana-forest" />
-          <h3 className="text-2xl font-serif font-bold text-diana-text-primary">Metabolic Signatures</h3>
+          <h3 className="text-2xl font-serif font-bold text-diana-text-primary">
+            Metabolic Signatures
+          </h3>
         </div>
         <p className="text-diana-text-secondary text-sm mt-2">
           Normalized biomarker shapes for each Ahlqvist Subtype (100 = Highest Group Mean)

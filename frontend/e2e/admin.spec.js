@@ -8,6 +8,12 @@ import { ADMIN_USER, waitForNetworkIdle } from './fixtures/test-data';
  */
 
 test.describe('Admin Authentication Flow', () => {
+  const adminNavButton = (page, label) =>
+    page
+      .locator('nav button:visible')
+      .filter({ hasText: label })
+      .first();
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
   });
@@ -36,11 +42,16 @@ test.describe('Admin Authentication Flow', () => {
     // Wait for admin dashboard
     await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 15000 });
 
-    // Verify sidebar navigation items
-    await expect(page.locator('text=Overview').first()).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('text=User Management').first()).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=Audit Logs').first()).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('text=Model Tracking').first()).toBeVisible({ timeout: 5000 });
+    // Verify governance-only sidebar navigation items
+    await expect(adminNavButton(page, 'Overview')).toBeVisible({ timeout: 10000 });
+    await expect(adminNavButton(page, 'User Management')).toBeVisible({ timeout: 5000 });
+    await expect(adminNavButton(page, 'Audit Logs')).toBeVisible({ timeout: 5000 });
+    await expect(adminNavButton(page, 'Auth Events')).toBeVisible({ timeout: 5000 });
+    await expect(adminNavButton(page, 'Model Tracking')).toBeVisible({ timeout: 5000 });
+
+    // Clinical tools are doctor-only
+    await expect(adminNavButton(page, 'Log Assessment')).toHaveCount(0);
+    await expect(adminNavButton(page, 'Clinical Explainability')).toHaveCount(0);
   });
 
   test('should display dashboard statistics', async ({ page }) => {
@@ -69,22 +80,25 @@ test.describe('Admin Authentication Flow', () => {
     await expect(page.locator('text=Admin Dashboard')).toBeVisible({ timeout: 15000 });
 
     // Navigate to User Management
-    await page.click('text=User Management');
-    await page.waitForTimeout(1000);
-    
-    // Verify User Management section loaded
-    await expect(page.locator('text=User Management').first()).toBeVisible({ timeout: 5000 });
+    await adminNavButton(page, 'User Management').click();
+    await expect(page.getByRole('heading', { name: 'User Management' })).toBeVisible({
+      timeout: 5000,
+    });
 
     // Navigate to Audit Logs
-    await page.click('text=Audit Logs');
-    await page.waitForTimeout(1000);
+    await adminNavButton(page, 'Audit Logs').click();
 
     // Verify Audit Logs section loaded
-    await expect(page.locator('text=Audit Logs').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: 'Audit Logs' })).toBeVisible({ timeout: 5000 });
+
+    // Navigate to Model Tracking
+    await adminNavButton(page, 'Model Tracking').click();
+    await expect(page.getByRole('heading', { name: 'Model Traceability' })).toBeVisible({
+      timeout: 5000,
+    });
 
     // Navigate back to Overview
-    await page.click('text=Overview');
-    await page.waitForTimeout(1000);
+    await adminNavButton(page, 'Overview').click();
 
     // Verify back on overview
     await expect(page.locator('text=Total Users').first()).toBeVisible({ timeout: 5000 });
@@ -121,9 +135,10 @@ test.describe('Admin User Management - Real Backend', () => {
     // Wait for table to load
     await expect(page.locator('table').first()).toBeVisible({ timeout: 10000 });
 
-    // Check for seeded users from the database - look for admin email in page content
-    const pageContent = await page.textContent('body');
-    expect(pageContent).toContain('admin');
+    // Check for at least one user-like email in loaded rows
+    const firstEmailCell = page.locator('tbody tr td').first();
+    await expect(firstEmailCell).toBeVisible({ timeout: 10000 });
+    await expect(firstEmailCell).toContainText('@');
   });
 });
 
@@ -143,8 +158,8 @@ test.describe('Admin Audit Logs - Real Backend', () => {
   });
 
   test('should display audit logs page', async ({ page }) => {
-    // Verify audit logs section is visible - check for heading or content
-    await expect(page.locator('text=Audit Logs').first()).toBeVisible({ timeout: 10000 });
+    // Verify audit logs section is visible
+    await expect(page.getByRole('heading', { name: 'Audit Logs' })).toBeVisible({ timeout: 10000 });
   });
 
   test('should show audit event table or empty state', async ({ page }) => {
@@ -185,10 +200,11 @@ test.describe('Admin Model Tracking - Real Backend', () => {
     
     // Check for any model-related content
     const pageContent = await page.textContent('body');
-    const hasContent = pageContent.includes('v0-mock') || 
-                      pageContent.includes('Model') ||
-                      pageContent.includes('No model') ||
-                      pageContent.includes('Active');
+    const hasContent =
+      pageContent.includes('Production Active') ||
+      pageContent.includes('No Active Model') ||
+      pageContent.includes('Training History') ||
+      pageContent.includes('Model Traceability');
     
     expect(hasContent).toBeTruthy();
   });

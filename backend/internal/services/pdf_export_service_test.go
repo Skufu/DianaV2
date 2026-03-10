@@ -2,6 +2,7 @@ package services
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -44,6 +45,126 @@ func TestPDFExportService_GenerateHealthReport(t *testing.T) {
 
 	if len(result) == 0 {
 		t.Fatal("expected non-empty PDF data")
+	}
+}
+
+func TestPDFExportService_GenerateHealthReport_IncludesClinicianContextMarkers(t *testing.T) {
+	service := NewPDFExportService()
+
+	user := models.UserProfile{
+		User: models.User{
+			ID:        10,
+			FirstName: "Elena",
+			LastName:  "Cruz",
+			Email:     "elena.cruz@example.com",
+		},
+	}
+
+	assessments := []models.Assessment{
+		{
+			ID:                 100,
+			UserID:             10,
+			RiskScore:          72,
+			Cluster:            "SIRD",
+			ClusterDescription: "Insulin resistance dominant pattern",
+			TreatmentFocus:     "Improve insulin sensitivity with activity and dietary planning",
+			PredictedStatus:    "at-risk",
+			AtRiskProbability:  0.72,
+			ValidationStatus:   "validated_within_range",
+			FBS:                131,
+			HbA1c:              6.6,
+			BMI:                28.7,
+			LDL:                141,
+			HDL:                45,
+			Triglycerides:      188,
+			CreatedAt:          time.Date(2026, time.March, 1, 9, 0, 0, 0, time.UTC),
+		},
+	}
+
+	pdfData, err := service.GenerateHealthReport(user, assessments)
+	if err != nil {
+		t.Fatalf("GenerateHealthReport() returned error: %v", err)
+	}
+
+	pdfText := string(pdfData)
+
+	requiredMarkers := []string{
+		"Biomarker Assessment",
+		"Cluster / Phenotype Context",
+		"Clinical Discussion Points",
+		"Predicted status: at-risk",
+		"At-risk probability: 72%",
+		"AI-assisted screening support only; this report must not be used as a diagnosis.",
+	}
+
+	for _, marker := range requiredMarkers {
+		if !strings.Contains(pdfText, marker) {
+			t.Fatalf("expected PDF to contain marker %q", marker)
+		}
+	}
+}
+
+func TestPDFExportService_GenerateHealthReport_UsesLatestAssessmentByCreatedAt(t *testing.T) {
+	service := NewPDFExportService()
+
+	user := models.UserProfile{User: models.User{ID: 20, Email: "latest.check@example.com"}}
+
+	older := models.Assessment{
+		ID:                 200,
+		UserID:             20,
+		RiskScore:          25,
+		Cluster:            "MARD",
+		PredictedStatus:    "not-at-risk",
+		AtRiskProbability:  0.12,
+		ValidationStatus:   "validated_within_range",
+		FBS:                90,
+		HbA1c:              5.2,
+		BMI:                21.4,
+		LDL:                92,
+		HDL:                58,
+		Triglycerides:      108,
+		CreatedAt:          time.Date(2026, time.January, 1, 8, 0, 0, 0, time.UTC),
+		ClusterDescription: "Older record",
+		TreatmentFocus:     "Older plan",
+	}
+
+	latest := models.Assessment{
+		ID:                 201,
+		UserID:             20,
+		RiskScore:          81,
+		Cluster:            "SIDD",
+		PredictedStatus:    "at-risk",
+		AtRiskProbability:  0.81,
+		ValidationStatus:   "validated_within_range",
+		FBS:                140,
+		HbA1c:              6.8,
+		BMI:                31.2,
+		LDL:                170,
+		HDL:                37,
+		Triglycerides:      220,
+		CreatedAt:          time.Date(2026, time.March, 1, 8, 0, 0, 0, time.UTC),
+		ClusterDescription: "Most recent record",
+		TreatmentFocus:     "Most recent plan",
+	}
+
+	// Intentionally unsorted input to ensure service picks latest by timestamp.
+	pdfData, err := service.GenerateHealthReport(user, []models.Assessment{older, latest})
+	if err != nil {
+		t.Fatalf("GenerateHealthReport() returned error: %v", err)
+	}
+
+	pdfText := string(pdfData)
+
+	if !strings.Contains(pdfText, "Risk Score: 81%") {
+		t.Fatalf("expected PDF to use latest risk score")
+	}
+
+	if !strings.Contains(pdfText, "140.0 mg/dL") {
+		t.Fatalf("expected PDF to include latest FBS value")
+	}
+
+	if strings.Contains(pdfText, "90.0 mg/dL") {
+		t.Fatalf("expected PDF to avoid stale FBS value from older record")
 	}
 }
 

@@ -53,7 +53,9 @@ describe('ErrorFallback', () => {
     import.meta.env.DEV = false;
 
     render(<ErrorFallback error={new Error('Test')} />);
-    expect(screen.queryByRole('button', { name: /show technical details/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /show technical details/i })
+    ).not.toBeInTheDocument();
 
     import.meta.env.DEV = originalDev;
   });

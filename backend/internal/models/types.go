@@ -244,7 +244,7 @@ type UpdateAssessmentRequest struct {
 	HeartDisease          string   `json:"heart_disease" binding:"omitempty,max=50"`
 	BMI                   *float64 `json:"bmi" binding:"omitempty,min=10,max=100"`
 	Notes                 string   `json:"notes" binding:"omitempty,max=2000"`
-	ModelType             string   `json:"model_type" binding:"omitempty,oneof=clinical ada binary_v2_no_bp binary_v2_bp"`
+	ModelType             string   `json:"model_type" binding:"omitempty,oneof=ada binary_v2_no_bp binary_v2_bp"`
 }
 
 // -----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 // UserManagement: Admin user CRUD with pagination
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   fetchAdminUsersApi,
   createAdminUserApi,
@@ -21,7 +21,13 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
+import {
+  staggerContainer,
+  fadeIn,
+  slideUp,
+  cardVariants,
+  useReducedMotion,
+} from '../../utils/animations';
 
 const UserManagement = ({ token }) => {
   const isReduced = useReducedMotion();
@@ -61,9 +67,23 @@ const UserManagement = ({ token }) => {
       if (activeFilter !== '') params.is_active = activeFilter === 'active';
 
       const response = await fetchAdminUsersApi(params);
-      setUsers(response.data || []);
-      setTotal(response.total || 0);
-      setTotalPages(response.total_pages || 1);
+      const loadedUsers = Array.isArray(response?.data) ? response.data : [];
+      const loadedTotal = Number.isFinite(response?.total) ? response.total : loadedUsers.length;
+      const loadedTotalPagesRaw = Number.isFinite(response?.total_pages)
+        ? response.total_pages
+        : Math.ceil((loadedTotal || 0) / pageSize);
+      const loadedTotalPages = Math.max(1, loadedTotalPagesRaw || 1);
+
+      setUsers(loadedUsers);
+      setTotal(loadedTotal);
+      setTotalPages(loadedTotalPages);
+
+      if (loadedTotal > 0 && page > loadedTotalPages) {
+        setPage(loadedTotalPages);
+      }
+      if (loadedTotal === 0 && page !== 1) {
+        setPage(1);
+      }
     } catch (err) {
       setError('Failed to load users');
       console.error(err);
@@ -78,7 +98,10 @@ const UserManagement = ({ token }) => {
 
   const handleSearch = e => {
     e.preventDefault();
-    setPage(1);
+    if (page !== 1) {
+      setPage(1);
+      return;
+    }
     loadUsers();
   };
 
@@ -157,11 +180,31 @@ const UserManagement = ({ token }) => {
   const rowVariants = {
     hidden: { opacity: 0, x: isReduced ? 0 : -20 },
     visible: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } },
-    exit: { opacity: 0, scale: isReduced ? 1 : 0.95, x: isReduced ? 0 : 20, transition: { duration: 0.2 } }
+    exit: {
+      opacity: 0,
+      scale: isReduced ? 1 : 0.95,
+      x: isReduced ? 0 : 20,
+      transition: { duration: 0.2 },
+    },
   };
 
+  const showingFrom = useMemo(() => {
+    if (total === 0 || users.length === 0) return 0;
+    return (page - 1) * pageSize + 1;
+  }, [page, pageSize, total, users.length]);
+
+  const showingTo = useMemo(() => {
+    if (total === 0 || users.length === 0) return 0;
+    return Math.min(page * pageSize, total);
+  }, [page, pageSize, total, users.length]);
+
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       {/* Header */}
       <motion.div variants={fadeIn}>
         <div className="flex items-center gap-3 mb-6">
@@ -174,6 +217,36 @@ const UserManagement = ({ token }) => {
           </div>
         </div>
       </motion.div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <motion.div variants={fadeIn} className="flex items-center justify-between px-1">
+          <p className="text-slate-500 text-sm">
+            Showing {showingFrom} to {showingTo} of {total}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-2 text-slate-500 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Previous page"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <span className="text-slate-900 text-sm">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="p-2 text-slate-500 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Next page"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Create User Button */}
       <motion.div variants={fadeIn} className="mb-6">
@@ -195,7 +268,7 @@ const UserManagement = ({ token }) => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="flex items-center gap-2 mb-4 p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg"
             role="status"
             aria-live="polite"
@@ -211,7 +284,7 @@ const UserManagement = ({ token }) => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="flex items-center gap-2 mb-4 p-4 bg-rose-500/10 border border-rose-500/30 rounded-lg"
             role="alert"
             aria-live="assertive"
@@ -330,11 +403,7 @@ const UserManagement = ({ token }) => {
                   <th className="px-4 py-3 text-slate-500 font-medium text-right">Actions</th>
                 </tr>
               </thead>
-              <motion.tbody
-                variants={staggerContainer}
-                initial="hidden"
-                animate="visible"
-              >
+              <motion.tbody variants={staggerContainer} initial="hidden" animate="visible">
                 {users.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="px-4 py-8 text-center text-slate-500">
@@ -352,20 +421,22 @@ const UserManagement = ({ token }) => {
                       <td className="px-4 py-3 text-slate-900">{user.email}</td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${user.role === 'admin'
-                            ? 'bg-violet-100 text-violet-600'
-                            : 'bg-teal-100 text-teal-600'
-                            }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user.role === 'admin'
+                              ? 'bg-violet-100 text-violet-600'
+                              : 'bg-teal-100 text-teal-600'
+                          }`}
                         >
                           {user.role}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${user.is_active !== false
-                            ? 'bg-emerald-500/20 text-emerald-400'
-                            : 'bg-slate-500/20 text-slate-400'
-                            }`}
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            user.is_active !== false
+                              ? 'bg-emerald-500/20 text-emerald-400'
+                              : 'bg-slate-500/20 text-slate-400'
+                          }`}
                         >
                           {user.is_active !== false ? 'Active' : 'Inactive'}
                         </span>
@@ -453,7 +524,10 @@ const UserManagement = ({ token }) => {
                 )}
 
                 <div>
-                  <label htmlFor="create-email" className="block text-sm font-medium text-slate-700 mb-1">
+                  <label
+                    htmlFor="create-email"
+                    className="block text-sm font-medium text-slate-700 mb-1"
+                  >
                     Email
                   </label>
                   <input
@@ -468,7 +542,10 @@ const UserManagement = ({ token }) => {
                 </div>
 
                 <div>
-                  <label htmlFor="create-password" className="block text-sm font-medium text-slate-700 mb-1">
+                  <label
+                    htmlFor="create-password"
+                    className="block text-sm font-medium text-slate-700 mb-1"
+                  >
                     Password
                   </label>
                   <input
@@ -484,7 +561,10 @@ const UserManagement = ({ token }) => {
                 </div>
 
                 <div>
-                  <label htmlFor="create-role" className="block text-sm font-medium text-slate-700 mb-1">
+                  <label
+                    htmlFor="create-role"
+                    className="block text-sm font-medium text-slate-700 mb-1"
+                  >
                     Role
                   </label>
                   <select
@@ -573,7 +653,10 @@ const UserManagement = ({ token }) => {
                 )}
 
                 <div>
-                  <label htmlFor="edit-email" className="block text-sm font-medium text-slate-700 mb-1">
+                  <label
+                    htmlFor="edit-email"
+                    className="block text-sm font-medium text-slate-700 mb-1"
+                  >
                     Email
                   </label>
                   <input
@@ -587,7 +670,10 @@ const UserManagement = ({ token }) => {
                 </div>
 
                 <div>
-                  <label htmlFor="edit-role" className="block text-sm font-medium text-slate-700 mb-1">
+                  <label
+                    htmlFor="edit-role"
+                    className="block text-sm font-medium text-slate-700 mb-1"
+                  >
                     Role
                   </label>
                   <select

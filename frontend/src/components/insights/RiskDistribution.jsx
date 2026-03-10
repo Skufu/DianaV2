@@ -1,7 +1,13 @@
 import React, { useMemo } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { cardVariants } from '../../utils/animations';
@@ -36,16 +42,16 @@ const RiskDistribution = React.memo(({ data = [] }) => {
                 border: '1px solid #e2e8f0',
                 borderRadius: '12px',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                color: '#0f172a'
+                color: '#0f172a',
               }}
               formatter={(value, name, props) => [
                 `${value} patients (${props.payload.percentage}%)`,
-                'Count'
+                'Count',
               ]}
               cursor={{ fill: '#f1f5f9' }}
             />
             <Bar dataKey="value" radius={[8, 8, 0, 0]} isAnimationActive={true}>
-              {data.map((entry) => (
+              {data.map(entry => (
                 <Cell key={entry.name} fill={entry.color} />
               ))}
             </Bar>

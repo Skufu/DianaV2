@@ -14,14 +14,7 @@ import {
   X,
 } from 'lucide-react';
 
-const AdminMobileDrawer = ({
-  isOpen,
-  onClose,
-  activeView,
-  setActiveView,
-  onLogout,
-  userRole,
-}) => {
+const AdminMobileDrawer = ({ isOpen, onClose, activeView, setActiveView, onLogout, userRole }) => {
   const panelRef = useRef(null);
   const previousFocusRef = useRef(null);
   const isReduced = useReducedMotion();
@@ -67,7 +60,7 @@ const AdminMobileDrawer = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (event) => {
+    const handleKeyDown = event => {
       if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
@@ -92,7 +85,7 @@ const AdminMobileDrawer = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const handleNavigate = (viewId) => {
+  const handleNavigate = viewId => {
     setActiveView(viewId);
     onClose();
   };
@@ -129,7 +122,9 @@ const AdminMobileDrawer = ({
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
-            transition={isReduced ? { duration: 0 } : { type: 'spring', stiffness: 260, damping: 30 }}
+            transition={
+              isReduced ? { duration: 0 } : { type: 'spring', stiffness: 260, damping: 30 }
+            }
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-indigo-100">
               <div className="flex items-center gap-3">
@@ -143,40 +138,42 @@ const AdminMobileDrawer = ({
                   <p className="text-sm font-semibold text-slate-900">Navigation</p>
                 </div>
               </div>
-                <motion.button
-                  type="button"
-                  onClick={onClose}
-                  whileHover={isReduced ? undefined : { scale: 1.1, rotate: 90 }}
-                  whileTap={isReduced ? undefined : { scale: 0.9 }}
-                  className="min-h-[44px] min-w-[44px] rounded-xl border border-indigo-100 text-indigo-600 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2"
-                  aria-label="Close navigation"
-                  data-drawer-focus
-                >
-                  <X size={18} />
-                </motion.button>
+              <motion.button
+                type="button"
+                onClick={onClose}
+                whileHover={isReduced ? undefined : { scale: 1.1, rotate: 90 }}
+                whileTap={isReduced ? undefined : { scale: 0.9 }}
+                className="min-h-[44px] min-w-[44px] rounded-xl border border-indigo-100 text-indigo-600 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300 focus-visible:ring-offset-2"
+                aria-label="Close navigation"
+                data-drawer-focus
+              >
+                <X size={18} />
+              </motion.button>
             </div>
 
             <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-              {navItems.map((item) => {
+              {navItems.map(item => {
                 const Icon = item.icon;
                 const isActive = activeView === item.id;
                 return (
-                    <motion.button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleNavigate(item.id)}
-                      whileHover={isReduced ? undefined : { scale: 1.02, x: 4 }}
-                      whileTap={isReduced ? undefined : { scale: 0.98 }}
-                      className={`w-full min-h-[48px] px-4 py-3 rounded-2xl flex items-center justify-between text-left border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 ${
-                        isActive
-                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
-                          : 'bg-white border-transparent text-slate-700 hover:bg-slate-50'
-                      }`}
-                    >
+                  <motion.button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleNavigate(item.id)}
+                    whileHover={isReduced ? undefined : { scale: 1.02, x: 4 }}
+                    whileTap={isReduced ? undefined : { scale: 0.98 }}
+                    className={`w-full min-h-[48px] px-4 py-3 rounded-2xl flex items-center justify-between text-left border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2 ${
+                      isActive
+                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                        : 'bg-white border-transparent text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
                     <span className="flex items-center gap-3">
-                      <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                        isActive ? 'bg-white text-indigo-600' : 'bg-slate-100 text-slate-500'
-                      }`}>
+                      <span
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                          isActive ? 'bg-white text-indigo-600' : 'bg-slate-100 text-slate-500'
+                        }`}
+                      >
                         <Icon size={18} />
                       </span>
                       <span className="text-sm font-semibold">{item.label}</span>
