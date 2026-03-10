@@ -1,0 +1,64 @@
+{
+  "timestamp": "2026-03-10T17:00:02.753876",
+  "platform": "win32",
+  "n_iterations": 100,
+  "sample_input": {
+    "bmi": 28.5,
+    "triglycerides": 180,
+    "ldl": 140,
+    "hdl": 45,
+    "waist_circumference": 95,
+    "age": 54,
+    "smoking_encoded": 1,
+    "activity_encoded": 1,
+    "alcohol_encoded": 1
+  },
+  "feature_names": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age",
+    "waist_circumference",
+    "smoking_encoded",
+    "activity_encoded",
+    "alcohol_encoded"
+  ],
+  "results": {
+    "Logistic Regression": {
+      "mean_ms": 1.0805179996532388,
+      "std_ms": 0.15834220353668427,
+      "min_ms": 0.7503999804612249,
+      "max_ms": 2.0846000115852803,
+      "median_ms": 1.092550010071136,
+      "p95_ms": 1.2722899948130362,
+      "p99_ms": 1.310518995160241,
+      "n_iterations": 100
+    },
+    "Random Forest": {
+      "mean_ms": 40.73559399723308,
+      "std_ms": 6.977608855911748,
+      "min_ms": 28.568699985044077,
+      "max_ms": 83.47110002068803,
+      "median_ms": 38.29024999868125,
+      "p95_ms": 49.43607501190854,
+      "p99_ms": 73.83047999843262,
+      "n_iterations": 100
+    },
+    "LightGBM": {
+      "mean_ms": 1.3994960009586066,
+      "std_ms": 0.47659711236220237,
+      "min_ms": 1.062900002580136,
+      "max_ms": 3.944600000977516,
+      "median_ms": 1.2535499990917742,
+      "p95_ms": 2.2432750207372005,
+      "p99_ms": 3.552757985016799,
+      "n_iterations": 100
+    }
+  },
+  "ratios": {
+    "Logistic Regression": 1.0,
+    "Random Forest": 37.700060536063255,
+    "LightGBM": 1.295208410602817
+  }
+}
