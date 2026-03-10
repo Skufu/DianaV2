@@ -29,11 +29,10 @@ Critical distinction:
 This separation prevents circular prediction logic in screening mode.
 
 ## Active Screening Feature Set
-The active no-BP screening model uses a 12-feature contract:
+The active no-BP screening model uses a 9-feature contract:
 - Core biomarkers/demographics: `bmi`, `triglycerides`, `ldl`, `hdl`, `age`
-- Engineered features: `bmi_category`, `tg_hdl_ratio`, `metabolic_syndrome_score`
-- Lifestyle encodings: `smoking_encoded`, `activity_encoded`, `alcohol_encoded`
 - Additional clinical variable: `waist_circumference`
+- Lifestyle encodings: `smoking_encoded`, `activity_encoded`, `alcohol_encoded`
 
 For feature definitions and derivation details, use `feature-documentation.md`.
 

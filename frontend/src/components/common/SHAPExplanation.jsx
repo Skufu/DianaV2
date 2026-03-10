@@ -45,15 +45,22 @@ const formatNumber = (value, digits, fallback = 'N/A') => {
     return numeric == null ? fallback : numeric.toFixed(digits);
 };
 
+const resolveExplainModelType = (modelType) => {
+    const normalized = String(modelType || '').trim();
+    if (normalized === 'ada') return 'ada';
+    if (normalized === 'binary_v2_bp') return 'binary_v2_bp';
+    if (normalized === 'binary_v2_no_bp') return 'binary_v2_no_bp';
+    if (normalized === 'clinical') return 'clinical';
+    return 'binary_v2_no_bp';
+};
+
 const SHAPExplanation = ({
     patientData,
-    modelType = 'clinical',
+    modelType = 'binary_v2_no_bp',
     showTitle = true,
     compact = false
 }) => {
-    const resolvedModelType = (modelType === 'binary_v2_no_bp' || modelType === 'binary_v2_bp')
-        ? 'clinical'
-        : modelType;
+    const resolvedModelType = resolveExplainModelType(modelType);
     const [explanation, setExplanation] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);

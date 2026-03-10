@@ -100,6 +100,26 @@ Ian_ML/
 
 **LIMITATION**: DIANA lacks HOMA2-B, HOMA2-IR, C-peptide. Labels are "Ahlqvist-inspired" per Tanabe et al. (2024).
 
+## SHAP EXPLAINABILITY
+
+### Background Data Requirement
+
+SHAP KernelExplainer requires background data representing training distribution.
+
+| Scenario | Background Source | Reliability |
+|----------|------------------|-------------|
+| TreeExplainer | None needed | Reliable |
+| KernelExplainer + saved background | Training data sample | Reliable |
+| KernelExplainer + fallback | Patient data repeated | Degraded |
+
+**Artifact:**
+- `shap_background.joblib` (saved during training)
+- 100 samples from processed training data
+- Validated on load (shape, feature count, NaN check)
+
+**Response Metadata:**
+- `shap_metadata.background_source`: "saved_training_data" | "patient_data_fallback"
+
 ## COMMANDS
 
 ```bash

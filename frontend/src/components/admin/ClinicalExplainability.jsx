@@ -23,22 +23,25 @@ const defaultFormState = {
 const lifestyleOptions = ['Unknown', 'Never', 'Former', 'Current'];
 const activityOptions = ['Unknown', 'Low', 'Moderate', 'High'];
 const alcoholOptions = ['Unknown', 'None', 'Occasional', 'Regular'];
+const DOCTOR_LOCKED_MODEL_TYPE = 'binary_v2_no_bp';
 
-const ClinicalExplainability = () => {
+const ClinicalExplainability = ({ userRole = 'admin' }) => {
+  const isDoctor = userRole === 'doctor';
   const [formData, setFormData] = useState(defaultFormState);
   const [submittedData, setSubmittedData] = useState(null);
   const [error, setError] = useState(null);
+  const activeModelType = isDoctor ? DOCTOR_LOCKED_MODEL_TYPE : formData.modelType;
 
   const requiredFields = useMemo(() => {
     const fields = ['age', 'bmi', 'triglycerides', 'ldl', 'hdl'];
-    if (formData.modelType === 'ada') {
+    if (activeModelType === 'ada') {
       fields.push('hba1c', 'fbs');
     }
-    if (formData.modelType === 'binary_v2_bp') {
+    if (activeModelType === 'binary_v2_bp') {
       fields.push('systolic', 'diastolic');
     }
     return fields;
-  }, [formData.modelType]);
+  }, [activeModelType]);
 
   const patientPayload = useMemo(() => {
     if (!submittedData) return null;
@@ -53,7 +56,7 @@ const ClinicalExplainability = () => {
       smoking: submittedData.smoking,
       activity: submittedData.activity,
       alcohol: submittedData.alcohol,
-      model_type: submittedData.modelType,
+      model_type: isDoctor ? DOCTOR_LOCKED_MODEL_TYPE : submittedData.modelType,
     };
 
     if (submittedData.modelType === 'ada') {
@@ -67,7 +70,7 @@ const ClinicalExplainability = () => {
     }
 
     return payload;
-  }, [submittedData]);
+  }, [isDoctor, submittedData]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -103,7 +106,10 @@ const ClinicalExplainability = () => {
       return;
     }
 
-    setSubmittedData({ ...formData });
+    setSubmittedData({
+      ...formData,
+      modelType: isDoctor ? DOCTOR_LOCKED_MODEL_TYPE : formData.modelType,
+    });
   };
 
   const handleReset = () => {
@@ -153,20 +159,29 @@ const ClinicalExplainability = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div>
-            <label htmlFor="modelType" className="block text-sm font-semibold text-slate-700 mb-1">Model Type</label>
-            <select
-              id="modelType"
-              name="modelType"
-              value={formData.modelType}
-              onChange={handleChange}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-700"
-            >
-              <option value="binary_v2_no_bp">Screening (No BP) — Binary at-risk</option>
-              <option value="binary_v2_bp">Screening (With BP) — Binary at-risk</option>
-              <option value="ada">ADA Baseline (HbA1c + FBS)</option>
-            </select>
-          </div>
+          {isDoctor ? (
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Model Type</label>
+              <div className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                Screening (No BP) — Binary at-risk
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="modelType" className="block text-sm font-semibold text-slate-700 mb-1">Model Type</label>
+              <select
+                id="modelType"
+                name="modelType"
+                value={formData.modelType}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-700"
+              >
+                <option value="binary_v2_no_bp">Screening (No BP) — Binary at-risk</option>
+                <option value="binary_v2_bp">Screening (With BP) — Binary at-risk</option>
+                <option value="ada">ADA Baseline (HbA1c + FBS)</option>
+              </select>
+            </div>
+          )}
           <div>
             <label htmlFor="age" className="block text-sm font-semibold text-slate-700 mb-1">Age *</label>
             <input
@@ -224,7 +239,7 @@ const ClinicalExplainability = () => {
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-700"
             />
           </div>
-          {formData.modelType === 'binary_v2_bp' && (
+          {activeModelType === 'binary_v2_bp' && (
             <>
               <div>
                 <label htmlFor="systolic" className="block text-sm font-semibold text-slate-700 mb-1">Systolic (mmHg) *</label>
@@ -250,7 +265,7 @@ const ClinicalExplainability = () => {
               </div>
             </>
           )}
-          {formData.modelType === 'ada' && (
+          {activeModelType === 'ada' && (
             <>
               <div>
                 <label htmlFor="hba1c" className="block text-sm font-semibold text-slate-700 mb-1">HbA1c (%) *</label>
@@ -342,7 +357,7 @@ const ClinicalExplainability = () => {
         <motion.div variants={slideUp} className="space-y-4">
           <SHAPExplanation
             patientData={patientPayload}
-            modelType={formData.modelType}
+            modelType={isDoctor ? DOCTOR_LOCKED_MODEL_TYPE : submittedData?.modelType}
             showTitle
           />
         </motion.div>

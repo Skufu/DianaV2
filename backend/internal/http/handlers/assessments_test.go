@@ -326,6 +326,239 @@ func TestAssessmentsHandler_Create_TransportsCanonicalWarningStatus(t *testing.T
 	}
 }
 
+func TestAssessmentsHandler_Create_DoctorRoleRejectsNonNoBPModel(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	repo := &fakeAssessmentRepo{}
+	h := NewAssessmentsHandler(
+		&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+		&fakePredictor{},
+		nil,
+		"binary_v2_no_bp",
+		"hash123",
+		getDefaultTestThresholds(),
+	)
+
+	r := gin.New()
+	r.Use(mockAuthMiddlewareWithRole("doctor"))
+	r.POST("/:id/assessments", h.Create)
+
+	payload, _ := json.Marshal(map[string]any{
+		"age":           55,
+		"bmi":           25,
+		"triglycerides": 150,
+		"ldl":           120,
+		"hdl":           50,
+		"model_type":    "ada",
+	})
+	req, _ := http.NewRequest(http.MethodPost, "/1/assessments", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403 for doctor override model, got %d", w.Code)
+	}
+	if repo.last.ID != 0 {
+		t.Fatalf("expected no assessment to be persisted when doctor requests disallowed model")
+	}
+}
+
+func TestAssessmentsHandler_Create_DoctorRoleForcesNoBPModel(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	predictor := &fakePredictor{}
+	repo := &fakeAssessmentRepo{}
+	h := NewAssessmentsHandler(
+		&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+		predictor,
+		nil,
+		"binary_v2_no_bp",
+		"hash123",
+		getDefaultTestThresholds(),
+	)
+
+	r := gin.New()
+	r.Use(mockAuthMiddlewareWithRole("doctor"))
+	r.POST("/:id/assessments", h.Create)
+
+	payload, _ := json.Marshal(map[string]any{
+		"age":           55,
+		"bmi":           25,
+		"triglycerides": 150,
+		"ldl":           120,
+		"hdl":           50,
+	})
+	req, _ := http.NewRequest(http.MethodPost, "/1/assessments", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected status 201 for doctor no-BP request, got %d", w.Code)
+	}
+	if predictor.lastModelType != doctorLockedModelType {
+		t.Fatalf("expected predictor model type %q, got %q", doctorLockedModelType, predictor.lastModelType)
+	}
+	if repo.last.ModelVersion != doctorLockedModelType {
+		t.Fatalf("expected persisted model version %q, got %q", doctorLockedModelType, repo.last.ModelVersion)
+	}
+}
+
+func TestAssessmentsHandler_Update_DoctorRoleRejectsNonNoBPModel(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	predictor := &fakePredictor{}
+	repo := &fakeAssessmentRepo{
+		existing: &models.Assessment{
+			ID:            99,
+			UserID:        1,
+			Age:           55,
+			BMI:           25,
+			Triglycerides: 150,
+			LDL:           120,
+			HDL:           50,
+			ModelVersion:  doctorLockedModelType,
+		},
+	}
+	h := NewAssessmentsHandler(
+		&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+		predictor,
+		nil,
+		doctorLockedModelType,
+		"hash123",
+		getDefaultTestThresholds(),
+	)
+
+	r := gin.New()
+	r.Use(mockAuthMiddlewareWithRole("doctor"))
+	r.PUT("/:id/assessments/:assessmentID", h.Update)
+
+	payload, _ := json.Marshal(map[string]any{
+		"model_type": "ada",
+	})
+	req, _ := http.NewRequest(http.MethodPut, "/1/assessments/99", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403 for doctor update model override, got %d", w.Code)
+	}
+	if predictor.lastModelType != "" {
+		t.Fatalf("expected predictor not to be called on forbidden doctor update")
+	}
+	if repo.updateCalled {
+		t.Fatalf("expected no persistence when doctor update model override is rejected")
+	}
+}
+
+func TestAssessmentsHandler_Update_DoctorRoleForcesNoBPModel(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	predictor := &fakePredictor{}
+	repo := &fakeAssessmentRepo{
+		existing: &models.Assessment{
+			ID:            42,
+			UserID:        1,
+			Age:           55,
+			BMI:           25,
+			Triglycerides: 150,
+			LDL:           120,
+			HDL:           50,
+			ModelVersion:  doctorLockedModelType,
+		},
+	}
+	h := NewAssessmentsHandler(
+		&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+		predictor,
+		nil,
+		doctorLockedModelType,
+		"hash123",
+		getDefaultTestThresholds(),
+	)
+
+	r := gin.New()
+	r.Use(mockAuthMiddlewareWithRole("doctor"))
+	r.PUT("/:id/assessments/:assessmentID", h.Update)
+
+	payload, _ := json.Marshal(map[string]any{
+		"notes": "doctor update without model override",
+	})
+	req, _ := http.NewRequest(http.MethodPut, "/1/assessments/42", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200 for doctor update, got %d", w.Code)
+	}
+	if predictor.lastModelType != doctorLockedModelType {
+		t.Fatalf("expected forced model type %q, got %q", doctorLockedModelType, predictor.lastModelType)
+	}
+	if !repo.updateCalled {
+		t.Fatalf("expected update repository call to execute")
+	}
+	if repo.last.ModelVersion != doctorLockedModelType {
+		t.Fatalf("expected persisted model version %q, got %q", doctorLockedModelType, repo.last.ModelVersion)
+	}
+}
+
+func TestAssessmentsHandler_Update_AdminRoleAllowsAlternateModel(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	predictor := &fakePredictor{}
+	repo := &fakeAssessmentRepo{
+		existing: &models.Assessment{
+			ID:            7,
+			UserID:        1,
+			Age:           55,
+			BMI:           25,
+			Triglycerides: 150,
+			LDL:           120,
+			HDL:           50,
+			ModelVersion:  doctorLockedModelType,
+		},
+	}
+	h := NewAssessmentsHandler(
+		&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+		predictor,
+		nil,
+		doctorLockedModelType,
+		"hash123",
+		getDefaultTestThresholds(),
+	)
+
+	r := gin.New()
+	r.Use(mockAuthMiddlewareWithRole("admin"))
+	r.PUT("/:id/assessments/:assessmentID", h.Update)
+
+	payload, _ := json.Marshal(map[string]any{
+		"model_type": "ada",
+		"fbs":        126,
+		"hba1c":      6.5,
+	})
+	req, _ := http.NewRequest(http.MethodPut, "/1/assessments/7", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200 for admin update, got %d", w.Code)
+	}
+	if predictor.lastModelType != "ada" {
+		t.Fatalf("expected admin-selected model type ada, got %q", predictor.lastModelType)
+	}
+	if !repo.updateCalled {
+		t.Fatalf("expected admin update to persist successfully")
+	}
+}
+
 func TestAssessmentsHandler_Create_HTTPPredictorError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -839,13 +1072,16 @@ func getDefaultTestThresholds() config.ClinicalThresholds {
 	}
 }
 
-type fakePredictor struct{}
+type fakePredictor struct {
+	lastModelType string
+}
 
 func (f *fakePredictor) Predict(ctx context.Context, input models.Assessment) (ml.Prediction, error) {
 	return ml.Prediction{}, nil
 }
 
 func (f *fakePredictor) PredictWithModelType(ctx context.Context, input models.Assessment, modelType string) (ml.Prediction, error) {
+	f.lastModelType = modelType
 	return ml.Prediction{}, nil
 }
 
@@ -879,11 +1115,15 @@ func (f *fakeStore) Close()                                      {}
 
 // mockAuthMiddleware injects mock user claims for testing
 func mockAuthMiddleware() gin.HandlerFunc {
+	return mockAuthMiddlewareWithRole("admin")
+}
+
+func mockAuthMiddlewareWithRole(role string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("user", middleware.UserClaims{
 			UserID: 1,
 			Email:  "test@example.com",
-			Role:   "admin",
+			Role:   role,
 		})
 		c.Next()
 	}
@@ -929,7 +1169,9 @@ func (f *fakePatientRepo) ListPaginated(ctx context.Context, userID int32, limit
 }
 
 type fakeAssessmentRepo struct {
-	last models.Assessment
+	last         models.Assessment
+	existing     *models.Assessment
+	updateCalled bool
 }
 
 func (f *fakeAssessmentRepo) ListByPatient(ctx context.Context, patientID int64) ([]models.Assessment, error) {
@@ -937,7 +1179,12 @@ func (f *fakeAssessmentRepo) ListByPatient(ctx context.Context, patientID int64)
 }
 
 func (f *fakeAssessmentRepo) Get(ctx context.Context, id int32) (*models.Assessment, error) {
-	return nil, nil
+	if f.existing == nil {
+		return nil, nil
+	}
+
+	copy := *f.existing
+	return &copy, nil
 }
 
 func (f *fakeAssessmentRepo) Create(ctx context.Context, a models.Assessment) (*models.Assessment, error) {
@@ -947,7 +1194,13 @@ func (f *fakeAssessmentRepo) Create(ctx context.Context, a models.Assessment) (*
 }
 
 func (f *fakeAssessmentRepo) Update(ctx context.Context, a models.Assessment) (*models.Assessment, error) {
-	return nil, nil
+	f.updateCalled = true
+	f.last = a
+	if f.existing != nil {
+		copy := a
+		f.existing = &copy
+	}
+	return &a, nil
 }
 
 func (f *fakeAssessmentRepo) Delete(ctx context.Context, id int32) error {

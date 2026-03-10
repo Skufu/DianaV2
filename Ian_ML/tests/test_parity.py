@@ -31,7 +31,7 @@ def predictor():
     pred.features = CLINICAL_FEATURES_NO_BP
     return pred
 
-def compare_parity(predictor, data: dict):
+def compare_parity(predictor, data):
     # 1. Training path
     df = pd.DataFrame([data])
     df_eng = engineer_features(df)
@@ -43,17 +43,7 @@ def compare_parity(predictor, data: dict):
     features = predictor.features
     serve_dict = dict(zip(features, serve_vector))
     
-    # Check bmi_category
-    assert df_eng['bmi_category'].iloc[0] == serve_dict['bmi_category'], "BMI Category mismatch"
-    
-    # Check tg_hdl_ratio
-    train_ratio = df_eng['tg_hdl_ratio'].iloc[0]
-    serve_ratio = serve_dict['tg_hdl_ratio']
-    if pd.isna(train_ratio):
-        assert serve_ratio == 0 or pd.isna(serve_ratio), "TG/HDL ratio nan mismatch"
-    else:
-        assert np.isclose(train_ratio, serve_ratio), "TG/HDL ratio mismatch"
-        
+    # Check 9-feature no-BP active contract fields
     # Check smoking_encoded
     assert df_eng['smoking_encoded'].iloc[0] == serve_dict['smoking_encoded'], "Smoking encoding mismatch"
     
@@ -62,9 +52,14 @@ def compare_parity(predictor, data: dict):
     
     # Check alcohol_encoded
     assert df_eng['alcohol_encoded'].iloc[0] == serve_dict['alcohol_encoded'], "Alcohol encoding mismatch"
-    
-    # Check metabolic_syndrome_score
-    assert df_eng['metabolic_syndrome_score'].iloc[0] == serve_dict['metabolic_syndrome_score'], "Metabolic score mismatch"
+
+    # Check waist_circumference passthrough
+    train_waist = df_eng['waist_circumference'].iloc[0]
+    serve_waist = serve_dict['waist_circumference']
+    if pd.isna(train_waist):
+        assert pd.isna(serve_waist), "Waist circumference NaN mismatch"
+    else:
+        assert np.isclose(train_waist, serve_waist), "Waist circumference mismatch"
 
 def test_feature_parity_standard(predictor):
     data = {

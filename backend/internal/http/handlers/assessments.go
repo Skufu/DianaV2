@@ -22,6 +22,7 @@ const (
 	canonicalAssessmentMinAge = 45
 	canonicalAssessmentMaxAge = 60
 	canonicalAssessmentAgeErr = "Age must be between 45-60 years for postmenopausal women. This application is designed for this specific population."
+	doctorLockedModelType     = "binary_v2_no_bp"
 )
 
 type AssessmentsHandler struct {
@@ -344,11 +345,12 @@ func applyCanonicalPredictionResult(assessment *models.Assessment, prediction ml
 
 // Create creates a new assessment for the logged-in user
 func (h *AssessmentsHandler) Create(c *gin.Context) {
-	userID, err := getUserID(c)
+	claims, err := getUserClaims(c)
 	if err != nil {
 		ErrUnauthorized(c)
 		return
 	}
+	userID := int64(claims.UserID)
 
 	var req models.UpdateAssessmentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -365,6 +367,14 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	if req.ModelType != "" && req.ModelType != "clinical" && req.ModelType != "ada" && req.ModelType != "binary_v2_no_bp" && req.ModelType != "binary_v2_bp" {
 		ErrBadRequest(c, "Invalid model type")
 		return
+	}
+
+	if claims.Role == "doctor" {
+		if req.ModelType != "" && req.ModelType != doctorLockedModelType {
+			ErrForbidden(c)
+			return
+		}
+		req.ModelType = doctorLockedModelType
 	}
 
 	if req.FBS != nil && *req.FBS < 0 {
@@ -541,11 +551,12 @@ func (h *AssessmentsHandler) Get(c *gin.Context) {
 
 // Update modifies an existing assessment
 func (h *AssessmentsHandler) Update(c *gin.Context) {
-	userID, err := getUserID(c)
+	claims, err := getUserClaims(c)
 	if err != nil {
 		ErrUnauthorized(c)
 		return
 	}
+	userID := int64(claims.UserID)
 	assessmentIDStr := c.Param("assessmentID")
 	assessmentID, err := strconv.ParseInt(assessmentIDStr, 10, 64)
 	if err != nil {
@@ -609,6 +620,14 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	if req.ModelType != "" && req.ModelType != "clinical" && req.ModelType != "ada" && req.ModelType != "binary_v2_no_bp" && req.ModelType != "binary_v2_bp" {
 		ErrBadRequest(c, "Invalid model type")
 		return
+	}
+
+	if claims.Role == "doctor" {
+		if req.ModelType != "" && req.ModelType != doctorLockedModelType {
+			ErrForbidden(c)
+			return
+		}
+		req.ModelType = doctorLockedModelType
 	}
 
 	modelType := req.ModelType

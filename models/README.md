@@ -12,7 +12,7 @@
 
 **AUC-ROC**: 0.7202 (72.0%)  
 **Algorithm**: Logistic Regression (calibrated)  
-**Features**: 12 clinical biomarkers (NO HbA1c/FBS)  
+**Features**: 9 clinical features (NO HbA1c/FBS)  
 **Population**: Postmenopausal women (45-60 years)  
 
 ### Model Files
@@ -23,7 +23,7 @@
 | `scaler.joblib` | StandardScaler for feature normalization |
 | `kmeans_model.joblib` | K-Means clustering (K=4) |
 | `cluster_labels.json` | Cluster ID to risk level mapping |
-| `features.json` | Feature list (12 features) |
+| `features.json` | Feature list (9 features) |
 
 ### Key Metrics
 
@@ -45,14 +45,13 @@
 
 ---
 
-## Features Used (12 Total)
+## Features Used (9 Total)
 
 ```python
 [
-    'bmi', 'triglycerides', 'ldl', 'hdl', 'age', 
-    'bmi_category', 'tg_hdl_ratio', 'smoking_encoded', 
-    'activity_encoded', 'alcohol_encoded',
-    'metabolic_syndrome_score', 'waist_circumference'
+    'bmi', 'triglycerides', 'ldl', 'hdl', 'age',
+    'waist_circumference', 'smoking_encoded',
+    'activity_encoded', 'alcohol_encoded'
 ]
 ```
 
@@ -70,10 +69,10 @@ model = joblib.load('models/binary_v2_no_bp/best_model.joblib')
 scaler = joblib.load('models/binary_v2_no_bp/scaler.joblib')
 kmeans = joblib.load('models/binary_v2_no_bp/kmeans_model.joblib')
 
-# Prepare features (12 features, NO HbA1c/FBS)
-features = [bmi, triglycerides, ldl, hdl, age, bmi_category, tg_hdl_ratio,
-            smoking_encoded, activity_encoded, alcohol_encoded,
-            metabolic_syndrome_score, waist_circumference]
+# Prepare features (9 features, NO HbA1c/FBS)
+features = [bmi, triglycerides, ldl, hdl, age,
+            waist_circumference, smoking_encoded,
+            activity_encoded, alcohol_encoded]
 scaled = scaler.transform([features])
 
 # Predict

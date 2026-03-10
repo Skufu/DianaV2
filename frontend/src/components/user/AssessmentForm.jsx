@@ -6,7 +6,14 @@ import Button from '../common/Button';
 import { useCreateAssessment } from '../../api';
 import { slideUp } from '../../utils/animations';
 
-const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = false }) => {
+const AssessmentForm = ({
+	initialData,
+	onSubmit,
+	onCancel,
+	showModelSelector = false,
+	lockedModelType = null,
+}) => {
+	const resolvedModelType = lockedModelType || 'binary_v2_no_bp';
 	const [formData, setFormData] = useState({
 		age: '',
 		height: '',
@@ -25,7 +32,7 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 		physical_activity: 'Unknown',
 		alcohol: 'Unknown',
 		notes: '',
-		model_type: 'binary_v2_no_bp'
+		model_type: resolvedModelType,
 	});
 
 	// Pre-fill fields from UserProfile if available
@@ -98,9 +105,33 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 			physical_activity: 'Unknown',
 			alcohol: 'Unknown',
 			notes: '',
-			model_type: 'binary_v2_no_bp'
+			model_type: resolvedModelType,
 		});
 	};
+
+	useEffect(() => {
+		if (!lockedModelType) {
+			return;
+		}
+
+		setFormData(prev => {
+			if (prev.model_type === lockedModelType) {
+				return prev;
+			}
+
+			const next = {
+				...prev,
+				model_type: lockedModelType,
+				fbs: '',
+				hba1c: '',
+				systolic: '',
+				diastolic: '',
+				family_history_diabetes: '',
+			};
+
+			return next;
+		});
+	}, [lockedModelType]);
 
 	const handleChange = (e) => {
 		const { name, value } = e.target;
@@ -146,11 +177,13 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 		e.preventDefault();
 		setError(null);
 
+		const selectedModelType = lockedModelType || formData.model_type;
+
 		const requiredFields = ['age', 'height', 'weight', 'triglycerides', 'ldl', 'hdl'];
-		if (formData.model_type === 'ada') {
+		if (selectedModelType === 'ada') {
 			requiredFields.push('fbs', 'hba1c');
 		}
-		if (formData.model_type === 'binary_v2_bp') {
+		if (selectedModelType === 'binary_v2_bp') {
 			requiredFields.push('systolic', 'diastolic');
 		}
 		const hasMissingRequired = requiredFields.some(field => !formData[field]);
@@ -186,13 +219,13 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 			activity: formData.physical_activity || 'Unknown',
 			alcohol: formData.alcohol || 'Unknown',
 			notes: formData.notes || null,
-			model_type: formData.model_type,
+			model_type: selectedModelType,
 		};
 
 		if (formData.waist_circumference) {
 			payload.waist_circumference = parseFloat(formData.waist_circumference);
 		}
-		if (formData.model_type !== 'binary_v2_no_bp') {
+		if (selectedModelType !== 'binary_v2_no_bp') {
 			if (formData.family_history_diabetes === 'yes') {
 				payload.family_history_diabetes = true;
 			}
@@ -200,11 +233,11 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 				payload.family_history_diabetes = false;
 			}
 		}
-		if (formData.model_type === 'ada') {
+		if (selectedModelType === 'ada') {
 			payload.fbs = parseFloat(formData.fbs);
 			payload.hba1c = parseFloat(formData.hba1c);
 		}
-		if (formData.model_type === 'binary_v2_bp') {
+		if (selectedModelType === 'binary_v2_bp') {
 			payload.systolic = parseFloat(formData.systolic);
 			payload.diastolic = parseFloat(formData.diastolic);
 		}
@@ -264,7 +297,7 @@ const AssessmentForm = ({ initialData, onSubmit, onCancel, showModelSelector = f
 				</div>
 
 				<form onSubmit={handleSubmit} className="space-y-6">
-					{showModelSelector && (
+					{showModelSelector && !lockedModelType && (
 						<div>
 							<label htmlFor="model_type" className="block text-sm font-semibold text-gray-700 mb-1">
 								Model Type

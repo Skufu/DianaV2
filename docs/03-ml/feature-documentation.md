@@ -2,10 +2,10 @@
 
 ## Overview
 
-The DIANA v2 screening model (binary_v2_no_bp) uses **12 features** derived from NHANES data across 6 cycles (2009-2023). Features are categorized into three groups:
+The DIANA v2 screening model (binary_v2_no_bp) uses **9 features** derived from NHANES data across 6 cycles (2009-2023). Features are categorized into three groups:
 
 1. **Original Metabolic Biomarkers** (5) - Direct measurements from NHANES lab/exam data
-2. **Derived/Engineered Features** (6) - Calculated from raw biomarkers and lifestyle questionnaires
+2. **Lifestyle Encodings** (3) - Encoded from lifestyle questionnaires
 3. **Enrichment Features** (1) - Additional clinical variables
 
 ---
@@ -26,51 +26,11 @@ These are direct laboratory or examination measurements from NHANES:
 
 ---
 
-## 2. Derived/Engineered Features (6)
+## 2. Lifestyle Encodings (3)
 
-These features are calculated through feature engineering in `train_binary_v2_no_bp.py`:
+These features are encoded from questionnaire responses:
 
-### 2.1 BMI Category (`bmi_category`)
-
-**Derivation:**
-```python
-df["bmi_category"] = pd.cut(
-    df["bmi"], 
-    bins=[0, 18.5, 23, 25, 100], 
-    labels=[0, 1, 2, 3]
-)
-```
-
-**Mapping (Philippine / Asia-Pacific WHO Standard):**
-| BMI Range | Category | Value |
-|-----------|----------|-------|
-| < 18.5 | Underweight | 0 |
-| 18.5 - 22.9 | Normal | 1 |
-| 23.0 - 24.9 | Overweight | 2 |
-| ≥ 25.0 | Obese | 3 |
-
-> **Note:** Uses WHO Asia-Pacific guidelines recommended for Filipino populations. Asian populations face higher metabolic risk at lower BMI levels compared to Western populations.
-
-**Clinical Rationale:** Non-linear BMI risk capture - obesity is a major diabetes risk factor.
-
----
-
-### 2.2 TG/HDL Ratio (`tg_hdl_ratio`)
-
-**Derivation:**
-```python
-df["tg_hdl_ratio"] = df["triglycerides"] / df["hdl"].replace(0, np.nan)
-```
-
-**Clinical Rationale:** 
-- Validated surrogate marker for **insulin resistance**
-- Higher ratio indicates atherogenic dyslipidemia
-- Strong predictor of metabolic syndrome and diabetes risk
-- Reference: Gaziano et al. - TG/HDL ratio predicts cardiovascular risk
-
----
-
-### 2.3 Smoking Status Encoded (`smoking_encoded`)
+### 2.1 Smoking Status Encoded (`smoking_encoded`)
 
 **Raw NHANES Variables:**
 - `SMQ020`: Ever smoked 100+ cigarettes? (1=Yes, 2=No)
@@ -94,7 +54,7 @@ df["smoking_encoded"] = df["smoking_status"].map(smoking_map)
 
 ---
 
-### 2.4 Physical Activity Encoded (`activity_encoded`)
+### 2.2 Physical Activity Encoded (`activity_encoded`)
 
 **Raw NHANES Variables:**
 - `PAQ605`: Vigorous work activity (1=Yes, 2=No)
@@ -121,7 +81,7 @@ df["activity_encoded"] = df["physical_activity"].map(activity_map)
 
 ---
 
-### 2.5 Alcohol Use Encoded (`alcohol_encoded`)
+### 2.3 Alcohol Use Encoded (`alcohol_encoded`)
 
 **Raw NHANES Variables:**
 - `ALQ101`: Had 12+ drinks in past year? (1=Yes, 2=No)
@@ -149,31 +109,6 @@ df["alcohol_encoded"] = df["alcohol_use"].map(alcohol_map)
 - Per year: `(ALQ120Q × ALQ130) / 52`
 
 **Clinical Rationale:** Based on CDC guidelines for women (>7 drinks/week = heavy). Moderate alcohol may have protective effects; heavy use increases risk.
-
----
-
-### 2.6 Metabolic Syndrome Score (`metabolic_syndrome_score`)
-
-**Derivation:**
-```python
-metabolic_criteria = pd.DataFrame({
-    "high_tg": df["triglycerides"] > 150,
-    "low_hdl": df["hdl"] < 50,
-    "high_bmi": df["bmi"] >= 25,
-    "high_waist": df["waist_circumference"] >= 80,
-})
-df["metabolic_syndrome_score"] = metabolic_criteria.sum(axis=1)
-```
-
-**ATP III Criteria Used (adapted for no‑BP model):**
-| Criterion | Threshold | Points |
-|-----------|-----------|--------|
-| Elevated triglycerides | ≥ 150 mg/dL | 1 |
-| Reduced HDL | < 50 mg/dL (women) | 1 |
-| Elevated BMI | ≥ 25 kg/m² (PH Asia-Pacific WHO) | 1 |
-| Elevated waist circumference | ≥ 80 cm (women) | 1 |
-
-**Clinical Rationale:** Metabolic syndrome is a cluster of conditions that increases diabetes risk. Score range: 0-4 (≥3 criteria = metabolic syndrome indicator in this dataset).
 
 ---
 
@@ -216,10 +151,9 @@ Data Cleaning (data_processing.py)
     - Detect outliers
     - Output: diana_dataset_final.csv
     ↓
-Feature Engineering (train_binary_v2_no_bp.py::engineer_features_reduced)
-    - Create derived features (bmi_category, tg_hdl_ratio, etc.)
-    - Encode categorical variables
-    - Calculate metabolic syndrome score
+Feature Engineering (train_binary_v2_no_bp.py)
+    - Encode lifestyle variables (smoking/activity/alcohol)
+    - Preserve 9-feature LR-safe contract used by active artifact
     ↓
 Model Training (train_binary_v2_no_bp.py)
     - SimpleImputer (median) inside CV pipeline
@@ -251,11 +185,11 @@ Based on mutual information and clinical literature:
 
 | Rank | Feature | Rationale |
 |------|---------|-----------|
-| 1 | `bmi` / `bmi_category` | Strongest single predictor |
+| 1 | `bmi` | Strongest single predictor |
 | 2 | `age` | Age 45-60 = postmenopausal cohort |
-| 3 | `tg_hdl_ratio` | Insulin resistance surrogate |
-| 4 | `metabolic_syndrome_score` | Composite risk indicator |
-| 5 | `race_encoded` | removed |
+| 3 | `triglycerides` | Lipid dysregulation signal |
+| 4 | `waist_circumference` | Central adiposity proxy |
+| 5 | `hdl` | Protective lipid marker |
 
 ---
 
@@ -264,7 +198,7 @@ Based on mutual information and clinical literature:
 | Version | Date | Changes |
 |---------|------|---------|
 | v1.0 | Original | 6 metabolic features only |
-| v2.0 | Current | Binary_v2_no_bp 12‑feature contract |
+| v2.0 | Current | Binary_v2_no_bp 9‑feature contract |
 | v2.1 | Planned | CRP (removed - not available all cycles) |
 
 ---
@@ -273,7 +207,7 @@ Based on mutual information and clinical literature:
 
 1. **ATP III Metabolic Syndrome Criteria** - NIH/NCEP
 2. **ADA Diabetes Classification** - American Diabetes Association 2024
-3. **Gaziano JM et al.** - Triglyceride/HDL ratio as insulin resistance marker
+3. **Ahlqvist et al.** - diabetes subgroup framing and metabolic phenotype context
 4. **NHANES Documentation** - CDC/NCHS data documentation
 
 ---

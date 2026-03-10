@@ -19,10 +19,10 @@ const AdminSidebar = ({ activeView, setActiveView, onLogout, isCollapsed, setIsC
   ];
 
   const doctorNavItems = [
-    { id: 'insights', icon: Activity, label: 'Insights' },
-    { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
     { id: 'assessment', icon: FileText, label: 'Log Assessment' },
     { id: 'explainability', icon: Brain, label: 'Clinical Explainability' },
+    { id: 'insights', icon: Activity, label: 'Insights' },
+    { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
   ];
 
   const navItems = userRole === 'doctor' ? doctorNavItems : adminNavItems;

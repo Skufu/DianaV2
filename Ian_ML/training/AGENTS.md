@@ -87,8 +87,31 @@ python Ian_ML/training/feature_selection_analysis.py
 | `best_model.joblib` | `models/binary_v2_no_bp/` | Trained classifier |
 | `scaler.joblib` | `models/binary_v2_no_bp/` | Feature scaler |
 | `features.json` | `models/binary_v2_no_bp/` | Feature manifest |
+| `shap_background.joblib` | `models/binary_v2_no_bp/` | SHAP background data (100 samples from training) |
 | `kmeans_model.joblib` | `models/clinical/` | K-Means model |
 | `cluster_centers.json` | `models/clinical/results/` | Cluster centroids |
+
+## SHAP ARTIFACTS
+
+### shap_background.joblib (REQUIRED for consistent runtime SHAP)
+
+**Contents:**
+- `background`: np.ndarray (100 samples × n_features)
+- `feature_names`: Ordered list matching model features
+- `n_features`: Feature count
+- `n_samples`: Background sample count
+- `model_type`: Model identifier
+- `artifact_version`: "1.0"
+
+**Runtime Behavior:**
+- Loaded by `ClinicalPredictor.get_shap_background()`
+- Validated against current model features
+- Fallback to patient data if missing (logged as warning)
+
+**Regeneration:**
+```bash
+python Ian_ML/training/train_binary_v2_no_bp.py
+```
 
 ## NOTES
 

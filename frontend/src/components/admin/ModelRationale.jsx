@@ -2,56 +2,36 @@ import { motion } from 'framer-motion';
 import { BookOpen, ShieldCheck, Activity, Target, AlertTriangle } from 'lucide-react';
 import { slideUp, staggerContainer } from '../../utils/animations';
 
-const modelCards = [
-  {
-    id: 'binary_v2_no_bp',
-    title: 'Primary Screening (No BP) — Binary At‑Risk',
-    summary: 'Default clinician workflow. Uses metabolic biomarkers only to avoid circularity and keep screening accessible when BP/labs are unavailable.',
-    inputs: ['BMI', 'Triglycerides', 'LDL', 'HDL', 'Age', 'Lifestyle (optional)'],
-    outputs: ['Predicted status (Normal / At‑Risk)', 'At‑risk probability', 'Risk score 0–100'],
-    training: 'NHANES postmenopausal cohort (2009–2023). Nested Leave‑One‑Group‑Out validation by NHANES cycle.',
-    notes: 'Optimized for screening sensitivity; confirm with diagnostic labs when at‑risk.'
-  },
-  {
-    id: 'binary_v2_bp',
-    title: 'Screening (With BP) — Binary At‑Risk',
-    summary: 'Adds systolic/diastolic BP for triage when vitals are reliable and recent.',
-    inputs: ['BMI', 'Triglycerides', 'LDL', 'HDL', 'Age', 'Systolic', 'Diastolic', 'Lifestyle (optional)'],
-    outputs: ['Predicted status (Normal / At‑Risk)', 'At‑risk probability', 'Risk score 0–100'],
-    training: 'NHANES postmenopausal cohort (2009–2023). Nested Leave‑One‑Group‑Out validation by NHANES cycle.',
-    notes: 'Use when BP is measured at visit. Confirm risk classification with HbA1c/FBS.'
-  },
-  {
-    id: 'ada',
-    title: 'ADA Baseline (HbA1c + FBS)',
-    summary: 'Diagnostic baseline aligned with ADA biomarker thresholds. Not used for initial screening decisions.',
-    inputs: ['HbA1c', 'FBS', 'BMI', 'Triglycerides', 'LDL', 'HDL'],
-    outputs: ['Medical status', 'Risk score 0–100'],
-    training: 'NHANES postmenopausal cohort; used as diagnostic baseline.',
-    notes: 'HbA1c/FBS are diagnostic markers; interpret as confirmatory evidence.'
-  }
-];
+const approvedModelCard = {
+  id: 'binary_v2_no_bp',
+  title: 'Screening Model — Binary At‑Risk',
+  summary: 'Uses metabolic biomarkers to screen for diabetes risk. Designed for rapid clinical triage without requiring blood pressure readings or diagnostic labs.',
+  inputs: ['BMI', 'Triglycerides', 'LDL', 'HDL', 'Age'],
+  outputs: ['Predicted status (Normal / At‑Risk)', 'At‑risk probability', 'Risk score 0–100'],
+  training: 'NHANES postmenopausal cohort (2009–2023). Nested Leave‑One‑Group‑Out validation by NHANES cycle.',
+  notes: 'Screening support only — confirm at‑risk results with diagnostic labs (HbA1c/FBS).'
+};
 
 const rationaleSections = [
   {
-    title: 'Why Binary Screening',
-    content: 'Binary screening prioritizes sensitivity for case‑finding (Normal vs At‑Risk). It keeps triage clear while prompting confirmatory labs when flagged.'
+    title: 'Screening Purpose',
+    content: 'This model is designed for rapid case‑finding to identify patients who may benefit from diagnostic testing. It provides a binary triage (Normal vs At‑Risk) to support clinical decision‑making.'
   },
   {
-    title: 'Default Model for Clinics',
-    content: 'The no‑BP screening model is the default for clinical workflow because it avoids circularity and works when vitals or diagnostic labs are not immediately available.'
+    title: 'Model Rationale',
+    content: 'The screening model uses metabolic biomarkers that are routinely available in clinical practice. This allows for quick risk assessment without requiring blood pressure readings or diagnostic labs at the point of screening.'
   },
   {
-    title: 'When to Use BP‑Enabled Screening',
-    content: 'Use the BP‑enabled model when systolic/diastolic readings are measured at visit and reliable. It improves stratification but should not replace confirmatory labs.'
-  },
-  {
-    title: 'How the Models Were Trained',
-    content: 'Models were trained on NHANES postmenopausal cohorts with Leave‑One‑Group‑Out validation across NHANES cycles. This tests temporal generalization and reduces overfitting to a single survey cycle.'
+    title: 'Training & Validation',
+    content: 'Trained on NHANES postmenopausal cohorts with Leave‑One‑Group‑Out validation across NHANES cycles. This tests temporal generalization and reduces overfitting to a single survey period.'
   },
   {
     title: 'What is NHANES?',
-    content: 'NHANES (CDC/NCHS) is a U.S. national health survey combining interviews and clinical exams/labs. It provides standardized biomarker data used to train and validate the DIANA screening models.'
+    content: 'NHANES (CDC/NCHS) is a U.S. national health survey combining interviews and clinical exams/labs. It provides standardized biomarker data used to train and validate this screening model.'
+  },
+  {
+    title: 'Interpreting Results',
+    content: 'At‑Risk results indicate elevated risk factors and should prompt confirmatory diagnostic testing (HbA1c/FBS). Always interpret screening results within the full patient context.'
   }
 ];
 
@@ -78,47 +58,45 @@ const ModelRationale = () => {
         </div>
         <ul className="text-blue-100 text-lg leading-loose space-y-2">
           <li>• Screening support only — not diagnostic or prescriptive.</li>
-          <li>• Default workflow uses the No‑BP screening model for rapid triage.</li>
-          <li>• Use confirmatory labs (HbA1c/FBS) for clinical decisions.</li>
+          <li>• Confirm at‑risk results with diagnostic labs (HbA1c/FBS).</li>
           <li>• Interpret results in the full patient context (history, symptoms, comorbidities).</li>
+          <li>• Use clinical judgment — screening is a decision‑support tool, not a replacement.</li>
         </ul>
       </motion.div>
 
-      <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {modelCards.map((card) => (
-            <motion.div key={card.id} variants={slideUp} className="glass-card bg-white rounded-3xl border border-diana-sand p-7">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-xl font-bold text-diana-text-primary">{card.title}</h3>
-                  <p className="text-diana-text-secondary mt-2">{card.summary}</p>
-                </div>
-                <div className="p-3 rounded-2xl bg-diana-forest/10 text-diana-forest">
-                  <Activity size={22} />
-                </div>
-              </div>
+      <motion.div
+        variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.1 }}
+      >
+        <motion.div variants={slideUp} className="glass-card bg-white rounded-3xl border border-diana-sand p-7 max-w-3xl mx-auto">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-bold text-diana-text-primary">{approvedModelCard.title}</h3>
+              <p className="text-diana-text-secondary mt-2">{approvedModelCard.summary}</p>
+            </div>
+            <div className="p-3 rounded-2xl bg-diana-forest/10 text-diana-forest">
+              <Activity size={22} />
+            </div>
+          </div>
 
-              <div className="mt-5 grid grid-cols-1 gap-4 text-sm">
-                <div>
-                  <div className="font-semibold text-diana-text-primary">Inputs</div>
-                  <div className="text-diana-text-secondary">{card.inputs.join(', ')}</div>
-                </div>
-                <div>
-                  <div className="font-semibold text-diana-text-primary">Outputs</div>
-                  <div className="text-diana-text-secondary">{card.outputs.join(', ')}</div>
-                </div>
-                <div>
-                  <div className="font-semibold text-diana-text-primary">Training</div>
-                  <div className="text-diana-text-secondary">{card.training}</div>
-                </div>
-                <div className="flex items-start gap-2 text-diana-text-secondary">
-                  <Target size={16} className="mt-0.5 text-diana-forest" />
-                  <span>{card.notes}</span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <div className="font-semibold text-diana-text-primary">Inputs</div>
+              <div className="text-diana-text-secondary">{approvedModelCard.inputs.join(', ')}</div>
+            </div>
+            <div>
+              <div className="font-semibold text-diana-text-primary">Outputs</div>
+              <div className="text-diana-text-secondary">{approvedModelCard.outputs.join(', ')}</div>
+            </div>
+            <div className="md:col-span-2">
+              <div className="font-semibold text-diana-text-primary">Training</div>
+              <div className="text-diana-text-secondary">{approvedModelCard.training}</div>
+            </div>
+            <div className="md:col-span-2 flex items-start gap-2 text-diana-text-secondary">
+              <Target size={16} className="mt-0.5 text-diana-forest" />
+              <span>{approvedModelCard.notes}</span>
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -101,7 +101,7 @@ const App = () => {
       if (userIsStaff) {
         setActiveTab('admin');
         if (role === 'doctor') {
-          setAdminView('insights');
+          setAdminView('assessment');
         }
       }
     } catch (err) {
@@ -169,7 +169,7 @@ const App = () => {
       setIsAdmin(role === 'admin' || role === 'doctor');
       setUserId(profile.id);
       if (role === 'doctor') {
-        setAdminView('insights');
+        setAdminView('assessment');
       }
       const hasAssessments = assessments && assessments.length > 0;
       if (profile?.onboarding_completed === true || hasAssessments) {
@@ -250,7 +250,7 @@ const App = () => {
     setUserId(res.user.id);
     setIsAuthenticated(true);
     if (role === 'doctor') {
-      setAdminView('insights');
+      setAdminView('assessment');
     }
   }, []);
 

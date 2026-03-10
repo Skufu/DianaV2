@@ -91,9 +91,8 @@ class ClinicalPredictor:
     """Non-circular predictor excluding HbA1c and FBS from features."""
     
     FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age',
-                'bmi_category', 'tg_hdl_ratio', 'smoking_encoded',
-                'activity_encoded', 'alcohol_encoded',
-                'metabolic_syndrome_score', 'waist_circumference']  # 12 features
+                'waist_circumference', 'smoking_encoded',
+                'activity_encoded', 'alcohol_encoded']  # 9 features
 ```
 
 ---
@@ -134,7 +133,7 @@ POST /predict?model_type=clinical
 | Type | Query Param | Features | Use Case |
 |------|-------------|----------|----------|
 | ADA | `?model_type=ada` | 6 features (hba1c, fbs, bmi, tg, ldl, hdl) | Diagnostic confirmation |
-| Clinical | `?model_type=binary_v2_no_bp` | 12 features (no HbA1c/FBS) | Screening without diagnostic biomarkers |
+| Clinical | `?model_type=binary_v2_no_bp` | 9 features (no HbA1c/FBS) | Screening without diagnostic biomarkers |
 
 ---
 
