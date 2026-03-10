@@ -39,6 +39,7 @@ import time
 import hmac
 import math
 from collections import defaultdict
+from typing import Any
 import numpy as np
 flask_module = importlib.import_module("flask")
 Flask = flask_module.Flask
@@ -288,8 +289,14 @@ class PredictorManager:
 # Global predictor manager
 _predictor_manager = PredictorManager()
 
-# Global SHAP explainer instance (lazy-loaded per model)
-shap_explainer = None
+# SHAP explainer cache scoped by (model_type, explainer_type, background_source)
+# Key: (model_id, "tree"|"kernel", "saved"|"fallback")
+_shap_explainer_cache: dict[tuple[str, str, str], Any] = {}
+
+
+def _get_shap_cache_key(model_id: str, explainer_type: str, bg_source: str) -> tuple[str, str, str]:
+    """Generate cache key for SHAP explainer."""
+    return (model_id, explainer_type, bg_source)
 
 
 def get_predictor():
@@ -457,17 +464,15 @@ def predict_explain():
     Predict with SHAP explanation for clinicians.
 
     Query params:
-        model_type: "clinical" (default) or "ada"
+        model_type: "clinical" (default), "binary_v2_no_bp", "binary_v2_bp", or "ada"
         format: "full" (default) or "clinician" (simplified)
 
-    For clinical model (12 features):
+    For clinical model (active no-BP contract = 9 features):
         Base features: bmi, triglycerides, ldl, hdl, age
         Lifestyle: smoking, activity, alcohol (optional)
 
     Returns prediction results with SHAP-based feature contributions.
     """
-    global shap_explainer
-    
     if not shap_module_available or SHAPExplainer is None:
         return jsonify({"error": "SHAP not available. Install shap package."}), 503
     
@@ -480,9 +485,14 @@ def predict_explain():
         if not data:
             return jsonify({"error": "No data provided"}), 400
         
+        # Initialize provenance metadata
+        explainer_type = "tree"
+        bg_source = "none"
+        background = None
+        
         # Get predictor and make prediction
-        if model_type == 'clinical':
-            clin_predictor = get_clinical_predictor()
+        if model_type in ('clinical', 'binary_v2_no_bp', 'binary_v2_bp'):
+            clin_predictor = get_clinical_predictor_for(model_type)
             if clin_predictor is None:
                 return jsonify({"error": "Clinical model not available"}), 503
             
@@ -503,18 +513,58 @@ def predict_explain():
             # Make prediction
             result = clin_predictor.predict(patient_data)
             
-            # Get SHAP explanation
-            if shap_explainer is None or shap_explainer.model != clin_predictor.classifier:
+            # Get SHAP explanation with proper cache scoping
+            model_id = f"clinical_{id(clin_predictor.classifier)}"
+            
+            # Try TreeExplainer first
+            cache_key = _get_shap_cache_key(model_id, "tree", "none")
+            shap_explainer = _shap_explainer_cache.get(cache_key)
+            
+            if shap_explainer is None:
                 shap_explainer = SHAPExplainer(clin_predictor.classifier, model_type="tree")
-                if not shap_explainer.is_available:
-                    # Fallback for wrapped models (e.g., calibrated classifier)
-                    bg = np.repeat(clin_predictor._build_feature_vector(patient_data), 16, axis=0)
-                    bg = clin_predictor._transform_features(bg)
+                if shap_explainer.is_available:
+                    _shap_explainer_cache[cache_key] = shap_explainer
+                else:
+                    shap_explainer = None
+            
+            # Fallback to KernelExplainer with saved background
+            if shap_explainer is None or not shap_explainer.is_available:
+                explainer_type = "kernel"
+                
+                # Try loading saved background
+                bg_artifact = clin_predictor.get_shap_background()
+                
+                if bg_artifact is not None:
+                    bg_source = "saved_training_data"
+                    background = bg_artifact["background"]
+                    logger.info("Using saved SHAP background from training (%d samples)", len(background))
+                else:
+                    bg_source = "patient_data_fallback"
+                    logger.warning(
+                        "No saved SHAP background found - using patient data (less reliable). "
+                        "Re-run training to generate shap_background.joblib"
+                    )
+                    # Fallback: use patient data (degraded mode)
+                    patient_features = clin_predictor._build_feature_vector(patient_data)
+                    patient_scaled = clin_predictor._transform_features(patient_features)
+                    background = np.repeat(patient_scaled, 16, axis=0)
+                
+                cache_key = _get_shap_cache_key(model_id, "kernel", bg_source)
+                shap_explainer = _shap_explainer_cache.get(cache_key)
+                
+                if shap_explainer is None:
                     shap_explainer = SHAPExplainer(
                         clin_predictor.classifier,
                         model_type="kernel",
-                        background_data=bg,
+                        background_data=background,
                     )
+                    if shap_explainer.is_available:
+                        _shap_explainer_cache[cache_key] = shap_explainer
+                    else:
+                        shap_explainer = None
+
+            if shap_explainer is None:
+                return jsonify({"error": "SHAP explainer unavailable"}), 503
 
             clinical_features = clin_predictor._build_feature_vector(patient_data)
             clinical_features_scaled = clin_predictor._transform_features(clinical_features)
@@ -537,8 +587,19 @@ def predict_explain():
             
             result = ada_predictor.predict(patient_data)
             
-            if shap_explainer is None or shap_explainer.model != ada_predictor.classifier:
+            model_id = f"ada_{id(ada_predictor.classifier)}"
+            cache_key = _get_shap_cache_key(model_id, "tree", "none")
+            shap_explainer = _shap_explainer_cache.get(cache_key)
+            
+            if shap_explainer is None:
                 shap_explainer = SHAPExplainer(ada_predictor.classifier, model_type="tree")
+                if shap_explainer.is_available:
+                    _shap_explainer_cache[cache_key] = shap_explainer
+                else:
+                    shap_explainer = None
+
+            if shap_explainer is None:
+                return jsonify({"error": "SHAP explainer unavailable"}), 503
 
             features = np.array([[patient_data[f] for f in REQUIRED_FEATURES]], dtype=float)
             if ada_predictor.scaler is not None:
@@ -568,6 +629,13 @@ def predict_explain():
                 if waterfall_plot:
                     explanation['waterfall_plot'] = waterfall_plot
             result['explanation'] = explanation
+        
+        # Add SHAP provenance metadata
+        result['shap_metadata'] = {
+            "explainer_type": explainer_type,
+            "background_source": bg_source,
+            "background_samples": len(background) if background is not None else None,
+        }
         
         result['model_type'] = model_type
         return jsonify(result)

@@ -243,15 +243,11 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   const actionSteps = getActionSteps(normalizedCluster, overallRiskLevel);
 
   const isDoctorModel = typeof model_version === 'string' && model_version.length > 0;
-  // ALWAYS assume binary_v2_no_bp is the primary use case now.
   const modelLabelMap = {
-    binary_v2_no_bp: 'Primary Screening (No BP) — Binary at-risk',
-    // Kept for backward compatibility, but binary_v2_no_bp is the main one.
-    binary_v2_bp: 'Screening (With BP) — Binary at-risk',
-    clinical: 'Clinical (No HbA1c/FBS)',
-    ada: 'ADA Baseline (HbA1c + FBS)'
+    binary_v2_no_bp: 'Screening Model — Binary at‑Risk',
+    clinical: 'Screening Model — Binary at‑Risk',
   };
-  const modelLabel = modelLabelMap[model_version] || model_version || 'Screening (No BP) — Binary at-risk';
+  const modelLabel = modelLabelMap[model_version] || 'Screening Model — Binary at‑Risk';
 
   const probabilityText = Number.isFinite(at_risk_probability)
     ? `${Math.round(at_risk_probability * 100)}%`

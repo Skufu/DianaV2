@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 import os
 import warnings
-from collections import defaultdict
+from collections import Counter, defaultdict
+from datetime import datetime
 from pathlib import Path
 
 import joblib
@@ -902,11 +903,74 @@ def generate_roc_curve(aggregated: dict[str, dict[str, object]], best_model_name
     print(f"[SAVED] ROC curve to {VIZ_DIR / 'roc_curve.png'}")
 
 
+def save_shap_background(
+    X_processed: np.ndarray,
+    feature_names: list[str],
+    models_dir: Path,
+    model_type: str = "binary_v2_no_bp",
+    n_background: int = 100,
+) -> Path:
+    """
+    Save SHAP background data deterministically (before explainer branching).
+
+    This is REQUIRED for consistent runtime SHAP explanations.
+    Must be called with the processed training matrix.
+
+    Args:
+        X_processed: Preprocessed training features (after ColumnTransformer)
+        feature_names: Ordered feature names matching X_processed columns
+        models_dir: Directory to save artifacts
+        model_type: Model identifier for metadata
+        n_background: Number of background samples (default 100)
+
+    Returns:
+        Path to saved artifact
+
+    Raises:
+        ValueError: If X_processed is empty or feature count mismatch
+    """
+    if X_processed.shape[0] == 0:
+        raise ValueError("Cannot create SHAP background from empty data")
+
+    if X_processed.shape[1] != len(feature_names):
+        raise ValueError(
+            f"Feature count mismatch: X has {X_processed.shape[1]} columns, "
+            f"but feature_names has {len(feature_names)} items"
+        )
+
+    # Sample background deterministically
+    bg_size = min(n_background, len(X_processed))
+    rng = np.random.RandomState(42)
+    indices = rng.choice(len(X_processed), size=bg_size, replace=False)
+    background = X_processed[indices]
+
+    # Build metadata envelope
+    artifact = {
+        "background": background,
+        "feature_names": feature_names,
+        "n_features": len(feature_names),
+        "n_samples": bg_size,
+        "model_type": model_type,
+        "artifact_version": "1.0",
+        "created_at": datetime.now().isoformat(),
+    }
+
+    output_path = models_dir / "shap_background.joblib"
+    joblib.dump(artifact, output_path)
+
+    print(f"[SHAP] Saved background data: {output_path}")
+    print(f"       Shape: {background.shape}")
+    print(f"       Features: {len(feature_names)}")
+
+    return output_path
+
+
 def generate_shap_plots(
     final_pipeline: Pipeline,
     X: np.ndarray,
     y: np.ndarray,
     feature_names: list[str],
+    background_path: Path | None = None,
 ) -> None:
     """Generate SHAP summary plots for thesis."""
     try:
@@ -957,8 +1021,18 @@ def generate_shap_plots(
     if shap_values_pos is None:
         try:
             print("   Falling back to KernelExplainer...")
-            bg_size = min(100, len(X_processed))
-            background = shap.sample(X_processed, bg_size)
+            
+            # Load saved background if available
+            if background_path and background_path.exists():
+                artifact = joblib.load(background_path)
+                background = artifact["background"]
+                print(f"   Loaded background from {background_path}")
+            else:
+                # Create on-the-fly (should not happen in production)
+                bg_size = min(100, len(X_processed))
+                background = shap.sample(X_processed, bg_size)
+                print(f"   Created temporary background (not saved)")
+            
             explainer = shap.KernelExplainer(model.predict_proba, background)
             shap_values_raw = explainer.shap_values(X_processed[:200])
             X_processed = X_processed[:200]
@@ -1138,7 +1212,18 @@ def main():
     save_fold_metrics(fold_df)
     save_best_model_report(comparison_df, str(best_model_name))
     generate_roc_curve(aggregated, str(best_model_name))
-    generate_shap_plots(final_pipeline, X, y, MODEL_FEATURES)
+    
+    # Save SHAP background BEFORE generating plots
+    X_processed = final_pipeline.named_steps["preprocessor"].transform(X)
+    shap_bg_path = save_shap_background(
+        X_processed=X_processed,
+        feature_names=MODEL_FEATURES,
+        models_dir=MODELS_DIR,
+        model_type="binary_v2_no_bp",
+        n_background=100,
+    )
+    
+    generate_shap_plots(final_pipeline, X, y, MODEL_FEATURES, background_path=shap_bg_path)
     
     print("\n" + "=" * 78)
     print("TRAINING COMPLETE")

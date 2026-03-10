@@ -204,13 +204,11 @@ def test_feature_engineering_consistency():
 
 def test_no_bp_features_list():
     """Test that no-bp model uses the expected feature set."""
-    assert len(CLINICAL_FEATURES_NO_BP) == 12, f"Expected 12 features, got {len(CLINICAL_FEATURES_NO_BP)}"
+    assert len(CLINICAL_FEATURES_NO_BP) == 9, f"Expected 9 features, got {len(CLINICAL_FEATURES_NO_BP)}"
 
     expected_features = [
-        "bmi", "triglycerides", "ldl", "hdl", "age",
-        "bmi_category", "tg_hdl_ratio",
+        "bmi", "triglycerides", "ldl", "hdl", "age", "waist_circumference",
         "smoking_encoded", "activity_encoded", "alcohol_encoded",
-        "metabolic_syndrome_score", "waist_circumference",
     ]
 
     for feat in expected_features:

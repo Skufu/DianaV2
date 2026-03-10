@@ -487,7 +487,7 @@ CLINICAL_BASE_FEATURES = ['bmi', 'triglycerides', 'ldl', 'hdl', 'age']
 # Optional enrichment features (model works without them via imputation)
 CLINICAL_ENRICHMENT_FEATURES = ['waist_circumference']
 
-# Full feature set including engineered features (12 features for classifier, no BP)
+# Full feature set for active no-BP classifier (9 features, no BP)
 # IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
 # CLINICAL_FEATURES is now imported at the top of the file
 
@@ -959,8 +959,9 @@ class ClinicalPredictor:
                 risk_level = cluster_info.get("risk_level", "UNKNOWN")
                 raw_risk_label = cluster_info.get("risk_label", raw_label)
                 risk_label = self._to_like_label(raw_risk_label) if emit_like else raw_risk_label
-                raw_subtype = cluster_info.get("subtype", raw_label)
-                metabolic_subtype = self._to_like_label(raw_subtype) if emit_like else raw_subtype
+                # metabolic_subtype uses canonical label (SIDD, SIRD, MOD, MARD) for API compatibility
+                # The 'subtype' field in cluster_labels.json contains aliases like 'ATH' for display only
+                metabolic_subtype = self._to_like_label(raw_label) if emit_like else raw_label
                 raw_subtype_full = cluster_info.get("subtype_full", cluster_info.get("full_name", "N/A"))
                 metabolic_subtype_full = self._to_like_label(raw_subtype_full) if emit_like else raw_subtype_full
                 cluster_description = cluster_info.get("description", "")
@@ -1083,6 +1084,98 @@ class ClinicalPredictor:
     def predict_batch(self, patients: list[Mapping[str, Any]]) -> list[Dict[str, Any]]:
         """Predict for multiple patients."""
         return [self.predict(p) for p in patients]
+
+    @property
+    def shap_background_path(self) -> Path:
+        """Path to saved SHAP background data from training."""
+        return self.models_dir / "shap_background.joblib"
+
+    @property
+    def shap_values_path(self) -> Path:
+        """Path to pre-computed SHAP values (optional, for thesis)."""
+        return self.models_dir / "shap_training_values.joblib"
+
+    def get_shap_background(self):
+        """
+        Load saved SHAP background data with validation.
+
+        Returns:
+            Dict with 'background' (np.ndarray), 'feature_names', etc.
+            None if file missing or validation fails.
+
+        Validation:
+            - File exists
+            - artifact_version == "1.0"
+            - background is 2D ndarray
+            - background.shape[1] == len(self.features)
+            - All values are finite (no NaN/Inf)
+        """
+        if not self.shap_background_path.exists():
+            logger.debug("SHAP background file not found: %s", self.shap_background_path)
+            return None
+
+        try:
+            artifact = joblib.load(self.shap_background_path)
+        except Exception as e:
+            logger.warning("Failed to load SHAP background: %s", e)
+            return None
+
+        if not isinstance(artifact, dict):
+            logger.warning("SHAP background artifact is not a dict")
+            return None
+
+        required_keys = ["background", "feature_names", "n_features"]
+        missing = [k for k in required_keys if k not in artifact]
+        if missing:
+            logger.warning("SHAP background missing keys: %s", missing)
+            return None
+
+        background = artifact["background"]
+
+        if not isinstance(background, np.ndarray):
+            logger.warning("SHAP background is not ndarray")
+            return None
+
+        if background.ndim != 2:
+            logger.warning("SHAP background is not 2D: shape=%s", background.shape)
+            return None
+
+        if background.shape[1] != len(self.features):
+            logger.warning(
+                "SHAP background feature count mismatch: "
+                "background has %d features, model expects %d",
+                background.shape[1], len(self.features)
+            )
+            return None
+
+        # Check feature order matches exactly
+        artifact_feature_names = artifact.get("feature_names", [])
+        if artifact_feature_names != self.features:
+            logger.warning(
+                "SHAP background feature order mismatch: "
+                "artifact has %s, model expects %s",
+                artifact_feature_names, self.features
+            )
+            return None
+
+        if not np.all(np.isfinite(background)):
+            logger.warning("SHAP background contains NaN/Inf values")
+            return None
+
+        artifact_n_features = artifact.get("n_features", 0)
+        if artifact_n_features != len(artifact.get("feature_names", [])):
+            logger.warning(
+                "SHAP background n_features mismatch: n_features=%d, feature_names has %d",
+                artifact_n_features, len(artifact.get("feature_names", []))
+            )
+            return None
+
+        logger.info(
+            "Loaded valid SHAP background: shape=%s, features=%d",
+            background.shape, artifact["n_features"]
+        )
+
+        return artifact
 
 
 _clinical_predictor = None

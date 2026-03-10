@@ -18,10 +18,10 @@ const AdminMobileHeader = ({ activeView, userRole, isOpen, onOpen }) => {
   ];
 
   const doctorNavItems = [
-    { id: 'insights', label: 'Insights' },
-    { id: 'rationale', label: 'Model Rationale' },
     { id: 'assessment', label: 'Log Assessment' },
     { id: 'explainability', label: 'Clinical Explainability' },
+    { id: 'insights', label: 'Insights' },
+    { id: 'rationale', label: 'Model Rationale' },
   ];
 
   const navItems = userRole === 'doctor' ? doctorNavItems : adminNavItems;

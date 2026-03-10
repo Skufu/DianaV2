@@ -44,19 +44,18 @@ CLUSTER_FEATURE_COUNT: int = len(CLUSTER_FEATURES)
 # =============================================================================
 # CLINICAL FEATURES - Binary/Classification Models (Non-Circular)
 # =============================================================================
+# Active binary_v2_no_bp production contract (artifact-aligned):
+# 6 continuous + 3 ordinal LR-safe features.
 CLINICAL_FEATURES_NO_BP: List[str] = [
     'bmi',
     'triglycerides',
     'ldl',
     'hdl',
     'age',
-    'bmi_category',
-    'tg_hdl_ratio',
+    'waist_circumference',
     'smoking_encoded',
     'activity_encoded',
     'alcohol_encoded',
-    'metabolic_syndrome_score',
-    'waist_circumference',
 ]
 
 CLINICAL_FEATURES_WITH_BP: List[str] = [
@@ -141,7 +140,7 @@ RAW_FEATURE_COUNT: int = len(RAW_FEATURES)
 # =============================================================================
 # Acceptable feature count ranges for model validation
 # Training must produce models within these bounds
-MIN_CLINICAL_FEATURES: int = 11
+MIN_CLINICAL_FEATURES: int = 9
 MAX_CLINICAL_FEATURES: int = 17
 
 # =============================================================================

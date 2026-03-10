@@ -61,12 +61,23 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
     return <AccessDenied message="Admin or Doctor role required to view this dashboard." />;
   }
 
+  const DOCTOR_ALLOWED_VIEWS = ['assessment', 'explainability', 'insights', 'rationale'];
+  const isDoctorViewAllowed = userRole !== 'doctor' || DOCTOR_ALLOWED_VIEWS.includes(activeView);
+
+  if (!isDoctorViewAllowed) {
+    return <AccessDenied message="This view is not available for doctor role." />;
+  }
+
   const renderContent = () => {
     switch (activeView) {
       case 'assessment':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <AssessmentForm initialData={profile} showModelSelector />
+            <AssessmentForm
+              initialData={profile}
+              showModelSelector={userRole === 'admin'}
+              lockedModelType={userRole === 'doctor' ? 'binary_v2_no_bp' : null}
+            />
           </Suspense>
         );
       case 'rationale':
@@ -78,7 +89,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
       case 'explainability':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <ClinicalExplainability />
+            <ClinicalExplainability userRole={userRole} />
           </Suspense>
         );
       case 'users':

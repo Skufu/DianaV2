@@ -1555,7 +1555,7 @@ flowchart TB
     end
     
     subgraph ML["ML Microservice - Render"]
-        C[Python 3.12 + Flask<br/>Logistic Regression + K-Means]
+        C[Python 3.12 + Flask<br/>Logistic Regression + Weighted K-Means]
     end
     
     subgraph Data["Data Layer - NeonDB + Redis"]
@@ -1763,7 +1763,7 @@ This endpoint is called by the Go backend to obtain risk predictions from the ML
   "prediction": 1,
   "probability": 0.72,
   "risk_label": "High",
-  "cluster": "SIRD",
+  "cluster": "SIRD-like",
   "shap_values": {
     "triglycerides": 0.15,
     "waist_circumference": 0.12,
@@ -1787,7 +1787,7 @@ This endpoint is called by the Go backend to obtain risk predictions from the ML
 | `prediction` | integer | Binary classification (0=Normal, 1=At-Risk) |
 | `probability` | float | Risk probability (0.0-1.0) |
 | `risk_label` | string | Human-readable risk category (Normal/Moderate/High) |
-| `cluster` | string | Ahlqvist subtype (SIRD/SIDD/MOD/MARD) |
+| `cluster` | string | Ahlqvist-inspired proxy subtype (SIRD-like/SIDD-like/MOD-like/MARD-like) |
 | `shap_values` | object | Feature contributions (positive=increase risk, negative=decrease risk) |
 | `model_version` | string | Trained model identifier |
 | `dataset_hash` | string | Training dataset fingerprint |
@@ -1815,7 +1815,7 @@ curl -X POST http://localhost:5001/predict \
   "prediction": 1,
   "probability": 0.72,
   "risk_label": "High",
-  "cluster": "SIRD",
+  "cluster": "SIRD-like",
   "shap_values": {
     "triglycerides": 0.15,
     "waist_circumference": 0.12,
@@ -2417,7 +2417,7 @@ _Figure X: Model Comparison — Logistic Regression vs. Random Forest vs. LightG
 
 The data presented in Table X and Figure X reveal that Logistic Regression achieved a higher mean AUC (0.7306 vs. 0.7142), while maintaining stable sensitivity and specificity. The marginal performance difference, coupled with the interpretability advantages of Logistic Regression (coefficient transparency, probability calibration), justifies the deployment of the linear model for clinical screening. AUC variability across cycles (σ = 0.0248 for LR) reflects realistic cohort shifts inherent to temporal validation, while maintaining performance above the 0.70 acceptability threshold established in Chapter 3.
 
-**4.6 Subtype Clustering (K-Means, K=4)**
+**4.6 Subtype Clustering (Weighted K-Means, K=4)**
 
 Prior to applying K-Means clustering, the optimal number of clusters was evaluated using the Elbow Method (within-cluster sum of squared errors, WCSS) and Silhouette Analysis. The evaluation results for K = 2 through K = 6 are summarized in Table X.
 
@@ -2435,7 +2435,7 @@ _Figure X: Elbow Method and Silhouette Analysis for Optimal K Selection_
 
 While the silhouette analysis suggested K = 2 as the statistically optimal cluster count, K = 4 was selected based on the Ahlqvist et al. (2018) diabetes subtyping literature, which established four clinically meaningful phenotypes. This decision prioritized clinical interpretability over mathematical compactness, as the four-cluster solution enables actionable risk stratification aligned with established endocrinological subgroups.
 
-K-means clustering (K=4) was applied to the full imputed dataset (n = 1,376), producing four phenotypic subgroups. The cluster labeling algorithm utilized the Lipid Accumulation Product (LAP) formula—LAP = (Waist Circumference − 58) × Triglycerides—as a validated proxy for insulin resistance (Wang et al., 2024), enabling identification of the SIRD phenotype without requiring C-peptide or HOMA-IR measurements. The resultant cluster distributions and biomarker profiles are detailed in Table X.
+Weighted K-means clustering (K=4) was applied to the at-risk subset only (diabetes_label >= 1), producing four phenotypic proxy subgroups. The clustering distance metric used expert-elicited feature weights applied post-standardization (weighted Euclidean distance). For deterministic Ahlqvist-inspired label assignment, centroids were inverse-transformed to raw clinical units and ranked via LAP, LDL, and BMI rules. DIANA outward-facing subtype outputs use SIRD-like/SIDD-like/MOD-like/MARD-like semantics to emphasize proxy status rather than diagnosis. The resultant cluster distributions and biomarker profiles are detailed in Table X.
 
 | Subgroup | Size n (%) | Mean BMI | Mean TG | Mean LDL | Mean HDL | Diabetic Rate |
 |---------|-------|----------|---------|----------|----------|---|
