@@ -19,7 +19,13 @@ import {
 } from 'lucide-react';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { staggerContainer, fadeIn, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
+import {
+  staggerContainer,
+  fadeIn,
+  slideUp,
+  cardVariants,
+  useReducedMotion,
+} from '../../utils/animations';
 import { API_BASE } from '../../api';
 
 const AuthEventLogViewer = ({ token }) => {
@@ -55,10 +61,7 @@ const AuthEventLogViewer = ({ token }) => {
       eventSourceRef.current.close();
     }
 
-    const url = new URL(
-      `${API_BASE}/admin/events/stream`,
-      window.location.origin
-    );
+    const url = new URL(`${API_BASE}/admin/events/stream`, window.location.origin);
     if (token) {
       url.searchParams.append('token', token);
     }
@@ -359,7 +362,6 @@ const AuthEventLogViewer = ({ token }) => {
         )}
       </motion.div>
 
-
       <motion.div
         variants={cardVariants}
         initial="offscreen"
@@ -382,7 +384,6 @@ const AuthEventLogViewer = ({ token }) => {
         <div className="text-slate-500 text-sm">Showing {filteredEvents.length} events</div>
       </motion.div>
 
-
       <motion.div
         variants={cardVariants}
         initial="offscreen"
@@ -399,9 +400,9 @@ const AuthEventLogViewer = ({ token }) => {
                 hidden: { opacity: 0 },
                 visible: {
                   opacity: 1,
-                  transition: { staggerChildren: 0.15, delayChildren: 0.2 }
+                  transition: { staggerChildren: 0.15, delayChildren: 0.2 },
                 },
-                exit: { opacity: 0, transition: { duration: 0.2 } }
+                exit: { opacity: 0, transition: { duration: 0.2 } },
               }}
               initial="hidden"
               animate="visible"
@@ -411,14 +412,18 @@ const AuthEventLogViewer = ({ token }) => {
               <motion.div
                 variants={{
                   hidden: { opacity: 0, scale: 0.8 },
-                  visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 200, damping: 20 } }
+                  visible: {
+                    opacity: 1,
+                    scale: 1,
+                    transition: { type: 'spring', stiffness: 200, damping: 20 },
+                  },
                 }}
                 className="relative mb-8 w-20 h-20 mx-auto"
               >
                 {/* Outer Spinning Ring */}
                 <motion.div
                   animate={{ rotate: 360 }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                   className="absolute inset-0 border-4 border-teal-500/20 border-t-teal-500 rounded-full"
                 />
 
@@ -427,12 +432,12 @@ const AuthEventLogViewer = ({ token }) => {
                   <motion.div
                     animate={{
                       scale: [1, 1.15, 1],
-                      opacity: [0.7, 1, 0.7]
+                      opacity: [0.7, 1, 0.7],
                     }}
                     transition={{
                       duration: 2,
                       repeat: Infinity,
-                      ease: "easeInOut"
+                      ease: 'easeInOut',
                     }}
                   >
                     <Wifi size={24} className="text-teal-500" />
@@ -443,7 +448,7 @@ const AuthEventLogViewer = ({ token }) => {
               <motion.p
                 variants={{
                   hidden: { opacity: 0, y: 10 },
-                  visible: { opacity: 1, y: 0 }
+                  visible: { opacity: 1, y: 0 },
                 }}
                 className="text-slate-900 text-lg font-bold mb-2"
               >
@@ -453,7 +458,7 @@ const AuthEventLogViewer = ({ token }) => {
               <motion.p
                 variants={{
                   hidden: { opacity: 0, y: 10 },
-                  visible: { opacity: 1, y: 0 }
+                  visible: { opacity: 1, y: 0 },
                 }}
                 className="text-slate-500"
               >
@@ -463,22 +468,22 @@ const AuthEventLogViewer = ({ token }) => {
               <motion.div
                 variants={{
                   hidden: { opacity: 0 },
-                  visible: { opacity: 1 }
+                  visible: { opacity: 1 },
                 }}
                 className="mt-6 flex justify-center gap-1.5"
               >
-                {[0, 1, 2].map((i) => (
+                {[0, 1, 2].map(i => (
                   <motion.span
                     key={i}
                     animate={{
                       y: [0, -8, 0],
-                      opacity: [0.4, 1, 0.4]
+                      opacity: [0.4, 1, 0.4],
                     }}
                     transition={{
                       duration: 0.8,
                       repeat: Infinity,
                       delay: i * 0.15,
-                      ease: "easeInOut"
+                      ease: 'easeInOut',
                     }}
                     className="w-2.5 h-2.5 bg-teal-500 rounded-full shadow-sm shadow-teal-500/20"
                   />
@@ -501,7 +506,9 @@ const AuthEventLogViewer = ({ token }) => {
               >
                 <AnimatePresence initial={false}>
                   {filteredEvents.map((event, index) => {
-                    const eventKey = event.id || `${event.event_type}-${event.timestamp || event.created_at}-${event.email || event.user_email || 'unknown'}`;
+                    const eventKey =
+                      event.id ||
+                      `${event.event_type}-${event.timestamp || event.created_at}-${event.email || event.user_email || 'unknown'}`;
                     return (
                       <motion.div
                         key={eventKey}

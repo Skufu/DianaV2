@@ -1194,10 +1194,7 @@ def _resolve_clinical_models_dir_for_type(model_type: Optional[str]) -> Path:
     if resolved_type == "binary_v2_no_bp":
         return _validate_model_dir(MODELS_ROOT / "binary_v2_no_bp")
     if resolved_type == "binary_v2_bp":
-        # Doctor model - includes blood pressure features
         return _validate_model_dir(MODELS_ROOT / "binary_v2_with_bp")
-    if resolved_type == "clinical":
-        return resolve_clinical_models_dir()
     return resolve_clinical_models_dir()
 
 def get_predictor() -> DianaPredictor:

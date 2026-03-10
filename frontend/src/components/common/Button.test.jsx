@@ -99,13 +99,21 @@ describe('Button', () => {
     const handleClick = vi.fn();
     const user = userEvent.setup();
 
-    const { rerender } = render(<Button onClick={handleClick} disabled>Text</Button>);
+    const { rerender } = render(
+      <Button onClick={handleClick} disabled>
+        Text
+      </Button>
+    );
     let button = screen.getByRole('button');
     expect(button).toBeDisabled();
     await user.click(button);
     expect(handleClick).not.toHaveBeenCalled();
 
-    rerender(<Button onClick={handleClick} disabled={false}>Text</Button>);
+    rerender(
+      <Button onClick={handleClick} disabled={false}>
+        Text
+      </Button>
+    );
     button = screen.getByRole('button');
     expect(button).not.toBeDisabled();
     await user.click(button);

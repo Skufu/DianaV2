@@ -31,7 +31,14 @@ import {
   Wifi,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { staggerContainer, fadeIn, cardVariants, slideUp, useReducedMotion, breathing } from '../../utils/animations';
+import {
+  staggerContainer,
+  fadeIn,
+  cardVariants,
+  slideUp,
+  useReducedMotion,
+  breathing,
+} from '../../utils/animations';
 
 // Lazy load subviews for code splitting
 const UserManagement = lazy(() => import('./UserManagement'));
@@ -50,22 +57,36 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
   const isReduced = useReducedMotion();
   // Animation enabled by default
 
-	const canViewAdminData = userRole === 'admin';
-  const { data: dashboardData, isLoading, error } = useAdminDashboard({ enabled: !!token && canViewAdminData });
+  const canViewAdminData = userRole === 'admin';
+  const {
+    data: dashboardData,
+    isLoading,
+    error,
+  } = useAdminDashboard({ enabled: !!token && canViewAdminData });
   const { data: clinicsData } = useClinicComparison({ enabled: !!token && canViewAdminData });
   const { data: profile } = useUserProfile(!!token);
   const canViewAuditData = userRole === 'admin' || userRole === 'doctor';
   const clinics = clinicsData ?? [];
 
-  if (userRole !== 'admin' && userRole !== 'doctor') {
+if (userRole !== 'admin' && userRole !== 'doctor') {
     return <AccessDenied message="Admin or Doctor role required to view this dashboard." />;
   }
 
+  const ADMIN_ONLY_VIEWS = ['overview', 'users', 'audit', 'auth-events', 'models'];
   const DOCTOR_ALLOWED_VIEWS = ['assessment', 'explainability', 'insights', 'rationale'];
+
+  const isAdminViewAllowed = userRole !== 'admin' || ADMIN_ONLY_VIEWS.includes(activeView);
   const isDoctorViewAllowed = userRole !== 'doctor' || DOCTOR_ALLOWED_VIEWS.includes(activeView);
 
-  if (!isDoctorViewAllowed) {
-    return <AccessDenied message="This view is not available for doctor role." />;
+  if (!isAdminViewAllowed || !isDoctorViewAllowed) {
+    const deniedView = !isAdminViewAllowed ? 'Admin' : 'Doctor';
+    return (
+      <AccessDenied
+        message={`${deniedView} role cannot access the "${activeView}" view. This view is for ${
+          deniedView === 'Admin' ? 'doctor clinical workflows' : 'admin governance'
+        }.`}
+      />
+    );
   }
 
   const renderContent = () => {
@@ -141,7 +162,11 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
     }
 
     if (error) {
-      return <div className="glass-card p-6 border border-rose-200 text-rose-600 bg-white/80">{error.message || 'Failed to load dashboard data'}</div>;
+      return (
+        <div className="glass-card p-6 border border-rose-200 text-rose-600 bg-white/80">
+          {error.message || 'Failed to load dashboard data'}
+        </div>
+      );
     }
 
     const stats = dashboardData?.stats || {};
@@ -228,7 +253,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
               Avg Risk: {(stats.avg_risk_score || 0).toFixed(1)}%
             </p>
           </motion.div>
-        </div >
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Cluster Distribution */}
@@ -254,7 +279,7 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
                     label={({ cluster, count }) => `${cluster}: ${count}`}
                     isAnimationActive={!shouldDisableHeavyEffects()}
                   >
-                    {clusterDist.map((c) => (
+                    {clusterDist.map(c => (
                       <Cell key={c.cluster} fill={COLORS[clusterDist.indexOf(c) % COLORS.length]} />
                     ))}
                   </Pie>
@@ -325,64 +350,62 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
               )}
             </ResponsiveContainer>
           </motion.div>
-        </div >
+        </div>
 
         {/* Clinic Comparison Table */}
-        {
-          clinics.length > 0 && (
-            <motion.div
-              variants={cardVariants}
-              initial="offscreen"
-              whileInView="onscreen"
-              viewport={{ once: true, amount: 0.3 }}
-              whileHover="hover"
-              className="glass-card p-8 overflow-x-auto bg-white/80 shadow-sm border border-slate-200/50"
-            >
-              <div className="flex items-center gap-3 mb-6">
-                <Building2 className="text-teal-600" size={24} />
-                <h3 className="text-2xl font-bold text-slate-900">Clinic Comparison</h3>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-slate-500 border-b border-slate-200">
-                    <th className="text-left py-3 px-4">Clinic</th>
-                    <th className="text-right py-3 px-4">Patients</th>
-                    <th className="text-right py-3 px-4">Assessments</th>
-                    <th className="text-right py-3 px-4">Avg Risk</th>
-                    <th className="text-right py-3 px-4">High Risk</th>
+        {clinics.length > 0 && (
+          <motion.div
+            variants={cardVariants}
+            initial="offscreen"
+            whileInView="onscreen"
+            viewport={{ once: true, amount: 0.3 }}
+            whileHover="hover"
+            className="glass-card p-8 overflow-x-auto bg-white/80 shadow-sm border border-slate-200/50"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <Building2 className="text-teal-600" size={24} />
+              <h3 className="text-2xl font-bold text-slate-900">Clinic Comparison</h3>
+            </div>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-slate-500 border-b border-slate-200">
+                  <th className="text-left py-3 px-4">Clinic</th>
+                  <th className="text-right py-3 px-4">Patients</th>
+                  <th className="text-right py-3 px-4">Assessments</th>
+                  <th className="text-right py-3 px-4">Avg Risk</th>
+                  <th className="text-right py-3 px-4">High Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {clinics.map(clinic => (
+                  <tr
+                    key={clinic.clinic_id}
+                    className="border-b border-slate-200 text-slate-700 hover:bg-slate-50"
+                  >
+                    <td className="py-3 px-4 font-medium flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: COLORS[clinics.indexOf(clinic) % COLORS.length] }}
+                      />
+                      {clinic.clinic_name}
+                    </td>
+                    <td className="text-right py-3 px-4">{clinic.patient_count}</td>
+                    <td className="text-right py-3 px-4">{clinic.assessment_count}</td>
+                    <td className="text-right py-3 px-4">
+                      {clinic.avg_risk_score?.toFixed(1) || 'N/A'}%
+                    </td>
+                    <td className="text-right py-3 px-4">
+                      <span className={clinic.high_risk_count > 0 ? 'text-rose-600' : ''}>
+                        {clinic.high_risk_count}
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {clinics.map((clinic) => (
-                    <tr
-                      key={clinic.clinic_id}
-                      className="border-b border-slate-200 text-slate-700 hover:bg-slate-50"
-                    >
-                      <td className="py-3 px-4 font-medium flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: COLORS[clinics.indexOf(clinic) % COLORS.length] }}
-                        />
-                        {clinic.clinic_name}
-                      </td>
-                      <td className="text-right py-3 px-4">{clinic.patient_count}</td>
-                      <td className="text-right py-3 px-4">{clinic.assessment_count}</td>
-                      <td className="text-right py-3 px-4">
-                        {clinic.avg_risk_score?.toFixed(1) || 'N/A'}%
-                      </td>
-                      <td className="text-right py-3 px-4">
-                        <span className={clinic.high_risk_count > 0 ? 'text-rose-600' : ''}>
-                          {clinic.high_risk_count}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </motion.div>
-          )
-        }
-      </div >
+                ))}
+              </tbody>
+            </table>
+          </motion.div>
+        )}
+      </div>
     );
   };
 
@@ -396,9 +419,9 @@ const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
             {userRole === 'doctor' ? 'Clinical Review' : 'System Administration'}
           </h4>
         </div>
-                <h2 className="text-3xl font-bold text-slate-900">
-                  {userRole === 'doctor' ? 'Doctor Dashboard' : 'Admin Dashboard'}
-                </h2>
+        <h2 className="text-3xl font-bold text-slate-900">
+          {userRole === 'doctor' ? 'Doctor Dashboard' : 'Admin Dashboard'}
+        </h2>
       </header>
 
       {/* Content */}

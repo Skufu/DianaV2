@@ -26,13 +26,16 @@ const AdminMobileHeader = ({ activeView, userRole, isOpen, onOpen }) => {
 
   const navItems = userRole === 'doctor' ? doctorNavItems : adminNavItems;
   const activeLabel = useMemo(() => {
-    return navItems.find((item) => item.id === activeView)?.label ?? 'Overview';
+    return navItems.find(item => item.id === activeView)?.label ?? 'Overview';
   }, [activeView, navItems]);
   const roleLabel = userRole === 'doctor' ? 'Doctor' : 'Admin';
 
   return (
     <header className="lg:hidden sticky top-0 z-40">
-      <div className="absolute inset-0 bg-white/90 backdrop-blur-xl border-b border-indigo-100" aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-white/90 backdrop-blur-xl border-b border-indigo-100"
+        aria-hidden="true"
+      />
       <div className="relative px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
@@ -42,9 +45,7 @@ const AdminMobileHeader = ({ activeView, userRole, isOpen, onOpen }) => {
             <span className="text-[10px] uppercase tracking-[0.3em] text-indigo-600 font-semibold">
               {roleLabel}
             </span>
-            <span className="text-sm font-semibold text-slate-900">
-              {activeLabel}
-            </span>
+            <span className="text-sm font-semibold text-slate-900">{activeLabel}</span>
           </div>
         </div>
         <motion.button

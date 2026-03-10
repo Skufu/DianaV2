@@ -1,18 +1,32 @@
 import React, { useMemo } from 'react';
-import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer
-} from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import { cardVariants, staggerContainer, slideUp } from '../../utils/animations';
 
 const subgroupInfo = {
-  'SIDD': { name: 'Atherogenic / Lipid-Driven Diabetes', color: '#EE5D50', description: 'High LDL, severe dyslipidemia, atherogenic phenotype' },
-  'SIRD': { name: 'Severe Insulin-Resistant Diabetes', color: '#FFB547', description: 'High insulin resistance, high risk of kidney disease' },
-  'MOD': { name: 'Mild Obesity-Related Diabetes', color: '#6AD2FF', description: 'High BMI but relatively normal metabolic state' },
-  'MARD': { name: 'Mild Age-Related Diabetes', color: '#05CD99', description: 'Older onset, modest metabolic derangements' }
+  SIDD: {
+    name: 'Atherogenic / Lipid-Driven Diabetes',
+    color: '#EE5D50',
+    description: 'High LDL, severe dyslipidemia, atherogenic phenotype',
+  },
+  SIRD: {
+    name: 'Severe Insulin-Resistant Diabetes',
+    color: '#FFB547',
+    description: 'High insulin resistance, high risk of kidney disease',
+  },
+  MOD: {
+    name: 'Mild Obesity-Related Diabetes',
+    color: '#6AD2FF',
+    description: 'High BMI but relatively normal metabolic state',
+  },
+  MARD: {
+    name: 'Mild Age-Related Diabetes',
+    color: '#05CD99',
+    description: 'Older onset, modest metabolic derangements',
+  },
 };
 
-const clusterColor = (label) => {
+const clusterColor = label => {
   const key = (label || '').toUpperCase();
   return subgroupInfo[key]?.color || '#A3AED0';
 };
@@ -27,7 +41,7 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
         <div className="w-96 h-5 bg-slate-600 animate-pulse rounded mb-6" />
         <div className="w-full h-[300px] bg-slate-700/30 rounded-xl animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4].map(i => (
             <div key={i} className="p-4 rounded-xl border border-slate-600/30">
               <div className="w-32 h-4 bg-slate-600 animate-pulse rounded mb-2" />
               <div className="w-24 h-3 bg-slate-600 animate-pulse rounded mb-2" />
@@ -72,7 +86,9 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
       className="glass-card p-8 bg-white border border-diana-stone/50"
     >
       <div className="mb-6">
-        <h3 className="text-2xl font-serif font-bold text-diana-text-primary">T2DM Subgroups (Novel Clustering)</h3>
+        <h3 className="text-2xl font-serif font-bold text-diana-text-primary">
+          T2DM Subgroups (Novel Clustering)
+        </h3>
         <p className="text-diana-text-secondary text-sm mt-2">
           Distribution across four diabetes subgroups based on Ahlqvist et al. classification
         </p>
@@ -84,18 +100,18 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
             data={clusters.map(c => ({
               name: c.cluster || 'Unknown',
               value: c.count || 0,
-              fullName: subgroupInfo[c.cluster?.toUpperCase()]?.name || c.cluster
+              fullName: subgroupInfo[c.cluster?.toUpperCase()]?.name || c.cluster,
             }))}
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={(entry) => `${entry.name}: ${entry.value}`}
+            label={entry => `${entry.name}: ${entry.value}`}
             outerRadius={100}
             fill="#8884d8"
             dataKey="value"
             isAnimationActive={true}
           >
-            {clusters.map((c) => (
+            {clusters.map(c => (
               <Cell key={c.cluster} fill={clusterColor(c.cluster)} stroke="#fff" strokeWidth={2} />
             ))}
           </Pie>
@@ -105,7 +121,7 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
               border: '1px solid #e2e8f0',
               borderRadius: '12px',
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              color: '#0f172a'
+              color: '#0f172a',
             }}
             itemStyle={{ color: '#0f172a' }}
             formatter={(value, name, props) => {

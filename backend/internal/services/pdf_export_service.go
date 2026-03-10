@@ -3,6 +3,8 @@ package services
 import (
 	"bytes"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/go-pdf/fpdf"
@@ -29,9 +31,13 @@ func NewPDFExportService() *PDFExportService {
 
 // GenerateHealthReport generates a professional clinical screening report on a single page
 func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessments []models.Assessment) ([]byte, error) {
+	orderedAssessments := s.orderAssessmentsByRecency(assessments)
+	latestAssessment, hasLatestAssessment := s.latestAssessment(orderedAssessments)
+
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(10, 10, 10) // Industry standard tighter margins
 	pdf.SetAutoPageBreak(true, 10)
+	pdf.SetCompression(false)
 	pdf.AddPage()
 
 	// === HEADER (Clinical Branding) ===
@@ -73,12 +79,17 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 	s.drawInfoRow(pdf, "Age / ID:", fmt.Sprintf("%s (ID: #%d)", age, user.User.ID), 30)
 	s.drawInfoRow(pdf, "Status:", casesTitle(user.MenopauseStatus), 30)
 	s.drawInfoRow(pdf, "Reported:", time.Now().Format("Jan 02, 2006"), 30)
+	if hasLatestAssessment {
+		s.drawInfoRow(pdf, "Latest Record:", latestAssessment.CreatedAt.Format("Jan 02, 2006 15:04"), 30)
+	} else {
+		s.drawInfoRow(pdf, "Latest Record:", "N/A", 30)
+	}
 
 	bottomYPatient := pdf.GetY()
 
 	// Right Column: Clinical Interpretation
-	if len(assessments) > 0 {
-		a := assessments[0]
+	if hasLatestAssessment {
+		a := latestAssessment
 		pdf.SetY(currentY)
 		pdf.SetX(110)
 
@@ -92,40 +103,48 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 		pdf.SetTextColor(255, 255, 255)
 		pdf.SetFont("Arial", "B", 14)
 
-		riskLevel := "LOW RISK"
-		if a.RiskScore >= 70 {
-			riskLevel = "HIGH RISK"
-		} else if a.RiskScore >= 30 {
-			riskLevel = "MODERATE RISK"
-		}
+		riskLevel := s.riskBandLabel(a.RiskScore)
 
 		pdf.CellFormat(90, 10, riskLevel, "1", 1, "C", true, 0, "")
 
 		pdf.SetX(110)
 		pdf.SetFillColor(primary[0], primary[1], primary[2])
 		pdf.CellFormat(90, 10, fmt.Sprintf("Risk Score: %d%%", a.RiskScore), "1", 1, "C", true, 0, "")
+
+		probabilitySummary := s.buildProbabilitySummary(a)
+		if probabilitySummary != "" {
+			pdf.SetX(110)
+			pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
+			pdf.SetFont("Arial", "", 8)
+			pdf.MultiCell(90, 5, probabilitySummary, "1", "L", false)
+		}
 	}
 
-	if pdf.GetY() < bottomYPatient {
+	bottomYInterpretation := pdf.GetY()
+	if bottomYInterpretation > bottomYPatient {
+		pdf.SetY(bottomYInterpretation)
+	} else {
 		pdf.SetY(bottomYPatient)
 	}
 	pdf.Ln(8)
 
 	// === BIOMARKER VALUES ===
-	if len(assessments) > 0 {
-		s.drawBiomarkerTable(pdf, assessments[0])
+	if hasLatestAssessment {
+		s.drawBiomarkerTable(pdf, latestAssessment)
+		pdf.Ln(4)
+		s.drawPhenotypeSummary(pdf, latestAssessment)
 	}
 	pdf.Ln(6)
 
 	// === HISTORY & TRENDS ===
-	if len(assessments) > 1 {
-		s.drawHistorySection(pdf, assessments)
+	if len(orderedAssessments) > 1 {
+		s.drawHistorySection(pdf, orderedAssessments)
 		pdf.Ln(6)
 	}
 
 	// === RECOMMENDATIONS ===
-	if len(assessments) > 0 {
-		s.drawRecommendations(pdf, assessments[0])
+	if hasLatestAssessment {
+		s.drawRecommendations(pdf, latestAssessment)
 	}
 
 	// === FOOTER ===
@@ -135,7 +154,7 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 	pdf.SetDrawColor(borderLight[0], borderLight[1], borderLight[2])
 	pdf.Line(10, pdf.GetY(), 200, pdf.GetY())
 	pdf.Ln(2)
-	pdf.CellFormat(0, 4, "This screening report is AI-assisted and intended for professional clinical reference only.", "", 1, "C", false, 0, "")
+	pdf.CellFormat(0, 4, "AI-assisted screening support only; this report must not be used as a diagnosis.", "", 1, "C", false, 0, "")
 	pdf.CellFormat(0, 4, fmt.Sprintf("Generated: %s | DIANA V2 Health Systems", time.Now().Format("2006-01-02 15:04")), "", 1, "C", false, 0, "")
 
 	var buf bytes.Buffer
@@ -155,7 +174,7 @@ func (s *PDFExportService) drawInfoRow(pdf *fpdf.Fpdf, label, value string, labe
 func (s *PDFExportService) drawBiomarkerTable(pdf *fpdf.Fpdf, a models.Assessment) {
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-	pdf.Cell(0, 8, "Biomarker Assessment")
+	pdf.Cell(0, 8, "Biomarker Assessment (Latest Stored Record)")
 	pdf.Ln(8)
 
 	headers := []string{"Biomarker Component", "Patient Result", "Reference Range", "Clinical Status"}
@@ -169,11 +188,14 @@ func (s *PDFExportService) drawBiomarkerTable(pdf *fpdf.Fpdf, a models.Assessmen
 	pdf.Ln(8)
 
 	rows := []struct{ name, val, ref, status string }{
-		{"BMI (Body Mass Index)", fmt.Sprintf("%.1f kg/m2", a.BMI), "18.5 - 22.9", s.getBMIStatus(a.BMI)},
-		{"Total Cholesterol", fmt.Sprintf("%d mg/dL", a.Cholesterol), "< 200", s.getCholStatus(a.Cholesterol)},
-		{"LDL (Low-Density Lipoprotein)", fmt.Sprintf("%d mg/dL", a.LDL), "< 100", s.getLDLStatus(a.LDL)},
-		{"HDL (High-Density Lipoprotein)", fmt.Sprintf("%d mg/dL", a.HDL), "> 50", s.getHDLStatus(a.HDL)},
-		{"Triglycerides", fmt.Sprintf("%d mg/dL", a.Triglycerides), "< 150", s.getTGStatus(a.Triglycerides)},
+		{"Fasting Blood Glucose", s.formatFloatValue(a.FBS, "mg/dL"), "70 - 99", s.getFBSStatus(a.FBS)},
+		{"HbA1c", s.formatFloatValue(a.HbA1c, "%"), "< 5.7", s.getHbA1cStatus(a.HbA1c)},
+		{"BMI (Body Mass Index)", s.formatFloatValue(a.BMI, "kg/m2"), "18.5 - 22.9", s.getBMIStatus(a.BMI)},
+		{"Total Cholesterol", s.formatIntValue(a.Cholesterol, "mg/dL"), "< 200", s.getCholStatus(a.Cholesterol)},
+		{"LDL (Low-Density Lipoprotein)", s.formatIntValue(a.LDL, "mg/dL"), "< 100", s.getLDLStatus(a.LDL)},
+		{"HDL (High-Density Lipoprotein)", s.formatIntValue(a.HDL, "mg/dL"), "> 50", s.getHDLStatus(a.HDL)},
+		{"Triglycerides", s.formatIntValue(a.Triglycerides, "mg/dL"), "< 150", s.getTGStatus(a.Triglycerides)},
+		{"Blood Pressure", s.formatBloodPressure(a.Systolic, a.Diastolic), "< 130 / < 80", s.getBPStatus(a.Systolic, a.Diastolic)},
 	}
 
 	pdf.SetFont("Arial", "", 9)
@@ -189,6 +211,55 @@ func (s *PDFExportService) drawBiomarkerTable(pdf *fpdf.Fpdf, a models.Assessmen
 		pdf.CellFormat(widths[3], 6, r.status, "1", 1, "C", false, 0, "")
 		pdf.SetFont("Arial", "", 9)
 	}
+}
+
+func (s *PDFExportService) drawPhenotypeSummary(pdf *fpdf.Fpdf, a models.Assessment) {
+	pdf.SetFont("Arial", "B", 12)
+	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
+	pdf.Cell(0, 7, "Cluster / Phenotype Context")
+	pdf.Ln(7)
+
+	cluster := strings.TrimSpace(a.Cluster)
+	if cluster == "" {
+		cluster = "Not available"
+	}
+
+	description := strings.TrimSpace(a.ClusterDescription)
+	if description == "" {
+		description = s.defaultClusterDescription(a.Cluster)
+	}
+
+	treatmentFocus := strings.TrimSpace(a.TreatmentFocus)
+	if treatmentFocus == "" {
+		treatmentFocus = s.defaultTreatmentFocus(a.Cluster)
+	}
+
+	whySummary := s.buildClinicalWhySummary(a)
+
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(34, 5, "Phenotype:", "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.CellFormat(156, 5, cluster, "", 1, "L", false, 0, "")
+
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(34, 5, "Summary:", "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.MultiCell(156, 5, description, "", "L", false)
+
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(34, 5, "Why:", "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.MultiCell(156, 5, whySummary, "", "L", false)
+
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(34, 5, "Treatment Focus:", "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.MultiCell(156, 5, treatmentFocus, "", "L", false)
+
+	pdf.SetFont("Arial", "I", 8)
+	pdf.SetTextColor(textLight[0], textLight[1], textLight[2])
+	pdf.MultiCell(190, 4, "Interpretation is screening support and must be integrated with full clinical evaluation; not diagnostic.", "", "L", false)
+	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
 }
 
 func (s *PDFExportService) drawHistorySection(pdf *fpdf.Fpdf, assessments []models.Assessment) {
@@ -225,7 +296,7 @@ func (s *PDFExportService) drawHistorySection(pdf *fpdf.Fpdf, assessments []mode
 func (s *PDFExportService) drawRecommendations(pdf *fpdf.Fpdf, a models.Assessment) {
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-	pdf.Cell(0, 8, "Clinical Discussion Points")
+	pdf.Cell(0, 8, "Clinical Discussion Points (What / Why / Limits)")
 	pdf.Ln(8)
 
 	recs := s.getSmartRecommendations(a)
@@ -244,18 +315,33 @@ func casesTitle(s string) string {
 	if len(s) == 0 {
 		return "N/A"
 	}
-	return string(s[0]-32) + s[1:]
+	if len(s) == 1 {
+		return strings.ToUpper(s)
+	}
+	return strings.ToUpper(s[:1]) + s[1:]
 }
 
 func (s *PDFExportService) getStatusColor(status string) [3]int {
 	switch status {
 	case "Normal":
 		return success
+	case "Not recorded":
+		return textLight
 	case "Borderline", "Elevated", "Overweight", "Pre-diabetic":
 		return warning
 	default:
 		return danger
 	}
+}
+
+func (s *PDFExportService) riskBandLabel(score int) string {
+	if score >= 70 {
+		return "HIGH RISK"
+	}
+	if score >= 30 {
+		return "MODERATE RISK"
+	}
+	return "LOW RISK"
 }
 
 func (s *PDFExportService) getRiskColor(score int) [3]int {
@@ -270,22 +356,36 @@ func (s *PDFExportService) getRiskColor(score int) [3]int {
 
 func (s *PDFExportService) getSmartRecommendations(a models.Assessment) []string {
 	var recs []string
+
+	recs = append(recs, fmt.Sprintf("What: Latest stored assessment indicates %s (%d%%).", s.riskBandLabel(a.RiskScore), a.RiskScore))
+
+	if a.Cluster != "" {
+		recs = append(recs, fmt.Sprintf("What: Phenotype is %s. %s", strings.ToUpper(a.Cluster), s.defaultClusterDescription(a.Cluster)))
+	}
+
+	recs = append(recs, fmt.Sprintf("Why: %s", s.buildClinicalWhySummary(a)))
+
+	if strings.TrimSpace(a.TreatmentFocus) != "" {
+		recs = append(recs, fmt.Sprintf("Clinical focus to discuss: %s.", strings.TrimSpace(a.TreatmentFocus)))
+	}
+
 	if a.RiskScore >= 70 {
-		recs = append(recs, "High clinical risk detected. Schedule immediate medical consultation for comprehensive diagnostic screening.")
+		recs = append(recs, "Next: prioritize near-term clinician follow-up and confirmatory laboratory workup.")
+	} else if a.RiskScore >= 30 {
+		recs = append(recs, "Next: review lifestyle, follow-up interval, and repeat biomarker testing with clinician judgment.")
+	} else {
+		recs = append(recs, "Next: maintain preventive care and routine reassessment cadence.")
 	}
-	if a.BMI >= 25 {
-		recs = append(recs, "Weight management intervention indicated. Discuss nutritional counseling and gradual metabolic targets.")
-	}
-	if a.LDL >= 130 || a.Cholesterol >= 200 || a.Triglycerides >= 150 {
-		recs = append(recs, "Lipid panel outside reference range. Evaluate cardiovascular risk and lipid-lowering lifestyle modifications.")
-	}
-	if len(recs) == 0 {
-		recs = append(recs, "Biomarkers are within physiological targets. Maintain current preventative lifestyle habits and annual screening.")
-	}
+
+	recs = append(recs, "Limitations: AI-assisted screening support only; this report is not a diagnosis and does not replace clinician judgment.")
+
 	return recs
 }
 
 func (s *PDFExportService) getBMIStatus(v float64) string {
+	if v <= 0 {
+		return "Not recorded"
+	}
 	if v >= 25 {
 		return "Obese"
 	}
@@ -295,6 +395,9 @@ func (s *PDFExportService) getBMIStatus(v float64) string {
 	return "Normal"
 }
 func (s *PDFExportService) getCholStatus(v int) string {
+	if v <= 0 {
+		return "Not recorded"
+	}
 	if v >= 240 {
 		return "High"
 	}
@@ -304,6 +407,9 @@ func (s *PDFExportService) getCholStatus(v int) string {
 	return "Normal"
 }
 func (s *PDFExportService) getLDLStatus(v int) string {
+	if v <= 0 {
+		return "Not recorded"
+	}
 	if v >= 160 {
 		return "High"
 	}
@@ -313,12 +419,18 @@ func (s *PDFExportService) getLDLStatus(v int) string {
 	return "Normal"
 }
 func (s *PDFExportService) getHDLStatus(v int) string {
+	if v <= 0 {
+		return "Not recorded"
+	}
 	if v < 40 {
 		return "Low"
 	}
 	return "Normal"
 }
 func (s *PDFExportService) getTGStatus(v int) string {
+	if v <= 0 {
+		return "Not recorded"
+	}
 	if v >= 200 {
 		return "High"
 	}
@@ -326,6 +438,168 @@ func (s *PDFExportService) getTGStatus(v int) string {
 		return "Borderline"
 	}
 	return "Normal"
+}
+
+func (s *PDFExportService) getFBSStatus(v float64) string {
+	if v <= 0 {
+		return "Not recorded"
+	}
+	if v >= 126 {
+		return "Diabetic"
+	}
+	if v >= 100 {
+		return "Pre-diabetic"
+	}
+	return "Normal"
+}
+
+func (s *PDFExportService) getHbA1cStatus(v float64) string {
+	if v <= 0 {
+		return "Not recorded"
+	}
+	if v >= 6.5 {
+		return "Diabetic"
+	}
+	if v >= 5.7 {
+		return "Pre-diabetic"
+	}
+	return "Normal"
+}
+
+func (s *PDFExportService) getBPStatus(systolic, diastolic int) string {
+	if systolic <= 0 || diastolic <= 0 {
+		return "Not recorded"
+	}
+	if systolic >= 140 || diastolic >= 90 {
+		return "High"
+	}
+	if systolic >= 130 || diastolic >= 80 {
+		return "Elevated"
+	}
+	return "Normal"
+}
+
+func (s *PDFExportService) formatIntValue(v int, unit string) string {
+	if v <= 0 {
+		return "Not recorded"
+	}
+	return fmt.Sprintf("%d %s", v, unit)
+}
+
+func (s *PDFExportService) formatFloatValue(v float64, unit string) string {
+	if v <= 0 {
+		return "Not recorded"
+	}
+	return fmt.Sprintf("%.1f %s", v, unit)
+}
+
+func (s *PDFExportService) formatBloodPressure(systolic, diastolic int) string {
+	if systolic <= 0 || diastolic <= 0 {
+		return "Not recorded"
+	}
+	return fmt.Sprintf("%d / %d mmHg", systolic, diastolic)
+}
+
+func (s *PDFExportService) defaultClusterDescription(cluster string) string {
+	switch strings.ToUpper(strings.TrimSpace(cluster)) {
+	case "SIDD":
+		return "Atherogenic/lipid-driven profile with emphasis on dyslipidemia burden."
+	case "SIRD":
+		return "Insulin resistance dominant profile with elevated metabolic strain."
+	case "MOD":
+		return "Weight-associated metabolic profile requiring structured lifestyle optimization."
+	case "MARD":
+		return "Age-related metabolic profile with preventive surveillance priority."
+	default:
+		return "Phenotype metadata unavailable in the latest stored assessment."
+	}
+}
+
+func (s *PDFExportService) defaultTreatmentFocus(cluster string) string {
+	switch strings.ToUpper(strings.TrimSpace(cluster)) {
+	case "SIDD":
+		return "Lipid management and cardiovascular risk mitigation"
+	case "SIRD":
+		return "Improve insulin sensitivity and cardiometabolic control"
+	case "MOD":
+		return "Sustainable weight reduction and activity progression"
+	case "MARD":
+		return "Age-adjusted prevention, adherence, and periodic reassessment"
+	default:
+		return "Discuss individualized follow-up plan using complete clinical context"
+	}
+}
+
+func (s *PDFExportService) buildClinicalWhySummary(a models.Assessment) string {
+	var findings []string
+
+	if status := s.getFBSStatus(a.FBS); status != "Normal" && status != "Not recorded" {
+		findings = append(findings, fmt.Sprintf("FBS %s (%.1f mg/dL)", strings.ToLower(status), a.FBS))
+	}
+	if status := s.getHbA1cStatus(a.HbA1c); status != "Normal" && status != "Not recorded" {
+		findings = append(findings, fmt.Sprintf("HbA1c %s (%.1f%%)", strings.ToLower(status), a.HbA1c))
+	}
+	if status := s.getBMIStatus(a.BMI); status != "Normal" && status != "Not recorded" {
+		findings = append(findings, fmt.Sprintf("BMI %s (%.1f)", strings.ToLower(status), a.BMI))
+	}
+	if status := s.getLDLStatus(a.LDL); status != "Normal" && status != "Not recorded" {
+		findings = append(findings, fmt.Sprintf("LDL %s (%d mg/dL)", strings.ToLower(status), a.LDL))
+	}
+	if status := s.getTGStatus(a.Triglycerides); status != "Normal" && status != "Not recorded" {
+		findings = append(findings, fmt.Sprintf("triglycerides %s (%d mg/dL)", strings.ToLower(status), a.Triglycerides))
+	}
+	if status := s.getHDLStatus(a.HDL); status == "Low" {
+		findings = append(findings, fmt.Sprintf("HDL low (%d mg/dL)", a.HDL))
+	}
+
+	if len(findings) == 0 {
+		return "No major out-of-range biomarker signal was captured in this stored record."
+	}
+
+	if len(findings) > 3 {
+		findings = findings[:3]
+	}
+
+	return strings.Join(findings, "; ") + "."
+}
+
+func (s *PDFExportService) buildProbabilitySummary(a models.Assessment) string {
+	parts := make([]string, 0, 3)
+
+	if strings.TrimSpace(a.PredictedStatus) != "" {
+		parts = append(parts, fmt.Sprintf("Predicted status: %s", a.PredictedStatus))
+	}
+
+	if a.AtRiskProbability > 0 {
+		parts = append(parts, fmt.Sprintf("At-risk probability: %.0f%%", a.AtRiskProbability*100))
+	}
+
+	if strings.TrimSpace(a.ValidationStatus) != "" {
+		parts = append(parts, fmt.Sprintf("Validation: %s", strings.ReplaceAll(a.ValidationStatus, "_", " ")))
+	}
+
+	return strings.Join(parts, " | ")
+}
+
+func (s *PDFExportService) orderAssessmentsByRecency(assessments []models.Assessment) []models.Assessment {
+	ordered := make([]models.Assessment, len(assessments))
+	copy(ordered, assessments)
+
+	sort.SliceStable(ordered, func(i, j int) bool {
+		if ordered[i].CreatedAt.Equal(ordered[j].CreatedAt) {
+			return ordered[i].ID > ordered[j].ID
+		}
+		return ordered[i].CreatedAt.After(ordered[j].CreatedAt)
+	})
+
+	return ordered
+}
+
+func (s *PDFExportService) latestAssessment(assessments []models.Assessment) (models.Assessment, bool) {
+	if len(assessments) == 0 {
+		return models.Assessment{}, false
+	}
+	return assessments[0], true
 }
 
 // GenerateMockData creates realistic mock data for PDF testing

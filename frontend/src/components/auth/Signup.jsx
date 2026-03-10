@@ -3,11 +3,17 @@ import { AlertCircle, Lock, Mail, Eye, EyeOff, Check, X, CheckCircle2 } from 'lu
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/logo-icon.png';
 import Button from '../common/Button';
-import { cardVariants, slideUp, fadeIn, getInputFocusVariants, useReducedMotion } from '../../utils/animations';
+import {
+  cardVariants,
+  slideUp,
+  fadeIn,
+  getInputFocusVariants,
+  useReducedMotion,
+} from '../../utils/animations';
 import { SignupFormSkeleton } from '../common/Skeleton';
 
 // Password requirements check
-const getPasswordRequirements = (password) => [
+const getPasswordRequirements = password => [
   { key: 'length', label: 'At least 8 characters', met: password.length >= 8 },
   { key: 'upper', label: 'Contains uppercase letter', met: /[A-Z]/.test(password) },
   { key: 'lower', label: 'Contains lowercase letter', met: /[a-z]/.test(password) },
@@ -35,7 +41,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
   const passwordRef = useRef(null);
   const confirmPasswordRef = useRef(null);
 
-  const validateEmail = (email) => {
+  const validateEmail = email => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
@@ -43,27 +49,30 @@ const Signup = ({ onSignup, onShowLogin }) => {
   const allRequirementsMet = passwordRequirements.every(r => r.met);
   const passwordsMatch = confirmPassword.length > 0 ? password === confirmPassword : null;
 
-  const validateField = useCallback((field, value) => {
-    switch (field) {
-      case 'email':
-        if (!value.trim()) return 'Email is required';
-        if (!validateEmail(value)) return 'Please enter a valid email address';
-        return '';
-      case 'password':
-        if (!value) return 'Password is required';
-        if (value.length < 8) return 'Password must be at least 8 characters';
-        if (!/[A-Z]/.test(value)) return 'Password must contain an uppercase letter';
-        if (!/[a-z]/.test(value)) return 'Password must contain a lowercase letter';
-        if (!/\d/.test(value)) return 'Password must contain a number';
-        return '';
-      case 'confirmPassword':
-        if (!value) return 'Please confirm your password';
-        if (value !== password) return 'Passwords do not match';
-        return '';
-      default:
-        return '';
-    }
-  }, [password]);
+  const validateField = useCallback(
+    (field, value) => {
+      switch (field) {
+        case 'email':
+          if (!value.trim()) return 'Email is required';
+          if (!validateEmail(value)) return 'Please enter a valid email address';
+          return '';
+        case 'password':
+          if (!value) return 'Password is required';
+          if (value.length < 8) return 'Password must be at least 8 characters';
+          if (!/[A-Z]/.test(value)) return 'Password must contain an uppercase letter';
+          if (!/[a-z]/.test(value)) return 'Password must contain a lowercase letter';
+          if (!/\d/.test(value)) return 'Password must contain a number';
+          return '';
+        case 'confirmPassword':
+          if (!value) return 'Please confirm your password';
+          if (value !== password) return 'Passwords do not match';
+          return '';
+        default:
+          return '';
+      }
+    },
+    [password]
+  );
 
   const handleFieldChange = (field, value) => {
     switch (field) {
@@ -84,21 +93,26 @@ const Signup = ({ onSignup, onShowLogin }) => {
     }
     // Clear errors as user types
     if (touched[field] && fieldErrors[field]) {
-      const err = field === 'confirmPassword'
-        ? (value && value !== password ? 'Passwords do not match' : (value ? '' : 'Please confirm your password'))
-        : validateField(field, value);
+      const err =
+        field === 'confirmPassword'
+          ? value && value !== password
+            ? 'Passwords do not match'
+            : value
+              ? ''
+              : 'Please confirm your password'
+          : validateField(field, value);
       setFieldErrors(prev => ({ ...prev, [field]: err }));
     }
   };
 
-  const handleBlur = (field) => {
+  const handleBlur = field => {
     setTouched(prev => ({ ...prev, [field]: true }));
     const value = field === 'email' ? email : field === 'password' ? password : confirmPassword;
     const err = validateField(field, value);
     setFieldErrors(prev => ({ ...prev, [field]: err }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setError(null);
 
@@ -175,8 +189,15 @@ const Signup = ({ onSignup, onShowLogin }) => {
             <img src={logoIcon} alt="DIANA Logo" className="h-10 w-10 object-contain" />
             <span className="text-2xl font-bold text-diana-navy tracking-tight">DIANA</span>
           </motion.div>
-          <motion.h1 variants={fadeIn} className="text-2xl font-semibold text-diana-midnight tracking-tight text-center">Create an account</motion.h1>
-          <motion.p variants={fadeIn} className="text-sm text-slate-500 mt-2 text-center">Check whether you may be at risk of Type 2 Diabetes in menopause.</motion.p>
+          <motion.h1
+            variants={fadeIn}
+            className="text-2xl font-semibold text-diana-midnight tracking-tight text-center"
+          >
+            Create an account
+          </motion.h1>
+          <motion.p variants={fadeIn} className="text-sm text-slate-500 mt-2 text-center">
+            Check whether you may be at risk of Type 2 Diabetes in menopause.
+          </motion.p>
         </div>
 
         {/* Main Card */}
@@ -206,11 +227,15 @@ const Signup = ({ onSignup, onShowLogin }) => {
                 transition={{ duration: 0.2 }}
               >
                 <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-
                   {/* Email Field */}
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center">
-                      <label htmlFor="signup-email" className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Email Address</label>
+                      <label
+                        htmlFor="signup-email"
+                        className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1"
+                      >
+                        Email Address
+                      </label>
                       {touched.email && !fieldErrors.email && email && (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
                           <CheckCircle2 size={14} className="text-diana-forest-light" />
@@ -229,7 +254,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         type="email"
                         id="signup-email"
                         value={email}
-                        onChange={(e) => handleFieldChange('email', e.target.value)}
+                        onChange={e => handleFieldChange('email', e.target.value)}
                         onBlur={() => handleBlur('email')}
                         className={`block w-full pl-10 pr-3 py-3 bg-white border ${touched.email && fieldErrors.email ? 'border-red-300' : 'border-slate-200'} rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm`}
                         placeholder="name@example.com"
@@ -238,13 +263,21 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         aria-describedby={fieldErrors.email ? 'signup-email-error' : undefined}
                       />
                     </div>
-                    <FieldError id="signup-email-error" message={touched.email ? fieldErrors.email : ''} />
+                    <FieldError
+                      id="signup-email-error"
+                      message={touched.email ? fieldErrors.email : ''}
+                    />
                   </div>
 
                   {/* Password Field */}
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center">
-                      <label htmlFor="signup-password" className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Password</label>
+                      <label
+                        htmlFor="signup-password"
+                        className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1"
+                      >
+                        Password
+                      </label>
                     </div>
                     <div className="relative group">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-diana-forest-light transition-colors">
@@ -257,7 +290,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         type={showPassword ? 'text' : 'password'}
                         id="signup-password"
                         value={password}
-                        onChange={(e) => handleFieldChange('password', e.target.value)}
+                        onChange={e => handleFieldChange('password', e.target.value)}
                         onBlur={() => handleBlur('password')}
                         className={`block w-full pl-10 pr-10 py-3 bg-white border ${touched.password && fieldErrors.password ? 'border-red-300' : 'border-slate-200'} rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm`}
                         placeholder="Create a password"
@@ -273,7 +306,10 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
-                    <FieldError id="signup-password-error" message={touched.password ? fieldErrors.password : ''} />
+                    <FieldError
+                      id="signup-password-error"
+                      message={touched.password ? fieldErrors.password : ''}
+                    />
 
                     {/* Password Requirements Checklist */}
                     {password.length > 0 && (
@@ -289,7 +325,11 @@ const Signup = ({ onSignup, onShowLogin }) => {
                             key={req.key}
                             className={`flex items-center gap-1.5 text-[11px] font-medium transition-colors ${req.met ? 'text-emerald-600' : 'text-slate-400'}`}
                           >
-                            {req.met ? <Check size={12} className="shrink-0" /> : <X size={12} className="shrink-0" />}
+                            {req.met ? (
+                              <Check size={12} className="shrink-0" />
+                            ) : (
+                              <X size={12} className="shrink-0" />
+                            )}
                             {req.label}
                           </div>
                         ))}
@@ -300,9 +340,30 @@ const Signup = ({ onSignup, onShowLogin }) => {
                   {/* Confirm Password Field */}
                   <div className="space-y-1.5">
                     <div className="flex justify-between items-center">
-                      <label htmlFor="signup-confirm-password" className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Confirm Password</label>
-                      {passwordsMatch === true && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">Match</motion.span>}
-                      {passwordsMatch === false && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] font-bold uppercase tracking-wider text-red-500">Mismatch</motion.span>}
+                      <label
+                        htmlFor="signup-confirm-password"
+                        className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1"
+                      >
+                        Confirm Password
+                      </label>
+                      {passwordsMatch === true && (
+                        <motion.span
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="text-[10px] font-bold uppercase tracking-wider text-emerald-500"
+                        >
+                          Match
+                        </motion.span>
+                      )}
+                      {passwordsMatch === false && (
+                        <motion.span
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="text-[10px] font-bold uppercase tracking-wider text-red-500"
+                        >
+                          Mismatch
+                        </motion.span>
+                      )}
                     </div>
                     <div className="relative group">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-diana-forest-light transition-colors">
@@ -315,13 +376,17 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         type={showConfirmPassword ? 'text' : 'password'}
                         id="signup-confirm-password"
                         value={confirmPassword}
-                        onChange={(e) => handleFieldChange('confirmPassword', e.target.value)}
+                        onChange={e => handleFieldChange('confirmPassword', e.target.value)}
                         onBlur={() => handleBlur('confirmPassword')}
                         className={`block w-full pl-10 pr-10 py-3 bg-white border ${touched.confirmPassword && fieldErrors.confirmPassword ? 'border-red-300' : passwordsMatch === false ? 'border-red-300' : 'border-slate-200'} rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm`}
                         placeholder="Confirm password"
                         autoComplete="new-password"
-                        aria-invalid={touched.confirmPassword && fieldErrors.confirmPassword ? 'true' : 'false'}
-                        aria-describedby={fieldErrors.confirmPassword ? 'signup-confirm-error' : undefined}
+                        aria-invalid={
+                          touched.confirmPassword && fieldErrors.confirmPassword ? 'true' : 'false'
+                        }
+                        aria-describedby={
+                          fieldErrors.confirmPassword ? 'signup-confirm-error' : undefined
+                        }
                       />
                       <button
                         type="button"
@@ -331,7 +396,10 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
-                    <FieldError id="signup-confirm-error" message={touched.confirmPassword ? fieldErrors.confirmPassword : ''} />
+                    <FieldError
+                      id="signup-confirm-error"
+                      message={touched.confirmPassword ? fieldErrors.confirmPassword : ''}
+                    />
                   </div>
 
                   {/* Error Display (Banner for non-field errors) */}
@@ -341,7 +409,8 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         initial={{ opacity: 0, height: 0, scale: 0.95 }}
                         animate={{ opacity: 1, height: 'auto', scale: 1 }}
                         exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                        className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2" role="alert"
+                        className="p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2"
+                        role="alert"
                       >
                         <AlertCircle size={16} className="mt-0.5 shrink-0" />
                         <span className="font-medium">{error}</span>
@@ -384,15 +453,16 @@ const Signup = ({ onSignup, onShowLogin }) => {
         {/* Footer & Trust */}
         <motion.div variants={fadeIn} className="mt-8 flex flex-col items-center gap-4">
           <div className="flex gap-4 text-xs text-slate-400 font-medium">
-            <a href="#" className="hover:text-diana-forest-light transition-colors">Privacy</a>
+            <a href="#" className="hover:text-diana-forest-light transition-colors">
+              Privacy
+            </a>
             <span className="text-slate-300">•</span>
-            <a href="#" className="hover:text-diana-forest-light transition-colors">Help</a>
+            <a href="#" className="hover:text-diana-forest-light transition-colors">
+              Help
+            </a>
           </div>
-          <p className="text-[10px] text-slate-300">
-            © 2026 DIANA
-          </p>
+          <p className="text-[10px] text-slate-300">© 2026 DIANA</p>
         </motion.div>
-
       </motion.div>
     </div>
   );

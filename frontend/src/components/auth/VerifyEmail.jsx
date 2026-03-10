@@ -3,7 +3,13 @@ import { AlertCircle, CheckCircle2, Mail, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/logo-icon.png';
 import Button from '../common/Button';
-import { cardVariants, slideUp, fadeIn, getInputFocusVariants, useReducedMotion } from '../../utils/animations';
+import {
+  cardVariants,
+  slideUp,
+  fadeIn,
+  getInputFocusVariants,
+  useReducedMotion,
+} from '../../utils/animations';
 import { useVerifyEmail, useResendVerification } from '../../api';
 
 const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
@@ -33,18 +39,18 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
     if (initialEmail) setEmail(initialEmail);
   }, [initialEmail]);
 
-  const validateEmail = (value) => {
+  const validateEmail = value => {
     if (!value.trim()) return 'Email is required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
     return '';
   };
 
-  const validateToken = (value) => {
+  const validateToken = value => {
     if (!value.trim()) return 'Please enter the verification token';
     return '';
   };
 
-  const handleTokenChange = (e) => {
+  const handleTokenChange = e => {
     const value = e.target.value;
     setToken(value);
     if (tokenTouched && tokenError) {
@@ -52,7 +58,7 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
     }
   };
 
-  const handleEmailChange = (e) => {
+  const handleEmailChange = e => {
     const value = e.target.value;
     setEmail(value);
     if (emailTouched && emailError) {
@@ -60,7 +66,7 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
     }
   };
 
-  const handleVerify = async (event) => {
+  const handleVerify = async event => {
     event.preventDefault();
     setError(null);
     setSuccess(null);
@@ -86,7 +92,7 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
     }
   };
 
-  const handleResend = async (event) => {
+  const handleResend = async event => {
     event.preventDefault();
     setError(null);
     setResendMessage(null);
@@ -125,8 +131,15 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
             <img src={logoIcon} alt="DIANA Logo" className="h-10 w-10 object-contain" />
             <span className="text-2xl font-bold text-diana-navy tracking-tight">DIANA</span>
           </motion.div>
-          <motion.h1 variants={fadeIn} className="text-2xl font-semibold text-diana-midnight tracking-tight text-center">Verify your email</motion.h1>
-          <motion.p variants={fadeIn} className="text-sm text-slate-500 mt-2 text-center">Enter the verification token or resend the email.</motion.p>
+          <motion.h1
+            variants={fadeIn}
+            className="text-2xl font-semibold text-diana-midnight tracking-tight text-center"
+          >
+            Verify your email
+          </motion.h1>
+          <motion.p variants={fadeIn} className="text-sm text-slate-500 mt-2 text-center">
+            Enter the verification token or resend the email.
+          </motion.p>
         </div>
 
         <motion.div
@@ -137,7 +150,12 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
         >
           <form onSubmit={handleVerify} className="space-y-5" noValidate>
             <div className="space-y-1.5">
-              <label htmlFor="verify-token" className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Verification Token</label>
+              <label
+                htmlFor="verify-token"
+                className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1"
+              >
+                Verification Token
+              </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-diana-forest-light transition-colors">
                   <ShieldCheck size={18} />
@@ -150,7 +168,10 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
                   id="verify-token"
                   value={token}
                   onChange={handleTokenChange}
-                  onBlur={() => { setTokenTouched(true); setTokenError(validateToken(token)); }}
+                  onBlur={() => {
+                    setTokenTouched(true);
+                    setTokenError(validateToken(token));
+                  }}
                   className={`block w-full pl-10 pr-3 py-3 bg-white border ${tokenTouched && tokenError ? 'border-red-300' : 'border-slate-200'} rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm`}
                   placeholder="Enter verification token"
                   aria-invalid={tokenTouched && tokenError ? 'true' : 'false'}
@@ -219,7 +240,12 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
 
           <form onSubmit={handleResend} className="space-y-4" noValidate>
             <div className="space-y-1.5">
-              <label htmlFor="verify-email" className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Resend verification</label>
+              <label
+                htmlFor="verify-email"
+                className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1"
+              >
+                Resend verification
+              </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-diana-forest-light transition-colors">
                   <Mail size={18} />
@@ -232,7 +258,10 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
                   id="verify-email"
                   value={email}
                   onChange={handleEmailChange}
-                  onBlur={() => { setEmailTouched(true); setEmailError(validateEmail(email)); }}
+                  onBlur={() => {
+                    setEmailTouched(true);
+                    setEmailError(validateEmail(email));
+                  }}
                   className={`block w-full pl-10 pr-3 py-3 bg-white border ${emailTouched && emailError ? 'border-red-300' : 'border-slate-200'} rounded-lg text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none transition-all shadow-sm`}
                   placeholder="Email address"
                   autoComplete="email"
@@ -301,9 +330,13 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
 
         <motion.div variants={fadeIn} className="mt-8 flex flex-col items-center gap-4">
           <div className="flex gap-4 text-xs text-slate-400 font-medium">
-            <a href="#" className="hover:text-diana-forest-light transition-colors">Privacy</a>
+            <a href="#" className="hover:text-diana-forest-light transition-colors">
+              Privacy
+            </a>
             <span className="text-slate-300">•</span>
-            <a href="#" className="hover:text-diana-forest-light transition-colors">Help</a>
+            <a href="#" className="hover:text-diana-forest-light transition-colors">
+              Help
+            </a>
           </div>
           <p className="text-[10px] text-slate-300">© 2026 DIANA</p>
         </motion.div>

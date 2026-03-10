@@ -67,7 +67,9 @@ describe('ErrorBoundary', () => {
     const CustomFallback = ({ error, errorInfo, onRetry }) => (
       <div>
         <div>Error: {error?.message}</div>
-        <button type="button" onClick={onRetry}>Retry</button>
+        <button type="button" onClick={onRetry}>
+          Retry
+        </button>
       </div>
     );
 
@@ -113,10 +115,7 @@ describe('ErrorBoundary', () => {
         <ThrowError shouldThrow={true} />
       </ErrorBoundary>
     );
-    expect(console.error).toHaveBeenCalledWith(
-      '[ErrorBoundary] Caught error:',
-      expect.any(Error)
-    );
+    expect(console.error).toHaveBeenCalledWith('[ErrorBoundary] Caught error:', expect.any(Error));
   });
 
   it('logs component stack to console', () => {

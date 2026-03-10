@@ -41,7 +41,11 @@ const AuditLogViewer = ({ token }) => {
   }, [page, pageSize, actor, action, startDate, endDate]);
 
   // Use React Query hook for fetching audit logs
-  const { data, isLoading: loading, error: queryError } = useAuditLogs(params, { enabled: !!token });
+  const {
+    data,
+    isLoading: loading,
+    error: queryError,
+  } = useAuditLogs(params, { enabled: !!token });
 
   const events = data?.data || [];
   const total = data?.total || 0;
@@ -78,11 +82,16 @@ const AuditLogViewer = ({ token }) => {
 
   const rowVariants = {
     hidden: { opacity: 0, x: isReduced ? 0 : -20 },
-    visible: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } }
+    visible: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } },
   };
 
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
       {/* Header */}
       <motion.div variants={fadeIn}>
         <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
@@ -186,7 +195,13 @@ const AuditLogViewer = ({ token }) => {
 
       {/* Error State */}
       {error && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card p-4 border border-rose-200 text-rose-600 bg-white/80">{error}</motion.div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="glass-card p-4 border border-rose-200 text-rose-600 bg-white/80"
+        >
+          {error}
+        </motion.div>
       )}
 
       {/* Events Table */}
@@ -214,11 +229,7 @@ const AuditLogViewer = ({ token }) => {
                   <th className="px-4 py-3 text-slate-500 font-medium">Target</th>
                 </tr>
               </thead>
-              <motion.tbody
-                variants={staggerContainer}
-                initial="hidden"
-                animate="visible"
-              >
+              <motion.tbody variants={staggerContainer} initial="hidden" animate="visible">
                 {events.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="px-4 py-8 text-center text-slate-500">
@@ -233,12 +244,13 @@ const AuditLogViewer = ({ token }) => {
                         className="border-b border-slate-200 cursor-pointer"
                         onClick={() => toggleExpand(event.id)}
                         whileHover={{
-                          backgroundColor: "#F8FAFC",
-                          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                          backgroundColor: '#F8FAFC',
+                          boxShadow:
+                            '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
                           y: -2,
                           zIndex: 10,
                         }}
-                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                       >
                         <td className="px-4 py-3 text-slate-500">
                           {event.details &&
@@ -269,9 +281,9 @@ const AuditLogViewer = ({ token }) => {
                             <td colSpan="5" className="p-0 border-0">
                               <motion.div
                                 initial={{ opacity: 0, height: 0, y: -10 }}
-                                animate={{ opacity: 1, height: "auto", y: 0 }}
+                                animate={{ opacity: 1, height: 'auto', y: 0 }}
                                 exit={{ opacity: 0, height: 0, y: -10 }}
-                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                                 className="overflow-hidden"
                               >
                                 <div className="px-8 py-4 text-sm">

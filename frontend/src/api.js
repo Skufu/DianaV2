@@ -7,25 +7,28 @@ let API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 
 // Fix Git Bash (MSYS2) path translation bug where '/api/v1' becomes 'C:/Program Files/Git/api/v1'
 if (API_BASE && /^[a-zA-Z]:[/\\]/.test(API_BASE)) {
-  console.warn(`[API] Detected Windows file path in API_BASE (${API_BASE}) likely due to Git Bash path translation. Normalizing to '/api/v1'`);
+  console.warn(
+    `[API] Detected Windows file path in API_BASE (${API_BASE}) likely due to Git Bash path translation. Normalizing to '/api/v1'`
+  );
   API_BASE = '/api/v1';
 }
 
 export { API_BASE };
-const ML_BASE = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
+const ML_BASE =
+  import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
 // Token refresh lock to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
 let refreshSubscribers = [];
 
 // Subscribe to token refresh completion
-const subscribeTokenRefresh = (callback) => {
+const subscribeTokenRefresh = callback => {
   refreshSubscribers.push(callback);
 };
 
 // Notify all subscribers that refresh completed
-const onTokenRefreshed = (newToken) => {
-  refreshSubscribers.forEach((callback) => {
+const onTokenRefreshed = newToken => {
+  refreshSubscribers.forEach(callback => {
     callback(newToken);
   });
   refreshSubscribers = [];
@@ -115,7 +118,9 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
   }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: `Request failed with status ${response.status}` }));
+    const error = await response
+      .json()
+      .catch(() => ({ error: `Request failed with status ${response.status}` }));
     const message = error.message || error.error || 'Request failed';
     const requestError = new Error(message);
     requestError.status = response.status;
@@ -172,8 +177,28 @@ const mlFetchJson = async (path, options = {}) => {
     signal: options.signal,
   });
 
-  if (!res.ok) throw new Error(`ML API error: ${res.status}`);
-  return res.json();
+  let payload = null;
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    payload = await res.json().catch(() => null);
+  } else if (res.status !== 204) {
+    payload = await res.text().catch(() => null);
+  }
+
+  if (!res.ok) {
+    const message =
+      (payload && typeof payload === 'object' && (payload.message || payload.error)) ||
+      (typeof payload === 'string' && payload.trim()) ||
+      `ML API error: ${res.status}`;
+    const requestError = new Error(message);
+    requestError.status = res.status;
+    if (payload && typeof payload === 'object' && payload.code) {
+      requestError.code = payload.code;
+    }
+    throw requestError;
+  }
+
+  return payload;
 };
 
 const mlFetch = async path => mlFetchJson(path);
@@ -184,6 +209,104 @@ export const fetchMLInformationGainApi = () => mlFetch('/insights/information-ga
 export const fetchMLClustersApi = () => mlFetch('/insights/clusters');
 export const getMLVisualizationUrl = name => `${ML_BASE}/insights/visualizations/${name}`;
 export { mlFetchJson };
+
+const hasValue = value => value !== undefined && value !== null;
+
+export const deriveRiskLevelFromScore = (riskScore, existingLevel) => {
+  if (
+    typeof existingLevel === 'string' &&
+    existingLevel.trim() &&
+    existingLevel.toLowerCase() !== 'unknown'
+  ) {
+    return existingLevel.toLowerCase();
+  }
+
+  const score = Number(riskScore);
+  if (!Number.isFinite(score)) return 'unknown';
+  if (score < 30) return 'low';
+  if (score < 70) return 'medium';
+  return 'high';
+};
+
+const deriveRiskLabel = riskLevel => {
+  switch (riskLevel) {
+    case 'low':
+      return 'Low Risk';
+    case 'medium':
+      return 'Moderate Risk';
+    case 'high':
+      return 'High Risk';
+    default:
+      return '';
+  }
+};
+
+export const normalizeAssessmentContract = assessment => {
+  if (!assessment || typeof assessment !== 'object') return assessment;
+
+  const normalized = { ...assessment };
+  const derivedRiskLevel = deriveRiskLevelFromScore(normalized.risk_score, normalized.risk_level);
+
+  if (
+    !hasValue(normalized.risk_level) ||
+    String(normalized.risk_level).trim() === '' ||
+    String(normalized.risk_level).toLowerCase() === 'unknown'
+  ) {
+    normalized.risk_level = derivedRiskLevel;
+  }
+
+  if (!hasValue(normalized.risk_label) || String(normalized.risk_label).trim() === '') {
+    const derivedRiskLabel = deriveRiskLabel(derivedRiskLevel);
+    if (derivedRiskLabel) {
+      normalized.risk_label = derivedRiskLabel;
+    }
+  }
+
+  return normalized;
+};
+
+export const mapTrendsToContract = (data = {}) => {
+  const dates = Array.isArray(data.dates) ? data.dates : [];
+  const toRiskScore = value => {
+    const score = Number(value);
+    return Number.isFinite(score) ? score : 0;
+  };
+
+  const biomarkerHistory = dates.map((date, index) => ({
+    date,
+    bmi: data.bmi_values?.[index] ?? null,
+    hba1c: data.hba1c_values?.[index] ?? null,
+    fbs: data.fbs_values?.[index] ?? null,
+    triglycerides: data.triglycerides_values?.[index] ?? null,
+    ldl: data.ldl_values?.[index] ?? null,
+    hdl: data.hdl_values?.[index] ?? null,
+    systolic: data.systolic_values?.[index] ?? null,
+    diastolic: data.diastolic_values?.[index] ?? null,
+    waist_circumference: data.waist_circumference_values?.[index] ?? null,
+  }));
+
+  const clusterHistory = dates.map((date, index) => ({
+    date,
+    cluster: data.clusters?.[index] || '',
+    riskScore: toRiskScore(data.risk_score_values?.[index]),
+  }));
+
+  const riskLevels =
+    dates.length > 0
+      ? {
+          low: clusterHistory.filter(({ riskScore }) => riskScore < 30).length,
+          medium: clusterHistory.filter(({ riskScore }) => riskScore >= 30 && riskScore < 70)
+            .length,
+          high: clusterHistory.filter(({ riskScore }) => riskScore >= 70).length,
+        }
+      : null;
+
+  return {
+    biomarkerHistory,
+    clusterHistory,
+    riskLevels,
+  };
+};
 
 // ============================================================================
 // REACT QUERY HOOKS
@@ -226,7 +349,7 @@ export const useResendVerification = () => {
 export const useLogout = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (refreshToken) => logoutApi(refreshToken),
+    mutationFn: refreshToken => logoutApi(refreshToken),
     onSuccess: () => {
       queryClient.clear();
     },
@@ -249,7 +372,7 @@ export const useUserProfile = (enabled = true) => {
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data) => updateUserProfileApi(data),
+    mutationFn: data => updateUserProfileApi(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
     },
@@ -265,7 +388,7 @@ export const useDeleteAccount = () => {
 export const useCompleteOnboarding = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data) => completeOnboardingApi(data),
+    mutationFn: data => completeOnboardingApi(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
     },
@@ -282,7 +405,7 @@ export const useConsentSettings = () => {
 export const useUpdateConsentSettings = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data) => updateConsentSettingsApi(data),
+    mutationFn: data => updateConsentSettingsApi(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user', 'consent'] });
     },
@@ -305,7 +428,7 @@ export const useAssessments = (enabled = true) => {
 export const useCreateAssessment = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data) => createAssessmentApi(data),
+    mutationFn: data => createAssessmentApi(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
       queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
@@ -313,17 +436,17 @@ export const useCreateAssessment = () => {
   });
 };
 
-export const useUpdateAssessment = (assessmentId) => {
+export const useUpdateAssessment = assessmentId => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data) => updateAssessmentApi(assessmentId, data),
+    mutationFn: data => updateAssessmentApi(assessmentId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
     },
   });
 };
 
-export const useDeleteAssessment = (assessmentId) => {
+export const useDeleteAssessment = assessmentId => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => deleteAssessmentApi(assessmentId),
@@ -333,7 +456,7 @@ export const useDeleteAssessment = (assessmentId) => {
   });
 };
 
-export const useAssessment = (assessmentId) => {
+export const useAssessment = assessmentId => {
   return useQuery({
     queryKey: ['assessment', assessmentId],
     queryFn: () => getAssessmentApi(assessmentId),
@@ -350,36 +473,7 @@ export const useTrends = (months = 12) => {
     queryKey: ['trends', months],
     queryFn: async () => {
       const data = await getTrendsApi(months);
-
-      const biomarkerHistory = data.dates.map((date, index) => ({
-        date,
-        bmi: data.bmi_values?.[index] ?? null,
-        triglycerides: data.triglycerides_values?.[index] ?? null,
-        ldl: data.ldl_values?.[index] ?? null,
-        hdl: data.hdl_values?.[index] ?? null,
-        waist_circumference: data.waist_circumference_values?.[index] ?? null,
-      }));
-
-      const clusterHistory = data.dates.map((date, index) => ({
-        date,
-        cluster: data.clusters?.[index] || '',
-        riskScore: data.risk_score_values?.[index] ?? 0,
-      }));
-
-      const riskLevels = data.dates.length > 0 ? {
-        low: data.risk_score_values?.filter((_, i) => (data.risk_score_values?.[i] ?? 0) < 30).length || 0,
-        medium: data.risk_score_values?.filter((_, i) => {
-          const score = data.risk_score_values?.[i] ?? 0;
-          return score >= 30 && score < 70;
-        }).length || 0,
-        high: data.risk_score_values?.filter((_, i) => (data.risk_score_values?.[i] ?? 0) >= 70).length || 0,
-      } : null;
-
-      return {
-        biomarkerHistory,
-        clusterHistory,
-        riskLevels,
-      };
+      return mapTrendsToContract(data);
     },
   });
 };
@@ -417,24 +511,24 @@ export const useAdminUsers = (params = {}) => {
 export const useCreateAdminUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (userData) => createAdminUserApi(userData),
+    mutationFn: userData => createAdminUserApi(userData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
   });
 };
 
-export const useUpdateAdminUser = (userId) => {
+export const useUpdateAdminUser = userId => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (userData) => updateAdminUserApi(userId, userData),
+    mutationFn: userData => updateAdminUserApi(userId, userData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
     },
   });
 };
 
-export const useDeactivateAdminUser = (userId) => {
+export const useDeactivateAdminUser = userId => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => deactivateAdminUserApi(userId),
@@ -444,7 +538,7 @@ export const useDeactivateAdminUser = (userId) => {
   });
 };
 
-export const useActivateAdminUser = (userId) => {
+export const useActivateAdminUser = userId => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => activateAdminUserApi(userId),
@@ -515,7 +609,7 @@ export const getUserProfileApi = async () => {
 };
 
 // Update user's profile
-export const updateUserProfileApi = async (data) => {
+export const updateUserProfileApi = async data => {
   return apiFetch('/users/me/profile', {
     method: 'PUT',
     body: data,
@@ -523,7 +617,7 @@ export const updateUserProfileApi = async (data) => {
 };
 
 // Complete onboarding
-export const completeOnboardingApi = async (data) => {
+export const completeOnboardingApi = async data => {
   return apiFetch('/users/me/onboarding', {
     method: 'POST',
     body: data,
@@ -536,7 +630,7 @@ export const getConsentSettingsApi = async () => {
 };
 
 // Update consent settings
-export const updateConsentSettingsApi = async (data) => {
+export const updateConsentSettingsApi = async data => {
   return apiFetch('/users/me/consent', {
     method: 'PUT',
     body: data,
@@ -561,12 +655,15 @@ export const deleteAccountApi = async () => {
 
 // Get user's assessments
 export const getAssessmentsApi = async () => {
-  return apiFetch('/users/me/assessments');
+  const response = await apiFetch('/users/me/assessments');
+  return Array.isArray(response)
+    ? response.map(assessment => normalizeAssessmentContract(assessment))
+    : response;
 };
 export const fetchAssessmentsApi = getAssessmentsApi;
 
 // Create new assessment for logged-in user
-export const createAssessmentApi = async (data) => {
+export const createAssessmentApi = async data => {
   const response = await apiFetch('/users/me/assessments', {
     method: 'POST',
     body: data,
@@ -576,27 +673,29 @@ export const createAssessmentApi = async (data) => {
     if (response.length === 0) {
       throw new Error('Invalid assessment response: empty array');
     }
-    return response[0];
+    return normalizeAssessmentContract(response[0]);
   }
 
-  return response;
+  return normalizeAssessmentContract(response);
 };
 
 // Get single assessment
-export const getAssessmentApi = async (assessmentId) => {
-  return apiFetch(`/users/me/assessments/${assessmentId}`);
+export const getAssessmentApi = async assessmentId => {
+  const response = await apiFetch(`/users/me/assessments/${assessmentId}`);
+  return normalizeAssessmentContract(response);
 };
 
 // Update assessment
 export const updateAssessmentApi = async (assessmentId, data) => {
-  return apiFetch(`/users/me/assessments/${assessmentId}`, {
+  const response = await apiFetch(`/users/me/assessments/${assessmentId}`, {
     method: 'PUT',
     body: data,
   });
+  return normalizeAssessmentContract(response);
 };
 
 // Delete assessment
-export const deleteAssessmentApi = async (assessmentId) => {
+export const deleteAssessmentApi = async assessmentId => {
   return apiFetch(`/users/me/assessments/${assessmentId}`, {
     method: 'DELETE',
   });
@@ -623,7 +722,7 @@ export const exportPDFApi = async () => {
 // ============================================================================
 
 // List all users
-export const adminListUsersApi = async (params) => {
+export const adminListUsersApi = async params => {
   const query = new URLSearchParams(params);
   return apiFetch(`/admin/users?${query}`);
 };
@@ -657,7 +756,7 @@ export const syncModelRunsApi = async () => {
   });
 };
 
-export const createAdminUserApi = async (userData) => {
+export const createAdminUserApi = async userData => {
   return apiFetch('/admin/users', {
     method: 'POST',
     body: userData,
@@ -671,13 +770,13 @@ export const updateAdminUserApi = async (userId, userData) => {
   });
 };
 
-export const deactivateAdminUserApi = async (userId) => {
+export const deactivateAdminUserApi = async userId => {
   return apiFetch(`/admin/users/${userId}`, {
     method: 'DELETE',
   });
 };
 
-export const activateAdminUserApi = async (userId) => {
+export const activateAdminUserApi = async userId => {
   return apiFetch(`/admin/users/${userId}/activate`, {
     method: 'POST',
   });
@@ -702,7 +801,7 @@ export const loginApi = async (email, password) => {
   });
 };
 
-export const forgotPasswordApi = async (email) => {
+export const forgotPasswordApi = async email => {
   return apiFetch('/auth/forgot-password', {
     method: 'POST',
     body: { email },
@@ -716,14 +815,14 @@ export const resetPasswordApi = async (token, password) => {
   });
 };
 
-export const verifyEmailApi = async (token) => {
+export const verifyEmailApi = async token => {
   return apiFetch('/auth/verify-email', {
     method: 'POST',
     body: { token },
   });
 };
 
-export const resendVerificationApi = async (email) => {
+export const resendVerificationApi = async email => {
   return apiFetch('/auth/resend-verification', {
     method: 'POST',
     body: { email },

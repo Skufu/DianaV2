@@ -87,12 +87,17 @@ func (h *AdminUsersHandler) listUsers(c *gin.Context) {
 		return
 	}
 
+	totalPages := (total + params.PageSize - 1) / params.PageSize
+	if totalPages < 1 {
+		totalPages = 1
+	}
+
 	c.JSON(http.StatusOK, models.PaginatedResponse{
 		Data:       users,
 		Total:      total,
 		Page:       params.Page,
 		PageSize:   params.PageSize,
-		TotalPages: (total + params.PageSize - 1) / params.PageSize,
+		TotalPages: totalPages,
 	})
 }
 
@@ -152,18 +157,7 @@ func (h *AdminUsersHandler) createUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.store.AuditEvents().Create(c.Request.Context(), models.AuditEvent{
-		Actor:      claims.Email,
-		Action:     "user.create",
-		TargetType: "user",
-		TargetID:   int(createdUser.ID),
-		Details: sanitizeAuditDetails(map[string]any{
-			"email": req.Email,
-			"role":  req.Role,
-		}),
-	}); err != nil {
-		log.Printf("[ERROR] Failed to create audit event for user create: %v", err)
-	}
+	c.Set(middleware.AuditTargetIDContextKey, int(createdUser.ID))
 
 	// Publish user creation event for real-time tracking
 	if h.broker != nil {
@@ -249,25 +243,6 @@ func (h *AdminUsersHandler) updateUser(c *gin.Context) {
 		return
 	}
 
-	claims, err := getUserClaims(c)
-	if err != nil {
-		ErrUnauthorized(c)
-		return
-	}
-
-	if err := h.store.AuditEvents().Create(c.Request.Context(), models.AuditEvent{
-		Actor:      claims.Email,
-		Action:     "user.update",
-		TargetType: "user",
-		TargetID:   int(id),
-		Details: sanitizeAuditDetails(map[string]any{
-			"email": req.Email,
-			"role":  req.Role,
-		}),
-	}); err != nil {
-		log.Printf("[ERROR] Failed to create audit event for user update: %v", err)
-	}
-
 	c.JSON(http.StatusOK, updatedUser)
 }
 
@@ -306,16 +281,6 @@ func (h *AdminUsersHandler) deactivateUser(c *gin.Context) {
 		return
 	}
 
-	// Log the audit event
-	if err := h.store.AuditEvents().Create(c.Request.Context(), models.AuditEvent{
-		Actor:      claims.Email,
-		Action:     "user.deactivate",
-		TargetType: "user",
-		TargetID:   int(id),
-	}); err != nil {
-		log.Printf("[ERROR] Failed to create audit event for user deactivate: %v", err)
-	}
-
 	c.JSON(http.StatusOK, gin.H{"message": "user deactivated successfully"})
 }
 
@@ -342,21 +307,6 @@ func (h *AdminUsersHandler) activateUser(c *gin.Context) {
 		log.Printf("[ERROR] Failed to activate user: %v", err)
 		ErrInternal(c, "Failed to activate user")
 		return
-	}
-
-	claims, err := getUserClaims(c)
-	if err != nil {
-		ErrUnauthorized(c)
-		return
-	}
-
-	if err := h.store.AuditEvents().Create(c.Request.Context(), models.AuditEvent{
-		Actor:      claims.Email,
-		Action:     "user.activate",
-		TargetType: "user",
-		TargetID:   int(id),
-	}); err != nil {
-		log.Printf("[ERROR] Failed to create audit event for user activate: %v", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "user activated successfully"})

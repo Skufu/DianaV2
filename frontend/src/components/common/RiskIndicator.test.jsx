@@ -56,13 +56,17 @@ describe('RiskIndicator', () => {
   });
 
   it('applies correct styling for SIRD cluster', () => {
-    const { container } = render(<RiskIndicator riskScore={50} riskLevel="medium" cluster="SIRD" />);
+    const { container } = render(
+      <RiskIndicator riskScore={50} riskLevel="medium" cluster="SIRD" />
+    );
     const clusterElements = container.querySelectorAll('.bg-purple-100');
     expect(clusterElements.length).toBeGreaterThan(0);
   });
 
   it('applies correct styling for SIDD cluster', () => {
-    const { container } = render(<RiskIndicator riskScore={50} riskLevel="medium" cluster="SIDD" />);
+    const { container } = render(
+      <RiskIndicator riskScore={50} riskLevel="medium" cluster="SIDD" />
+    );
     const clusterElements = container.querySelectorAll('.bg-red-100');
     expect(clusterElements.length).toBeGreaterThan(0);
   });
@@ -74,13 +78,17 @@ describe('RiskIndicator', () => {
   });
 
   it('applies correct styling for MARD cluster', () => {
-    const { container } = render(<RiskIndicator riskScore={50} riskLevel="medium" cluster="MARD" />);
+    const { container } = render(
+      <RiskIndicator riskScore={50} riskLevel="medium" cluster="MARD" />
+    );
     const clusterElements = container.querySelectorAll('.bg-green-100');
     expect(clusterElements.length).toBeGreaterThan(0);
   });
 
   it('applies gray styling for unknown cluster', () => {
-    const { container } = render(<RiskIndicator riskScore={50} riskLevel="medium" cluster="UNKNOWN" />);
+    const { container } = render(
+      <RiskIndicator riskScore={50} riskLevel="medium" cluster="UNKNOWN" />
+    );
     const clusterElements = container.querySelectorAll('.bg-gray-100');
     expect(clusterElements.length).toBeGreaterThan(0);
   });
@@ -104,7 +112,9 @@ describe('RiskIndicator', () => {
   });
 
   it('updates correctly when cluster changes', () => {
-    const { rerender, container } = render(<RiskIndicator riskScore={50} riskLevel="medium" cluster="SIRD" />);
+    const { rerender, container } = render(
+      <RiskIndicator riskScore={50} riskLevel="medium" cluster="SIRD" />
+    );
     expect(screen.getByText('SIRD')).toBeInTheDocument();
     expect(container.querySelectorAll('.bg-purple-100').length).toBeGreaterThan(0);
 

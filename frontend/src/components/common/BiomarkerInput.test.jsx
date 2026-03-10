@@ -65,9 +65,7 @@ describe('BiomarkerInput', () => {
   it('shows error when value is below minimum', async () => {
     const handleChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <BiomarkerInput label="Glucose" onChange={handleChange} min={70} />
-    );
+    render(<BiomarkerInput label="Glucose" onChange={handleChange} min={70} />);
 
     const input = screen.getByRole('spinbutton');
     await user.clear(input);
@@ -79,9 +77,7 @@ describe('BiomarkerInput', () => {
   it('shows error when value is above maximum', async () => {
     const handleChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <BiomarkerInput label="Glucose" onChange={handleChange} max={200} />
-    );
+    render(<BiomarkerInput label="Glucose" onChange={handleChange} max={200} />);
 
     const input = screen.getByRole('spinbutton');
     await user.clear(input);
@@ -93,14 +89,7 @@ describe('BiomarkerInput', () => {
   it('includes unit in error message when provided', async () => {
     const handleChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <BiomarkerInput
-        label="Glucose"
-        unit="mg/dL"
-        onChange={handleChange}
-        min={70}
-      />
-    );
+    render(<BiomarkerInput label="Glucose" unit="mg/dL" onChange={handleChange} min={70} />);
 
     const input = screen.getByRole('spinbutton');
     await user.clear(input);
@@ -130,11 +119,7 @@ describe('BiomarkerInput', () => {
     };
     const user = userEvent.setup();
     render(
-      <BiomarkerInput
-        label="Glucose"
-        onChange={handleChange}
-        referenceRanges={referenceRanges}
-      />
+      <BiomarkerInput label="Glucose" onChange={handleChange} referenceRanges={referenceRanges} />
     );
 
     const input = screen.getByRole('spinbutton');
@@ -153,11 +138,7 @@ describe('BiomarkerInput', () => {
     };
     const user = userEvent.setup();
     render(
-      <BiomarkerInput
-        label="Glucose"
-        onChange={handleChange}
-        referenceRanges={referenceRanges}
-      />
+      <BiomarkerInput label="Glucose" onChange={handleChange} referenceRanges={referenceRanges} />
     );
 
     const input = screen.getByRole('spinbutton');
@@ -175,11 +156,7 @@ describe('BiomarkerInput', () => {
     };
     const user = userEvent.setup();
     render(
-      <BiomarkerInput
-        label="Glucose"
-        onChange={handleChange}
-        referenceRanges={referenceRanges}
-      />
+      <BiomarkerInput label="Glucose" onChange={handleChange} referenceRanges={referenceRanges} />
     );
 
     const input = screen.getByRole('spinbutton');

@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, User, Download, Plus, LogOut, BookOpen, TrendingUp, FileText, X } from 'lucide-react';
+import {
+  LayoutDashboard,
+  User,
+  Download,
+  Plus,
+  LogOut,
+  BookOpen,
+  TrendingUp,
+  FileText,
+  X,
+} from 'lucide-react';
 import { EASE_IN_OUT, useReducedMotion } from '../../utils/animations';
 
 const navItems = [
@@ -11,10 +21,14 @@ const navItems = [
   { id: 'export', icon: FileText, label: 'Health Report' },
 ];
 
-const drawerVariants = (isReduced) => ({
+const drawerVariants = isReduced => ({
   hidden: { x: '-100%', opacity: isReduced ? 1 : 0 },
   visible: { x: 0, opacity: 1, transition: { duration: isReduced ? 0 : 0.25, ease: EASE_IN_OUT } },
-  exit: { x: '-100%', opacity: isReduced ? 1 : 0, transition: { duration: isReduced ? 0 : 0.2, ease: EASE_IN_OUT } },
+  exit: {
+    x: '-100%',
+    opacity: isReduced ? 1 : 0,
+    transition: { duration: isReduced ? 0 : 0.2, ease: EASE_IN_OUT },
+  },
 });
 
 const MobileDrawer = ({
@@ -43,7 +57,7 @@ const MobileDrawer = ({
     document.body.style.overflow = 'hidden';
     closeButtonRef.current?.focus();
 
-    const handleKeyDown = (event) => {
+    const handleKeyDown = event => {
       if (event.key === 'Escape') {
         onClose();
         return;
@@ -76,7 +90,7 @@ const MobileDrawer = ({
     };
   }, [isOpen, onClose, focusableSelectors]);
 
-  const handleNavClick = (tab) => {
+  const handleNavClick = tab => {
     setActiveTab(tab);
     onClose();
   };
@@ -120,7 +134,9 @@ const MobileDrawer = ({
                     D
                   </div>
                   <div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-diana-text-muted">DIANA</div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-diana-text-muted">
+                      DIANA
+                    </div>
                     <div className="text-lg font-serif font-bold text-diana-forest">Navigation</div>
                   </div>
                 </div>
@@ -164,7 +180,7 @@ const MobileDrawer = ({
             </div>
 
             <nav className="flex-1 px-4 py-4 space-y-2">
-              {navItems.map((item) => {
+              {navItems.map(item => {
                 const isActive = activeTab === item.id;
                 const Icon = item.icon;
                 return (
@@ -180,8 +196,13 @@ const MobileDrawer = ({
                         : 'text-diana-text-secondary hover:bg-diana-stone'
                     }`}
                   >
-                    <Icon size={20} className={isActive ? 'text-diana-forest' : 'text-diana-text-muted'} />
-                    <span className={`font-medium ${isActive ? 'font-bold' : ''}`}>{item.label}</span>
+                    <Icon
+                      size={20}
+                      className={isActive ? 'text-diana-forest' : 'text-diana-text-muted'}
+                    />
+                    <span className={`font-medium ${isActive ? 'font-bold' : ''}`}>
+                      {item.label}
+                    </span>
                   </motion.button>
                 );
               })}

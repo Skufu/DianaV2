@@ -3,7 +3,13 @@ import { AlertCircle, CheckCircle2, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/logo-icon.png';
 import Button from '../common/Button';
-import { cardVariants, slideUp, fadeIn, getInputFocusVariants, useReducedMotion } from '../../utils/animations';
+import {
+  cardVariants,
+  slideUp,
+  fadeIn,
+  getInputFocusVariants,
+  useReducedMotion,
+} from '../../utils/animations';
 import { useForgotPassword } from '../../api';
 
 const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
@@ -23,13 +29,13 @@ const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
     if (initialEmail) setEmail(initialEmail);
   }, [initialEmail]);
 
-  const validateEmail = (value) => {
+  const validateEmail = value => {
     if (!value.trim()) return 'Email is required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Please enter a valid email address';
     return '';
   };
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const value = e.target.value;
     setEmail(value);
     if (touched && fieldError) {
@@ -42,7 +48,7 @@ const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
     setFieldError(validateEmail(email));
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async event => {
     event.preventDefault();
     setError(null);
     setSuccess(null);
@@ -81,8 +87,15 @@ const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
             <img src={logoIcon} alt="DIANA Logo" className="h-10 w-10 object-contain" />
             <span className="text-2xl font-bold text-diana-navy tracking-tight">DIANA</span>
           </motion.div>
-          <motion.h1 variants={fadeIn} className="text-2xl font-semibold text-diana-midnight tracking-tight text-center">Forgot your password?</motion.h1>
-          <motion.p variants={fadeIn} className="text-sm text-slate-500 mt-2 text-center">We&apos;ll email you a secure reset link.</motion.p>
+          <motion.h1
+            variants={fadeIn}
+            className="text-2xl font-semibold text-diana-midnight tracking-tight text-center"
+          >
+            Forgot your password?
+          </motion.h1>
+          <motion.p variants={fadeIn} className="text-sm text-slate-500 mt-2 text-center">
+            We&apos;ll email you a secure reset link.
+          </motion.p>
         </div>
 
         <motion.div
@@ -93,7 +106,12 @@ const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
         >
           <motion.form onSubmit={handleSubmit} className="space-y-5" initial={false} noValidate>
             <div className="space-y-1.5">
-              <label htmlFor="forgot-email" className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1">Email Address</label>
+              <label
+                htmlFor="forgot-email"
+                className="text-xs font-semibold uppercase tracking-wide text-slate-500 ml-1"
+              >
+                Email Address
+              </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-diana-forest-light transition-colors">
                   <Mail size={18} />
@@ -190,9 +208,13 @@ const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
 
         <motion.div variants={fadeIn} className="mt-8 flex flex-col items-center gap-4">
           <div className="flex gap-4 text-xs text-slate-400 font-medium">
-            <a href="#" className="hover:text-diana-forest-light transition-colors">Privacy</a>
+            <a href="#" className="hover:text-diana-forest-light transition-colors">
+              Privacy
+            </a>
             <span className="text-slate-300">•</span>
-            <a href="#" className="hover:text-diana-forest-light transition-colors">Help</a>
+            <a href="#" className="hover:text-diana-forest-light transition-colors">
+              Help
+            </a>
           </div>
           <p className="text-[10px] text-slate-300">© 2026 DIANA</p>
         </motion.div>

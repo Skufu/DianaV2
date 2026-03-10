@@ -23,7 +23,7 @@ test.describe('Admin Audit Log Viewing', () => {
 
   test('should view audit logs page', async ({ page }) => {
     // Verify audit logs section is visible
-    await expect(page.locator('text=Audit Logs').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Audit Logs' })).toBeVisible({ timeout: 10000 });
   });
 
   test('should display events in table or empty state', async ({ page }) => {

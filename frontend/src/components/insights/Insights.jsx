@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  fetchClusterDistributionApi, fetchTrendInsightsApi,
-  fetchMLMetricsApi, fetchMLInformationGainApi, fetchMLClustersApi
+  fetchClusterDistributionApi,
+  fetchTrendInsightsApi,
+  fetchMLMetricsApi,
+  fetchMLInformationGainApi,
+  fetchMLClustersApi,
 } from '../../api';
 import { AlertCircle } from 'lucide-react';
 import InsightsHeader from './InsightsHeader';
@@ -56,7 +59,7 @@ const Insights = ({ token, patients }) => {
       try {
         const [cResult, tResult] = await Promise.allSettled([
           fetchClusterDistributionApi(token),
-          fetchTrendInsightsApi(token)
+          fetchTrendInsightsApi(token),
         ]);
 
         const c = cResult.status === 'fulfilled' ? cResult.value : [];
@@ -65,15 +68,24 @@ const Insights = ({ token, patients }) => {
         let sawRateLimit = false;
         if (cResult.status === 'rejected') {
           console.error('Cluster distribution failed:', cResult.reason);
-          sawRateLimit = cResult.reason?.status === 429 || String(cResult.reason?.message || cResult.reason || '').includes('rate limit');
+          sawRateLimit =
+            cResult.reason?.status === 429 ||
+            String(cResult.reason?.message || cResult.reason || '').includes('rate limit');
         }
         if (tResult.status === 'rejected') {
           console.error('Biomarker trends failed:', tResult.reason);
-          sawRateLimit = sawRateLimit || tResult.reason?.status === 429 || String(tResult.reason?.message || tResult.reason || '').includes('rate limit');
+          sawRateLimit =
+            sawRateLimit ||
+            tResult.reason?.status === 429 ||
+            String(tResult.reason?.message || tResult.reason || '').includes('rate limit');
         }
 
         if (cResult.status === 'rejected' && tResult.status === 'rejected') {
-          setError(sawRateLimit ? 'Rate limited — please retry in a moment.' : 'Failed to load insights data');
+          setError(
+            sawRateLimit
+              ? 'Rate limited — please retry in a moment.'
+              : 'Failed to load insights data'
+          );
         }
         setRateLimited(sawRateLimit);
         rateLimitedRef.current = sawRateLimit;
@@ -105,7 +117,6 @@ const Insights = ({ token, patients }) => {
     };
 
     load();
-
   }, [token, reloadKey]); // Removed patientList from dependencies
 
   useEffect(() => {
@@ -116,7 +127,7 @@ const Insights = ({ token, patients }) => {
         const [metrics, ig, clusters] = await Promise.all([
           fetchMLMetricsApi().catch(() => null),
           fetchMLInformationGainApi().catch(() => null),
-          fetchMLClustersApi().catch(() => null)
+          fetchMLClustersApi().catch(() => null),
         ]);
         setMlMetrics(metrics);
         setMlIG(ig);
@@ -140,7 +151,7 @@ const Insights = ({ token, patients }) => {
       return mlIG.feature_ranking.map((item, i) => ({
         factor: item.feature.charAt(0).toUpperCase() + item.feature.slice(1),
         importance: item.ig,
-        color: colors[i % colors.length]
+        color: colors[i % colors.length],
       }));
     }
     return [
@@ -149,7 +160,7 @@ const Insights = ({ token, patients }) => {
       { factor: 'LDL', importance: 0.16, color: '#7C3AED' },
       { factor: 'HDL', importance: 0.14, color: '#06B6D4' },
       { factor: 'Age', importance: 0.12, color: '#F43F5E' },
-      { factor: 'Lifestyle', importance: 0.08, color: '#64748B' }
+      { factor: 'Lifestyle', importance: 0.08, color: '#64748B' },
     ];
   }, [mlIG]);
 
@@ -176,10 +187,12 @@ const Insights = ({ token, patients }) => {
       totalRisk += c.risk_score * c.size;
       totalSize += c.size;
     });
-    return totalSize > 0 ? (totalRisk / totalSize) : null; // Risk score is typically 0-100, so no * 100 needed here if it's already in that range
+    return totalSize > 0 ? totalRisk / totalSize : null; // Risk score is typically 0-100, so no * 100 needed here if it's already in that range
   }, [mlClusters]);
 
-  const totalAssessments = mlClusters?.cluster_sizes ? Object.values(mlClusters.cluster_sizes).reduce((a, b) => a + b, 0) : 0;
+  const totalAssessments = mlClusters?.cluster_sizes
+    ? Object.values(mlClusters.cluster_sizes).reduce((a, b) => a + b, 0)
+    : 0;
 
   return (
     <div className="space-y-8 animate-fade-in pb-8">

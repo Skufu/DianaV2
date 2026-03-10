@@ -23,7 +23,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
 
-  const validateEmail = (email) => {
+  const validateEmail = email => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
@@ -42,7 +42,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
     }
   }, []);
 
-  const handleEmailChange = (e) => {
+  const handleEmailChange = e => {
     const value = e.target.value;
     setEmail(value);
     // Clear field error as user types (if touched)
@@ -52,7 +52,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
     }
   };
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = e => {
     const value = e.target.value;
     setPassword(value);
     if (touched.password && fieldErrors.password) {
@@ -61,7 +61,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
     }
   };
 
-  const handleBlur = (field) => {
+  const handleBlur = field => {
     setTouched(prev => ({ ...prev, [field]: true }));
     const value = field === 'email' ? email : password;
     const err = validateField(field, value);
@@ -116,15 +116,19 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
   };
 
   const displayError = errorProp?.message || errorProp || error;
-  const shouldShowVerify = errorProp?.code === 'EMAIL_NOT_VERIFIED' || errorProp?.message === 'Email not verified';
+  const shouldShowVerify =
+    errorProp?.code === 'EMAIL_NOT_VERIFIED' || errorProp?.message === 'Email not verified';
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative bg-slate-50 overflow-hidden font-sans selection:bg-diana-teal/20 selection:text-diana-teal-dark p-4 sm:p-6 lg:p-8">
-
       {/* Calm, Accessible Background Elements */}
       {/* 1. Subtle Background Grid (Softer for light mode) */}
       <div className="absolute inset-0 z-0 opacity-[0.4]">
-        <svg className="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <svg
+          className="absolute w-full h-full"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+        >
           <defs>
             <pattern id="light-grid" width="40" height="40" patternUnits="userSpaceOnUse">
               <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e2e8f0" strokeWidth="1" />
@@ -140,10 +144,9 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
         className="w-full max-w-[1050px] flex flex-col lg:flex-row shadow-[0_8px_30px_rgb(0,0,0,0.06)] rounded-2xl overflow-hidden z-10 relative bg-white border border-slate-200"
       >
-
         {/* Left Side: Clinical Value Prop (Trustworthy primary blue) */}
         <div className="w-full lg:w-[460px] p-10 lg:p-14 flex flex-col justify-between relative bg-gradient-to-br from-diana-forest to-[#152865] overflow-hidden">
           {/* Subtle medical pattern overlay */}
@@ -152,24 +155,28 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
           <div className="relative z-10 flex items-center gap-3 mb-10">
             <img src={logoIcon} alt="DIANA Logo" className="h-6 w-6" />
 
-            <span className="text-white font-bold tracking-[0.15em] text-lg mt-0.5 uppercase">DIANA</span>
+            <span className="text-white font-bold tracking-[0.15em] text-lg mt-0.5 uppercase">
+              DIANA
+            </span>
           </div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }}
+            transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
             className="space-y-6 relative z-10"
           >
             <h2 className="text-3xl lg:text-4xl text-white font-semibold leading-[1.2] tracking-tight">
               Personal Diabetes Risk Insights for <br />
-              <span className="text-teal-100 font-serif italic pr-2 font-medium">menopausal women.</span>
+              <span className="text-teal-100 font-serif italic pr-2 font-medium">
+                menopausal women.
+              </span>
             </h2>
 
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: 0.4 }}
+              transition={{ duration: 0.6, ease: 'easeOut', delay: 0.4 }}
               className="pt-8 flex flex-col gap-4"
             >
               <div className="flex items-center gap-4 text-[15px] text-white bg-white/10 p-4 rounded-xl border border-white/10 shadow-sm">
@@ -180,14 +187,15 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
           </motion.div>
 
           <div className="mt-14 lg:mt-0 relative z-10">
-            <p className="text-blue-200/80 text-[11px] font-bold tracking-[0.15em] uppercase">Diabetes Risk Self‑Assessment Tool for Menopausal Women</p>
+            <p className="text-blue-200/80 text-[11px] font-bold tracking-[0.15em] uppercase">
+              Diabetes Risk Self‑Assessment Tool for Menopausal Women
+            </p>
           </div>
         </div>
 
         {/* Right Side: High-Contrast Login Form (Clean White) */}
         <div className="w-full lg:flex-1 p-10 sm:p-12 lg:p-16 bg-white relative flex flex-col justify-center">
           <div className="max-w-[420px] w-full mx-auto space-y-8">
-
             {/* Mobile-only branding backup (if stacked) */}
             <div className="lg:hidden flex items-center gap-3 mb-4">
               <div className="bg-diana-forest p-2 rounded-lg">
@@ -222,10 +230,14 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                   transition={{ duration: 0.2, delay: 0.1 }}
                 >
                   <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-
                     {/* Email Field */}
                     <div className="space-y-2">
-                      <label htmlFor="login-email" className="text-[14px] font-semibold text-slate-700">Email Address</label>
+                      <label
+                        htmlFor="login-email"
+                        className="text-[14px] font-semibold text-slate-700"
+                      >
+                        Email Address
+                      </label>
                       <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
                           <Mail size={20} />
@@ -266,7 +278,12 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                     {/* Password Field */}
                     <div className="space-y-2 pt-1">
                       <div className="flex items-center justify-between">
-                        <label htmlFor="login-password" className="text-[14px] font-semibold text-slate-700">Password</label>
+                        <label
+                          htmlFor="login-password"
+                          className="text-[14px] font-semibold text-slate-700"
+                        >
+                          Password
+                        </label>
                         <button
                           type="button"
                           onClick={() => onShowForgotPassword?.(email)}
@@ -284,7 +301,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                           ref={passwordRef}
                           whileFocus="focus"
                           variants={inputFocusVariants}
-                          type={showPassword ? "text" : "password"}
+                          type={showPassword ? 'text' : 'password'}
                           id="login-password"
                           value={password}
                           onChange={handlePasswordChange}
@@ -293,13 +310,15 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                           placeholder="••••••••"
                           autoComplete="current-password"
                           aria-invalid={touched.password && fieldErrors.password ? 'true' : 'false'}
-                          aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
+                          aria-describedby={
+                            fieldErrors.password ? 'login-password-error' : undefined
+                          }
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
                         >
                           {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
@@ -328,7 +347,10 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                         type="checkbox"
                         className="h-5 w-5 text-blue-600 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-blue-600/20 focus:ring-offset-0 cursor-pointer transition-all"
                       />
-                      <label htmlFor="remember-me" className="ml-3 block text-[15px] font-medium text-slate-600 cursor-pointer select-none">
+                      <label
+                        htmlFor="remember-me"
+                        className="ml-3 block text-[15px] font-medium text-slate-600 cursor-pointer select-none"
+                      >
                         Keep me signed in
                       </label>
                     </div>
@@ -340,7 +362,8 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                           initial={{ opacity: 0, height: 0, scale: 0.95 }}
                           animate={{ opacity: 1, height: 'auto', scale: 1 }}
                           exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                          className="p-4 text-[14px] text-red-700 bg-red-50 border border-red-200 rounded-xl flex flex-col gap-2" role="alert"
+                          className="p-4 text-[14px] text-red-700 bg-red-50 border border-red-200 rounded-xl flex flex-col gap-2"
+                          role="alert"
                         >
                           <div className="flex items-start gap-2">
                             <AlertCircle size={18} className="mt-0.5 shrink-0 text-red-600" />
@@ -400,16 +423,17 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                       onClick={onShowSignup}
                       className="text-[15px] font-normal text-gray-600 hover:text-gray-700 transition-colors focus:outline-none"
                     >
-                      Don&apos;t have an account? <span className="font-bold text-blue-600 hover:text-blue-700 underline">Sign up</span>
+                      Don&apos;t have an account?{' '}
+                      <span className="font-bold text-blue-600 hover:text-blue-700 underline">
+                        Sign up
+                      </span>
                     </button>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-
           </div>
         </div>
-
       </motion.div>
     </div>
   );

@@ -4,7 +4,13 @@ import { useUserProfile, useUpdateProfile, useDeleteAccount } from '../../api';
 import AssessmentForm from './AssessmentForm';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../common/Button';
-import { staggerContainer, fadeIn, slideUp, useInputFocusVariants, useReducedMotion } from '../../utils/animations';
+import {
+  staggerContainer,
+  fadeIn,
+  slideUp,
+  useInputFocusVariants,
+  useReducedMotion,
+} from '../../utils/animations';
 
 const UserProfile = ({ setActiveTab }) => {
   const isReduced = useReducedMotion();
@@ -32,7 +38,7 @@ const UserProfile = ({ setActiveTab }) => {
     }
   }, [profileData]);
 
-  const handleChange = (e) => {
+  const handleChange = e => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -40,7 +46,7 @@ const UserProfile = ({ setActiveTab }) => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault();
     setFormError(null);
     try {
@@ -75,7 +81,11 @@ const UserProfile = ({ setActiveTab }) => {
 
   if (isLoading) {
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 text-slate-400">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center py-12 text-slate-400"
+      >
         Loading profile...
       </motion.div>
     );
@@ -88,7 +98,9 @@ const UserProfile = ({ setActiveTab }) => {
           <AlertTriangle size={32} className="text-rose-600" />
         </div>
         <h3 className="text-xl font-serif font-bold text-slate-900 mb-2">Profile Error</h3>
-        <p className="text-slate-600 mb-8 font-medium">Failed to load your profile data. Please try again.</p>
+        <p className="text-slate-600 mb-8 font-medium">
+          Failed to load your profile data. Please try again.
+        </p>
         <Button
           onClick={() => refetch()}
           variant="blue"
@@ -101,8 +113,16 @@ const UserProfile = ({ setActiveTab }) => {
   }
 
   return (
-    <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="max-w-4xl mx-auto space-y-6 pt-4 lg:pt-0">
-      <motion.div variants={slideUp} className="bg-gradient-to-r from-diana-forest to-diana-forest-light rounded-3xl p-8 shadow-lg text-white">
+    <motion.div
+      variants={staggerContainer}
+      initial="hidden"
+      animate="visible"
+      className="max-w-4xl mx-auto space-y-6 pt-4 lg:pt-0"
+    >
+      <motion.div
+        variants={slideUp}
+        className="bg-gradient-to-r from-diana-forest to-diana-forest-light rounded-3xl p-8 shadow-lg text-white"
+      >
         <div className="flex items-center gap-4 mb-2">
           <Button
             variant="ghost"
@@ -160,7 +180,7 @@ const UserProfile = ({ setActiveTab }) => {
         <motion.div
           variants={fadeIn}
           whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           className="glass-card p-8 bg-white"
         >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
@@ -173,22 +193,30 @@ const UserProfile = ({ setActiveTab }) => {
               { label: 'First Name', name: 'first_name', type: 'text' },
               { label: 'Last Name', name: 'last_name', type: 'text' },
               { label: 'Age', name: 'age', type: 'number', min: 45, max: 80 },
-            ].map((field) => (
+            ].map(field => (
               <div key={field.name}>
-                <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">{field.label}</label>
+                <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                  {field.label}
+                </label>
                 <motion.input
                   whileFocus="focus"
                   variants={inputFocusVariants}
                   type={field.type}
                   name={field.name}
-                  value={field.valueTransform ? field.valueTransform(formData[field.name]) : (formData[field.name] || '')}
+                  value={
+                    field.valueTransform
+                      ? field.valueTransform(formData[field.name])
+                      : formData[field.name] || ''
+                  }
                   onChange={handleChange}
                   className="w-full px-4 py-3 bg-diana-stone/50 border border-diana-sand rounded-xl text-diana-text-primary focus:outline-none focus:border-diana-forest transition-all"
                 />
               </div>
             ))}
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Email Address</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                Email Address
+              </label>
               <input
                 type="email"
                 readOnly
@@ -203,7 +231,7 @@ const UserProfile = ({ setActiveTab }) => {
         <motion.div
           variants={fadeIn}
           whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           className="glass-card p-8 bg-white"
         >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
@@ -213,7 +241,9 @@ const UserProfile = ({ setActiveTab }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Menopause Status</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                Menopause Status
+              </label>
               <select
                 name="menopause_status"
                 value={formData.menopause_status || ''}
@@ -229,8 +259,13 @@ const UserProfile = ({ setActiveTab }) => {
             </div>
 
             {formData.menopause_status === 'post' && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
-                <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Menopause Type</label>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+              >
+                <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                  Menopause Type
+                </label>
                 <select
                   name="menopause_type"
                   value={formData.menopause_type || ''}
@@ -245,7 +280,9 @@ const UserProfile = ({ setActiveTab }) => {
             )}
 
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Years Post-Menopause</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                Years Post-Menopause
+              </label>
               <motion.input
                 whileFocus="focus"
                 variants={inputFocusVariants}
@@ -262,17 +299,21 @@ const UserProfile = ({ setActiveTab }) => {
         <motion.div
           variants={fadeIn}
           whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           className="glass-card p-8 bg-white"
         >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
-            <div className="w-6 h-6 rounded-full bg-diana-sage/20 flex items-center justify-center">🏃‍♀️</div>
+            <div className="w-6 h-6 rounded-full bg-diana-sage/20 flex items-center justify-center">
+              🏃‍♀️
+            </div>
             Lifestyle Habits
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Physical Activity Level</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                Physical Activity Level
+              </label>
               <select
                 name="physical_activity"
                 value={formData.physical_activity || ''}
@@ -288,7 +329,9 @@ const UserProfile = ({ setActiveTab }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Alcohol Consumption</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                Alcohol Consumption
+              </label>
               <select
                 name="alcohol"
                 value={formData.alcohol || ''}
@@ -308,7 +351,7 @@ const UserProfile = ({ setActiveTab }) => {
         <motion.div
           variants={fadeIn}
           whileHover={{ scale: 1.02 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           className="glass-card p-8 bg-white"
         >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
@@ -318,7 +361,9 @@ const UserProfile = ({ setActiveTab }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Hypertension</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                Hypertension
+              </label>
               <select
                 name="hypertension"
                 value={formData.hypertension || ''}
@@ -333,7 +378,9 @@ const UserProfile = ({ setActiveTab }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Heart Disease</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                Heart Disease
+              </label>
               <select
                 name="heart_disease"
                 value={formData.heart_disease || ''}
@@ -349,7 +396,9 @@ const UserProfile = ({ setActiveTab }) => {
             {/* Family history removed based on gap analysis */}
 
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">Smoking Status</label>
+              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                Smoking Status
+              </label>
               <select
                 name="smoking_status"
                 value={formData.smoking_status || ''}
@@ -365,8 +414,6 @@ const UserProfile = ({ setActiveTab }) => {
           </div>
         </motion.div>
 
-
-
         <div className="flex justify-end pt-4">
           <Button
             type="submit"
@@ -380,7 +427,10 @@ const UserProfile = ({ setActiveTab }) => {
         </div>
       </form>
 
-      <motion.div variants={fadeIn} className="bg-white rounded-[32px] p-8 shadow-sm border border-rose-100">
+      <motion.div
+        variants={fadeIn}
+        className="bg-white rounded-[32px] p-8 shadow-sm border border-rose-100"
+      >
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center shrink-0">
             <AlertTriangle size={24} className="text-rose-600" />
@@ -388,7 +438,8 @@ const UserProfile = ({ setActiveTab }) => {
           <div className="flex-1">
             <h2 className="text-xl font-serif font-bold text-slate-900 mb-2">Delete Account</h2>
             <p className="text-slate-500 text-base mb-6 leading-relaxed">
-              Deleting your account will permanently remove all your health data and activity logs. This action is irreversible.
+              Deleting your account will permanently remove all your health data and activity logs.
+              This action is irreversible.
             </p>
             <Button
               variant="danger"
@@ -413,9 +464,12 @@ const UserProfile = ({ setActiveTab }) => {
               <div className="w-16 h-16 rounded-3xl bg-rose-50 flex items-center justify-center mb-6">
                 <AlertTriangle size={32} className="text-rose-600" />
               </div>
-              <h3 className="text-2xl font-serif font-bold text-slate-900 mb-2">Confirm Deletion</h3>
+              <h3 className="text-2xl font-serif font-bold text-slate-900 mb-2">
+                Confirm Deletion
+              </h3>
               <p className="text-slate-500 text-base mb-8 leading-relaxed">
-                Are you absolutely sure? This will permanently erase your health records and cannot be undone.
+                Are you absolutely sure? This will permanently erase your health records and cannot
+                be undone.
               </p>
               <div className="flex gap-4">
                 <Button

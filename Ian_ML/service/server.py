@@ -142,8 +142,8 @@ def _resolve_model_version_for_lineage(resolved: str, predictor) -> str:
 
 
 def _lineage_for_model_type(model_type: str, clinical_predictor=None):
-    resolved = model_type or "clinical"
-    if resolved in ('clinical', 'binary_v2_no_bp', 'binary_v2_bp'):
+    resolved = model_type or "binary_v2_no_bp"
+    if resolved in ('binary_v2_no_bp', 'binary_v2_bp'):
         predictor = clinical_predictor
         if predictor is None:
             predictor = get_clinical_predictor_for(resolved)
@@ -390,7 +390,7 @@ def predict():
         if not data:
             return jsonify({"error": "No data provided"}), 400
         
-        if model_type in ('clinical', 'binary_v2_no_bp', 'binary_v2_bp'):
+        if model_type in ('binary_v2_no_bp', 'binary_v2_bp'):
             # Use clinical model (non-circular)
             clin_predictor = get_clinical_predictor_for(model_type)
             if clin_predictor is None:
@@ -491,7 +491,7 @@ def predict_explain():
         background = None
         
         # Get predictor and make prediction
-        if model_type in ('clinical', 'binary_v2_no_bp', 'binary_v2_bp'):
+        if model_type in ('binary_v2_no_bp', 'binary_v2_bp'):
             clin_predictor = get_clinical_predictor_for(model_type)
             if clin_predictor is None:
                 return jsonify({"error": "Clinical model not available"}), 503

@@ -8,7 +8,7 @@ const formatMetric = (value, isPercentage = false, decimals = 1) => {
   return isPercentage ? `${(value * 100).toFixed(decimals)}%` : value.toFixed(decimals);
 };
 
-const getMLMetrics = (mlMetrics) => {
+const getMLMetrics = mlMetrics => {
   if (!mlMetrics) return null;
   return mlMetrics.clinical?.best_model ? mlMetrics.clinical : mlMetrics.ada_baseline;
 };
@@ -28,7 +28,7 @@ const ModelPerformance = React.memo(({ mlMetrics, isLoading = false }) => {
           <div className="w-48 h-7 bg-slate-600 animate-pulse rounded" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {['skeleton-1', 'skeleton-2', 'skeleton-3', 'skeleton-4'].map((id) => (
+          {['skeleton-1', 'skeleton-2', 'skeleton-3', 'skeleton-4'].map(id => (
             <div key={id} className="bg-slate-700/30 p-4 rounded-2xl">
               <div className="w-20 h-4 mb-2 bg-slate-600 animate-pulse rounded" />
               <div className="w-16 h-6 bg-slate-600 animate-pulse rounded" />
@@ -56,48 +56,73 @@ const ModelPerformance = React.memo(({ mlMetrics, isLoading = false }) => {
         <div className="p-3 bg-diana-lime/10 rounded-xl">
           <Brain size={32} className="text-diana-lime-dark" />
         </div>
-        <h3 className="text-2xl font-serif font-bold text-diana-text-primary">ML Model Performance</h3>
+        <h3 className="text-2xl font-serif font-bold text-diana-text-primary">
+          ML Model Performance
+        </h3>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-3 gap-6">
         <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
-          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2">Best Model</p>
+          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2">
+            Best Model
+          </p>
           <p className="text-2xl font-serif font-bold text-diana-forest">
             {metrics?.best_model?.best_model || metrics?.best_model?.model_type || 'clinical'}
           </p>
         </div>
         <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
-          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2">Accuracy</p>
+          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2">
+            Accuracy
+          </p>
           <p className="text-3xl font-serif font-bold text-diana-forest">
             {formatMetric(metrics?.best_model?.metrics?.accuracy, true)}
           </p>
         </div>
         <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
-          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2">AUC-ROC</p>
+          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2">
+            AUC-ROC
+          </p>
           <p className="text-3xl font-serif font-bold text-diana-forest">
             {formatMetric(metrics?.best_model?.metrics?.auc_roc, false, 3)}
           </p>
         </div>
         <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
-          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2">F1-Score</p>
+          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2">
+            F1-Score
+          </p>
           <p className="text-3xl font-serif font-bold text-diana-forest">
             {formatMetric(metrics?.best_model?.metrics?.f1, true)}
           </p>
         </div>
         <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
-          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2" title="True Positive Rate (ability to correctly identify At-Risk patients)">Sensitivity</p>
+          <p
+            className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2"
+            title="True Positive Rate (ability to correctly identify At-Risk patients)"
+          >
+            Sensitivity
+          </p>
           <p className="text-3xl font-serif font-bold text-diana-forest">
             {formatMetric(metrics?.best_model?.metrics?.sensitivity, true)}
           </p>
         </div>
         <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
-          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2" title="True Negative Rate (ability to correctly identify Normal patients)">Specificity</p>
+          <p
+            className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2"
+            title="True Negative Rate (ability to correctly identify Normal patients)"
+          >
+            Specificity
+          </p>
           <p className="text-3xl font-serif font-bold text-diana-forest">
             {formatMetric(metrics?.best_model?.metrics?.specificity, true)}
           </p>
         </div>
         <div className="bg-diana-stone/30 p-6 rounded-2xl border border-diana-stone">
-          <p className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2" title="Negative Predictive Value (confidence when predicting Normal)">NPV</p>
+          <p
+            className="text-diana-text-secondary font-bold text-xs uppercase tracking-wider mb-2"
+            title="Negative Predictive Value (confidence when predicting Normal)"
+          >
+            NPV
+          </p>
           <p className="text-3xl font-serif font-bold text-diana-forest">
             {formatMetric(metrics?.best_model?.metrics?.npv, true)}
           </p>
@@ -117,13 +142,24 @@ const ModelPerformance = React.memo(({ mlMetrics, isLoading = false }) => {
               </tr>
             </thead>
             <tbody>
-              {modelComparison.map((m) => (
-                <tr key={m.Model} className="border-b border-diana-sand last:border-0 hover:bg-diana-stone/20 transition-colors">
+              {modelComparison.map(m => (
+                <tr
+                  key={m.Model}
+                  className="border-b border-diana-sand last:border-0 hover:bg-diana-stone/20 transition-colors"
+                >
                   <td className="py-4 font-bold text-diana-text-primary">{m.Model}</td>
-                  <td className="text-right py-4 text-diana-text-secondary font-medium">{formatMetric(m.Accuracy, true)}</td>
-                  <td className="text-right py-4 text-diana-text-secondary font-medium">{formatMetric(m.Precision, true)}</td>
-                  <td className="text-right py-4 text-diana-text-secondary font-medium">{formatMetric(m.Recall, true)}</td>
-                  <td className="text-right py-4 text-diana-text-secondary font-medium">{formatMetric(m['AUC-ROC'], false, 3)}</td>
+                  <td className="text-right py-4 text-diana-text-secondary font-medium">
+                    {formatMetric(m.Accuracy, true)}
+                  </td>
+                  <td className="text-right py-4 text-diana-text-secondary font-medium">
+                    {formatMetric(m.Precision, true)}
+                  </td>
+                  <td className="text-right py-4 text-diana-text-secondary font-medium">
+                    {formatMetric(m.Recall, true)}
+                  </td>
+                  <td className="text-right py-4 text-diana-text-secondary font-medium">
+                    {formatMetric(m['AUC-ROC'], false, 3)}
+                  </td>
                 </tr>
               ))}
             </tbody>

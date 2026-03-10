@@ -34,8 +34,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 DATA_PATH = Path("data/nhanes/processed/diana_dataset_final.csv")
-MODELS_DIR = Path("models/clinical_3class")  # Save to clinical_3class
-VIZ_DIR = Path("models/clinical_3class/visualizations")
+MODELS_DIR = Path("models/binary_v2_no_bp")
+VIZ_DIR = Path("models/binary_v2_no_bp/visualizations")
 
 # Features for clustering — non-circular clinical biomarkers only
 # IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE

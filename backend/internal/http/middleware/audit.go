@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,8 @@ type AuditLogger struct {
 	store store.Store
 	wg    sync.WaitGroup
 }
+
+const AuditTargetIDContextKey = "audit_target_id"
 
 // NewAuditLogger creates a new AuditLogger with the given store.
 func NewAuditLogger(st store.Store) *AuditLogger {
@@ -63,11 +66,7 @@ func (a *AuditLogger) LogAction(action, targetType string) gin.HandlerFunc {
 			return
 		}
 
-		// Extract target ID from URL params if present
-		var targetID int
-		if idStr := c.Param("id"); idStr != "" {
-			targetID, _ = strconv.Atoi(idStr)
-		}
+		targetID := resolveTargetID(c)
 
 		// Build details from request
 		details := buildAuditDetails(c)
@@ -88,6 +87,57 @@ func (a *AuditLogger) LogAction(action, targetType string) gin.HandlerFunc {
 				log.Printf("[AUDIT FAILURE] Failed to log %s on %s: %v", action, targetType, err)
 			}
 		}()
+	}
+}
+
+func resolveTargetID(c *gin.Context) int {
+	if explicitTarget, exists := c.Get(AuditTargetIDContextKey); exists {
+		if id, ok := toInt(explicitTarget); ok {
+			return id
+		}
+	}
+
+	for _, key := range []string{"id", "assessmentID", "userID"} {
+		if id, ok := parseNumericParam(c.Param(key)); ok {
+			return id
+		}
+	}
+
+	for _, p := range c.Params {
+		if id, ok := parseNumericParam(p.Value); ok {
+			return id
+		}
+	}
+
+	return 0
+}
+
+func parseNumericParam(raw string) (int, bool) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return 0, false
+	}
+	id, err := strconv.Atoi(raw)
+	if err != nil {
+		return 0, false
+	}
+	return id, true
+}
+
+func toInt(v any) (int, bool) {
+	switch value := v.(type) {
+	case int:
+		return value, true
+	case int64:
+		return int(value), true
+	case int32:
+		return int(value), true
+	case float64:
+		return int(value), true
+	case string:
+		return parseNumericParam(value)
+	default:
+		return 0, false
 	}
 }
 

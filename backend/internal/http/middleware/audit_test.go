@@ -165,6 +165,79 @@ func TestAuditLogger_LogAction_SkippedWithoutUser(t *testing.T) {
 	}
 }
 
+func TestAuditLogger_LogAction_UsesAssessmentIDParam(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	store := &mockAuditStore{}
+	auditLogger := NewAuditLogger(store)
+
+	r := gin.New()
+	r.Use(auditLogger.LogAction("assessment.update", "assessment"))
+	r.PUT("/assessments/:assessmentID", func(c *gin.Context) {
+		c.Set("user", UserClaims{
+			UserID: 1,
+			Email:  "admin@example.com",
+			Role:   "admin",
+		})
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+	})
+
+	req, _ := http.NewRequest(http.MethodPut, "/assessments/42", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	auditLogger.Shutdown()
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	events := store.GetEvents()
+	if len(events) != 1 {
+		t.Fatalf("expected 1 audit event, got %d", len(events))
+	}
+
+	if events[0].TargetID != 42 {
+		t.Errorf("expected target_id 42, got %d", events[0].TargetID)
+	}
+}
+
+func TestAuditLogger_LogAction_UsesExplicitTargetIDContext(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	store := &mockAuditStore{}
+	auditLogger := NewAuditLogger(store)
+
+	r := gin.New()
+	r.Use(auditLogger.LogAction("assessment.create", "assessment"))
+	r.POST("/assessments", func(c *gin.Context) {
+		c.Set("user", UserClaims{
+			UserID: 1,
+			Email:  "admin@example.com",
+			Role:   "admin",
+		})
+		c.Set(AuditTargetIDContextKey, 77)
+		c.JSON(http.StatusCreated, gin.H{"id": 77})
+	})
+
+	req, _ := http.NewRequest(http.MethodPost, "/assessments", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	auditLogger.Shutdown()
+
+	if w.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", w.Code)
+	}
+
+	events := store.GetEvents()
+	if len(events) != 1 {
+		t.Fatalf("expected 1 audit event, got %d", len(events))
+	}
+
+	if events[0].TargetID != 77 {
+		t.Errorf("expected target_id 77, got %d", events[0].TargetID)
+	}
+}
+
 func TestAuditLogger_CaptureRequestBody_POST(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

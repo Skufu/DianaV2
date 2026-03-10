@@ -24,8 +24,8 @@ const VisualizationCard = React.memo(({ title, visualizationName }) => {
 
         const response = await fetch(url, {
           headers: {
-            'X-API-Key': apiKey
-          }
+            'X-API-Key': apiKey,
+          },
         });
 
         if (!response.ok) {
@@ -41,7 +41,7 @@ const VisualizationCard = React.memo(({ title, visualizationName }) => {
         }
       } catch (error) {
         if (isMounted) {
-          console.error("Error loading visualization:", error);
+          console.error('Error loading visualization:', error);
           setStatus('error');
         }
       }
@@ -67,9 +67,7 @@ const VisualizationCard = React.memo(({ title, visualizationName }) => {
       className="glass-card p-8 bg-white"
     >
       <h3 className="text-xl font-serif font-bold text-diana-text-primary mb-6">{title}</h3>
-      {status === 'loading' && (
-        <LoadingSkeleton className="w-full h-64 !bg-diana-stone/50" />
-      )}
+      {status === 'loading' && <LoadingSkeleton className="w-full h-64 !bg-diana-stone/50" />}
       <img
         src={imgSrc}
         alt={title}

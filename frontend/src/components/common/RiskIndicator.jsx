@@ -40,7 +40,7 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
     };
   }, [riskScore, displayScore, isReduced]);
 
-  const getRiskColor = (level) => {
+  const getRiskColor = level => {
     switch (level) {
       case 'low':
         return 'bg-green-100 text-green-800 border-green-200';
@@ -53,7 +53,7 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
     }
   };
 
-  const getClusterColor = (cluster) => {
+  const getClusterColor = cluster => {
     switch (cluster) {
       case 'SIRD':
         return 'bg-orange-100 text-orange-800 border-orange-200';
@@ -68,32 +68,21 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
     }
   };
 
-  const fadeInVariants = isReduced
-    ? { hidden: { opacity: 1 }, visible: { opacity: 1 } }
-    : fadeIn;
+  const fadeInVariants = isReduced ? { hidden: { opacity: 1 }, visible: { opacity: 1 } } : fadeIn;
   const scaleInVariants = isReduced
     ? { hidden: { opacity: 1, scale: 1 }, visible: { opacity: 1, scale: 1 } }
     : scaleIn;
 
   return (
-    <motion.div
-      variants={fadeInVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-3"
-    >
+    <motion.div variants={fadeInVariants} initial="hidden" animate="visible" className="space-y-3">
       {/* Risk Score */}
-      <motion.div
-        variants={scaleInVariants}
-      >
+      <motion.div variants={scaleInVariants}>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-xl font-semibold text-slate-800">Diabetes Risk Score</h3>
         </div>
 
         <div className="flex items-baseline gap-2 mb-5">
-          <motion.span
-            className="text-[56px] leading-none font-light tracking-tighter text-slate-800 sm:text-[64px] md:text-[72px] lg:text-[80px]"
-          >
+          <motion.span className="text-[56px] leading-none font-light tracking-tighter text-slate-800 sm:text-[64px] md:text-[72px] lg:text-[80px]">
             {displayScore}
           </motion.span>
         </div>
@@ -122,7 +111,9 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
         >
           <div className="flex items-center space-x-3">
             <span className="text-base font-semibold text-slate-700">Metabolic Profile:</span>
-            <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${getClusterColor(cluster)}`}>
+            <span
+              className={`px-4 py-1.5 rounded-full text-sm font-bold ${getClusterColor(cluster)}`}
+            >
               {cluster}
             </span>
           </div>

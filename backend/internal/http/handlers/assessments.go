@@ -364,7 +364,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if req.ModelType != "" && req.ModelType != "clinical" && req.ModelType != "ada" && req.ModelType != "binary_v2_no_bp" && req.ModelType != "binary_v2_bp" {
+	if req.ModelType != "" && req.ModelType != "ada" && req.ModelType != "binary_v2_no_bp" && req.ModelType != "binary_v2_bp" {
 		ErrBadRequest(c, "Invalid model type")
 		return
 	}
@@ -481,6 +481,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 
 	// Get full assessment with model info
 	assessment.ID = created.ID
+	c.Set(middleware.AuditTargetIDContextKey, int(assessment.ID))
 	ensureAssessmentLineage(&assessment, responseModelVersion, h.datasetHash)
 
 	h.invalidateUserCache(c.Request.Context(), userID)
