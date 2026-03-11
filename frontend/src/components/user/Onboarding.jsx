@@ -2,14 +2,15 @@ import { useState } from 'react';
 import {
   User,
   Heart,
+  Activity,
   Shield,
-  FileText,
-  Check,
+  AlertTriangle,
+  CheckCircle2,
   ChevronRight,
   ChevronLeft,
   ArrowRight,
   AlertCircle,
-  CheckCircle2,
+  Info,
 } from 'lucide-react';
 import { useCompleteOnboarding } from '../../api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +25,7 @@ import {
 
 const Onboarding = ({ onComplete }) => {
   const isReduced = useReducedMotion();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [error, setError] = useState(null);
   const completeOnboardingMutation = useCompleteOnboarding();
@@ -96,8 +97,8 @@ const Onboarding = ({ onComplete }) => {
           return false;
         }
         const ageNum = parseInt(formData.age, 10);
-        if (isNaN(ageNum) || ageNum < 45 || ageNum > 80) {
-          setError('Age must be between 45 and 80 years.');
+        if (isNaN(ageNum) || ageNum < 45 || ageNum > 60) {
+          setError('Age must be between 45 and 60 years. DIANA is designed for menopausal women.');
           return false;
         }
         break;
@@ -129,8 +130,9 @@ const Onboarding = ({ onComplete }) => {
   };
 
   const steps = [
+    { title: 'Welcome', icon: Heart },
     { title: 'Personal', icon: User },
-    { title: 'Health', icon: Heart },
+    { title: 'Menopause', icon: Activity },
     { title: 'History', icon: Shield },
     { title: 'Consent', icon: CheckCircle2 },
   ];
@@ -170,25 +172,25 @@ const Onboarding = ({ onComplete }) => {
         <div className="mb-10">
           <div className="flex items-center justify-between mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Step {step} of 4
+              Step {step + 1} of 5
             </span>
             <motion.span
-              key={step} // Animate text change
+              key={step}
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-xs font-bold uppercase tracking-wider text-diana-forest-light"
             >
-              {steps[step - 1].title}
+              {steps[step].title}
             </motion.span>
           </div>
 
-          {/* Minimal Progress Bar */}
+          {/* Progress Bar */}
           <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden mb-8">
             <motion.div
               layout
               className="h-full bg-diana-navy"
               initial={{ width: 0 }}
-              animate={{ width: `${(step / 4) * 100}%` }}
+              animate={{ width: `${((step + 1) / 5) * 100}%` }}
               transition={{ duration: 0.5, ease: 'easeInOut' }}
             />
           </div>
@@ -203,17 +205,17 @@ const Onboarding = ({ onComplete }) => {
               aria-live="polite"
             >
               <h1 className="text-2xl font-semibold text-diana-midnight mb-2">
+                {step === 0 && 'Welcome to DIANA'}
                 {step === 1 && 'Start your clinical profile'}
                 {step === 2 && 'Menopausal health status'}
                 {step === 3 && 'Medical history overview'}
                 {step === 4 && 'Privacy & Consent'}
               </h1>
               <p className="text-slate-500">
-                {step === 1 && 'We need a few basic details to personalize your care plan.'}
-                {step === 2 &&
-                  'Understanding where you are in your journey helps us tailor recommendations.'}
-                {step === 3 &&
-                  'This information creates the baseline for your clinical risk assessment.'}
+                {step === 0 && 'Learn about DIANA and how it can help you understand your diabetes risk.'}
+                {step === 1 && 'We need a few basic details to personalize your risk assessment.'}
+                {step === 2 && 'Understanding where you are in your menopause journey helps us tailor recommendations.'}
+                {step === 3 && 'This information creates the baseline for your clinical risk assessment.'}
                 {step === 4 && 'Please review how your data will be used and protected.'}
               </p>
             </motion.div>
@@ -245,6 +247,91 @@ const Onboarding = ({ onComplete }) => {
               exit="exit"
               className="w-full"
             >
+              {/* STEP 0: Welcome / Intro */}
+              {step === 0 && (
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-6"
+                >
+                  <motion.div variants={fadeIn} className="bg-diana-forest-light/5 border border-diana-forest-light/20 rounded-xl p-6">
+                    <h2 className="text-lg font-semibold text-diana-midnight mb-3 flex items-center gap-2">
+                      <Heart className="text-diana-forest-light" size={20} />
+                      What is DIANA?
+                    </h2>
+                    <p className="text-slate-600 text-sm leading-relaxed mb-4">
+                      DIANA is a screening tool for <strong>postmenopausal women</strong> aged 45-60.
+                    </p>
+                    <p className="text-slate-600 text-sm leading-relaxed">
+                      We use basic clinical biomarkers to estimate your risk of developing Type 2 Diabetes, which increases significantly during and after menopause.
+                    </p>
+                  </motion.div>
+
+                  <motion.div variants={fadeIn} className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                    <h2 className="text-lg font-semibold text-amber-800 mb-3 flex items-center gap-2">
+                      <AlertTriangle className="text-amber-600" size={20} />
+                      Important Disclaimer
+                    </h2>
+                    <ul className="text-amber-900 text-sm space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500 mt-0.5">•</span>
+                        <span><strong>DIANA is a screening tool, NOT a diagnostic device.</strong></span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500 mt-0.5">•</span>
+                        <span>Results should be reviewed with a qualified healthcare provider.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500 mt-0.5">•</span>
+                        <span>This tool does not replace clinical judgment or confirmatory testing.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-500 mt-0.5">•</span>
+                        <span>Always consult your doctor before making health decisions.</span>
+                      </li>
+                    </ul>
+                  </motion.div>
+
+                  <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+                    <h2 className="text-lg font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                      <Info className="text-slate-500" size={20} />
+                      What You'll Need
+                    </h2>
+                    <p className="text-slate-600 text-sm mb-3">
+                      To get the most accurate assessment, have these from your recent health checkup:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <CheckCircle2 size={14} className="text-diana-forest-light" />
+                        <span>BMI (Body Mass Index)</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <CheckCircle2 size={14} className="text-diana-forest-light" />
+                        <span>Triglycerides</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <CheckCircle2 size={14} className="text-diana-forest-light" />
+                        <span>LDL Cholesterol</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <CheckCircle2 size={14} className="text-diana-forest-light" />
+                        <span>HDL Cholesterol</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <CheckCircle2 size={14} className="text-diana-forest-light" />
+                        <span>Waist Circumference</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <CheckCircle2 size={14} className="text-diana-forest-light" />
+                        <span>HbA1c or Fasting Glucose</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+
+              {/* STEP 1: Personal Info */}
               {step === 1 && (
                 <motion.div
                   variants={staggerContainer}
@@ -301,19 +388,26 @@ const Onboarding = ({ onComplete }) => {
                       id="onboarding-age"
                       name="age"
                       min="45"
-                      max="80"
+                      max="60"
                       value={formData.age}
                       onChange={handleInputChange}
                       className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm"
-                      placeholder="Enter your age (45-80)"
+                      placeholder="Enter your age (45-60)"
                     />
                     <p className="text-[10px] text-slate-400">
-                      DIANA is designed for women aged 45-80
+                      DIANA focuses on the menopausal transition period (ages 45-60).
+                    </p>
+                  </motion.div>
+
+                  <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      <strong>Why age 45-60?</strong> Hormonal changes during this window increase the risk of Type 2 Diabetes.
                     </p>
                   </motion.div>
                 </motion.div>
               )}
 
+              {/* STEP 2: Menopause Status */}
               {step === 2 && (
                 <motion.div
                   variants={staggerContainer}
@@ -337,19 +431,16 @@ const Onboarding = ({ onComplete }) => {
                         className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none cursor-pointer"
                       >
                         <option value="">Select status...</option>
-                        <option value="pre">Premenopausal (not started)</option>
-                        <option value="peri">Perimenopausal (in transition)</option>
-                        <option value="post">Postmenopausal (completed)</option>
-                        <option value="surgical">Surgical Menopause</option>
+                        <option value="pre">Premenopausal (Periods are regular)</option>
+                        <option value="peri">Perimenopausal (Periods are irregular)</option>
+                        <option value="post">Postmenopausal (No period for 12+ months)</option>
+                        <option value="surgical">Surgical Menopause (Ovaries removed)</option>
                       </select>
                       <ChevronRight
                         className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
                         size={16}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400">
-                      This helps us understand your hormonal health stage
-                    </p>
                   </motion.div>
 
                   {(formData.menopause_status === 'post' ||
@@ -379,13 +470,20 @@ const Onboarding = ({ onComplete }) => {
                         placeholder="How many years?"
                       />
                       <p className="text-[10px] text-slate-400">
-                        Time since menopause affects diabetes risk factors
+                        Diabetes risk increases with time since menopause due to cumulative metabolic changes.
                       </p>
                     </motion.div>
                   )}
+
+                  <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      <strong>Did you know?</strong> Lower estrogen levels after menopause can act as a catalyst for metabolic changes, raising the likelihood of developing Type 2 Diabetes.
+                    </p>
+                  </motion.div>
                 </motion.div>
               )}
 
+              {/* STEP 3: Medical History */}
               {step === 3 && (
                 <motion.div
                   variants={staggerContainer}
@@ -394,63 +492,6 @@ const Onboarding = ({ onComplete }) => {
                   className="space-y-5"
                 >
                   <div className="grid grid-cols-2 gap-5">
-                    <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label
-                        htmlFor="onboarding-hypertension"
-                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                      >
-                        Hypertension
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="onboarding-hypertension"
-                          name="hypertension"
-                          value={formData.hypertension}
-                          onChange={handleInputChange}
-                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
-                        >
-                          <option value="">Select...</option>
-                          <option value="no">No History</option>
-                          <option value="controlled">Yes (Controlled)</option>
-                          <option value="uncontrolled">Yes (Uncontrolled)</option>
-                        </select>
-                        <ChevronRight
-                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
-                          size={16}
-                        />
-                      </div>
-                    </motion.div>
-
-                    <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label
-                        htmlFor="onboarding-heart-disease"
-                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                      >
-                        Heart Disease
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="onboarding-heart-disease"
-                          name="heart_disease"
-                          value={formData.heart_disease}
-                          onChange={handleInputChange}
-                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
-                        >
-                          <option value="">Select...</option>
-                          <option value="no">No</option>
-                          <option value="yes">Yes</option>
-                        </select>
-                        <ChevronRight
-                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
-                          size={16}
-                        />
-                      </div>
-                    </motion.div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-5">
-                    {/* Family History removed based on gap analysis */}
-
                     <motion.div variants={fadeIn} className="group space-y-1.5">
                       <label
                         htmlFor="onboarding-smoking-status"
@@ -470,6 +511,7 @@ const Onboarding = ({ onComplete }) => {
                           <option value="never">Never Smoked</option>
                           <option value="former">Former Smoker</option>
                           <option value="current">Current Smoker</option>
+                          <option value="unknown">Unknown</option>
                         </select>
                         <ChevronRight
                           className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
@@ -496,10 +538,10 @@ const Onboarding = ({ onComplete }) => {
                           className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
                         >
                           <option value="">Select...</option>
-                          <option value="Unknown">Unknown</option>
-                          <option value="Sedentary">Sedentary (little/no exercise)</option>
-                          <option value="Moderate">Moderate (1-3 days/week)</option>
                           <option value="Active">Active (4+ days/week)</option>
+                          <option value="Moderate">Moderate (1-3 days/week)</option>
+                          <option value="Sedentary">Sedentary (little/no exercise)</option>
+                          <option value="Unknown">Unknown</option>
                         </select>
                         <ChevronRight
                           className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
@@ -524,11 +566,10 @@ const Onboarding = ({ onComplete }) => {
                           className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
                         >
                           <option value="">Select...</option>
+                          <option value="Current">Current</option>
+                          <option value="Former">Former</option>
+                          <option value="Never">Never</option>
                           <option value="Unknown">Unknown</option>
-                          <option value="None">None</option>
-                          <option value="Light">Light</option>
-                          <option value="Moderate">Moderate</option>
-                          <option value="Heavy">Heavy</option>
                         </select>
                         <ChevronRight
                           className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
@@ -540,6 +581,7 @@ const Onboarding = ({ onComplete }) => {
                 </motion.div>
               )}
 
+              {/* STEP 4: Consent */}
               {step === 4 && (
                 <motion.div
                   variants={staggerContainer}
@@ -549,25 +591,25 @@ const Onboarding = ({ onComplete }) => {
                 >
                   {[
                     {
+                      name: 'consent_personal_data',
+                      label: 'I Agree to the Data Usage Agreement',
+                      sub: 'Required for secure processing of your health data for the clinical risk assessment.',
+                      required: true,
+                    },
+                    {
                       name: 'consent_research_participation',
                       label: 'Research Participation',
-                      sub: 'Allow anonymized data contribution to diabetes research.',
+                      sub: 'Allow anonymized data to be contributed to diabetes research. (Optional)',
                     },
                     {
                       name: 'consent_email_updates',
                       label: 'Email Communications',
-                      sub: 'Receive health tips and platform updates.',
+                      sub: 'Receive health tips and platform updates from DIANA. (Optional)',
                     },
                     {
                       name: 'consent_analytics',
                       label: 'Analytics',
-                      sub: 'Help us improve by sharing usage data.',
-                    },
-                    {
-                      name: 'consent_personal_data',
-                      label: 'Data Usage Agreement',
-                      sub: 'I agree to the secure processing of my health data.',
-                      required: true,
+                      sub: 'Help us improve DIANA by sharing anonymous usage data. (Optional)',
                     },
                   ].map(item => (
                     <label
@@ -584,7 +626,7 @@ const Onboarding = ({ onComplete }) => {
                           className="peer sr-only"
                         />
                         <div className="w-4 h-4 rounded border border-slate-300 bg-white flex items-center justify-center peer-checked:bg-diana-forest-light peer-checked:border-diana-forest-light transition-all">
-                          <Check
+                          <CheckCircle2
                             size={10}
                             className="text-white opacity-0 peer-checked:opacity-100"
                             strokeWidth={3}
@@ -608,6 +650,14 @@ const Onboarding = ({ onComplete }) => {
                       </div>
                     </label>
                   ))}
+
+                  <motion.div variants={fadeIn} className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <p className="text-xs text-amber-800 leading-relaxed">
+                      <strong>Reminder:</strong> DIANA provides screening results only. 
+                      All findings should be discussed with a qualified healthcare provider. 
+                      This tool does not replace professional medical advice, diagnosis, or treatment.
+                    </p>
+                  </motion.div>
                 </motion.div>
               )}
             </motion.div>
@@ -625,7 +675,7 @@ const Onboarding = ({ onComplete }) => {
           </Button>
 
           <div className="flex gap-3">
-            {step > 1 && (
+            {step > 0 && (
               <Button variant="ghost" onClick={prevStep} icon={ChevronLeft}>
                 Back
               </Button>
