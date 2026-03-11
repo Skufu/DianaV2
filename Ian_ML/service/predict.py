@@ -38,7 +38,6 @@ logger = logging.getLogger(__name__)
 
 MODELS_DIR = MODELS_ROOT / "binary"
 RESULTS_DIR = MODELS_ROOT / "binary" / "results"
-MODEL_HASHES_FILE = MODELS_DIR / "model_hashes.json"
 WEIGHTED_KMEANS_FILE = "weighted_kmeans_model.joblib"
 FEATURE_WEIGHTS_FILE = "feature_weights.json"
 
@@ -113,14 +112,16 @@ def compute_file_hash(filepath: Path) -> str:
 
 
 def verify_model_integrity(filepath: Path) -> bool:
-    if not MODEL_HASHES_FILE.exists():
+    model_hashes_file = filepath.parent / "model_hashes.json"
+    
+    if not model_hashes_file.exists():
         if os.environ.get('ENV') == 'production':
-            logger.error(f"Model hashes file not found in production: {MODEL_HASHES_FILE}")
+            logger.error(f"Model hashes file not found in production: {model_hashes_file}")
             return False
-        logger.warning(f"Model hashes file not found, skipping integrity check: {MODEL_HASHES_FILE}")
+        logger.warning(f"Model hashes file not found, skipping integrity check: {model_hashes_file}")
         return True
     
-    with open(MODEL_HASHES_FILE) as f:
+    with open(model_hashes_file) as f:
         expected_hashes = json.load(f)
     
     filename = filepath.name

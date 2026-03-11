@@ -27,8 +27,11 @@ def generate_model_hashes(models_dir: Path) -> dict:
         "imputer.joblib",
         "kmeans_model.joblib",
         "cluster_scaler.joblib",
+        "cluster_imputer.joblib",
+        "weighted_kmeans_model.joblib",
         "features.json",
         "cluster_labels.json",
+        "feature_weights.json",
     ]
     
     hashes = {}
@@ -36,9 +39,9 @@ def generate_model_hashes(models_dir: Path) -> dict:
         filepath = models_dir / filename
         if filepath.exists():
             hashes[filename] = compute_file_hash(filepath)
-            print(f"✓ Hashed: {filename}")
+            print(f"[+] Hashed: {filename}")
         else:
-            print(f"⚠ Skipped (not found): {filename}")
+            print(f"[-] Skipped (not found): {filename}")
     
     return hashes
 
@@ -51,11 +54,11 @@ def main():
     else:
         project_dir = Path.cwd()
     
-    models_dir = project_dir / "models" / "clinical_3class"
+    models_dir = project_dir / "models" / "binary_v2_no_bp"
     output_file = models_dir / "model_hashes.json"
     
     if not models_dir.exists():
-        print(f"❌ Models directory not found: {models_dir}")
+        print(f"[X] Models directory not found: {models_dir}")
         print("   Train models first: bash scripts/dev/retrain-clinical.sh")
         return 1
     
@@ -68,7 +71,7 @@ def main():
         json.dump(hashes, f, indent=2)
     
     print("=" * 60)
-    print(f"✓ Saved hashes to: {output_file}")
+    print(f"[+] Saved hashes to: {output_file}")
     print(f"  Total files hashed: {len(hashes)}")
     
     return 0
