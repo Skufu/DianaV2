@@ -340,7 +340,7 @@ func (p *HTTPPredictor) predictWithModelType(ctx context.Context, input models.A
 	if modelType != "" {
 		version = modelType
 	}
-	mlURL := fmt.Sprintf("%s?model_type=%s", p.url, version)
+	mlURL := fmt.Sprintf("%s/predict?model_type=%s", p.baseURL(), version)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, mlURL, bytes.NewReader(body))
 	if err != nil {
 		log.Printf("[ML] Failed to create request: %v", err)
