@@ -20,7 +20,6 @@ const AdminMobileHeader = ({ activeView, userRole, isOpen, onOpen }) => {
   const doctorNavItems = [
     { id: 'assessment', label: 'Log Assessment' },
     { id: 'explainability', label: 'Clinical Explainability' },
-    { id: 'insights', label: 'Insights' },
     { id: 'rationale', label: 'Model Rationale' },
   ];
 

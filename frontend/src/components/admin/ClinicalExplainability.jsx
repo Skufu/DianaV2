@@ -129,24 +129,28 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
     >
       <motion.div
         variants={slideUp}
-        className="glass-card bg-white rounded-3xl border border-slate-200/60 p-8"
+        className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 p-8 text-white shadow-xl"
       >
-        <div className="flex items-start justify-between gap-6">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 opacity-100" />
+        <div className="absolute inset-0 opacity-10 mix-blend-overlay" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.2) 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+        <div className="absolute -top-32 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px]" />
+        
+        <div className="relative z-10 flex items-start justify-between gap-6">
           <div>
-            <h3 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-              <span className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
-                <Brain className="text-purple-600" size={24} />
+            <h3 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-4 mb-3 tracking-tight">
+              <span className="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 shadow-inner flex items-center justify-center backdrop-blur-md">
+                <Brain className="text-indigo-300" size={24} />
               </span>
               Clinical Explainability
             </h3>
-            <p className="text-slate-500 mt-2 max-w-2xl">
+            <p className="text-indigo-100 text-base md:text-lg font-normal max-w-2xl leading-relaxed mt-2">
               Generate SHAP-based feature contributions for a single clinical assessment. This view
               is intended for clinicians to validate model reasoning and communicate
               biomarker-driven risk.
             </p>
           </div>
-          <div className="hidden md:flex items-center gap-2 text-emerald-600 text-sm font-medium">
-            <ShieldCheck size={18} />
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-indigo-50 text-xs font-semibold tracking-wider uppercase shadow-sm">
+            <ShieldCheck size={16} className="text-indigo-300" />
             Clinician Use Only
           </div>
         </div>

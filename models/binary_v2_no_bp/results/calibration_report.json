@@ -1,0 +1,39 @@
+{
+  "brier_score": 0.2082,
+  "expected_calibration_error": 0.0624,
+  "hosmer_lemeshow_statistic": 21.4035,
+  "n_samples": 1047,
+  "n_positive": 578,
+  "prevalence": 0.5521,
+  "calibration_curve": {
+    "prob_true": [
+      0.2,
+      0.1167,
+      0.2712,
+      0.4225,
+      0.4896,
+      0.6609,
+      0.7103,
+      0.8227,
+      0.8077,
+      0.75
+    ],
+    "prob_pred": [
+      0.0693,
+      0.16,
+      0.2552,
+      0.3508,
+      0.4536,
+      0.5485,
+      0.6529,
+      0.7453,
+      0.8396,
+      0.9175
+    ]
+  },
+  "interpretation": {
+    "brier": "Lower is better. 0 = perfect, 0.25 = random guess for binary classification.",
+    "ece": "Lower is better. Measures average deviation from perfect calibration.",
+    "hl_stat": "Lower is better. Chi-square-like measure of calibration fit."
+  }
+}

@@ -305,7 +305,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                       data={activeTrends.clusterHistory}
-                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                     >
                       <defs>
                         <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
@@ -333,7 +333,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
                         tickLine={false}
                         tick={{ fill: '#64748B', fontSize: 12 }}
                         domain={[0, 100]}
-                        width={35}
+                        width={40}
                       />
 
                       <ReferenceLine
@@ -374,10 +374,12 @@ const PersonalTrends = ({ onStartAssessment }) => {
                         type="monotone"
                         dataKey="riskScore"
                         stroke="#10B981"
-                        strokeWidth={3}
+                        strokeWidth={4}
                         fillOpacity={1}
                         fill="url(#colorRisk)"
                         activeDot={{ r: 6, strokeWidth: 0, fill: '#059669' }}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -421,7 +423,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                       data={activeTrends.biomarkerHistory}
-                      margin={{ top: 20, right: 10, left: -20, bottom: 0 }}
+                      margin={{ top: 20, right: 10, left: 0, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                       <XAxis
@@ -440,7 +442,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
                         tickLine={false}
                         tick={{ fill: '#64748B', fontSize: 12 }}
                         domain={['dataMin - 1', 'dataMax + 1']}
-                        width={35}
+                        width={45}
                       />
 
                       {biomarkerMetrics[selectedBiomarker].normalMin &&
@@ -478,11 +480,13 @@ const PersonalTrends = ({ onStartAssessment }) => {
                         type="monotone"
                         dataKey={selectedBiomarker}
                         stroke="#3B82F6"
-                        strokeWidth={3}
+                        strokeWidth={4}
                         fillOpacity={0.1}
                         fill="#3B82F6"
                         activeDot={{ r: 6, strokeWidth: 0, fill: '#2563EB' }}
                         connectNulls={true}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -507,6 +511,9 @@ const PersonalTrends = ({ onStartAssessment }) => {
             </h2>
             <div className="space-y-3">
               {activeTrends.clusterHistory.map((entry, index) => {
+                // Use index in key to ensure uniqueness (same date + cluster can occur multiple times)
+                const uniqueKey = `${entry.date}-${entry.cluster}-${index}`;
+
                 const riskTier = getRiskTier(entry.riskScore);
                 const riskLabel =
                   riskTier === 'low' ? 'Low' : riskTier === 'medium' ? 'Medium' : 'High';
@@ -515,9 +522,6 @@ const PersonalTrends = ({ onStartAssessment }) => {
                 const currentBio =
                   activeTrends.biomarkerHistory.find(b => b.date === entry.date) || {};
                 const prevBio = activeTrends.biomarkerHistory[index + 1] || null;
-
-                // Use index in key to ensure uniqueness (same date + cluster can occur multiple times)
-                const uniqueKey = `${entry.date}-${entry.cluster}-${index}`;
 
                 return (
                   <div

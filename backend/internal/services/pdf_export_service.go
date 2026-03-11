@@ -115,8 +115,8 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 		if probabilitySummary != "" {
 			pdf.SetX(110)
 			pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-			pdf.SetFont("Arial", "", 8)
-			pdf.MultiCell(90, 5, probabilitySummary, "1", "L", false)
+			pdf.SetFont("Arial", "", 7)
+			pdf.MultiCell(90, 4, probabilitySummary, "1", "L", false)
 		}
 	}
 
@@ -154,7 +154,7 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 	pdf.SetDrawColor(borderLight[0], borderLight[1], borderLight[2])
 	pdf.Line(10, pdf.GetY(), 200, pdf.GetY())
 	pdf.Ln(2)
-	pdf.CellFormat(0, 4, "AI-assisted screening support only; this report must not be used as a diagnosis.", "", 1, "C", false, 0, "")
+	pdf.CellFormat(0, 4, "AI-assisted screening support only; present to your physician for confirmatory diagnostic testing.", "", 1, "C", false, 0, "")
 	pdf.CellFormat(0, 4, fmt.Sprintf("Generated: %s | DIANA V2 Health Systems", time.Now().Format("2006-01-02 15:04")), "", 1, "C", false, 0, "")
 
 	var buf bytes.Buffer
@@ -187,15 +187,12 @@ func (s *PDFExportService) drawBiomarkerTable(pdf *fpdf.Fpdf, a models.Assessmen
 	}
 	pdf.Ln(8)
 
+	// Simplified biomarker panel for clinical review (FBS, HbA1c, BP, Total Cholesterol removed)
 	rows := []struct{ name, val, ref, status string }{
-		{"Fasting Blood Glucose", s.formatFloatValue(a.FBS, "mg/dL"), "70 - 99", s.getFBSStatus(a.FBS)},
-		{"HbA1c", s.formatFloatValue(a.HbA1c, "%"), "< 5.7", s.getHbA1cStatus(a.HbA1c)},
-		{"BMI (Body Mass Index)", s.formatFloatValue(a.BMI, "kg/m2"), "18.5 - 22.9", s.getBMIStatus(a.BMI)},
-		{"Total Cholesterol", s.formatIntValue(a.Cholesterol, "mg/dL"), "< 200", s.getCholStatus(a.Cholesterol)},
-		{"LDL (Low-Density Lipoprotein)", s.formatIntValue(a.LDL, "mg/dL"), "< 100", s.getLDLStatus(a.LDL)},
-		{"HDL (High-Density Lipoprotein)", s.formatIntValue(a.HDL, "mg/dL"), "> 50", s.getHDLStatus(a.HDL)},
+		{"BMI (Body Mass Index)", s.formatFloatValue(a.BMI, "kg/m²"), "18.5 - 22.9", s.getBMIStatus(a.BMI)},
+		{"LDL Cholesterol", s.formatIntValue(a.LDL, "mg/dL"), "< 100", s.getLDLStatus(a.LDL)},
+		{"HDL Cholesterol", s.formatIntValue(a.HDL, "mg/dL"), "> 50", s.getHDLStatus(a.HDL)},
 		{"Triglycerides", s.formatIntValue(a.Triglycerides, "mg/dL"), "< 150", s.getTGStatus(a.Triglycerides)},
-		{"Blood Pressure", s.formatBloodPressure(a.Systolic, a.Diastolic), "< 130 / < 80", s.getBPStatus(a.Systolic, a.Diastolic)},
 	}
 
 	pdf.SetFont("Arial", "", 9)
@@ -214,67 +211,92 @@ func (s *PDFExportService) drawBiomarkerTable(pdf *fpdf.Fpdf, a models.Assessmen
 }
 
 func (s *PDFExportService) drawPhenotypeSummary(pdf *fpdf.Fpdf, a models.Assessment) {
+	cluster := strings.ToUpper(strings.TrimSpace(a.Cluster))
+	if cluster == "" {
+		cluster = "N/A"
+	}
+
+	clusterColors := map[string][3]int{
+		"SIDD": {220, 53, 69}, // Red - SIDD-like/Lipid-driven cardiovascular risk
+		"SIRD": {255, 153, 0}, // Orange - Insulin resistance
+		"MOD":  {255, 193, 7}, // Yellow - Obesity-related
+		"MARD": {40, 167, 69}, // Green - Mild/Age-related
+	}
+
+	clusterNames := map[string]string{
+		"SIDD": "SIDD-like (Lipid-Driven Profile)",
+		"SIRD": "SIRD-like (Insulin Resistant Profile)",
+		"MOD":  "MOD-like (Obesity-Related Profile)",
+		"MARD": "MARD-like (Age-Related Profile)",
+	}
+
+	clusterShortDesc := map[string]string{
+		"SIDD": "High LDL cholesterol, cardiovascular risk priority",
+		"SIRD": "Elevated metabolic strain, insulin resistance pattern",
+		"MOD":  "Weight-driven metabolic pattern, lifestyle focus",
+		"MARD": "Mild age-related pattern, routine monitoring",
+	}
+
+	treatmentShort := map[string]string{
+		"SIDD": "Lipid management, statin consideration",
+		"SIRD": "Insulin sensitivity, metformin option",
+		"MOD":  "Weight reduction, lifestyle program",
+		"MARD": "Annual check-ups, prevention focus",
+	}
+
+	clusterColor, ok := clusterColors[cluster]
+	if !ok {
+		clusterColor = [3]int{100, 116, 139}
+	}
+
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-	pdf.Cell(0, 7, "Cluster / Phenotype Context")
-	pdf.Ln(7)
+	pdf.Cell(0, 8, "Metabolic Profile")
+	pdf.Ln(8)
 
-	cluster := strings.TrimSpace(a.Cluster)
-	if cluster == "" {
-		cluster = "Not available"
+	pdf.SetFillColor(clusterColor[0], clusterColor[1], clusterColor[2])
+	pdf.SetTextColor(255, 255, 255)
+	pdf.SetFont("Arial", "B", 14)
+
+	displayName := cluster
+	if name, ok := clusterNames[cluster]; ok {
+		displayName = name
+	}
+	pdf.CellFormat(190, 12, displayName, "1", 1, "C", true, 0, "")
+
+	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
+	pdf.SetFont("Arial", "", 10)
+
+	if shortDesc, ok := clusterShortDesc[cluster]; ok {
+		pdf.CellFormat(190, 8, shortDesc, "LR", 1, "C", false, 0, "")
 	}
 
-	description := strings.TrimSpace(a.ClusterDescription)
-	if description == "" {
-		description = s.defaultClusterDescription(a.Cluster)
+	if treatment, ok := treatmentShort[cluster]; ok {
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(60, 7, "Clinical Priority:", "LB", 0, "L", false, 0, "")
+		pdf.SetFont("Arial", "", 9)
+		pdf.CellFormat(130, 7, treatment, "RB", 1, "L", false, 0, "")
 	}
-
-	treatmentFocus := strings.TrimSpace(a.TreatmentFocus)
-	if treatmentFocus == "" {
-		treatmentFocus = s.defaultTreatmentFocus(a.Cluster)
-	}
-
-	whySummary := s.buildClinicalWhySummary(a)
-
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(34, 5, "Phenotype:", "", 0, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 9)
-	pdf.CellFormat(156, 5, cluster, "", 1, "L", false, 0, "")
-
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(34, 5, "Summary:", "", 0, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 9)
-	pdf.MultiCell(156, 5, description, "", "L", false)
-
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(34, 5, "Why:", "", 0, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 9)
-	pdf.MultiCell(156, 5, whySummary, "", "L", false)
-
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(34, 5, "Treatment Focus:", "", 0, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 9)
-	pdf.MultiCell(156, 5, treatmentFocus, "", "L", false)
 
 	pdf.SetFont("Arial", "I", 8)
 	pdf.SetTextColor(textLight[0], textLight[1], textLight[2])
-	pdf.MultiCell(190, 4, "Interpretation is screening support and must be integrated with full clinical evaluation; not diagnostic.", "", "L", false)
+	pdf.CellFormat(190, 6, "Screening support only. Not a diagnosis.", "LRB", 1, "C", false, 0, "")
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
 }
 
 func (s *PDFExportService) drawHistorySection(pdf *fpdf.Fpdf, assessments []models.Assessment) {
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-	pdf.Cell(0, 8, "Clinical Risk Trends")
+	pdf.Cell(0, 8, "Recent Assessments")
 	pdf.Ln(8)
 
 	colW := 190.0 / 4.0
 	pdf.SetFont("Arial", "B", 9)
 	pdf.SetFillColor(borderLight[0], borderLight[1], borderLight[2])
-	pdf.CellFormat(colW, 7, "Assessment Date", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(colW, 7, "Date", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colW, 7, "Risk Score", "1", 0, "C", true, 0, "")
 	pdf.CellFormat(colW, 7, "BMI", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(colW, 7, "Risk Cluster", "1", 1, "C", true, 0, "")
+	pdf.CellFormat(colW, 7, "Metabolic Type", "1", 1, "C", true, 0, "")
 
 	pdf.SetFont("Arial", "", 9)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
@@ -284,28 +306,41 @@ func (s *PDFExportService) drawHistorySection(pdf *fpdf.Fpdf, assessments []mode
 		limit = len(assessments)
 	}
 
+	clusterShortNames := map[string]string{
+		"SIDD": "SIDD-like",
+		"SIRD": "SIRD-like",
+		"MOD":  "MOD-like",
+		"MARD": "MARD-like",
+	}
+
 	for i := 0; i < limit; i++ {
 		a := assessments[i]
+		clusterDisplay := strings.ToUpper(strings.TrimSpace(a.Cluster))
+		if name, ok := clusterShortNames[clusterDisplay]; ok {
+			clusterDisplay = name
+		} else if clusterDisplay == "" {
+			clusterDisplay = "N/A"
+		}
 		pdf.CellFormat(colW, 6, a.CreatedAt.Format("Jan 02, 2006"), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(colW, 6, fmt.Sprintf("%d %%", a.RiskScore), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(colW, 6, fmt.Sprintf("%.1f", a.BMI), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(colW, 6, a.Cluster, "1", 1, "C", false, 0, "")
+		pdf.CellFormat(colW, 6, clusterDisplay, "1", 1, "C", false, 0, "")
 	}
 }
 
 func (s *PDFExportService) drawRecommendations(pdf *fpdf.Fpdf, a models.Assessment) {
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
-	pdf.Cell(0, 8, "Clinical Discussion Points (What / Why / Limits)")
+	pdf.Cell(0, 8, "Clinical Summary")
 	pdf.Ln(8)
 
 	recs := s.getSmartRecommendations(a)
-	pdf.SetFont("Arial", "", 9)
+	pdf.SetFont("Arial", "", 10)
 	pdf.SetTextColor(textDark[0], textDark[1], textDark[2])
 
 	for _, rec := range recs {
-		pdf.CellFormat(4, 5, "-", "", 0, "R", false, 0, "")
-		pdf.MultiCell(186, 5, " "+rec, "", "L", false)
+		pdf.CellFormat(4, 6, "-", "", 0, "R", false, 0, "")
+		pdf.MultiCell(186, 6, " "+rec, "", "L", false)
 	}
 }
 
@@ -357,29 +392,43 @@ func (s *PDFExportService) getRiskColor(score int) [3]int {
 func (s *PDFExportService) getSmartRecommendations(a models.Assessment) []string {
 	var recs []string
 
-	recs = append(recs, fmt.Sprintf("What: Latest stored assessment indicates %s (%d%%).", s.riskBandLabel(a.RiskScore), a.RiskScore))
+	riskLabel := s.riskBandLabel(a.RiskScore)
+	recs = append(recs, fmt.Sprintf("Risk Level: %s (%d%% score)", riskLabel, a.RiskScore))
 
 	if a.Cluster != "" {
-		recs = append(recs, fmt.Sprintf("What: Phenotype is %s. %s", strings.ToUpper(a.Cluster), s.defaultClusterDescription(a.Cluster)))
-	}
-
-	recs = append(recs, fmt.Sprintf("Why: %s", s.buildClinicalWhySummary(a)))
-
-	if strings.TrimSpace(a.TreatmentFocus) != "" {
-		recs = append(recs, fmt.Sprintf("Clinical focus to discuss: %s.", strings.TrimSpace(a.TreatmentFocus)))
+		clusterName := s.getFriendlyClusterName(a.Cluster)
+		recs = append(recs, fmt.Sprintf("Metabolic Profile: %s", clusterName))
 	}
 
 	if a.RiskScore >= 70 {
-		recs = append(recs, "Next: prioritize near-term clinician follow-up and confirmatory laboratory workup.")
+		recs = append(recs, "Action: Present this report to your physician for confirmatory diagnostic testing (HbA1c, fasting blood sugar).")
+		recs = append(recs, "Priority: Schedule follow-up within 1-2 weeks.")
 	} else if a.RiskScore >= 30 {
-		recs = append(recs, "Next: review lifestyle, follow-up interval, and repeat biomarker testing with clinician judgment.")
+		recs = append(recs, "Action: Discuss these results with your physician. Consider confirmatory HbA1c and fasting blood sugar testing.")
+		recs = append(recs, "Schedule: Follow-up within 1-3 months with repeat screening.")
 	} else {
-		recs = append(recs, "Next: maintain preventive care and routine reassessment cadence.")
+		recs = append(recs, "Action: Continue routine preventive care and annual health screening.")
+		recs = append(recs, "Maintain: Healthy lifestyle, balanced nutrition, regular physical activity.")
 	}
 
-	recs = append(recs, "Limitations: AI-assisted screening support only; this report is not a diagnosis and does not replace clinician judgment.")
+	recs = append(recs, "Note: This screening uses non-diagnostic biomarkers (BMI, lipid panel) to estimate risk. It is not a diagnosis. Clinical judgment and confirmatory lab tests are required.")
 
 	return recs
+}
+
+func (s *PDFExportService) getFriendlyClusterName(cluster string) string {
+	switch strings.ToUpper(strings.TrimSpace(cluster)) {
+	case "SIDD":
+		return "SIDD-like (Lipid-Driven / Cardiovascular Risk)"
+	case "SIRD":
+		return "SIRD-like (Insulin Resistant / Metabolic Strain)"
+	case "MOD":
+		return "MOD-like (Obesity-Related / Weight Focus)"
+	case "MARD":
+		return "MARD-like (Age-Related / Routine Monitoring)"
+	default:
+		return cluster
+	}
 }
 
 func (s *PDFExportService) getBMIStatus(v float64) string {
@@ -503,13 +552,13 @@ func (s *PDFExportService) formatBloodPressure(systolic, diastolic int) string {
 func (s *PDFExportService) defaultClusterDescription(cluster string) string {
 	switch strings.ToUpper(strings.TrimSpace(cluster)) {
 	case "SIDD":
-		return "Atherogenic/lipid-driven profile with emphasis on dyslipidemia burden."
+		return "SIDD-like: Lipid-driven profile with emphasis on dyslipidemia and cardiovascular risk."
 	case "SIRD":
-		return "Insulin resistance dominant profile with elevated metabolic strain."
+		return "SIRD-like: Insulin resistance dominant profile with elevated metabolic strain."
 	case "MOD":
-		return "Weight-associated metabolic profile requiring structured lifestyle optimization."
+		return "MOD-like: Weight-associated metabolic profile requiring structured lifestyle optimization."
 	case "MARD":
-		return "Age-related metabolic profile with preventive surveillance priority."
+		return "MARD-like: Age-related metabolic profile with preventive surveillance priority."
 	default:
 		return "Phenotype metadata unavailable in the latest stored assessment."
 	}
@@ -533,14 +582,8 @@ func (s *PDFExportService) defaultTreatmentFocus(cluster string) string {
 func (s *PDFExportService) buildClinicalWhySummary(a models.Assessment) string {
 	var findings []string
 
-	if status := s.getFBSStatus(a.FBS); status != "Normal" && status != "Not recorded" {
-		findings = append(findings, fmt.Sprintf("FBS %s (%.1f mg/dL)", strings.ToLower(status), a.FBS))
-	}
-	if status := s.getHbA1cStatus(a.HbA1c); status != "Normal" && status != "Not recorded" {
-		findings = append(findings, fmt.Sprintf("HbA1c %s (%.1f%%)", strings.ToLower(status), a.HbA1c))
-	}
 	if status := s.getBMIStatus(a.BMI); status != "Normal" && status != "Not recorded" {
-		findings = append(findings, fmt.Sprintf("BMI %s (%.1f)", strings.ToLower(status), a.BMI))
+		findings = append(findings, fmt.Sprintf("BMI %s (%.1f kg/m²)", strings.ToLower(status), a.BMI))
 	}
 	if status := s.getLDLStatus(a.LDL); status != "Normal" && status != "Not recorded" {
 		findings = append(findings, fmt.Sprintf("LDL %s (%d mg/dL)", strings.ToLower(status), a.LDL))
@@ -553,7 +596,7 @@ func (s *PDFExportService) buildClinicalWhySummary(a models.Assessment) string {
 	}
 
 	if len(findings) == 0 {
-		return "No major out-of-range biomarker signal was captured in this stored record."
+		return "Lipid profile within normal range."
 	}
 
 	if len(findings) > 3 {
@@ -564,19 +607,18 @@ func (s *PDFExportService) buildClinicalWhySummary(a models.Assessment) string {
 }
 
 func (s *PDFExportService) buildProbabilitySummary(a models.Assessment) string {
-	parts := make([]string, 0, 3)
+	parts := make([]string, 0, 2)
 
 	if strings.TrimSpace(a.PredictedStatus) != "" {
-		parts = append(parts, fmt.Sprintf("Predicted status: %s", a.PredictedStatus))
+		parts = append(parts, fmt.Sprintf("Screening result: %s", a.PredictedStatus))
 	}
 
 	if a.AtRiskProbability > 0 {
-		parts = append(parts, fmt.Sprintf("At-risk probability: %.0f%%", a.AtRiskProbability*100))
+		parts = append(parts, fmt.Sprintf("Confidence: %.0f%%", a.AtRiskProbability*100))
 	}
 
-	if strings.TrimSpace(a.ValidationStatus) != "" {
-		parts = append(parts, fmt.Sprintf("Validation: %s", strings.ReplaceAll(a.ValidationStatus, "_", " ")))
-	}
+	// Intentionally exclude raw validation_status codes — the biomarker table
+	// already shows which values are abnormal in a clinician-friendly format.
 
 	return strings.Join(parts, " | ")
 }

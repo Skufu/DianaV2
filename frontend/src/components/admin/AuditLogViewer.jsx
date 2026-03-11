@@ -14,7 +14,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { staggerContainer, fadeIn, cardVariants, useReducedMotion } from '../../utils/animations';
 
-const AuditLogViewer = ({ token }) => {
+const AuditLogViewer = () => {
   const isReduced = useReducedMotion();
 
   // Pagination
@@ -45,7 +45,7 @@ const AuditLogViewer = ({ token }) => {
     data,
     isLoading: loading,
     error: queryError,
-  } = useAuditLogs(params, { enabled: !!token });
+  } = useAuditLogs(params);
 
   const events = data?.data || [];
   const total = data?.total || 0;

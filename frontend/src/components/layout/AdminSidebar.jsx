@@ -13,6 +13,7 @@ import {
   Activity,
   BookOpen,
   Brain,
+  Stethoscope,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { navLabelVariants } from '../../utils/animations';
@@ -40,7 +41,6 @@ const AdminSidebar = ({
   const doctorNavItems = [
     { id: 'assessment', icon: FileText, label: 'Log Assessment' },
     { id: 'explainability', icon: Brain, label: 'Clinical Explainability' },
-    { id: 'insights', icon: Activity, label: 'Insights' },
     { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
   ];
 
@@ -69,7 +69,11 @@ const AdminSidebar = ({
         className={`p-6 lg:p-8 flex items-center ${isCollapsed ? 'justify-center' : 'justify-center lg:justify-start'} gap-3 border-b border-slate-200`}
       >
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20">
-          <Shield size={20} className="text-white" />
+          {userRole === 'doctor' ? (
+            <Stethoscope size={20} className="text-white" />
+          ) : (
+            <Shield size={20} className="text-white" />
+          )}
         </div>
         <AnimatePresence mode="wait">
           {!isCollapsed && (

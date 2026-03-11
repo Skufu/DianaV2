@@ -34,7 +34,6 @@ const AdminMobileDrawer = ({ isOpen, onClose, activeView, setActiveView, onLogou
   const doctorNavItems = [
     { id: 'assessment', icon: FileText, label: 'Log Assessment' },
     { id: 'explainability', icon: Brain, label: 'Clinical Explainability' },
-    { id: 'insights', icon: Activity, label: 'Insights' },
     { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
   ];
 

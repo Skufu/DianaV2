@@ -19,7 +19,7 @@ import ClusterBiomarkerRadar from './ClusterBiomarkerRadar';
 import RiskDistribution from './RiskDistribution';
 import BiomarkerTrends from './BiomarkerTrends';
 
-const Insights = ({ token, patients }) => {
+const Insights = () => {
   const [clusters, setClusters] = useState([]);
   const [trends, setTrends] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -29,7 +29,6 @@ const Insights = ({ token, patients }) => {
   const inFlightRef = useRef(false);
   const lastAttemptRef = useRef(0);
   const hasLoadedRef = useRef(false);
-  const tokenRef = useRef(null);
   const rateLimitedRef = useRef(false);
 
   const [mlMetrics, setMlMetrics] = useState(null);
@@ -38,15 +37,10 @@ const Insights = ({ token, patients }) => {
   const [mlLoading, setMlLoading] = useState(false);
   const [mlError, setMlError] = useState(null);
 
-  // patientList and allAssessments logic removed as per instructions
-  // const patientList = useMemo(() => (Array.isArray(patients) ? patients : []), [patients]);
-
   useEffect(() => {
-    if (!token) return;
     const now = Date.now();
-    const tokenChanged = tokenRef.current !== token;
     if (inFlightRef.current) return;
-    if (!tokenChanged && hasLoadedRef.current && reloadKey === 0) return;
+    if (hasLoadedRef.current && reloadKey === 0) return;
     if (rateLimitedRef.current && reloadKey === 0) return;
     if (now - lastAttemptRef.current < 1500) return;
 
@@ -55,11 +49,10 @@ const Insights = ({ token, patients }) => {
       lastAttemptRef.current = Date.now();
       setLoading(true);
       setError(null);
-      tokenRef.current = token;
       try {
         const [cResult, tResult] = await Promise.allSettled([
-          fetchClusterDistributionApi(token),
-          fetchTrendInsightsApi(token),
+          fetchClusterDistributionApi(),
+          fetchTrendInsightsApi(),
         ]);
 
         const c = cResult.status === 'fulfilled' ? cResult.value : [];
@@ -117,7 +110,7 @@ const Insights = ({ token, patients }) => {
     };
 
     load();
-  }, [token, reloadKey]); // Removed patientList from dependencies
+  }, [reloadKey]);
 
   useEffect(() => {
     const loadML = async () => {

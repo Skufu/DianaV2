@@ -28,7 +28,7 @@ import {
 } from '../../utils/animations';
 import { API_BASE } from '../../api';
 
-const AuthEventLogViewer = ({ token }) => {
+const AuthEventLogViewer = () => {
   const isReduced = useReducedMotion();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,11 +62,8 @@ const AuthEventLogViewer = ({ token }) => {
     }
 
     const url = new URL(`${API_BASE}/admin/events/stream`, window.location.origin);
-    if (token) {
-      url.searchParams.append('token', token);
-    }
 
-    eventSourceRef.current = new EventSource(url);
+    eventSourceRef.current = new EventSource(url, { withCredentials: true });
 
     eventSourceRef.current.onopen = () => {
       setConnected(true);
@@ -114,7 +111,7 @@ const AuthEventLogViewer = ({ token }) => {
       timeoutRef.current.forEach(clearTimeout);
       timeoutRef.current = [];
     };
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     const cleanup = connectEventSource();

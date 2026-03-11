@@ -17,6 +17,18 @@ export { API_BASE };
 const ML_BASE =
   import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
+// CSRF token helper - reads from cookie
+const getCSRFToken = () => {
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'diana_csrf_token') {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+};
+
 // Token refresh lock to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
 let refreshSubscribers = [];
@@ -27,54 +39,44 @@ const subscribeTokenRefresh = callback => {
 };
 
 // Notify all subscribers that refresh completed
-const onTokenRefreshed = newToken => {
+const onTokenRefreshed = () => {
   refreshSubscribers.forEach(callback => {
-    callback(newToken);
+    callback();
   });
   refreshSubscribers = [];
 };
 
 const attemptTokenRefresh = async () => {
-  const refreshToken = localStorage.getItem('diana_refresh_token');
-
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
-
   const response = await fetch(`${API_BASE}/auth/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: refreshToken }),
+    credentials: 'include',
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Token refresh failed' }));
-    throw new Error(error.error || 'Token refresh failed');
+    throw new Error('Token refresh failed');
   }
 
-  const data = await response.json();
-
-  // Store the new tokens
-  localStorage.setItem('diana_token', data.access_token);
-  localStorage.setItem('diana_refresh_token', data.refresh_token);
-
-  return data.access_token;
+  return response.json();
 };
 
 const apiFetch = async (endpoint, options = {}, isRetry = false) => {
-  const token = localStorage.getItem('diana_token');
   const headers = {
     'Content-Type': 'application/json',
   };
 
-  // Add Authorization header if token exists
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const method = (options.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+    }
   }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method: options.method || 'GET',
     headers,
+    credentials: 'include',
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
@@ -97,18 +99,13 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
     // Start token refresh
     isRefreshing = true;
     try {
-      const newToken = await attemptTokenRefresh();
-      onTokenRefreshed(newToken);
+      await attemptTokenRefresh();
+      onTokenRefreshed();
       isRefreshing = false;
 
-      // Retry original request with new token
       return apiFetch(endpoint, options, true);
     } catch (refreshError) {
       isRefreshing = false;
-
-      // Clear tokens and redirect to login on refresh failure
-      localStorage.removeItem('diana_token');
-      localStorage.removeItem('diana_refresh_token');
 
       if (typeof window !== 'undefined') {
         window.location.href = '/login?error=session_expired';
@@ -137,17 +134,20 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
 };
 
 const blobFetch = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('diana_token');
   const headers = {};
 
-  // Add Authorization header if token exists
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const method = (options.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    const csrfToken = getCSRFToken();
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+    }
   }
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     method: options.method || 'GET',
     headers,
+    credentials: 'include',
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 

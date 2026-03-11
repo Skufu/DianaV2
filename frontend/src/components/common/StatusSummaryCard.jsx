@@ -92,54 +92,58 @@ const StatusSummaryCard = ({
     switch (level) {
       case 'low':
         return {
-          gradient: 'from-teal-500 via-emerald-500 to-green-500',
-          bgLight: 'bg-teal-50',
-          border: 'border-teal-200',
+          gradient: 'bg-gradient-to-br from-teal-500/10 via-emerald-500/5 to-transparent',
+          bgLight: 'bg-teal-50/50 backdrop-blur-sm',
+          border: 'border-teal-500/20',
           text: 'text-teal-700',
           icon: CheckCircle,
           iconColor: 'text-teal-500',
-          badge: 'bg-teal-100 text-teal-800',
+          badge: 'bg-teal-500 text-white shadow-md shadow-teal-500/20',
           statusText: 'Looking Good',
           guidance:
             'Your screening shows a healthy risk profile. Keep up your wonderful habits!',
+          glow: 'shadow-[inset_0_0_40px_rgba(20,184,166,0.1)]'
         };
       case 'medium':
         return {
-          gradient: 'from-amber-400 via-orange-400 to-amber-500',
-          bgLight: 'bg-amber-50',
-          border: 'border-amber-200',
+          gradient: 'bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent',
+          bgLight: 'bg-amber-50/50 backdrop-blur-sm',
+          border: 'border-amber-500/20',
           text: 'text-amber-700',
           icon: AlertTriangle,
           iconColor: 'text-amber-500',
-          badge: 'bg-amber-100 text-amber-800',
+          badge: 'bg-amber-500 text-white shadow-md shadow-amber-500/20',
           statusText: 'Monitor Closely',
           guidance:
             'Some risk factors need attention. Small lifestyle adjustments can make a big difference.',
+          glow: 'shadow-[inset_0_0_40px_rgba(245,158,11,0.1)]'
         };
       case 'high':
         return {
-          gradient: 'from-rose-500 via-red-500 to-rose-600',
-          bgLight: 'bg-rose-50',
-          border: 'border-rose-200',
+          gradient: 'bg-gradient-to-br from-rose-500/10 via-rose-500/5 to-transparent',
+          bgLight: 'bg-rose-50/50 backdrop-blur-sm',
+          border: 'border-rose-500/20',
           text: 'text-rose-700',
           icon: AlertTriangle,
           iconColor: 'text-rose-500',
-          badge: 'bg-rose-100 text-rose-800',
+          badge: 'bg-rose-500 text-white shadow-md shadow-rose-500/20',
           statusText: 'Action Recommended',
           guidance:
             "Please schedule a visit with your doctor soon to discuss these results. Early action is powerful.",
+          glow: 'shadow-[inset_0_0_40px_rgba(244,63,94,0.1)]'
         };
       default:
         return {
-          gradient: 'from-slate-400 via-slate-500 to-slate-600',
-          bgLight: 'bg-slate-50',
-          border: 'border-slate-200',
+          gradient: 'bg-gradient-to-br from-slate-400/10 via-slate-500/5 to-transparent',
+          bgLight: 'bg-slate-50/50 backdrop-blur-sm',
+          border: 'border-slate-200/50',
           text: 'text-slate-600',
           icon: Activity,
           iconColor: 'text-slate-400',
           badge: 'bg-slate-100 text-slate-700',
           statusText: 'No Data Yet',
           guidance: 'Log your first assessment to see your risk profile.',
+          glow: ''
         };
     }
   };
@@ -206,22 +210,24 @@ const StatusSummaryCard = ({
     <motion.div
       initial={isReduced ? false : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden"
+      className={`bg-white/80 backdrop-blur-xl rounded-[32px] shadow-sm border border-slate-200/60 overflow-hidden relative ${theme.glow}`}
     >
-      <div className={`bg-gradient-to-r ${theme.gradient} p-6 md:p-8 text-white relative`}>
-        <div className="flex items-start justify-between">
+      <div className={`p-6 md:p-8 border-b ${theme.border} ${theme.gradient} relative overflow-hidden`}>
+        <div className="flex items-start justify-between relative z-10">
           <div className="flex items-center gap-3 mb-2">
-            <StatusIcon size={22} className="text-white/90" />
-            <span className="text-sm font-semibold text-white/90 uppercase tracking-wide">
+            <div className={`w-10 h-10 rounded-xl bg-white/50 backdrop-blur-sm border ${theme.border} flex items-center justify-center shadow-sm`}>
+              <StatusIcon size={20} className={theme.iconColor} />
+            </div>
+            <span className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
               Latest Assessment
             </span>
           </div>
-          <span className="text-sm text-white/80 flex items-center gap-1.5">
+          <span className="text-sm text-slate-500 flex items-center gap-1.5 px-3 py-1 bg-white/50 backdrop-blur-sm rounded-full border border-slate-200/50">
             <Calendar size={14} />
             {assessmentDate}
           </span>
         </div>
-        <h2 className="text-2xl md:text-3xl font-bold font-serif">{theme.statusText}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold font-serif text-slate-800 mt-2 relative z-10">{theme.statusText}</h2>
       </div>
 
       <div className="p-6 md:p-8">
@@ -298,21 +304,12 @@ const StatusSummaryCard = ({
               </div>
             )}
 
-            <div className="flex flex-wrap gap-3">
-              <motion.button
-                whileHover={isReduced ? undefined : { scale: 1.02 }}
-                whileTap={isReduced ? undefined : { scale: 0.98 }}
-                onClick={onViewLatest}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-slate-800 text-white font-semibold rounded-xl hover:bg-slate-700 transition-all shadow-sm"
-              >
-                <Activity size={18} />
-                View Full Results
-              </motion.button>
+            <div className="flex flex-wrap gap-3 mt-6">
               <motion.button
                 whileHover={isReduced ? undefined : { scale: 1.02 }}
                 whileTap={isReduced ? undefined : { scale: 0.98 }}
                 onClick={onViewTrends}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-white text-slate-700 font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-all shadow-md shadow-indigo-200"
               >
                 <TrendingUp size={18} />
                 See Trends
@@ -320,11 +317,11 @@ const StatusSummaryCard = ({
               <motion.button
                 whileHover={isReduced ? undefined : { scale: 1.02 }}
                 whileTap={isReduced ? undefined : { scale: 0.98 }}
-                onClick={onStartAssessment}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-500 transition-all shadow-sm"
+                onClick={onViewLatest}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-700 font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all shadow-sm"
               >
-                Log New Assessment
-                <ArrowRight size={16} />
+                <Activity size={18} />
+                View Full Results
               </motion.button>
             </div>
           </div>

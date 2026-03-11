@@ -56,7 +56,7 @@ const truncateHash = (hash, length = 12) => {
   return `${hash.slice(0, length)}...`;
 };
 
-const ModelTraceability = ({ token }) => {
+const ModelTraceability = () => {
   const isReduced = useReducedMotion();
   const [activeModel, setActiveModel] = useState(null);
   const [modelRuns, setModelRuns] = useState([]);
@@ -78,8 +78,8 @@ const ModelTraceability = ({ token }) => {
     setError(null);
     try {
       const [active, runs] = await Promise.all([
-        fetchActiveModelApi(token).catch(() => null),
-        fetchModelRunsApi(token, { page, page_size: pageSize }),
+        fetchActiveModelApi().catch(() => null),
+        fetchModelRunsApi({ page, page_size: pageSize }),
       ]);
       setActiveModel(active);
       setModelRuns(runs.data || []);
@@ -91,7 +91,7 @@ const ModelTraceability = ({ token }) => {
     } finally {
       setLoading(false);
     }
-  }, [token, page, pageSize]);
+  }, [page, pageSize]);
 
   useEffect(() => {
     load();
@@ -102,12 +102,12 @@ const ModelTraceability = ({ token }) => {
     setError(null);
     setSyncSuccess(null);
     try {
-      await syncModelRunsApi(token);
+      await syncModelRunsApi();
       setLastSyncTime(new Date().toISOString());
       // Reload data
       const [active, runs] = await Promise.all([
-        fetchActiveModelApi(token).catch(() => null),
-        fetchModelRunsApi(token, { page, page_size: pageSize }),
+        fetchActiveModelApi().catch(() => null),
+        fetchModelRunsApi({ page, page_size: pageSize }),
       ]);
       setActiveModel(active);
       setModelRuns(runs.data || []);

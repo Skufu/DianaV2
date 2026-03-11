@@ -1,10 +1,19 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { shouldDisableHeavyEffects, getAnimationNodeCount } from './deviceCapabilities';
-import { useReducedMotion as useFramerReducedMotion } from 'framer-motion';
 
 export const useReducedMotion = () => {
-  const isReduced = useFramerReducedMotion();
-  return isReduced || shouldDisableHeavyEffects();
+  const [prefersReduced, setPrefersReduced] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReduced(mediaQuery.matches);
+
+    const handler = event => setPrefersReduced(event.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  return prefersReduced || shouldDisableHeavyEffects();
 };
 
 export const useInputFocusVariants = () => {
