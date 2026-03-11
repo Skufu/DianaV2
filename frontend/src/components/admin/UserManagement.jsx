@@ -29,7 +29,7 @@ import {
   useReducedMotion,
 } from '../../utils/animations';
 
-const UserManagement = ({ token }) => {
+const UserManagement = () => {
   const isReduced = useReducedMotion();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -90,7 +90,7 @@ const UserManagement = ({ token }) => {
     } finally {
       setLoading(false);
     }
-  }, [token, page, pageSize, search, roleFilter, activeFilter]);
+  }, [page, pageSize, search, roleFilter, activeFilter]);
 
   useEffect(() => {
     loadUsers();

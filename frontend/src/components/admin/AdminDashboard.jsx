@@ -53,18 +53,17 @@ const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'
 
 // activeView and setActiveView are now passed from App.jsx
 // Navigation is handled by AdminSidebar
-const AdminDashboard = ({ userRole, activeView = 'overview', token }) => {
+const AdminDashboard = ({ userRole, activeView = 'overview' }) => {
   const isReduced = useReducedMotion();
-  // Animation enabled by default
 
   const canViewAdminData = userRole === 'admin';
   const {
     data: dashboardData,
     isLoading,
     error,
-  } = useAdminDashboard({ enabled: !!token && canViewAdminData });
-  const { data: clinicsData } = useClinicComparison({ enabled: !!token && canViewAdminData });
-  const { data: profile } = useUserProfile(!!token);
+  } = useAdminDashboard({ enabled: canViewAdminData });
+  const { data: clinicsData } = useClinicComparison({ enabled: canViewAdminData });
+  const { data: profile } = useUserProfile(true);
   const canViewAuditData = userRole === 'admin' || userRole === 'doctor';
   const clinics = clinicsData ?? [];
 
@@ -73,7 +72,7 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
   }
 
   const ADMIN_ONLY_VIEWS = ['overview', 'users', 'audit', 'auth-events', 'models'];
-  const DOCTOR_ALLOWED_VIEWS = ['assessment', 'explainability', 'insights', 'rationale'];
+  const DOCTOR_ALLOWED_VIEWS = ['assessment', 'explainability', 'rationale'];
 
   const isAdminViewAllowed = userRole !== 'admin' || ADMIN_ONLY_VIEWS.includes(activeView);
   const isDoctorViewAllowed = userRole !== 'doctor' || DOCTOR_ALLOWED_VIEWS.includes(activeView);
@@ -98,6 +97,7 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
               initialData={profile}
               showModelSelector={userRole === 'admin'}
               lockedModelType={userRole === 'doctor' ? 'binary_v2_no_bp' : null}
+              isClinicalView={true}
             />
           </Suspense>
         );

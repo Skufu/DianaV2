@@ -41,7 +41,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// CORS configuration (must be before other middleware that might reject requests)
 	corsConfig := cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-CSRF-Token"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -49,9 +49,9 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	if cfg.Env == "production" || cfg.Env == "prod" {
 		corsConfig.AllowOrigins = cfg.CORSOrigins
 	} else {
-		// In development, allow all origins to avoid CORS issues with proxies
-		corsConfig.AllowAllOrigins = true
-		corsConfig.AllowCredentials = false // AllowAllOrigins requires AllowCredentials=false
+		corsConfig.AllowOriginFunc = func(origin string) bool {
+			return true
+		}
 	}
 	r.Use(cors.New(corsConfig))
 
@@ -117,6 +117,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// -------------------------------------------------------------------------
 	protected := api.Group("")
 	protected.Use(middleware.Auth(cfg.JWTSecret, st.Users()))
+	protected.Use(middleware.CSRF())
 
 	auditLogger := middleware.NewAuditLogger(st)
 

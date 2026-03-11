@@ -350,20 +350,25 @@ func (h *AuthHandler) register(c *gin.Context) {
 
 func (h *AuthHandler) refresh(c *gin.Context) {
 	var req struct {
-		RefreshToken string `json:"refresh_token" binding:"required"`
+		RefreshToken string `json:"refresh_token"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil && err.Error() != "invalid character 'e' looking for beginning of value" {
 		ErrBadRequest(c, "invalid payload")
 		return
 	}
 
-	if req.RefreshToken == "" {
-		ErrUnauthorized(c)
-		return
+	refreshToken := req.RefreshToken
+	if refreshToken == "" {
+		cookieToken, err := c.Cookie("diana_refresh_token")
+		if err != nil || cookieToken == "" {
+			ErrUnauthorized(c)
+			return
+		}
+		refreshToken = cookieToken
 	}
 
 	// Hash refresh token to look it up in database
-	tokenHash := hashToken(req.RefreshToken)
+	tokenHash := hashToken(refreshToken)
 
 	// Validate refresh token
 	tokenRecord, err := h.store.RefreshTokens().FindRefreshToken(c.Request.Context(), tokenHash)
@@ -465,13 +470,17 @@ func (h *AuthHandler) logout(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refresh_token"`
 	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		ErrBadRequest(c, "invalid payload")
-		return
+	// Allow empty body - we can get the token from cookie
+	_ = c.ShouldBindJSON(&req)
+
+	refreshToken := req.RefreshToken
+	if refreshToken == "" {
+		cookieToken, _ := c.Cookie("diana_refresh_token")
+		refreshToken = cookieToken
 	}
 
-	if req.RefreshToken != "" {
-		tokenHash := hashToken(req.RefreshToken)
+	if refreshToken != "" {
+		tokenHash := hashToken(refreshToken)
 		if err := h.store.RefreshTokens().RevokeRefreshToken(c.Request.Context(), tokenHash); err != nil {
 			log.Printf("[WARN] Failed to revoke refresh token during logout: %v", err)
 		}
@@ -480,6 +489,7 @@ func (h *AuthHandler) logout(c *gin.Context) {
 	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("diana_token", "", -1, "/", "", h.isSecure(), true)
 	c.SetCookie("diana_refresh_token", "", -1, "/", "", h.isSecure(), true)
+	c.SetCookie("diana_csrf_token", "", -1, "/", "", h.isSecure(), false)
 
 	// Publish logout event (using email from context if available)
 	if h.broker != nil {

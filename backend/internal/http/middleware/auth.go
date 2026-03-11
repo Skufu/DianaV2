@@ -61,12 +61,19 @@ type UserFinder interface {
 
 func Auth(jwtSecret string, users UserFinder) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authz := c.GetHeader("Authorization")
-		if authz == "" || !strings.HasPrefix(authz, "Bearer ") {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing bearer token"})
-			return
+		var tokenStr string
+
+		cookieToken, err := c.Cookie("diana_token")
+		if err == nil && cookieToken != "" {
+			tokenStr = cookieToken
+		} else {
+			authz := c.GetHeader("Authorization")
+			if authz == "" || !strings.HasPrefix(authz, "Bearer ") {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing bearer token"})
+				return
+			}
+			tokenStr = strings.TrimPrefix(authz, "Bearer ")
 		}
-		tokenStr := strings.TrimPrefix(authz, "Bearer ")
 
 		// Parse token with claims validation
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {

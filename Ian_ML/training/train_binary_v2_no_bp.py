@@ -66,7 +66,7 @@ VIZ_DIR = MODELS_DIR / "visualizations"
 N_JOBS = int(os.environ.get("ML_N_JOBS", "1"))
 BOOTSTRAP_SAMPLES = int(os.environ.get("ML_BOOTSTRAP_SAMPLES", "1000"))
 
-# 9 LR-safe features (Gemini-style: continuous + ordinal, no derived ratios/scores)
+# 9 LR-safe features (continuous + ordinal, no derived ratios/scores)
 MODEL_FEATURES = [
     # Continuous biomarkers (6)
     "bmi", "triglycerides", "ldl", "hdl", "age", "waist_circumference",
@@ -120,7 +120,7 @@ AHLQVIST_SUBTYPES = {
 
 
 def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Create engineered features (same as clinical_3class)."""
+    """Create engineered features"""
     df = df.copy()
 
     # Philippine (Asia-Pacific WHO) BMI cutoffs:

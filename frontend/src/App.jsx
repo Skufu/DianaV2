@@ -43,16 +43,12 @@ const LoadingSkeleton = memo(function LoadingSkeleton() {
 
 const App = () => {
   const isReduced = useReducedMotion();
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    () => !!localStorage.getItem('diana_token')
-  );
-  const [token, setToken] = useState(() => localStorage.getItem('diana_token'));
-  const [refreshToken, setRefreshToken] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userId, setUserId] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [adminView, setAdminView] = useState('overview'); // Separate state for admin navigation
+  const [adminView, setAdminView] = useState('overview');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -64,8 +60,6 @@ const App = () => {
   const [authError, setAuthError] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // React Query hooks
-  // React Query hooks - only fetch profile when authenticated
   const queryClient = useQueryClient();
   const {
     data: profile,
@@ -85,15 +79,9 @@ const App = () => {
         const res = await loginMutation.mutateAsync({ email, password });
         if (!res?.user) throw new Error('login failed');
 
-        // Store tokens in localStorage for API authentication
-        localStorage.setItem('diana_token', res.access_token);
-        localStorage.setItem('diana_refresh_token', res.refresh_token);
-
         const role = res.user.role || 'user';
         const userIsStaff = role === 'admin' || role === 'doctor';
 
-        setToken(res.access_token);
-        setRefreshToken(res.refresh_token);
         setUserRole(role);
         setIsAdmin(userIsStaff);
         setUserId(res.user.id);
@@ -119,6 +107,13 @@ const App = () => {
     const email = params.get('email');
     const error = params.get('error');
 
+    // Clean up URL parameters after reading them
+    // This prevents the error from persisting across refreshes
+    if (error || resetToken || verifyToken || email) {
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+
     if (error) {
       setAuthError(error === 'session_expired' ? 'Session expired. Please log in again.' : error);
     }
@@ -140,16 +135,11 @@ const App = () => {
   }, []);
 
   const handleLogout = useCallback(async () => {
-    localStorage.removeItem('diana_token');
-    localStorage.removeItem('diana_refresh_token');
-
     queryClient.cancelQueries({ queryKey: ['user'] });
     queryClient.cancelQueries({ queryKey: ['assessments'] });
     queryClient.clear();
 
     setIsAuthenticated(false);
-    setToken(null);
-    setRefreshToken(null);
     setUserRole(null);
     setIsAdmin(false);
     setUserId(null);
@@ -161,9 +151,7 @@ const App = () => {
     });
   }, [logoutMutation, queryClient]);
 
-  // Sync auth state with profile data from React Query
   useEffect(() => {
-    // Only process profile data if user is authenticated
     if (!isAuthenticated) return;
 
     if (profile && !profileLoading && !profileError) {
@@ -181,15 +169,9 @@ const App = () => {
         setShowOnboarding(true);
       }
     } else if (profileError) {
-      // apiFetch throws Error with .status set to the HTTP status code
       const status = profileError.status;
       if (status === 401 || status === 403) {
-        // Clear all auth state and storage on auth error
-        localStorage.removeItem('diana_token');
-        localStorage.removeItem('diana_refresh_token');
         setIsAuthenticated(false);
-        setToken(null);
-        setRefreshToken(null);
         setUserRole(null);
         setIsAdmin(false);
         setUserId(null);
@@ -201,7 +183,6 @@ const App = () => {
     setShowAssessmentModal(true);
   }, []);
 
-  // Render content for regular users
   const renderUserContent = useCallback(() => {
     if (showOnboarding) {
       return <Onboarding onComplete={() => setShowOnboarding(false)} />;
@@ -223,23 +204,21 @@ const App = () => {
       case 'education':
         return <Education />;
       case 'export':
-        return <Export token={token} />;
+        return <Export />;
       default:
         return <Dashboard_user userId={userId} />;
     }
-  }, [userId, activeTab, showOnboarding, handleStartAssessment, token]);
+  }, [userId, activeTab, showOnboarding, handleStartAssessment]);
 
-  // Render content for admin users
   const renderAdminContent = useCallback(() => {
     return (
       <AdminDashboard
         userRole={userRole}
         activeView={adminView}
         setActiveView={setAdminView}
-        token={token}
       />
     );
-  }, [userRole, adminView, token]);
+  }, [userRole, adminView]);
 
   const handleSignupSuccess = useCallback(res => {
     if (!res?.user) throw new Error('signup failed');
@@ -251,12 +230,6 @@ const App = () => {
       return;
     }
 
-    // Store tokens in localStorage for API authentication
-    localStorage.setItem('diana_token', res.access_token);
-    localStorage.setItem('diana_refresh_token', res.refresh_token);
-
-    setToken(res.access_token);
-    setRefreshToken(res.refresh_token);
     const role = res.user.role || 'user';
     setUserRole(role);
     setIsAdmin(role === 'admin' || role === 'doctor');

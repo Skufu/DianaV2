@@ -12,6 +12,7 @@ const AssessmentForm = ({
   onCancel,
   showModelSelector = false,
   lockedModelType = null,
+  isClinicalView = false,
 }) => {
   const resolvedModelType = lockedModelType || 'binary_v2_no_bp';
   const [formData, setFormData] = useState({
@@ -267,12 +268,39 @@ const AssessmentForm = ({
 
   return (
     <>
-      <motion.div
-        variants={slideUp}
-        initial="hidden"
-        animate="visible"
-        className="glass-card p-8 bg-white"
-      >
+      {isClinicalView ? (
+        <motion.div
+          variants={slideUp}
+          className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 p-8 text-white shadow-xl mb-6"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 opacity-100" />
+          <div className="absolute inset-0 opacity-10 mix-blend-overlay" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.2) 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+          <div className="absolute -top-32 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px]" />
+          
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+            <div>
+              <h3 className="text-2xl md:text-3xl font-extrabold text-white flex items-center gap-4 mb-3 tracking-tight">
+                <span className="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 shadow-inner flex items-center justify-center backdrop-blur-md">
+                  <Activity className="text-indigo-300" size={24} />
+                </span>
+                Log New Assessment
+              </h3>
+              <p className="text-indigo-100 text-base md:text-lg font-normal max-w-2xl leading-relaxed mt-2">
+                Enter patient clinical markers to calculate real-time metabolic risk utilizing the selected predictive model.
+              </p>
+            </div>
+            {onCancel && (
+              <Button
+                variant="ghost"
+                onClick={onCancel}
+                className="!p-2 !bg-white/10 hover:!bg-white/20 !text-indigo-100 hover:text-white"
+              >
+                <X size={18} />
+              </Button>
+            )}
+          </div>
+        </motion.div>
+      ) : (
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-diana-forest/10 flex items-center justify-center">
@@ -292,7 +320,14 @@ const AssessmentForm = ({
             </Button>
           )}
         </div>
+      )}
 
+      <motion.div
+        variants={slideUp}
+        initial="hidden"
+        animate="visible"
+        className="glass-card p-8 bg-white"
+      >
         <form onSubmit={handleSubmit} className="space-y-6">
           {showModelSelector && !lockedModelType && (
             <div>
@@ -307,7 +342,7 @@ const AssessmentForm = ({
                 name="model_type"
                 value={formData.model_type}
                 onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
               >
                 <option value="binary_v2_no_bp">Screening (no BP)</option>
                 <option value="binary_v2_bp">Screening (with BP)</option>
@@ -340,7 +375,7 @@ const AssessmentForm = ({
                   max="220"
                   value={formData.height}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                   placeholder="160"
                   required
                 />
@@ -367,7 +402,7 @@ const AssessmentForm = ({
                   max="200"
                   value={formData.weight}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                   placeholder="65"
                   required
                 />
@@ -419,7 +454,7 @@ const AssessmentForm = ({
                   max="60"
                   value={formData.age}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                   placeholder="45-60"
                   required
                 />
@@ -451,7 +486,7 @@ const AssessmentForm = ({
                   max="500"
                   value={formData.triglycerides}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                   placeholder="30-500"
                   required
                 />
@@ -474,7 +509,7 @@ const AssessmentForm = ({
                   max="300"
                   value={formData.ldl}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                   placeholder="30-300"
                   required
                 />
@@ -497,7 +532,7 @@ const AssessmentForm = ({
                   max="150"
                   value={formData.hdl}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                   placeholder="20-150"
                   required
                 />
@@ -523,7 +558,7 @@ const AssessmentForm = ({
                     max="200"
                     value={formData.waist_circumference}
                     onChange={handleChange}
-                    className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                    className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                     placeholder="e.g. 88"
                   />
                 </motion.div>
@@ -541,7 +576,7 @@ const AssessmentForm = ({
                       name="family_history_diabetes"
                       value={formData.family_history_diabetes}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      className="w-full px-3 py-2 md:py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                     >
                       <option value="">Unknown</option>
                       <option value="yes">Yes</option>
@@ -571,7 +606,7 @@ const AssessmentForm = ({
                       max="300"
                       value={formData.systolic}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                       placeholder="50 - 300"
                       required
                     />
@@ -593,7 +628,7 @@ const AssessmentForm = ({
                       max="200"
                       value={formData.diastolic}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                       placeholder="30 - 200"
                       required
                     />
@@ -619,7 +654,7 @@ const AssessmentForm = ({
                       max="20"
                       value={formData.hba1c}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                       placeholder="2.0 - 20.0"
                       required
                     />
@@ -638,7 +673,7 @@ const AssessmentForm = ({
                       max="600"
                       value={formData.fbs}
                       onChange={handleChange}
-                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                      className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                       placeholder="20 - 600"
                       required
                     />
@@ -663,7 +698,7 @@ const AssessmentForm = ({
                   name="smoking_status"
                   value={formData.smoking_status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                 >
                   <option value="Unknown">Unknown</option>
                   <option value="Never">Never smoked</option>
@@ -684,7 +719,7 @@ const AssessmentForm = ({
                   name="physical_activity"
                   value={formData.physical_activity}
                   onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                 >
                   <option value="Unknown">Unknown</option>
                   <option value="Sedentary">Sedentary (little/no exercise)</option>
@@ -702,7 +737,7 @@ const AssessmentForm = ({
                   name="alcohol"
                   value={formData.alcohol}
                   onChange={handleChange}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                 >
                   <option value="Unknown">Unknown</option>
                   <option value="None">None</option>
@@ -729,7 +764,7 @@ const AssessmentForm = ({
                 name="notes"
                 value={formData.notes}
                 onChange={handleChange}
-                className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all shadow-sm"
+                className="w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all shadow-sm"
                 placeholder="Add any notes or observations..."
               />
             </div>

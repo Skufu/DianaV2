@@ -288,17 +288,25 @@ def main() -> int:
         if "triglycerides" in df.columns and "hdl" in df.columns:
             df["tg_hdl_ratio"] = df["triglycerides"] / df["hdl"].replace(0, np.nan)
 
-        smoking_map = {"Never": 0, "Former": 1, "Current": 2}
+        # Ordinal encoding - must match train_binary_v2_no_bp.py exactly
+        # "Unknown" values are mapped to 1 (middle category) for consistency
+        smoking_map = {"Never": 0, "Former": 1, "Current": 2, "Unknown": 1}
         if "smoking_status" in df.columns:
-            df["smoking_encoded"] = df["smoking_status"].map(smoking_map).fillna(1)
+            df["smoking_encoded"] = df["smoking_status"].fillna("Unknown").map(
+                lambda value: smoking_map.get(str(value).strip().title() if str(value).strip().lower() != 'unknown' else 'Unknown', 1)
+            )
 
-        activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2}
+        activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2, "Unknown": 1}
         if "physical_activity" in df.columns:
-            df["activity_encoded"] = df["physical_activity"].map(activity_map).fillna(1)
+            df["activity_encoded"] = df["physical_activity"].fillna("Unknown").map(
+                lambda value: activity_map.get(str(value).strip().title() if str(value).strip().lower() != 'unknown' else 'Unknown', 1)
+            )
 
-        alcohol_map = {"None": 0, "Light": 1, "Moderate": 2, "Heavy": 3}
+        alcohol_map = {"None": 0, "Light": 1, "Moderate": 2, "Heavy": 3, "Unknown": 1}
         if "alcohol_use" in df.columns:
-            df["alcohol_encoded"] = df["alcohol_use"].map(alcohol_map).fillna(0)
+            df["alcohol_encoded"] = df["alcohol_use"].fillna("Unknown").map(
+                lambda value: alcohol_map.get(str(value).strip().title() if str(value).strip().lower() != 'none' else 'None', 1)
+            )
 
         # Metabolic syndrome score (same as train_binary_v2_no_bp.py)
         met_criteria = pd.DataFrame({

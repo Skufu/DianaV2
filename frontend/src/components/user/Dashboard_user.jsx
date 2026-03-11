@@ -189,18 +189,19 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
             <motion.div
               variants={cardVariants}
               whileHover="hover"
-              className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100"
+              className="bg-white/80 backdrop-blur-xl rounded-[24px] p-6 shadow-sm border border-slate-200/60 transition-all hover:shadow-md hover:border-indigo-200/60 relative overflow-hidden group"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center">
-                  <Activity size={20} />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="flex items-center gap-3 mb-4 relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm">
+                  <Activity size={22} />
                 </div>
-                <span className="text-slate-600 font-medium">Total Assessments</span>
+                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">Total Assessments</span>
               </div>
-              <div className="text-4xl font-light tracking-tight text-slate-800">
+              <div className="text-5xl font-light tracking-tight text-slate-800 relative z-10">
                 {assessments.length}
               </div>
-              <div className="text-sm text-slate-400 mt-1">
+              <div className="text-sm text-slate-500 mt-2 relative z-10">
                 {assessments.length === 0 ? 'No records yet' : 'Health records logged'}
               </div>
             </motion.div>
@@ -208,49 +209,53 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
             <motion.div
               variants={cardVariants}
               whileHover="hover"
-              className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100"
+              className="bg-white/80 backdrop-blur-xl rounded-[24px] p-6 shadow-sm border border-slate-200/60 transition-all hover:shadow-md hover:border-teal-200/60 relative overflow-hidden group"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-500 flex items-center justify-center">
-                  <TrendingUp size={20} />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="flex items-center gap-3 mb-4 relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shadow-sm">
+                  <TrendingUp size={22} />
                 </div>
-                <span className="text-slate-600 font-medium">Risk Level</span>
+                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">Risk Level</span>
               </div>
-              {latestAssessment ? (
-                <RiskIndicator
-                  riskScore={latestAssessment.risk_score || 0}
-                  riskLevel={getCalculatedRiskLevel(
-                    latestAssessment.risk_score,
-                    latestAssessment.risk_level
-                  )}
-                  cluster={latestCluster}
-                />
-              ) : (
-                <div className="text-slate-400 text-sm italic">No data yet</div>
-              )}
+              <div className="relative z-10 mt-2">
+                {latestAssessment ? (
+                  <RiskIndicator
+                    riskScore={latestAssessment.risk_score || 0}
+                    riskLevel={getCalculatedRiskLevel(
+                      latestAssessment.risk_score,
+                      latestAssessment.risk_level
+                    )}
+                    cluster={latestCluster}
+                  />
+                ) : (
+                  <div className="text-slate-400 text-sm italic py-2">No data yet</div>
+                )}
+              </div>
             </motion.div>
 
             <motion.div
               variants={cardVariants}
               whileHover="hover"
-              className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100"
+              className="bg-white/80 backdrop-blur-xl rounded-[24px] p-6 shadow-sm border border-slate-200/60 transition-all hover:shadow-md hover:border-amber-200/60 relative overflow-hidden group"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
-                  <AlertCircle size={20} />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="flex items-center gap-3 mb-4 relative z-10">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm">
+                  <AlertCircle size={22} />
                 </div>
-                <span className="text-slate-600 font-medium">Status</span>
+                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">Status</span>
               </div>
-              <div className="text-2xl font-light tracking-tight text-slate-800">
+              <div className="text-2xl font-semibold tracking-tight text-slate-800 relative z-10 mt-2">
                 {!latestAssessment
-                  ? 'No Risk Estimate Yet'
+                  ? 'No Estimate Yet'
                   : latestAssessment.risk_score >= 70
                     ? 'Action Needed'
                     : latestAssessment.risk_score >= 30
                       ? 'Monitor Closely'
                       : 'Looking Good'}
               </div>
-              <div className="text-sm text-slate-400 mt-1">
+              <div className="text-sm text-slate-500 mt-2 relative z-10">
                 {latestAssessment
                   ? 'Based on latest screening'
                   : 'Log your first assessment'}
@@ -264,9 +269,10 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
               whileHover="hover"
               whileTap={{ scale: isReduced ? 1 : 0.98 }}
               onClick={onStartAssessment}
-              className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 text-left hover:border-indigo-200 transition-all group"
+              className="bg-white/80 backdrop-blur-xl rounded-[24px] p-6 shadow-sm border border-slate-200/60 text-left hover:border-indigo-300 hover:bg-slate-50/50 transition-all group overflow-hidden relative"
             >
-              <div className="flex items-center gap-4">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="flex items-center gap-4 relative z-10">
                 <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200 group-hover:scale-105 transition-transform">
                   <Plus size={24} />
                 </div>
@@ -287,9 +293,10 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
               whileHover="hover"
               whileTap={{ scale: isReduced ? 1 : 0.98 }}
               onClick={() => setActiveTab('trends')}
-              className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 text-left hover:border-teal-200 transition-all group"
+              className="bg-white/80 backdrop-blur-xl rounded-[24px] p-6 shadow-sm border border-slate-200/60 text-left hover:border-teal-300 hover:bg-slate-50/50 transition-all group overflow-hidden relative"
             >
-              <div className="flex items-center gap-4">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-teal-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="flex items-center gap-4 relative z-10">
                 <div className="w-14 h-14 rounded-2xl bg-teal-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-teal-200 group-hover:scale-105 transition-transform">
                   <TrendingUp size={24} />
                 </div>
@@ -310,9 +317,10 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
               whileHover="hover"
               whileTap={{ scale: isReduced ? 1 : 0.98 }}
               onClick={() => setActiveTab('export')}
-              className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 text-left hover:border-amber-200 transition-all group"
+              className="bg-white/80 backdrop-blur-xl rounded-[24px] p-6 shadow-sm border border-slate-200/60 text-left hover:border-amber-300 hover:bg-slate-50/50 transition-all group overflow-hidden relative"
             >
-              <div className="flex items-center gap-4">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="flex items-center gap-4 relative z-10">
                 <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                   <FileText size={24} />
                 </div>
@@ -333,9 +341,10 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
               whileHover="hover"
               whileTap={{ scale: isReduced ? 1 : 0.98 }}
               onClick={() => setActiveTab('profile')}
-              className="bg-white rounded-[24px] p-6 shadow-sm border border-slate-100 text-left hover:border-slate-300 transition-all group"
+              className="bg-white/80 backdrop-blur-xl rounded-[24px] p-6 shadow-sm border border-slate-200/60 text-left hover:border-slate-400 hover:bg-slate-50/50 transition-all group overflow-hidden relative"
             >
-              <div className="flex items-center gap-4">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-slate-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="flex items-center gap-4 relative z-10">
                 <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                   <UserIcon size={24} />
                 </div>
@@ -355,7 +364,7 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
           {assessments.length > 0 && (
             <motion.div
               variants={slideUp}
-              className="bg-white rounded-[32px] p-6 md:p-8 shadow-sm border border-slate-100"
+              className="bg-white/80 backdrop-blur-xl rounded-[32px] p-6 md:p-8 shadow-sm border border-slate-200/60"
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-slate-800">Recent Results</h2>
@@ -421,7 +430,7 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full min-w-[640px]">
                   <thead>
-                    <tr className="border-b border-slate-100">
+                    <tr className="border-b border-slate-200/60">
                       <th className="text-left py-3 px-4 text-sm font-semibold text-slate-500">
                         Date
                       </th>
@@ -453,8 +462,8 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                       return (
                         <motion.tr
                           key={assessment.id}
-                          whileHover={{ backgroundColor: '#f8fafc' }}
-                          className="border-b border-slate-50 last:border-0 cursor-pointer"
+                          whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.5)' }}
+                          className="border-b border-slate-200/40 last:border-0 cursor-pointer transition-colors"
                           onClick={() => handleViewAssessment(assessment)}
                         >
                           <td className="py-3 px-4 text-sm font-medium text-slate-700 align-middle">
