@@ -1,5 +1,5 @@
 import { useEffect, useState, Suspense, lazy, useCallback, memo } from 'react';
-import { useUserProfile, useLogin, useLogout, useAssessments } from './api';
+import { useUserProfile, useLogin, useLogout, useAssessments, setAuthTokens, clearAuthTokens } from './api';
 import { useQueryClient } from '@tanstack/react-query';
 import Sidebar from './components/layout/Sidebar';
 import AdminSidebar from './components/layout/AdminSidebar';
@@ -79,6 +79,9 @@ const App = () => {
         const res = await loginMutation.mutateAsync({ email, password });
         if (!res?.user) throw new Error('login failed');
 
+        // Store tokens for cross-origin Bearer auth
+        if (res.access_token) setAuthTokens(res.access_token, res.refresh_token);
+
         const role = res.user.role || 'user';
         const userIsStaff = role === 'admin' || role === 'doctor';
 
@@ -135,6 +138,7 @@ const App = () => {
   }, []);
 
   const handleLogout = useCallback(async () => {
+    clearAuthTokens();
     queryClient.cancelQueries({ queryKey: ['user'] });
     queryClient.cancelQueries({ queryKey: ['assessments'] });
     queryClient.clear();
@@ -222,6 +226,9 @@ const App = () => {
 
   const handleSignupSuccess = useCallback(res => {
     if (!res?.user) throw new Error('signup failed');
+
+    // Store tokens for cross-origin Bearer auth
+    if (res.access_token) setAuthTokens(res.access_token, res.refresh_token);
 
     if (res.email_verification_required === true) {
       setAuthEmail(res.user.email || '');
