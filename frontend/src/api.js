@@ -17,6 +17,21 @@ export { API_BASE };
 const ML_BASE =
   import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
 
+// Token storage for cross-origin auth (Vercel → Render)
+// Cookies don't work cross-origin with SameSite=Strict, so we use Bearer tokens
+let _accessToken = null;
+let _refreshToken = null;
+
+export const setAuthTokens = (accessToken, refreshToken) => {
+  _accessToken = accessToken;
+  _refreshToken = refreshToken;
+};
+
+export const clearAuthTokens = () => {
+  _accessToken = null;
+  _refreshToken = null;
+};
+
 // CSRF token helper - reads from cookie
 const getCSRFToken = () => {
   const cookies = document.cookie.split(';');
@@ -51,19 +66,34 @@ const attemptTokenRefresh = async () => {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
+    body: JSON.stringify({ refresh_token: _refreshToken }),
   });
 
   if (!response.ok) {
+    clearAuthTokens();
     throw new Error('Token refresh failed');
   }
 
-  return response.json();
+  const data = await response.json();
+  // Store new tokens from refresh response
+  if (data.access_token) {
+    _accessToken = data.access_token;
+  }
+  if (data.refresh_token) {
+    _refreshToken = data.refresh_token;
+  }
+  return data;
 };
 
 const apiFetch = async (endpoint, options = {}, isRetry = false) => {
   const headers = {
     'Content-Type': 'application/json',
   };
+
+  // Send Bearer token for cross-origin auth
+  if (_accessToken) {
+    headers['Authorization'] = `Bearer ${_accessToken}`;
+  }
 
   const method = (options.method || 'GET').toUpperCase();
   if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
