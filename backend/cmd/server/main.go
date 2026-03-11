@@ -2,14 +2,17 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"github.com/pressly/goose/v3"
 	"github.com/skufu/DianaV2/backend/internal/cache"
 	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/http/router"
@@ -74,6 +77,21 @@ func main() {
 
 		log.Printf("connected to Postgres (MaxConns: %d, MinConns: %d, MaxConnLifetime: %s, MaxConnIdleTime: %s)",
 			poolConfig.MaxConns, poolConfig.MinConns, poolConfig.MaxConnLifetime, poolConfig.MaxConnIdleTime)
+
+		// Auto-run database migrations using Goose
+		log.Printf("running database migrations...")
+		migrationDB, err := sql.Open("pgx", cfg.DBDSN)
+		if err != nil {
+			log.Fatalf("failed to open migration DB connection: %v", err)
+		}
+		if err := goose.SetDialect("postgres"); err != nil {
+			log.Fatalf("failed to set goose dialect: %v", err)
+		}
+		if err := goose.Up(migrationDB, "./migrations"); err != nil {
+			log.Fatalf("migration failed: %v", err)
+		}
+		migrationDB.Close()
+		log.Printf("database migrations completed successfully")
 	} else {
 		log.Printf("DB_DSN not set; running without database (handlers will error on DB access)")
 	}

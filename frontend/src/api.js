@@ -159,56 +159,20 @@ const blobFetch = async (endpoint, options = {}) => {
   return response;
 };
 
-const mlFetchJson = async (path, options = {}) => {
-  const apiKey = import.meta.env.VITE_ML_API_KEY;
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  };
 
-  if (apiKey) {
-    headers['X-API-Key'] = apiKey;
-  }
 
-  const res = await fetch(`${ML_BASE}${path}`, {
-    method: options.method || 'GET',
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    signal: options.signal,
-  });
 
-  let payload = null;
-  const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('application/json')) {
-    payload = await res.json().catch(() => null);
-  } else if (res.status !== 204) {
-    payload = await res.text().catch(() => null);
-  }
+// ML API calls routed through Go backend proxy (keeps ML server private & API key server-side)
+export const fetchMLHealthApi = () => apiFetch('/ml/health');
+export const fetchMLMetricsApi = () => apiFetch('/ml/insights/metrics');
+export const fetchMLInformationGainApi = () => apiFetch('/ml/insights/information-gain');
+export const fetchMLClustersApi = () => apiFetch('/ml/insights/clusters');
+export const getMLVisualizationUrl = name => `${API_BASE}/ml/insights/visualizations/${name}`;
 
-  if (!res.ok) {
-    const message =
-      (payload && typeof payload === 'object' && (payload.message || payload.error)) ||
-      (typeof payload === 'string' && payload.trim()) ||
-      `ML API error: ${res.status}`;
-    const requestError = new Error(message);
-    requestError.status = res.status;
-    if (payload && typeof payload === 'object' && payload.code) {
-      requestError.code = payload.code;
-    }
-    throw requestError;
-  }
-
-  return payload;
+// ML fetch routed through backend proxy for SHAP explanations
+export const mlFetchJson = async (path, options = {}) => {
+  return apiFetch(`/ml${path}`, options);
 };
-
-const mlFetch = async path => mlFetchJson(path);
-
-export const fetchMLHealthApi = () => mlFetch('/health');
-export const fetchMLMetricsApi = () => mlFetch('/insights/metrics');
-export const fetchMLInformationGainApi = () => mlFetch('/insights/information-gain');
-export const fetchMLClustersApi = () => mlFetch('/insights/clusters');
-export const getMLVisualizationUrl = name => `${ML_BASE}/insights/visualizations/${name}`;
-export { mlFetchJson };
 
 const hasValue = value => value !== undefined && value !== null;
 

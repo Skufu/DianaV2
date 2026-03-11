@@ -192,6 +192,15 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		adminModelsHandler.Register(adminModels)
 	}
 
+	// -------------------------------------------------------------------------
+	// ML Proxy routes (proxies frontend ML calls to internal ML service)
+	// -------------------------------------------------------------------------
+	if cfg.ModelURL != "" {
+		mlGroup := protected.Group("/ml")
+		mlProxyHandler := handlers.NewMLProxyHandler(cfg.ModelURL, cfg.MLAPIKey, cfg.ModelTimeoutMS)
+		mlProxyHandler.Register(mlGroup)
+	}
+
 	// =========================================================================
 	// Debug: Print registered routes (development only)
 	// =========================================================================

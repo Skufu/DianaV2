@@ -1,0 +1,58 @@
+# Render Blueprint — Infrastructure as Code
+# Deploy: https://render.com/deploy
+# Docs: https://docs.render.com/blueprint-spec
+
+services:
+  # Go Backend API
+  - type: web
+    name: diana-backend
+    runtime: docker
+    dockerfilePath: ./build/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /api/v1/healthz
+    autoDeploy: true  # Auto-deploy on GitHub push
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: ENV
+        value: production
+      - key: DB_DSN
+        sync: false  # Set manually — NeonDB connection string
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false  # Set to your Vercel frontend URL, e.g. https://diana-v2.vercel.app
+      - key: MODEL_URL
+        sync: false  # Set to ML service URL, e.g. https://diana-ml.onrender.com
+      - key: ML_API_KEY
+        generateValue: true
+      - key: MODEL_VERSION
+        value: binary_v2_no_bp
+      - key: MODEL_DATASET_HASH
+        value: nhanes_postmenopausal_2009_2023
+      - key: MODEL_TIMEOUT_MS
+        value: "30000"
+      - key: EXPORT_MAX_ROWS
+        value: "5000"
+
+  # Python ML Server
+  - type: web
+    name: diana-ml
+    runtime: docker
+    dockerfilePath: ./Ian_ML/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true  # Auto-deploy on GitHub push
+    envVars:
+      - key: ML_PORT
+        value: "5000"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: ML_API_KEY
+        sync: false  # Must match diana-backend ML_API_KEY
+      - key: ENV
+        value: production
+      - key: CORS_ORIGINS
+        sync: false  # Set to backend URL, e.g. https://diana-backend.onrender.com
