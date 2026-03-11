@@ -72,7 +72,12 @@ func Load() Config {
 		DatasetHash:    getEnv("MODEL_DATASET_HASH", ""),
 		MLAPIKey:       getEnv("ML_API_KEY", ""),
 		ModelTimeoutMS: 2000,
-		RedisAddr:      getEnv("REDIS_ADDR", "localhost:6379"),
+		RedisAddr:      getEnv("REDIS_ADDR", func() string {
+			if env == "production" || env == "prod" {
+				return ""
+			}
+			return "localhost:6379"
+		}()),
 		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
 		RedisDB:        0,
 	}
