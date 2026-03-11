@@ -19,7 +19,11 @@ func CSRF() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if isSafeMethod(c.Request.Method) {
 			token := generateCSRFToken()
-			c.SetCookie(csrfCookieName, token, 7*24*60*60, "/", "", isSecure(c), false)
+			secure := isSecure(c)
+			if secure {
+				c.SetSameSite(http.SameSiteNoneMode)
+			}
+			c.SetCookie(csrfCookieName, token, 7*24*60*60, "/", "", secure, false)
 			c.Next()
 			return
 		}
@@ -51,7 +55,11 @@ func CSRF() gin.HandlerFunc {
 		}
 
 		newToken := generateCSRFToken()
-		c.SetCookie(csrfCookieName, newToken, 7*24*60*60, "/", "", isSecure(c), false)
+		secure := isSecure(c)
+		if secure {
+			c.SetSameSite(http.SameSiteNoneMode)
+		}
+		c.SetCookie(csrfCookieName, newToken, 7*24*60*60, "/", "", secure, false)
 		c.Next()
 	}
 }

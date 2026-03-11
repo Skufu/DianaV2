@@ -117,7 +117,6 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// -------------------------------------------------------------------------
 	protected := api.Group("")
 	protected.Use(middleware.Auth(cfg.JWTSecret, st.Users()))
-	protected.Use(middleware.CSRF())
 
 	auditLogger := middleware.NewAuditLogger(st)
 
