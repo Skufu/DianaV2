@@ -19,17 +19,25 @@ const ML_BASE =
 
 // Token storage for cross-origin auth (Vercel → Render)
 // Cookies don't work cross-origin with SameSite=Strict, so we use Bearer tokens
-let _accessToken = null;
-let _refreshToken = null;
+let _accessToken = typeof window !== 'undefined' ? localStorage.getItem('diana_access_token') : null;
+let _refreshToken = typeof window !== 'undefined' ? localStorage.getItem('diana_refresh_token') : null;
 
 export const setAuthTokens = (accessToken, refreshToken) => {
   _accessToken = accessToken;
   _refreshToken = refreshToken;
+  if (typeof window !== 'undefined') {
+    if (accessToken) localStorage.setItem('diana_access_token', accessToken);
+    if (refreshToken) localStorage.setItem('diana_refresh_token', refreshToken);
+  }
 };
 
 export const clearAuthTokens = () => {
   _accessToken = null;
   _refreshToken = null;
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('diana_access_token');
+    localStorage.removeItem('diana_refresh_token');
+  }
 };
 
 // CSRF token helper - reads from cookie
