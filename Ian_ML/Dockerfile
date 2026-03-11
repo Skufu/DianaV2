@@ -25,11 +25,12 @@ COPY Ian_ML/ .
 COPY models/ /app/models/
 
 # Set ownership and switch to non-root user
-RUN chown -R appuser:appgroup /app
+RUN mkdir -p /home/appuser && chown -R appuser:appgroup /app /home/appuser
 USER appuser
 
 ENV PYTHONPATH=/app
 ENV FLASK_APP=Ian_ML.service.server
+ENV MPLCONFIGDIR=/tmp/matplotlib
 EXPOSE 5000
 
 # Health check
