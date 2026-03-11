@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -56,13 +57,23 @@ func main() {
 		defer cancel()
 		var err error
 
-		poolConfig, err := pgxpool.ParseConfig(cfg.DBDSN)
+		// Ensure NeonDB pooler (PgBouncer) compatibility by using simple protocol
+		dsn := cfg.DBDSN
+		if !strings.Contains(dsn, "default_query_exec_mode") {
+			sep := "&"
+			if !strings.Contains(dsn, "?") {
+				sep = "?"
+			}
+			dsn += sep + "default_query_exec_mode=simple_protocol"
+		}
+
+		poolConfig, err := pgxpool.ParseConfig(dsn)
 		if err != nil {
 			log.Fatalf("failed to parse DB config: %v", err)
 		}
 
-		poolConfig.MaxConns = 50
-		poolConfig.MinConns = 10
+		poolConfig.MaxConns = 10
+		poolConfig.MinConns = 2
 		poolConfig.MaxConnLifetime = 1 * time.Hour
 		poolConfig.MaxConnIdleTime = 30 * time.Minute
 		poolConfig.HealthCheckPeriod = 1 * time.Minute
@@ -79,8 +90,17 @@ func main() {
 			poolConfig.MaxConns, poolConfig.MinConns, poolConfig.MaxConnLifetime, poolConfig.MaxConnIdleTime)
 
 		// Auto-run database migrations using Goose
+		// Use simple protocol for NeonDB pooler (PgBouncer) compatibility
 		log.Printf("running database migrations...")
-		migrationDB, err := sql.Open("pgx", cfg.DBDSN)
+		migrationDSN := cfg.DBDSN
+		if !strings.Contains(migrationDSN, "default_query_exec_mode") {
+			sep := "&"
+			if !strings.Contains(migrationDSN, "?") {
+				sep = "?"
+			}
+			migrationDSN += sep + "default_query_exec_mode=simple_protocol"
+		}
+		migrationDB, err := sql.Open("pgx", migrationDSN)
 		if err != nil {
 			log.Fatalf("failed to open migration DB connection: %v", err)
 		}
