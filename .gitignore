@@ -172,3 +172,8 @@ Neuron_ML/
 
 
 .setup-verification.txt
+
+# Assistant and temporary files
+.agents/
+autoresearch/
+frontend/lint_output.txt

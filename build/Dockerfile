@@ -27,6 +27,9 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=build /app/server /app/server
 
+# Copy migrations for auto-migration on startup
+COPY backend/migrations/ /app/migrations/
+
 # Set ownership and switch to non-root user
 RUN chown -R appuser:appgroup /app
 USER appuser
