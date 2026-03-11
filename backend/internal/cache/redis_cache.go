@@ -36,6 +36,7 @@ func NewCache(addr, password string, db int) (*Cache, error) {
 	defer cancel()
 
 	if err := client.Ping(ctx).Err(); err != nil {
+		client.Close()
 		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
 
