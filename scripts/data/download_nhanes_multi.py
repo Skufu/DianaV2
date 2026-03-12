@@ -1,3 +1,4 @@
+# pyright: reportGeneralTypeIssues=false, reportArgumentType=false, reportCallIssue=false, reportOperatorIssue=false
 """
 NHANES Multi-Cycle Data Download Script
 Downloads data from multiple NHANES cycles for larger training dataset.

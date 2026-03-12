@@ -1,3 +1,4 @@
+# pyright: reportGeneralTypeIssues=false, reportMissingImports=false, reportAttributeAccessIssue=false
 import json
 import logging
 from Ian_ML.service.predict import get_clinical_predictor

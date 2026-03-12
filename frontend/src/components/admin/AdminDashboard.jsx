@@ -116,7 +116,7 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
       case 'users':
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <UserManagement token={token} />
+            <UserManagement />
           </Suspense>
         );
       case 'audit':
@@ -125,7 +125,7 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
         }
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <AuditLogViewer token={token} />
+            <AuditLogViewer />
           </Suspense>
         );
       case 'models':
@@ -140,11 +140,11 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
         }
         return (
           <Suspense fallback={<LoadingSpinner />}>
-            <AuthEventLogViewer token={token} />
+            <AuthEventLogViewer />
           </Suspense>
         );
       case 'insights':
-        return <Insights token={token} />;
+        return <Insights />;
       default:
         return renderOverview();
     }
@@ -157,7 +157,7 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
     // However, for data-dependent views, we do need data.
     // React Query's isLoading is true for initial fetch. isPending is better in v5.
     // Assuming v4/v5, safely check loading state only when we expect it to load.
-    if (isLoading && token) {
+    if (isLoading) {
       return <LoadingSpinner />;
     }
 

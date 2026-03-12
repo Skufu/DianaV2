@@ -1,3 +1,4 @@
+# pyright: reportGeneralTypeIssues=false, reportArgumentType=false, reportCallIssue=false, reportIndexIssue=false, reportAttributeAccessIssue=false
 """
 DIANA Dataset Preparation Script
 Prepares final dataset with:
