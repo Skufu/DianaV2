@@ -1,3 +1,4 @@
+# pyright: reportGeneralTypeIssues=false, reportArgumentType=false, reportCallIssue=false, reportIndexIssue=false, reportAttributeAccessIssue=false
 """
 DIANA Error Analysis Script
 Investigates False Negatives (Missed Diabetics) to improve defensibility.

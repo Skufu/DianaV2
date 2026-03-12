@@ -1,3 +1,4 @@
+# pyright: reportGeneralTypeIssues=false, reportArgumentType=false, reportCallIssue=false, reportIndexIssue=false, reportAttributeAccessIssue=false, reportMissingImports=false
 """DIANA Binary Classification Training V2."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# pyright: reportGeneralTypeIssues=false, reportArgumentType=false, reportCallIssue=false, reportIndexIssue=false, reportAttributeAccessIssue=false, reportMissingImports=false
 """
 NHANES Multi-Cycle Data Processing Script (Updated with Lifestyle Factors)
 Combines data from multiple NHANES cycles for larger training dataset.

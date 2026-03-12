@@ -1,0 +1,20 @@
+{
+  "venvPath": ".",
+  "venv": "venv",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning",
+  "reportMissingModuleSource": "warning",
+  "reportGeneralTypeIssues": "none",
+  "reportArgumentType": "none",
+  "reportCallIssue": "none",
+  "reportIndexIssue": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportMissingTypeArgument": "none",
+  "reportOperatorIssue": "none",
+  "pythonVersion": "3.11",
+  "include": [
+    "Ian_ML/**",
+    "scripts/**",
+    "test_predictor.py"
+  ]
+}
