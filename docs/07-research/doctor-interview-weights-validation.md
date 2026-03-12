@@ -40,6 +40,15 @@
 
 ---
 
+### Q4: SHAP (Explainability)
+"We use SHAP (game theory) to show patients *why* they got their risk score (e.g., 'Your LDL pushed the risk up, but your activity pushed it down'). Does this level of transparency help or confuse patients?"
+
+> **Response:** _________________________________
+> 
+> **Confirmed?** ☐ Yes ☐ Partial ☐ No
+
+---
+
 ## The Ask
 
 "Can I quote you in my thesis as clinical validation?"
