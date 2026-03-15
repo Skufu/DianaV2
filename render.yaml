@@ -35,6 +35,10 @@ services:
         value: "30000"
       - key: EXPORT_MAX_ROWS
         value: "5000"
+      - key: DEMO_EMAIL
+        value: "demo@diana.app"
+      - key: DEMO_PASSWORD
+        value: "demopassword123"
 
   # Python ML Server
   - type: web
