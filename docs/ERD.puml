@@ -1,0 +1,195 @@
+@startuml Diana_ERD
+
+!define table(x) class x << (T,#FFAAAA) >>
+!define primary_key(x) <u>x</u>
+!define foreign_key(x) #x#
+!define unique(x) {unique}
+!define not_null *
+
+skinparam class {
+    BackgroundColor White
+    ArrowColor #333333
+    BorderColor #333333
+}
+
+skinparam class<< (T,#FFAAAA) >> {
+    BackgroundColor #FFF8F8
+}
+
+title Diana Database Schema - Entity Relationship Diagram
+
+' ============================================
+' TABLES
+' ============================================
+
+table(users) {
+    primary_key(id): SERIAL <<PK>>
+    --
+    email: TEXT <<UK>>
+    not_null password_hash: TEXT
+    first_name: TEXT
+    last_name: TEXT
+    date_of_birth: DATE
+    phone: TEXT
+    address: TEXT
+    --
+    menopause_status: TEXT {check: pre|peri|post|surgical}
+    menopause_type: TEXT {check: natural|surgical}
+    years_menopause: INT {check: 0-50}
+    --
+    hypertension: TEXT {check: no|controlled|uncontrolled}
+    heart_disease: TEXT {check: no|yes}
+    smoking_status: TEXT {check: never|former|current}
+    physical_activity: TEXT
+    alcohol: TEXT
+    --
+    not_null consent_personal_data: BOOLEAN = true
+    not_null consent_research_participation: BOOLEAN = false
+    not_null consent_email_updates: BOOLEAN = false
+    not_null consent_analytics: BOOLEAN = true
+    consent_updated_at: TIMESTAMPTZ
+    --
+    not_null assessment_frequency_months: INT = 3 {check: 1-12}
+    not_null reminder_email: BOOLEAN = true
+    last_assessment_reminder_sent: TIMESTAMPTZ
+    not_null onboarding_completed: BOOLEAN = false
+    --
+    not_null account_status: TEXT = 'active' {check: active|deleted}
+    deleted_at: TIMESTAMPTZ
+    not_null is_admin: BOOLEAN = false
+    not_null is_active: BOOLEAN = true
+    last_login_at: TIMESTAMPTZ
+    foreign_key(created_by): INT <<FK>>
+    --
+    not_null email_verified: BOOLEAN = false
+    email_verified_at: TIMESTAMPTZ
+    --
+    not_null created_at: TIMESTAMPTZ
+    not_null updated_at: TIMESTAMPTZ
+}
+
+table(assessments) {
+    primary_key(id): SERIAL <<PK>>
+    --
+    foreign_key(user_id): INT <<FK>>
+    --
+    fbs: NUMERIC(6,2)
+    hba1c: NUMERIC(4,2)
+    cholesterol: INT
+    ldl: INT
+    hdl: INT
+    triglycerides: INT
+    systolic: INT
+    diastolic: INT
+    waist_circumference: NUMERIC(5,2)
+    bmi: NUMERIC(5,2)
+    --
+    not_null family_history_diabetes: BOOLEAN = false
+    age: INT
+    activity: TEXT
+    alcohol: TEXT
+    history_flag: BOOLEAN
+    smoking: TEXT
+    hypertension: TEXT
+    heart_disease: TEXT
+    --
+    cluster: TEXT
+    risk_score: INT
+    risk_label: TEXT
+    cluster_description: TEXT
+    treatment_focus: TEXT
+    predicted_status: TEXT
+    at_risk_probability: DOUBLE PRECISION
+    --
+    model_version: TEXT
+    dataset_hash: TEXT
+    drift_baseline: JSONB
+    validation_status: TEXT
+    feature_set: JSONB
+    cluster_capability: JSONB
+    output_capabilities: JSONB
+    --
+    not_null is_self_reported: BOOLEAN = true
+    not_null source: TEXT = 'manual'
+    notes: TEXT
+    --
+    not_null created_at: TIMESTAMPTZ
+    not_null updated_at: TIMESTAMPTZ
+}
+
+table(refresh_tokens) {
+    primary_key(id): SERIAL <<PK>>
+    --
+    foreign_key(user_id): INT <<FK>>
+    not_null unique(token_hash): TEXT <<UK>>
+    not_null expires_at: TIMESTAMPTZ
+    not_null revoked: BOOLEAN = false
+    not_null created_at: TIMESTAMPTZ
+    revoked_at: TIMESTAMPTZ
+}
+
+table(clinics) {
+    primary_key(id): SERIAL <<PK>>
+    --
+    not_null name: TEXT
+    address: TEXT
+    not_null created_at: TIMESTAMPTZ
+    not_null updated_at: TIMESTAMPTZ
+}
+
+table(user_clinics) {
+    foreign_key(user_id): INT <<PK,FK>>
+    foreign_key(clinic_id): INT <<PK,FK>>
+    --
+    not_null role: TEXT = 'member'
+    not_null created_at: TIMESTAMPTZ
+}
+
+table(model_runs) {
+    primary_key(id): SERIAL <<PK>>
+    --
+    not_null model_version: TEXT
+    dataset_hash: TEXT
+    notes: TEXT
+    not_null is_active: BOOLEAN
+    not_null created_at: TIMESTAMPTZ
+}
+
+table(audit_events) {
+    primary_key(id): SERIAL <<PK>>
+    --
+    actor: TEXT
+    action: TEXT
+    target_type: TEXT
+    target_id: INT
+    details: JSONB
+    not_null created_at: TIMESTAMPTZ
+}
+
+table(auth_events) {
+    primary_key(id): UUID <<PK>> = gen_random_uuid()
+    --
+    not_null event_type: TEXT {check: login|logout|failed_login|token_refresh}
+    email: TEXT
+    ip_address: INET
+    user_agent: TEXT
+    not_null success: BOOLEAN = true
+    device_info: JSONB
+    location: JSONB
+    metadata: JSONB
+    not_null created_at: TIMESTAMPTZ
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+users "1" --> "0..*" assessments : has
+users "1" --> "0..*" refresh_tokens : has
+users "1" --> "0..*" user_clinics : belongs_to
+users "1" --> "0..*" audit_events : creates
+users "1" --> "0..*" auth_events : generates
+users "0..1" --> "0..*" users : created_by
+clinics "1" --> "0..*" user_clinics : has
+
+@enduml
