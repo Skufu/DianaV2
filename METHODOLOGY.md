@@ -514,69 +514,74 @@ Clusters were assigned Ahlqvist-inspired subtype labels using a deterministic ce
 
 ---
 
-## Phase 5: Model Evaluation, Calibration, and Comparison
+## Phase 5: Model Evaluation, Calibration, and Comparison Methodology
 
-### 5.1 Model Performance Metrics
+### 5.1 Evaluation Metrics and Approach
 
-The logistic regression model demonstrated clinically acceptable discriminative performance under nested LOGO validation:
+Model performance was assessed using nested LOGO cross-validation (Section 3.2) to ensure conservative temporal generalization estimates. The following discriminative metrics were computed on aggregated outer-fold predictions:
 
-**Table 5.1 — Binary Screening Model Performance**
+**Primary Metrics:**
+- **AUC-ROC**: Area under the receiver operating characteristic curve, measuring discrimination across all thresholds
+- **Sensitivity (Recall)**: True positive rate, prioritized for screening context
+- **Specificity**: True negative rate, balanced against sensitivity
+- **F1 Score**: Harmonic mean of precision and sensitivity
+- **Positive/Negative Predictive Value (PPV/NPV)**: Clinical utility metrics
 
-| Metric | Value | 95% CI |
-|--------|-------|--------|
-| AUC-ROC | 0.7267 | 0.700–0.753 |
-| Sensitivity | 0.7398 | 0.709–0.768 |
-| Specificity | 0.5654 | - |
-| F1 Score | 0.6979 | - |
-| Threshold | 0.455 | 0.39-0.50 (range) |
+**Confidence Intervals:**
+Bootstrap 95% confidence intervals were computed using 1,000 resamples with percentile method (fixed seed=42) to provide distribution-free uncertainty quantification appropriate for the cohort size (n=1,376).
 
-The fold-level AUC range of **0.703–0.776** confirms stable temporal generalization with no catastrophic failure fold across the six NHANES survey cycles spanning 2009–2023.
-
----
-
-### 5.2 Model Comparison
-
-**Table 5.2 — Algorithm Comparison (Aggregated Test Set Performance)**
-
-| Algorithm | AUC-ROC | AUC 95% CI | Sensitivity | Specificity | F1 | Mean Threshold |
-|-----------|---------|------------|-------------|-------------|------|----------------|
-| Logistic Regression | **0.7267** | 0.700-0.753 | 0.7398 | 0.5654 | 0.6979 | 0.455 |
-| Random Forest | 0.7114 | 0.684-0.740 | 0.7371 | 0.5888 | 0.7031 | 0.483 |
-| LightGBM | 0.7012 | 0.673-0.730 | **0.7711** | 0.5016 | 0.6988 | 0.438 |
-| XGBoost | 0.7020 | 0.673-0.730 | 0.7657 | 0.5498 | 0.7091 | 0.637 |
-
-**Model Selection Rationale:** Logistic Regression was selected for deployment due to:
-1. **Marginally superior mean fold AUC** across LOGO folds
-2. **Computational efficiency** — LR inference averages **1.08 ms** per prediction
-3. **Interpretability** — coefficients map directly to log-odds ratios
+**Implementation:** `Ian_ML/training/train_binary_v2_no_bp.py:579-636`
 
 ---
 
-### 5.3 Calibration Analysis
+### 5.2 Model Comparison Methodology
 
-**Table 5.3 — Calibration Metrics (Logistic Regression, n=1,047)**
+Four algorithms (Logistic Regression, Random Forest, LightGBM, XGBoost) were evaluated under identical nested LOGO conditions. Model selection followed these criteria:
 
-| Metric | Value | Interpretation |
-|--------|-------|----------------|
-| **Brier Score** | 0.2082 | Acceptable calibration (0 = perfect, 0.25 = random guess) |
-| **Expected Calibration Error (ECE)** | 0.0624 | Good calibration (<0.10 = well-calibrated) |
-| **Hosmer-Lemeshow χ²** | 21.40 | Moderate calibration fit |
+1. **Primary**: Mean fold AUC across LOGO folds (conservative temporal generalization)
+2. **Secondary**: Computational efficiency (inference latency)
+3. **Tertiary**: Interpretability for clinical transparency
 
-**Clinical Implication:** The calibration metrics indicate that predicted probabilities can be trusted for patient communication. A prediction of 70% at-risk probability corresponds to approximately 70% observed at-risk rate in similar patients.
+**Selection Rationale:**
+Logistic Regression was selected for deployment due to:
+- Marginally superior mean fold AUC across temporal folds
+- Computational efficiency (~1-2ms inference vs. 40ms+ for tree ensembles)
+- Direct coefficient interpretability (log-odds ratios)
+
+**Benchmarking:** Inference latency measured via Python `time.perf_counter()` over 100 iterations on standardized hardware.
 
 ---
 
-### 5.4 Clustering Validation Metrics
+### 5.3 Calibration Assessment
 
-**Table 5.4 — Clustering Validation Metrics (K=4, n=578)**
+Probability calibration was evaluated to ensure predicted probabilities match observed outcomes:
 
-| Metric | Value | Interpretation |
-|--------|-------|----------------|
-| **Silhouette Score** | 0.1804 | Weak-to-moderate cluster separation (>0.25 = reasonable) |
-| **Davies-Bouldin Index** | 1.5905 | Moderate cluster distinctness (<1.0 = well-separated) |
-| **Calinski-Harabasz Index** | 132.44 | Moderate between/within variance ratio |
+**Metrics Computed:**
+- **Brier Score**: Mean squared error between predicted probabilities and actual outcomes (0 = perfect, 0.25 = random)
+- **Expected Calibration Error (ECE)**: Weighted average of calibration errors across probability bins (<0.10 = well-calibrated)
+- **Hosmer-Lemeshow χ²**: Goodness-of-fit test for logistic regression (non-significant p-value indicates adequate fit)
 
-**K Selection Note:** While silhouette analysis suggested K=2 as optimal by internal validation criteria, K=4 was selected to align with the clinically established Ahlqvist et al. (2018) subtype framework. The modest silhouette at K=4 (0.18) reflects the inherent metabolic overlap in menopausal women—a population-specific finding.
+**Reliability Diagrams:** Visual calibration curves plotted predicted vs. observed probability across deciles.
+
+**Clinical Relevance:** Well-calibrated probabilities enable meaningful patient communication (e.g., "70% probability" corresponds to ~70% observed at-risk rate).
+
+---
+
+### 5.4 Clustering Validation Methodology
+
+Weighted K-Means clustering (K=4) was validated using internal metrics appropriate for unsupervised learning:
+
+**Validation Metrics:**
+- **Silhouette Score**: (-1 to 1) measures cluster cohesion vs. separation (>0.25 = reasonable structure)
+- **Davies-Bouldin Index**: Ratio of within-cluster scatter to between-cluster separation (<1.0 = well-separated)
+- **Calinski-Harabasz Index**: Ratio of between-cluster variance to within-cluster variance (higher = better separation)
+- **WCSS**: Within-cluster sum of squares for elbow method visualization
+
+**K Selection:**
+K=4 was selected to align with Ahlqvist et al. (2018) clinical subtype framework despite K=2 showing optimal silhouette. This prioritizes clinical interpretability over purely statistical cluster separation.
+
+**Inverse Transformation:**
+Cluster centroids were inverse-transformed from standardized space back to raw clinical units before label assignment to ensure clinically meaningful interpretation (e.g., BMI in kg/m², triglycerides in mg/dL).
 
 ---
 
