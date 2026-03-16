@@ -263,6 +263,35 @@ def build_model_registry() -> dict[str, dict[str, object]]:
             },
         }
     except ImportError:
+        pass
+
+    try:
+        from xgboost import XGBClassifier
+        
+        class XGBClassifierWrapper(XGBClassifier):
+            _estimator_type = "classifier"
+            def __sklearn_tags__(self):
+                tags = super().__sklearn_tags__()
+                tags.estimator_type = "classifier"
+                return tags
+
+        registry["XGBoost"] = {
+            "estimator": XGBClassifierWrapper(
+                random_state=42, n_jobs=N_JOBS,
+                scale_pos_weight=2.0, # Approximate weight to help handle unbalance
+                eval_metric="logloss",
+                objective="binary:logistic"
+            ),
+            "param_grid": {
+                "model__n_estimators": [200, 300],
+                "model__max_depth": [3, 5],
+                "model__learning_rate": [0.05, 0.1],
+            },
+        }
+    except ImportError:
+        pass
+
+    if "LightGBM" not in registry and "XGBoost" not in registry:
         from sklearn.ensemble import GradientBoostingClassifier
         registry["Gradient Boosting"] = {
             "estimator": GradientBoostingClassifier(
@@ -883,15 +912,23 @@ def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) ->
 
 
 def generate_roc_curve(aggregated: dict[str, dict[str, object]], best_model_name: str) -> None:
-    s = aggregated[best_model_name]
-    y_true = s["y_true"]
-    y_proba = s["y_proba"]
-    
-    fpr, tpr, _ = roc_curve(y_true, y_proba)
-    auc_val = roc_auc_score(y_true, y_proba)
-    
     plt.figure(figsize=(8, 6))
-    plt.plot(fpr, tpr, 'b-', linewidth=2, label=f'{best_model_name} (AUC = {auc_val:.3f})')
+    
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+    
+    for i, (model_name, s) in enumerate(aggregated.items()):
+        y_true = s["y_true"]
+        y_proba = s["y_proba"]
+        
+        fpr, tpr, _ = roc_curve(y_true, y_proba)
+        auc_val = roc_auc_score(y_true, y_proba)
+        
+        c = colors[i % len(colors)]
+        if model_name == best_model_name:
+            plt.plot(fpr, tpr, color=c, linewidth=2.5, label=f'{model_name} (AUC = {auc_val:.3f}) ★')
+        else:
+            plt.plot(fpr, tpr, color=c, linewidth=1.5, alpha=0.8, label=f'{model_name} (AUC = {auc_val:.3f})')
+            
     plt.plot([0, 1], [0, 1], 'k--', label='Random')
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
