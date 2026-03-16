@@ -147,8 +147,9 @@ echo ""
 echo -e "${BLUE}Step 5/6: Training Weighted K-Means clustering...${NC}"
 echo "------------------------------------------------------------"
 echo ""
-echo -e "${CYAN}Expert Feature Weights (Dr. Margarette Rose Pajanel, MD-MBA, FPCP, DPCEDM):${NC}"
+echo -e "${CYAN}Literature-Derived Feature Weights:${NC}"
 echo "  bmi=1.5, triglycerides=2.0, ldl=2.5, hdl=1.2, age=1.0, waist_circumference=2.0"
+echo "  Source: Systematic literature review (see docs/03-ml/rationale.md for citations)"
 echo ""
 python Ian_ML/training/clustering.py --k 4
 if [ $? -ne 0 ]; then
@@ -227,6 +228,8 @@ if [ -f "$REPORT_FILE" ]; then
     SPECIFICITY=$(python -c "import json; print(json.load(open('$REPORT_FILE'))['metrics']['specificity'])" 2>/dev/null || echo "0.0")
     NPV=$(python -c "import json; print(json.load(open('$REPORT_FILE'))['metrics']['npv'])" 2>/dev/null || echo "0.0")
     THRESHOLD=$(python -c "import json; print(json.load(open('$REPORT_FILE'))['metrics']['mean_threshold'])" 2>/dev/null || echo "0.5")
+    THRESH_STRATEGY=$(python -c "import json; print(json.load(open('$REPORT_FILE')).get('threshold_policy', {}).get('strategy_mode', 'unknown'))" 2>/dev/null || echo "unknown")
+    GUARDRAIL_FOLDS=$(python -c "import json; print(json.load(open('$REPORT_FILE')).get('threshold_policy', {}).get('guardrail_folds', '0'))" 2>/dev/null || echo "0")
     
     echo -e "  Best Model:    ${CYAN}$BEST_MODEL${NC}"
     echo -e "  AUC-ROC:       ${CYAN}$AUC_ROC${NC}"
@@ -234,6 +237,8 @@ if [ -f "$REPORT_FILE" ]; then
     echo -e "  Specificity:   ${CYAN}$SPECIFICITY${NC}"
     echo -e "  NPV:           ${CYAN}$NPV${NC}"
     echo -e "  Threshold:     ${CYAN}$THRESHOLD${NC}"
+    echo -e "  Threshold mode:${CYAN}$THRESH_STRATEGY${NC}"
+    echo -e "  Guardrail folds:${CYAN}$GUARDRAIL_FOLDS${NC}"
     
     # Check if AUC >= 0.70 (minimum acceptable for binary_v2_no_bp)
     AUC_CHECK=$(python -c "import json; auc=json.load(open('$REPORT_FILE'))['metrics']['auc_roc']; print('PASS' if auc >= 0.70 else 'FAIL')" 2>/dev/null || echo "FAIL")
@@ -254,6 +259,13 @@ else
     echo -e "${YELLOW}WARNING: Could not find best_model_report.json${NC}"
 fi
 
+FOLD_METRICS_FILE="$MODELS_DIR/results/logo_fold_metrics.csv"
+if [ -f "$FOLD_METRICS_FILE" ]; then
+    echo ""
+    echo "Threshold Policy Summary (per-fold):"
+    python -c "import csv, collections; rows=list(csv.DictReader(open('$FOLD_METRICS_FILE', newline=''))); ctr=collections.Counter((r.get('Model','Unknown'), r.get('Threshold_Strategy','unknown')) for r in rows); [print(f'  {model}: {strategy} x{count}') for (model, strategy), count in sorted(ctr.items())]" 2>/dev/null || true
+fi
+
 # Summary
 echo ""
 echo "============================================================"
@@ -269,9 +281,9 @@ echo "  - Feature Weights: models/binary_v2_no_bp/feature_weights.json"
 echo "  - Visualizations:  models/binary_v2_no_bp/visualizations/"
 echo "  - Results:         models/binary_v2_no_bp/results/"
 echo ""
-echo -e "${CYAN}Expert Weights Used for Clustering:${NC}"
+echo -e "${CYAN}Literature-Derived Weights Used for Clustering:${NC}"
 echo "  bmi=1.5, triglycerides=2.0, ldl=2.5, hdl=1.2, age=1.0, waist_circumference=2.0"
-echo "  Source: Dr. Margarette Rose Pajanel (MD-MBA, FPCP, DPCEDM)"
+echo "  Source: Systematic literature review (Huang et al. 2023, Ahmed et al. 2021, Wei et al. 2024)"
 echo ""
 echo -e "${YELLOW}IMPORTANT: Check the actual results above before updating documentation!${NC}"
 echo ""

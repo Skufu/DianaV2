@@ -1,50 +1,14 @@
 [
   {
-    "fold": 2,
-    "test_cycle": "2011-2012",
-    "model": "LightGBM",
-    "auc_roc": 0.6884157509157509,
-    "accuracy": 0.6421052631578947,
-    "sensitivity": 0.8125,
-    "specificity": 0.3974358974358974,
-    "fpr": 0.6026,
-    "fnr": 0.1875,
-    "threshold": 0.32999999999999985
-  },
-  {
-    "fold": 3,
-    "test_cycle": "2013-2014",
-    "model": "Random Forest",
-    "auc_roc": 0.7188956876456877,
-    "accuracy": 0.6610169491525424,
-    "sensitivity": 0.8787878787878788,
-    "specificity": 0.38461538461538464,
-    "fpr": 0.6154,
-    "fnr": 0.1212,
-    "threshold": 0.3699999999999999
-  },
-  {
     "fold": 6,
     "test_cycle": "2021-2023",
     "model": "Logistic Regression",
     "auc_roc": 0.7242015450247896,
-    "accuracy": 0.5622641509433962,
-    "sensitivity": 0.923728813559322,
-    "specificity": 0.272108843537415,
-    "fpr": 0.7279,
-    "fnr": 0.0763,
-    "threshold": 0.3699999999999999
-  },
-  {
-    "fold": 6,
-    "test_cycle": "2021-2023",
-    "model": "Random Forest",
-    "auc_roc": 0.7206272339444252,
-    "accuracy": 0.6075471698113207,
-    "sensitivity": 0.8983050847457628,
-    "specificity": 0.3741496598639456,
-    "fpr": 0.6259,
-    "fnr": 0.1017,
-    "threshold": 0.3799999999999999
+    "accuracy": 0.5811320754716981,
+    "sensitivity": 0.9067796610169492,
+    "specificity": 0.3197278911564626,
+    "fpr": 0.6803,
+    "fnr": 0.0932,
+    "threshold": 0.3899999999999999
   }
 ]

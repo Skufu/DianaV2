@@ -391,6 +391,14 @@ def optimize_binary_v2_no_bp_threshold(
         "metrics": gmean_metrics,
     }
 
+    def _composite_score(metrics: dict[str, object]) -> float:
+        return (
+            0.35 * float(metrics.get("sensitivity", 0.0))
+            + 0.30 * float(metrics.get("specificity", 0.0))
+            + 0.25 * float(metrics.get("f1", 0.0))
+            + 0.10 * float(metrics.get("accuracy", 0.0))
+        )
+
     best_name = None
     best_score = -1.0
     all_strategies = {}
@@ -400,12 +408,7 @@ def optimize_binary_v2_no_bp_threshold(
         metrics = strat.get("metrics", {})
         if not isinstance(metrics, dict):
             continue
-        composite = (
-            0.35 * float(metrics.get("sensitivity", 0.0))
-            + 0.30 * float(metrics.get("specificity", 0.0))
-            + 0.25 * float(metrics.get("f1", 0.0))
-            + 0.10 * float(metrics.get("accuracy", 0.0))
-        )
+        composite = _composite_score(metrics)
         if composite > best_score:
             best_score = composite
             best_name = name
@@ -425,6 +428,135 @@ def optimize_binary_v2_no_bp_threshold(
     if best_name is None:
         raise RuntimeError("No valid threshold strategy found")
 
+    original_best_name = best_name
+    original_best_strategy = strategies[original_best_name]
+    original_best_threshold = float(original_best_strategy.get("threshold", 0.5))
+
+    # Deterministic safety guardrail arbitration (post-selection only).
+    pos_prev = float(np.mean(y_true)) if len(y_true) > 0 else 0.0
+    normal_prev = 1.0 - pos_prev
+    base_spec_floor = 0.45 if normal_prev >= 0.55 else 0.40
+    sens_floor = max(float(min_sensitivity) - 0.05, 0.75)
+
+    original_strategy_name = best_name
+    original_strategy = strategies[original_strategy_name]
+    original_metrics = original_strategy.get("metrics", {})
+    original_sens = float(original_metrics.get("sensitivity", 0.0)) if isinstance(original_metrics, dict) else 0.0
+    original_spec = float(original_metrics.get("specificity", 0.0)) if isinstance(original_metrics, dict) else 0.0
+
+    # Tighten specificity floor for high-sensitivity operating points to prevent
+    # unstable low-threshold selections under temporal prevalence shift.
+    spec_floor = max(base_spec_floor, 0.45 if original_sens >= 0.85 else base_spec_floor)
+
+    guardrail_triggered = bool(original_spec < spec_floor and original_sens >= 0.85)
+    guardrail_reason = ""
+
+    def _rank_key(name: str) -> tuple[float, float, float]:
+        strat = strategies.get(name, {})
+        metrics = strat.get("metrics", {}) if isinstance(strat, dict) else {}
+        threshold = strat.get("threshold", 0.5) if isinstance(strat, dict) else 0.5
+        if not isinstance(metrics, dict):
+            metrics = {}
+        return (
+            _composite_score(metrics),
+            float(metrics.get("specificity", 0.0)),
+            float(threshold) if isinstance(threshold, (int, float)) else 0.5,
+        )
+
+    def _nearest_guardrail_threshold() -> tuple[float, dict[str, float | int]] | None:
+        feasible_points: list[tuple[float, dict[str, float | int]]] = []
+        for thresh in thresholds:
+            thresh_val = float(thresh)
+            metrics = compute_binary_v2_no_bp_metrics(
+                y_true,
+                (y_proba >= thresh_val).astype(int),
+                y_proba,
+            )
+            specificity = float(metrics.get("specificity", 0.0))
+            sensitivity = float(metrics.get("sensitivity", 0.0))
+            if specificity >= spec_floor and sensitivity > 0.0:
+                feasible_points.append((thresh_val, metrics))
+
+        if not feasible_points:
+            return None
+
+        return min(
+            feasible_points,
+            key=lambda item: (
+                abs(item[0] - original_best_threshold),
+                0 if item[0] < 0.5 else 1,
+                -float(item[1].get("sensitivity", 0.0)),
+                -_composite_score(item[1]),
+            ),
+        )
+
+    if guardrail_triggered:
+        guardrail_reason = "specificity_collapse"
+        eligible = []
+        for name, strat in strategies.items():
+            if not isinstance(strat, dict):
+                continue
+            metrics = strat.get("metrics", {})
+            if not isinstance(metrics, dict):
+                continue
+            sensitivity = float(metrics.get("sensitivity", 0.0))
+            specificity = float(metrics.get("specificity", 0.0))
+            if specificity >= spec_floor and sensitivity >= sens_floor:
+                eligible.append(name)
+
+        if eligible:
+            best_name = max(eligible, key=_rank_key)
+        else:
+            sensitivity_eligible = []
+            for name, strat in strategies.items():
+                if name == original_strategy_name:
+                    continue
+                if not isinstance(strat, dict):
+                    continue
+                metrics = strat.get("metrics", {})
+                if not isinstance(metrics, dict):
+                    continue
+                sensitivity = float(metrics.get("sensitivity", 0.0))
+                if sensitivity >= sens_floor:
+                    sensitivity_eligible.append(name)
+
+            if sensitivity_eligible:
+                best_name = max(sensitivity_eligible, key=lambda n: (_rank_key(n)[1], _rank_key(n)[2], _rank_key(n)[0]))
+            else:
+                nearest_feasible = _nearest_guardrail_threshold()
+                if nearest_feasible is not None:
+                    feasible_thresh, feasible_metrics = nearest_feasible
+                    strategies["guardrail_nearest_feasible"] = {
+                        "threshold": float(feasible_thresh),
+                        "metrics": feasible_metrics,
+                    }
+                    best_name = "guardrail_nearest_feasible"
+                    all_strategies["guardrail_nearest_feasible"] = {
+                        "threshold": float(feasible_thresh),
+                        "sensitivity": float(feasible_metrics.get("sensitivity", 0.0)),
+                        "specificity": float(feasible_metrics.get("specificity", 0.0)),
+                        "accuracy": float(feasible_metrics.get("accuracy", 0.0)),
+                        "f1": float(feasible_metrics.get("f1", 0.0)),
+                    }
+                    guardrail_reason = "specificity_collapse_nearest_feasible"
+                else:
+                    fallback_thresh = 0.5
+                    fallback_metrics = compute_binary_v2_no_bp_metrics(
+                        y_true, (y_proba >= fallback_thresh).astype(int), y_proba
+                    )
+                    strategies["guardrail_fallback"] = {
+                        "threshold": float(fallback_thresh),
+                        "metrics": fallback_metrics,
+                    }
+                    best_name = "guardrail_fallback"
+                    all_strategies["guardrail_fallback"] = {
+                        "threshold": float(fallback_thresh),
+                        "sensitivity": float(fallback_metrics.get("sensitivity", 0.0)),
+                        "specificity": float(fallback_metrics.get("specificity", 0.0)),
+                        "accuracy": float(fallback_metrics.get("accuracy", 0.0)),
+                        "f1": float(fallback_metrics.get("f1", 0.0)),
+                    }
+
     best_strategy = strategies[best_name]
     best_threshold = best_strategy.get("threshold", 0.5)
     best_metrics = best_strategy.get("metrics", {})
@@ -433,6 +565,12 @@ def optimize_binary_v2_no_bp_threshold(
         "metrics": best_metrics,
         "strategy": best_name,
         "all_strategies": all_strategies,
+        "guardrail_triggered": guardrail_triggered,
+        "guardrail_reason": guardrail_reason,
+        "guardrail_spec_floor": float(spec_floor),
+        "guardrail_pos_prevalence": float(pos_prev),
+        "original_strategy": original_strategy_name,
+        "original_threshold": float(original_best_threshold),
     }
 
 
@@ -533,6 +671,12 @@ def run_nested_logo_evaluation(
                 "NPV": threshold_metrics["npv"],
                 "F1": threshold_metrics["f1"],
                 "Threshold": threshold,
+                "Threshold_Strategy": str(thresh_result.get("strategy", "unknown")),
+                "Original_Threshold_Strategy": str(thresh_result.get("original_strategy", "unknown")),
+                "Original_Threshold": float(thresh_result.get("original_threshold", 0.5)),
+                "Guardrail_Triggered": bool(thresh_result.get("guardrail_triggered", False)),
+                "Guardrail_Reason": str(thresh_result.get("guardrail_reason", "")),
+                "Guardrail_Spec_Floor": float(thresh_result.get("guardrail_spec_floor", 0.0)),
                 "Best_Params": json.dumps(search.best_params_),
             })
 
@@ -577,6 +721,12 @@ def run_nested_logo_evaluation(
         auc_ci = bootstrap_auc_ci(y_true, y_proba)
 
         model_folds = fold_df[fold_df["Model"] == model_name]
+        guardrail_folds = int(model_folds["Guardrail_Triggered"].fillna(False).astype(bool).sum()) if "Guardrail_Triggered" in model_folds.columns else 0
+        threshold_strategy_mode = (
+            str(model_folds["Threshold_Strategy"].mode(dropna=True).iloc[0])
+            if "Threshold_Strategy" in model_folds.columns and not model_folds["Threshold_Strategy"].mode(dropna=True).empty
+            else "unknown"
+        )
         comparison_rows.append({
             "Model": model_name,
             "AUC_ROC": threshold_metrics["auc_roc"],
@@ -594,6 +744,8 @@ def run_nested_logo_evaluation(
             "Inner_CV_AUC_Mean": float(np.mean(s["inner_cv_auc"])),
             "Inner_CV_AUC_Std": float(np.std(s["inner_cv_auc"])),
             "Mean_Fold_AUC": float(fold_df[fold_df["Model"] == model_name]["AUC_ROC"].mean()) if not fold_df.empty else 0.0,
+            "Guardrail_Folds": guardrail_folds,
+            "Threshold_Strategy_Mode": threshold_strategy_mode,
         })
 
         aggregated[model_name] = {
@@ -868,10 +1020,9 @@ def save_fold_metrics(fold_df: pd.DataFrame) -> None:
             "fnr": float(row["FNR"]),
             "threshold": float(row["Threshold"]),
         })
-    if warnings:
-        with open(RESULTS_DIR / "blindspot_warnings.json", "w") as f:
-            json.dump(warnings, f, indent=2)
-        print(f"[DEFENSIBILITY] Detected {len(warnings)} fold warnings")
+    with open(RESULTS_DIR / "blindspot_warnings.json", "w") as f:
+        json.dump(warnings, f, indent=2)
+    print(f"[DEFENSIBILITY] Detected {len(warnings)} fold warnings")
     print(f"\n[DEFENSIBILITY] Saved fold metrics to {RESULTS_DIR}")
 
 
@@ -900,6 +1051,10 @@ def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) ->
             "mean_threshold": float(best_row["Mean_Threshold"]),
             "inner_cv_auc_mean": float(best_row["Inner_CV_AUC_Mean"]),
             "inner_cv_auc_std": float(best_row["Inner_CV_AUC_Std"]),
+        },
+        "threshold_policy": {
+            "strategy_mode": str(best_row.get("Threshold_Strategy_Mode", "unknown")),
+            "guardrail_folds": int(best_row.get("Guardrail_Folds", 0)),
         },
         "features": MODEL_FEATURES,
         "clinical_rationale": "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). Prioritizes sensitivity for screening. Uses 9 LR-safe features (continuous + ordinal only).",

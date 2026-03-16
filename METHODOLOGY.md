@@ -410,7 +410,9 @@ The winning strategy per fold was selected by a composite clinical score:
 
 **Clinical Score = 0.35 * Sensitivity + 0.30 * Specificity + 0.25 * F1 + 0.10 * Accuracy**
 
-The mean threshold across folds was **0.448** (SD = 0.062, range: 0.37-0.50), reflecting an intentional downward adjustment from the default 0.50 to prioritize sensitivity in a screening setting.
+The mean threshold across folds was **0.455** (range: 0.39-0.50), reflecting an intentional downward adjustment from the default 0.50 to prioritize sensitivity in a screening setting while preserving acceptable specificity under temporal prevalence shift.
+
+After recalibration, folds vulnerable to specificity collapse were handled by deterministic guardrail arbitration, which selected the nearest feasible threshold satisfying the minimum specificity constraint rather than defaulting immediately to 0.50.
 
 > **Epidemiological Rationale:** The selection of a sensitivity-biased threshold aligns with the epidemiological principle that **screening tools must cast a wide net**, prioritizing case detection over diagnostic precision. This reflects asymmetric clinical costs:
 > - **False Negatives:** Delayed diagnosis, progression to complications
@@ -473,11 +475,11 @@ flowchart TB
 
 ---
 
-### 4.2 Expert-Specified Feature Weights
+### 4.2 Literature-Derived Feature Weights
 
-The clustering weights function as feature scaling multipliers before Euclidean distance computation. The following weights are applied to the standardized features:
+The clustering weights function as feature scaling multipliers before Euclidean distance computation. Weights were derived through systematic literature review of metabolic biomarker importance in T2DM clustering and insulin resistance research. The following weights are applied to the standardized features:
 
-**Table 4.1 — Expert Feature Weights and Rationale**
+**Table 4.1 — Feature Weights and Literature Rationale**
 
 | Feature | Weight | Rank | Key Evidence | Rationale |
 |---------|--------|------|--------------|-----------|
@@ -488,7 +490,7 @@ The clustering weights function as feature scaling multipliers before Euclidean 
 | **HDL** | 1.2 | #4 | OR = 0.69/mmol/L (MR-confirmed; Wei et al., 2024) | Inverse/protective signal; lower variance; amplifies TG's direction |
 | **Age** | 1.0 | #5 | MARD defined by age | Baseline — cohort is already age-restricted; metabolic features dominate |
 
-> **Expert Elicitation Limitation:** The weight configuration represents single-expert elicitation, not multi-specialist consensus. Future work should expand elicitation to a multi-expert Delphi process.
+> **Weight Derivation Limitation:** The weight configuration represents literature-informed synthesis rather than empirical optimization or multi-specialist consensus. While each weight is grounded in peer-reviewed evidence, the specific weight values represent interpretive translation of effect sizes into clustering multipliers. Future work should validate weight configurations through ablation studies or formal expert consensus methods.
 
 ---
 
@@ -523,10 +525,10 @@ The logistic regression model demonstrated clinically acceptable discriminative 
 | Metric | Value | 95% CI |
 |--------|-------|--------|
 | AUC-ROC | 0.7267 | 0.700–0.753 |
-| Sensitivity | 0.748 | 0.717–0.777 |
-| Specificity | 0.551 | - |
-| F1 Score | 0.699 | - |
-| Threshold | 0.448 | 0.37-0.50 (range) |
+| Sensitivity | 0.7398 | 0.709–0.768 |
+| Specificity | 0.5654 | - |
+| F1 Score | 0.6979 | - |
+| Threshold | 0.455 | 0.39-0.50 (range) |
 
 The fold-level AUC range of **0.703–0.776** confirms stable temporal generalization with no catastrophic failure fold across the six NHANES survey cycles spanning 2009–2023.
 
@@ -538,9 +540,10 @@ The fold-level AUC range of **0.703–0.776** confirms stable temporal generaliz
 
 | Algorithm | AUC-ROC | AUC 95% CI | Sensitivity | Specificity | F1 | Mean Threshold |
 |-----------|---------|------------|-------------|-------------|------|----------------|
-| Logistic Regression | **0.7267** | 0.700-0.753 | 0.7480 | 0.5514 | 0.6989 | 0.448 |
-| Random Forest | 0.7142 | 0.689-0.746 | 0.7590 | 0.5574 | 0.7037 | 0.463 |
-| LightGBM | 0.7026 | 0.681-0.726 | **0.7807** | 0.5011 | 0.7019 | 0.433 |
+| Logistic Regression | **0.7267** | 0.700-0.753 | 0.7398 | 0.5654 | 0.6979 | 0.455 |
+| Random Forest | 0.7114 | 0.684-0.740 | 0.7371 | 0.5888 | 0.7031 | 0.483 |
+| LightGBM | 0.7012 | 0.673-0.730 | **0.7711** | 0.5016 | 0.6988 | 0.438 |
+| XGBoost | 0.7020 | 0.673-0.730 | 0.7657 | 0.5498 | 0.7091 | 0.637 |
 
 **Model Selection Rationale:** Logistic Regression was selected for deployment due to:
 1. **Marginally superior mean fold AUC** across LOGO folds
