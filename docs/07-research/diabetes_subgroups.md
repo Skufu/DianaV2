@@ -21,7 +21,7 @@
 
 ### SIRD-like (Severe Insulin-Resistant Diabetes Proxy)
 - **Key Indicators**: High BMI, elevated triglycerides, low HDL
-- **Assignment**: Maximum LAP = (WC − 58) × TG (Guo et al., 2020)
+- **Assignment**: Maximum LAP = (WC − 58) × TG (Wang et al., 2024)
 - **Clinical Implication**: Responds to insulin sensitizers (metformin)
 
 ### SIDD-like (Atherogenic / Lipid-Driven Diabetes Proxy)

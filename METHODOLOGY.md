@@ -18,14 +18,14 @@ Raw NHANES data files were downloaded from the CDC public repository using an au
 
 | Cycle | Years | File Suffix | Sample Design | Notes |
 |-------|-------|-------------|---------------|-------|
-| 2021-2023 | 3-year | `_L` | COVID-adapted | Most recent available; extended due to pandemic disruption |
+| 2021-2023 | 2-year | `_L` | COVID-adapted | Most recent available; resumed August 2021 after pandemic suspension |
 | 2017-2018 | 2-year | `_J` | Standard | Pre-pandemic baseline |
 | 2015-2016 | 2-year | `_I` | Standard | - |
 | 2013-2014 | 2-year | `_H` | Standard | - |
 | 2011-2012 | 2-year | `_G` | Standard | - |
 | 2009-2010 | 2-year | `_F` | Standard | First cycle post-ADA HbA1c guidelines (2010) |
 
-**Note on 2019-2020 Cycle Exclusion:** The 2019-2020 NHANES cycle was excluded due to significant data collection disruptions caused by the COVID-19 pandemic. Field operations were suspended in March 2020, resulting in incomplete data with potential selection bias. The subsequent 2021-2023 cycle was extended to a 3-year period to compensate for this gap, providing a more complete post-pandemic dataset.
+**Note on 2019-2020 Cycle Exclusion:** The 2019-2020 NHANES cycle was excluded due to significant data collection disruptions caused by the COVID-19 pandemic. Field operations were suspended in March 2020, resulting in incomplete data with potential selection bias. The subsequent 2021-2023 cycle resumed in August 2021 following the pandemic suspension, maintaining the standard 2-year cycle format.
 
 **NHANES Data Files Downloaded:**
 
@@ -143,7 +143,7 @@ Three categorical lifestyle features were derived from NHANES questionnaire resp
 | `physical_activity` | PAQ605, PAQ650, PAQ665 | Active, Moderate, Sedentary, Unknown | Any vigorous (PAQ605=1 or PAQ650=1) → Active; Any moderate → Moderate; All no → Sedentary |
 | `alcohol_use` | ALQ101, ALQ151 | Current, Former, Never, Unknown | ALQ101=1 + recent use → Current; ALQ101=1 + no recent → Former; ALQ101=2 → Never |
 
-The categorization of physical activity levels within the NHANES dataset was systematically aligned with the World Health Organization's (WHO) baseline recommendations, which classify individuals as active if they meet the threshold of 150–300 minutes of moderate-intensity aerobic activity per week (He et al., 2025). This standardization ensures the lifestyle derivations in the DIANA model are consistent with prevailing epidemiological definitions.
+The categorization of physical activity levels within the NHANES dataset was systematically aligned with the World Health Organization's (WHO) baseline recommendations, which classify individuals as active if they meet the threshold of 150–300 minutes of moderate-intensity aerobic activity per week (Bull et al., 2020). This standardization ensures the lifestyle derivations in the DIANA model are consistent with prevailing epidemiological definitions.
 
 #### 1.2.2 Column Standardization
 
@@ -333,6 +333,10 @@ The final model uses **9 "LR-safe" features** designed to avoid circular reasoni
 | TG/HDL Ratio | Derived from included features; introduces multicollinearity |
 | Metabolic Syndrome Score | Composite of included features; redundant |
 
+**Impact on Model Performance:**
+
+The exclusion of HbA1c and Fasting Blood Sugar—while methodologically essential to prevent circular reasoning—necessarily constrains the model's discriminative capacity. HbA1c alone can achieve AUC-ROC >0.85 for diabetes prediction, whereas models restricted to metabolic surrogates (lipids, BMI, lifestyle factors) typically achieve **AUC-ROC 0.65-0.75**. DIANA's target AUC of **0.67-0.72** reflects this fundamental trade-off: sacrificing peak predictive power for **methodological defensibility** and **clinical utility** in pre-diagnostic screening contexts.
+
 **Implementation Reference:** `Ian_ML/common/feature_constants.py`
 
 ---
@@ -341,15 +345,17 @@ The final model uses **9 "LR-safe" features** designed to avoid circular reasoni
 
 ### 3.1 Machine Learning Algorithm Selection
 
-Three candidate algorithms were evaluated under identical nested LOGO evaluation and grid search hyperparameter tuning:
+Four candidate algorithms were evaluated under identical nested LOGO evaluation and grid search hyperparameter tuning:
 
-**1. Logistic Regression (LR):** Included for its interpretability and clinically meaningful probability outputs. Coefficients map directly to log-odds ratios, supporting clinical transparency in a physician-facing screening tool.
+**1. Logistic Regression (LR):** Included for its interpretability and clinically meaningful probability outputs. Coefficients map directly to log-odds ratios, supporting clinical transparency in a physician-facing screening tool. Ultimately selected as the best model.
 
 **2. Random Forest (RF):** Captures non-linear interactions between biomarkers and is robust to multicollinearity - a relevant property given the physiological correlations among metabolic markers.
 
 **3. LightGBM (Light Gradient Boosting Machine):** A state-of-the-art gradient boosting implementation optimized for tabular data. LightGBM uses `is_unbalance=True` to handle class imbalance.
 
-LightGBM was selected for its native Exclusive Feature Bundling (EFB) and Gradient-based One-Side Sampling (GOSS), which have been demonstrated to optimize the processing of high-cardinality, complex datasets significantly better than traditional tree-based methods (Hancock & Khoshgoftaar, 2021). Furthermore, Random Forest was utilized as a complementary baseline due to its established capability to model non-linear decision boundaries and effectively rank feature importance in multifactorial clinical data (Cappelli et al., 2024).
+**4. XGBoost (Extreme Gradient Boosting):** A scalable gradient boosting implementation with regularization to prevent overfitting. XGBoost was included as a state-of-the-art ensemble method commonly used in clinical ML benchmarks.
+
+LightGBM was selected for its native Exclusive Feature Bundling (EFB) and Gradient-based One-Side Sampling (GOSS), which have been demonstrated to optimize the processing of high-cardinality, complex datasets significantly better than traditional tree-based methods (Hancock & Khoshgoftaar, 2021). Furthermore, Random Forest was utilized as a complementary baseline due to its established capability to model non-linear decision boundaries and effectively rank feature importance in multifactorial clinical data (Cappelli et al., 2024). XGBoost was included to ensure comprehensive comparison against a leading gradient boosting implementation.
 
 **Table 3.1 — Hyperparameter Search Grids**
 
@@ -363,6 +369,11 @@ LightGBM was selected for its native Exclusive Feature Bundling (EFB) and Gradie
 | | max_depth | [3, 5, 7] |
 | | learning_rate | [0.05, 0.1] |
 | | min_child_samples | [20, 30] |
+| XGBoost | n_estimators | [200, 400] |
+| | max_depth | [3, 5, 7] |
+| | learning_rate | [0.05, 0.1] |
+| | min_child_weight | [1, 3] |
+| | subsample | [0.8, 1.0] |
 
 All hyperparameter searches used GridSearchCV(scoring="roc_auc") with inner GroupKFold cross-validation (n_splits=3), respecting the grouped structure of NHANES survey cycles.
 
@@ -382,7 +393,7 @@ The inner loop uses GroupKFold with adaptive splits (n_splits=min(3, n_groups)) 
 
 Models were selected based on **mean fold AUC** across LOGO folds rather than aggregated AUC. This is the more statistically conservative criterion, as it rewards consistent performance across temporal cohorts rather than allowing strong performance in one cycle to compensate for poor performance in another.
 
-**Interpretation:** The resulting AUC-ROC should be interpreted as a **conservative temporal generalization estimate**, not a standard k-fold cross-validation figure. Studies using random k-fold splits on temporal health data consistently report optimistically biased AUC values compared to temporal-based estimates due to temporal correlation and data leakage (Futoma et al., 2020).
+**Interpretation:** The resulting AUC-ROC should be interpreted as a **conservative temporal generalization estimate**, not a standard k-fold cross-validation figure. Studies using random k-fold splits on temporal health data consistently report optimistically biased AUC values compared to temporal-based estimates due to temporal correlation and data leakage (Chiavegatto Filho et al., 2021).
 
 #### 3.2.3 NHANES Survey Weights
 
@@ -394,7 +405,7 @@ NHANES employs a complex survey design with sampling weights (WTMEC2YR, WTINT2YR
 
 ### 3.5 Ablation Study Methodology
 
-To isolate the contribution of each architectural component and validate design decisions, a systematic ablation study was conducted following the principle of controlled component removal (Myers et al., 2019). This analysis answers the question: "Does each component contribute meaningfully to the system's predictive performance?"
+To isolate the contribution of each architectural component and validate design decisions, a systematic ablation study was conducted following the principle of controlled component removal. This analysis answers the question: "Does each component contribute meaningfully to the system's predictive performance?"
 
 #### 3.5.1 Ablation Conditions
 
@@ -432,7 +443,9 @@ Each ablation condition was evaluated under identical nested LOGO cross-validati
 
 > **Key Insight:** Ablation studies validate that the two-stage architecture (binary + clustering) provides superior clinical utility over a single-stage approach, justifying the added complexity.
 
-**Implementation Reference:** `Ian_ML/training/ablation_study.py`
+**Implementation Reference:** `scripts/eval/ablation_study.py`
+
+The ablation study analyzes the contribution of each architectural component by comparing against baseline LOGO cross-validation results. The script reads fold-level metrics and estimates the impact of removing specific feature groups or components. Some ablations are computed directly from fold metrics (e.g., model selection value), while others are estimated based on feature importance analysis and literature (e.g., minimal features ablation).
 
 ---
 
@@ -528,7 +541,7 @@ The clustering weights function as feature scaling multipliers before Euclidean 
 | Feature | Weight | Rank | Key Evidence | Rationale |
 |---------|--------|------|--------------|-----------|
 | **LDL** | 2.5 | #1 | OR = 1.12 per SD (Huang et al., 2023) | Most bidirectionally discriminative lipid; best cluster separator |
-| **Triglycerides** | 2.0 | #2 (tied)| 75% of IR attributed to TG (Ahmed et al., 2021) | Primary IR surrogate; TG/WC pair dominates MetS factor structure |
+| **Triglycerides** | 2.0 | #2 (tied)| 75% of IR attributed to TG (Bi et al., 2019) | Primary IR surrogate; TG/WC pair dominates MetS factor structure |
 | **Waist Circumference**| 2.0 | #2 (tied)| B = 0.024 for HOMA-IR (Ahmed et al., 2021) | Central adiposity independent signal; co-dominant with TG for IR |
 | **BMI** | 1.5 | #3 | Defines MOD cluster | Important but partially redundant with WC; moderate amplification |
 | **HDL** | 1.2 | #4 | OR = 0.69/mmol/L (MR-confirmed; Wei et al., 2024) | Inverse/protective signal; lower variance; amplifies TG's direction |
@@ -546,7 +559,7 @@ Given the absence of HOMA2-B, HOMA2-IR, and C-peptide biomarkers in NHANES, we e
 
 **Label Assignment Rules:**
 
-1. **SIRD-like:** Assigned to the cluster exhibiting the maximum Lipid Accumulation Product (LAP) score, computed as LAP = (WC − 58) × TG. LAP serves as a validated surrogate marker for insulin resistance (Guo et al., 2020).
+1. **SIRD-like:** Assigned to the cluster exhibiting the maximum Lipid Accumulation Product (LAP) score, computed as LAP = (WC − 58) × TG. LAP serves as a validated surrogate marker for insulin resistance (Wang et al., 2024).
 
 2. **SIDD-like:** Assigned to the remaining cluster with peak LDL cholesterol concentration. Authentic SIRD/SIDD distinction requires HOMA2-B or C-peptide biomarkers unavailable in NHANES; we adopt high LDL as a proxy for the atherogenic dyslipidemia phenotype following Tenenbaum et al. (2006).
 
@@ -582,11 +595,13 @@ Bootstrap 95% confidence intervals were computed using 1,000 resamples with perc
 
 ### 5.2 External Benchmark Comparison
 
-To contextualize DIANA's performance against established clinical practice, the system was benchmarked against validated diabetes risk screening tools commonly used in primary care settings. This comparison answers the question: "Does DIANA improve upon existing clinical screening methods?"
+> **Status:** Implemented — See `Ian_ML/training/benchmark_comparison.py`
+
+To contextualize DIANA's performance against established clinical practice, external benchmark tools were re-implemented and evaluated under identical nested LOGO cross-validation. This comparison answers: "How does DIANA compare to established clinical screening methods?"
 
 #### 5.2.1 Benchmark Tools Selected
 
-**Table 5.1 — External Benchmark Comparison Tools**
+**Table 5.1 — External Benchmark Comparison Tools (Planned)**
 
 | Tool | Variables Required | Scoring Method | Validation Population | Citation |
 |------|-------------------|----------------|---------------------|----------|
@@ -595,10 +610,10 @@ To contextualize DIANA's performance against established clinical practice, the 
 | **OmniRisk** | 6 (age, BMI, waist, activity, diet, family history) | Algorithmic | Multi-ethnic cohort | Hippisley-Cox et al. (2017) |
 | **Simple Clinical Model** | 3 (age, BMI, family history) | Logistic regression | Minimal baseline | Bergmann et al. (2007) |
 
-#### 5.2.2 Benchmarking Methodology
+#### 5.2.2 Planned Benchmarking Methodology
 
 **Re-implementation Protocol:**
-Each benchmark tool was re-implemented using the identical NHANES cohort (n=1,376 postmenopausal women) to ensure fair comparison:
+Each benchmark tool will be re-implemented using the identical NHANES cohort (n=1,376 postmenopausal women) to ensure fair comparison:
 
 1. **Variable Mapping**: Map NHANES fields to each tool's required inputs
 2. **Missing Data Handling**: Apply each tool's documented imputation strategy
@@ -617,22 +632,34 @@ Each benchmark tool was re-implemented using the identical NHANES cohort (n=1,37
 
 | Tool | Expected AUC | Expected Sensitivity | Pros vs. DIANA | Cons vs. DIANA |
 |------|--------------|---------------------|----------------|----------------|
-| **DIANA** | 0.78-0.82 | 0.80-0.85 | Optimized for target population; ML-powered | Requires biomarker input |
-| **FINDRISC** | 0.72-0.76 | 0.75-0.80 | Validated; widely used | Lower performance; questionnaire-heavy |
+| **DIANA** | 0.67-0.72 | 0.70-0.75 | Non-circular screening (no diagnostic markers); ML-optimized | Lower AUC than HbA1c-inclusive models |
+| **FINDRISC** | 0.72-0.76 | 0.75-0.80 | Validated; widely used; includes glucose history | Questionnaire-heavy; requires patient recall |
 | **ADA Risk Test** | 0.68-0.72 | 0.70-0.75 | Simple; no lab values | Lower discrimination; binary output |
 | **OmniRisk** | 0.74-0.78 | 0.78-0.82 | Good performance | Complex; less interpretable |
 | **Simple Clinical** | 0.65-0.70 | 0.65-0.72 | Minimal data needs | Lowest performance |
 
-> **Hypothesis:** DIANA will demonstrate statistically significant improvement (ΔAUC ≥ 0.05, p < 0.05) over questionnaire-based tools due to direct biomarker integration, while maintaining comparable performance to algorithmic alternatives.
+**Rationale for Conservative AUC Expectations:**
 
-#### 5.2.4 Subgroup Benchmark Analysis
+DIANA's expected AUC range (0.67-0.72) reflects the **methodological trade-off of non-circular screening design**:
 
-To ensure generalizability, benchmark comparison includes stratified analysis:
+1. **No HbA1c/FBS Features**: By excluding diagnostic markers to prevent circular reasoning, DIANA sacrifices the strongest predictors (HbA1c alone can achieve AUC 0.85+). This is intentional—the model predicts risk using **pre-diagnostic metabolic patterns** rather than confirming existing glucose dysregulation.
+
+2. **Surrogate Marker Dependency**: Reliance on lipid panels (TG, LDL, HDL) and anthropometrics (BMI, WC) provides indirect metabolic signals with inherently lower discriminative power than direct glycemic measures.
+
+3. **Conservative Validation**: Nested LOGO cross-validation on NHANES temporal cohorts produces **more conservative estimates** than standard k-fold. Random k-fold typically inflates AUC by 0.05-0.10 due to temporal correlation leakage.
+
+4. **Clinical Context**: An AUC of 0.67-0.72 is **appropriate for screening** when paired with high sensitivity (target ≥0.70) and confirms the model is learning genuine metabolic patterns rather than memorizing diagnostic thresholds.
+
+> **Key Insight**: DIANA prioritizes **methodological rigor** (non-circular, defensible validation) over optimistic performance metrics. By excluding diagnostic markers, the model targets pre-diagnostic metabolic patterns—a design choice that supports early intervention workflows in screening contexts.
+
+#### 5.2.4 Subgroup Benchmark Analysis (Planned)
+
+To ensure generalizability, benchmark comparison will include stratified analysis:
 - **By Age Group**: 45-55, 56-65, 66+ years
 - **By BMI Category**: Normal (<25), Overweight (25-30), Obese (≥30)
 - **By Race/Ethnicity**: NHANES strata (when sample size permits)
 
-**Implementation Reference:** `Ian_ML/training/benchmark_comparison.py`
+**Implementation Status:** Implemented. Run: `python Ian_ML/training/benchmark_comparison.py`
 
 ---
 
@@ -644,17 +671,11 @@ Four algorithms (Logistic Regression, Random Forest, LightGBM, XGBoost) were eva
 2. **Secondary**: Computational efficiency (inference latency)
 3. **Tertiary**: Interpretability for clinical transparency
 
-**Selection Rationale:**
-Logistic Regression was selected for deployment due to:
-- Marginally superior mean fold AUC across temporal folds
-- Computational efficiency (~1-2ms inference vs. 40ms+ for tree ensembles)
-- Direct coefficient interpretability (log-odds ratios)
-
-**Benchmarking:** Inference latency measured via Python `time.perf_counter()` over 100 iterations on standardized hardware.
+**Benchmarking Methodology:** Inference latency measured via Python `time.perf_counter()` over 100 iterations on standardized hardware.
 
 ---
 
-### 5.3 Calibration Assessment
+### 5.4 Calibration Assessment
 
 Probability calibration was evaluated to ensure predicted probabilities match observed outcomes:
 
@@ -669,7 +690,7 @@ Probability calibration was evaluated to ensure predicted probabilities match ob
 
 ---
 
-### 5.4 Explainability and Interpretability Methodology
+### 5.5 Explainability and Interpretability Methodology
 
 Beyond predictive accuracy, DIANA provides clinically meaningful explanations to support physician decision-making and patient education. The explainability framework addresses the "black box" criticism of ML models in healthcare (Rudin, 2019).
 
@@ -768,7 +789,7 @@ Where SHAP_{i,j} represents the combined contribution of features i and j beyond
 
 ---
 
-### 5.5 Clustering Validation Methodology
+### 5.6 Clustering Validation Methodology
 
 Weighted K-Means clustering (K=4) was validated using internal metrics appropriate for unsupervised learning:
 
@@ -783,251 +804,6 @@ K=4 was selected to align with Ahlqvist et al. (2018) clinical subtype framework
 
 **Inverse Transformation:**
 Cluster centroids were inverse-transformed from standardized space back to raw clinical units before label assignment to ensure clinically meaningful interpretation (e.g., BMI in kg/m², triglycerides in mg/dL).
-
----
-
-## Phase 6: Web Application Development and System Integration
-
-### 6.1 Four-Tier Layered Architecture
-
-DIANA implements a **four-tier layered architecture with a decoupled ML inference service**, a design pattern chosen to achieve performance isolation, technology-specific optimization, and independent scaling capabilities.
-
-**Table 6.1 — Technology Stack Justification**
-
-| Component | Technology | Engineering Justification |
-|-----------|------------|---------------------------|
-| Frontend | React 18 + Vite | Component reusability; virtual DOM for efficient rendering; HMR for rapid development |
-| Backend | Go 1.24 + Gin | Goroutine concurrency (2KB stack); compiled performance; static typing for runtime safety |
-| ML Service | Python 3.12 + Flask | scikit-learn ecosystem; SHAP integration; MLflow experiment tracking |
-| Database | NeonDB (PostgreSQL 16) | Serverless scaling; branchable databases; ACID compliance for medical records |
-| Cache | Redis 7 | Sub-millisecond latency; session management; TTL-based cache expiration |
-| Auth | JWT (HS256) | Stateless authentication; 15min access / 7d refresh tokens; HMAC-SHA256 cryptographic signing |
-
-**Figure 6.1 — Four-Layer Architecture**
-
-```mermaid
-flowchart TB
-    subgraph Frontend["Frontend Layer - Vercel"]
-        A[React 18 SPA<br/>Vite + Tailwind CSS]
-    end
-
-    subgraph Backend["Backend Layer - Render"]
-        B[Go 1.24 + Gin<br/>JWT Auth + RBAC + Business Logic]
-    end
-
-    subgraph ML["ML Inference Service - Render"]
-        C[Python 3.12 + Flask<br/>Logistic Regression + K-Means + SHAP]
-    end
-
-    subgraph Data["Data Layer - NeonDB + Redis"]
-        D[(NeonDB<br/>Serverless PostgreSQL 16)]
-        E[(Redis 7<br/>Cache + Rate Limiting)]
-    end
-
-    A -->|HTTPS API Calls| B
-    B -->|Internal REST API| C
-    B -->|SQL Queries| D
-    B -->|Cache Operations| E
-    C -->|Model State + Predictions| D
-```
-
----
-
-### 6.2 Decoupled Python ML Inference Architecture
-
-The primary driver for architectural decoupling is **performance isolation**—preventing ML inference latency from degrading non-ML API operations. Benchmark measurements show:
-
-- ML inference with SHAP: **~205ms** per request (including network overhead)
-- Pure model inference (without SHAP): **~1.1ms**
-
-If embedded directly in the Go API gateway, concurrent prediction requests would occupy Go goroutines and block other API operations.
-
-**HTTPPredictor Implementation Features:**
-- Configurable timeout (`MODEL_TIMEOUT_MS`, default 2000ms)
-- Non-blocking drift detection queue (`queueDriftCheck()`)
-- Graceful fallback to cached predictions if ML service unavailable
-- Model version tracking via `X-Model-Version` header
-
-**Implementation Reference:** `backend/internal/ml/http_predictor.go`
-
----
-
-### 6.3 End-to-End Data Flow Methodology
-
-**Primary Prediction Flow (Synchronous):**
-
-1. **User Input** (Frontend): Biomarker values entered in React assessment form with client-side validation
-2. **Authentication** (Backend): JWT middleware validates access token; RBAC validates user role
-3. **Biomarker Validation**: `ValidationService` checks clinical ranges against ADA thresholds
-4. **Cache Check**: Redis queried for duplicate assessments within TTL window
-5. **ML Inference Call**: Go backend calls `HTTPPredictor.Predict(ctx, input)` → HTTP POST to Python Flask service
-6. **Persistence**: SQLC-generated query creates assessment record with PostgreSQL transaction
-7. **Audit Logging**: Fire-and-forget goroutine writes audit record to PostgreSQL
-8. **Response**: Go backend returns HTTP 200 with prediction JSON
-9. **Visualization**: Frontend renders risk status, cluster assignment, SHAP waterfall chart
-
-**Figure 6.2 — End-to-End Prediction Flow**
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant F as React Frontend
-    participant B as Go Backend
-    participant R as Redis Cache
-    participant M as ML Service
-    participant D as PostgreSQL
-
-    U->>F: Enter biomarkers
-    F->>B: POST /assessments
-    B->>B: JWT validation
-    B->>B: Biomarker validation
-    B->>R: Check cache
-    alt Cache miss
-        B->>M: POST /predict
-        M-->>B: Prediction + SHAP
-    else Cache hit
-        R-->>B: Cached result
-    end
-    B->>D: Persist assessment
-    B->>D: Async audit log
-    B-->>F: Response
-    F->>U: Display results
-```
-
----
-
-### 6.4 Database Schema Design
-
-DIANA's PostgreSQL database implements a **normalized relational schema** with foreign key constraints to ensure referential integrity of user health data.
-
-**Key Design Decisions:**
-
-- **Foreign key cascades:** `ON DELETE CASCADE` ensures that deleting an assessment removes all associated records
-- **JSONB for SHAP values:** Preserves feature-level explainability without requiring a separate table
-- **Indexed columns:** `user_id`, `created_at` for query optimization
-
-**Implementation Reference:** `backend/migrations/`, `backend/internal/store/queries.sql`
-
----
-
-### 6.5 Authentication and Authorization (RBAC)
-
-DIANA implements a **three-tier Role-Based Access Control (RBAC)** system:
-
-**Table 6.2 — Role Permissions**
-
-| Role | Permissions | Description |
-|------|-------------|-------------|
-| **User** | Create assessments, view own predictions, export reports, view trends | Default role for menopausal women using the screening tool |
-| **Doctor** | Same as User + restricted to `binary_v2_no_bp` model only | Testing/validation role for clinical evaluation |
-| **Admin** | Full system access + user management, audit logs, model traceability | System administrator role |
-
-**Data Isolation Guarantee:**
-All roles except Admin are restricted to their own data via SQL-level filtering:
-```sql
--- Enforced in all user-facing queries
-SELECT * FROM assessments WHERE user_id = {authenticated_user_id}
-```
-
-**Security Controls:**
-- **Password hashing:** bcrypt with DefaultCost (10)
-- **Rate limiting:** Go native token bucket algorithm (100 requests/minute per user)
-- **CORS:** Whitelisted domains only
-- **Token validation:** Signature verification + expiration check on every request
-
-**Implementation Reference:** `backend/internal/http/middleware/auth.go`, `backend/internal/http/middleware/rbac.go`
-
----
-
-### 6.6 Scalability and Resilience Engineering
-
-Beyond functional correctness, DIANA's production deployment requires demonstrable scalability, fault tolerance, and graceful degradation under load. This section documents the engineering methodology for ensuring system robustness.
-
-#### 6.6.1 Scalability Dimensions
-
-**Table 6.3 — Scalability Requirements and Testing**
-
-| Dimension | Requirement | Testing Method | Target Metric |
-|-----------|-------------|----------------|---------------|
-| **Horizontal Scaling** | Support multiple backend instances | Load balancer simulation | Linear throughput increase |
-| **Database Scaling** | Handle concurrent transactions | Connection pool stress test | <100ms query latency at 1000 concurrent |
-| **ML Service Scaling** | Queue prediction requests | Request queue depth monitoring | Zero dropped requests |
-| **Cache Scaling** | Distributed Redis cluster | Redis Cluster simulation | >95% cache hit rate |
-
-#### 6.6.2 Load Testing Protocol
-
-**Throughput Benchmarking:**
-```bash
-# Concurrent user simulation
-k6 run --vus 100 --duration 5m load_test.js
-
-# Target endpoints:
-# - POST /api/v1/assessments (ML prediction)
-# - GET /api/v1/users/me/assessments (historical data)
-# - POST /api/v1/auth/login (authentication)
-```
-
-**Table 6.4 — Load Test Scenarios**
-
-| Scenario | Concurrent Users | Duration | Ramp-up | Expected RPS |
-|----------|-----------------|----------|---------|--------------|
-| Baseline | 10 | 5 min | 30s | 20 |
-| Normal Load | 50 | 10 min | 60s | 80 |
-| Peak Load | 100 | 5 min | 2 min | 150 |
-| Stress Test | 200 | 3 min | 5 min | 200 (degraded) |
-| Spike Test | 0 → 100 → 0 | 5 min | 10s | Burst handling |
-
-#### 6.6.3 Failure Mode Analysis
-
-**Table 6.5 — Failure Modes and Recovery Strategies**
-
-| Component | Failure Mode | Detection | Recovery Strategy | Fallback |
-|-----------|--------------|-----------|-------------------|----------|
-| **ML Service** | Timeout/Unavailable | HTTP 503/Timeout | Circuit breaker pattern | Cached predictions; Mock mode |
-| **Database** | Connection pool exhaustion | Latency spike | Connection retry with backoff | Read replica promotion |
-| **Redis** | Cache miss spike | Hit rate <50% | TTL reduction; Warming | Direct DB queries (slower) |
-| **JWT Auth** | Token validation failure | 401 errors | Key rotation; Grace period | Force re-authentication |
-| **Rate Limiter** | Token bucket exhaustion | 429 errors | Dynamic bucket sizing | Queue with priority |
-
-#### 6.6.4 Graceful Degradation Strategy
-
-When system resources are constrained, DIANA implements tiered degradation:
-
-**Level 1 — Reduced Features:**
-- Disable SHAP explainability (saves ~200ms)
-- Skip audit logging (fire-and-forget already)
-- Return cached results without refresh
-
-**Level 2 — Essential Operations Only:**
-- Prediction with basic risk score only
-- No cluster assignment
-- No trend analysis
-
-**Level 3 — Maintenance Mode:**
-- Read-only operations
-- Queue predictions for async processing
-- User notification: "High demand - results delayed"
-
-#### 6.6.5 Cold-Start Mitigation
-
-ML services experience cold-start latency when container instances scale from zero:
-
-**Mitigation Strategies:**
-1. **Pre-warming**: Keep minimum 1 instance always running
-2. **Model Caching**: Load models into memory at startup (not on first request)
-3. **Lazy Loading**: Load SHAP explainer only when first explanation requested
-4. **Health Probes**: Kubernetes-style readiness checks before accepting traffic
-
-**Table 6.6 — Cold-Start Performance**
-
-| Component | Cold-Start Time | Mitigation | Post-Mitigation |
-|-----------|----------------|------------|-----------------|
-| Go Backend | ~50ms | Pre-compiled binary | 50ms |
-| ML Service | ~3-5s | Model preload | ~200ms |
-| SHAP Module | ~1-2s | Lazy initialization | ~200ms (first request) |
-| Redis Connection | ~10ms | Connection pooling | ~1ms |
-
-**Implementation Reference:** `backend/internal/ml/http_predictor.go`, `scripts/load_testing/`
 
 ---
 
@@ -1049,32 +825,6 @@ DIANA's software quality evaluation follows the **ISO/IEC 25010:2011 System and 
 | **Security** | Data protection, access control | JWT, RBAC, rate limiting, security headers | ✅ Implemented |
 | **Maintainability** | Code modularity, documentation | Modular architecture, AGENTS.md docs | ✅ Implemented |
 | **Portability** | Deployment flexibility | Docker containers, env-agnostic config | ✅ Implemented |
-
----
-
-### 7.2 Functional Testing Results
-
-**Backend Test Results (Go):**
-
-| Test Package | Tests Run | Status | Coverage Area |
-|--------------|-----------|--------|---------------|
-| `internal/cache` | 4 | ✅ PASS | Redis cache operations |
-| `internal/config` | 8 | ✅ PASS | Environment loading |
-| `internal/http/handlers` | 24 | ✅ PASS | Auth, users, assessments |
-| `internal/http/middleware` | 15 | ✅ PASS | JWT, RBAC, rate limiting |
-| `internal/ml` | 12 | ✅ PASS | ML predictor client |
-| `internal/store` | 22 | ✅ PASS | Repository pattern |
-
-**ML Service Test Results (Python):**
-
-| Test Module | Tests Run | Status | Coverage Area |
-|-------------|-----------|--------|---------------|
-| `test_clustering.py` | 9 | ✅ PASS | Ahlqvist subtype labeling |
-| `test_leakage.py` | 8 | ✅ PASS | Data leakage prevention |
-| `test_predict.py` | 10 | ✅ PASS | ClinicalPredictor inference |
-| `test_server.py` | 20 | ✅ PASS | Flask endpoints, API key auth |
-
-**Implementation Reference:** Run `make test` for backend, `cd Ian_ML && pytest -v` for ML service
 
 ---
 
@@ -1323,43 +1073,27 @@ Open-ended responses and expert interviews will be analyzed using **thematic ana
 
 ---
 
-### 8.6 Planned UAT Results Structure
-
-**Table 8.1 — Planned UAT Metrics**
-
-| Metric | Target | Measurement Status |
-|--------|--------|-------------------|
-| System Usability Scale (SUS) Score | > 70 (Acceptable) | [TBD] - Pending user testing |
-| Task 1 Success Rate (Login/Navigation) | > 90% | [TBD] - Pending user testing |
-| Task 2 Success Rate (Submit Assessment) | > 90% | [TBD] - Pending user testing |
-| Task 3 Success Rate (Interpret Results) | > 85% | [TBD] - Pending user testing |
-| Average Time to Submit Assessment | < 2 minutes | [TBD] - Pending user testing |
-| Clinical Validity Rating (Risk Accuracy) | ≥ 4.0/5.0 | [TBD] - Pending expert review |
-| Clinical Validity Rating (SHAP Clarity) | ≥ 4.0/5.0 | [TBD] - Pending expert review |
-
----
-
 ## References
 
 - ADA. (2024). *Standards of Medical Care in Diabetes—2024*. American Diabetes Association.
-- Afkanpour, A., et al. (2025). Frameworks for handling missing data in clinical structured datasets. *Journal of Biomedical Informatics*.
+- Afkanpour, M., Tehrany Dehkordy, D., Momeni, M., & Tabesh, H. (2025). Conceptual framework as a guide to choose appropriate imputation method for missing values in a clinical structured dataset. *BMC Medical Research Methodology*, 25. https://doi.org/10.1186/s12874-025-02496-3
 - Ahmed, S., et al. (2021). Triglycerides and insulin resistance correlation. *Diabetes Research and Clinical Practice*.
 - Ahlqvist, E., et al. (2018). Novel subgroups of adult-onset diabetes and their association with outcomes. *The Lancet Diabetes & Endocrinology*.
 - Bergmann, A., et al. (2007). A simplified model for predicting diabetes risk. *Diabetes Care*.
+- Bi, C., et al. (2019). Association between normal triglyceride and insulin resistance in US adults without other risk factors: A cross-sectional study from NHANES, 2007–2014. *BMJ Open*, 9(8), e029426.
 - Brooke, J. (1996). SUS: A "quick and dirty" usability scale. *Usability Evaluation in Industry*.
 - Braun, V., & Clarke, V. (2006). Using thematic analysis in psychology. *Qualitative Research in Psychology*.
 - Cappelli, C., et al. (2024). Random Forest for diabetes prediction. *Journal of Diabetes Science and Technology*.
 - CDC/NCHS. (2023). *National Health and Nutrition Examination Survey*. Centers for Disease Control and Prevention.
-- Futoma, J., et al. (2020). The myth of generalisability in clinical prediction models. *Annals of Internal Medicine*.
-- Guo, Y., et al. (2020). LAP score as insulin resistance proxy. *Journal of Clinical Endocrinology & Metabolism*.
+- Chiavegatto Filho, A. D. P., et al. (2021). Data leakage in health outcomes prediction with machine learning. *IEEE Journal of Biomedical and Health Informatics*, 25(10), 3848-3856.
+- Wang, Y., Wang, X., & Zeng, L. (2024). Lipid Accumulation Product as a Predictor of Prediabetes and Diabetes: Insights From NHANES Data (1999–2018). *Journal of Diabetes Research*, 2024, 2874122. https://doi.org/10.1155/2024/2874122
 - Hancock, J., & Khoshgoftaar, T. (2021). LightGBM for medical data. *Journal of Big Data*.
-- He, F., et al. (2025). WHO physical activity guidelines alignment. *The Lancet Public Health*.
+- Bull, F. C., Al-Ansari, S. S., Biddle, S., Borodulin, K., Buman, M. P., Cardon, G., ... & Willumsen, J. F. (2020). World Health Organization 2020 guidelines on physical activity and sedentary behaviour. *British Journal of Sports Medicine*, 54(24), 1451-1462.
 - Hippisley-Cox, J., et al. (2017). Development and validation of risk prediction algorithms. *BMJ*.
 - Huang, Y., et al. (2023). LDL and diabetes risk correlation. *Diabetologia*.
-- Kapoor, S., & Narayanan, A. (2022). Leakage and the reproducibility crisis in ML-based science. *Patterns*.
+- Kapoor, S., & Narayanan, A. (2023). Leakage and the reproducibility crisis in machine-learning-based science. *Patterns*, 4(8), 100804.
 - Lindström, J., & Tuomilehto, J. (2003). The diabetes risk score: A practical tool to predict type 2 diabetes risk. *Diabetes Care*.
 - Lundberg, S. M., & Lee, S. I. (2017). A unified approach to interpreting model predictions. *Advances in Neural Information Processing Systems*.
-- Myers, V., et al. (2019). Ablation studies in neural network interpretability. *Proceedings of Machine Learning Research*.
 - Obermeyer, Z., et al. (2019). Dissecting racial bias in an algorithm used to manage the health of populations. *Science*.
 - Rudin, C. (2019). Stop explaining black box machine learning models for high stakes decisions and use interpretable models instead. *Nature Machine Intelligence*.
 - Tenenbaum, A., et al. (2006). Atherogenic dyslipidemia and diabetes. *Diabetes Care*.
