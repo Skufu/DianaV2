@@ -1,0 +1,15 @@
+# Consolidate contributors under canonical names
+# Format: Canonical Name <email> <Previous Name> <previous@email>
+
+# Skufu / Adrian Francisco
+Skufu <agpfrancisco1@gmail.com> Skufu <agpfrancisco1@gmail.com>
+Skufu <agpfrancisco1@gmail.com> Adrian Francisco <agpfrancisco1@gmail.com>
+Skufu <agpfrancisco1@gmail.com> Skufu <160680761+Skufu@users.noreply.github.com>
+
+# grfsdtrrs
+grfsdtrrs <grefaldo26@gmail.com> grfsdtrrs <grefaldo26@gmail.com>
+
+# Remove sisyphus-dev-ai attribution - map to Skufu
+# GitHub associates commits based on email; this catches sisyphus-dev-ai's commits
+Skufu <agpfrancisco1@gmail.com> sisyphus-dev-ai <sisyphus-dev-ai@users.noreply.github.com>
+Skufu <agpfrancisco1@gmail.com> sisyphus-dev-ai <sisyphus-dev-ai@users.noreply.github.org>
