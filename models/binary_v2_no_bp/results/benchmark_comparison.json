@@ -1,0 +1,338 @@
+{
+  "diana": {
+    "name": "DIANA (Current)",
+    "auc": 0.7267288870780175,
+    "auc_ci_low": 0.6995203261556218,
+    "auc_ci_high": 0.7526645470751937,
+    "sensitivity": 0.7397820163487738,
+    "specificity": 0.5654205607476636,
+    "accuracy": 0.6584302325581395,
+    "algorithm": "Logistic Regression",
+    "n_features": 9,
+    "validation": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)"
+  },
+  "benchmarks": [
+    {
+      "auc_mean": 0.8746334880500987,
+      "auc_std": 0.02315643120243378,
+      "sensitivity_mean": 0.7786813318928862,
+      "sensitivity_std": 0.04417077735252826,
+      "specificity_mean": 0.8461746648344873,
+      "specificity_std": 0.0755190625927707,
+      "accuracy_mean": 0.8142161917161647,
+      "fold_results": [
+        {
+          "fold": 1,
+          "test_cycle": "2009-2010",
+          "auc": 0.8698819698819699,
+          "sensitivity": 0.811965811965812,
+          "specificity": 0.819047619047619,
+          "accuracy": 0.8153153153153153,
+          "threshold": 0.1,
+          "n_test": 222,
+          "n_positive": 117
+        },
+        {
+          "fold": 2,
+          "test_cycle": "2011-2012",
+          "auc": 0.8672733516483516,
+          "sensitivity": 0.7767857142857143,
+          "specificity": 0.8461538461538461,
+          "accuracy": 0.8052631578947368,
+          "threshold": 0.1,
+          "n_test": 190,
+          "n_positive": 112
+        },
+        {
+          "fold": 3,
+          "test_cycle": "2013-2014",
+          "auc": 0.8723412004662005,
+          "sensitivity": 0.7954545454545454,
+          "specificity": 0.7788461538461539,
+          "accuracy": 0.788135593220339,
+          "threshold": 0.1,
+          "n_test": 236,
+          "n_positive": 132
+        },
+        {
+          "fold": 4,
+          "test_cycle": "2015-2016",
+          "auc": 0.9017103850283785,
+          "sensitivity": 0.8211382113821138,
+          "specificity": 0.8584905660377359,
+          "accuracy": 0.8384279475982532,
+          "threshold": 0.1,
+          "n_test": 229,
+          "n_positive": 123
+        },
+        {
+          "fold": 5,
+          "test_cycle": "2017-2018",
+          "auc": 0.8342245989304812,
+          "sensitivity": 0.7803030303030303,
+          "specificity": 0.7745098039215687,
+          "accuracy": 0.7777777777777778,
+          "threshold": 0.1326530612244898,
+          "n_test": 234,
+          "n_positive": 132
+        },
+        {
+          "fold": 6,
+          "test_cycle": "2021-2023",
+          "auc": 0.9023694223452093,
+          "sensitivity": 0.6864406779661016,
+          "specificity": 1.0,
+          "accuracy": 0.8603773584905661,
+          "threshold": 0.1326530612244898,
+          "n_test": 265,
+          "n_positive": 118
+        }
+      ],
+      "overall_auc": 0.8658420127836206,
+      "tool": "FINDRISC"
+    },
+    {
+      "auc_mean": 0.5979400480606819,
+      "auc_std": 0.03336857012555409,
+      "sensitivity_mean": 0.8867690579787522,
+      "sensitivity_std": 0.07154551839185824,
+      "specificity_mean": 0.261346009134181,
+      "specificity_std": 0.14661291043499902,
+      "accuracy_mean": 0.6001371410419479,
+      "fold_results": [
+        {
+          "fold": 1,
+          "test_cycle": "2009-2010",
+          "auc": 0.563003663003663,
+          "sensitivity": 0.8888888888888888,
+          "specificity": 0.17142857142857143,
+          "accuracy": 0.5495495495495496,
+          "threshold": 0.1653061224489796,
+          "n_test": 222,
+          "n_positive": 117
+        },
+        {
+          "fold": 2,
+          "test_cycle": "2011-2012",
+          "auc": 0.5645604395604396,
+          "sensitivity": 0.9017857142857143,
+          "specificity": 0.15384615384615385,
+          "accuracy": 0.5947368421052631,
+          "threshold": 0.1653061224489796,
+          "n_test": 190,
+          "n_positive": 112
+        },
+        {
+          "fold": 3,
+          "test_cycle": "2013-2014",
+          "auc": 0.6309003496503497,
+          "sensitivity": 0.9242424242424242,
+          "specificity": 0.2692307692307692,
+          "accuracy": 0.635593220338983,
+          "threshold": 0.1653061224489796,
+          "n_test": 236,
+          "n_positive": 132
+        },
+        {
+          "fold": 4,
+          "test_cycle": "2015-2016",
+          "auc": 0.6532060131922073,
+          "sensitivity": 0.7479674796747967,
+          "specificity": 0.5566037735849056,
+          "accuracy": 0.6593886462882096,
+          "threshold": 0.36122448979591837,
+          "n_test": 229,
+          "n_positive": 123
+        },
+        {
+          "fold": 5,
+          "test_cycle": "2017-2018",
+          "auc": 0.5898692810457516,
+          "sensitivity": 0.9848484848484849,
+          "specificity": 0.11764705882352941,
+          "accuracy": 0.6068376068376068,
+          "threshold": 0.1653061224489796,
+          "n_test": 234,
+          "n_positive": 132
+        },
+        {
+          "fold": 6,
+          "test_cycle": "2021-2023",
+          "auc": 0.5861005419116798,
+          "sensitivity": 0.8728813559322034,
+          "specificity": 0.29931972789115646,
+          "accuracy": 0.5547169811320755,
+          "threshold": 0.36122448979591837,
+          "n_test": 265,
+          "n_positive": 118
+        }
+      ],
+      "overall_auc": 0.5912997529858158,
+      "tool": "ADA Risk Test"
+    },
+    {
+      "auc_mean": 0.6713305958744935,
+      "auc_std": 0.022868989104630106,
+      "sensitivity_mean": 0.9339104008388835,
+      "sensitivity_std": 0.04598240901436791,
+      "specificity_mean": 0.24890225804884122,
+      "specificity_std": 0.09838570931287108,
+      "accuracy_mean": 0.6205228165913313,
+      "fold_results": [
+        {
+          "fold": 1,
+          "test_cycle": "2009-2010",
+          "auc": 0.6257631257631256,
+          "sensitivity": 0.9487179487179487,
+          "specificity": 0.19047619047619047,
+          "accuracy": 0.5900900900900901,
+          "threshold": 0.49183673469387756,
+          "n_test": 222,
+          "n_positive": 117
+        },
+        {
+          "fold": 2,
+          "test_cycle": "2011-2012",
+          "auc": 0.6598557692307693,
+          "sensitivity": 0.9642857142857143,
+          "specificity": 0.1794871794871795,
+          "accuracy": 0.6421052631578947,
+          "threshold": 0.49183673469387756,
+          "n_test": 190,
+          "n_positive": 112
+        },
+        {
+          "fold": 3,
+          "test_cycle": "2013-2014",
+          "auc": 0.690814393939394,
+          "sensitivity": 0.9696969696969697,
+          "specificity": 0.20192307692307693,
+          "accuracy": 0.6313559322033898,
+          "threshold": 0.4755102040816327,
+          "n_test": 236,
+          "n_positive": 132
+        },
+        {
+          "fold": 4,
+          "test_cycle": "2015-2016",
+          "auc": 0.689139438564197,
+          "sensitivity": 0.8536585365853658,
+          "specificity": 0.42452830188679247,
+          "accuracy": 0.6550218340611353,
+          "threshold": 0.5571428571428572,
+          "n_test": 229,
+          "n_positive": 123
+        },
+        {
+          "fold": 5,
+          "test_cycle": "2017-2018",
+          "auc": 0.6855689245395127,
+          "sensitivity": 0.9772727272727273,
+          "specificity": 0.1568627450980392,
+          "accuracy": 0.6196581196581197,
+          "threshold": 0.5244897959183674,
+          "n_test": 234,
+          "n_positive": 132
+        },
+        {
+          "fold": 6,
+          "test_cycle": "2021-2023",
+          "auc": 0.676841923209962,
+          "sensitivity": 0.8898305084745762,
+          "specificity": 0.3401360544217687,
+          "accuracy": 0.5849056603773585,
+          "threshold": 0.5571428571428572,
+          "n_test": 265,
+          "n_positive": 118
+        }
+      ],
+      "overall_auc": 0.6659822845841079,
+      "tool": "Simple Clinical Model"
+    },
+    {
+      "auc_mean": 0.6831280185119158,
+      "auc_std": 0.025621745417300064,
+      "sensitivity_mean": 0.9094684716971818,
+      "sensitivity_std": 0.04802654245562021,
+      "specificity_mean": 0.3251809335248371,
+      "specificity_std": 0.12748642126012652,
+      "accuracy_mean": 0.6427030760269641,
+      "fold_results": [
+        {
+          "fold": 1,
+          "test_cycle": "2009-2010",
+          "auc": 0.6295482295482295,
+          "sensitivity": 0.9401709401709402,
+          "specificity": 0.20952380952380953,
+          "accuracy": 0.5945945945945946,
+          "threshold": 0.3938775510204082,
+          "n_test": 222,
+          "n_positive": 117
+        },
+        {
+          "fold": 2,
+          "test_cycle": "2011-2012",
+          "auc": 0.6779990842490844,
+          "sensitivity": 0.9375,
+          "specificity": 0.2564102564102564,
+          "accuracy": 0.6578947368421053,
+          "threshold": 0.4102040816326531,
+          "n_test": 190,
+          "n_positive": 112
+        },
+        {
+          "fold": 3,
+          "test_cycle": "2013-2014",
+          "auc": 0.6991550116550116,
+          "sensitivity": 0.946969696969697,
+          "specificity": 0.28846153846153844,
+          "accuracy": 0.6567796610169492,
+          "threshold": 0.3938775510204082,
+          "n_test": 236,
+          "n_positive": 132
+        },
+        {
+          "fold": 4,
+          "test_cycle": "2015-2016",
+          "auc": 0.7082374597330879,
+          "sensitivity": 0.8292682926829268,
+          "specificity": 0.5660377358490566,
+          "accuracy": 0.7074235807860262,
+          "threshold": 0.5408163265306123,
+          "n_test": 229,
+          "n_positive": 123
+        },
+        {
+          "fold": 5,
+          "test_cycle": "2017-2018",
+          "auc": 0.6918820558526442,
+          "sensitivity": 0.946969696969697,
+          "specificity": 0.21568627450980393,
+          "accuracy": 0.6282051282051282,
+          "threshold": 0.44285714285714284,
+          "n_test": 234,
+          "n_positive": 132
+        },
+        {
+          "fold": 6,
+          "test_cycle": "2021-2023",
+          "auc": 0.6919462700334371,
+          "sensitivity": 0.8559322033898306,
+          "specificity": 0.41496598639455784,
+          "accuracy": 0.6113207547169811,
+          "threshold": 0.6061224489795919,
+          "n_test": 265,
+          "n_positive": 118
+        }
+      ],
+      "overall_auc": 0.6748070997478927,
+      "tool": "OmniRisk (Approximated)"
+    }
+  ],
+  "metadata": {
+    "n_samples": 1376,
+    "n_cycles": 6,
+    "prevalence": 0.5334302325581395,
+    "validation": "Leave-One-Group-Out (LOGO)"
+  }
+}
