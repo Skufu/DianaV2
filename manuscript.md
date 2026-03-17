@@ -2439,14 +2439,14 @@ Weighted K-means clustering (K=4) was applied to the at-risk subset only (diabet
 
 | Subgroup | Size n (%) | Mean BMI | Mean TG | Mean LDL | Mean HDL | Diabetic Rate |
 |---------|-------|----------|---------|----------|----------|---|
-| **SIRD** | 356 (25.8%) | 40.15 | 105.92 | 115.20 | 53.49 | 32.9% |
-| **SIDD** | 199 (14.4%) | 32.08 | 250.34 | 138.63 | 43.09 | 37.7% |
-| **MOD** | 547 (39.7%) | 29.44 | 101.45 | 126.89 | 61.75 | 13.2% |
-| **MARD** | 274 (19.9%) | 21.83 | 91.63 | 123.74 | 71.31 | 4.7% |
+| **SIRD-like** | 356 (25.8%) | 40.15 | 105.92 | 115.20 | 53.49 | 32.9% |
+| **SIDD-like** | 199 (14.4%) | 32.08 | 250.34 | 138.63 | 43.09 | 37.7% |
+| **MOD-like** | 547 (39.7%) | 29.44 | 101.45 | 126.89 | 61.75 | 13.2% |
+| **MARD-like** | 274 (19.9%) | 21.83 | 91.63 | 123.74 | 71.31 | 4.7% |
 
 _Table X: K-Means Subtype Distribution, Biomarker Means, and Diabetic Rates (K=4)_
 
-As shown in Table X, SIDD exhibited the highest diabetic rate (37.7%) coupled with the most severe atherogenic dyslipidemia (mean TG = 250.34 mg/dL, mean LDL = 138.63 mg/dL, lowest HDL = 43.09 mg/dL), consistent with severe insulin-deficient pathophysiology. SIRD showed the second-highest diabetic rate (32.9%) and the highest mean BMI (40.15 kg/m²), reflecting the Severe Insulin-Resistant phenotype characterized by central adiposity and metabolic syndrome. MOD (Mild Obesity-Related) showed a moderate diabetic rate (13.2%) with moderately elevated BMI (29.44 kg/m²). MARD (Mild Age-Associated) had the lowest diabetic rate (4.7%), the lowest BMI (21.83 kg/m²), and normal lipid panels. The gradient of diabetic rates across subtypes (SIDD > SIRD > MOD > MARD) provides clinical validation that the unsupervised clustering recovered phenotypically meaningful groupings aligned with known diabetes pathophysiology.
+As shown in Table X, SIDD-like exhibited the highest diabetic rate (37.7%) coupled with the most severe atherogenic dyslipidemia (mean TG = 250.34 mg/dL, mean LDL = 138.63 mg/dL, lowest HDL = 43.09 mg/dL), consistent with the atherogenic/lipid-driven proxy phenotype. SIRD-like showed the second-highest diabetic rate (32.9%) and the highest mean BMI (40.15 kg/m²), reflecting the insulin-resistant phenotype characterized by central adiposity and metabolic syndrome. MOD-like (Mild Obesity-Related Proxy) showed a moderate diabetic rate (13.2%) with moderately elevated BMI (29.44 kg/m²). MARD-like (Mild Age-Related Proxy) had the lowest diabetic rate (4.7%), the lowest BMI (21.83 kg/m²), and normal lipid panels. The gradient of diabetic rates across subtypes (SIDD-like > SIRD-like > MOD-like > MARD-like) provides clinical validation that the unsupervised clustering recovered phenotypically meaningful groupings. **Note:** These are heuristic Ahlqvist-inspired proxy labels (denoted with "-like" suffix), not validated biological subtype diagnoses, as true Ahlqvist subtyping requires HOMA2-B and C-peptide biomarkers unavailable in routine screening.
 
 **4.7 SHAP Explainability Analysis**
 
@@ -2534,7 +2534,7 @@ The Python ML service test suite comprises 65 tests covering clustering algorith
 
 | Test Module | Tests Run | Status | Coverage Area |
 |-------------|-----------|--------|---------------|
-| `test_clustering.py` | 9 | ✅ PASS | Ahlqvist subtype labeling (SIRD/SIDD/MOD/MARD) |
+| `test_clustering.py` | 9 | ✅ PASS | Ahlqvist-inspired proxy subtype labeling (SIRD-like/SIDD-like/MOD-like/MARD-like) |
 | `test_leakage.py` | 8 | ✅ PASS | Data leakage prevention, feature set validation |
 | `test_parity.py` | 4 | ✅ PASS | Feature computation parity across implementations |
 | `test_predict.py` | 10 | ✅ PASS | ClinicalPredictor inference, edge cases |

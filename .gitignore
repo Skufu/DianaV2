@@ -179,3 +179,5 @@ autoresearch/
 frontend/lint_output.txt
 logs-backend
 logs-ml
+
+skills/
