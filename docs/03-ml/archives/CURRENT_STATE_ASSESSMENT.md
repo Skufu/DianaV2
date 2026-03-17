@@ -39,12 +39,12 @@ Predicts diabetes risk (Normal / Pre-diabetic / Diabetic) for postmenopausal wom
 
 #### 1. **Prediction (Working)**
 - **Input**: 7 base features + 3 lifestyle factors
-- **Output**: Risk class + Risk score (0-100) + Risk cluster (SIRD/SIDD/MOD/MARD)
+- **Output**: Risk class + Risk score (0-100) + Risk cluster (SIRD-like/SIDD-like/MOD-like/MARD-like)
 - **Model**: CatBoost (best performer, AUC 0.6780)
 
 #### 2. **Risk Clustering (Working)**
 - **Method**: K-means clustering (K=4)
-- **Clusters**: SIRD, SIDD, MOD, MARD (Ahlqvist subtypes)
+- **Clusters**: SIRD-like, SIDD-like, MOD-like, MARD-like (Ahlqvist-inspired proxy subtypes)
 - **Features**: 13 optimized features
 - **Silhouette**: 0.1572 (weak structure, but forced for clinical alignment)
 

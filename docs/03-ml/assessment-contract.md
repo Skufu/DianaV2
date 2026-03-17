@@ -308,7 +308,7 @@ Assessment-level subtype availability is stricter than model-level support:
 #### Output Capabilities
 - **Binary Classification**: `Normal` vs `At-Risk`
 - **Risk Score**: 0-100 integer from at-risk probability
-- **Clustering**: SIRD/SIDD/MOD/MARD (requires `waist_circumference`)
+- **Clustering**: SIRD-like/SIDD-like/MOD-like/MARD-like (requires `waist_circumference`)
 
 ### Binary Model (With BP)
 **Canonical**: `binary_v2_bp`
@@ -326,8 +326,9 @@ Assessment-level subtype availability is stricter than model-level support:
 - **Preprocessing**: Requires imputation and scaling (not raw values)
 
 #### Output
-- Cluster assignment (SIRD/SIDD/MOD/MARD)
+- Cluster assignment (SIRD-like/SIDD-like/MOD-like/MARD-like)
 - Risk level derived from cluster characteristics
+- **Note**: "-like" suffix denotes heuristic proxy classifications; true Ahlqvist subtyping requires HOMA2-B and C-peptide biomarkers unavailable in routine screening
 
 ### Model Type Selection
 Backend determines model type via:

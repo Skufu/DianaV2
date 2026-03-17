@@ -1,6 +1,8 @@
 # T2DM Subgroups (Clustering Labels)
 
 > This document includes both paper-context taxonomy and DIANA runtime semantics.
+> 
+> **Important**: DIANA uses "-like" suffixes (SIRD-like, SIDD-like, MOD-like, MARD-like) to indicate these are heuristic proxy classifications derived from available biomarkers, not validated biological subtype diagnoses. True Ahlqvist subtyping requires HOMA2-B and C-peptide biomarkers unavailable in NHANES.
 
 ---
 
@@ -8,33 +10,34 @@
 
 | Label | Full Name | Defining Features |
 |-------|-----------|-------------------|
-| **SIRD** | Severe Insulin-Resistant Diabetes | High BMI, high HOMA-IR, high TG, low HDL |
-| **SIDD** | Atherogenic / Lipid-Driven Diabetes | High LDL, severe dyslipidemia pattern |
-| **MOD** | Mild Obesity-Related Diabetes | High BMI (>30), moderate HbA1c |
-| **MARD** | Mild Age-Related Diabetes | Older age (>55), mild elevations across markers |
+| **SIRD-like** | Severe Insulin-Resistant Diabetes (Proxy) | High BMI, high TG, low HDL; validated LAP score proxy |
+| **SIDD-like** | Atherogenic / Lipid-Driven Diabetes (Proxy) | High LDL, severe dyslipidemia pattern; lipid-driven heuristic |
+| **MOD-like** | Mild Obesity-Related Diabetes (Proxy) | High BMI, moderate metabolic markers |
+| **MARD-like** | Mild Age-Related Diabetes (Proxy) | Older age, mild elevations across markers; residual category |
 
 ---
 
 ## Cluster Characteristics
 
-### SIRD (Severe Insulin-Resistant Diabetes)
+### SIRD-like (Severe Insulin-Resistant Diabetes Proxy)
 - **Key Indicators**: High BMI, elevated triglycerides, low HDL
-- **Age Profile**: Often younger onset
+- **Assignment**: Maximum LAP = (WC − 58) × TG (Guo et al., 2020)
 - **Clinical Implication**: Responds to insulin sensitizers (metformin)
 
-### SIDD (Atherogenic / Lipid-Driven Diabetes)
+### SIDD-like (Atherogenic / Lipid-Driven Diabetes Proxy)
 - **Key Indicators**: High LDL and dyslipidemia profile
-- **Age Profile**: Variable
+- **Assignment**: Maximum LDL among remaining clusters (Tenenbaum et al., 2006)
 - **Clinical Implication**: Cardiovascular risk management and lipid-focused intervention
+- **Note**: Lipid-driven proxy; true SIDD requires HOMA2-B/C-peptide unavailable in NHANES
 
-### MOD (Mild Obesity-Related Diabetes)
-- **Key Indicators**: BMI >30, moderate glucose elevation
-- **Age Profile**: Middle-aged
+### MOD-like (Mild Obesity-Related Diabetes Proxy)
+- **Key Indicators**: High BMI, moderate metabolic markers
+- **Assignment**: Maximum BMI among remaining clusters
 - **Clinical Implication**: Weight management focus
 
-### MARD (Mild Age-Related Diabetes)
+### MARD-like (Mild Age-Related Diabetes Proxy)
 - **Key Indicators**: Oldest age at diagnosis, mild dysfunction
-- **Age Profile**: >55 years typically
+- **Assignment**: Residual cluster (heuristic category)
 - **Clinical Implication**: Conservative management
 
 ---

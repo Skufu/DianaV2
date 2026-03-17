@@ -514,10 +514,12 @@ Returns system statistics:
 **Endpoint:** `GET /api/v1/insights/cluster-distribution`
 
 Returns distribution of users across diabetes risk clusters:
-- SIDD (Severe Insulin-Deficient)
-- SIRD (Severe Insulin-Resistant)
-- MOD (Mild Obesity-Related)
-- MARD (Mild Age-Related)
+- SIDD-like (Severe Insulin-Deficient Proxy)
+- SIRD-like (Severe Insulin-Resistant Proxy)
+- MOD-like (Mild Obesity-Related Proxy)
+- MARD-like (Mild Age-Related Proxy)
+
+**Note**: "-like" suffix indicates heuristic proxy classifications derived from clustering analysis. True Ahlqvist subtyping requires HOMA2-B and C-peptide biomarkers unavailable in NHANES.
 
 ### 10.3 Biomarker Trends
 
