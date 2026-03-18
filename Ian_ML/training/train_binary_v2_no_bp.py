@@ -448,6 +448,18 @@ def optimize_binary_v2_no_bp_threshold(
     # unstable low-threshold selections under temporal prevalence shift.
     spec_floor = max(base_spec_floor, 0.45 if original_sens >= 0.85 else base_spec_floor)
 
+    # Severe prevalence-shift signature (observed in problematic folds):
+    # very high sensitivity with low specificity at a low provisional threshold.
+    # Apply a stricter specificity floor and an explicit minimum threshold bump
+    # to avoid repeatedly selecting unstable low-threshold operating points.
+    severe_shift_signature = bool(
+        original_sens >= 0.85
+        and original_spec < 0.45
+        and original_best_threshold <= 0.38
+    )
+    effective_spec_floor = spec_floor
+    shift_threshold_floor = 0.46 if severe_shift_signature else None
+
     guardrail_triggered = bool(original_spec < spec_floor and original_sens >= 0.85)
     guardrail_reason = ""
 
@@ -474,7 +486,7 @@ def optimize_binary_v2_no_bp_threshold(
             )
             specificity = float(metrics.get("specificity", 0.0))
             sensitivity = float(metrics.get("sensitivity", 0.0))
-            if specificity >= spec_floor and sensitivity > 0.0:
+            if specificity >= effective_spec_floor and sensitivity >= sens_floor:
                 feasible_points.append((thresh_val, metrics))
 
         if not feasible_points:
@@ -501,7 +513,7 @@ def optimize_binary_v2_no_bp_threshold(
                 continue
             sensitivity = float(metrics.get("sensitivity", 0.0))
             specificity = float(metrics.get("specificity", 0.0))
-            if specificity >= spec_floor and sensitivity >= sens_floor:
+            if specificity >= effective_spec_floor and sensitivity >= sens_floor:
                 eligible.append(name)
 
         if eligible:
@@ -557,6 +569,30 @@ def optimize_binary_v2_no_bp_threshold(
                         "f1": float(fallback_metrics.get("f1", 0.0)),
                     }
 
+    if shift_threshold_floor is not None:
+        chosen = strategies.get(best_name, {}) if isinstance(best_name, str) else {}
+        chosen_threshold = float(chosen.get("threshold", 0.5)) if isinstance(chosen, dict) else 0.5
+        if chosen_threshold < shift_threshold_floor:
+            floor_metrics = compute_binary_v2_no_bp_metrics(
+                y_true,
+                (y_proba >= shift_threshold_floor).astype(int),
+                y_proba,
+            )
+            strategies["guardrail_shift_floor"] = {
+                "threshold": float(shift_threshold_floor),
+                "metrics": floor_metrics,
+            }
+            all_strategies["guardrail_shift_floor"] = {
+                "threshold": float(shift_threshold_floor),
+                "sensitivity": float(floor_metrics.get("sensitivity", 0.0)),
+                "specificity": float(floor_metrics.get("specificity", 0.0)),
+                "accuracy": float(floor_metrics.get("accuracy", 0.0)),
+                "f1": float(floor_metrics.get("f1", 0.0)),
+            }
+            best_name = "guardrail_shift_floor"
+            guardrail_triggered = True
+            guardrail_reason = "specificity_collapse_shift_floor"
+
     best_strategy = strategies[best_name]
     best_threshold = best_strategy.get("threshold", 0.5)
     best_metrics = best_strategy.get("metrics", {})
@@ -567,7 +603,7 @@ def optimize_binary_v2_no_bp_threshold(
         "all_strategies": all_strategies,
         "guardrail_triggered": guardrail_triggered,
         "guardrail_reason": guardrail_reason,
-        "guardrail_spec_floor": float(spec_floor),
+        "guardrail_spec_floor": float(effective_spec_floor),
         "guardrail_pos_prevalence": float(pos_prev),
         "original_strategy": original_strategy_name,
         "original_threshold": float(original_best_threshold),

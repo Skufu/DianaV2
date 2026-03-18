@@ -41,18 +41,35 @@ def test_prevalence_shift_regression_keeps_specificity_above_floor():
     assert selected_specificity >= 0.40
 
 
-def test_prevalence_shift_prefers_nearest_feasible_threshold_over_blunt_default():
-    """Guardrail should prefer nearest feasible threshold rather than jumping straight to 0.50."""
+def test_prevalence_shift_uses_fallback_when_no_feasible_sensitivity_floor():
+    """If no point satisfies spec + sensitivity floors, fallback remains deterministic at 0.50."""
     y_true, y_proba = _build_high_normal_prevalence_regression_case()
 
     result = optimize_binary_v2_no_bp_threshold(y_true, y_proba)
 
     assert result["guardrail_triggered"] is True
-    assert result["strategy"] == "guardrail_nearest_feasible"
+    assert result["strategy"] == "guardrail_fallback"
     assert float(result["original_threshold"]) == pytest.approx(0.40)
+    assert float(result["threshold"]) == pytest.approx(0.50)
+    assert float(result["metrics"]["specificity"]) >= 0.55
+    assert float(result["metrics"]["sensitivity"]) < 0.75
+
+
+def test_severe_shift_signature_applies_shift_floor_guardrail():
+    """Severe low-threshold collapse signature should enforce 0.46 shift floor."""
+    rng = np.random.default_rng(371)
+    y_true = np.array([0] * 220 + [1] * 180, dtype=int)
+    normal_scores = np.clip(rng.normal(0.43, 0.10, 220), 0.0, 1.0)
+    at_risk_scores = np.clip(rng.normal(0.50, 0.09, 180), 0.0, 1.0)
+    y_proba = np.concatenate([normal_scores, at_risk_scores]).astype(float)
+
+    result = optimize_binary_v2_no_bp_threshold(y_true, y_proba)
+
+    assert result["guardrail_triggered"] is True
+    assert result["strategy"] == "guardrail_shift_floor"
+    assert result["guardrail_reason"] == "specificity_collapse_shift_floor"
     assert float(result["threshold"]) == pytest.approx(0.46)
-    assert float(result["metrics"]["specificity"]) >= 0.45
-    assert float(result["metrics"]["sensitivity"]) > 0.50
+    assert float(result["metrics"]["specificity"]) >= 0.50
 
 
 def test_screening_strategy_fallback_is_sane_when_constraints_fail():
