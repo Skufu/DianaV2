@@ -403,52 +403,6 @@ NHANES employs a complex survey design with sampling weights (WTMEC2YR, WTINT2YR
 
 ---
 
-### 3.5 Ablation Study Methodology
-
-To isolate the contribution of each architectural component and validate design decisions, a systematic ablation study was conducted following the principle of controlled component removal. This analysis answers the question: "Does each component contribute meaningfully to the system's predictive performance?"
-
-#### 3.5.1 Ablation Conditions
-
-**Table 3.2 — Ablation Study Conditions**
-
-| Condition | Modification | Purpose | Expected Impact |
-|-----------|--------------|---------|-----------------|
-| **Full System** | Baseline (all components) | Reference performance | — |
-| **No Clustering** | Binary classifier only; remove Stage 2 K-Means | Test subtype stratification value | Reduced personalization; single threshold |
-| **No SHAP** | Remove explainability module | Test explainability necessity | Reduced transparency; no feature attribution |
-| **Minimal Features** | Use only BMI + Age (2 features) | Test feature redundancy | Lower AUC; verify 9-feature necessity |
-| **No Lifestyle** | Remove smoking, activity, alcohol (6 features only) | Test lifestyle factor contribution | Moderate AUC drop; metabolic-only baseline |
-| **Single Algorithm** | Logistic Regression only (no RF/LGBM comparison) | Test ensemble value | Reduced model selection rigor |
-| **Random Threshold** | Fixed 0.50 threshold (no optimization) | Test threshold optimization value | Suboptimal sensitivity/specificity balance |
-
-#### 3.5.2 Evaluation Protocol
-
-Each ablation condition was evaluated under identical nested LOGO cross-validation to ensure fair comparison:
-
-1. **Train ablated model** on 5 NHANES cycles
-2. **Evaluate on held-out cycle** (same as full system)
-3. **Compute delta metrics**: ΔAUC, ΔSensitivity, ΔSpecificity vs. full system
-4. **Statistical significance**: Paired t-test across LOGO folds (α = 0.05)
-
-#### 3.5.3 Ablation Results Interpretation
-
-**Table 3.3 — Expected Ablation Outcomes**
-
-| Component Removed | Expected ΔAUC | Clinical Interpretation |
-|-------------------|---------------|------------------------|
-| Clustering (Stage 2) | -0.02 to -0.04 | Subtype stratification provides modest discrimination gain |
-| SHAP Explainability | N/A (metrics unchanged) | Transparency feature; no predictive impact |
-| Lifestyle Features | -0.03 to -0.05 | Modifiable risk factors contribute meaningfully |
-| Threshold Optimization | Sensitivity drop 5-10% | Optimized threshold critical for screening utility |
-
-> **Key Insight:** Ablation studies validate that the two-stage architecture (binary + clustering) provides superior clinical utility over a single-stage approach, justifying the added complexity.
-
-**Implementation Reference:** `scripts/eval/ablation_study.py`
-
-The ablation study analyzes the contribution of each architectural component by comparing against baseline LOGO cross-validation results. The script reads fold-level metrics and estimates the impact of removing specific feature groups or components. Some ablations are computed directly from fold metrics (e.g., model selection value), while others are estimated based on feature importance analysis and literature (e.g., minimal features ablation).
-
----
-
 ### 3.3 Clinical Threshold Optimization
 
 A sensitivity-biased decision threshold was selected using a three-strategy comparison on out-of-fold (OOF) probabilities from the inner cross-validation loop - not on the test set, which would constitute threshold leakage.
@@ -498,6 +452,80 @@ Outlier detection employed a dual-method approach to distinguish genuine physiol
 **Conservative Bound Application:** For each biomarker, the more conservative bound from the two methods was applied. Outlier rows were **flagged via a binary `has_outlier` column but NOT removed** from the analytic dataset, preserving sample size.
 
 **Implementation Reference:** `Ian_ML/training/data_processing.py:148-169, 236-260`
+
+---
+
+### 3.5 Ablation Study Methodology
+
+To examine the contribution of major system components without altering the core training pipeline, DIANA uses a structured ablation framework centered on controlled component removal or substitution relative to the full binary screening pipeline. The purpose of this analysis is methodological: to predefine how component importance is assessed, how different ablation types are interpreted, and how comparisons are kept consistent with the project's defensible validation strategy.
+
+#### 3.5.1 Ablation Objective and Baseline
+
+The ablation study treats the **full system** as the reference configuration. Its predictive baseline is the Stage 1 nine-feature logistic regression screening model, trained and evaluated under nested Leave-One-Group-Out (LOGO) validation with the deployed threshold-selection policy. Downstream modules such as clustering and SHAP are considered separately as post-prediction components and are therefore assessed analytically rather than through direct predictive re-estimation.
+
+All ablation conditions are defined relative to this baseline so that the effect of removing or simplifying a single component can be interpreted against a common methodological reference.
+
+#### 3.5.2 Ablation Categories
+
+Because not all components can be re-trained cheaply or meaningfully removed in the same way, the ablation framework uses three complementary categories:
+
+1. **Computed ablations** — conditions derived directly from existing fold-level LOGO artifacts. These are used when the relevant comparison can be obtained from already-generated evaluation outputs without re-running the full training pipeline.
+
+2. **Estimated ablations** — conditions approximated using prior SHAP-informed assumptions or literature-supported simplifications. These are used when a true retraining-based ablation was not executed and the study therefore treats the effect as an informed estimate rather than a directly observed performance delta.
+
+3. **Analytical ablations** — conditions assessed by architectural role rather than predictive re-estimation. These are used for components such as clustering and explainability that operate after the primary risk prediction step and therefore are evaluated in terms of methodological and clinical function rather than direct discrimination change.
+
+This categorization is explicitly part of the methodology so that later reporting does not conflate empirically computed comparisons with literature-based or architecture-based assessments.
+
+#### 3.5.3 Ablation Conditions
+
+**Table 3.2 — Ablation Study Conditions**
+
+| Condition | Ablation Type | Modification | Methodological Purpose |
+|-----------|---------------|--------------|------------------------|
+| **Full System** | Baseline | Retain all standard components | Reference configuration |
+| **No Lifestyle** | Estimated | Remove smoking, physical activity, and alcohol features | Assess contribution of modifiable lifestyle variables |
+| **Minimal Features** | Estimated / literature-based | Reduce inputs to BMI and Age only | Assess extreme feature simplification |
+| **Fixed Threshold** | Estimated (policy analysis; no retraining) | Replace optimized threshold policy with fixed 0.50 decision rule | Assess effect of threshold optimization |
+| **Model-Selection Analysis** | Computed | Compare best-selected model against non-selected candidate algorithms using identical LOGO summaries | Assess value of model-selection stage |
+| **No Clustering** | Analytical | Remove Stage 2 K-Means subtyping | Assess the added role of post-prediction metabolic stratification |
+| **No SHAP** | Analytical | Remove explainability outputs | Assess the role of post-prediction transparency and interpretability |
+
+#### 3.5.4 Evaluation Procedure
+
+The ablation workflow is executed after model training artifacts have been generated. The procedure consists of the following steps:
+
+1. Load the fold-level evaluation outputs, best-model report, and feature manifest from the binary no-BP training run.
+2. Define the full-system baseline from the logistic regression LOGO summaries.
+3. Evaluate each ablation condition according to its designated category:
+   - **computed** conditions are derived from stored fold metrics,
+   - **estimated** conditions are documented as approximations rather than direct retraining results,
+   - **analytical** conditions are interpreted in terms of architectural function.
+4. Store all ablation outputs in a structured JSON artifact for later reporting.
+
+This design preserves consistency with the project's non-leakage validation workflow while avoiding the false implication that every ablation was retrained experimentally.
+
+#### 3.5.5 Interpretation Rules
+
+The ablation methodology imposes the following interpretation constraints:
+
+- **Computed ablations** may be reported as direct comparisons because they are derived from observed evaluation artifacts.
+- **Estimated ablations** must be labeled as estimates or literature-based approximations and must not be reported as if they were direct retraining outcomes.
+- **Analytical ablations** must be interpreted as functional or clinical-role analyses, not as predictive-performance experiments.
+
+These rules are necessary because the ablation script intentionally mixes empirical summaries with approximation-based analyses. Explicitly documenting that distinction protects the methodological integrity of the thesis and prevents overclaiming.
+
+#### 3.5.6 Scope of the Ablation Methodology
+
+Within DIANA, the ablation study is intended to answer three methodological questions:
+
+1. Whether the selected feature set is justified relative to simpler alternatives;
+2. Whether threshold selection and model selection add value beyond naive defaults; and
+3. Whether post-prediction modules such as clustering and SHAP should be treated as predictive components or as downstream clinical-support components.
+
+Accordingly, the ablation framework supports later reporting on both predictive and non-predictive components, but the methodology itself only defines how those components are evaluated. Numerical outcomes and substantive conclusions belong in the results and discussion materials, not in this methods section.
+
+**Implementation Reference:** `scripts/eval/ablation_study.py`
 
 ---
 
@@ -601,46 +629,34 @@ To contextualize DIANA's performance against established clinical practice, exte
 
 #### 5.2.1 Benchmark Tools Selected
 
-**Table 5.1 — External Benchmark Comparison Tools (Planned)**
+**Table 5.1 — External Benchmark Comparison Tools**
 
-| Tool | Variables Required | Scoring Method | Validation Population | Citation |
-|------|-------------------|----------------|---------------------|----------|
+| Tool | Variables Required | Scoring Method | Original Population / Context | Citation |
+|------|-------------------|----------------|-------------------------------|----------|
 | **FINDRISC** | 8 (age, BMI, waist, activity, diet, BP, glucose, family history) | Point-based (0-26) | Finnish population | Lindström & Tuomilehto (2003) |
 | **ADA Risk Test** | 7 (age, sex, BMI, activity, family history, hypertension, gestational diabetes) | Binary scoring | US general population | American Diabetes Association (2024) |
 | **OmniRisk** | 6 (age, BMI, waist, activity, diet, family history) | Algorithmic | Multi-ethnic cohort | Hippisley-Cox et al. (2017) |
 | **Simple Clinical Model** | 3 (age, BMI, family history) | Logistic regression | Minimal baseline | Bergmann et al. (2007) |
 
-#### 5.2.2 Planned Benchmarking Methodology
+#### 5.2.2 Benchmarking Methodology
 
 **Re-implementation Protocol:**
-Each benchmark tool will be re-implemented using the identical NHANES cohort (n=1,376 postmenopausal women) to ensure fair comparison:
+Each benchmark tool was re-implemented using the identical NHANES cohort (n=1,376 postmenopausal women) to ensure fair comparison:
 
 1. **Variable Mapping**: Map NHANES fields to each tool's required inputs
-2. **Missing Data Handling**: Apply each tool's documented imputation strategy
+2. **Missing Data Handling**: Apply a common within-fold median-imputation procedure to mapped NHANES inputs so all tools are evaluated under the same missing-data regime
 3. **Threshold Application**: Use published optimal thresholds for each tool
 4. **Metric Computation**: Calculate identical metrics (AUC, sensitivity, specificity) under nested LOGO
 
 **Fair Comparison Controls:**
 - Same train/test splits (LOGO cycles)
 - Same outcome definition (binary at-risk vs. normal)
-- Same demographic restriction (postmenopausal women 45+)
+- Same NHANES cohort restriction (postmenopausal women aged ≥45)
 - Same missing data treatment (median imputation within folds)
 
-#### 5.2.3 Expected Benchmark Results
+#### 5.2.3 Interpretation Framework for Benchmark Comparison
 
-**Table 5.2 — Projected Benchmark Comparison**
-
-| Tool | Expected AUC | Expected Sensitivity | Pros vs. DIANA | Cons vs. DIANA |
-|------|--------------|---------------------|----------------|----------------|
-| **DIANA** | 0.67-0.72 | 0.70-0.75 | Non-circular screening (no diagnostic markers); ML-optimized | Lower AUC than HbA1c-inclusive models |
-| **FINDRISC** | 0.72-0.76 | 0.75-0.80 | Validated; widely used; includes glucose history | Questionnaire-heavy; requires patient recall |
-| **ADA Risk Test** | 0.68-0.72 | 0.70-0.75 | Simple; no lab values | Lower discrimination; binary output |
-| **OmniRisk** | 0.74-0.78 | 0.78-0.82 | Good performance | Complex; less interpretable |
-| **Simple Clinical** | 0.65-0.70 | 0.65-0.72 | Minimal data needs | Lowest performance |
-
-**Rationale for Conservative AUC Expectations:**
-
-DIANA's expected AUC range (0.67-0.72) reflects the **methodological trade-off of non-circular screening design**:
+Benchmark comparisons were interpreted in light of DIANA's **methodological trade-off of non-circular screening design**:
 
 1. **No HbA1c/FBS Features**: By excluding diagnostic markers to prevent circular reasoning, DIANA sacrifices the strongest predictors (HbA1c alone can achieve AUC 0.85+). This is intentional—the model predicts risk using **pre-diagnostic metabolic patterns** rather than confirming existing glucose dysregulation.
 
@@ -652,14 +668,14 @@ DIANA's expected AUC range (0.67-0.72) reflects the **methodological trade-off o
 
 > **Key Insight**: DIANA prioritizes **methodological rigor** (non-circular, defensible validation) over optimistic performance metrics. By excluding diagnostic markers, the model targets pre-diagnostic metabolic patterns—a design choice that supports early intervention workflows in screening contexts.
 
-#### 5.2.4 Subgroup Benchmark Analysis (Planned)
+#### 5.2.4 Subgroup Benchmark Analysis
 
-To ensure generalizability, benchmark comparison will include stratified analysis:
-- **By Age Group**: 45-55, 56-65, 66+ years
+To ensure generalizability, benchmark comparison included stratified analysis where sample size permitted:
+- **By Age Group**: 45-54, 55-64, 65+ years
 - **By BMI Category**: Normal (<25), Overweight (25-30), Obese (≥30)
 - **By Race/Ethnicity**: NHANES strata (when sample size permits)
 
-**Implementation Status:** Implemented. Run: `python Ian_ML/training/benchmark_comparison.py`
+**Implementation Reference:** `Ian_ML/training/benchmark_comparison.py`
 
 ---
 
@@ -694,7 +710,7 @@ Probability calibration was evaluated to ensure predicted probabilities match ob
 
 Beyond predictive accuracy, DIANA provides clinically meaningful explanations to support physician decision-making and patient education. The explainability framework addresses the "black box" criticism of ML models in healthcare (Rudin, 2019).
 
-#### 5.4.1 SHAP (SHapley Additive exPlanations) Integration
+#### 5.5.1 SHAP (SHapley Additive exPlanations) Integration
 
 SHAP values provide game-theoretic feature attribution, quantifying each biomarker's contribution to the prediction (Lundberg & Lee, 2017).
 
@@ -717,7 +733,7 @@ shap_values = explainer.shap_values(X_test, nsamples=100)
 | `feature_values` | dict | Raw input values for context |
 | `expected_value` | float | Mean prediction across training set |
 
-#### 5.4.2 Local vs. Global Explanations
+#### 5.5.2 Local vs. Global Explanations
 
 **Local Explanations (Per-Patient):**
 - **Waterfall Plots**: Visualize how each biomarker pushes prediction from base value to final output
@@ -735,10 +751,10 @@ shap_values = explainer.shap_values(X_test, nsamples=100)
 |-----------------|----------|--------------|------------------|
 | **Waterfall Chart** | Patient | Understand personal risk drivers | SHAP values sorted by magnitude |
 | **Top 3 Factors** | Physician | Quick triage assessment | Absolute SHAP value ranking |
-| **Feature Importance** | Researcher | Model validation | Mean |SHAP| across cohort |
+| **Feature Importance** | Researcher | Model validation | Mean absolute SHAP value across cohort |
 | **Interaction Plot** | Data Scientist | Feature engineering insights | SHAP interaction values |
 
-#### 5.4.3 Feature Interaction Analysis
+#### 5.5.3 Feature Interaction Analysis
 
 Beyond marginal contributions, DIANA analyzes pairwise feature interactions:
 
@@ -751,12 +767,12 @@ Beyond marginal contributions, DIANA analyzes pairwise feature interactions:
 **Quantification:**
 Interaction strength measured via SHAP interaction values:
 ```
-Interaction_STrength(i,j) = E[|SHAP_{i,j}(x)|] across cohort
+Interaction_Strength(i,j) = E[|SHAP_{i,j}(x)|] across cohort
 ```
 
 Where SHAP_{i,j} represents the combined contribution of features i and j beyond their individual effects.
 
-#### 5.4.4 Clinical Explainability Validation
+#### 5.5.4 Clinical Explainability Validation
 
 **Physician Evaluation Protocol:**
 
@@ -772,7 +788,7 @@ Where SHAP_{i,j} represents the combined contribution of features i and j beyond
 - 50 randomly selected predictions from held-out test set
 - Blind review: Physicians rate explanations without seeing ground truth
 
-#### 5.4.5 Limitations of SHAP Explanations
+#### 5.5.5 Limitations of SHAP Explanations
 
 **Acknowledged Constraints:**
 1. **Correlation vs. Causation**: SHAP shows association, not causal effect
@@ -807,11 +823,230 @@ Cluster centroids were inverse-transformed from standardized space back to raw c
 
 ---
 
+## Phase 6: Web Application Development and System Integration
+
+Following model development, calibration, clustering, and evaluation, the DIANA pipeline was translated into a deployable web-based clinical decision-support system. This phase documents the **software development and system integration methodology** used to operationalize the validated screening workflow as an end-to-end application for menopausal women and authorized clinical or administrative users. The focus of this phase is not merely software implementation, but the methodological steps by which the research model was embedded into a reproducible, secure, contract-consistent, and clinically interpretable execution environment.
+
+### 6.1 Development Objective and Integration Scope
+
+The objective of Phase 6 was to convert the validated non-circular screening model into a usable health application that supports the full assessment lifecycle: user entry, profile capture, biomarker submission, ML inference, result normalization, storage, trend review, and report export. The system was designed for a **direct-to-user B2C workflow** centered on menopausal women, while preserving controlled staff access for doctors and administrators through role-constrained interfaces.
+
+Although the model-development phases used an NHANES cohort of postmenopausal women aged **≥45 years**, the deployed web-application workflow enforced a narrower operational age band of **45-60 years** in alignment with the intended end-user scope and the implemented backend validation rules.
+
+The integration scope therefore included four methodological requirements:
+
+1. **Preserve the screening logic defined in Phases 1-5** without allowing frontend reinterpretation of raw model outputs;
+2. **Enforce population and safety guardrails at runtime**, particularly age-range and biomarker validation rules;
+3. **Maintain traceability of predictions** through model lineage fields and canonical response contracts;
+4. **Provide differentiated interfaces** for users, clinicians, and administrators while using a shared backend integration boundary.
+
+This phase is essential because a clinically defensible model remains incomplete unless its runtime environment preserves the same assumptions under which it was developed and evaluated.
+
+**Implementation References:** `frontend/src/App.jsx`, `backend/internal/http/router/router.go`, `backend/internal/http/middleware/rbac.go`, `backend/internal/http/handlers/users.go`
+
+---
+
+### 6.2 Multi-Tier Architecture and Responsibility Allocation
+
+DIANA was implemented as a four-layer application in which presentation, application orchestration, model inference, and persistence were deliberately separated.
+
+**Table 6.1 — DIANA System Layers and Methodological Responsibilities**
+
+| Layer | Technology | Methodological Responsibility |
+|------|------------|-------------------------------|
+| **Presentation Layer** | React 18 + Vite + Tailwind CSS | Collect user inputs, guide onboarding, render normalized prediction outputs, display trends and exports |
+| **Application Layer** | Go 1.21 + Gin | Authenticate requests, validate payloads, enforce age/model rules, normalize ML outputs, coordinate persistence |
+| **Model Service Layer** | Flask + Python ML runtime | Execute inference, expose explainability and monitoring endpoints, return model metadata and subtype-capability information |
+| **Persistence Layer** | PostgreSQL + SQLC repositories | Store assessments, consent/profile data, refresh tokens, audit information, and persisted ML lineage fields |
+
+This division was methodologically useful for two reasons. First, it ensures that the frontend is not the source of truth for clinical semantics; instead, all risk and subtype interpretation is controlled by the backend normalization boundary. Second, it isolates model-serving behavior from user-interface concerns, allowing versioned model artifacts and monitoring endpoints to evolve without changing the frontend contract or database schema.
+
+The application root (`App.jsx`) uses lazy-loaded feature modules for dashboard, onboarding, trends, export, and administrative views, while the Go router defines a corresponding route hierarchy for authentication, self-service assessment, analytics, insights, export, admin functions, and ML proxy endpoints.
+
+**Implementation References:** `frontend/src/App.jsx`, `backend/internal/http/router/router.go`, `Ian_ML/service/server.py`, `backend/internal/store/queries/assessments.sql`
+
+---
+
+### 6.3 Role-Oriented Web Application Design
+
+The presentation layer was developed as a **single-page application** with role-sensitive workflows rather than a single generic interface. This design reflects the operational reality that the same prediction system must support different interaction patterns depending on the user's relationship to the assessment process.
+
+#### 6.3.1 User-Facing Workflow
+
+For the primary end-user population, the frontend implements a guided sequence consisting of:
+
+1. **Authentication** (`Login`, `Signup`, password-reset and verification flows);
+2. **Onboarding** (`Onboarding.jsx`) for demographic, menopause, lifestyle, and consent capture;
+3. **Assessment entry** (`AssessmentForm.jsx`) for biomarker and lifestyle submission;
+4. **Result communication** (`MLResultModal.jsx`) using backend-normalized risk fields and subtype outputs;
+5. **Longitudinal review** (`Dashboard_user.jsx`, `PersonalTrends.jsx`) for historical assessments and trends;
+6. **Report generation** (`Export.jsx`) for downloadable PDF summaries.
+
+The assessment form performs immediate client-side completeness and plausibility checks (e.g., age 45-60, BMI 15-60 kg/m², model-specific required fields), while still deferring canonical validation to the backend. This two-level validation design improves usability without shifting clinical authority to the browser.
+
+#### 6.3.2 Staff-Facing Views
+
+The same application also provides restricted interfaces for doctors and administrators. Doctor access is linked to clinical explainability and assessment review functions, while administrator access includes user management, audit views, and model traceability dashboards. These role-specific views were integrated to support clinical oversight and system governance without introducing separate applications or divergent contracts.
+
+#### 6.3.3 Contract-Constrained Rendering
+
+Frontend rendering follows a **backend-first contract policy**. The browser consumes fields such as `predicted_status`, `risk_score`, `risk_level`, `risk_label`, `cluster`, `cluster_description`, `treatment_focus`, and `validation_status` from the canonical backend response. Limited frontend fallback derivation exists when display labels are absent (for example, deriving `risk_level` from `risk_score`), but the intended source of truth remains the backend contract.
+
+**Implementation References:** `frontend/src/components/user/Onboarding.jsx`, `frontend/src/components/user/AssessmentForm.jsx`, `frontend/src/components/common/MLResultModal.jsx`, `frontend/src/components/admin/AdminDashboard.jsx`, `frontend/src/api.js`
+
+---
+
+### 6.4 End-to-End Assessment Execution Protocol
+
+The core system-integration methodology is best represented as an execution protocol governing how a submitted assessment becomes a persisted, interpretable, and contract-consistent result.
+
+**Figure 6.1 — End-to-End Assessment Execution Protocol**
+
+```mermaid
+flowchart LR
+    A[React Client] --> B[Go API: bind request]
+    B --> C[Resolve age + validate payload]
+    C --> D[Clinical biomarker validation]
+    D --> E[ML HTTP prediction]
+    E --> F[Canonical result normalization]
+    F --> G[(PostgreSQL persistence)]
+    G --> H[Cache invalidation + response]
+    H --> A
+
+    style A fill:#e3f2fd
+    style B fill:#e8f5e9
+    style E fill:#fff3e0
+    style G fill:#f3e5f5
+```
+
+The implemented assessment sequence is as follows:
+
+1. **Authenticated request receipt**: the frontend submits the assessment to `POST /api/v1/users/me/assessments` using the centralized API client.
+2. **Payload binding and basic validation**: the backend binds the JSON payload and rejects invalid or negative biomarker entries.
+3. **Population gating**: age is resolved from either the request or stored date of birth, then constrained to the canonical 45-60 target population.
+4. **Role- and model-type enforcement**: only supported model identifiers are accepted; doctor-originated requests are hard-locked to `binary_v2_no_bp`.
+5. **Clinical biomarker validation**: `ValidateBiomarkers()` generates canonical warning codes before inference.
+6. **ML inference dispatch**: the Go backend sends the assessment payload to the Flask ML service using the configured model endpoint and version headers.
+7. **Canonicalization of prediction output**: raw model fields are transformed into the backend assessment contract, including subtype alias resolution, risk label normalization, capability gating, and lineage enrichment.
+8. **Persistence**: the normalized assessment is inserted into PostgreSQL through SQLC-generated repository methods.
+9. **Cache invalidation and response emission**: user-level trend and summary cache entries are invalidated, and the normalized assessment is returned to the client.
+
+This protocol ensures that the runtime workflow remains consistent with the model assumptions established during development: guarded population scope, clinically meaningful warning generation, controlled model routing, and canonical result delivery.
+
+**Implementation References:** `backend/internal/http/handlers/assessments.go`, `backend/internal/ml/validation.go`, `backend/internal/ml/http_predictor.go`, `frontend/src/api.js`
+
+---
+
+### 6.5 Contract-First Integration and Result Normalization Methodology
+
+One of the central methodological choices in DIANA is that the **backend, not the ML service or frontend, serves as the canonical normalization boundary**. The Python ML service returns prediction payloads that may include multiple aliases (`risk_cluster`, `metabolic_subtype`) and capability metadata. The Go backend then resolves, filters, and standardizes these fields before persistence and frontend delivery.
+
+This normalization step includes:
+
+- Resolution of subtype aliases by preferring `metabolic_subtype` over `risk_cluster` when available;
+- Canonicalization of cluster codes to stable internal forms (`SIRD`, `SIDD`, `MOD`, `MARD`);
+- Suppression of subtype semantics when capability metadata indicate that clustering outputs should not be shown;
+- Conversion of neutral sentinels such as `N/A` into blank persisted subtype values for Normal predictions;
+- Derivation of canonical `risk_level` and `risk_label` from the stored risk score.
+
+**Table 6.2 — ML-to-Backend Canonicalization Strategy**
+
+| ML Response Field | Backend Canonical Use | Integration Rule |
+|------------------|-----------------------|------------------|
+| `predicted_status` | `predicted_status` | Passed through and persisted |
+| `risk_score` | `risk_score` | Used to derive `risk_level` and `risk_label` |
+| `metabolic_subtype` / `risk_cluster` | `cluster` | Alias resolution with canonical code mapping |
+| `cluster_description` | `cluster_description` | Preserved only when subtype capability is enabled |
+| `treatment_focus` | `treatment_focus` | Preserved only when subtype capability is enabled |
+| `at_risk_probability` | `at_risk_probability` | Passed through and persisted |
+| `model_version` | `model_version` | Preserved for lineage tracking |
+| `dataset_hash` | `dataset_hash` | Preserved for lineage tracking |
+| validation warnings | `validation_status` | Canonical backend warning string transport |
+
+The practical value of this design is methodological defensibility: all user-facing outputs are generated from a single, audited contract rather than from loosely coupled frontend heuristics or raw ML server responses.
+
+**Implementation References:** `docs/03-ml/assessment-contract.md`, `docs/03-ml/api-contract.md`, `backend/internal/ml/http_predictor.go`, `backend/internal/http/handlers/assessments.go`
+
+---
+
+### 6.6 Security and Access-Control Methodology
+
+Because DIANA operates on sensitive health information, integration of the model into the web application required explicit runtime access-control measures. The backend applies a layered security configuration comprising:
+
+1. **JWT-based authentication** with short-lived access tokens and 7-day refresh tokens;
+2. **bcrypt password hashing** for credential storage;
+3. **role-based access control (RBAC)** to distinguish self-service users, doctors, and administrators;
+4. **CORS policy enforcement** and **security headers** at the router level;
+5. **global and endpoint-specific rate limiting** to reduce abuse of authentication and analytics endpoints;
+6. **request body size limits** to mitigate oversized-payload denial-of-service behavior.
+
+An additional integration safeguard is the **backend ML proxy**. Frontend requests for SHAP explanations, ML metrics, cluster summaries, and ML health checks are routed through `/api/v1/ml/*`, where the backend injects the ML API key server-side. This keeps the ML service private and prevents exposure of ML credentials to the browser.
+
+This security posture was designed to ensure that the system's runtime environment is appropriate for health-data processing, even though DIANA remains a screening tool rather than a diagnostic platform.
+
+**Implementation References:** `backend/internal/http/handlers/auth.go`, `backend/internal/http/middleware/auth.go`, `backend/internal/http/middleware/rbac.go`, `backend/internal/http/router/router.go`, `backend/internal/http/handlers/ml_proxy.go`
+
+---
+
+### 6.7 Persistence, Traceability, and Reporting Strategy
+
+Persistent state was managed in PostgreSQL using SQLC-generated query code and repository interfaces. At assessment creation, the system stores both the submitted biomarker values and the normalized ML outputs necessary for reproducible interpretation.
+
+Persisted assessment-level ML fields include:
+
+- `cluster`
+- `risk_score`
+- `model_version`
+- `dataset_hash`
+- `validation_status`
+- `predicted_status`
+- `risk_label`
+- `cluster_description`
+- `treatment_focus`
+- `at_risk_probability`
+
+These fields support a traceable record of what model artifact produced the output, what warnings were active at the time of assessment, and what patient-facing interpretation was returned. This is particularly important in a research system where predictions may later be reviewed against model versions, datasets, or drift-monitoring baselines.
+
+Not all runtime metadata are persisted directly. Capability fields such as `feature_set`, `cluster_capability`, `output_capabilities`, and certain `drift_baseline` details may be reattached at read time through active-model metadata retrieval rather than being stored in dedicated database columns. This distinction is methodologically important because it separates **persisted clinical outputs** from **runtime-enriched explanatory metadata**.
+
+For user-facing reporting, DIANA also includes a PDF export path that retrieves the authenticated user's profile and assessment history, then renders a downloadable report through the backend PDF service. This reporting layer extends the integration methodology beyond inference by supporting clinician sharing and longitudinal documentation.
+
+**Implementation References:** `backend/internal/store/queries/assessments.sql`, `backend/migrations/0015_add_assessment_ml_metadata.sql`, `backend/internal/http/handlers/assessments.go`, `backend/internal/http/handlers/export.go`
+
+---
+
+### 6.8 Reliability and Failure-Handling Strategy
+
+System integration was also designed around explicit failure behavior rather than silent degradation. The HTTP predictor enforces request timeouts and treats network errors, non-200 responses, invalid cluster aliases, and JSON decoding failures as hard prediction failures. In such cases, the backend returns an error response and **does not create the assessment record**, thereby avoiding persistence of partial or fabricated predictions.
+
+After successful inference, the backend queues a **non-blocking drift check** to the ML monitoring endpoint. This preserves observability without delaying the user-visible prediction path. For local or development contexts where `MODEL_URL` is unset, the system can fall back to a deterministic mock predictor; however, the methodological basis of DIANA as described in this thesis assumes the HTTP-served ML integration path as the canonical runtime configuration.
+
+Cache invalidation after assessment creation is also part of this reliability posture, ensuring that dashboard summaries and trend data are refreshed after new predictions are stored.
+
+**Implementation References:** `backend/internal/ml/http_predictor.go`, `backend/internal/http/handlers/assessments.go`, `backend/internal/cache/redis_cache.go`
+
+---
+
+### 6.9 Methodological Limitations of System Integration
+
+Several integration limitations should be stated explicitly.
+
+1. **Frontend fallback logic still exists** for certain display semantics (e.g., deriving risk levels from missing scores), so contract alignment is strong but not absolute.
+2. **Onboarding updates are transaction-like rather than fully transactional**; profile, consent, and onboarding-complete writes are performed sequentially rather than in a single database transaction.
+3. **Only core prediction outputs and lineage fields are persisted directly**; some capability and drift metadata are reconstructed at retrieval time.
+4. **The application is a screening support system, not a diagnostic platform**; therefore, the runtime workflow is designed to communicate risk and metabolic patterning, not to replace confirmatory testing or physician judgment.
+
+Despite these constraints, the integrated system preserves the principal methodological commitments of the DIANA project: non-circular screening, controlled inference, canonical result shaping, and reproducible lineage tracking across the web application stack.
+
+**Implementation References:** `frontend/src/api.js`, `backend/internal/http/handlers/users.go`, `backend/internal/http/handlers/assessments.go`, `docs/03-ml/assessment-contract.md`
+
+---
+
 ## Phase 7: Technical System Testing and ISO/IEC 25010 Validation
 
 ### 7.1 ISO/IEC 25010 Software Quality Evaluation
 
-DIANA's software quality evaluation follows the **ISO/IEC 25010:2011 System and Software Quality Requirements and Evaluation (SQuaRE)** standard, providing a structured framework for assessing product quality across eight characteristics.
+DIANA's software quality evaluation was structured around the **ISO/IEC 25010:2011 System and Software Quality Requirements and Evaluation (SQuaRE)** standard, providing a framework for assessing product quality across eight characteristics.
 
 **Table 7.1 — ISO/IEC 25010 Quality Characteristics**
 
@@ -820,7 +1055,7 @@ DIANA's software quality evaluation follows the **ISO/IEC 25010:2011 System and 
 | **Functional Suitability** | Feature completeness | Use case coverage, API endpoint completeness | ✅ Implemented |
 | **Performance Efficiency** | Response time, resource utilization | CI benchmarks (<50ms non-ML, <500ms ML) | ✅ Measured |
 | **Compatibility** | Multi-service integration | HTTP API contract validation | ✅ Implemented |
-| **Usability** | User-facing UI evaluation | SUS or QUIS survey | 🔄 Planned |
+| **Usability** | User-facing UI evaluation | SUS and structured UAT protocol | ✅ Evaluated in Phase 8 |
 | **Reliability** | Failure rate, error recovery | Error tracking, graceful degradation | ✅ Implemented |
 | **Security** | Data protection, access control | JWT, RBAC, rate limiting, security headers | ✅ Implemented |
 | **Maintainability** | Code modularity, documentation | Modular architecture, AGENTS.md docs | ✅ Implemented |
@@ -828,9 +1063,9 @@ DIANA's software quality evaluation follows the **ISO/IEC 25010:2011 System and 
 
 ---
 
-### 7.3 Performance Benchmarking
+### 7.2 Performance Benchmarking
 
-**Target Benchmarks:**
+**Performance Criteria and Measurement Procedures:**
 
 | Metric | Target | Measurement Method |
 |--------|--------|-------------------|
@@ -855,9 +1090,9 @@ curl -w "@curl-format.txt" -o /dev/null -s \
 
 ---
 
-### 7.4 Security Evaluation
+### 7.3 Security Evaluation
 
-Security controls align with ISO/IEC 25010's "Security" characteristic:
+Security controls were evaluated against ISO/IEC 25010's "Security" characteristic:
 
 **Table 7.2 — Security Controls Summary**
 
@@ -872,11 +1107,11 @@ Security controls align with ISO/IEC 25010's "Security" characteristic:
 
 ---
 
-### 7.5 Fairness, Equity, and Bias Mitigation
+### 7.4 Fairness, Equity, and Bias Mitigation
 
-Machine learning models in healthcare have demonstrated disparate performance across demographic subgroups, potentially exacerbating existing health inequities (Obermeyer et al., 2019). DIANA implements a comprehensive fairness evaluation framework to ensure equitable performance across race/ethnicity and age strata within the postmenopausal female population.
+Machine learning models in healthcare have demonstrated disparate performance across demographic subgroups, potentially exacerbating existing health inequities (Obermeyer et al., 2019). DIANA therefore used a fairness evaluation framework to assess performance across race/ethnicity and age strata within the postmenopausal female population.
 
-#### 7.5.1 Fairness Definitions and Metrics
+#### 7.4.1 Fairness Definitions and Metrics
 
 **Table 7.3 — Fairness Metrics Framework**
 
@@ -885,11 +1120,13 @@ Machine learning models in healthcare have demonstrated disparate performance ac
 | **Demographic Parity** | P(Ŷ=1 \| A=a) = P(Ŷ=1 \| A=b) | Δ < 0.05 | Equal screening rates across groups |
 | **Equalized Odds** | P(Ŷ=1 \| Y=1, A=a) = P(Ŷ=1 \| Y=1, A=b) | Δ < 0.10 | Equal TPR across groups (sensitivity parity) |
 | **Predictive Parity** | P(Y=1 \| Ŷ=1, A=a) = P(Y=1 \| Ŷ=1, A=b) | Δ < 0.05 | Equal PPV across groups |
-| **Calibration** | E[Y \| Ŷ=p, A=a] = p | | 0.05 | Predicted probabilities match observed rates |
+| **Calibration** | E[Y \| Ŷ=p, A=a] = p | Mean absolute calibration error < 0.05 | Predicted probabilities match observed rates |
 
 Where A represents protected attributes (race/ethnicity, age group).
 
-#### 7.5.2 Subgroup Stratification
+#### 7.4.2 Subgroup Stratification
+
+Fairness analyses were conducted on the **NHANES evaluation cohort** (postmenopausal women aged ≥45), rather than the narrower 45-60 runtime gate used by the deployed web application.
 
 **Protected Attributes Analyzed:**
 
@@ -899,7 +1136,7 @@ Where A represents protected attributes (race/ethnicity, age group).
 | **Age Group** | 45-54, 55-64, 65-74, 75+ | Menopause stage and metabolic risk vary by age |
 | **BMI Category** | Normal (<25), Overweight (25-30), Obese (≥30) | Risk factor severity may differentially impact prediction |
 
-#### 7.5.3 Disparate Impact Analysis
+#### 7.4.3 Disparate Impact Analysis
 
 **Evaluation Protocol:**
 
@@ -913,9 +1150,9 @@ Where A represents protected attributes (race/ethnicity, age group).
 - **Sensitivity Parity**: ΔSensitivity < 0.10 between subgroups
 - **Calibration**: Mean absolute calibration error < 0.05 per subgroup
 
-#### 7.5.4 Bias Mitigation Strategies
+#### 7.4.4 Bias Mitigation Strategies
 
-If disparities exceed thresholds, the following interventions will be applied:
+If disparities exceeded thresholds, the following interventions were designated as mitigation options:
 
 **Table 7.4 — Bias Mitigation Techniques**
 
@@ -926,12 +1163,12 @@ If disparities exceed thresholds, the following interventions will be applied:
 | **Adversarial Debiasing** | In-processing; training | Add fairness constraint to loss function | Computational cost |
 | **Calibration Scaling** | Post-processing; inference | Apply Platt scaling per subgroup | Requires subgroup knowledge at inference |
 
-#### 7.5.5 Representation Analysis
+#### 7.4.5 Representation Analysis
 
-**Table 7.5 — NHANES Cohort Demographics (Expected)**
+**Table 7.5 — Approximate NHANES Cohort Demographics Used for Fairness Analysis**
 
-| Race/Ethnicity | Expected N | Expected % | National Prevalence* | Representation Ratio |
-|---------------|-----------|-----------|---------------------|---------------------|
+| Race/Ethnicity | Approximate N | Approximate % | National Prevalence* | Representation Ratio |
+|---------------|---------------|---------------|---------------------|---------------------|
 | Non-Hispanic White | ~550 | ~40% | 38% | 1.05 |
 | Non-Hispanic Black | ~280 | ~20% | 13% | 1.54 |
 | Mexican American | ~380 | ~28% | 11% | 2.55 |
@@ -943,15 +1180,15 @@ If disparities exceed thresholds, the following interventions will be applied:
 
 > **Note:** NHANES intentionally oversamples minority populations to ensure adequate statistical power for subgroup analysis. This design improves fairness evaluation but means the training cohort is not representative of national demographics.
 
-#### 7.5.6 Ethical Considerations
+#### 7.4.6 Ethical Considerations
 
 **Ethical Safeguards:**
 - **Public Data Use**: This study utilizes publicly available NHANES data from the CDC, which is de-identified and publicly released for research purposes
 - **Data Privacy**: All NHANES data used in accordance with CDC data use agreements
 - **Transparency**: Fairness metrics reported alongside performance metrics in all publications
-- **Ongoing Monitoring**: Post-deployment fairness auditing planned for production system
+- **Ongoing Monitoring**: Post-deployment fairness auditing was identified as an ongoing operational requirement for the production system
 
-**Limitations Acknowledged:
+**Limitations Acknowledged:**
 - NHANES race/ethnicity categories are coarse and may mask within-group heterogeneity
 - Socioeconomic status (income, education) not directly analyzed as protected attribute
 - Single-country dataset (US) limits generalizability to other populations
@@ -964,7 +1201,7 @@ If disparities exceed thresholds, the following interventions will be applied:
 
 ### 8.1 UAT Evaluation Framework
 
-The UAT protocol evaluates DIANA across seven quality characteristics defined in ISO/IEC 25010:2011:
+The UAT protocol evaluated DIANA across six usability-oriented dimensions aligned with ISO/IEC 25010:2011, together with one study-specific user-confidence measure:
 
 1. **Appropriateness Recognizability**
 2. **Learnability**
@@ -976,11 +1213,13 @@ The UAT protocol evaluates DIANA across seven quality characteristics defined in
 
 ---
 
-### 8.2 Target Participant Recruitment
+### 8.2 Participant Recruitment
+
+Participants were recruited for two evaluation groups.
 
 **User Cohort (n=30):**
 - **Source**: Members of "Usapang Perimenopause at Menopause" Facebook interest group
-- **Inclusion Criteria**: Filipino women aged 45-65, perimenopause/postmenopause symptoms, English proficiency
+- **Inclusion Criteria**: Filipino women aged 45-60 with peri- or postmenopausal symptoms, English proficiency
 - **Incentive**: PHP 500 digital gift card + personalized health report
 
 **Clinical Expert Cohort (n=2):**
@@ -1062,7 +1301,7 @@ Licensed physicians evaluate DIANA on four dimensions using 5-point Likert scale
 
 ### 8.5 Qualitative Analysis Framework
 
-Open-ended responses and expert interviews will be analyzed using **thematic analysis** (Braun & Clarke, 2006):
+Open-ended responses and expert interviews were analyzed using **thematic analysis** (Braun & Clarke, 2006):
 
 1. **Familiarization**: Repeated reading of transcripts
 2. **Coding**: Generation of initial codes for notable features
@@ -1100,6 +1339,3 @@ Open-ended responses and expert interviews will be analyzed using **thematic ana
 - Wei, J., et al. (2024). HDL and diabetes risk: Mendelian randomization study. *Circulation*.
 
 ---
-
-
-
