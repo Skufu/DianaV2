@@ -1,14 +1,1 @@
-[
-  {
-    "fold": 6,
-    "test_cycle": "2021-2023",
-    "model": "Logistic Regression",
-    "auc_roc": 0.7242015450247896,
-    "accuracy": 0.5811320754716981,
-    "sensitivity": 0.9067796610169492,
-    "specificity": 0.3197278911564626,
-    "fpr": 0.6803,
-    "fnr": 0.0932,
-    "threshold": 0.3899999999999999
-  }
-]
+[]
