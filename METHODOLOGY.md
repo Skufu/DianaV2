@@ -992,6 +992,56 @@ This security posture was designed to ensure that the system's runtime environme
 
 Persistent state was managed in PostgreSQL using SQLC-generated query code and repository interfaces. At assessment creation, the system stores both the submitted biomarker values and the normalized ML outputs necessary for reproducible interpretation.
 
+For the main methodology chapter, the database design is best communicated through a **simplified ERD** centered on the entities that support the implemented assessment lifecycle and access model: `users`, `assessments`, `refresh_tokens`, `clinics`, and `user_clinics`. These tables capture the direct-to-user health profile, repeated assessment history, authenticated session continuity, and optional clinic-affiliation structure used for staff oversight. The **full physical ERD** should be placed in the appendix, where governance and monitoring tables such as `auth_events`, `audit_events`, and `model_runs` can be shown without overloading the main narrative.
+
+**Figure 6.2 — Core Entity-Relationship Model for the Main Methodology Chapter**
+
+```mermaid
+erDiagram
+    USERS ||--o{ ASSESSMENTS : submits
+    USERS ||--o{ REFRESH_TOKENS : owns
+    USERS ||--o{ USER_CLINICS : assigned_to
+    CLINICS ||--o{ USER_CLINICS : contains
+
+    USERS {
+        int id PK
+        text email
+        text role
+        date date_of_birth
+        text menopause_status
+        boolean onboarding_completed
+    }
+
+    ASSESSMENTS {
+        int id PK
+        int user_id FK
+        float risk_score
+        text predicted_status
+        text cluster
+        text model_version
+        timestamptz created_at
+    }
+
+    REFRESH_TOKENS {
+        int id PK
+        int user_id FK
+        text token_hash
+        timestamptz expires_at
+        boolean revoked
+    }
+
+    CLINICS {
+        int id PK
+        text name
+    }
+
+    USER_CLINICS {
+        int user_id FK
+        int clinic_id FK
+        text role
+    }
+```
+
 Persisted assessment-level ML fields include:
 
 - `cluster`
