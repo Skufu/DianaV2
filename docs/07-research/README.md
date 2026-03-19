@@ -13,6 +13,7 @@ This folder supports manuscript writing and defense preparation. For runtime imp
 |---|---|---|
 | `paper-requirements.md` | Paper checklist and requirements | Thesis structure, required figures/tables |
 | `manuscript-updates.md` | Ready-to-paste manuscript revisions | Results and discussion updates |
+| `methodology-style-workflow.md` | Safe style-transfer workflow for Chapter 3 | SEIRViz-derived tone profile and rewrite prompt pattern |
 | `ml_algorithms.md` | Algorithm framing for manuscript | LR, RF, K-means narrative |
 | `metrics.md` | Metric definitions and interpretation | AUC, F1, sensitivity and related measures |
 | `data_pipeline.md` | Data processing narrative | NHANES pipeline and preparation story |

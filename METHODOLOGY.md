@@ -14,7 +14,7 @@ The construction of a defensible training dataset required systematic acquisitio
 
 #### 1.1.1 Survey Cycle Selection
 
-Raw NHANES data files were downloaded from the CDC public repository using an automated Python download script. The dataset spans **six survey cycles** from 2009-2023, encompassing the post-ADA HbA1c diagnostic guidelines era (established 2010) to ensure consistent diagnostic criteria across all cycles.
+The NHANES data files were systematically acquired through an automated download mechanism. The dataset encompasses six survey cycles spanning 2009 to 2023, capturing data collected following the establishment of the American Diabetes Association's HbA1c diagnostic guidelines in 2010. This temporal selection ensures diagnostic consistency across all included survey cycles.
 
 The selection of survey cycles was guided by two primary considerations: diagnostic consistency and temporal coverage. Beginning with the 2009-2010 cycle ensures inclusion of data collected after the 2010 American Diabetes Association (ADA) HbA1c diagnostic guidelines were established, which standardizes glycated hemoglobin thresholds across the full dataset. This temporal window provides sufficient longitudinal depth for temporal validation while avoiding the 2019-2020 cycle that was disrupted by COVID-19 pandemic data collection suspensions.
 
@@ -86,7 +86,7 @@ flowchart LR
     style C fill:#fff3e0
 ```
 
-The automated acquisition script downloads the specified NHANES XPT files for each survey cycle and stores them locally for subsequent processing. This reproducible approach ensures that the data acquisition pipeline can be reconstructed consistently.
+The automated acquisition mechanism retrieves the specified NHANES XPT files for each survey cycle and stores them locally for subsequent processing. This reproducible approach ensures that the data acquisition pipeline can be reconstructed consistently.
 
 ---
 
@@ -94,7 +94,7 @@ The automated acquisition script downloads the specified NHANES XPT files for ea
 
 Raw NHANES XPT files (SAS Transport format) were merged by SEQN (unique respondent identifier) and processed through a multi-stage pipeline to construct the analytic dataset.
 
-The transformation of raw NHANES files into an analysis-ready dataset required systematic merging of multiple examination and questionnaire modules across survey cycles. This phase implements a reproducible data processing pipeline that consolidates disparate NHANES components, derives clinically meaningful features from questionnaire responses, and applies variable renaming for interpretability. The resulting intermediate dataset provides the foundation for cohort filtering, label construction, and subsequent machine learning pipeline development.
+The transformation of raw NHANES files into an analysis-ready dataset involved systematic merging of multiple examination and questionnaire modules across survey cycles. This phase implements a reproducible data processing pipeline that consolidates disparate NHANES components, derives clinically meaningful features from questionnaire responses, and applies variable renaming for interpretability. The resulting intermediate dataset provides the foundation for cohort filtering, label construction, and subsequent machine learning pipeline development.
 
 **Figure 1.2 — Data Processing Pipeline**
 
@@ -111,12 +111,12 @@ flowchart TB
         A8[SMQ/PAQ/ALQ_*.XPT]
     end
 
-    subgraph Process["process_nhanes_multi.py"]
+    subgraph Process["Data Processing Pipeline"]
         B1[Load XPT files<br/>via pyreadstat]
         B2[Merge by SEQN<br/>6 cycles → 1 dataset]
         B3[Column Renaming<br/>LBXGH → hba1c]
         B4[Lifestyle Derivation<br/>SMQ/PAQ/ALQ → categories]
-        B5[Postmenopausal Filter<br/>Age 45+ + menopause indicators]
+        B5[Postmenopausal Filter<br/>Age 45-60 + menopause indicators]
     end
 
     subgraph Output["Intermediate Output"]
@@ -173,11 +173,11 @@ Following data merging, the cohort was filtered to the target population and gro
 
 The establishment of a well-defined cohort with reliable ground-truth labels is essential for training a clinically interpretable screening model. This phase applies sequential filtering criteria to isolate the target population of postmenopausal women from the merged NHANES dataset, then assigns diabetes status labels through a hierarchical decision process that prioritizes clinical diagnosis while incorporating objective glycemic thresholds. The resulting cohort of 1,376 participants provides the basis for subsequent feature selection, model training, and validation.
 
-Cohort selection criteria were applied sequentially to isolate the target population. Sex was restricted to female participants (RIAGENDR = 2). Age was constrained to participants aged 45 years or older to target the menopausal population. Menopause status was confirmed using postmenopausal indicators from the RHQ questionnaire. Only participants with complete biomarker data for all required features were retained in the analysis. Fasting subsample criteria required an 8-12 hour fasting status to ensure validity of glucose and lipid measurements.
+Cohort selection criteria were applied sequentially to isolate the target population. Sex was restricted to female participants (RIAGENDR = 2). Age was constrained to participants aged 45-60 years to target the postmenopausal population aligned with the operational age band enforced by the deployed web application. Menopause status was confirmed using postmenopausal indicators from the RHQ questionnaire. Only participants with complete biomarker data for all required features were retained in the analysis. Fasting subsample criteria required an 8-12 hour fasting status to ensure validity of glucose and lipid measurements.
 
 #### 1.3.2 Label Construction
 
-Ground-truth diabetes status labels were assigned using a dual-source hierarchy implemented in the `data_processing.py` script. The primary label source was self-reported physician diagnosis (DIQ010), which was supplemented by secondary HbA1c thresholds for undiagnosed cases and a hard override mechanism that assigned diabetic status to any participant with HbA1c ≥6.5% regardless of self-report. This hierarchical labeling approach ensures that diagnostic accuracy takes precedence while capturing cases where individuals may be unaware of their diabetic status based on glycemic thresholds alone.
+Ground-truth diabetes status labels were assigned using a dual-source hierarchy. The primary label source was self-reported physician diagnosis (DIQ010), which was supplemented by secondary HbA1c thresholds for undiagnosed cases and a hard override mechanism that assigned diabetic status to any participant with HbA1c ≥6.5% regardless of self-report. This hierarchical labeling approach ensures that diagnostic accuracy takes precedence while capturing cases where individuals may be unaware of their diabetic status based on glycemic thresholds alone.
 
 **Table 1.2 — Class Distribution**
 
@@ -203,18 +203,18 @@ The presence of missing values in NHANES data reflects the inherent complexity o
 ```mermaid
 flowchart TB
     A[Missing Values Detected] --> B{Is this for<br/>EDA/Exploration?}
-    
+
     B -->|Yes| C[KNN Imputation<br/>scripts/data/impute_missing_data.py]
     C --> D[Output: diana_dataset_imputed.csv]
-    D --> E[⚠️ DO NOT USE<br/>for defensible training]
-    
+    D --> E[WARNING: DO NOT USE<br/>for defensible training]
+
     B -->|No - Training| F{Inside CV Pipeline?}
-    
+
     F -->|Yes| G[SimpleImputer<br/>strategy='median']
     G --> H[Fitted on training<br/>fold only]
-    H --> I[✓ Leakage-safe<br/>Used in production]
-    
-    F -->|No - Pre-CV| J[❌ STOP<br/>Data Leakage Risk]
+    H --> I[APPROVED: Leakage-safe<br/>Used in production]
+
+    F -->|No - Pre-CV| J[STOP: Data Leakage Risk]
     J --> K[Imputation must occur<br/>inside CV pipeline]
 
     style E fill:#ffebee
@@ -229,10 +229,10 @@ The selection of **median imputation** (vs. mean or KNN) was guided by clinical 
 
 | Strategy | Pros | Cons | Decision |
 |----------|------|------|----------|
-| **Mean** | Simple, preserves mean | Sensitive to outliers; skewed distributions | ❌ Rejected |
-| **Median** | Robust to outliers; preserves central tendency | May understate variance | ✅ **Selected** |
-| **KNN** | Borrows from similar patients; captures multivariate patterns | Causes data leakage if applied globally; computationally expensive | ⚠️ EDA only |
-| **MICE** | Multiple imputation; uncertainty quantification | Complex; not pipeline-compatible | ❌ Not implemented |
+| **Mean** | Simple, preserves mean | Sensitive to outliers; skewed distributions | Rejected |
+| **Median** | Robust to outliers; preserves central tendency | May understate variance | **Selected** |
+| **KNN** | Borrows from similar patients; captures multivariate patterns | Causes data leakage if applied globally; computationally expensive | EDA only |
+| **MICE** | Multiple imputation; uncertainty quantification | Complex; not pipeline-compatible | Not implemented |
 
 #### 1.4.2 Clinical Rationale for Median
 
@@ -246,7 +246,7 @@ Median imputation was selected specifically due to the non-linear, right-skewed 
 
 #### 1.4.3 Leakage-Safe Implementation
 
-The imputer is embedded inside the sklearn Pipeline, ensuring it is fitted only on training data during cross-validation. This approach prevents information from test folds from contaminating model training and preserves the validity of temporal validation estimates. The median imputation strategy was implemented through the `SimpleImputer` class with continuous and ordinal features processed through parallel transformer branches.
+The imputer is embedded within the scikit-learn Pipeline framework, ensuring it is fitted only on training data during cross-validation. This approach prevents information from test folds from contaminating model training and preserves the validity of temporal validation estimates. The median imputation strategy was implemented through the SimpleImputer configuration, with continuous and ordinal features processed through parallel transformer branches.
 
 ---
 
@@ -262,7 +262,7 @@ The three-layer architecture provides automated, fail-safe verification that the
 
 #### 2.1.1 Layer 1: Static Feature Constant Verification
 
-Prior to training, an automated script scans all feature constant definitions (CLUSTER_FEATURES, CLINICAL_FEATURES, CLINICAL_FEATURES_NO_BP, CLINICAL_FEATURES_WITH_BP) and asserts that the diagnostic marker set {hba1c, fbs, fasting_blood_sugar, fasting_glucose} is entirely absent. If any diagnostic feature is detected, the pipeline terminates with exit code 1, preventing model training from proceeding.
+Prior to training, an automated validation mechanism scans all feature constant definitions (CLUSTER_FEATURES, CLINICAL_FEATURES, CLINICAL_FEATURES_NO_BP, CLINICAL_FEATURES_WITH_BP) and asserts that the diagnostic marker set {hba1c, fbs, fasting_blood_sugar, fasting_glucose} is entirely absent. If any diagnostic feature is detected, the pipeline terminates with exit code 1, preventing model training from proceeding.
 
 #### 2.1.2 Layer 2: Proxy Leakage Detection
 
@@ -270,7 +270,7 @@ For each feature in the training set, the Pearson correlation coefficient betwee
 
 #### 2.1.3 Layer 3: Shannon Entropy Information Gain Validation
 
-Information Gain IG(X, Y) = H(Y) - H(Y|X) was computed for all candidate features using pd.qcut discretization (q=5 bins) on continuous variables.
+Information gain IG(X, Y) = H(Y) − H(Y|X) was computed for all candidate features using quantile-based discretization (q = 5 bins) on continuous variables.
 
 [[FIGURE PLACEHOLDER: Information Gain bar chart showing IG scores per feature | Thesis author to insert final IG visualization]]
 
@@ -346,7 +346,7 @@ Four candidate algorithms were evaluated under identical nested LOGO evaluation 
 | | min_child_weight | [1, 3] |
 | | subsample | [0.8, 1.0] |
 
-All hyperparameter searches used GridSearchCV(scoring="roc_auc") with inner GroupKFold cross-validation (n_splits=3), respecting the grouped structure of NHANES survey cycles. This nested approach ensures that hyperparameter optimization is conducted without temporal leakage between training and validation folds.
+All hyperparameter searches employed GridSearchCV with AUC scoring, using inner GroupKFold cross-validation (n_splits = 3), respecting the grouped structure of NHANES survey cycles. This nested approach ensures that hyperparameter optimization is conducted without temporal leakage between training and validation folds.
 
 ---
 
@@ -372,7 +372,7 @@ A sensitivity-biased decision threshold was selected using a three-strategy comp
 
 [[FIGURE PLACEHOLDER: Threshold optimization curves comparing three strategies | Thesis author to insert final threshold optimization visualization]]
 
-The winning strategy per fold was selected by a composite clinical score calculated as 0.35 times Sensitivity plus 0.30 times Specificity plus 0.25 times F1 plus 0.10 times Accuracy. This composite scoring balances multiple clinical considerations while prioritizing sensitivity appropriate for a screening context. The mean threshold across folds was 0.455 with a range from 0.39 to 0.50, reflecting an intentional downward adjustment from the default 0.50 to prioritize sensitivity while preserving acceptable specificity under temporal prevalence shift. After recalibration, folds vulnerable to specificity collapse were handled by deterministic guardrail arbitration, which selected the nearest feasible threshold satisfying the minimum specificity constraint rather than defaulting immediately to 0.50. The selection of a sensitivity-biased threshold aligns with the epidemiological principle that screening tools must cast a wide net, prioritizing case detection over diagnostic precision. This reflects asymmetric clinical costs where false negatives result in delayed diagnosis and progression to complications, while false positives lead only to unnecessary confirmatory testing with minimal harm.
+The winning strategy per fold was determined through a composite clinical score calculated as 0.35 × Sensitivity + 0.30 × Specificity + 0.25 × F1 + 0.10 × Accuracy. This composite scoring balances multiple clinical considerations while prioritizing sensitivity appropriate for a screening context. The mean threshold across folds was 0.478 with a range from 0.39 to 0.50, reflecting an intentional downward adjustment from the default 0.50 to prioritize sensitivity while preserving acceptable specificity under temporal prevalence shift. After recalibration, folds vulnerable to specificity collapse were addressed through deterministic guardrail arbitration, which selected the nearest feasible threshold satisfying the minimum specificity constraint rather than defaulting immediately to 0.50. The selection of a sensitivity-biased threshold aligns with the epidemiological principle that screening tools must cast a wide net, prioritizing case detection over diagnostic precision. This reflects asymmetric clinical costs where false negatives result in delayed diagnosis and progression to complications, while false positives lead only to unnecessary confirmatory testing with minimal harm.
 
 ---
 
@@ -480,7 +480,7 @@ The clustering weights function as feature scaling multipliers applied before Eu
 
 ### 4.3 Ahlqvist-Inspired Subtype Label Assignment
 
-Clusters were assigned Ahlqvist-inspired subtype labels using a deterministic centroid-based algorithm adapted for the absence of HOMA2-B, HOMA2-IR, and C-peptide biomarkers in NHANES. The weighted K-Means centroids were inverse-transformed from standardized space back to raw clinical units before label assignment to ensure clinically meaningful interpretation. Given the biomarker limitations in NHANES, a centroid-ranking algorithm was employed to generate proxy subtype labels (denoted with "-like" suffix) adapted from Ahlqvist et al. (2018).
+Clusters were assigned Ahlqvist-inspired subtype labels using a deterministic centroid-based algorithm adapted for the absence of HOMA2-B, HOMA2-IR, and C-peptide biomarkers in NHANES. The weighted K-Means centroids were inverse-transformed from standardized space back to raw clinical units before label assignment to ensure clinically meaningful interpretation. Given the biomarker limitations in NHANES, a centroid-ranking algorithm was employed to generate proxy subtype labels (denoted with "-like" suffix) adapted from Ahlqvist et al. (2018). This transformation ensures that cluster centroids are expressed in clinically meaningful units (e.g., BMI in kg/m², triglycerides in mg/dL, HDL in mg/dL), supporting transparent interpretation and physician understanding of metabolic patterns within each subtype.
 
 **Label Assignment Rules:**
 
@@ -522,7 +522,7 @@ Confusion matrices were generated to visualize classification performance across
 
 **Confidence Intervals:**
 
-Uncertainty quantification was performed through bootstrap 95% confidence intervals computed using 1,000 resamples with the percentile method (fixed seed=42). This distribution-free approach provides appropriate uncertainty estimates for the cohort size (n=1,376) without relying on parametric assumptions about metric distributions.
+Uncertainty quantification was performed through bootstrap 95% confidence intervals computed using 1,000 resamples with the percentile method (fixed seed = 42). This distribution-free approach provides appropriate uncertainty estimates for the cohort size (n = 1,376) without relying on parametric assumptions about metric distributions.
 
 ---
 
@@ -543,19 +543,14 @@ To contextualize DIANA's performance against established clinical practice, exte
 
 #### 5.2.2 Benchmarking Methodology
 
-**Re-implementation Protocol:**
-Each benchmark tool was re-implemented using the identical NHANES cohort (n=1,376 postmenopausal women) to ensure fair comparison:
+Each benchmark tool was re-implemented using the identical NHANES cohort (n = 1,376 postmenopausal women) to ensure fair comparison:
 
 1. **Variable Mapping**: Map NHANES fields to each tool's required inputs
 2. **Missing Data Handling**: Apply a common within-fold median-imputation procedure to mapped NHANES inputs so all tools are evaluated under the same missing-data regime
 3. **Threshold Application**: Use published optimal thresholds for each tool
 4. **Metric Computation**: Calculate identical metrics (AUC, sensitivity, specificity) under nested LOGO
 
-**Fair Comparison Controls:**
-- Same train/test splits (LOGO cycles)
-- Same outcome definition (binary at-risk vs. normal)
-- Same NHANES cohort restriction (postmenopausal women aged ≥45)
-- Same missing data treatment (median imputation within folds)
+Fair comparison controls included identical train/test splits using LOGO cycles, the same outcome definition (binary at-risk vs. normal), the same NHANES cohort restriction (postmenopausal women aged ≥45), and the same missing data treatment (median imputation within folds).
 
 #### 5.2.3 Interpretation Framework for Benchmark Comparison
 
@@ -583,7 +578,7 @@ Probability calibration assessment was conducted to verify that predicted risk p
 
 [[FIGURE PLACEHOLDER: Calibration reliability diagram showing predicted vs observed probabilities | Thesis author to insert final calibration curve visualization]]
 
-This provides graphical assessment of calibration quality across the risk spectrum. Calibrated probability estimates support meaningful patient communication, where a predicted 70% risk corresponds approximately to a 70% observed at-risk rate in comparable patients, enabling informed shared decision-making.
+This calibration provides graphical assessment of calibration quality across the risk spectrum. Calibrated probability estimates support meaningful patient communication, where a predicted 70% risk corresponds approximately to a 70% observed at-risk rate in comparable patients, enabling informed shared decision-making.
 
 ---
 
@@ -634,19 +629,17 @@ Key interactions examined in the analysis included BMI × Waist Circumference, r
 
 **Quantification:**
 
-Interaction strength was measured via SHAP interaction values using the formula:
+Interaction strength was quantified using SHAP interaction values:
 
-```
-Interaction_Strength(i,j) = E[|SHAP_{i,j}(x)|] across cohort
-```
+Interaction Strength(i, j) = E[|SHAP_{i,j}(x)|]
 
-Where SHAP_{i,j} represents the combined contribution of features i and j beyond their individual effects.
+where SHAP_{i,j} represents the combined contribution of features i and j beyond their individual effects, and the expectation is computed across the cohort.
 
-#### 5.5.4 Clinical Explainability Validation
+#### 5.5.4 Clinical Explainability Validation Framework
 
 **Physician Evaluation Protocol:**
 
-The clinical explainability validation employed a structured protocol in which licensed physicians evaluated SHAP explanations across four critical dimensions. Correctness was assessed through the question "Do SHAP attributions align with clinical knowledge?" using an expert rating scale from 1 to 5. Usefulness was evaluated by asking "Would you use this in patient counseling?" with responses measured on a likelihood scale. Clarity was assessed through the question "Are explanations understandable to patients?" using a SUS-style rating approach. Actionability was determined through the binary question "Do explanations suggest interventions?" requiring a yes or no response.
+The clinical explainability validation framework employs a structured protocol in which licensed physicians would evaluate SHAP explanations across four critical dimensions. Correctness would be assessed through the question "Do SHAP attributions align with clinical knowledge?" using an expert rating scale from 1 to 5. Usefulness would be evaluated by asking "Would you use this in patient counseling?" with responses measured on a likelihood scale. Clarity would be assessed through the question "Are explanations understandable to patients?" using a SUS-style rating approach. Actionability would be determined through the binary question "Do explanations suggest interventions?" requiring a yes or no response.
 
 **Table 5.4 — Physician Evaluation Dimensions**
 
@@ -657,9 +650,9 @@ The clinical explainability validation employed a structured protocol in which l
 | **Clarity** | "Are explanations understandable to patients?" | SUS-style rating |
 | **Actionability** | "Do explanations suggest interventions?" | Binary (yes/no) |
 
-**Validation Cohort:**
+**Validation Cohort Design:**
 
-The validation cohort comprised 2 licensed physicians including an endocrinologist and an OB-GYN specialist. Each physician reviewed 50 randomly selected predictions from a held-out test set through a blind review process, ensuring that evaluations were conducted without access to ground truth labels to prevent confirmation bias.
+The validation cohort would comprise 2 licensed physicians including an endocrinologist and an OB-GYN specialist. Each physician would review 50 randomly selected predictions from a held-out test set through a blind review process, ensuring that evaluations would be conducted without access to ground truth labels to prevent confirmation bias.
 
 #### 5.5.5 Limitations of SHAP Explanations
 
@@ -704,7 +697,7 @@ The translation of the validated DIANA model into a deployable web-based clinica
 
 The objective of Phase 6 was to operationalize the validated non-circular screening model as a functional health application supporting the complete assessment lifecycle: user authentication and profile capture, biomarker submission, machine learning inference, result normalization and persistence, longitudinal trend review, and report generation and export. The system architecture supports a direct-to-user B2C workflow designed for menopausal women, while simultaneously providing controlled staff access for clinicians and administrators through role-constrained interfaces that maintain appropriate separation of concerns.
 
-While the model-development phases employed an NHANES cohort of postmenopausal women aged **≥45 years** to establish training data, the deployed web-application workflow enforces a narrower operational age band of **45-60 years** to align with the intended end-user scope and backend validation rules. This operational narrowing reflects the practical consideration that the target demographic for self-service diabetes risk screening consists of women in early to mid-menopause who can benefit most from early intervention opportunities.
+The training dataset for model development was constructed from postmenopausal women aged **45-60 years** to ensure alignment between the cohort used for model training and the operational age band enforced by the deployed web application. This constrained age range focuses on early to mid-menopausal women who can benefit most from early intervention opportunities while maintaining consistency with the runtime validation rules enforced at the application layer.
 
 The integration methodology encompasses four core methodological requirements designed to preserve clinical defensibility through runtime environment fidelity. First, the system preserves screening logic consistency by maintaining the validated screening model behavior defined in Phases 1-5, ensuring that frontend components do not reinterpret raw model outputs or introduce deviations from the research-established decision boundaries. Second, the application enforces population and safety guardrails at runtime through server-side validation of age-range constraints, biomarker plausibility checks, and clinical warning generation consistent with the validation methodology established during model development. Third, the system maintains prediction traceability through persistent model lineage fields (model version, dataset hash) and canonical response contracts that enable retrospective analysis of predictions against model versions and drift-monitoring baselines. Fourth, the architecture provides differentiated role interfaces for end-users, clinicians, and administrators that support appropriate interaction patterns while maintaining a shared backend integration boundary to ensure consistent clinical semantics across all access pathways.
 
@@ -837,14 +830,14 @@ The software quality assessment framework employed in this study aligns with the
 
 | Characteristic | Evaluation Approach | Metric/Method | Status |
 |----------------|---------------------|---------------|--------|
-| **Functional Suitability** | Feature completeness | Use case coverage, API endpoint completeness | ✅ Implemented |
-| **Performance Efficiency** | Response time, resource utilization | CI benchmarks (<50ms non-ML, <500ms ML) | ✅ Measured |
-| **Compatibility** | Multi-service integration | HTTP API contract validation | ✅ Implemented |
-| **Usability** | User-facing UI evaluation | SUS and structured UAT protocol | ✅ Evaluated in Phase 8 |
-| **Reliability** | Failure rate, error recovery | Error tracking, graceful degradation | ✅ Implemented |
-| **Security** | Data protection, access control | JWT, RBAC, rate limiting, security headers | ✅ Implemented |
-| **Maintainability** | Code modularity, documentation | Modular architecture, AGENTS.md docs | ✅ Implemented |
-| **Portability** | Deployment flexibility | Docker containers, env-agnostic config | ✅ Implemented |
+| **Functional Suitability** | Feature completeness | Use case coverage, API endpoint completeness | Implemented |
+| **Performance Efficiency** | Response time, resource utilization | CI benchmarks (<50ms non-ML, <500ms ML) | Measured |
+| **Compatibility** | Multi-service integration | HTTP API contract validation | Implemented |
+| **Usability** | User-facing UI evaluation | SUS and structured UAT protocol | Evaluated in Phase 8 |
+| **Reliability** | Failure rate, error recovery | Error tracking, graceful degradation | Implemented |
+| **Security** | Data protection, access control | JWT, RBAC, rate limiting, security headers | Implemented |
+| **Maintainability** | Code modularity, documentation | Modular architecture, AGENTS.md docs | Implemented |
+| **Portability** | Deployment flexibility | Docker containers, env-agnostic config | Implemented |
 
 ### 7.2 Performance Benchmarking
 
@@ -888,11 +881,11 @@ Role-based access control middleware enforces least privilege principles by rest
 
 ### 7.4 Fairness, Equity, and Bias Mitigation
 
-Machine learning models deployed in healthcare settings have demonstrated disparate performance across demographic subgroups, potentially exacerbating existing health inequities when algorithmic decisions systematically favor some populations over others. This necessitates explicit fairness evaluation to ensure that automated risk prediction tools do not introduce or amplify disparities in healthcare access, diagnosis, or treatment. DIANA therefore incorporates a comprehensive fairness evaluation framework designed to assess performance distribution across race/ethnicity and age strata within the postmenopausal female population, recognizing that equitable performance is essential for ethical deployment in diverse clinical contexts. The fairness assessment addresses both demographic representation in the training data and differential prediction accuracy across subgroups, ensuring that the screening tool does not systematically disadvantage any population segment.
+Machine learning models deployed in healthcare settings have demonstrated disparate performance across demographic subgroups, potentially exacerbating existing health inequities when algorithmic decisions systematically favor some populations over others. This necessitates an explicit fairness evaluation framework to ensure that automated risk prediction tools do not introduce or amplify disparities in healthcare access, diagnosis, or treatment. DIANA incorporates a comprehensive fairness evaluation framework designed to assess performance distribution across race/ethnicity and age strata within the postmenopausal female population, recognizing that equitable performance is essential for ethical deployment in diverse clinical contexts. The fairness assessment framework addresses both demographic representation in the training data and differential prediction accuracy across subgroups, ensuring that the screening tool does not systematically disadvantage any population segment.
 
 #### 7.4.1 Fairness Definitions and Metrics
 
-The fairness evaluation employs multiple complementary fairness criteria to assess different aspects of equitable performance. Demographic parity requires equal screening rates across groups, measured as the difference in positive prediction rates between demographic subgroups with a target threshold below 0.05. Equalized odds demands equal true positive rates across groups, ensuring that sensitivity parity is maintained with a maximum allowable difference of 0.10 between subgroups. Predictive parity requires equal positive predictive values across groups, with a target mean absolute calibration error below 0.05. Calibration ensures that predicted probabilities match observed rates within each subgroup, requiring mean absolute calibration error below 0.05. The selection of these specific fairness criteria addresses both the fairness of screening decisions and the accuracy of probability calibration across subgroups, ensuring that the system provides equitable access to screening while maintaining valid risk estimates for all demographic groups.
+The fairness evaluation would employ multiple complementary fairness criteria to assess different aspects of equitable performance. Demographic parity would require equal screening rates across groups, measured as the difference in positive prediction rates between demographic subgroups with a target threshold below 0.05. Equalized odds would demand equal true positive rates across groups, ensuring that sensitivity parity is maintained with a maximum allowable difference of 0.10 between subgroups. Predictive parity would require equal positive predictive values across groups, with a target mean absolute calibration error below 0.05. Calibration would ensure that predicted probabilities match observed rates within each subgroup, requiring mean absolute calibration error below 0.05. The selection of these specific fairness criteria addresses both the fairness of screening decisions and the accuracy of probability calibration across subgroups, ensuring that the system would provide equitable access to screening while maintaining valid risk estimates for all demographic groups.
 
 **Table 7.4 — Fairness Metrics Framework**
 
@@ -905,7 +898,7 @@ The fairness evaluation employs multiple complementary fairness criteria to asse
 
 #### 7.4.2 Subgroup Stratification
 
-Fairness analyses were conducted on the NHANES evaluation cohort of postmenopausal women aged ≥45, rather than the narrower 45-60 runtime gate used by the deployed web application. This broader evaluation scope ensures that fairness assessment reflects the full population on which the model was trained and validated. Protected attributes analyzed include race/ethnicity categories following NHANES standard strata, age groups corresponding to menopause stage and metabolic risk variation, and BMI categories to assess whether risk factor severity differentially impacts prediction across subgroups. The evaluation of these specific protected attributes addresses known sources of health disparities and ensures that the screening tool does not systematically disadvantage any demographic subgroup within the intended user population.
+The fairness evaluation framework would conduct analysis on the NHANES evaluation cohort of postmenopausal women aged 45-60, consistent with the operational age band used by the deployed web application. This evaluation scope ensures that fairness assessment reflects the full population on which the model was trained and validated. Protected attributes analyzed would include race/ethnicity categories following NHANES standard strata, age groups corresponding to menopause stage and metabolic risk variation, and BMI categories to assess whether risk factor severity differentially impacts prediction across subgroups. The evaluation of these specific protected attributes addresses known sources of health disparities and ensures that the screening tool framework does not systematically disadvantage any demographic subgroup within the intended user population.
 
 **Table 7.5 — Protected Attributes Analyzed**
 
@@ -917,9 +910,9 @@ Fairness analyses were conducted on the NHANES evaluation cohort of postmenopaus
 
 #### 7.4.3 Disparate Impact Analysis
 
-The disparate impact evaluation protocol employed a four-step analytical framework designed to quantify performance variation across protected subgroups. First, stratified performance metrics were computed by calculating AUC, sensitivity, and specificity independently for each demographic subgroup to establish baseline performance distributions. Second, disparity ratios were calculated by comparing the highest-scoring subgroup against the lowest-scoring subgroup to quantify relative performance gaps. Third, statistical independence between model predictions and protected attributes was tested using chi-squared analysis to determine whether observed disparities exceeded chance expectations. Fourth, error analysis was conducted by examining false positive and false negative rates within each subgroup to identify whether certain demographic groups experienced systematically different error profiles that could affect clinical utility. This comprehensive analytical approach ensures that fairness assessment addresses both overall performance variation and specific error patterns that could differentially impact different demographic groups.
+The disparate impact evaluation protocol would employ a four-step analytical framework designed to quantify performance variation across protected subgroups. First, stratified performance metrics would be computed by calculating AUC, sensitivity, and specificity independently for each demographic subgroup to establish baseline performance distributions. Second, disparity ratios would be calculated by comparing the highest-scoring subgroup against the lowest-scoring subgroup to quantify relative performance gaps. Third, statistical independence between model predictions and protected attributes would be tested using chi-squared analysis to determine whether observed disparities exceed chance expectations. Fourth, error analysis would be conducted by examining false positive and false negative rates within each subgroup to identify whether certain demographic groups experience systematically different error profiles that could affect clinical utility. This comprehensive analytical approach ensures that the fairness assessment framework addresses both overall performance variation and specific error patterns that could differentially impact different demographic groups.
 
-The evaluation framework established explicit acceptance criteria for defining acceptable fairness performance. Performance parity required that AUC variation between subgroups remain below 0.05 to ensure consistent discrimination capability across demographic groups. Sensitivity parity permitted slightly wider variation, with a maximum allowable difference of 0.10 between subgroups, reflecting clinical prioritization of true positive rate consistency. Calibration was assessed by requiring mean absolute calibration error below 0.05 within each subgroup to ensure that predicted probabilities remained well-calibrated across all demographic strata.
+The evaluation framework would establish explicit acceptance criteria for defining acceptable fairness performance. Performance parity would require that AUC variation between subgroups remain below 0.05 to ensure consistent discrimination capability across demographic groups. Sensitivity parity would permit slightly wider variation, with a maximum allowable difference of 0.10 between subgroups, reflecting clinical prioritization of true positive rate consistency. Calibration would be assessed by requiring mean absolute calibration error below 0.05 within each subgroup to ensure that predicted probabilities remained well-calibrated across all demographic strata.
 
 #### 7.4.4 Bias Mitigation Strategies
 
@@ -957,9 +950,9 @@ The ethical framework governing this study incorporates several safeguards desig
 
 Several methodological limitations are acknowledged to provide transparent assessment of the fairness evaluation framework. NHANES race/ethnicity categories are coarse and may mask within-group heterogeneity, potentially obscuring disparities that become visible at more granular levels of demographic analysis. Socioeconomic status variables such as income and education were not directly analyzed as protected attributes, though these factors often intersect with race/ethnicity in determining health outcomes and healthcare access. The single-country nature of the NHANES dataset limits generalizability to other populations, particularly non-US contexts where different demographic distributions and healthcare systems may produce different fairness characteristics. These limitations highlight the importance of ongoing fairness monitoring and the need for context-specific evaluation when deploying the system outside the US population on which it was trained and validated.
 
-## Phase 8: User Acceptance Testing and Clinical Expert Evaluation
+## Phase 8: User Acceptance Testing and Clinical Expert Evaluation Framework
 
-This phase establishes the validation framework for assessing DIANA's usability from the perspectives of end users and clinical experts. User Acceptance Testing provides empirical evidence that the application interface is appropriate for the target demographic of menopausal women, while clinical expert evaluation assesses whether risk predictions and explanations align with medical practice standards. The dual-evaluation approach ensures that the system addresses both usability requirements for lay users and clinical validity requirements for healthcare professionals, recognizing that successful deployment of decision support tools requires acceptance across both stakeholder groups. This validation phase is critical for establishing that the system not only performs accurately in technical terms but also meets the practical needs of both patients who will use the tool for self-assessment and clinicians who will rely on it for decision support.
+This phase establishes a validation framework for assessing DIANA's usability from the perspectives of end users and clinical experts. User Acceptance Testing provides a protocol for empirical evidence that the application interface is appropriate for the target demographic of menopausal women, while clinical expert assessment provides a framework for evaluating whether risk predictions and explanations align with medical practice standards. The dual-evaluation approach ensures that the system addresses both usability requirements for lay users and clinical validity requirements for healthcare professionals, recognizing that successful deployment of decision support tools requires acceptance across both stakeholder groups. This validation phase framework is critical for establishing that the system can perform accurately in technical terms while meeting the practical needs of both patients who may use the tool for risk self-assessment and clinicians who may rely on it for decision support.
 
 ### 8.1 UAT Evaluation Framework
 
@@ -971,25 +964,25 @@ The evaluated dimensions include Appropriateness Recognizability, which assesses
 
 ### 8.2 Participant Recruitment
 
-Participant recruitment targeted two distinct stakeholder groups to ensure comprehensive evaluation from both end-user and clinical perspectives. The user cohort was recruited through a community-based approach targeting Filipino women experiencing menopause symptoms, while the clinical expert cohort consisted of licensed physicians with relevant specialization in endocrinology and obstetrics-gynecology. This dual-cohort design enables evaluation of the system across different use cases: direct interaction by patients for risk self-assessment, and clinical review of system outputs for treatment decision support. The recruitment strategy was designed to obtain participants who reflect the intended end-user population in terms of age, cultural background, and clinical expertise relevant to menopause-related health concerns.
+Participant recruitment would target two distinct stakeholder groups to ensure comprehensive evaluation from both end-user and clinical perspectives. The user cohort would be recruited through a community-based approach targeting Filipino women experiencing menopause symptoms, while the clinical expert cohort would consist of licensed physicians with relevant specialization in endocrinology and obstetrics-gynecology. This dual-cohort design enables evaluation of the system across different use cases: direct interaction by patients for risk self-assessment, and clinical review of system outputs for treatment decision support. The recruitment strategy is designed to obtain participants who reflect the intended end-user population in terms of age, cultural background, and clinical expertise relevant to menopause-related health concerns.
 
 [[FIGURE PLACEHOLDER: Participant recruitment flow diagram | Thesis author to insert final recruitment flow visualization]]
 
-The user cohort consisted of 30 participants recruited from the "Usapang Perimenopause at Menopause" Facebook interest group. Inclusion criteria specified Filipino women aged 45-60 experiencing peri- or postmenopausal symptoms with English proficiency sufficient to navigate the application interface. Participants received a PHP 500 digital gift card incentive and a personalized health report as compensation for their time. The clinical expert cohort comprised two licensed physicians: an endocrinologist and an obstetrics-gynecology specialist. Selection criteria required a minimum of five years of clinical practice in the Philippines, ensuring sufficient experience to evaluate the clinical validity of risk predictions and the interpretability of SHAP explanations for patient counseling contexts.
+The user cohort would consist of 30 participants recruited from the "Usapang Perimenopause at Menopause" Facebook interest group. Inclusion criteria would specify Filipino women aged 45-60 experiencing peri- or postmenopausal symptoms with English proficiency sufficient to navigate the application interface. Participants would receive a PHP 500 digital gift card incentive and a personalized health report as compensation for their time. The clinical expert cohort would comprise two licensed physicians: an endocrinologist and an obstetrics-gynecology specialist. Selection criteria would require a minimum of five years of clinical practice in the Philippines, ensuring sufficient experience to evaluate the clinical validity of risk predictions and the interpretability of SHAP explanations for patient counseling contexts.
 
 ### 8.3 Evaluation Instruments
 
 #### 8.3.1 System Usability Scale
 
-The System Usability Scale was selected as the primary quantitative instrument for usability evaluation due to its widespread adoption in health technology research and validated psychometric properties. The SUS is a 10-item questionnaire with 5-point Likert scale responses that produces a single composite score ranging from 0 to 100, enabling standardized comparison against established benchmarks. The instrument's brevity and proven reliability make it suitable for moderated testing sessions where participant fatigue must be minimized. The SUS instrument provides a standardized measure of perceived usability that has been extensively validated across diverse application domains, making it an appropriate choice for assessing the usability of a diabetes risk screening tool targeted at non-expert users.
+The System Usability Scale would serve as the primary quantitative instrument for usability evaluation due to its widespread adoption in health technology research and validated psychometric properties. The SUS is a 10-item questionnaire with 5-point Likert scale responses that produces a single composite score ranging from 0 to 100, enabling standardized comparison against established benchmarks. The instrument's brevity and proven reliability make it suitable for moderated testing sessions where participant fatigue must be minimized. The SUS instrument provides a standardized measure of perceived usability that has been extensively validated across diverse application domains, making it an appropriate choice for assessing the usability of a diabetes risk screening tool targeted at non-expert users.
 
-Scoring follows the standard SUS calculation procedure. For odd-numbered positive items, the item score is adjusted by subtracting one from the raw response. For even-numbered negative items, the adjusted score is calculated as five minus the raw response. The sum of adjusted scores is multiplied by 2.5 to produce the final 0-100 SUS composite score. Interpretation benchmarks established by Brooke classify scores below 50 as not acceptable, scores between 50 and 69 as marginal acceptance, scores between 70 and 79 as acceptable, scores between 80 and 89 as good, and scores between 90 and 100 as excellent. The target range for DIANA was established at 70-79, corresponding to acceptable usability for health applications.
+Scoring would follow the standard SUS calculation procedure. For odd-numbered positive items, the item score would be adjusted by subtracting one from the raw response. For even-numbered negative items, the adjusted score would be calculated as five minus the raw response. The sum of adjusted scores would be multiplied by 2.5 to produce the final 0-100 SUS composite score. Interpretation benchmarks established by Brooke classify scores below 50 as not acceptable, scores between 50 and 69 as marginal acceptance, scores between 70 and 79 as acceptable, scores between 80 and 89 as good, and scores between 90 and 100 as excellent. The target range for DIANA would be established at 70-79, corresponding to acceptable usability for health applications.
 
 #### 8.3.2 Clinical Validity Assessment
 
-Clinical expert evaluation focuses on assessing whether DIANA's outputs align with established medical practice and can meaningfully support clinical decision-making. Licensed physicians evaluate the system across four dimensions using 5-point Likert scales, each targeting a different aspect of clinical utility. These dimensions were selected to cover the full spectrum of clinical concerns: whether the system correctly identifies at-risk patients, whether explanations are interpretable for patient communication, whether the workflow integrates smoothly into existing practice patterns, and whether the system provides overall value as a screening and triage tool. This comprehensive evaluation framework ensures that clinical validation addresses both the accuracy of risk predictions and the practical applicability of the system in real-world clinical settings.
+Clinical expert evaluation would focus on assessing whether DIANA's outputs align with established medical practice and can meaningfully support clinical decision-making. Licensed physicians would evaluate the system across four dimensions using 5-point Likert scales, each targeting a different aspect of clinical utility. These dimensions would be selected to cover the full spectrum of clinical concerns: whether the system correctly identifies at-risk patients, whether explanations are interpretable for patient communication, whether the workflow integrates smoothly into existing practice patterns, and whether the system provides overall value as a screening and triage tool. This comprehensive evaluation framework ensures that clinical validation would address both the accuracy of risk predictions and the practical applicability of the system in real-world clinical settings.
 
-The evaluation framework establishes target thresholds for each dimension to indicate acceptable clinical performance. Risk Prediction Accuracy and SHAP Explanation Clarity both require ratings of at least 4.0 out of 5.0, reflecting the critical importance of accurate risk identification and interpretable explanations for clinical utility. Clinical Workflow Integration has a slightly lower target of 3.5 out of 5.0, acknowledging that workflow integration depends on practice-specific factors that may vary across clinical settings. Overall Clinical Utility is evaluated with a target of at least 4.0 out of 5.0, requiring that physicians perceive the system as providing meaningful value as a screening and triage tool.
+The evaluation framework would establish target thresholds for each dimension to indicate acceptable clinical performance. Risk Prediction Accuracy and SHAP Explanation Clarity both would require ratings of at least 4.0 out of 5.0, reflecting the critical importance of accurate risk identification and interpretable explanations for clinical utility. Clinical Workflow Integration would have a slightly lower target of 3.5 out of 5.0, acknowledging that workflow integration depends on practice-specific factors that may vary across clinical settings. Overall Clinical Utility would be evaluated with a target of at least 4.0 out of 5.0, requiring that physicians perceive the system as providing meaningful value as a screening and triage tool.
 
 **Table 8.1 — Clinical Validity Evaluation Dimensions**
 
@@ -1002,23 +995,23 @@ The evaluation framework establishes target thresholds for each dimension to ind
 
 #### 8.3.3 Task Completion Metrics
 
-Task-based evaluation complements questionnaire-based measures by observing actual user behavior during interaction with the system. Three core tasks were designed to represent typical user workflows: account access and dashboard navigation, submission of a new health assessment, and interpretation of machine learning results. Success criteria were defined for each task based on acceptable performance standards for health applications, including time limits and accuracy thresholds that balance efficiency with error tolerance. These task-based measures provide objective evidence of whether users can successfully complete the core functions of the application without excessive difficulty or assistance, which is particularly important for health tools designed for self-service use by non-expert users.
+Task-based evaluation would complement questionnaire-based measures by observing actual user behavior during interaction with the system. Three core tasks would be designed to represent typical user workflows: account access and dashboard navigation, submission of a new health assessment, and interpretation of machine learning results. Success criteria would be defined for each task based on acceptable performance standards for health applications, including time limits and accuracy thresholds that balance efficiency with error tolerance. These task-based measures would provide objective evidence of whether users can successfully complete the core functions of the application without excessive difficulty or assistance, which is particularly important for health tools designed for self-service use by non-expert users.
 
-Task 1 requires participants to access the dashboard within 60 seconds of login, with a target success rate exceeding 90%. This metric evaluates the initial usability of the login and navigation flow. Task 2 requires correct population of all required fields in a new assessment submission, also targeting a 90% success rate to ensure that users can successfully complete the core functionality. Task 3 requires participants to correctly identify their risk level and the contributing biomarkers from the ML results display, with a slightly more lenient target of 85% success rate recognizing the cognitive complexity of interpreting probabilistic outputs and feature contributions. Additional performance targets include an average time to submit assessment below 2 minutes, an error rate measured by incorrect clicks below 5%, and a requirement that participants request no more than one prompt per task to complete independently.
+Task 1 would require participants to access the dashboard within 60 seconds of login, with a target success rate exceeding 90%. This metric would evaluate the initial usability of the login and navigation flow. Task 2 would require correct population of all required fields in a new assessment submission, also targeting a 90% success rate to ensure that users can successfully complete the core functionality. Task 3 would require participants to correctly identify their risk level and the contributing biomarkers from the ML results display, with a slightly more lenient target of 85% success rate recognizing the cognitive complexity of interpreting probabilistic outputs and feature contributions. Additional performance targets would include an average time to submit assessment below 2 minutes, an error rate measured by incorrect clicks below 5%, and a requirement that participants request no more than one prompt per task to complete independently.
 
 ### 8.4 Data Collection Protocol
 
-The data collection protocol employs a mixed-methods approach combining pre-test demographic questionnaires, moderated testing sessions with task-based observation, and post-test questionnaires for both quantitative usability scoring and open-ended feedback. This triangulated approach enables comprehensive assessment of usability by capturing objective performance metrics, subjective usability ratings, and qualitative insights into user experience. Remote moderation via video conferencing platforms allows observation of natural user behavior while enabling intervention only when participants experience significant difficulty, ensuring that observed behavior reflects autonomous use rather than prompted navigation. The protocol design ensures that data collection addresses both quantitative usability outcomes and qualitative user experiences, providing a holistic understanding of system usability from the perspective of the target user population.
+The data collection protocol would employ a mixed-methods approach combining pre-test demographic questionnaires, moderated testing sessions with task-based observation, and post-test questionnaires for both quantitative usability scoring and open-ended feedback. This triangulated approach would enable comprehensive assessment of usability by capturing objective performance metrics, subjective usability ratings, and qualitative insights into user experience. Remote moderation via video conferencing platforms would allow observation of natural user behavior while enabling intervention only when participants experience significant difficulty, ensuring that observed behavior reflects autonomous use rather than prompted navigation. The protocol design ensures that data collection addresses both quantitative usability outcomes and qualitative user experiences, providing a holistic understanding of system usability from the perspective of the target user population.
 
 [[FIGURE PLACEHOLDER: Data collection protocol flowchart | Thesis author to insert final data collection flow visualization]]
 
-Each testing session begins with a pre-test questionnaire collecting demographic information including age, education, and computer literacy, as well as prior experience with health applications and self-reported technology comfort level. The moderated testing session is conducted remotely via Google Meet or Zoom with screen sharing enabled, lasting 30-45 minutes per participant. The moderator observes without intervention unless the participant appears stuck for more than 60 seconds, preserving natural user behavior while preventing frustration. Sessions are recorded with participant consent for subsequent qualitative analysis. Following task completion, participants complete the post-test questionnaire comprising the SUS instrument and open-ended feedback questions. For clinical evaluators, an additional semi-structured interview covers alignment of DIANA predictions with clinical experience, usability of SHAP explanations in patient counseling contexts, integration barriers in clinical practice, and suggestions for system improvement. This comprehensive data collection approach ensures that both objective performance and subjective perceptions are captured, providing a complete picture of system usability across different user groups.
+Each testing session would begin with a pre-test questionnaire collecting demographic information including age, education, and computer literacy, as well as prior experience with health applications and self-reported technology comfort level. The moderated testing session would be conducted remotely via Google Meet or Zoom with screen sharing enabled, lasting 30-45 minutes per participant. The moderator would observe without intervention unless the participant appears stuck for more than 60 seconds, preserving natural user behavior while preventing frustration. Sessions would be recorded with participant consent for subsequent qualitative analysis. Following task completion, participants would complete the post-test questionnaire comprising the SUS instrument and open-ended feedback questions. For clinical evaluators, an additional semi-structured interview would cover alignment of DIANA predictions with clinical experience, usability of SHAP explanations in patient counseling contexts, integration barriers in clinical practice, and suggestions for system improvement. This comprehensive data collection approach would ensure that both objective performance and subjective perceptions are captured, providing a complete picture of system usability across different user groups.
 
 ### 8.5 Qualitative Analysis Framework
 
-Open-ended responses from user questionnaires and semi-structured interviews with clinical experts were analyzed using thematic analysis as described by Braun and Clarke. This systematic approach to qualitative data analysis enables identification of recurring themes, patterns, and insights that quantitative measures cannot capture, providing depth to understanding of user experience and clinical perceptions of system utility. The six-phase process ensures that analysis proceeds systematically from data familiarization through theme development to reporting, with explicit steps for verifying that themes accurately represent the data. This qualitative framework complements the quantitative usability metrics by capturing nuanced user experiences and clinical insights that would be missed by standardized questionnaires alone, ensuring a comprehensive understanding of system usability from both end-user and clinical expert perspectives.
+Open-ended responses from user questionnaires and semi-structured interviews with clinical experts would be analyzed using thematic analysis as described by Braun and Clarke. This systematic approach to qualitative data analysis would enable identification of recurring themes, patterns, and insights that quantitative measures cannot capture, providing depth to understanding of user experience and clinical perceptions of system utility. The six-phase process would ensure that analysis proceeds systematically from data familiarization through theme development to reporting, with explicit steps for verifying that themes accurately represent the data. This qualitative framework would complement the quantitative usability metrics by capturing nuanced user experiences and clinical insights that would be missed by standardized questionnaires alone, ensuring a comprehensive understanding of system usability from both end-user and clinical expert perspectives.
 
-The analysis begins with familiarization through repeated reading of transcripts to develop comprehensive understanding of the data. Coding involves generating initial codes for notable features across the dataset, capturing both explicit statements and implicit patterns. Theme development requires searching for themes across codes, identifying higher-level patterns that explain the coded data. Reviewing themes involves checking candidate themes against extracted codes to ensure they accurately represent the data. Defining and naming themes refines themes for clarity and specificity, ensuring each theme has a coherent focus and appropriate labeling. The final phase involves producing the report through selection of vivid examples and establishing clear connections between themes and the original data. This rigorous qualitative analysis framework ensures that subjective user experiences and clinical expert insights are systematically analyzed and reported alongside quantitative usability metrics.
+The analysis would begin with familiarization through repeated reading of transcripts to develop comprehensive understanding of the data. Coding would involve generating initial codes for notable features across the dataset, capturing both explicit statements and implicit patterns. Theme development would require searching for themes across codes, identifying higher-level patterns that explain the coded data. Reviewing themes would involve checking candidate themes against extracted codes to ensure they accurately represent the data. Defining and naming themes would refine themes for clarity and specificity, ensuring each theme has a coherent focus and appropriate labeling. The final phase would involve producing the report through selection of vivid examples and establishing clear connections between themes and the original data. This rigorous qualitative analysis framework would ensure that subjective user experiences and clinical expert insights are systematically analyzed and reported alongside quantitative usability metrics.
 
 ## References
 
