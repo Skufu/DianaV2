@@ -17,7 +17,7 @@ import { test, expect } from '@playwright/test';
 const UNIQUE_EMAIL = `test-signup-${Date.now()}@diana.app`;
 
 test.describe('Integration: Signup Flow', () => {
-  test.beforeEach(async ({ page, request }) => {
+  test.beforeEach(async ({ page: _page, request }) => {
     // Clean up any existing test user
     try {
       await request.delete('http://localhost:8080/api/v1/test/cleanup', {
@@ -62,22 +62,15 @@ test.describe('Integration: Signup Flow', () => {
     const accessToken = await page.evaluate(() => localStorage.getItem('diana_token'));
     const refreshToken = await page.evaluate(() => localStorage.getItem('diana_refresh_token'));
 
-    console.log('Access Token:', accessToken ? 'Found' : 'NOT FOUND');
-    console.log('Refresh Token:', refreshToken ? 'Found' : 'NOT FOUND');
-
     expect(accessToken).toBeTruthy();
     expect(accessToken.length).toBeGreaterThan(0);
     expect(refreshToken).toBeTruthy();
     expect(refreshToken.length).toBeGreaterThan(0);
 
-    // Verify user should be logged in (login form should not be visible)
-    await page.waitForTimeout(3000);
     const loginFormVisible = await page.locator('input[type="email"]').isVisible().catch(() => false);
-    console.log('Login form visible after signup:', loginFormVisible);
 
     // User should either be on dashboard or onboarding
     const content = await page.textContent('body');
-    console.log('Page content length:', content.length);
     expect(content.length).toBeGreaterThan(100);
   });
 
@@ -114,9 +107,7 @@ test.describe('Integration: Signup Flow', () => {
       }
     });
 
-    console.log('Profile API status:', profileResponse.status());
     const profileData = await profileResponse.json();
-    console.log('Profile data:', JSON.stringify(profileData));
 
     // Verify API call succeeded
     expect(profileResponse.status()).toBe(200);
@@ -150,7 +141,7 @@ test.describe('Integration: Signup Flow', () => {
     expect(initialAccessToken).toBeTruthy();
     expect(initialRefreshToken).toBeTruthy();
 
-    console.log('Initial access token stored:', !!initialAccessToken);
+    expect(initialRefreshToken).toBeTruthy();
 
     // Step 3: Reload page
     await page.reload();
@@ -163,11 +154,10 @@ test.describe('Integration: Signup Flow', () => {
     expect(reloadedAccessToken).toBeTruthy();
     expect(reloadedRefreshToken).toBeTruthy();
 
-    console.log('Reloaded access token:', !!reloadedAccessToken);
+    expect(reloadedRefreshToken).toBeTruthy();
 
     // Login form should NOT be visible (user should be logged in)
     const loginFormVisible = await page.locator('input[type="email"]').isVisible().catch(() => false);
-    console.log('Login form visible after reload:', loginFormVisible);
 
     // User should see dashboard or onboarding content
     const content = await page.textContent('body');

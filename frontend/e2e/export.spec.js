@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TEST_PROFILE, SELECTORS, createMockJwt } from './fixtures/test-data';
+import { TEST_PROFILE, createMockJwt } from './fixtures/test-data';
 
 const corsHeaders = {
   'access-control-allow-origin': '*',
@@ -141,7 +141,6 @@ test.describe('Export Page Tests', () => {
     page.on('console', msg => {
       if (msg.type() === 'error') {
         errors.push(msg.text());
-        console.log('Console error:', msg.text());
       }
     });
 
@@ -166,7 +165,7 @@ test.describe('Export Page Tests', () => {
     await expect(page.locator('button:has-text("Download PDF")')).toBeVisible();
   });
 
-  test('should generate PDF report and trigger download', async ({ page, context }) => {
+  test('should generate PDF report and trigger download', async ({ page, context: _context }) => {
     const sidebar = page.locator('nav').first();
     const exportTab = sidebar.locator('button:has-text("Health Report")');
 
@@ -182,11 +181,6 @@ test.describe('Export Page Tests', () => {
     const downloadPromise = page.waitForEvent('download');
 
     await generateButton.click();
-
-    const hasErrors = logs.some(log => log.type === 'error');
-    if (hasErrors) {
-      console.log('Console errors:', logs.filter(l => l.type === 'error'));
-    }
 
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/diana_health_report.*\.pdf$/);

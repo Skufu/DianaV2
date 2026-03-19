@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER, SELECTORS, createMockJwt } from './fixtures/test-data';
+import { TEST_USER, SELECTORS } from './fixtures/test-data';
 
 const corsHeaders = {
   'access-control-allow-origin': '*',

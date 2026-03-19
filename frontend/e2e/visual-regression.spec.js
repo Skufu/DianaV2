@@ -147,7 +147,7 @@ test.describe('Visual Regression: Insights Component', () => {
             });
           }
         } catch (e) {
-          console.log(`Section ${section.name} not visible, skipping screenshot`);
+          // Section not visible, skipping screenshot
         }
       }
     }
@@ -204,9 +204,7 @@ test.describe('Visual Regression: Insights Component', () => {
         const element = page.locator(`text=${component.pattern.source}`);
         try {
           await expect(element.first()).toBeVisible({ timeout: 5000 });
-          console.log(`✓ ${component.name} component is visible`);
         } catch (e) {
-          console.log(`✗ ${component.name} component not visible`);
           throw e;
         }
       }

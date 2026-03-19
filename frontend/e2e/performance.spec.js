@@ -17,11 +17,7 @@ test.describe('Time to Interactive Performance', () => {
             };
         });
 
-        console.log('Timing metrics:', JSON.stringify(timingMetrics, null, 2));
-
         const tti = timingMetrics.domContentLoaded;
-
-        console.log(`Time to Interactive (TTI): ${tti}ms`);
 
         expect(tti).toBeLessThan(2000);
     });
@@ -53,8 +49,6 @@ test.describe('Time to Interactive Performance', () => {
             });
         });
 
-        console.log('Core Web Vitals:', JSON.stringify(metrics, null, 2));
-
         expect(metrics.lcp).toBeLessThan(2500);
         expect(metrics.cls).toBeLessThan(0.1);
     });
@@ -73,7 +67,7 @@ test.describe('Time to Interactive Performance', () => {
                         sizeKB: (size.length / 1024).toFixed(2),
                     });
                 } catch (e) {
-                    console.warn('Failed to read bundle response body', e);
+                    // Fail silently for build artifacts
                 }
             }
         });
@@ -83,15 +77,7 @@ test.describe('Time to Interactive Performance', () => {
         const totalSize = bundles.reduce((sum, b) => sum + b.size, 0);
         const totalSizeKB = totalSize / 1024;
 
-        console.log('Bundle analysis:');
-        console.log(`  Total bundle size: ${totalSizeKB.toFixed(2)} KB`);
-        console.log(`  Number of bundles: ${bundles.length}`);
-
         bundles.sort((a, b) => b.size - a.size);
-        console.log('\nTop 5 largest bundles:');
-        bundles.slice(0, 5).forEach(b => {
-            console.log(`    ${b.name}: ${b.sizeKB} KB`);
-        });
 
         expect(totalSizeKB).toBeLessThan(500);
     });
@@ -111,8 +97,6 @@ test.describe('Time to Interactive Performance', () => {
                 avgDuration: entries.length > 0 ? totalDuration / entries.length : 0,
             };
         });
-
-        console.log('JavaScript execution metrics:', JSON.stringify(jsMetrics, null, 2));
 
         expect(jsMetrics.totalDuration).toBeLessThan(500);
     });

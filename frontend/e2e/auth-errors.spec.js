@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER, ADMIN_USER, SELECTORS, waitForNetworkIdle } from './fixtures/test-data';
+import { TEST_USER, SELECTORS, waitForNetworkIdle } from './fixtures/test-data';
 
 const corsHeaders = {
   'access-control-allow-origin': '*',
@@ -171,7 +171,6 @@ test.describe('Authorization Error Handling', () => {
 
   test('User accessing admin route → forbidden message or redirect', async ({ page }) => {
     let adminDashboardCalled = false;
-    let profileCallCount = 0;
 
     await page.route('**/auth/login', async route => {
       const request = route.request();
@@ -223,8 +222,6 @@ test.describe('Authorization Error Handling', () => {
       if (request.method() === 'OPTIONS') {
         return route.fulfill({ status: 204, headers: corsHeaders });
       }
-
-      profileCallCount++;
 
       return route.fulfill({
         status: 200,

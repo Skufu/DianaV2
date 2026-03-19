@@ -150,7 +150,7 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
           className="text-center py-12 text-slate-500"
           aria-live="polite"
         >
-          Loading your health data...
+          Loading your health data&hellip;
         </motion.div>
       )}
 

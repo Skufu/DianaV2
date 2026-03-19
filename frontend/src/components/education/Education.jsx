@@ -375,8 +375,8 @@ const Education = () => {
           <div className="space-y-1">
             <h3 className="text-lg font-bold text-white tracking-wide">Understanding Your Results</h3>
             <p className="text-blue-50 text-sm leading-relaxed">
-              <strong>1. Screening:</strong> Identifies if you are "Normal" or "At-Risk" based on biomarkers. 
-              <strong> 2. Subtyping:</strong> If "At-Risk", assigns a metabolic pattern to guide care. (Pattern-based classification to support clinical discussion, not a definitive diagnosis).
+              <strong>1. Screening:</strong> Identifies if you are &quot;Normal&quot; or &quot;At-Risk&quot; based on biomarkers. 
+              <strong> 2. Subtyping:</strong> If &quot;At-Risk&quot;, assigns a metabolic pattern to guide care. (Pattern-based classification to support clinical discussion, not a definitive diagnosis).
             </p>
           </div>
         </div>

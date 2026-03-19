@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER, SELECTORS, waitForNetworkIdle } from '../fixtures/test-data';
+import { SELECTORS, waitForNetworkIdle } from '../fixtures/test-data';
 
 /**
  * Integration Test Suite for Real Assessment Creation
