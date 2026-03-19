@@ -110,7 +110,7 @@ const Insights = () => {
     };
 
     load();
-  }, [reloadKey]);
+  }, [reloadKey, fetchClusterDistributionApi, fetchTrendInsightsApi]);
 
   useEffect(() => {
     const loadML = async () => {
@@ -136,7 +136,7 @@ const Insights = () => {
       }
     };
     loadML();
-  }, []);
+  }, [fetchMLMetricsApi, fetchMLInformationGainApi, fetchMLClustersApi]);
 
   const riskFactorImportance = useMemo(() => {
     if (mlIG && mlIG.feature_ranking) {

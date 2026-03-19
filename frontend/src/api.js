@@ -14,9 +14,6 @@ if (API_BASE && /^[a-zA-Z]:[/\\]/.test(API_BASE)) {
 }
 
 export { API_BASE };
-const ML_BASE =
-  import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
-
 // Token storage for cross-origin auth (Vercel → Render)
 // Cookies don't work cross-origin with SameSite=Strict, so we use Bearer tokens
 let _accessToken = typeof window !== 'undefined' ? localStorage.getItem('diana_access_token') : null;

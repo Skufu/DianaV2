@@ -59,7 +59,6 @@ test.describe('Admin Model Traceability Tests', () => {
     await page.waitForTimeout(2000);
     
     // Verify no error messages
-    const hasError = await page.locator('text=Error').count();
     const hasContent = await page.textContent('body');
     
     // Page should have model-related content and ideally no errors

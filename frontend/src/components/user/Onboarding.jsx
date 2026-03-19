@@ -296,7 +296,8 @@ const Onboarding = ({ onComplete }) => {
                   <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-xl p-6">
                     <h2 className="text-lg font-semibold text-slate-700 mb-3 flex items-center gap-2">
                       <Info className="text-slate-500" size={20} />
-                      What You'll Need
+                      <Info className="text-slate-500" size={20} />
+                      What You&apos;ll Need
                     </h2>
                     <p className="text-slate-600 text-sm mb-3">
                       To get the most accurate assessment, have these from your recent health checkup:

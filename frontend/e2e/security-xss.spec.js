@@ -42,14 +42,13 @@ test.describe('Security: HttpOnly Cookie Protection', () => {
     });
 
     if (testResult.access_error) {
-      console.log('✅ SECURITY TEST PASSED: HttpOnly cookies protected - JavaScript cannot access cookies');
-      console.log('   Error:', testResult.access_error);
+      // Security test passed
     } else {
       expect(testResult.has_diana_token).toBe(false);
       expect(testResult.has_diana_refresh_token).toBe(false);
       expect(testResult.document_cookie).not.toContain('diana_token');
       expect(testResult.document_cookie).not.toContain('diana_refresh_token');
-      console.log('✅ SECURITY TEST PASSED: HttpOnly cookies not in document.cookie');
+      expect(testResult.document_cookie).not.toContain('diana_refresh_token');
     }
   });
 
@@ -71,7 +70,7 @@ test.describe('Security: HttpOnly Cookie Protection', () => {
     expect(cookies).toContain('Secure');
     expect(cookies).toContain('SameSite=Strict');
 
-    console.log('✅ Cookie security attributes verified:', cookies);
+    expect(cookies).toContain('SameSite=Strict');
   });
 
   test('XSS attack simulation: Reflective XSS in URL parameter', async ({ page }) => {
@@ -112,12 +111,11 @@ test.describe('Security: HttpOnly Cookie Protection', () => {
     });
 
     if (theftResult.access_error) {
-      console.log('✅ Reflective XSS test passed: HttpOnly cookies protected - access blocked');
-      console.log('   Error:', theftResult.access_error);
+      // Security test passed
     } else {
       expect(theftResult.stolen).toBe(false);
       expect(theftResult.allCookies).not.toContain('diana_token');
-      console.log('✅ Reflective XSS test passed: HttpOnly cookies protected');
+      expect(theftResult.allCookies).not.toContain('diana_token');
     }
   });
 });

@@ -42,7 +42,7 @@ const SubgroupDistribution = React.memo(({ clusters = [], isLoading = false }) =
         <div className="w-full h-[300px] bg-slate-700/30 rounded-xl animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="p-4 rounded-xl border border-slate-600/30">
+            <div key={`skeleton-${i}`} className="p-4 rounded-xl border border-slate-600/30">
               <div className="w-32 h-4 bg-slate-600 animate-pulse rounded mb-2" />
               <div className="w-24 h-3 bg-slate-600 animate-pulse rounded mb-2" />
               <div className="w-16 h-8 bg-slate-600 animate-pulse rounded" />
