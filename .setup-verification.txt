@@ -1,15 +1,15 @@
 Diana V2 Setup Verification
 ===========================
-Setup completed: Mon, Mar 16, 2026  5:06:03 PM
-Machine: DESKTOP-3I7UAPL
-User: ADRIAN
+Setup completed: Sat 21 Mar 2026 11:53:22 PST
+Machine: MacBook-Air-2.local
+User: adriangabriellfrancisco
 
 Tools Installed:
-- Go: go version go1.24.1 windows/amd64
-- Node: v20.17.0
-- npm: 11.8.0
-- Python: Python 3.12.5
-- Goose: goose version: v3.26.0
+- Go: go version go1.24.4 darwin/arm64
+- Node: v21.7.0
+- npm: 10.5.0
+- Python: Python 3.13.5
+- Goose: goose version: v3.24.3
 - Docker: Yes
 
 Auto-Install Attempts:

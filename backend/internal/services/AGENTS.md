@@ -65,7 +65,7 @@ Normal: 40-99, Prediabetic: 100-125, Diabetic: 126-600
 Normal: 3.5-5.6, Prediabetic: 5.7-6.4, Diabetic: 6.5-15.0
 
 // BMI - kg/m²
-Valid: 15-60 (outside range triggers warning)
+Valid: 10-100 (outside range triggers warning)
 
 // Blood Pressure - mmHg
 Systolic: 70-250, Diastolic: 40-150

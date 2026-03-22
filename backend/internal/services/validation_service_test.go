@@ -45,13 +45,13 @@ func TestValidationService_ValidateBiomarkerRanges(t *testing.T) {
 		},
 		{
 			name:      "BMI too low",
-			values:    map[string]any{"bmi": 14.0},
+			values:    map[string]any{"bmi": 9.0},
 			wantValid: false,
 			wantWarn:  1,
 		},
 		{
 			name:      "BMI too high",
-			values:    map[string]any{"bmi": 65.0},
+			values:    map[string]any{"bmi": 105.0},
 			wantValid: false,
 			wantWarn:  1,
 		},
@@ -129,7 +129,7 @@ func TestValidationService_ValidateBiomarkerRanges(t *testing.T) {
 		},
 		{
 			name:      "multiple out of range",
-			values:    map[string]any{"fbs": 700.0, "hba1c": 16.0, "bmi": 65.0},
+			values:    map[string]any{"fbs": 700.0, "hba1c": 16.0, "bmi": 105.0},
 			wantValid: false,
 			wantWarn:  3,
 		},

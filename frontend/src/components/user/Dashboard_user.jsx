@@ -9,6 +9,7 @@ import {
   Eye,
   FileText,
   ChevronRight,
+  Layers,
 } from 'lucide-react';
 import RiskIndicator from '../common/RiskIndicator';
 import MLResultModal from '../common/MLResultModal';
@@ -18,6 +19,37 @@ import { motion } from 'framer-motion';
 import { staggerContainer, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
 
 const CANONICAL_CLUSTERS = new Set(['SIDD', 'SIRD', 'MOD', 'MARD']);
+
+const CLUSTER_DISPLAY_MAP = {
+  SIRD: {
+    label: 'SIRD-like',
+    name: 'Insulin Resistant',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-200',
+  },
+  SIDD: {
+    label: 'SIDD-like',
+    name: 'Lipid-Driven',
+    color: 'text-rose-600',
+    bgColor: 'bg-rose-50',
+    borderColor: 'border-rose-200',
+  },
+  MOD: {
+    label: 'MOD-like',
+    name: 'Weight-Related',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+  },
+  MARD: {
+    label: 'MARD-like',
+    name: 'Mild Pattern',
+    color: 'text-teal-600',
+    bgColor: 'bg-teal-50',
+    borderColor: 'border-teal-200',
+  },
+};
 
 const capabilityOrFalse = capabilityValue => capabilityValue === true;
 
@@ -237,28 +269,44 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
             <motion.div
               variants={cardVariants}
               whileHover="hover"
-              className="bg-white/80 backdrop-blur-xl rounded-[24px] p-6 shadow-sm border border-slate-200/60 transition-all hover:shadow-md hover:border-amber-200/60 relative overflow-hidden group"
+              className="bg-white/80 backdrop-blur-xl rounded-[24px] p-6 shadow-sm border border-slate-200/60 transition-all hover:shadow-md hover:border-violet-200/60 relative overflow-hidden group"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150" />
               <div className="flex items-center gap-3 mb-4 relative z-10">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm">
-                  <AlertCircle size={22} />
+                <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center shadow-sm">
+                  <Layers size={22} />
                 </div>
-                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">Status</span>
+                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">Metabolic Profile</span>
               </div>
-              <div className="text-2xl font-semibold tracking-tight text-slate-800 relative z-10 mt-2">
-                {!latestAssessment
-                  ? 'No Estimate Yet'
-                  : latestAssessment.risk_score >= 70
-                    ? 'Action Needed'
-                    : latestAssessment.risk_score >= 30
-                      ? 'Monitor Closely'
-                      : 'Looking Good'}
-              </div>
-              <div className="text-sm text-slate-500 mt-2 relative z-10">
-                {latestAssessment
-                  ? 'Based on latest screening'
-                  : 'Log your first assessment'}
+              <div className="relative z-10 mt-2">
+                {!latestAssessment ? (
+                  <>
+                    <div className="text-2xl font-semibold tracking-tight text-slate-800">
+                      No Profile Yet
+                    </div>
+                    <div className="text-sm text-slate-500 mt-2">
+                      Complete an assessment to see your profile
+                    </div>
+                  </>
+                ) : !canUseClusterSemantics ? (
+                  <>
+                    <div className="text-2xl font-semibold tracking-tight text-emerald-600">
+                      Normal
+                    </div>
+                    <div className="text-sm text-slate-500 mt-2">
+                      No metabolic subtype assigned
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={`text-2xl font-semibold tracking-tight ${CLUSTER_DISPLAY_MAP[latestCluster]?.color || 'text-slate-800'}`}>
+                      {CLUSTER_DISPLAY_MAP[latestCluster]?.label || latestCluster}
+                    </div>
+                    <div className="text-sm text-slate-500 mt-2">
+                      {CLUSTER_DISPLAY_MAP[latestCluster]?.name || 'Metabolic pattern detected'}
+                    </div>
+                  </>
+                )}
               </div>
             </motion.div>
           </motion.div>

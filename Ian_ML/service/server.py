@@ -390,9 +390,9 @@ def predict():
         if not data:
             return jsonify({"error": "No data provided"}), 400
         
-        if model_type in ('binary_v2_no_bp', 'binary_v2_bp'):
-            # Use clinical model (non-circular)
-            clin_predictor = get_clinical_predictor_for(model_type)
+        if model_type in ('binary_v2_no_bp', 'binary_v2_bp', 'clinical'):
+            # Use clinical model (binary_v2_no_bp is the final production model)
+            clin_predictor = get_clinical_predictor_for('binary_v2_no_bp')
             if clin_predictor is None:
                 return jsonify({
                     "error": "Clinical model not trained. Run Ian_ML/training/train_binary_v2_no_bp.py or scripts/train/train_quick.py first."
@@ -1015,8 +1015,9 @@ def predict_batch():
                 "error": f"Batch size exceeds maximum of {MAX_BATCH_SIZE} patients"
             }), 400
 
-        if model_type == 'clinical':
-            clin_predictor = get_clinical_predictor()
+        if model_type in ('clinical', 'binary_v2_no_bp', 'binary_v2_bp'):
+            # Use clinical model (binary_v2_no_bp is the final production model)
+            clin_predictor = get_clinical_predictor_for('binary_v2_no_bp')
             if clin_predictor is None:
                 return jsonify({
                     "error": "Clinical model not trained. Run Ian_ML/training/train_binary_v2_no_bp.py first."

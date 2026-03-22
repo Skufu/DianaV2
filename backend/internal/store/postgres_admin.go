@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -33,7 +34,7 @@ func (r *pgAuditEventRepo) Create(ctx context.Context, event models.AuditEvent) 
 
 	detailsJSON, err := json.Marshal(event.Details)
 	if err != nil {
-		detailsJSON = []byte("{}")
+		return fmt.Errorf("failed to marshal audit details: %w", err)
 	}
 
 	query := `
