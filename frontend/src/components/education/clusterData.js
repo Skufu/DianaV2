@@ -1,0 +1,123 @@
+import SIDDLogo from '../../assets/clusters/sidd.png';
+import SIRDLogo from '../../assets/clusters/sird.png';
+import MODLogo from '../../assets/clusters/mod.png';
+import MARDLogo from '../../assets/clusters/mard.png';
+
+export const clusterEducation = {
+  SIRD: {
+    name: 'Insulin Resistant',
+    shortDesc: 'Your body makes insulin, but your cells don\'t use it well. Small changes can make a big difference.',
+    color: '#D97706',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+    logo: SIRDLogo,
+    fullDesc: `This pattern means your body is working harder to process sugar and fats. The good news? It responds really well to everyday changes—what you eat, how much you move, and managing your weight. Many women see real improvements with simple, consistent steps.`,
+    riskFactors: [
+      'Higher levels of blood fats (triglycerides)',
+      'Extra weight around your middle',
+      'Lower "good" cholesterol (HDL)',
+      'Family history of diabetes',
+      'Changes related to menopause',
+    ],
+    recommendations: [
+      'Focus on losing a small amount of weight—even 5-10% helps',
+      'Add walking or light exercise to your routine',
+      'Choose heart-healthy foods like vegetables, fish, and olive oil',
+      'Talk to your doctor about checking your kidney health',
+      'Get regular check-ups to track your progress',
+    ],
+    clinicalImplications: [
+      'Lifestyle changes are your strongest tool here',
+      'Reducing belly fat can improve how your body uses insulin',
+      'Regular monitoring helps catch changes early',
+      'Your doctor may discuss medications that help insulin work better',
+    ],
+  },
+  SIDD: {
+    name: 'Cholesterol-Focused',
+    shortDesc: 'Your cholesterol levels are the main concern. Taking care of your heart health is key.',
+    color: '#DC2626',
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-200',
+    logo: SIDDLogo,
+    fullDesc: `This pattern centers on your cholesterol levels, especially LDL ("bad") cholesterol. While this can affect your heart health, it's very manageable with the right approach. Diet changes, staying active, and working with your doctor can help keep your heart strong.`,
+    riskFactors: [
+      'Higher LDL ("bad") cholesterol',
+      'Higher total cholesterol levels',
+      'Family history of heart disease',
+      'Less physical activity',
+      'Diet high in saturated fats',
+    ],
+    recommendations: [
+      'Ask your doctor about a heart-healthy eating plan',
+      'Add more fiber, fruits, and vegetables to your meals',
+      'Stay active—even daily walks help your heart',
+      'Get your cholesterol checked regularly',
+      'Discuss whether cholesterol medication might help',
+    ],
+    clinicalImplications: [
+      'Heart health is the main focus for this pattern',
+      'Diet and exercise can lower cholesterol naturally',
+      'Your doctor may recommend medication if needed',
+      'Regular heart check-ups give you peace of mind',
+    ],
+  },
+  MOD: {
+    name: 'Weight-Related',
+    shortDesc: 'Your weight is the biggest factor. The great news: this responds very well to lifestyle changes.',
+    color: '#2563EB',
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-200',
+    logo: MODLogo,
+    fullDesc: `This pattern is primarily connected to carrying extra weight. Here's the encouraging part: women with this pattern often see the biggest improvements from lifestyle changes. Even modest weight loss can significantly lower your risk. You have a lot of power to change this.`,
+    riskFactors: [
+      'Higher body weight or BMI',
+      'Extra weight around your middle',
+      'Less daily movement or exercise',
+      'Eating patterns that may need adjusting',
+      'Gradual weight gain over the years',
+    ],
+    recommendations: [
+      'Set small, realistic weight loss goals',
+      'Find physical activities you actually enjoy',
+      'Make gradual changes to how you eat',
+      'Ask your doctor about weight management support',
+      'Celebrate small wins along the way',
+    ],
+    clinicalImplications: [
+      'This pattern responds best to lifestyle changes',
+      'Losing even a little weight can lower your risk a lot',
+      'You have strong potential to improve your health',
+      'Your doctor can help create a plan that works for you',
+    ],
+  },
+  MARD: {
+    name: 'Mild Pattern',
+    shortDesc: 'The mildest metabolic pattern—your body isn\'t showing strong warning signs in any one area.',
+    color: '#16A34A',
+    bgColor: 'bg-green-50',
+    borderColor: 'border-green-200',
+    logo: MARDLogo,
+    fullDesc: `This is the mildest of the four patterns. It means your metabolic health isn't showing strong warning signs in any specific area—not heavy insulin resistance, not major cholesterol issues, not significant weight concerns. That's good news. Standard healthy habits go a long way here, and this pattern tends to progress slowly.`,
+    riskFactors: [
+      'Milder overall metabolic changes',
+      'No single dominant risk factor standing out',
+      'Subtle shifts that may come with age',
+      'Gradual changes in body composition',
+      'Less physical activity over time',
+    ],
+    recommendations: [
+      'Keep up with regular check-ups',
+      'Stay active with activities you enjoy',
+      'Eat a balanced, varied diet',
+      'Get enough sleep and manage stress',
+      'Maintain your current healthy habits',
+    ],
+    clinicalImplications: [
+      'The mildest metabolic pattern of the four',
+      'Very manageable with standard healthy habits',
+      'Lower risk compared to other patterns',
+      'Focus on maintaining your good health',
+    ],
+  },
+};

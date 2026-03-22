@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -159,7 +160,7 @@ func buildAuditDetails(c *gin.Context) map[string]any {
 	// For POST/PUT requests, try to include sanitized body info
 	// We use a previously-set context value since the body is already consumed
 	if bodyData, exists := c.Get("audit_body"); exists {
-		details["body"] = bodyData
+		details["body"] = sanitizeForJSON(bodyData)
 	}
 
 	return details
@@ -188,6 +189,36 @@ func containsField(fields []string, target string) bool {
 		}
 	}
 	return false
+}
+
+// sanitizeForJSON replaces NaN/Infinity with nil since they are invalid JSON.
+func sanitizeForJSON(v any) any {
+	switch val := v.(type) {
+	case float64:
+		if math.IsNaN(val) || math.IsInf(val, 0) {
+			return nil
+		}
+		return val
+	case float32:
+		if math.IsNaN(float64(val)) || math.IsInf(float64(val), 0) {
+			return nil
+		}
+		return val
+	case map[string]any:
+		result := make(map[string]any, len(val))
+		for k, v := range val {
+			result[k] = sanitizeForJSON(v)
+		}
+		return result
+	case []any:
+		result := make([]any, len(val))
+		for i, v := range val {
+			result[i] = sanitizeForJSON(v)
+		}
+		return result
+	default:
+		return v
+	}
 }
 
 // CaptureRequestBody is a helper middleware that captures the request body

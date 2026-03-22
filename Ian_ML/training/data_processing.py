@@ -23,7 +23,7 @@ OUTPUT_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
 
 # Biomarkers to check for outliers (clinical ranges)
 BIOMARKER_RANGES = {
-    'bmi': (15.0, 60.0),               # Extreme but possible BMI range
+    'bmi': (10.0, 100.0),              # Aligned with API binding (10-100)
     'triglycerides': (20.0, 800.0),     # mg/dL
     'ldl': (20.0, 300.0),              # mg/dL
     'hdl': (10.0, 120.0),              # mg/dL

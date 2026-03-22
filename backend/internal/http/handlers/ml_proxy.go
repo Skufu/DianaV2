@@ -20,8 +20,7 @@ type MLProxyHandler struct {
 
 // NewMLProxyHandler creates a new ML proxy handler.
 func NewMLProxyHandler(mlBaseURL, mlAPIKey string, timeoutMS int) *MLProxyHandler {
-	// Normalize base URL: strip trailing slash
-	mlBaseURL = strings.TrimRight(mlBaseURL, "/")
+	mlBaseURL = strings.TrimSuffix(strings.TrimSuffix(mlBaseURL, "/"), "/predict")
 
 	return &MLProxyHandler{
 		mlBaseURL: mlBaseURL,

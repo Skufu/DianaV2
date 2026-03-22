@@ -1,0 +1,99 @@
+[
+  {
+    "timestamp": "2026-03-21T11:55:05.468315",
+    "alert_type": "drift",
+    "severity": "high",
+    "message": "Drift detected in 5 feature(s): age, bmi, hdl, ldl, triglycerides",
+    "details": {
+      "features": [
+        "age",
+        "bmi",
+        "hdl",
+        "ldl",
+        "triglycerides"
+      ],
+      "recommendations": [
+        "HIGH PRIORITY: Significant drift in age, bmi, hdl, ldl, triglycerides. Consider retraining the model.",
+        "hdl: Mean shifted by -31.0% (reference: 57.96 \u2192 current: 40.00)",
+        "ldl: Mean shifted by +140.0% (reference: 125.00 \u2192 current: 300.00)",
+        "triglycerides: Mean shifted by +177.8% (reference: 180.00 \u2192 current: 500.00)",
+        "Multiple features show drift. Consider reviewing data collection process."
+      ]
+    },
+    "acknowledged": false
+  },
+  {
+    "timestamp": "2026-03-21T11:55:50.225084",
+    "alert_type": "drift",
+    "severity": "high",
+    "message": "Drift detected in 5 feature(s): age, bmi, hdl, ldl, triglycerides",
+    "details": {
+      "features": [
+        "age",
+        "bmi",
+        "hdl",
+        "ldl",
+        "triglycerides"
+      ],
+      "recommendations": [
+        "HIGH PRIORITY: Significant drift in age, bmi, hdl, ldl, triglycerides. Consider retraining the model.",
+        "bmi: Mean shifted by +96.1% (reference: 28.25 \u2192 current: 55.40)",
+        "hdl: Mean shifted by -31.0% (reference: 57.96 \u2192 current: 40.00)",
+        "ldl: Mean shifted by +140.0% (reference: 125.00 \u2192 current: 300.00)",
+        "triglycerides: Mean shifted by +177.8% (reference: 180.00 \u2192 current: 500.00)",
+        "Multiple features show drift. Consider reviewing data collection process."
+      ]
+    },
+    "acknowledged": false
+  },
+  {
+    "timestamp": "2026-03-21T11:56:08.472300",
+    "alert_type": "drift",
+    "severity": "high",
+    "message": "Drift detected in 5 feature(s): age, bmi, hdl, ldl, triglycerides",
+    "details": {
+      "features": [
+        "age",
+        "bmi",
+        "hdl",
+        "ldl",
+        "triglycerides"
+      ],
+      "recommendations": [
+        "HIGH PRIORITY: Significant drift in age, bmi, hdl, ldl, triglycerides. Consider retraining the model.",
+        "age: Mean shifted by -28.1% (reference: 63.96 \u2192 current: 46.00)",
+        "bmi: Mean shifted by +96.1% (reference: 28.25 \u2192 current: 55.40)",
+        "hdl: Mean shifted by -31.0% (reference: 57.96 \u2192 current: 40.00)",
+        "ldl: Mean shifted by +140.0% (reference: 125.00 \u2192 current: 300.00)",
+        "triglycerides: Mean shifted by +177.8% (reference: 180.00 \u2192 current: 500.00)",
+        "Multiple features show drift. Consider reviewing data collection process."
+      ]
+    },
+    "acknowledged": false
+  },
+  {
+    "timestamp": "2026-03-21T11:56:29.023059",
+    "alert_type": "drift",
+    "severity": "high",
+    "message": "Drift detected in 5 feature(s): age, bmi, hdl, ldl, triglycerides",
+    "details": {
+      "features": [
+        "age",
+        "bmi",
+        "hdl",
+        "ldl",
+        "triglycerides"
+      ],
+      "recommendations": [
+        "HIGH PRIORITY: Significant drift in age, bmi, hdl, ldl, triglycerides. Consider retraining the model.",
+        "age: Mean shifted by -28.1% (reference: 63.96 \u2192 current: 46.00)",
+        "bmi: Mean shifted by +96.1% (reference: 28.25 \u2192 current: 55.40)",
+        "hdl: Mean shifted by -31.0% (reference: 57.96 \u2192 current: 40.00)",
+        "ldl: Mean shifted by +140.0% (reference: 125.00 \u2192 current: 300.00)",
+        "triglycerides: Mean shifted by +177.8% (reference: 180.00 \u2192 current: 500.00)",
+        "Multiple features show drift. Consider reviewing data collection process."
+      ]
+    },
+    "acknowledged": false
+  }
+]

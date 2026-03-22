@@ -27,7 +27,7 @@ type ValidationResult struct {
 var BiomarkerRanges = map[string]BiomarkerRange{
 	"fbs":           {Min: 40, Max: 600, Unit: "mg/dL", Name: "Fasting Blood Sugar"},
 	"hba1c":         {Min: 3.5, Max: 15.0, Unit: "%", Name: "HbA1c"},
-	"bmi":           {Min: 15, Max: 60, Unit: "kg/m²", Name: "Body Mass Index"},
+	"bmi":           {Min: 10, Max: 100, Unit: "kg/m²", Name: "Body Mass Index"},
 	"systolic":      {Min: 70, Max: 250, Unit: "mmHg", Name: "Systolic Blood Pressure"},
 	"diastolic":     {Min: 40, Max: 150, Unit: "mmHg", Name: "Diastolic Blood Pressure"},
 	"cholesterol":   {Min: 100, Max: 400, Unit: "mg/dL", Name: "Total Cholesterol"},
@@ -79,8 +79,8 @@ func (s *ValidationService) ValidateBiomarkerRanges(values map[string]any) Valid
 	// Check BMI
 	if bmi, ok := values["bmi"]; ok && bmi != nil {
 		if val, ok := bmi.(float64); ok {
-			if val < 15 || val > 60 {
-				warnings = append(warnings, fmt.Sprintf("BMI (%.1f %s) is outside the valid range (15-60 kg/m²)", val, BiomarkerRanges["bmi"].Unit))
+			if val < 10 || val > 100 {
+				warnings = append(warnings, fmt.Sprintf("BMI (%.1f %s) is outside the valid range (10-100 kg/m²)", val, BiomarkerRanges["bmi"].Unit))
 			}
 		}
 	}

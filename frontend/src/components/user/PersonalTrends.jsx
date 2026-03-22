@@ -510,7 +510,9 @@ const PersonalTrends = ({ onStartAssessment }) => {
               Previous Assessments Details
             </h2>
             <div className="space-y-3">
-              {activeTrends.clusterHistory.map((entry, index) => {
+              {[...activeTrends.clusterHistory]
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .map((entry, index) => {
                 // Use index in key to ensure uniqueness (same date + cluster can occur multiple times)
                 const uniqueKey = `${entry.date}-${entry.cluster}-${index}`;
 

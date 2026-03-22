@@ -901,7 +901,6 @@ class ClinicalPredictor:
                 # Binary model: proba[0] = Normal, proba[1] = At-Risk
                 at_risk_prob = float(proba_arr[1])
                 diabetes_prob = float(proba_arr[1])  # Same as at-risk for binary
-                predicted_class = 1 if proba_arr[1] >= 0.5 else 0
                 # Use optimized threshold if available
                 threshold = self.decision_thresholds.get("at_risk", 0.5)
                 predicted_class = 1 if proba_arr[1] >= float(threshold) else 0
