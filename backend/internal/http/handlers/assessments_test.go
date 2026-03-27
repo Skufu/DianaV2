@@ -407,6 +407,86 @@ func TestAssessmentsHandler_Create_DoctorRoleForcesNoBPModel(t *testing.T) {
 	}
 }
 
+func TestAssessmentsHandler_Create_DoctorRoleCaseInsensitive(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	testCases := []struct {
+		name       string
+		role       string
+		modelType  string
+		wantStatus int
+	}{
+		{
+			name:       "uppercase DOCTOR forces locked model",
+			role:       "DOCTOR",
+			modelType:  "",
+			wantStatus: http.StatusCreated,
+		},
+		{
+			name:       "mixed case Doctor forces locked model",
+			role:       "Doctor",
+			modelType:  "",
+			wantStatus: http.StatusCreated,
+		},
+		{
+			name:       "uppercase DOCTOR rejects non-locked model",
+			role:       "DOCTOR",
+			modelType:  "ada",
+			wantStatus: http.StatusForbidden,
+		},
+		{
+			name:       "mixed case Doctor rejects non-locked model",
+			role:       "Doctor",
+			modelType:  "ada",
+			wantStatus: http.StatusForbidden,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			predictor := &fakePredictor{}
+			repo := &fakeAssessmentRepo{}
+			h := NewAssessmentsHandler(
+				&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+				predictor,
+				nil,
+				"binary_v2_no_bp",
+				"hash123",
+				getDefaultTestThresholds(),
+			)
+
+			r := gin.New()
+			r.Use(mockAuthMiddlewareWithRole(tc.role))
+			r.POST("/:id/assessments", h.Create)
+
+			payload, _ := json.Marshal(map[string]any{
+				"age":           55,
+				"bmi":           25,
+				"triglycerides": 150,
+				"ldl":           120,
+				"hdl":           50,
+				"model_type":    tc.modelType,
+			})
+			req, _ := http.NewRequest(http.MethodPost, "/1/assessments", bytes.NewReader(payload))
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != tc.wantStatus {
+				t.Fatalf("expected status %d for role %q, got %d", tc.wantStatus, tc.role, w.Code)
+			}
+
+			if tc.wantStatus == http.StatusCreated {
+				if predictor.lastModelType != doctorLockedModelType {
+					t.Fatalf("expected predictor model type %q, got %q", doctorLockedModelType, predictor.lastModelType)
+				}
+			}
+		})
+	}
+}
+
 func TestAssessmentsHandler_Update_DoctorRoleRejectsNonNoBPModel(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
@@ -505,6 +585,96 @@ func TestAssessmentsHandler_Update_DoctorRoleForcesNoBPModel(t *testing.T) {
 	}
 	if repo.last.ModelVersion != doctorLockedModelType {
 		t.Fatalf("expected persisted model version %q, got %q", doctorLockedModelType, repo.last.ModelVersion)
+	}
+}
+
+func TestAssessmentsHandler_Update_DoctorRoleCaseInsensitive(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	testCases := []struct {
+		name       string
+		role       string
+		modelType  string
+		wantStatus int
+	}{
+		{
+			name:       "uppercase DOCTOR forces locked model",
+			role:       "DOCTOR",
+			modelType:  "",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "mixed case Doctor forces locked model",
+			role:       "Doctor",
+			modelType:  "",
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "uppercase DOCTOR rejects non-locked model",
+			role:       "DOCTOR",
+			modelType:  "ada",
+			wantStatus: http.StatusForbidden,
+		},
+		{
+			name:       "mixed case Doctor rejects non-locked model",
+			role:       "Doctor",
+			modelType:  "ada",
+			wantStatus: http.StatusForbidden,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			predictor := &fakePredictor{}
+			repo := &fakeAssessmentRepo{
+				existing: &models.Assessment{
+					ID:            42,
+					UserID:        1,
+					Age:           55,
+					BMI:           25,
+					Triglycerides: 150,
+					LDL:           120,
+					HDL:           50,
+					ModelVersion:  doctorLockedModelType,
+				},
+			}
+			h := NewAssessmentsHandler(
+				&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+				predictor,
+				nil,
+				doctorLockedModelType,
+				"hash123",
+				getDefaultTestThresholds(),
+			)
+
+			r := gin.New()
+			r.Use(mockAuthMiddlewareWithRole(tc.role))
+			r.PUT("/:id/assessments/:assessmentID", h.Update)
+
+			payload := map[string]any{
+				"notes": "doctor update",
+			}
+			if tc.modelType != "" {
+				payload["model_type"] = tc.modelType
+			}
+			payloadBytes, _ := json.Marshal(payload)
+			req, _ := http.NewRequest(http.MethodPut, "/1/assessments/42", bytes.NewReader(payloadBytes))
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != tc.wantStatus {
+				t.Fatalf("expected status %d for role %q, got %d", tc.wantStatus, tc.role, w.Code)
+			}
+
+			if tc.wantStatus == http.StatusOK {
+				if predictor.lastModelType != doctorLockedModelType {
+					t.Fatalf("expected forced model type %q, got %q", doctorLockedModelType, predictor.lastModelType)
+				}
+			}
+		})
 	}
 }
 
