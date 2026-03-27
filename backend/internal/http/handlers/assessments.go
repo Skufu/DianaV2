@@ -618,7 +618,7 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 		assessment.Alcohol = "Unknown"
 	}
 
-	if req.ModelType != "" && req.ModelType != "clinical" && req.ModelType != "ada" && req.ModelType != "binary_v2_no_bp" && req.ModelType != "binary_v2_bp" {
+	if req.ModelType != "" && req.ModelType != "ada" && req.ModelType != "binary_v2_no_bp" && req.ModelType != "binary_v2_bp" {
 		ErrBadRequest(c, "Invalid model type")
 		return
 	}
