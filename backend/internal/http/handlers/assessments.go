@@ -372,7 +372,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	log.Printf("[DEBUG] Role check: claims.Role=%q, expected=%q", claims.Role, "doctor")
 	if strings.ToLower(claims.Role) == "doctor" {
 		if req.ModelType != "" && req.ModelType != doctorLockedModelType {
-			ErrForbidden(c)
+			errorResponse(c, http.StatusForbidden, "FORBIDDEN", "Doctors must use the binary_v2_no_bp model type")
 			return
 		}
 		req.ModelType = doctorLockedModelType
@@ -627,7 +627,7 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	log.Printf("[DEBUG] Role check: claims.Role=%q, expected=%q", claims.Role, "doctor")
 	if strings.ToLower(claims.Role) == "doctor" {
 		if req.ModelType != "" && req.ModelType != doctorLockedModelType {
-			ErrForbidden(c)
+			errorResponse(c, http.StatusForbidden, "FORBIDDEN", "Doctors must use the binary_v2_no_bp model type")
 			return
 		}
 		req.ModelType = doctorLockedModelType
