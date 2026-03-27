@@ -330,6 +330,21 @@ Rollback of v0011 will re-create a blank `patients` table; it does NOT currently
 ### Role Field
 `models.User.Role` is DERIVED from `is_admin` (not in DB). Check `postgres.go` line 64-68 for derivation logic. Required for JWT compatibility with legacy auth.
 
+### Doctor Model Type Locking
+Doctors are restricted to using only the `binary_v2_no_bp` model type for assessments. This constant is synchronized across frontend and backend:
+
+**Backend constant** (assessments.go:33):
+```go
+doctorLockedModelType = "binary_v2_no_bp"
+```
+
+**Frontend constants**:
+- `ClinicalExplainability.jsx:27` - `DOCTOR_LOCKED_MODEL_TYPE = 'binary_v2_no_bp'`
+- `AdminDashboard.jsx:99` - `lockedModelType={userRole === 'doctor' ? 'binary_v2_no_bp' : null}`
+- `AssessmentForm.jsx:9` - `DEFAULT_MODEL_TYPE = 'binary_v2_no_bp'`
+
+**Verification**: All constants match exactly (case-sensitive). Do NOT modify without synchronizing all locations.
+
 ### Clinical Thresholds
 HbA1c, FBS, cholesterol ranges are hardcoded in `backend/internal/ml/validation.go`. These represent SIDD/AQR research methodology.
 
