@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -673,6 +674,177 @@ func TestAssessmentsHandler_Update_DoctorRoleCaseInsensitive(t *testing.T) {
 				if predictor.lastModelType != doctorLockedModelType {
 					t.Fatalf("expected forced model type %q, got %q", doctorLockedModelType, predictor.lastModelType)
 				}
+			}
+		})
+	}
+}
+
+func TestAssessmentsHandler_CreateAndUpdate_ModelTypeValidationConsistency(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	// Test that both Create and Update handlers accept the same model types
+	// and both reject "clinical" (VAL-MODEL-004)
+	validModelTypes := []string{"ada", "binary_v2_no_bp", "binary_v2_bp"}
+	invalidModelType := "clinical"
+
+	t.Run("Create rejects clinical model type", func(t *testing.T) {
+		repo := &fakeAssessmentRepo{}
+		h := NewAssessmentsHandler(
+			&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+			&fakePredictor{},
+			nil,
+			"binary_v2_no_bp",
+			"hash123",
+			getDefaultTestThresholds(),
+		)
+
+		r := gin.New()
+		r.Use(mockAuthMiddlewareWithRole("admin"))
+		r.POST("/:id/assessments", h.Create)
+
+		payload, _ := json.Marshal(map[string]any{
+			"age":           55,
+			"bmi":           25,
+			"triglycerides": 150,
+			"ldl":           120,
+			"hdl":           50,
+			"model_type":    invalidModelType,
+		})
+		req, _ := http.NewRequest(http.MethodPost, "/1/assessments", bytes.NewReader(payload))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected status 400 for clinical model type in Create, got %d", w.Code)
+		}
+		// Validation happens at struct binding level with oneof tag
+		if !strings.Contains(w.Body.String(), "Invalid") {
+			t.Fatalf("expected 'Invalid' error message, got %s", w.Body.String())
+		}
+	})
+
+	t.Run("Update rejects clinical model type", func(t *testing.T) {
+		predictor := &fakePredictor{}
+		repo := &fakeAssessmentRepo{
+			existing: &models.Assessment{
+				ID:            42,
+				UserID:        1,
+				Age:           55,
+				BMI:           25,
+				Triglycerides: 150,
+				LDL:           120,
+				HDL:           50,
+				ModelVersion:  "binary_v2_no_bp",
+			},
+		}
+		h := NewAssessmentsHandler(
+			&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+			predictor,
+			nil,
+			"binary_v2_no_bp",
+			"hash123",
+			getDefaultTestThresholds(),
+		)
+
+		r := gin.New()
+		r.Use(mockAuthMiddlewareWithRole("admin"))
+		r.PUT("/:id/assessments/:assessmentID", h.Update)
+
+		payload, _ := json.Marshal(map[string]any{
+			"model_type": invalidModelType,
+		})
+		req, _ := http.NewRequest(http.MethodPut, "/1/assessments/42", bytes.NewReader(payload))
+		req.Header.Set("Content-Type", "application/json")
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected status 400 for clinical model type in Update, got %d", w.Code)
+		}
+		// Validation happens at struct binding level with oneof tag
+		if !strings.Contains(w.Body.String(), "Invalid") {
+			t.Fatalf("expected 'Invalid' error message, got %s", w.Body.String())
+		}
+	})
+
+	for _, modelType := range validModelTypes {
+		modelType := modelType
+		t.Run(fmt.Sprintf("Create accepts valid model type %s", modelType), func(t *testing.T) {
+			predictor := &fakePredictor{}
+			repo := &fakeAssessmentRepo{}
+			h := NewAssessmentsHandler(
+				&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+				predictor,
+				nil,
+				"binary_v2_no_bp",
+				"hash123",
+				getDefaultTestThresholds(),
+			)
+
+			r := gin.New()
+			r.Use(mockAuthMiddlewareWithRole("admin"))
+			r.POST("/:id/assessments", h.Create)
+
+			payload, _ := json.Marshal(map[string]any{
+				"age":           55,
+				"bmi":           25,
+				"triglycerides": 150,
+				"ldl":           120,
+				"hdl":           50,
+				"model_type":    modelType,
+			})
+			req, _ := http.NewRequest(http.MethodPost, "/1/assessments", bytes.NewReader(payload))
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != http.StatusCreated {
+				t.Fatalf("expected status 201 for model type %s in Create, got %d", modelType, w.Code)
+			}
+		})
+
+		t.Run(fmt.Sprintf("Update accepts valid model type %s", modelType), func(t *testing.T) {
+			predictor := &fakePredictor{}
+			repo := &fakeAssessmentRepo{
+				existing: &models.Assessment{
+					ID:            42,
+					UserID:        1,
+					Age:           55,
+					BMI:           25,
+					Triglycerides: 150,
+					LDL:           120,
+					HDL:           50,
+					ModelVersion:  "binary_v2_no_bp",
+				},
+			}
+			h := NewAssessmentsHandler(
+				&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+				predictor,
+				nil,
+				"binary_v2_no_bp",
+				"hash123",
+				getDefaultTestThresholds(),
+			)
+
+			r := gin.New()
+			r.Use(mockAuthMiddlewareWithRole("admin"))
+			r.PUT("/:id/assessments/:assessmentID", h.Update)
+
+			payload, _ := json.Marshal(map[string]any{
+				"model_type": modelType,
+			})
+			req, _ := http.NewRequest(http.MethodPut, "/1/assessments/42", bytes.NewReader(payload))
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != http.StatusOK {
+				t.Fatalf("expected status 200 for model type %s in Update, got %d", modelType, w.Code)
 			}
 		})
 	}
