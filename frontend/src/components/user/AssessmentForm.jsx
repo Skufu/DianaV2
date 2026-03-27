@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Activity, Save, AlertCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MLResultModal from '../common/MLResultModal';
 import Button from '../common/Button';
 import { useCreateAssessment } from '../../api';
 import { slideUp } from '../../utils/animations';
+
+const DEFAULT_MODEL_TYPE = 'binary_v2_no_bp';
 
 const AssessmentForm = ({
   initialData,
@@ -14,7 +16,19 @@ const AssessmentForm = ({
   lockedModelType = null,
   isClinicalView = false,
 }) => {
-  const resolvedModelType = lockedModelType || 'binary_v2_no_bp';
+  // Use a ref to track the current locked model type to avoid stale closures
+  const lockedModelTypeRef = useRef(lockedModelType);
+  
+  // Update ref whenever prop changes
+  useEffect(() => {
+    lockedModelTypeRef.current = lockedModelType;
+  }, [lockedModelType]);
+
+  // Compute resolved model type - prefer lockedModelType over default
+  const resolvedModelType = useMemo(() => {
+    return lockedModelType || DEFAULT_MODEL_TYPE;
+  }, [lockedModelType]);
+
   const [formData, setFormData] = useState({
     age: '',
     height: '',
@@ -33,7 +47,7 @@ const AssessmentForm = ({
     physical_activity: 'Unknown',
     alcohol: 'Unknown',
     notes: '',
-    model_type: resolvedModelType,
+    model_type: lockedModelType || DEFAULT_MODEL_TYPE,
   });
 
   // Pre-fill fields from UserProfile if available
@@ -88,6 +102,8 @@ const AssessmentForm = ({
   }, []);
 
   const resetForm = () => {
+    // Use ref to get current lockedModelType to avoid stale closure
+    const currentLockedModelType = lockedModelTypeRef.current || DEFAULT_MODEL_TYPE;
     setFormData({
       age: '',
       height: '',
@@ -106,7 +122,7 @@ const AssessmentForm = ({
       physical_activity: 'Unknown',
       alcohol: 'Unknown',
       notes: '',
-      model_type: resolvedModelType,
+      model_type: currentLockedModelType,
     });
   };
 
@@ -178,7 +194,9 @@ const AssessmentForm = ({
     e.preventDefault();
     setError(null);
 
-    const selectedModelType = lockedModelType || formData.model_type;
+    // Always use lockedModelType if provided, otherwise use formData.model_type
+    // This ensures doctors always submit with the correct model type
+    const selectedModelType = resolvedModelType;
 
     const requiredFields = ['age', 'height', 'weight', 'triglycerides', 'ldl', 'hdl'];
     if (selectedModelType === 'ada') {
