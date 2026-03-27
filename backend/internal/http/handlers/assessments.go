@@ -369,7 +369,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	if claims.Role == "doctor" {
+	if strings.ToLower(claims.Role) == "doctor" {
 		if req.ModelType != "" && req.ModelType != doctorLockedModelType {
 			ErrForbidden(c)
 			return
@@ -623,7 +623,7 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if claims.Role == "doctor" {
+	if strings.ToLower(claims.Role) == "doctor" {
 		if req.ModelType != "" && req.ModelType != doctorLockedModelType {
 			ErrForbidden(c)
 			return
