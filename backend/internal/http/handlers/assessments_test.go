@@ -364,6 +364,18 @@ func TestAssessmentsHandler_Create_DoctorRoleRejectsNonNoBPModel(t *testing.T) {
 	if repo.last.ID != 0 {
 		t.Fatalf("expected no assessment to be persisted when doctor requests disallowed model")
 	}
+	// Verify the error message is descriptive (VAL-ERROR-001)
+	var response map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to decode response body: %v", err)
+	}
+	if response["code"] != "FORBIDDEN" {
+		t.Fatalf("expected error code FORBIDDEN, got %v", response["code"])
+	}
+	expectedMessage := "Doctors must use the binary_v2_no_bp model type"
+	if response["message"] != expectedMessage {
+		t.Fatalf("expected message %q, got %q", expectedMessage, response["message"])
+	}
 }
 
 func TestAssessmentsHandler_Create_DoctorRoleForcesNoBPModel(t *testing.T) {
@@ -484,6 +496,21 @@ func TestAssessmentsHandler_Create_DoctorRoleCaseInsensitive(t *testing.T) {
 					t.Fatalf("expected predictor model type %q, got %q", doctorLockedModelType, predictor.lastModelType)
 				}
 			}
+
+			// Verify descriptive error message on rejection (VAL-ERROR-001)
+			if tc.wantStatus == http.StatusForbidden {
+				var response map[string]any
+				if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+					t.Fatalf("failed to decode response body: %v", err)
+				}
+				if response["code"] != "FORBIDDEN" {
+					t.Fatalf("expected error code FORBIDDEN, got %v", response["code"])
+				}
+				expectedMessage := "Doctors must use the binary_v2_no_bp model type"
+				if response["message"] != expectedMessage {
+					t.Fatalf("expected message %q, got %q", expectedMessage, response["message"])
+				}
+			}
 		})
 	}
 }
@@ -534,6 +561,18 @@ func TestAssessmentsHandler_Update_DoctorRoleRejectsNonNoBPModel(t *testing.T) {
 	}
 	if repo.updateCalled {
 		t.Fatalf("expected no persistence when doctor update model override is rejected")
+	}
+	// Verify the error message is descriptive (VAL-ERROR-001, VAL-MODEL-005)
+	var response map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("failed to decode response body: %v", err)
+	}
+	if response["code"] != "FORBIDDEN" {
+		t.Fatalf("expected error code FORBIDDEN, got %v", response["code"])
+	}
+	expectedMessage := "Doctors must use the binary_v2_no_bp model type"
+	if response["message"] != expectedMessage {
+		t.Fatalf("expected message %q, got %q", expectedMessage, response["message"])
 	}
 }
 
@@ -673,6 +712,21 @@ func TestAssessmentsHandler_Update_DoctorRoleCaseInsensitive(t *testing.T) {
 			if tc.wantStatus == http.StatusOK {
 				if predictor.lastModelType != doctorLockedModelType {
 					t.Fatalf("expected forced model type %q, got %q", doctorLockedModelType, predictor.lastModelType)
+				}
+			}
+
+			// Verify descriptive error message on rejection (VAL-ERROR-001, VAL-MODEL-005)
+			if tc.wantStatus == http.StatusForbidden {
+				var response map[string]any
+				if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+					t.Fatalf("failed to decode response body: %v", err)
+				}
+				if response["code"] != "FORBIDDEN" {
+					t.Fatalf("expected error code FORBIDDEN, got %v", response["code"])
+				}
+				expectedMessage := "Doctors must use the binary_v2_no_bp model type"
+				if response["message"] != expectedMessage {
+					t.Fatalf("expected message %q, got %q", expectedMessage, response["message"])
 				}
 			}
 		})
