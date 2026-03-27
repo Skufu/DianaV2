@@ -172,6 +172,7 @@ Neuron_ML/
 
 
 .setup-verification.txt
+.credentials
 
 # Assistant and temporary files
 .agents/
