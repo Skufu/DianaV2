@@ -9,6 +9,11 @@
 # Optional:
 #   VITE_API_BASE - Backend API URL (default: http://localhost:8080)
 #   VITE_ML_BASE - ML server URL (default: http://localhost:5000)
+#
+# Deployment:
+#   DIANA_BACKEND_IMAGE - Override backend image (default: build from source)
+#   DIANA_ML_IMAGE - Override ML image (default: build from source)
+#   DIANA_FRONTEND_IMAGE - Override frontend image (default: build from source)
 
 services:
   # PostgreSQL Database
@@ -31,6 +36,7 @@ services:
 
   # Go Backend API
   backend:
+    image: ${DIANA_BACKEND_IMAGE:-}
     build:
       context: .
       dockerfile: build/Dockerfile
@@ -49,9 +55,15 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # Python ML Server
   ml:
+    image: ${DIANA_ML_IMAGE:-}
     build:
       context: .
       dockerfile: Ian_ML/Dockerfile
@@ -75,6 +87,7 @@ services:
 
   # React Frontend (Nginx)
   frontend:
+    image: ${DIANA_FRONTEND_IMAGE:-}
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -88,6 +101,11 @@ services:
       - backend
       - ml
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres_data:
