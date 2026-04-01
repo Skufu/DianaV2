@@ -73,7 +73,7 @@ func (h *MLProxyHandler) doProxy(c *gin.Context, method, targetURL string, body 
 	req, err := http.NewRequestWithContext(c.Request.Context(), method, targetURL, body)
 	if err != nil {
 		log.Printf("[ML_PROXY] Failed to create request: %v", err)
-		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to proxy request to ML service"})
+		ErrBadGateway(c, "Failed to proxy request to ML service")
 		return
 	}
 
@@ -90,7 +90,7 @@ func (h *MLProxyHandler) doProxy(c *gin.Context, method, targetURL string, body 
 	resp, err := h.httpClient.Do(req)
 	if err != nil {
 		log.Printf("[ML_PROXY] ML service request failed: %v", err)
-		c.JSON(http.StatusBadGateway, gin.H{"error": "ML service unavailable"})
+		ErrServiceUnavailable(c, "ML service unavailable")
 		return
 	}
 	defer resp.Body.Close()

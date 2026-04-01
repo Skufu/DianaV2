@@ -48,7 +48,7 @@ func (h *ExportHandler) ExportPDF(c *gin.Context) {
 
 	user, err := h.store.Users().GetUserByID(c, int32(userID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user profile"})
+		ErrInternal(c, "Failed to fetch user profile")
 		return
 	}
 
@@ -56,7 +56,7 @@ func (h *ExportHandler) ExportPDF(c *gin.Context) {
 	assessments, err := h.store.Assessments().ListAllLimitedByUser(c, int32(userID), 100)
 	if err != nil {
 		log.Printf("[ERROR] Failed to fetch assessments for user %d: %v", userID, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch assessments"})
+		ErrInternal(c, "Failed to fetch assessments")
 		return
 	}
 
@@ -68,7 +68,7 @@ func (h *ExportHandler) ExportPDF(c *gin.Context) {
 	pdfData, err := h.pdfService.GenerateHealthReport(userProfile, assessments)
 	if err != nil {
 		log.Printf("Failed to generate PDF: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate PDF report"})
+		ErrInternal(c, "Failed to generate PDF report")
 		return
 	}
 
@@ -109,7 +109,7 @@ func (h *ExportHandler) ExportResearchData(c *gin.Context) {
 	// Or Users().GetUsersForNotification()
 	users, err := h.store.Users().GetUsersForNotification(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+		ErrInternal(c, "Failed to fetch users")
 		return
 	}
 
@@ -132,10 +132,10 @@ func (h *ExportHandler) ExportResearchData(c *gin.Context) {
 // Legacy methods from original export handler
 func (h *ExportHandler) PatientsCSV(c *gin.Context) {
 	// This is deprecated - users now export their own data
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Patient CSV export is deprecated. Users can export their own data via /users/me/export/pdf"})
+	ErrNotImplemented(c, "Patient CSV export is deprecated. Users can export their own data via /users/me/export/pdf")
 }
 
 func (h *ExportHandler) AssessmentsCSV(c *gin.Context) {
 	// This is deprecated - use ExportPDF instead
-	c.JSON(http.StatusNotImplemented, gin.H{"error": "Assessment CSV export is deprecated. Use PDF export for professional reports"})
+	ErrNotImplemented(c, "Assessment CSV export is deprecated. Use PDF export for professional reports")
 }

@@ -82,7 +82,7 @@ func (h *UsersHandler) GetUserProfile(c *gin.Context) {
 func (h *UsersHandler) UpdateUserProfile(c *gin.Context) {
 	claims, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 	userClaims := claims.(middleware.UserClaims)
