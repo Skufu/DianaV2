@@ -72,6 +72,10 @@ jobs:
           DB_SOURCE: "postgres://postgres:postgres@localhost:5432/diana_test?sslmode=disable"
           ENVIRONMENT: "test"
 
+      - name: Contract Tests
+        run: go test -v -run "TestContract_" ./internal/http/handlers/
+        working-directory: backend
+
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:

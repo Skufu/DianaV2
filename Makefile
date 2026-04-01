@@ -42,6 +42,9 @@ lint:
 test:
 	cd $(BACKEND_DIR) && $(GO) test ./...
 
+test-contract:
+	cd $(BACKEND_DIR) && $(GO) test -v -run "TestContract_" ./internal/http/handlers/
+
 db_up:
 	$(GOOSE) -dir $(MIGRATIONS_DIR) postgres "$$DB_DSN" up
 
@@ -84,3 +87,13 @@ ml-train:
 # Start all services (ML + Backend + Frontend)
 start-all:
 	bash scripts/dev/start-all.sh
+
+# Load testing targets
+load-test-assessment:
+	k6 run backend/load_tests/assessment_load_test.js
+
+load-test-assessment-quick:
+	k6 run --vus 10 --duration 30s backend/load_tests/assessment_load_test.js
+
+load-test-assessment-stress:
+	k6 run --vus 200 --duration 5m backend/load_tests/assessment_load_test.js
