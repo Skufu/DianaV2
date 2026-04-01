@@ -97,3 +97,19 @@ load-test-assessment-quick:
 
 load-test-assessment-stress:
 	k6 run --vus 200 --duration 5m backend/load_tests/assessment_load_test.js
+
+# Backup targets (VAL-DP-002: Database Backups Automated)
+backup:
+	./scripts/backup.sh
+
+backup-list:
+	./scripts/backup.sh --list
+
+backup-status:
+	./scripts/backup.sh --status
+
+backup-test:
+	./scripts/backup.sh --test
+
+backup-restore:
+	./scripts/backup.sh --restore $(BACKUP_FILE)

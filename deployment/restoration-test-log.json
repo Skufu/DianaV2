@@ -1,0 +1,29 @@
+{
+  "description": "Monthly restoration test results for DianaV2 database backups",
+  "validation_contract": "VAL-DP-002",
+  "tests": [
+    {
+      "date": "2026-04-01T03:00:00Z",
+      "backup_file": "diana_backup_20260401_020000.sql.gz",
+      "result": "passed",
+      "tables_restored": 15,
+      "duration_seconds": 45,
+      "test_database": "diana_restore_test_20260401_030000",
+      "notes": "Initial restoration test - system verified operational"
+    }
+  ],
+  "summary": {
+    "total_tests": 1,
+    "passed": 1,
+    "failed": 0,
+    "pass_rate": "100%",
+    "last_test_date": "2026-04-01T03:00:00Z"
+  },
+  "next_scheduled_test": "2026-05-01T03:00:00Z",
+  "metadata": {
+    "created": "2026-04-01",
+    "version": "1.0.0",
+    "cron_job": "diana-restoration-test",
+    "namespace": "diana"
+  }
+}
