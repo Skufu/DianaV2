@@ -1,7 +1,111 @@
 // DIANA V2 - User-Focused API Layer
 // Simplified version for menopausal user platform
 
+/**
+ * @fileoverview API layer for DianaV2 frontend. Provides typed API functions
+ * for communicating with the Go backend and ML service.
+ *
+ * All API calls use apiFetch() or mlFetch() - NEVER use raw fetch().
+ *
+ * TypeScript interfaces are documented via JSDoc below. Contract tests in
+ * api.contract.test.js validate that these interfaces match the backend contract.
+ *
+ * @see backend/internal/http/handlers/contract_test.go for backend contract definitions
+ * @see frontend/src/api.contract.test.js for frontend contract tests
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+// =============================================================================
+// TYPE DEFINITIONS (JSDoc TypeScript Interfaces)
+// =============================================================================
+
+/**
+ * @typedef {Object} AuthResponseContract
+ * @property {string} message - Success message
+ * @property {string} access_token - JWT access token for API authentication
+ * @property {string} refresh_token - Refresh token for token renewal
+ * @property {UserContract} user - User object with basic info
+ */
+
+/**
+ * @typedef {Object} UserContract
+ * @property {number} id - User ID
+ * @property {string} email - User email address
+ * @property {string} role - User role ('user', 'doctor', 'admin')
+ */
+
+/**
+ * @typedef {Object} UserProfileContract
+ * @property {number} id - User ID
+ * @property {string} email - User email address
+ * @property {boolean} onboarding_completed - Whether onboarding flow is complete
+ * @property {boolean} is_active - Whether user account is active
+ * @property {boolean} is_admin - Whether user has admin privileges
+ * @property {string} role - User role ('user', 'doctor', 'admin')
+ * @property {number} assessment_count - Number of assessments created
+ * @property {AssessmentContract} [latest_assessment] - Most recent assessment (optional)
+ * @property {string} [current_risk_level] - Current risk level from latest assessment (optional)
+ */
+
+/**
+ * @typedef {Object} ConsentSettingsContract
+ * @property {boolean} consent_personal_data - Consent to store personal health data
+ * @property {boolean} consent_research_participation - Consent to participate in research
+ * @property {boolean} consent_email_updates - Consent to receive email updates
+ * @property {boolean} consent_analytics - Consent to analytics tracking
+ */
+
+/**
+ * @typedef {Object} AssessmentContract
+ * @property {number} id - Assessment ID
+ * @property {number} user_id - Owner user ID
+ * @property {number} [risk_score] - Risk score (0-100)
+ * @property {string} [risk_level] - Risk level ('low', 'medium', 'high')
+ * @property {string} [risk_label] - Human-readable risk label ('Low Risk', etc.)
+ * @property {string} [cluster] - Cluster assignment ('SIDD', 'SIRD', 'MOD', 'MARD')
+ * @property {string} [cluster_description] - Description of cluster
+ * @property {string} [treatment_focus] - Recommended treatment focus
+ * @property {string} [model_version] - ML model version used
+ * @property {string} [dataset_hash] - Dataset hash for reproducibility
+ * @property {string} [validation_status] - Validation status ('passed', 'failed')
+ * @property {number} [fbs] - Fasting blood sugar (mg/dL)
+ * @property {number} [hba1c] - HbA1c percentage
+ * @property {number} [cholesterol] - Total cholesterol (mg/dL)
+ * @property {number} [ldl] - LDL cholesterol (mg/dL)
+ * @property {number} [hdl] - HDL cholesterol (mg/dL)
+ * @property {number} [triglycerides] - Triglycerides (mg/dL)
+ * @property {number} [systolic] - Systolic blood pressure (mmHg)
+ * @property {number} [diastolic] - Diastolic blood pressure (mmHg)
+ * @property {number} [waist_circumference] - Waist circumference (cm)
+ * @property {number} [bmi] - Body mass index
+ * @property {number} [age] - Age at assessment
+ * @property {string} created_at - Creation timestamp (ISO 8601)
+ * @property {string} updated_at - Last update timestamp (ISO 8601)
+ * @property {Object<string, any>} [feature_set] - Feature set used for prediction
+ * @property {Object<string, any>} [cluster_capability] - Cluster capability info
+ * @property {Object<string, any>} [output_capabilities] - Output capabilities
+ * @property {Object<string, any>} [drift_baseline] - Drift baseline data
+ */
+
+/**
+ * @typedef {Object} APIErrorContract
+ * @property {string} code - Error code ('VALIDATION_ERROR', 'UNAUTHORIZED', etc.)
+ * @property {string} message - Human-readable error message
+ * @property {Object<string, string>|string} [details] - Additional error details
+ */
+
+/**
+ * @typedef {Object} AdminDashboardContract
+ * @property {number} total_users - Total registered users
+ * @property {number} total_patients - Total patients (deprecated)
+ * @property {number} total_assessments - Total assessments created
+ * @property {number} total_clinics - Total clinics (deprecated)
+ * @property {number} avg_risk_score - Average risk score across assessments
+ * @property {number} high_risk_count - Number of high-risk assessments
+ * @property {number} assessments_this_month - Assessments created this month
+ * @property {number} new_users_this_month - New users this month
+ */
 
 let API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 
