@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/skufu/DianaV2/backend/internal/models"
 )
 
 // RoleRequired returns middleware that enforces role-based access control.
@@ -14,11 +15,11 @@ import (
 //
 //	adminGroup := router.Group("/admin")
 //	adminGroup.Use(middleware.Auth(jwtSecret))
-//	adminGroup.Use(middleware.RoleRequired("admin"))
+//	adminGroup.Use(middleware.RoleRequired(models.RoleAdmin))
 //
 // Or with multiple allowed roles:
 //
-//	managerRoutes.Use(middleware.RoleRequired("admin", "manager"))
+//	managerRoutes.Use(middleware.RoleRequired(models.RoleAdmin, models.RoleDoctor))
 func RoleRequired(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Get user claims from context (set by Auth middleware)
@@ -53,7 +54,7 @@ func RoleRequired(allowedRoles ...string) gin.HandlerFunc {
 }
 
 // AdminOnly is a convenience middleware that only allows admin users.
-// It's equivalent to RoleRequired("admin").
+// It's equivalent to RoleRequired(models.RoleAdmin).
 func AdminOnly() gin.HandlerFunc {
-	return RoleRequired("admin")
+	return RoleRequired(models.RoleAdmin)
 }
