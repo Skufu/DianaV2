@@ -23,6 +23,9 @@ type Store interface {
 	// Transaction support for multi-step operations
 	// BeginTx starts a new transaction and returns a TxStore
 	BeginTx(ctx context.Context) (TxStore, error)
+
+	// Ping verifies database connectivity for health checks
+	Ping(ctx context.Context) error
 }
 
 // TxStore is a transaction-scoped store that shares the same transaction

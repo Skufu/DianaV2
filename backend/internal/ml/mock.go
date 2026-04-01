@@ -14,6 +14,7 @@ type Predictor interface {
 	GetActiveModelMetadata(ctx context.Context) (*ModelMetadata, error)
 	GetDriftStatus(ctx context.Context) (*DriftStatus, error)
 	GetDriftAlerts(ctx context.Context, unacknowledgedOnly bool, limit int) (*DriftAlertsEnvelope, error)
+	IsAvailable() bool
 }
 
 type MockPredictor struct{}
@@ -48,6 +49,11 @@ func NewMockPredictor() *MockPredictor {
 		log.Println("[WARN] Using MockPredictor - real ML service not connected. Set MODEL_URL env var to connect to ML service.")
 	}
 	return &MockPredictor{}
+}
+
+// IsAvailable always returns true for mock predictor since it doesn't depend on external service.
+func (m *MockPredictor) IsAvailable() bool {
+	return true
 }
 
 func (m *MockPredictor) Predict(ctx context.Context, input models.Assessment) (Prediction, error) {

@@ -80,6 +80,8 @@ func (m *mockCohortStore) Cohort() store.CohortRepository {
 
 func (m *mockCohortStore) Close() {}
 
+func (m *mockCohortStore) Ping(ctx context.Context) error { return nil }
+
 func (m *mockCohortStore) Users() store.UserRepository                 { return nil }
 func (m *mockCohortStore) Patients() store.PatientRepository           { return nil }
 func (m *mockCohortStore) Assessments() store.AssessmentRepository     { return nil }

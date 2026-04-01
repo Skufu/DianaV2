@@ -25,6 +25,7 @@ func (m *mockInsightsStore) Assessments() store.AssessmentRepository {
 }
 
 func (m *mockInsightsStore) Close() {}
+func (m *mockInsightsStore) Ping(ctx context.Context) error { return nil }
 
 func (m *mockInsightsStore) Users() store.UserRepository                 { return nil }
 func (m *mockInsightsStore) Patients() store.PatientRepository           { return nil }

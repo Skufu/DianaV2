@@ -193,6 +193,7 @@ func (m *mockAdminUsersStore) AuditEvents() store.AuditEventRepository {
 }
 
 func (m *mockAdminUsersStore) Close() {}
+func (m *mockAdminUsersStore) Ping(ctx context.Context) error { return nil }
 
 func (m *mockAdminUsersStore) Patients() store.PatientRepository           { return nil }
 func (m *mockAdminUsersStore) Assessments() store.AssessmentRepository     { return nil }

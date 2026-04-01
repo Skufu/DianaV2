@@ -168,6 +168,7 @@ func (m *mockExportStore) Assessments() store.AssessmentRepository {
 }
 
 func (m *mockExportStore) Close() {}
+func (m *mockExportStore) Ping(ctx context.Context) error { return nil }
 
 func (m *mockExportStore) Patients() store.PatientRepository           { return nil }
 func (m *mockExportStore) RefreshTokens() store.RefreshTokenRepository { return nil }
