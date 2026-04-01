@@ -112,6 +112,20 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Test
+        run: npm test
+        env:
+          VITE_API_BASE: http://localhost:8080
+          VITE_ML_BASE: http://localhost:5000
+
+      - name: Upload test coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 30
+
   # Python ML server tests
   ml:
     runs-on: ubuntu-latest
