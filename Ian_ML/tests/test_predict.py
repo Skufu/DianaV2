@@ -45,6 +45,9 @@ def _default_cluster_labels(cluster_id):
             "subtype_full": "Mild Age-Related Diabetes",
             "description": "Older age at diagnosis, mild metabolic dysfunction",
             "treatment_focus": "Conservative management, slower progression",
+            # API contract fields (read by _get_cluster_info)
+            "characteristics": "Older age at diagnosis, mild metabolic dysfunction",
+            "clinical_implication": "Conservative management, slower progression",
         }
     }
 
@@ -105,6 +108,9 @@ def cluster_fixture():
             "subtype_full": "Severe Insulin-Resistant Diabetes",
             "description": "Insulin resistance dominant profile",
             "treatment_focus": "Insulin sensitivity and triglyceride control",
+            # API contract fields (read by _get_cluster_info)
+            "characteristics": "Insulin resistance dominant profile",
+            "clinical_implication": "Insulin sensitivity and triglyceride control",
         }
     }
 
