@@ -49,12 +49,12 @@ func (h *CohortHandler) getCohortStats(c *gin.Context) {
 	case "menopause_status":
 		groups, err = cohortRepo.StatsByMenopauseStatus(c.Request.Context())
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid groupBy parameter"})
+		ErrBadRequest(c, "invalid groupBy parameter")
 		return
 	}
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load cohort statistics"})
+		ErrInternal(c, "failed to load cohort statistics")
 		return
 	}
 

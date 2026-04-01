@@ -28,7 +28,7 @@ func (h *InsightsHandler) Register(rg *gin.RouterGroup) {
 func (h *InsightsHandler) cluster(c *gin.Context) {
 	_, exists := c.Get("user")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+		ErrUnauthorized(c)
 		return
 	}
 	cacheKey := "cluster-distribution:all"

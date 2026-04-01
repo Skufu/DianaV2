@@ -130,6 +130,18 @@ func ErrConflict(c *gin.Context, message string) {
 	errorResponse(c, http.StatusConflict, "CONFLICT", message)
 }
 
+func ErrNotImplemented(c *gin.Context, message string) {
+	errorResponse(c, http.StatusNotImplemented, "NOT_IMPLEMENTED", message)
+}
+
+func ErrBadGateway(c *gin.Context, message string) {
+	errorResponse(c, http.StatusBadGateway, "BAD_GATEWAY", message)
+}
+
+func ErrServiceUnavailable(c *gin.Context, message string) {
+	errorResponse(c, http.StatusServiceUnavailable, "SERVICE_UNAVAILABLE", message)
+}
+
 var controlCharRegex = regexp.MustCompile(`[\x00-\x1f\x7f]`)
 
 func parseIDParam(c *gin.Context, name string) (int64, error) {

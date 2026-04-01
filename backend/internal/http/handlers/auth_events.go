@@ -36,13 +36,13 @@ type streamParams struct {
 func (h *AuthEventHandler) StreamAuthEvents(c *gin.Context) {
 	var params streamParams
 	if err := c.ShouldBindQuery(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid parameters"})
+		ErrBadRequest(c, "invalid parameters")
 		return
 	}
 
 	token := params.Token
 	if token == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+		ErrBadRequest(c, "missing token")
 		return
 	}
 

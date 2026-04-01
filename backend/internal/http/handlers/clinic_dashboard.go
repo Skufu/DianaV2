@@ -38,7 +38,7 @@ func (h *ClinicDashboardHandler) listClinics(c *gin.Context) {
 
 	clinics, err := h.store.Clinics().ListUserClinics(c.Request.Context(), int32(claims.UserID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load clinics"})
+		ErrInternal(c, "Failed to load clinics")
 		return
 	}
 
@@ -62,33 +62,33 @@ func (h *ClinicDashboardHandler) getClinicDashboard(c *gin.Context) {
 
 	clinicID, err := strconv.Atoi(clinicIDStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid clinic ID"})
+		ErrBadRequest(c, "Invalid clinic ID")
 		return
 	}
 
 	// Check if user is clinic_admin for this clinic or system admin
 	isAdmin, err := h.store.Clinics().IsClinicAdmin(c.Request.Context(), int32(claims.UserID), int32(clinicID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify access"})
+		ErrInternal(c, "Failed to verify access")
 		return
 	}
 
 	if !isAdmin && claims.Role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "access denied - clinic_admin role required"})
+		ErrForbidden(c)
 		return
 	}
 
 	// Get clinic info
 	clinic, err := h.store.Clinics().Get(c.Request.Context(), int32(clinicID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "clinic not found"})
+		ErrNotFound(c, "Clinic")
 		return
 	}
 
 	// Get aggregate stats
 	agg, err := h.store.Clinics().ClinicAggregate(c.Request.Context(), int32(clinicID))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load clinic statistics"})
+		ErrInternal(c, "Failed to load clinic statistics")
 		return
 	}
 
