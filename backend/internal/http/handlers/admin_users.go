@@ -13,6 +13,19 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// parseBoolQuery safely parses a boolean query parameter
+func parseBoolQuery(c *gin.Context, key string) *bool {
+	val := c.Query(key)
+	if val == "" {
+		return nil
+	}
+	b, err := strconv.ParseBool(val)
+	if err != nil {
+		return nil
+	}
+	return &b
+}
+
 // AdminUsersHandler handles admin user management operations
 type AdminUsersHandler struct {
 	store  store.Store
@@ -66,18 +79,15 @@ type UpdateUserRequest struct {
 // @Failure 500 {object} map[string]string
 // @Router /admin/users [get]
 func (h *AdminUsersHandler) listUsers(c *gin.Context) {
-	var params models.UserListParams
-	if err := c.ShouldBindQuery(&params); err != nil {
-		log.Printf("[ERROR] Invalid query parameters: %v", err)
-		ErrBadRequest(c, "Invalid query parameters")
-		return
-	}
+	// Use ParsePagination() for validated pagination params
+	pagination := ParsePagination(c)
 
-	if params.Page < 1 {
-		params.Page = 1
-	}
-	if params.PageSize < 1 || params.PageSize > 100 {
-		params.PageSize = 20
+	params := models.UserListParams{
+		Page:     pagination.Page,
+		PageSize: pagination.PageSize,
+		Search:   c.Query("search"),
+		Role:     c.Query("role"),
+		IsActive: parseBoolQuery(c, "is_active"),
 	}
 
 	users, total, err := h.store.Users().List(c.Request.Context(), params)
@@ -87,7 +97,8 @@ func (h *AdminUsersHandler) listUsers(c *gin.Context) {
 		return
 	}
 
-	totalPages := (total + params.PageSize - 1) / params.PageSize
+	// Use models.PaginatedResponse for backward-compatible format
+	totalPages := (total + pagination.PageSize - 1) / pagination.PageSize
 	if totalPages < 1 {
 		totalPages = 1
 	}
@@ -95,8 +106,8 @@ func (h *AdminUsersHandler) listUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, models.PaginatedResponse{
 		Data:       users,
 		Total:      total,
-		Page:       params.Page,
-		PageSize:   params.PageSize,
+		Page:       pagination.Page,
+		PageSize:   pagination.PageSize,
 		TotalPages: totalPages,
 	})
 }
