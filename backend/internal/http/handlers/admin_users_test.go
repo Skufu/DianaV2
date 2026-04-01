@@ -204,7 +204,7 @@ func (m *mockAdminUsersStore) BeginTx(ctx context.Context) (store.TxStore, error
 	return nil, fmt.Errorf("mock store does not support transactions")
 }
 
-func setupAdminUsersRouter() (*gin.Engine, *mockAdminUsersStore) {
+func setupAdminUsersRouter() (*gin.Engine, *mockAdminUsersStore, *middleware.AuditLogger) {
 	gin.SetMode(gin.TestMode)
 
 	store := &mockAdminUsersStore{
@@ -253,11 +253,11 @@ func setupAdminUsersRouter() (*gin.Engine, *mockAdminUsersStore) {
 	auditLogger := middleware.NewAuditLogger(store)
 	handler.Register(router.Group("/admin"), auditLogger)
 
-	return router, store
+	return router, store, auditLogger
 }
 
 func TestAdminGetUsers_NoPasswordHashExposed(t *testing.T) {
-	router, _ := setupAdminUsersRouter()
+	router, _, auditLogger := setupAdminUsersRouter()
 
 	t.Run("list users endpoint does not expose password_hash", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/admin/users?page=1&page_size=20", nil)
@@ -329,7 +329,7 @@ func TestAdminGetUsers_NoPasswordHashExposed(t *testing.T) {
 		router.ServeHTTP(w, req)
 
 		// Wait for async audit goroutine to complete to avoid race condition
-		time.Sleep(50 * time.Millisecond)
+		auditLogger.Shutdown()
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
@@ -342,7 +342,7 @@ func TestAdminGetUsers_NoPasswordHashExposed(t *testing.T) {
 }
 
 func TestAdminListUsers_PaginationMetadata(t *testing.T) {
-	router, st := setupAdminUsersRouter()
+	router, st, _ := setupAdminUsersRouter()
 
 	t.Run("returns total_pages as at least 1 when list is empty", func(t *testing.T) {
 		st.users = []models.User{}
@@ -382,7 +382,7 @@ func TestAdminListUsers_PaginationMetadata(t *testing.T) {
 }
 
 func TestAdminCreateUser_AuditTargetIDMatchesCreatedUser(t *testing.T) {
-	router, st := setupAdminUsersRouter()
+	router, st, _ := setupAdminUsersRouter()
 
 	reqBody := CreateUserRequest{
 		Email:    "audit-target@example.com",

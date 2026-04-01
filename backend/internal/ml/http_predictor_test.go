@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -1020,10 +1021,28 @@ func TestHTTPPredictor_Predict_QueuesDriftCheck(t *testing.T) {
 	}
 }
 
+// safeBuffer is a thread-safe wrapper around bytes.Buffer
+type safeBuffer struct {
+	buf   bytes.Buffer
+	mutex sync.Mutex
+}
+
+func (s *safeBuffer) Write(p []byte) (n int, err error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.buf.Write(p)
+}
+
+func (s *safeBuffer) String() string {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.buf.String()
+}
+
 func TestHTTPPredictor_Predict_DriftFailureIsLoggedAndNonBlocking(t *testing.T) {
 	t.Helper()
 
-	var logBuffer bytes.Buffer
+	var logBuffer safeBuffer
 	originalWriter := log.Writer()
 	defer log.SetOutput(originalWriter)
 	log.SetOutput(&logBuffer)
@@ -1068,6 +1087,8 @@ func TestHTTPPredictor_Predict_DriftFailureIsLoggedAndNonBlocking(t *testing.T) 
 
 	select {
 	case <-driftCalled:
+		// Wait a bit for the async logging to complete
+		time.Sleep(100 * time.Millisecond)
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for drift failure request")
 	}
