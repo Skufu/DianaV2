@@ -116,17 +116,9 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 		return nil, 0, errors.New("db not configured")
 	}
 
+	// Pagination params are validated by ParsePagination() in handlers
 	page := params.Page
-	if page < 1 {
-		page = 1
-	}
 	pageSize := params.PageSize
-	if pageSize < 1 {
-		pageSize = 20
-	}
-	if pageSize > 100 {
-		pageSize = 100
-	}
 	offset := (page - 1) * pageSize
 
 	query := `
