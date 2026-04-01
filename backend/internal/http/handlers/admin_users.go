@@ -151,7 +151,7 @@ func (h *AdminUsersHandler) createUser(c *gin.Context) {
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
 		Role:         req.Role,
-		IsAdmin:      req.Role == "admin",
+		IsAdmin:      req.Role == models.RoleAdmin,
 		CreatedBy:    &creatorID,
 	}
 
@@ -244,7 +244,7 @@ func (h *AdminUsersHandler) updateUser(c *gin.Context) {
 		ID:      id,
 		Email:   req.Email,
 		Role:    req.Role,
-		IsAdmin: req.Role == "admin",
+		IsAdmin: req.Role == models.RoleAdmin,
 	}
 
 	updatedUser, err := h.store.Users().Update(c.Request.Context(), user)

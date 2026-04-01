@@ -226,12 +226,12 @@ func (r *pgUserRepo) Create(ctx context.Context, user models.User) (*models.User
 
 	role = user.Role
 	if role == "" {
-		role = "user"
+		role = models.RoleUser
 	}
-	isAdmin := role == "admin"
+	isAdmin := role == models.RoleAdmin
 	if user.IsAdmin {
 		isAdmin = true
-		role = "admin"
+		role = models.RoleAdmin
 	}
 	err := r.pool.QueryRow(ctx, query,
 		user.Email, user.PasswordHash, role, isAdmin, user.CreatedBy,
@@ -278,7 +278,7 @@ func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User
 	var isAdminInput pgtype.Bool
 	if user.Role != "" {
 		roleInput = pgtype.Text{String: user.Role, Valid: true}
-		isAdminInput = pgtype.Bool{Bool: user.Role == "admin", Valid: true}
+		isAdminInput = pgtype.Bool{Bool: user.Role == models.RoleAdmin, Valid: true}
 	}
 	err := r.pool.QueryRow(ctx, query, user.ID, user.Email, roleInput, isAdminInput).Scan(
 		&u.ID, &u.Email, &u.PasswordHash, &role, &isAdmin,

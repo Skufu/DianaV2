@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
+	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
@@ -38,7 +39,7 @@ func (h *AdminDashboardHandler) Register(rg *gin.RouterGroup) {
 func (h *AdminDashboardHandler) getDashboard(c *gin.Context) {
 	claims := c.MustGet("user").(middleware.UserClaims)
 
-	if claims.Role != "admin" {
+	if claims.Role != models.RoleAdmin {
 		ErrForbidden(c)
 		return
 	}
@@ -75,7 +76,7 @@ func (h *AdminDashboardHandler) getDashboard(c *gin.Context) {
 func (h *AdminDashboardHandler) listAllClinics(c *gin.Context) {
 	claims := c.MustGet("user").(middleware.UserClaims)
 
-	if claims.Role != "admin" {
+	if claims.Role != models.RoleAdmin {
 		ErrForbidden(c)
 		return
 	}
@@ -102,7 +103,7 @@ func (h *AdminDashboardHandler) listAllClinics(c *gin.Context) {
 func (h *AdminDashboardHandler) getClinicComparison(c *gin.Context) {
 	claims := c.MustGet("user").(middleware.UserClaims)
 
-	if claims.Role != "admin" {
+	if claims.Role != models.RoleAdmin {
 		ErrForbidden(c)
 		return
 	}

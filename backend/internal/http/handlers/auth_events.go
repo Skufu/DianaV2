@@ -7,6 +7,7 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/config"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/http/sse"
+	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
@@ -70,7 +71,7 @@ func (h *AuthEventHandler) StreamAuthEvents(c *gin.Context) {
 	}
 
 	role, ok := claims["role"].(string)
-	if !ok || role != "admin" {
+	if !ok || role != models.RoleAdmin {
 		c.Header("Content-Type", "text/event-stream")
 		c.Header("Cache-Control", "no-cache")
 		c.String(http.StatusForbidden, "event: error\ndata: "+`{"message":"Admin role required"}`+"\n\n")

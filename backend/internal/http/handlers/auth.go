@@ -280,7 +280,7 @@ func (h *AuthHandler) register(c *gin.Context) {
 	user := models.User{
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
-		Role:         "user", // Default role for new registrations
+		Role:         models.RoleUser, // Default role for new registrations
 		IsActive:     true,
 	}
 	createdUser, err := h.store.Users().Create(c.Request.Context(), user)

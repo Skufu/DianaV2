@@ -3,6 +3,24 @@ package models
 
 import "time"
 
+// Role constants for authorization and user management.
+// These constants replace hardcoded role strings throughout the backend,
+// ensuring type safety and reducing the risk of typos in role checks.
+//
+// Role derivation (from postgres.go):
+//   - RoleAdmin: User with is_admin=true in database
+//   - RoleDoctor: User with role='doctor' in database (menopause specialists)
+//   - RoleUser: Default role for standard patients/users
+//
+// Usage in authorization:
+//   middleware.RoleRequired(models.RoleAdmin, models.RoleDoctor)
+//   if claims.Role == models.RoleAdmin { ... }
+const (
+	RoleAdmin  = "admin"  // Administrator with full system access
+	RoleDoctor = "doctor" // Medical professional (restricted to binary_v2_no_bp model)
+	RoleUser   = "user"   // Standard patient/user (default role for new registrations)
+)
+
 type AuthEvent struct {
 	ID         string         `json:"id"`
 	EventType  string         `json:"event_type"`

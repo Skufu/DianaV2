@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
+	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
@@ -73,7 +74,7 @@ func (h *ClinicDashboardHandler) getClinicDashboard(c *gin.Context) {
 		return
 	}
 
-	if !isAdmin && claims.Role != "admin" {
+	if !isAdmin && claims.Role != models.RoleAdmin {
 		ErrForbidden(c)
 		return
 	}

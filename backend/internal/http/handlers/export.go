@@ -95,7 +95,7 @@ func (h *ExportHandler) ExportResearchData(c *gin.Context) {
 		return
 	}
 
-	if claims.Role != "admin" {
+	if claims.Role != models.RoleAdmin {
 		ErrForbidden(c)
 		return
 	}

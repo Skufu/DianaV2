@@ -13,6 +13,7 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/http/sse"
 	"github.com/skufu/DianaV2/backend/internal/ml"
+	"github.com/skufu/DianaV2/backend/internal/models"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
@@ -136,7 +137,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	}
 
 	insightsGroup := protected.Group("/insights")
-	insightsGroup.Use(middleware.RoleRequired("admin", "doctor"))
+	insightsGroup.Use(middleware.RoleRequired(models.RoleAdmin, models.RoleDoctor))
 	insightsGroup.Use(middleware.RateLimit(expensiveLimiter))
 	{
 		insightsHandler := handlers.NewInsightsHandler(st, cache)
@@ -169,7 +170,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	api.GET("/admin/events/stream", authEventHandler.StreamAuthEvents)
 
 	admin := protected.Group("/admin")
-	admin.Use(middleware.RoleRequired("admin"))
+	admin.Use(middleware.RoleRequired(models.RoleAdmin))
 	{
 		// Admin dashboard and system stats
 		adminDashboardHandler := handlers.NewAdminDashboardHandler(st)
@@ -185,7 +186,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	}
 
 	adminModels := protected.Group("/admin")
-	adminModels.Use(middleware.RoleRequired("admin"))
+	adminModels.Use(middleware.RoleRequired(models.RoleAdmin))
 	{
 		adminModelsHandler := handlers.NewAdminModelsHandler(st, predictor)
 		adminModelsHandler.Register(adminModels)
