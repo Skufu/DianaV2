@@ -202,11 +202,7 @@ test.describe('Visual Regression: Insights Component', () => {
 
       for (const component of componentChecks) {
         const element = page.locator(`text=${component.pattern.source}`);
-        try {
-          await expect(element.first()).toBeVisible({ timeout: 5000 });
-        } catch (e) {
-          throw e;
-        }
+        await expect(element.first()).toBeVisible({ timeout: 5000 });
       }
 
       await takeScreenshot(page, 'insights-all-components');
