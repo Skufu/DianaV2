@@ -80,13 +80,17 @@ def _build_stub_predictor(at_risk_probability, *, threshold, cluster_id=2, clust
 
 @pytest.fixture
 def patient_input():
+    # Use values that do NOT trigger metabolic syndrome boost
+    # Metabolic syndrome criteria: TG>=150, HDL<50, BMI>=25, Age 45-60
+    # This patient has: TG=140 (<150), HDL=55 (>=50), BMI=24 (<25), Age=40 (<45)
+    # 0 criteria met = no boost
     return {
-        "bmi": 27.4,
-        "triglycerides": 178.0,
+        "bmi": 24.0,
+        "triglycerides": 140.0,
         "ldl": 131.0,
-        "hdl": 44.0,
-        "age": 52,
-        "waist_circumference": 89.0,
+        "hdl": 55.0,
+        "age": 40,
+        "waist_circumference": 80.0,
     }
 
 

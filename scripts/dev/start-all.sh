@@ -27,6 +27,12 @@ if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$WINDIR" ]
     IS_WINDOWS=true
 fi
 
+# Detect if running on macOS
+IS_MAC=false
+if [[ "$OSTYPE" == darwin* ]]; then
+    IS_MAC=true
+fi
+
 # Detect Python
 if [ -d "venv/Scripts" ]; then
     PYTHON="venv/Scripts/python.exe"
@@ -179,10 +185,40 @@ echo -e "\n${YELLOW}[2/3] Starting Go Backend...${NC}"
 kill_on_port $PORT
 
 cd backend || exit 1
-echo -e "${GREEN}   Using 'go run' for backend server...${NC}"
+USE_AIR=false
+AIR_CONFIG=""
 
-# On Windows, use the correct Go from PATH (avoid nohup which can break PATH)
+# Windows keeps the default execution path (go run).
+# macOS conditionally uses air only when config file + binary exist.
 if [ "$IS_WINDOWS" = true ]; then
+    echo -e "${GREEN}   Using 'go run' for backend server...${NC}"
+elif [ "$IS_MAC" = true ]; then
+    if [ -f ".air.toml" ]; then
+        AIR_CONFIG=".air.toml"
+    elif [ -f "air.toml" ]; then
+        AIR_CONFIG="air.toml"
+    elif [ -f "../.air.toml" ]; then
+        AIR_CONFIG="../.air.toml"
+    elif [ -f "../air.toml" ]; then
+        AIR_CONFIG="../air.toml"
+    fi
+
+    if [ -n "$AIR_CONFIG" ] && command -v air >/dev/null 2>&1; then
+        USE_AIR=true
+        echo -e "${GREEN}   Using 'air' for backend live reloading...${NC}"
+        echo -e "${CYAN}   Config: $AIR_CONFIG${NC}"
+    elif [ -n "$AIR_CONFIG" ]; then
+        echo -e "${YELLOW}   Air config found ($AIR_CONFIG) but 'air' is not installed. Using 'go run'.${NC}"
+    else
+        echo -e "${YELLOW}   No air config found. Using 'go run'.${NC}"
+    fi
+else
+    echo -e "${GREEN}   Using 'go run' for backend server...${NC}"
+fi
+
+if [ "$USE_AIR" = true ]; then
+    air -c "$AIR_CONFIG" > ../logs/backend.log 2>&1 &
+elif [ "$IS_WINDOWS" = true ]; then
     GO_BIN=$(which go)
     "$GO_BIN" run ./cmd/server > ../logs/backend.log 2>&1 &
 else

@@ -2,6 +2,8 @@ package ml
 
 import (
 	"context"
+	"log"
+	"os"
 
 	"github.com/skufu/DianaV2/backend/internal/models"
 )
@@ -41,6 +43,10 @@ var mockOutputCapabilities = OutputCapabilities{
 }
 
 func NewMockPredictor() *MockPredictor {
+	// Warn when using mock predictor in non-test environments
+	if os.Getenv("GO_ENV") != "test" && os.Getenv("ENV") != "test" {
+		log.Println("[WARN] Using MockPredictor - real ML service not connected. Set MODEL_URL env var to connect to ML service.")
+	}
 	return &MockPredictor{}
 }
 
@@ -81,6 +87,20 @@ func (m *MockPredictor) Predict(ctx context.Context, input models.Assessment) (P
 			ClusterDescription: "Mild obesity-related diabetes profile.",
 			TreatmentFocus:     "Weight management and lifestyle optimization.",
 			AtRiskProbability:  0.60,
+			FeatureSet:         mockFeatureSet,
+			ClusterCapability:  mockClusterCapability,
+			OutputCapabilities: mockOutputCapabilities,
+		}, nil
+	// High metabolic risk despite moderate BMI (25-30) with elevated biomarkers
+	case input.BMI >= 25 && (input.Triglycerides >= 200 || input.LDL >= 160 || input.HDL > 0 && input.HDL < 40):
+		return Prediction{
+			Cluster:            "SIDD",
+			RiskScore:          75,
+			PredictedStatus:    "high",
+			RiskLabel:          "High risk",
+			ClusterDescription: "Severe insulin-deficient diabetes profile with metabolic syndrome markers.",
+			TreatmentFocus:     "Prioritize glycemic control and address metabolic syndrome markers (lipids, BMI).",
+			AtRiskProbability:  0.75,
 			FeatureSet:         mockFeatureSet,
 			ClusterCapability:  mockClusterCapability,
 			OutputCapabilities: mockOutputCapabilities,

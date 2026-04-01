@@ -187,14 +187,22 @@ def _build_stub_predictor(
 
 @pytest.fixture
 def typical_patient():
-    """Typical postmenopausal woman with moderate metabolic risk."""
+    """Typical postmenopausal woman with moderate metabolic risk.
+
+    Values chosen to NOT trigger metabolic syndrome boost (need 2+ criteria):
+    - TG=140 (<150) - no
+    - HDL=55 (>=50) - no
+    - BMI=24 (<25) - no
+    - Age=40 (<45) - no
+    0 criteria met = no metabolic syndrome boost
+    """
     return {
-        "bmi": 27.4,
-        "triglycerides": 178.0,
+        "bmi": 24.0,
+        "triglycerides": 140.0,
         "ldl": 131.0,
-        "hdl": 44.0,
-        "age": 52,
-        "waist_circumference": 89.0,
+        "hdl": 55.0,
+        "age": 40,
+        "waist_circumference": 80.0,
         "smoking_encoded": 0,
         "activity_encoded": 1,
         "alcohol_encoded": 0,

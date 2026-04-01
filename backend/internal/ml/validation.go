@@ -20,11 +20,11 @@ func ValidateBiomarkers(input models.Assessment, thresholds config.ClinicalThres
 	valid := true
 
 	if input.FBS >= thresholds.FBSDiabetic {
-    warnings = append(warnings, "fbs_diabetic_range")
-    valid = false
-} else if input.FBS >= thresholds.FBSNormal {
-    warnings = append(warnings, "fbs_prediabetic_range")
-}
+		warnings = append(warnings, "fbs_diabetic_range")
+		valid = false
+	} else if input.FBS >= thresholds.FBSNormal {
+		warnings = append(warnings, "fbs_prediabetic_range")
+	}
 
 	if input.HbA1c >= thresholds.HbA1cDiabetic {
 		warnings = append(warnings, "hba1c_diabetic")
