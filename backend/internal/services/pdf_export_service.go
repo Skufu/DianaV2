@@ -443,18 +443,7 @@ func (s *PDFExportService) getBMIStatus(v float64) string {
 	}
 	return "Normal"
 }
-func (s *PDFExportService) getCholStatus(v int) string {
-	if v <= 0 {
-		return "Not recorded"
-	}
-	if v >= 240 {
-		return "High"
-	}
-	if v >= 200 {
-		return "Borderline"
-	}
-	return "Normal"
-}
+
 func (s *PDFExportService) getLDLStatus(v int) string {
 	if v <= 0 {
 		return "Not recorded"
@@ -489,44 +478,7 @@ func (s *PDFExportService) getTGStatus(v int) string {
 	return "Normal"
 }
 
-func (s *PDFExportService) getFBSStatus(v float64) string {
-	if v <= 0 {
-		return "Not recorded"
-	}
-	if v >= 126 {
-		return "Diabetic"
-	}
-	if v >= 100 {
-		return "Pre-diabetic"
-	}
-	return "Normal"
-}
 
-func (s *PDFExportService) getHbA1cStatus(v float64) string {
-	if v <= 0 {
-		return "Not recorded"
-	}
-	if v >= 6.5 {
-		return "Diabetic"
-	}
-	if v >= 5.7 {
-		return "Pre-diabetic"
-	}
-	return "Normal"
-}
-
-func (s *PDFExportService) getBPStatus(systolic, diastolic int) string {
-	if systolic <= 0 || diastolic <= 0 {
-		return "Not recorded"
-	}
-	if systolic >= 140 || diastolic >= 90 {
-		return "High"
-	}
-	if systolic >= 130 || diastolic >= 80 {
-		return "Elevated"
-	}
-	return "Normal"
-}
 
 func (s *PDFExportService) formatIntValue(v int, unit string) string {
 	if v <= 0 {
@@ -540,70 +492,6 @@ func (s *PDFExportService) formatFloatValue(v float64, unit string) string {
 		return "Not recorded"
 	}
 	return fmt.Sprintf("%.1f %s", v, unit)
-}
-
-func (s *PDFExportService) formatBloodPressure(systolic, diastolic int) string {
-	if systolic <= 0 || diastolic <= 0 {
-		return "Not recorded"
-	}
-	return fmt.Sprintf("%d / %d mmHg", systolic, diastolic)
-}
-
-func (s *PDFExportService) defaultClusterDescription(cluster string) string {
-	switch strings.ToUpper(strings.TrimSpace(cluster)) {
-	case "SIDD":
-		return "SIDD-like: Lipid-driven profile with emphasis on dyslipidemia and cardiovascular risk."
-	case "SIRD":
-		return "SIRD-like: Insulin resistance dominant profile with elevated metabolic strain."
-	case "MOD":
-		return "MOD-like: Weight-associated metabolic profile requiring structured lifestyle optimization."
-	case "MARD":
-		return "MARD-like: Age-related metabolic profile with preventive surveillance priority."
-	default:
-		return "Phenotype metadata unavailable in the latest stored assessment."
-	}
-}
-
-func (s *PDFExportService) defaultTreatmentFocus(cluster string) string {
-	switch strings.ToUpper(strings.TrimSpace(cluster)) {
-	case "SIDD":
-		return "Lipid management and cardiovascular risk mitigation"
-	case "SIRD":
-		return "Improve insulin sensitivity and cardiometabolic control"
-	case "MOD":
-		return "Sustainable weight reduction and activity progression"
-	case "MARD":
-		return "Age-adjusted prevention, adherence, and periodic reassessment"
-	default:
-		return "Discuss individualized follow-up plan using complete clinical context"
-	}
-}
-
-func (s *PDFExportService) buildClinicalWhySummary(a models.Assessment) string {
-	var findings []string
-
-	if status := s.getBMIStatus(a.BMI); status != "Normal" && status != "Not recorded" {
-		findings = append(findings, fmt.Sprintf("BMI %s (%.1f kg/m²)", strings.ToLower(status), a.BMI))
-	}
-	if status := s.getLDLStatus(a.LDL); status != "Normal" && status != "Not recorded" {
-		findings = append(findings, fmt.Sprintf("LDL %s (%d mg/dL)", strings.ToLower(status), a.LDL))
-	}
-	if status := s.getTGStatus(a.Triglycerides); status != "Normal" && status != "Not recorded" {
-		findings = append(findings, fmt.Sprintf("triglycerides %s (%d mg/dL)", strings.ToLower(status), a.Triglycerides))
-	}
-	if status := s.getHDLStatus(a.HDL); status == "Low" {
-		findings = append(findings, fmt.Sprintf("HDL low (%d mg/dL)", a.HDL))
-	}
-
-	if len(findings) == 0 {
-		return "Lipid profile within normal range."
-	}
-
-	if len(findings) > 3 {
-		findings = findings[:3]
-	}
-
-	return strings.Join(findings, "; ") + "."
 }
 
 func (s *PDFExportService) buildProbabilitySummary(a models.Assessment) string {
@@ -669,14 +557,4 @@ func GenerateMockData() (models.UserProfile, []models.Assessment) {
 		{ID: 4, UserID: 1, BMI: 28.1, LDL: 155, HDL: 44, Triglycerides: 182, Cluster: "SIDD", RiskScore: 68, CreatedAt: baseTime.AddDate(0, -2, 0)},
 	}
 	return user, assessments
-}
-
-func getRiskLevel(score int32) string {
-	if score < 30 {
-		return "Low"
-	}
-	if score < 70 {
-		return "Moderate"
-	}
-	return "High"
 }

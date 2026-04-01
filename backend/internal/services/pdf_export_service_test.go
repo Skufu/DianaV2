@@ -198,24 +198,26 @@ func TestPDFExportService_GenerateMockReport(t *testing.T) {
 	t.Logf("Open this file to preview the report design")
 }
 
-func TestGetRiskLevel(t *testing.T) {
+func TestRiskBandLabel(t *testing.T) {
+	service := NewPDFExportService()
+
 	tests := []struct {
-		score    int32
+		score    int
 		expected string
 	}{
-		{20, "Low"},
-		{29, "Low"},
-		{30, "Moderate"},
-		{69, "Moderate"},
-		{70, "High"},
-		{100, "High"},
+		{20, "LOW RISK"},
+		{29, "LOW RISK"},
+		{30, "MODERATE RISK"},
+		{69, "MODERATE RISK"},
+		{70, "HIGH RISK"},
+		{100, "HIGH RISK"},
 	}
 
 	for _, tc := range tests {
 		t.Run("", func(t *testing.T) {
-			result := getRiskLevel(tc.score)
+			result := service.riskBandLabel(tc.score)
 			if result != tc.expected {
-				t.Errorf("getRiskLevel(%d) = %q, want %q", tc.score, result, tc.expected)
+				t.Errorf("riskBandLabel(%d) = %q, want %q", tc.score, result, tc.expected)
 			}
 		})
 	}

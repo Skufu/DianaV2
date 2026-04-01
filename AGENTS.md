@@ -152,8 +152,7 @@ SK|- Fire-and-forget goroutines in `audit.go` - errors are logged but don't bloc
 XZ|- Manual `gin.H{"error": ...}` in handlers - Use `ErrBadRequest()`, `ErrInternal()` from utils.go.
 YB|- Manual `strconv.Atoi` in users.go:258, clinic_dashboard.go:63 - Use `ParsePagination()`.
 
-### CI/CD Issues (CRITICAL)
-QX|- **Lint failures silently ignored**: `ci.yml` has `continue-on-error: true` on golangci-lint and flake8.
+### CI/CD Issues
 BV|- **Deploy job is no-op**: `cd.yml` deploy job only echoes instructions, no actual deployment.
 KM|- **Makefile stale reference**: `ml-train` target calls `train.py` (should be `train_v2.py`).
 
