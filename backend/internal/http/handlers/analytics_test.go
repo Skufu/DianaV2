@@ -96,6 +96,7 @@ func (m *mockAnalyticsStore) Assessments() store.AssessmentRepository {
 }
 
 func (m *mockAnalyticsStore) Close() {}
+func (m *mockAnalyticsStore) Ping(ctx context.Context) error { return nil }
 
 func (m *mockAnalyticsStore) Users() store.UserRepository                 { return nil }
 func (m *mockAnalyticsStore) Patients() store.PatientRepository           { return nil }

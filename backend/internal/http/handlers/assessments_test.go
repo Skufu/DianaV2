@@ -1493,6 +1493,8 @@ func (f *fakePredictor) GetDriftAlerts(ctx context.Context, unacknowledgedOnly b
 	return nil, nil
 }
 
+func (f *fakePredictor) IsAvailable() bool { return true }
+
 type fakeStore struct {
 	repo        *fakeAssessmentRepo
 	patientRepo *fakePatientRepo
@@ -1531,6 +1533,7 @@ func (f *fakeTxStore) BeginTx(ctx context.Context) (store.TxStore, error) {
 	return nil, fmt.Errorf("nested transactions not supported")
 }
 func (f *fakeStore) Close()                                      {}
+func (f *fakeStore) Ping(ctx context.Context) error             { return nil }
 
 // mockAuthMiddleware injects mock user claims for testing
 func mockAuthMiddleware() gin.HandlerFunc {

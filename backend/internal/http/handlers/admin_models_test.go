@@ -58,6 +58,8 @@ func (f *fakeAdminPredictor) GetDriftAlerts(ctx context.Context, unacknowledgedO
 	return (&ml.MockPredictor{}).GetDriftAlerts(ctx, unacknowledgedOnly, limit)
 }
 
+func (f *fakeAdminPredictor) IsAvailable() bool { return true }
+
 type mockAdminStore struct {
 	modelRuns *mockModelRunRepo
 }
@@ -67,6 +69,7 @@ func (m *mockAdminStore) ModelRuns() store.ModelRunRepository {
 }
 
 func (m *mockAdminStore) Close() {}
+func (m *mockAdminStore) Ping(ctx context.Context) error { return nil }
 
 func (m *mockAdminStore) Users() store.UserRepository                 { return nil }
 func (m *mockAdminStore) Patients() store.PatientRepository           { return nil }

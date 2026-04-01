@@ -214,8 +214,10 @@ func (f *fakeTxStoreAuth) Rollback(ctx context.Context) error {
 func (f *fakeTxStoreAuth) BeginTx(ctx context.Context) (store.TxStore, error) {
 	return nil, fmt.Errorf("nested transactions not supported")
 }
+func (f *fakeTxStoreAuth) Ping(ctx context.Context) error { return nil }
 
 func (f *fakeStoreAuth) Close() {}
+func (f *fakeStoreAuth) Ping(ctx context.Context) error { return nil }
 
 func TestAuthHandler_Login_Success(t *testing.T) {
 	gin.SetMode(gin.TestMode)

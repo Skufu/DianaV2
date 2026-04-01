@@ -26,6 +26,7 @@ func (m *mockStore) Cohort() store.CohortRepository              { return nil }
 func (m *mockStore) Clinics() store.ClinicRepository             { return nil }
 func (m *mockStore) ModelRuns() store.ModelRunRepository         { return nil }
 func (m *mockStore) Close()                                      {}
+func (m *mockStore) Ping(ctx context.Context) error             { return nil }
 func (m *mockStore) BeginTx(ctx context.Context) (store.TxStore, error) {
 	return nil, fmt.Errorf("mock store does not support transactions")
 }

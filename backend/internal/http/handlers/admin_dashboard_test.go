@@ -150,6 +150,7 @@ func (m *mockAdminDashboardStore) Assessments() store.AssessmentRepository {
 }
 
 func (m *mockAdminDashboardStore) Close() {}
+func (m *mockAdminDashboardStore) Ping(ctx context.Context) error { return nil }
 
 func (m *mockAdminDashboardStore) Users() store.UserRepository                 { return nil }
 func (m *mockAdminDashboardStore) Patients() store.PatientRepository           { return nil }

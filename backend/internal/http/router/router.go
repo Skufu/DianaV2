@@ -92,6 +92,12 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		predictor = ml.NewMockPredictor()
 	}
 
+	// -------------------------------------------------------------------------
+	// Root-level health check (for load balancers and monitoring)
+	// -------------------------------------------------------------------------
+	healthHandler := handlers.NewHealthHandler(st, predictor)
+	healthHandler.Register(r.Group("/health"))
+
 	// =========================================================================
 	// API v1 Routes
 	// =========================================================================
@@ -101,7 +107,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// Public routes (no authentication required)
 	// -------------------------------------------------------------------------
 
-	// Health checks
+	// Legacy simple health checks (Kubernetes-style) - no dependency verification
 	handlers.RegisterHealth(api)
 
 	// SSE broker for auth events (must be created before auth handler)

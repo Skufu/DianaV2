@@ -197,6 +197,34 @@ func NewHTTPPredictor(url, version, apiKey string, timeout time.Duration) *HTTPP
 	}
 }
 
+// IsAvailable checks if the ML service health endpoint is reachable.
+// This is used by health checks to determine ML service availability.
+func (p *HTTPPredictor) IsAvailable() bool {
+	if p.url == "" {
+		return false
+	}
+
+	// Quick health check with short timeout
+	healthClient := &http.Client{Timeout: 2 * time.Second}
+	healthURL := p.baseURL() + "/health"
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, healthURL, nil)
+	if err != nil {
+		return false
+	}
+	if p.apiKey != "" {
+		req.Header.Set("X-API-Key", p.apiKey)
+	}
+
+	resp, err := healthClient.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusOK
+}
+
 func addDriftFeature(features map[string][]float64, name string, value float64) {
 	if value <= 0 {
 		return

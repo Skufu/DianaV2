@@ -39,6 +39,14 @@ func (s *PostgresStore) Close() {
 	}
 }
 
+// Ping verifies database connectivity for health checks.
+func (s *PostgresStore) Ping(ctx context.Context) error {
+	if s.pool == nil {
+		return pgx.ErrNoRows // Use appropriate error for "not configured"
+	}
+	return s.pool.Ping(ctx)
+}
+
 // Users returns the UserRepository implementation.
 func (s *PostgresStore) Users() UserRepository {
 	return &pgUserRepo{q: s.q, pool: s.pool}
@@ -118,6 +126,13 @@ func (s *pgTxStore) Rollback(ctx context.Context) error {
 // Close is a no-op for transactions. Use Commit or Rollback instead.
 func (s *pgTxStore) Close() {
 	// Transactions are closed via Commit/Rollback
+}
+
+// Ping verifies the transaction is still active.
+func (s *pgTxStore) Ping(ctx context.Context) error {
+	// For transactions, we can execute a simple query to verify connectivity
+	_, err := s.tx.Exec(ctx, "SELECT 1")
+	return err
 }
 
 // Users returns the UserRepository implementation using the transaction.
