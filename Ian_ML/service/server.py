@@ -235,8 +235,8 @@ class RateLimiter:
 
 
 rate_limiter = RateLimiter(
-    requests_per_minute=int(os.environ.get('ML_RATE_LIMIT_MINUTE', 120)),
-    requests_per_second=int(os.environ.get('ML_RATE_LIMIT_SECOND', 20))
+    requests_per_minute=int(os.environ.get('ML_RATE_LIMIT_MINUTE', 10000)),
+    requests_per_second=int(os.environ.get('ML_RATE_LIMIT_SECOND', 1000))
 )
 
 
@@ -360,6 +360,105 @@ def health():
             "clinical": CLINICAL_FEATURES
         }
     })
+
+
+@app.route('/warmup', methods=['POST'])
+@require_api_key
+def warmup():
+    """
+    Warmup endpoint to preload models and SHAP explainers.
+    
+    Call this endpoint after server startup to eliminate cold start latency.
+    This is especially important for production deployments where the first
+    prediction should not experience model loading delays.
+    
+    Returns:
+        JSON with warmup status and loaded model information.
+    """
+    warmup_results = {
+        "status": "success",
+        "models": {},
+        "shap_explainers": {},
+        "timing_ms": {}
+    }
+    
+    start_time = time.time()
+    
+    # Warmup ADA baseline predictor
+    try:
+        ada_start = time.time()
+        ada_predictor = get_predictor()
+        # Make a dummy prediction to fully load the model
+        dummy_data = {
+            "hba1c": 5.5, "fbs": 95, "bmi": 25.0,
+            "triglycerides": 120, "ldl": 100, "hdl": 50
+        }
+        ada_predictor.predict(dummy_data)
+        warmup_results["models"]["ada_baseline"] = "loaded"
+        warmup_results["timing_ms"]["ada_baseline"] = round((time.time() - ada_start) * 1000, 2)
+    except Exception as e:
+        warmup_results["models"]["ada_baseline"] = f"failed: {str(e)}"
+        logger.warning("ADA baseline warmup failed: %s", e)
+    
+    # Warmup clinical predictor
+    try:
+        clin_start = time.time()
+        clin_predictor = get_clinical_predictor_for('binary_v2_no_bp')
+        if clin_predictor:
+            # Make a dummy prediction to fully load the model
+            dummy_data = {
+                "bmi": 25.0, "triglycerides": 120, "ldl": 100, "hdl": 50,
+                "age": 55, "waist_circumference": 85,
+                "smoking_status": "Never", "physical_activity": "Moderate", 
+                "alcohol_use": "None"
+            }
+            clin_predictor.predict(dummy_data)
+            warmup_results["models"]["clinical"] = "loaded"
+            warmup_results["timing_ms"]["clinical"] = round((time.time() - clin_start) * 1000, 2)
+            
+            # Preload SHAP explainer for clinical model if available
+            if shap_module_available and SHAPExplainer is not None:
+                try:
+                    shap_start = time.time()
+                    model_id = f"clinical_{id(clin_predictor.classifier)}"
+                    cache_key = _get_shap_cache_key(model_id, "tree", "none")
+                    
+                    # Try TreeExplainer first
+                    shap_explainer = _shap_explainer_cache.get(cache_key)
+                    if shap_explainer is None:
+                        shap_explainer = SHAPExplainer(clin_predictor.classifier, model_type="tree")
+                        if shap_explainer.is_available:
+                            _shap_explainer_cache[cache_key] = shap_explainer
+                            warmup_results["shap_explainers"]["clinical_tree"] = "loaded"
+                        else:
+                            # Try KernelExplainer with saved background
+                            bg_artifact = clin_predictor.get_shap_background()
+                            if bg_artifact is not None:
+                                cache_key = _get_shap_cache_key(model_id, "kernel", "saved_training_data")
+                                shap_explainer = SHAPExplainer(
+                                    clin_predictor.classifier,
+                                    model_type="kernel",
+                                    background_data=bg_artifact["background"]
+                                )
+                                if shap_explainer.is_available:
+                                    _shap_explainer_cache[cache_key] = shap_explainer
+                                    warmup_results["shap_explainers"]["clinical_kernel"] = "loaded"
+                    else:
+                        warmup_results["shap_explainers"]["clinical_tree"] = "already_cached"
+                    
+                    warmup_results["timing_ms"]["shap"] = round((time.time() - shap_start) * 1000, 2)
+                except Exception as e:
+                    warmup_results["shap_explainers"]["clinical"] = f"failed: {str(e)}"
+                    logger.warning("SHAP warmup failed: %s", e)
+        else:
+            warmup_results["models"]["clinical"] = "not_available"
+    except Exception as e:
+        warmup_results["models"]["clinical"] = f"failed: {str(e)}"
+        logger.warning("Clinical predictor warmup failed: %s", e)
+    
+    warmup_results["timing_ms"]["total"] = round((time.time() - start_time) * 1000, 2)
+    
+    return jsonify(warmup_results)
 
 
 @app.route('/predict', methods=['POST'])
@@ -1345,6 +1444,7 @@ def get_visualization(name):
 
 if __name__ == '__main__':
     port = int(os.environ.get('ML_PORT', 5000))
+    skip_warmup = os.environ.get('ML_SKIP_WARMUP', '').lower() in ('1', 'true', 'yes')
     
     # Startup banner with model info
     print("=" * 60)
@@ -1353,13 +1453,80 @@ if __name__ == '__main__':
     print(f"  Port: {port}")
     print(f"  Health: http://localhost:{port}/health")
     print(f"  Predict: http://localhost:{port}/predict")
+    print(f"  Warmup: http://localhost:{port}/warmup")
     
-    # Check which models are available
-    clinical = get_clinical_predictor()
-    if clinical:
-        print(f"  [OK] Clinical model: {clinical.models_dir.name} ({len(clinical.features)} features)")
+    # Preload models at startup to eliminate cold start latency
+    if not skip_warmup:
+        print("\n  Preloading models...")
+        warmup_start = time.time()
+        
+        # Load clinical predictor (primary model)
+        try:
+            clinical = get_clinical_predictor()
+            if clinical:
+                # Make a dummy prediction to fully initialize the model
+                dummy_data = {
+                    "bmi": 25.0, "triglycerides": 120, "ldl": 100, "hdl": 50,
+                    "age": 55, "waist_circumference": 85,
+                    "smoking_status": "Never", "physical_activity": "Moderate", 
+                    "alcohol_use": "None"
+                }
+                clinical.predict(dummy_data)
+                warmup_time = round((time.time() - warmup_start) * 1000, 0)
+                print(f"  [OK] Clinical model: {clinical.models_dir.name} ({len(clinical.features)} features) - {warmup_time}ms")
+                
+                # Preload SHAP explainer
+                if shap_module_available and SHAPExplainer is not None:
+                    try:
+                        model_id = f"clinical_{id(clinical.classifier)}"
+                        cache_key = _get_shap_cache_key(model_id, "tree", "none")
+                        shap_explainer = SHAPExplainer(clinical.classifier, model_type="tree")
+                        if shap_explainer.is_available:
+                            _shap_explainer_cache[cache_key] = shap_explainer
+                            print(f"  [OK] SHAP TreeExplainer preloaded")
+                        else:
+                            # Try with saved background data
+                            bg_artifact = clinical.get_shap_background()
+                            if bg_artifact is not None:
+                                cache_key = _get_shap_cache_key(model_id, "kernel", "saved_training_data")
+                                shap_explainer = SHAPExplainer(
+                                    clinical.classifier,
+                                    model_type="kernel",
+                                    background_data=bg_artifact["background"]
+                                )
+                                if shap_explainer.is_available:
+                                    _shap_explainer_cache[cache_key] = shap_explainer
+                                    print(f"  [OK] SHAP KernelExplainer preloaded with saved background")
+                    except Exception as e:
+                        print(f"  [WARN] SHAP warmup skipped: {e}")
+            else:
+                print(f"  [!!] Clinical model: NOT FOUND (run training first)")
+        except FileNotFoundError as e:
+            print(f"  [!!] Clinical model: NOT FOUND - {e}")
+        except Exception as e:
+            print(f"  [!!] Clinical model warmup failed: {e}")
+        
+        # Load ADA baseline predictor
+        try:
+            ada = get_predictor()
+            dummy_data = {
+                "hba1c": 5.5, "fbs": 95, "bmi": 25.0,
+                "triglycerides": 120, "ldl": 100, "hdl": 50
+            }
+            ada.predict(dummy_data)
+            print(f"  [OK] ADA baseline model loaded")
+        except Exception as e:
+            print(f"  [WARN] ADA baseline warmup skipped: {e}")
+        
+        total_warmup = round((time.time() - warmup_start) * 1000, 0)
+        print(f"\n  Warmup completed in {total_warmup}ms")
     else:
-        print(f"  [!!] Clinical model: NOT FOUND (run training first)")
+        print("  [SKIP] Warmup disabled (ML_SKIP_WARMUP=true)")
+        clinical = get_clinical_predictor()
+        if clinical:
+            print(f"  [OK] Clinical model: {clinical.models_dir.name} ({len(clinical.features)} features)")
+        else:
+            print(f"  [!!] Clinical model: NOT FOUND")
     
     print("=" * 60)
     
