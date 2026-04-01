@@ -6,6 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/skufu/DianaV2/backend/internal/models"
@@ -15,6 +17,26 @@ import (
 type pgUserRepo struct {
 	q    *sqlcgen.Queries
 	pool *pgxpool.Pool
+	tx   pgx.Tx // Used when operating within a transaction
+}
+
+// getExecutor returns the appropriate query executor (pool, tx, or q).
+// Priority: tx > pool > q
+func (r *pgUserRepo) getExecutor() queryExecutor {
+	if r.tx != nil {
+		return r.tx
+	}
+	if r.pool != nil {
+		return r.pool
+	}
+	return nil
+}
+
+// queryExecutor is an interface that both pgxpool.Pool and pgx.Tx implement.
+type queryExecutor interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
 // ============================================================================
@@ -112,7 +134,8 @@ func (r *pgUserRepo) GetUserByID(ctx context.Context, id int32) (*models.User, e
 }
 
 func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]models.User, int, error) {
-	if r.pool == nil {
+	exec := r.getExecutor()
+	if exec == nil {
 		return nil, 0, errors.New("db not configured")
 	}
 
@@ -155,7 +178,7 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 	}
 
 	var total int
-	err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total)
+	err := exec.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -163,7 +186,7 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 	query += ` ORDER BY created_at DESC LIMIT $` + itoa(argNum) + ` OFFSET $` + itoa(argNum+1)
 	args = append(args, pageSize, offset)
 
-	rows, err := r.pool.Query(ctx, query, args...)
+	rows, err := exec.Query(ctx, query, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -210,10 +233,21 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 }
 
 func (r *pgUserRepo) Create(ctx context.Context, user models.User) (*models.User, error) {
-	if r.pool == nil {
+	// Use transaction if available, otherwise use pool
+	if r.tx != nil {
+		return r.createWithTx(ctx, user, r.tx)
+	}
+	if r.pool != nil {
+		return r.createWithTx(ctx, user, r.pool)
+	}
+	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
+	return nil, errors.New("db not configured")
+}
 
+// createWithTx creates a user using the provided executor (transaction or pool).
+func (r *pgUserRepo) createWithTx(ctx context.Context, user models.User, exec queryExecutor) (*models.User, error) {
 	var id int64
 	var createdAt, updatedAt time.Time
 	var role string
@@ -233,7 +267,7 @@ func (r *pgUserRepo) Create(ctx context.Context, user models.User) (*models.User
 		isAdmin = true
 		role = models.RoleAdmin
 	}
-	err := r.pool.QueryRow(ctx, query,
+	err := exec.QueryRow(ctx, query,
 		user.Email, user.PasswordHash, role, isAdmin, user.CreatedBy,
 	).Scan(&id, &role, &createdAt, &updatedAt)
 
@@ -251,7 +285,8 @@ func (r *pgUserRepo) Create(ctx context.Context, user models.User) (*models.User
 }
 
 func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User, error) {
-	if r.pool == nil {
+	exec := r.getExecutor()
+	if exec == nil {
 		return nil, errors.New("db not configured")
 	}
 
@@ -280,7 +315,7 @@ func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User
 		roleInput = pgtype.Text{String: user.Role, Valid: true}
 		isAdminInput = pgtype.Bool{Bool: user.Role == models.RoleAdmin, Valid: true}
 	}
-	err := r.pool.QueryRow(ctx, query, user.ID, user.Email, roleInput, isAdminInput).Scan(
+	err := exec.QueryRow(ctx, query, user.ID, user.Email, roleInput, isAdminInput).Scan(
 		&u.ID, &u.Email, &u.PasswordHash, &role, &isAdmin,
 		&isActive, &lastLoginAt, &createdBy, &createdAt, &updatedAt,
 	)
@@ -340,20 +375,22 @@ func (r *pgUserRepo) UpdateUser(ctx context.Context, user models.User) (*models.
 }
 
 func (r *pgUserRepo) Deactivate(ctx context.Context, id int32) error {
-	if r.pool == nil {
+	exec := r.getExecutor()
+	if exec == nil {
 		return errors.New("db not configured")
 	}
 
-	_, err := r.pool.Exec(ctx, `UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1`, id)
+	_, err := exec.Exec(ctx, `UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1`, id)
 	return err
 }
 
 func (r *pgUserRepo) Activate(ctx context.Context, id int32) error {
-	if r.pool == nil {
+	exec := r.getExecutor()
+	if exec == nil {
 		return errors.New("db not configured")
 	}
 
-	_, err := r.pool.Exec(ctx, `UPDATE users SET is_active = true, updated_at = NOW() WHERE id = $1`, id)
+	_, err := exec.Exec(ctx, `UPDATE users SET is_active = true, updated_at = NOW() WHERE id = $1`, id)
 	return err
 }
 

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -174,6 +175,9 @@ func (m *mockExportStore) Cohort() store.CohortRepository              { return 
 func (m *mockExportStore) Clinics() store.ClinicRepository             { return nil }
 func (m *mockExportStore) AuditEvents() store.AuditEventRepository     { return nil }
 func (m *mockExportStore) ModelRuns() store.ModelRunRepository         { return nil }
+func (m *mockExportStore) BeginTx(ctx context.Context) (store.TxStore, error) {
+	return nil, fmt.Errorf("mock store does not support transactions")
+}
 
 type mockPDFGenerator struct {
 	data []byte

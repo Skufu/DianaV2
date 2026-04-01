@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -103,6 +104,9 @@ func (m *mockAnalyticsStore) Cohort() store.CohortRepository              { retu
 func (m *mockAnalyticsStore) Clinics() store.ClinicRepository             { return nil }
 func (m *mockAnalyticsStore) AuditEvents() store.AuditEventRepository     { return nil }
 func (m *mockAnalyticsStore) ModelRuns() store.ModelRunRepository         { return nil }
+func (m *mockAnalyticsStore) BeginTx(ctx context.Context) (store.TxStore, error) {
+	return nil, fmt.Errorf("mock store does not support transactions")
+}
 
 func setupAnalyticsRouter(withUser bool, assessments store.AssessmentRepository) *gin.Engine {
 	gin.SetMode(gin.TestMode)

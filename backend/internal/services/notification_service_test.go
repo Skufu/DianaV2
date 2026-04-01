@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/skufu/DianaV2/backend/internal/models"
@@ -25,6 +26,9 @@ func (m *mockStore) Cohort() store.CohortRepository              { return nil }
 func (m *mockStore) Clinics() store.ClinicRepository             { return nil }
 func (m *mockStore) ModelRuns() store.ModelRunRepository         { return nil }
 func (m *mockStore) Close()                                      {}
+func (m *mockStore) BeginTx(ctx context.Context) (store.TxStore, error) {
+	return nil, fmt.Errorf("mock store does not support transactions")
+}
 
 // Implement AuditEventRepository List method
 func (m *mockStore) List(ctx context.Context, params models.AuditListParams) ([]models.AuditEvent, int, error) {
