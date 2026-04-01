@@ -113,3 +113,26 @@ backup-test:
 
 backup-restore:
 	./scripts/backup.sh --restore $(BACKUP_FILE)
+
+# TLS/SSL targets (VAL-DP-003: TLS/SSL Enabled)
+ssl-setup:
+	./scripts/setup-ssl.sh --domain $(DOMAIN) --email $(SSL_EMAIL)
+
+ssl-setup-staging:
+	./scripts/setup-ssl.sh --domain $(DOMAIN) --email $(SSL_EMAIL) --staging
+
+ssl-verify:
+	./scripts/verify-tls.sh --domain $(DOMAIN)
+
+ssl-verify-verbose:
+	./scripts/verify-tls.sh --domain $(DOMAIN) --verbose
+
+# Production deployment with TLS
+deploy-prod:
+	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+deploy-prod-down:
+	docker-compose -f docker-compose.yml -f docker-compose.prod.yml down
+
+deploy-prod-logs:
+	docker-compose -f docker-compose.yml -f docker-compose.prod.yml logs -f nginx-proxy
