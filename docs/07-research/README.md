@@ -1,31 +1,71 @@
-# DIANA Research Reference
+# Research Documentation
 
-> Purpose: research/manuscript support docs for DIANA V2
+This directory contains all research-related documentation for the DIANA (Diabetes Intelligence Analysis for At-risk Women) platform.
 
-## Scope
-This folder supports manuscript writing and defense preparation. For runtime implementation truth, use:
-- `../03-ml/assessment-contract.md`
-- `../03-ml/feature-documentation.md`
-- `../03-ml/methodology.md`
+## Directory Structure
 
-## Current Index
-| Document | Purpose | Key Content |
-|---|---|---|
-| `paper-requirements.md` | Paper checklist and requirements | Thesis structure, required figures/tables |
-| `manuscript-updates.md` | Ready-to-paste manuscript revisions | Results and discussion updates |
-| `methodology-style-workflow.md` | Safe style-transfer workflow for Chapter 3 | SEIRViz-derived tone profile and rewrite prompt pattern |
-| `ml_algorithms.md` | Algorithm framing for manuscript | LR, RF, K-means narrative |
-| `metrics.md` | Metric definitions and interpretation | AUC, F1, sensitivity and related measures |
-| `data_pipeline.md` | Data processing narrative | NHANES pipeline and preparation story |
-| `diabetes_subgroups.md` | Subtype narrative support | SIRD, SIDD, MOD, MARD discussion |
-| `ui_requirements.md` | UI requirements for research alignment | Dashboard and figure alignment notes |
+```
+07-research/
+├── README.md                          # This file
+├── analysis/                          # Analytical documents and justifications
+│   └── Literature-Backed Justification for DIANA's 0.4567 At-Risk Threshold and Feature Weight Rankings.md
+├── external-sources/                  # External research sources and snapshots
+│   └── perplexity-snapshot.md
+├── thesis-drafts/                     # Thesis manuscript drafts and chapters
+│   ├── ch3+4.md                       # Chapters 3 & 4 (Methodology sections)
+│   ├── manuscript.md                  # Full manuscript
+│   ├── METHODOLOGY.md                 # Complete methodology documentation
+│   ├── DRAFT CHAP 4-5.docx            # Word document drafts
+│   ├── Manuscript_part1.md            # Split manuscript parts
+│   ├── manuscript_part2.md
+│   ├── manuscript_part3.md
+│   ├── Transcript.md                  # Interview transcripts
+│   └── SEIRViz_FinalDocument-3.pdf    # Visualization document
+├── data_pipeline.md                   # Data processing pipeline documentation
+├── diabetes_subgroups.md              # Diabetes subgroup analysis
+├── doctor-interview-quick.md          # Doctor interview summaries
+├── doctor-interview-weights-validation.md
+├── manuscript-updates.md              # Manuscript revision tracking
+├── methodology-style-workflow.md      # Methodology writing workflow
+├── metrics.md                         # ML performance metrics
+├── ml_algorithms.md                   # ML algorithm documentation
+├── ml-pipeline-presentation.html      # Interactive ML pipeline presentation
+├── paper-requirements.md              # Publication requirements
+└── ui_requirements.md                 # UI/UX research requirements
 
-## Important Alignment Notes
-- Active screening model discussion should align with `binary_v2_no_bp` (non-circular screening).
-- Do not present HbA1c/FBS as active screening inputs for `binary_v2_no_bp`.
-- If manuscript language conflicts with runtime behavior, align wording to `../03-ml/assessment-contract.md`.
+```
 
-## Paper Source Context
-- Title: DIANA: A Predictive Model-Based Application Using Selected Blood Biomarkers for Cluster-Based Identification of Type 2 Diabetes Risk in Menopausal Women
-- Target population: postmenopausal women aged 45-60
-- Development dataset: NHANES
+## Key Documents
+
+### Thesis & Methodology
+- **manuscript.md** - Complete thesis manuscript
+- **METHODOLOGY.md** - Detailed methodology documentation
+- **ch3+4.md** - Chapters covering research methodology
+
+### Research Analysis
+- **Literature-Backed Justification** - Evidence-based justification for ML thresholds and feature rankings
+- **diabetes_subgroups.md** - Analysis of diabetes subgroups (SIDD, SIRD, MOD, MARD, AQR)
+
+### External Sources
+- **perplexity-snapshot.md** - Snapshot of external research queries and findings
+
+### Clinical Validation
+- **doctor-interview-*.md** - Clinical expert interviews and validation
+
+## Research Topics
+
+1. **Machine Learning** - Model architectures, training methodologies, validation
+2. **Clinical Evidence** - Medical literature, doctor interviews, threshold justifications
+3. **Data Pipeline** - NHANES data processing, feature engineering, imputation
+4. **Methodology** - Research design, statistical methods, defensibility
+
+## Citation Index
+
+Key citations referenced across documents are maintained in `docs/03-ml/defense/diana-citations.md`
+
+## Updating This Documentation
+
+When adding new research documents:
+1. Place in the appropriate subdirectory
+2. Update this README
+3. Link from relevant AGENTS.md files

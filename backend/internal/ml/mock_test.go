@@ -69,6 +69,21 @@ func TestMockPredictor_Predict(t *testing.T) {
 			wantCluster:   "MOD",
 			wantRiskRange: [2]int{25, 40},
 		},
+		{
+			name: "SIDD - moderate BMI with high metabolic markers",
+			input: models.Assessment{
+				PatientID:     15,
+				BMI:           25.4,
+				Triglycerides: 500,
+				LDL:           300,
+				HDL:           150,
+				Systolic:      120,
+				Diastolic:     80,
+				Age:           45,
+			},
+			wantCluster:   "SIDD",
+			wantRiskRange: [2]int{70, 80},
+		},
 	}
 
 	for _, tt := range tests {

@@ -58,11 +58,14 @@ def _sanitize_list(values: list[Any]) -> list[float | None]:
     return [_sanitize_number(v) for v in values]
 
 
-def _extract_tree_model(model: Any) -> Any:
-    """Recursively unwrap wrapper models to find a tree-based estimator.
+def _extract_estimator(model: Any) -> tuple[Any, str]:
+    """Recursively unwrap wrapper models to find the underlying estimator.
 
     Handles: CalibratedClassifierCV, Pipeline, and nested combinations.
-    Returns the inner estimator that TreeExplainer can use, or None.
+    Returns tuple of (inner_estimator, detected_model_type) where model_type
+    is one of: "tree", "linear", "kernel".
+
+    The detected_model_type is determined by the actual estimator class found.
     """
     working_model: Any = model
 
@@ -72,7 +75,7 @@ def _extract_tree_model(model: Any) -> Any:
         if isinstance(working_model, CalibratedClassifierCV):
             inner = getattr(working_model, "estimator", None)
             if inner is not None:
-                return _extract_tree_model(inner)
+                return _extract_estimator(inner)
     except ImportError:
         pass
 
@@ -80,13 +83,16 @@ def _extract_tree_model(model: Any) -> Any:
     named_steps = getattr(working_model, "named_steps", None)
     if isinstance(named_steps, dict) and named_steps:
         steps = list(named_steps.values())
-        return _extract_tree_model(steps[-1])
+        return _extract_estimator(steps[-1])
 
     steps_attr = getattr(working_model, "steps", None)
     if isinstance(steps_attr, list) and steps_attr:
-        return _extract_tree_model(steps_attr[-1][1])
+        return _extract_estimator(steps_attr[-1][1])
 
-    # If the model itself looks like a tree-based estimator, return it
+    # Detect model type based on class name
+    class_name = type(working_model).__name__
+
+    # Tree-based estimators
     tree_types = (
         "RandomForestClassifier", "RandomForestRegressor",
         "GradientBoostingClassifier", "GradientBoostingRegressor",
@@ -95,10 +101,33 @@ def _extract_tree_model(model: Any) -> Any:
         "DecisionTreeClassifier", "DecisionTreeRegressor",
         "ExtraTreesClassifier", "ExtraTreesRegressor",
     )
-    class_name = type(working_model).__name__
     if class_name in tree_types:
-        return model
+        return working_model, "tree"
 
+    # Linear estimators
+    linear_types = (
+        "LogisticRegression", "LinearRegression",
+        "Ridge", "RidgeClassifier",
+        "Lasso", "ElasticNet",
+        "SGDClassifier", "SGDRegressor",
+        "LinearSVC", "LinearSVR",
+    )
+    if class_name in linear_types:
+        return working_model, "linear"
+
+    # If we can't determine the type, return the model and let caller decide
+    return working_model, "kernel"
+
+
+def _extract_tree_model(model: Any) -> Any:
+    """Legacy wrapper for backward compatibility.
+
+    Recursively unwrap wrapper models to find a tree-based estimator.
+    Returns the inner estimator or None if not a tree-based model.
+    """
+    estimator, model_type = _extract_estimator(model)
+    if model_type == "tree":
+        return estimator
     return None
 
 
@@ -143,9 +172,29 @@ class SHAPExplainer:
 
         if shap_module is None:
             return
-        
+
         try:
-            if self.model_type == "tree":
+            # Auto-detect model type from the actual model if not explicitly specified
+            # or if specified as "tree" but model is actually linear
+            _, detected_type = _extract_estimator(self.model)
+            effective_type = self.model_type
+
+            # If user specified "tree" but we detected a linear model, use linear
+            if self.model_type == "tree" and detected_type == "linear":
+                effective_type = "linear"
+                logger.info(
+                    "Auto-adjusting explainer type from 'tree' to 'linear' "
+                    "based on model class: %s", type(self.model).__name__
+                )
+            # If user specified "tree" but model isn't tree-based, try kernel fallback
+            elif self.model_type == "tree" and detected_type != "tree":
+                effective_type = "kernel"
+                logger.info(
+                    "Model is not tree-based (%s), falling back to KernelExplainer",
+                    type(self.model).__name__
+                )
+
+            if effective_type == "tree":
                 # Try to extract raw tree model from wrappers (CalibratedClassifierCV, Pipeline)
                 tree_model = _extract_tree_model(self.model)
                 if tree_model is not None:
@@ -172,26 +221,78 @@ class SHAPExplainer:
                     else self.model.predict
                 )
                 if self.background_data is not None:
-                    self._explainer = shap_module.KernelExplainer(predict_fn, self.background_data)
+                    # Explicitly set nsamples to avoid SHAP 0.50.0 auto-calculation bug
+                    # Default "auto" can produce incorrect maskMatrix sizes
+                    n_features = self.background_data.shape[1] if self.background_data.ndim > 1 else len(self.background_data)
+                    nsamples = min(200, 2 * (n_features + 1))
+                    self._explainer = shap_module.KernelExplainer(
+                        predict_fn,
+                        self.background_data,
+                        nsamples=nsamples
+                    )
                 else:
                     logger.warning("No background data for KernelExplainer fallback; explainer unavailable")
                     return
-            elif self.model_type == "linear":
+            elif effective_type == "linear":
                 # For linear models (LogisticRegression, LinearSVC)
-                self._explainer = shap_module.LinearExplainer(
-                    self.model,
-                    self.background_data if self.background_data is not None else np.zeros((1, 10))
-                )
+                # Extract the actual linear model from Pipeline if needed
+                linear_model, _ = _extract_estimator(self.model)
+
+                # For LinearExplainer with Pipeline models, we need the masker
+                # Use the background data or create a default masker
+                if self.background_data is not None:
+                    masker = shap_module.maskers.Independent(self.background_data)
+                else:
+                    # Create a default masker with zeros
+                    # Try to infer feature dimension from the model
+                    n_features = None
+                    if hasattr(linear_model, 'coef_'):
+                        n_features = linear_model.coef_.shape[-1] if hasattr(linear_model.coef_, 'shape') else None
+                    if n_features is None:
+                        n_features = 10  # Default fallback
+                    masker = shap_module.maskers.Independent(np.zeros((1, n_features)))
+
+                try:
+                    self._explainer = shap_module.LinearExplainer(linear_model, masker)
+                    logger.info("SHAP LinearExplainer initialized for %s", type(linear_model).__name__)
+                except Exception as linear_e:
+                    logger.warning("LinearExplainer failed: %s", linear_e)
+                    # Fallback to KernelExplainer
+                    if self.background_data is not None:
+                        predict_fn = (
+                            self.model.predict_proba if hasattr(self.model, 'predict_proba')
+                            else self.model.predict
+                        )
+                        n_features = self.background_data.shape[1] if self.background_data.ndim > 1 else len(self.background_data)
+                        nsamples = min(200, 2 * (n_features + 1))
+                        self._explainer = shap_module.KernelExplainer(
+                            predict_fn,
+                            self.background_data,
+                            nsamples=nsamples
+                        )
+                        logger.info("Falling back to KernelExplainer after LinearExplainer failure")
+                    else:
+                        logger.error("No background data for KernelExplainer fallback")
+                        return
             else:
                 # Kernel explainer for any model (slower)
                 if self.background_data is None:
                     logger.warning("Kernel explainer requires background data")
                     return
-                self._explainer = shap_module.KernelExplainer(
-                    self.model.predict_proba if hasattr(self.model, 'predict_proba') else self.model.predict,
-                    self.background_data
+                # Explicitly set nsamples to avoid SHAP 0.50.0 auto-calculation bug
+                n_features = self.background_data.shape[1] if self.background_data.ndim > 1 else len(self.background_data)
+                nsamples = min(200, 2 * (n_features + 1))
+                predict_fn = (
+                    self.model.predict_proba if hasattr(self.model, 'predict_proba')
+                    else self.model.predict
                 )
-            logger.info(f"SHAP {self.model_type} explainer initialized")
+                self._explainer = shap_module.KernelExplainer(
+                    predict_fn,
+                    self.background_data,
+                    nsamples=nsamples
+                )
+                logger.info("SHAP KernelExplainer initialized")
+            logger.info(f"SHAP {effective_type} explainer initialized")
         except Exception as e:
             logger.error(f"Failed to initialize SHAP explainer: {e}")
             self._explainer = None

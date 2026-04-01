@@ -152,9 +152,17 @@ func buildAuditDetails(c *gin.Context) map[string]any {
 		"user_agent": c.Request.UserAgent(),
 	}
 
-	// Include query parameters if any
+	// Include query parameters if any - convert url.Values to map[string]any for clean JSON
 	if len(c.Request.URL.Query()) > 0 {
-		details["query"] = c.Request.URL.Query()
+		queryMap := make(map[string]any, len(c.Request.URL.Query()))
+		for k, v := range c.Request.URL.Query() {
+			if len(v) == 1 {
+				queryMap[k] = v[0]
+			} else {
+				queryMap[k] = v
+			}
+		}
+		details["query"] = queryMap
 	}
 
 	// For POST/PUT requests, try to include sanitized body info

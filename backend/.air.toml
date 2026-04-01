@@ -2,8 +2,8 @@ root = "."
 tmp_dir = "tmp"
 
 [build]
-  bin = "tmp\\main.exe"
-  full_bin = ".\\tmp\\main.exe"
+  bin = "tmp/main.exe"
+  full_bin = "./tmp/main.exe"
   cmd = "go build -o tmp/main.exe ./cmd/server"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "migrations", "venv", "node_modules", ".git", "logs", "frontend", "Ian_ML", "Neoron_ML", "models"]

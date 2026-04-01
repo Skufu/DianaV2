@@ -24,7 +24,7 @@ SEQN,age,hba1c,fbs,bmi,total_cholesterol,ldl,hdl,triglycerides,systolic,diastoli
 131912.0,60.0,5.9,109.0,26.8,244.0,168.0,49.0,,123.0,72.0,95.2,8.41,,Never,Unknown,Unknown,2021-2023,Pre-diabetic,1,Postmenopausal,False
 131944.0,59.0,5.3,101.0,20.8,211.0,122.0,75.0,,100.0,59.0,74.3,3.52,,Never,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,False
 131998.0,55.0,5.3,86.0,33.5,171.0,94.0,45.0,,109.0,78.0,113.2,10.84,,Never,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,False
-132014.0,54.0,5.4,96.0,69.9,200.0,132.0,51.0,,,,169.0,18.9,,Never,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,True
+132014.0,54.0,5.4,96.0,69.9,200.0,132.0,51.0,,,,169.0,18.9,,Never,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,False
 132097.0,48.0,5.2,97.0,34.3,166.0,85.0,38.0,,127.0,82.0,105.5,17.43,,Never,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,False
 132107.0,54.0,7.1,150.0,31.4,195.0,108.0,55.0,,141.0,79.0,106.1,13.35,,Current,Unknown,Unknown,2021-2023,Diabetic,2,Postmenopausal,False
 132141.0,56.0,5.4,89.0,29.1,205.0,100.0,98.0,,115.0,70.0,99.0,9.22,,Never,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,False
@@ -241,7 +241,7 @@ SEQN,age,hba1c,fbs,bmi,total_cholesterol,ldl,hdl,triglycerides,systolic,diastoli
 141549.0,48.0,5.4,102.0,26.0,206.0,120.0,62.0,,181.0,115.0,93.0,,,Current,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,False
 141585.0,54.0,4.8,98.0,27.1,246.0,138.0,67.0,,131.0,75.0,101.4,14.77,,Never,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,False
 141628.0,58.0,4.1,113.0,33.2,203.0,121.0,62.0,,101.0,70.0,100.3,11.4,,Former,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,False
-141644.0,57.0,7.8,125.0,60.5,163.0,95.0,48.0,,107.0,62.0,151.7,33.15,,Former,Unknown,Unknown,2021-2023,Diabetic,2,Postmenopausal,True
+141644.0,57.0,7.8,125.0,60.5,163.0,95.0,48.0,,107.0,62.0,151.7,33.15,,Former,Unknown,Unknown,2021-2023,Diabetic,2,Postmenopausal,False
 141673.0,54.0,5.4,93.0,25.0,181.0,97.0,74.0,,113.0,82.0,88.6,3.91,,Never,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,False
 141684.0,54.0,5.4,106.0,31.0,197.0,113.0,65.0,,147.0,101.0,104.0,13.75,,Current,Unknown,Unknown,2021-2023,Normal,0,Postmenopausal,False
 141691.0,55.0,6.0,115.0,42.3,232.0,155.0,48.0,,120.0,86.0,124.2,112.83,,Never,Unknown,Unknown,2021-2023,Pre-diabetic,1,Postmenopausal,False
@@ -278,7 +278,7 @@ SEQN,age,hba1c,fbs,bmi,total_cholesterol,ldl,hdl,triglycerides,systolic,diastoli
 94038.0,59.0,5.7,107.0,30.3,235.0,157.0,45.0,163.0,102.0,74.0,103.1,16.56,1.0,Current,Sedentary,Unknown,2017-2018,Pre-diabetic,1,Postmenopausal,False
 94050.0,55.0,5.6,99.0,27.3,270.0,192.0,40.0,190.0,130.0,82.0,97.5,23.04,0.0,Never,Active,Unknown,2017-2018,Normal,0,Postmenopausal,False
 94113.0,60.0,8.6,232.0,23.4,264.0,174.0,54.0,181.0,124.0,64.0,81.3,8.74,1.0,Never,Sedentary,Unknown,2017-2018,Diabetic,2,Postmenopausal,False
-94117.0,57.0,6.9,190.0,74.8,208.0,138.0,42.0,140.0,150.0,72.0,,70.88,0.0,Current,Sedentary,Unknown,2017-2018,Diabetic,2,Postmenopausal,True
+94117.0,57.0,6.9,190.0,74.8,208.0,138.0,42.0,140.0,150.0,72.0,,70.88,0.0,Current,Sedentary,Unknown,2017-2018,Diabetic,2,Postmenopausal,False
 94174.0,45.0,5.6,105.0,25.8,220.0,148.0,57.0,75.0,116.0,66.0,83.7,9.07,0.0,Never,Active,Unknown,2017-2018,Normal,0,Postmenopausal,False
 94177.0,59.0,5.5,106.0,25.9,187.0,102.0,71.0,71.0,132.0,76.0,85.7,9.84,0.0,Never,Sedentary,Unknown,2017-2018,Normal,0,Postmenopausal,False
 94187.0,54.0,5.4,103.0,29.6,200.0,127.0,63.0,50.0,148.0,84.0,84.8,11.47,0.0,Never,Sedentary,Unknown,2017-2018,Normal,0,Postmenopausal,False
@@ -374,7 +374,7 @@ SEQN,age,hba1c,fbs,bmi,total_cholesterol,ldl,hdl,triglycerides,systolic,diastoli
 98141.0,56.0,5.9,112.0,34.7,238.0,154.0,68.0,80.0,140.0,70.0,120.5,22.37,1.0,Never,Moderate,Unknown,2017-2018,Pre-diabetic,1,Postmenopausal,False
 98144.0,45.0,5.4,97.0,23.5,191.0,121.0,47.0,114.0,,,85.1,9.25,1.0,Never,Moderate,Unknown,2017-2018,Normal,0,Postmenopausal,False
 98168.0,55.0,5.9,104.0,23.3,205.0,141.0,51.0,67.0,120.0,76.0,86.6,4.86,1.0,Never,Moderate,Unknown,2017-2018,Pre-diabetic,1,Postmenopausal,False
-98228.0,52.0,7.4,113.0,64.7,182.0,116.0,47.0,95.0,130.0,74.0,149.0,16.42,1.0,Never,Active,Unknown,2017-2018,Diabetic,2,Postmenopausal,True
+98228.0,52.0,7.4,113.0,64.7,182.0,116.0,47.0,95.0,130.0,74.0,149.0,16.42,1.0,Never,Active,Unknown,2017-2018,Diabetic,2,Postmenopausal,False
 98242.0,53.0,6.5,116.0,30.7,94.0,45.0,38.0,54.0,116.0,74.0,106.9,13.32,1.0,Former,Active,Unknown,2017-2018,Diabetic,2,Postmenopausal,False
 98293.0,52.0,7.7,139.0,36.3,257.0,169.0,60.0,140.0,112.0,70.0,114.6,24.27,1.0,Former,Moderate,Unknown,2017-2018,Diabetic,2,Postmenopausal,False
 98320.0,48.0,6.0,100.0,36.9,252.0,185.0,47.0,101.0,,,106.0,19.47,0.0,Never,Moderate,Unknown,2017-2018,Pre-diabetic,1,Postmenopausal,False
@@ -629,7 +629,7 @@ SEQN,age,hba1c,fbs,bmi,total_cholesterol,ldl,hdl,triglycerides,systolic,diastoli
 89565.0,55.0,6.3,156.0,29.1,222.0,134.0,41.0,236.0,116.0,70.0,106.4,10.56,1.0,Current,Active,,2015-2016,Diabetic,2,Postmenopausal,False
 89616.0,56.0,5.6,105.0,33.7,246.0,135.0,96.0,74.0,126.0,72.0,110.8,14.28,1.0,Never,Active,Light,2015-2016,Normal,0,Postmenopausal,False
 89622.0,46.0,5.1,99.0,21.7,201.0,118.0,70.0,64.0,96.0,58.0,74.2,5.78,0.0,Never,Active,Light,2015-2016,Normal,0,Postmenopausal,False
-89652.0,50.0,6.3,121.0,61.7,255.0,149.0,84.0,110.0,134.0,80.0,149.8,15.07,0.0,Never,Moderate,,2015-2016,Pre-diabetic,1,Postmenopausal,True
+89652.0,50.0,6.3,121.0,61.7,255.0,149.0,84.0,110.0,134.0,80.0,149.8,15.07,0.0,Never,Moderate,,2015-2016,Pre-diabetic,1,Postmenopausal,False
 89701.0,53.0,5.5,97.0,28.0,176.0,106.0,57.0,63.0,112.0,70.0,83.3,6.28,1.0,Never,Active,Light,2015-2016,Normal,0,Postmenopausal,False
 89755.0,60.0,6.0,115.0,37.0,244.0,151.0,39.0,271.0,180.0,92.0,111.3,15.58,1.0,Current,Moderate,Light,2015-2016,Pre-diabetic,1,Postmenopausal,False
 89800.0,60.0,7.3,184.0,34.6,212.0,123.0,62.0,137.0,130.0,56.0,122.0,6.39,1.0,Current,Sedentary,Light,2015-2016,Diabetic,2,Postmenopausal,False
@@ -709,7 +709,7 @@ SEQN,age,hba1c,fbs,bmi,total_cholesterol,ldl,hdl,triglycerides,systolic,diastoli
 92872.0,55.0,5.8,96.0,34.5,190.0,118.0,36.0,179.0,144.0,68.0,115.1,36.73,1.0,Current,Moderate,Light,2015-2016,Pre-diabetic,1,Postmenopausal,False
 92901.0,54.0,5.3,97.0,23.9,201.0,,61.0,,102.0,78.0,87.0,7.45,1.0,Former,Moderate,,2015-2016,Normal,0,Postmenopausal,False
 92929.0,50.0,5.3,84.0,33.5,204.0,128.0,67.0,46.0,110.0,80.0,103.4,7.21,1.0,Never,Active,,2015-2016,Normal,0,Postmenopausal,False
-92988.0,51.0,6.8,149.0,64.5,230.0,157.0,61.0,59.0,140.0,104.0,137.1,18.03,1.0,Former,Moderate,Light,2015-2016,Diabetic,2,Postmenopausal,True
+92988.0,51.0,6.8,149.0,64.5,230.0,157.0,61.0,59.0,140.0,104.0,137.1,18.03,1.0,Former,Moderate,Light,2015-2016,Diabetic,2,Postmenopausal,False
 93015.0,53.0,5.6,107.0,30.5,236.0,138.0,77.0,106.0,150.0,86.0,106.1,7.62,0.0,Former,Moderate,Heavy,2015-2016,Normal,0,Postmenopausal,False
 93016.0,51.0,4.5,93.0,20.9,175.0,101.0,59.0,73.0,114.0,60.0,76.2,4.03,0.0,Never,Moderate,Light,2015-2016,Normal,0,Postmenopausal,False
 93052.0,55.0,5.8,81.0,32.7,162.0,91.0,55.0,80.0,146.0,84.0,110.5,,1.0,Current,Moderate,Light,2015-2016,Pre-diabetic,1,Postmenopausal,False
@@ -808,7 +808,7 @@ SEQN,age,hba1c,fbs,bmi,total_cholesterol,ldl,hdl,triglycerides,systolic,diastoli
 77164.0,56.0,5.3,96.0,27.5,170.0,91.0,67.0,59.0,130.0,80.0,90.2,6.67,0.0,Never,Sedentary,,2013-2014,Normal,0,Postmenopausal,False
 77189.0,56.0,5.6,84.0,31.2,224.0,146.0,47.0,157.0,100.0,66.0,105.4,8.37,1.0,Current,Active,Light,2013-2014,Normal,0,Postmenopausal,False
 77199.0,54.0,5.7,112.0,28.2,160.0,73.0,41.0,232.0,110.0,62.0,99.9,,0.0,Current,Sedentary,Light,2013-2014,Diabetic,2,Postmenopausal,False
-77255.0,60.0,5.9,103.0,63.0,169.0,104.0,43.0,111.0,132.0,64.0,142.6,14.15,1.0,Former,Sedentary,Light,2013-2014,Pre-diabetic,1,Postmenopausal,True
+77255.0,60.0,5.9,103.0,63.0,169.0,104.0,43.0,111.0,132.0,64.0,142.6,14.15,1.0,Former,Sedentary,Light,2013-2014,Pre-diabetic,1,Postmenopausal,False
 77308.0,51.0,5.3,115.0,25.3,214.0,121.0,78.0,74.0,106.0,62.0,86.4,6.7,0.0,Never,Active,Moderate,2013-2014,Normal,0,Postmenopausal,False
 77433.0,58.0,5.3,90.0,26.2,273.0,173.0,65.0,175.0,126.0,78.0,91.5,3.88,0.0,Never,Sedentary,,2013-2014,Normal,0,Postmenopausal,False
 77436.0,58.0,5.5,101.0,32.0,290.0,208.0,59.0,114.0,134.0,52.0,110.7,12.92,0.0,Never,Moderate,Heavy,2013-2014,Normal,0,Postmenopausal,False
@@ -995,7 +995,7 @@ SEQN,age,hba1c,fbs,bmi,total_cholesterol,ldl,hdl,triglycerides,systolic,diastoli
 63941.0,53.0,5.4,90.0,19.0,225.0,156.0,51.0,90.0,140.0,80.0,78.9,,0.0,Never,Sedentary,,2011-2012,Normal,0,Postmenopausal,False
 63948.0,50.0,5.6,98.0,28.1,263.0,164.0,82.0,83.0,148.0,64.0,100.0,,0.0,Never,Moderate,Moderate,2011-2012,Normal,0,Postmenopausal,False
 63957.0,59.0,5.2,149.0,35.4,208.0,127.0,47.0,170.0,100.0,70.0,112.2,,0.0,Current,Sedentary,Light,2011-2012,Normal,0,Postmenopausal,False
-63989.0,53.0,5.5,102.0,13.6,192.0,116.0,58.0,89.0,96.0,68.0,,,0.0,Former,Sedentary,Light,2011-2012,Normal,0,Postmenopausal,True
+63989.0,53.0,5.5,102.0,13.6,192.0,116.0,58.0,89.0,96.0,68.0,,,0.0,Former,Sedentary,Light,2011-2012,Normal,0,Postmenopausal,False
 64072.0,50.0,5.5,105.0,33.9,163.0,86.0,53.0,119.0,102.0,46.0,110.0,,1.0,Never,Moderate,,2011-2012,Normal,0,Postmenopausal,False
 64089.0,54.0,5.4,108.0,32.8,214.0,128.0,77.0,46.0,138.0,84.0,114.3,,1.0,Never,Moderate,Light,2011-2012,Normal,0,Postmenopausal,False
 64161.0,51.0,6.7,109.0,59.0,180.0,98.0,71.0,55.0,120.0,90.0,144.4,,1.0,Former,Sedentary,Light,2011-2012,Diabetic,2,Postmenopausal,False

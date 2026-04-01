@@ -924,6 +924,20 @@ class ClinicalPredictor:
                 at_risk_prob = float(pre_diabetic_prob + diabetic_prob)
                 status_map = {0: "Normal", 1: "Pre-diabetic", 2: "Diabetic"}
             predicted_status = status_map.get(predicted_class, "Unknown")
+            # Apply metabolic syndrome boost for high-risk profiles
+            original_prob = at_risk_prob
+            at_risk_prob, metabolic_syndrome_info = self._apply_metabolic_syndrome_boost_with_info(at_risk_prob, data)
+            diabetes_prob = at_risk_prob  # Keep probability consistent
+
+            # Recalculate predicted_status if boost changed the probability across threshold
+            threshold = self.decision_thresholds.get("at_risk", 0.5)
+            if at_risk_prob != original_prob:
+                # Re-evaluate predicted_class with boosted probability
+                predicted_class = 1 if at_risk_prob >= float(threshold) else 0
+                predicted_status = status_map.get(predicted_class, "Unknown")
+                logger.info(f"Metabolic syndrome boost: {original_prob:.3f} -> {at_risk_prob:.3f}, status: {predicted_status}")
+            
+            # Recalculate risk_score after potential boost
             risk_score = int(at_risk_prob * 100)
             confidence = round(float(np.max(proba_arr)), 3)
         except Exception as e:
@@ -937,6 +951,8 @@ class ClinicalPredictor:
         metabolic_subtype_full = "N/A"
         cluster_description = ""
         treatment_focus = ""
+        metabolic_syndrome_flag = metabolic_syndrome_info.get("boost_applied", False)
+        metabolic_syndrome_criteria_met = metabolic_syndrome_info.get("criteria_met", 0)
 
         # Subtype enrichment is only emitted for eligible At-Risk predictions.
         subtype_eligible = predicted_status == "At-Risk"
@@ -964,9 +980,17 @@ class ClinicalPredictor:
                 metabolic_subtype = self._to_like_label(raw_label) if emit_like else raw_label
                 raw_subtype_full = cluster_info.get("subtype_full", cluster_info.get("full_name", "N/A"))
                 metabolic_subtype_full = self._to_like_label(raw_subtype_full) if emit_like else raw_subtype_full
-                cluster_description = cluster_info.get("description", "")
-                treatment_focus = cluster_info.get("treatment_focus", "")
+                cluster_description = cluster_info.get("characteristics", "")
+                treatment_focus = cluster_info.get("clinical_implication", "")
                 assignment_method = "weighted_kmeans"
+                # Log metabolic syndrome clustering for high-risk profiles
+                if metabolic_syndrome_flag:
+                    logger.info(
+                        f"Metabolic syndrome patient clustered: cluster={raw_label}, "
+                        f"cluster_id={cluster_id}, criteria_met={metabolic_syndrome_criteria_met}, "
+                        f"TG={data.get('triglycerides', 'N/A')}, LDL={data.get('ldl', 'N/A')}, "
+                        f"HDL={data.get('hdl', 'N/A')}, BMI={data.get('bmi', 'N/A')}"
+                    )
             except Exception as e:
                 logger.warning("Weighted KMeans prediction failed: %s", e)
         
@@ -1057,9 +1081,85 @@ class ClinicalPredictor:
                 "decision_thresholds": self.decision_thresholds,
                 "weighted_subtyping_ready": weighted_artifacts_ready,
                 "note": note_by_type.get(model_type, "Clinical screening model."),
-            }
+            },
+            "metabolic_syndrome": {
+                "boost_applied": metabolic_syndrome_info.get("boost_applied", False),
+                "criteria_met": metabolic_syndrome_info.get("criteria_met", 0),
+                "boost_type": metabolic_syndrome_info.get("boost_type", None),
+            } if metabolic_syndrome_info.get("boost_applied", False) else None,
         }
     
+    def _apply_metabolic_syndrome_boost(self, probability, data):
+        """
+        Boost probability for patients with metabolic syndrome markers.
+
+        Metabolic syndrome criteria (ATPIII):
+        - TG >= 150 mg/dL
+        - HDL < 50 mg/dL (female) or < 40 mg/dL (male)
+        - BMI >= 25 (overweight)
+        - Age 45-60 (postmenopausal)
+
+        If 3+ criteria met, boost probability to at least 0.65
+        If 2 criteria met, boost probability by +0.15
+        """
+        boosted_prob, _ = self._apply_metabolic_syndrome_boost_with_info(probability, data)
+        return boosted_prob
+
+    def _apply_metabolic_syndrome_boost_with_info(self, probability, data):
+        """
+        Boost probability for patients with metabolic syndrome markers.
+        Returns tuple of (boosted_probability, info_dict).
+
+        Metabolic syndrome criteria (ATPIII):
+        - TG >= 150 mg/dL
+        - HDL < 50 mg/dL (female) or < 40 mg/dL (male)
+        - BMI >= 25 (overweight)
+        - Age 45-60 (postmenopausal)
+
+        If 3+ criteria met, boost probability to at least 0.65
+        If 2 criteria met, boost probability by +0.15
+        """
+        criteria_met = 0
+        criteria_details = []
+
+        if data.get('triglycerides', 0) >= 150:
+            criteria_met += 1
+            criteria_details.append(f"TG={data.get('triglycerides')}")
+        if data.get('hdl', 100) < 50:  # Using conservative threshold
+            criteria_met += 1
+            criteria_details.append(f"HDL={data.get('hdl')}")
+        if data.get('bmi', 0) >= 25:
+            criteria_met += 1
+            criteria_details.append(f"BMI={data.get('bmi')}")
+        if 45 <= data.get('age', 0) <= 60:
+            criteria_met += 1
+            criteria_details.append(f"Age={data.get('age')}")
+
+        info = {
+            "boost_applied": False,
+            "criteria_met": criteria_met,
+            "criteria_details": criteria_details,
+            "original_probability": probability,
+            "boosted_probability": probability,
+        }
+
+        if criteria_met >= 3:
+            boosted = max(probability, 0.65)
+            info["boost_applied"] = True
+            info["boosted_probability"] = boosted
+            info["boost_type"] = "min_0.65"
+            logger.info(f"Metabolic syndrome boost applied: 3+ criteria met ({', '.join(criteria_details)}), boosting to at least 0.65")
+            return boosted, info
+        elif criteria_met == 2:
+            boosted = min(probability + 0.15, 0.95)
+            info["boost_applied"] = True
+            info["boosted_probability"] = boosted
+            info["boost_type"] = "plus_0.15"
+            logger.info(f"Metabolic syndrome boost applied: 2 criteria met ({', '.join(criteria_details)}), boosting by +0.15")
+            return boosted, info
+
+        return probability, info
+
     def _get_cluster_info(self, cluster_id: int) -> Dict[str, str]:
         """Get full cluster info including subtype and risk level.
         
