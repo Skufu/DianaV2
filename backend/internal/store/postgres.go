@@ -2,9 +2,18 @@
 package store
 
 import (
+	"strconv"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	sqlcgen "github.com/skufu/DianaV2/backend/internal/store/sqlc"
 )
+
+// itoa converts an integer to its string representation.
+// Used for dynamic SQL parameter numbering in queries that cannot use SQLC.
+// NOTE: This should be removed once all repos are migrated to SQLC.
+func itoa(n int) string {
+	return strconv.Itoa(n)
+}
 
 type PostgresStore struct {
 	pool *pgxpool.Pool
@@ -60,10 +69,10 @@ func (s *PostgresStore) Cohort() CohortRepository {
 
 // AuditEvents returns the AuditEventRepository implementation.
 func (s *PostgresStore) AuditEvents() AuditEventRepository {
-	return &pgAuditEventRepo{pool: s.pool}
+	return &pgAuditEventRepo{q: s.q}
 }
 
 // ModelRuns returns the ModelRunRepository implementation.
 func (s *PostgresStore) ModelRuns() ModelRunRepository {
-	return &pgModelRunRepo{pool: s.pool}
+	return &pgModelRunRepo{q: s.q}
 }

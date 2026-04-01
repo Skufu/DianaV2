@@ -5,51 +5,42 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log"
 
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/skufu/DianaV2/backend/internal/models"
+	sqlcgen "github.com/skufu/DianaV2/backend/internal/store/sqlc"
 )
-
-func itoa(n int) string {
-	if n < 10 {
-		return string(rune('0' + n))
-	}
-	return itoa(n/10) + string(rune('0'+n%10))
-}
 
 // ============================================================================
 // AuditEventRepository implementation
 // ============================================================================
 
 type pgAuditEventRepo struct {
-	pool *pgxpool.Pool
+	q *sqlcgen.Queries
 }
 
 func (r *pgAuditEventRepo) Create(ctx context.Context, event models.AuditEvent) error {
-	if r.pool == nil {
+	if r.q == nil {
 		return errors.New("db not configured")
 	}
 
 	detailsJSON, err := json.Marshal(event.Details)
 	if err != nil {
-		return fmt.Errorf("failed to marshal audit details: %w", err)
+		return err
 	}
 
-	query := `
-		INSERT INTO audit_events (actor, action, target_type, target_id, details, created_at)
-		VALUES ($1, $2, $3, $4, $5, NOW())
-	`
-
-	_, err = r.pool.Exec(ctx, query,
-		event.Actor, event.Action, event.TargetType, event.TargetID, detailsJSON,
-	)
-	return err
+	return r.q.CreateAuditEvent(ctx, sqlcgen.CreateAuditEventParams{
+		Actor:      pgtype.Text{String: event.Actor, Valid: event.Actor != ""},
+		Action:     pgtype.Text{String: event.Action, Valid: event.Action != ""},
+		TargetType: pgtype.Text{String: event.TargetType, Valid: event.TargetType != ""},
+		TargetID:   pgtype.Int4{Int32: int32(event.TargetID), Valid: event.TargetID != 0},
+		Details:    detailsJSON,
+	})
 }
 
 func (r *pgAuditEventRepo) List(ctx context.Context, params models.AuditListParams) ([]models.AuditEvent, int, error) {
-	if r.pool == nil {
+	if r.q == nil {
 		return nil, 0, errors.New("db not configured")
 	}
 
@@ -66,81 +57,61 @@ func (r *pgAuditEventRepo) List(ctx context.Context, params models.AuditListPara
 	}
 	offset := (page - 1) * pageSize
 
-	query := `
-		SELECT id, actor, action, target_type, target_id, details, created_at
-		FROM audit_events
-		WHERE 1=1
-	`
-	countQuery := `SELECT COUNT(*) FROM audit_events WHERE 1=1`
-	args := []any{}
-	argNum := 1
-
-	if params.Actor != "" {
-		query += ` AND actor ILIKE '%' || $` + itoa(argNum) + ` || '%'`
-		countQuery += ` AND actor ILIKE '%' || $` + itoa(argNum) + ` || '%'`
-		args = append(args, params.Actor)
-		argNum++
-	}
-
-	if params.Action != "" {
-		query += ` AND action = $` + itoa(argNum)
-		countQuery += ` AND action = $` + itoa(argNum)
-		args = append(args, params.Action)
-		argNum++
-	}
-
+	// Prepare timestamp parameters
+	var startDate pgtype.Timestamptz
 	if !params.StartDate.IsZero() {
-		query += ` AND created_at >= $` + itoa(argNum)
-		countQuery += ` AND created_at >= $` + itoa(argNum)
-		args = append(args, params.StartDate)
-		argNum++
+		startDate = pgtype.Timestamptz{Time: params.StartDate, Valid: true}
 	}
-
+	var endDate pgtype.Timestamptz
 	if !params.EndDate.IsZero() {
-		query += ` AND created_at <= $` + itoa(argNum)
-		countQuery += ` AND created_at <= $` + itoa(argNum)
-		args = append(args, params.EndDate)
-		argNum++
+		endDate = pgtype.Timestamptz{Time: params.EndDate, Valid: true}
 	}
 
-	var total int
-	err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total)
+	// Get total count
+	total, err := r.q.CountAuditEvents(ctx, sqlcgen.CountAuditEventsParams{
+		Column1: params.Actor,
+		Column2: params.Action,
+		Column3: startDate,
+		Column4: endDate,
+	})
 	if err != nil {
 		return nil, 0, err
 	}
 
-	query += ` ORDER BY created_at DESC LIMIT $` + itoa(argNum) + ` OFFSET $` + itoa(argNum+1)
-	args = append(args, pageSize, offset)
-
-	rows, err := r.pool.Query(ctx, query, args...)
+	// Get paginated list
+	rows, err := r.q.ListAuditEvents(ctx, sqlcgen.ListAuditEventsParams{
+		Column1: params.Actor,
+		Column2: params.Action,
+		Column3: startDate,
+		Column4: endDate,
+		Limit:   int32(pageSize),
+		Offset:  int32(offset),
+	})
 	if err != nil {
 		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var events []models.AuditEvent
-	for rows.Next() {
-		var e models.AuditEvent
-		var targetID pgtype.Int4
-		var detailsJSON []byte
-
-		err := rows.Scan(&e.ID, &e.Actor, &e.Action, &e.TargetType, &targetID, &detailsJSON, &e.CreatedAt)
-		if err != nil {
-			return nil, 0, err
+	for _, row := range rows {
+		var details map[string]any
+		if len(row.Details) > 0 {
+			if err := json.Unmarshal(row.Details, &details); err != nil {
+				log.Printf("[AUDIT DEBUG] Failed to unmarshal audit details: %v", err)
+			}
 		}
 
-		if targetID.Valid {
-			e.TargetID = int(targetID.Int32)
-		}
-
-		if len(detailsJSON) > 0 {
-			_ = json.Unmarshal(detailsJSON, &e.Details)
-		}
-
-		events = append(events, e)
+		events = append(events, models.AuditEvent{
+			ID:         int64(row.ID),
+			Actor:      textVal(row.Actor),
+			Action:     textVal(row.Action),
+			TargetType: textVal(row.TargetType),
+			TargetID:   intVal(row.TargetID),
+			Details:    details,
+			CreatedAt:  row.CreatedAt.Time,
+		})
 	}
 
-	return events, total, nil
+	return events, int(total), nil
 }
 
 // ============================================================================
@@ -148,11 +119,11 @@ func (r *pgAuditEventRepo) List(ctx context.Context, params models.AuditListPara
 // ============================================================================
 
 type pgModelRunRepo struct {
-	pool *pgxpool.Pool
+	q *sqlcgen.Queries
 }
 
 func (r *pgModelRunRepo) List(ctx context.Context, limit, offset int) ([]models.ModelRun, int, error) {
-	if r.pool == nil {
+	if r.q == nil {
 		return nil, 0, errors.New("db not configured")
 	}
 
@@ -163,103 +134,85 @@ func (r *pgModelRunRepo) List(ctx context.Context, limit, offset int) ([]models.
 		limit = 100
 	}
 
-	var total int
-	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM model_runs`).Scan(&total)
+	// Get total count
+	total, err := r.q.CountModelRuns(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	query := `
-		SELECT id, model_version, dataset_hash, notes, created_at
-		FROM model_runs
-		ORDER BY created_at DESC
-		LIMIT $1 OFFSET $2
-	`
-
-	rows, err := r.pool.Query(ctx, query, limit, offset)
+	// Get paginated list
+	rows, err := r.q.ListModelRuns(ctx, sqlcgen.ListModelRunsParams{
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
 	if err != nil {
 		return nil, 0, err
 	}
-	defer rows.Close()
 
 	var runs []models.ModelRun
 	isFirst := true
-	for rows.Next() {
-		var run models.ModelRun
-		var datasetHash, notes pgtype.Text
-
-		err := rows.Scan(&run.ID, &run.ModelVersion, &datasetHash, &notes, &run.CreatedAt)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		if datasetHash.Valid {
-			run.DatasetHash = datasetHash.String
-		}
-		if notes.Valid {
-			run.Notes = notes.String
-		}
-
-		run.IsActive = isFirst
+	for _, row := range rows {
+		runs = append(runs, models.ModelRun{
+			ID:           int64(row.ID),
+			ModelVersion: row.ModelVersion,
+			DatasetHash:  textVal(row.DatasetHash),
+			Notes:        textVal(row.Notes),
+			IsActive:     isFirst,
+			CreatedAt:    row.CreatedAt.Time,
+		})
 		isFirst = false
-
-		runs = append(runs, run)
 	}
 
-	return runs, total, nil
+	return runs, int(total), nil
 }
 
 func (r *pgModelRunRepo) GetActive(ctx context.Context) (*models.ModelRun, error) {
-	if r.pool == nil {
+	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
 
-	query := `
-		SELECT id, model_version, dataset_hash, notes, created_at
-		FROM model_runs
-		ORDER BY created_at DESC
-		LIMIT 1
-	`
-
-	var run models.ModelRun
-	var datasetHash, notes pgtype.Text
-
-	err := r.pool.QueryRow(ctx, query).Scan(&run.ID, &run.ModelVersion, &datasetHash, &notes, &run.CreatedAt)
+	row, err := r.q.GetLatestModelRun(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if datasetHash.Valid {
-		run.DatasetHash = datasetHash.String
-	}
-	if notes.Valid {
-		run.Notes = notes.String
-	}
-	run.IsActive = true
-
-	return &run, nil
+	return &models.ModelRun{
+		ID:           int64(row.ID),
+		ModelVersion: row.ModelVersion,
+		DatasetHash:  textVal(row.DatasetHash),
+		Notes:        textVal(row.Notes),
+		IsActive:     true,
+		CreatedAt:    row.CreatedAt.Time,
+	}, nil
 }
 
 func (r *pgModelRunRepo) Create(ctx context.Context, run models.ModelRun) (*models.ModelRun, error) {
-	if r.pool == nil {
+	if r.q == nil {
 		return nil, errors.New("db not configured")
 	}
 
-	query := `
-		INSERT INTO model_runs (model_version, dataset_hash, notes, created_at)
-		VALUES ($1, $2, $3, NOW())
-		RETURNING id, created_at
-	`
-
-	err := r.pool.QueryRow(ctx, query, run.ModelVersion, run.DatasetHash, run.Notes).Scan(&run.ID, &run.CreatedAt)
+	row, err := r.q.CreateModelRun(ctx, sqlcgen.CreateModelRunParams{
+		ModelVersion: run.ModelVersion,
+		DatasetHash:  textToPg(run.DatasetHash),
+		Notes:        textToPg(run.Notes),
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	run.IsActive = true
-	return &run, nil
+	return &models.ModelRun{
+		ID:           int64(row.ID),
+		ModelVersion: row.ModelVersion,
+		DatasetHash:  textVal(row.DatasetHash),
+		Notes:        textVal(row.Notes),
+		IsActive:     true,
+		CreatedAt:    row.CreatedAt.Time,
+	}, nil
 }
 
 func (r *pgModelRunRepo) SetActive(ctx context.Context, id int32) error {
+	// Note: Model runs are inherently ordered by created_at DESC, so the "active"
+	// model is always the most recent one. This method is a no-op placeholder
+	// for potential future implementation of explicit model activation.
 	return nil
 }
