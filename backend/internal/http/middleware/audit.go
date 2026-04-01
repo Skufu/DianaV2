@@ -72,13 +72,17 @@ func (a *AuditLogger) LogAction(action, targetType string) gin.HandlerFunc {
 		// Build details from request
 		details := buildAuditDetails(c)
 
+		// Capture all data needed for the goroutine BEFORE spawning it
+		// to avoid data races with the gin context
+		actorEmail := claims.Email
+		ctx := context.WithoutCancel(c.Request.Context())
+
 		// Create audit event (fire and forget - don't block the response)
 		a.wg.Add(1)
 		go func() {
 			defer a.wg.Done()
-			ctx := context.WithoutCancel(c.Request.Context())
 			event := models.AuditEvent{
-				Actor:      claims.Email,
+				Actor:      actorEmail,
 				Action:     action,
 				TargetType: targetType,
 				TargetID:   targetID,
