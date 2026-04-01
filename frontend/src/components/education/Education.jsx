@@ -178,7 +178,7 @@ const Education = () => {
             <h3 className="text-lg font-bold text-white">How It Works</h3>
             <p className="text-blue-50 text-sm leading-relaxed">
               <strong>Step 1:</strong> We check your overall diabetes risk based on your health measurements.
-              <strong> Step 2:</strong> If you're at higher risk, we identify which health pattern fits you best
+              <strong> Step 2:</strong> If you&apos;re at higher risk, we identify which health pattern fits you best
               —so you know exactly where to focus.
             </p>
           </div>
@@ -508,11 +508,11 @@ const Education = () => {
               >
                 <motion.p variants={isReduced ? {} : fadeUp} className="text-diana-text-primary text-base leading-loose">
                   Your risk score shows how likely you may be to develop Type 2 Diabetes based on your health measurements.
-                  It's not a diagnosis—it's an early warning that helps you and your doctor take action before problems develop.
+                  It&apos;s not a diagnosis—it&apos;s an early warning that helps you and your doctor take action before problems develop.
                 </motion.p>
                 <motion.p variants={isReduced ? {} : fadeUp} className="text-diana-text-secondary text-base leading-relaxed">
                   The score uses your weight, cholesterol, blood fats, and lifestyle factors—things you can actually change.
-                  It doesn't use blood sugar tests, so it catches risk patterns earlier.
+                  It doesn&apos;t use blood sugar tests, so it catches risk patterns earlier.
                 </motion.p>
 
                 <motion.div variants={isReduced ? {} : fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -538,7 +538,7 @@ const Education = () => {
 
                 <motion.div variants={isReduced ? {} : fadeUp} className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                   <p className="text-sm text-blue-800 leading-relaxed">
-                    <strong>Remember:</strong> An "At-Risk" result doesn't mean you have diabetes. It means your body
+                    <strong>Remember:</strong> An &quot;At-Risk&quot; result doesn&apos;t mean you have diabetes. It means your body
                     is showing early signs that could lead there—and catching it early is actually a good thing.
                     Your doctor can help you figure out next steps.
                   </p>
