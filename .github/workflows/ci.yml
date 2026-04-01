@@ -157,6 +157,11 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
 
+      - name: Run ML tests
+        run: pytest tests/ -v --tb=short
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
   # Docker build test
   docker:
     runs-on: ubuntu-latest
