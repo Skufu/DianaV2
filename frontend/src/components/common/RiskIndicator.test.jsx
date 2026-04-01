@@ -1,8 +1,27 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import RiskIndicator from './RiskIndicator';
 
+// Mock framer-motion to avoid animation issues in tests
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+    span: ({ children, ...props }) => <span {...props}>{children}</span>,
+  },
+}));
+
+// Mock the animations utils
+vi.mock('../../utils/animations', () => ({
+  fadeIn: {},
+  scaleIn: {},
+  useReducedMotion: () => true,
+}));
+
 describe('RiskIndicator', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders risk score correctly', () => {
     render(<RiskIndicator riskScore={75} riskLevel="high" />);
     expect(screen.getByText('75')).toBeInTheDocument();
@@ -46,12 +65,12 @@ describe('RiskIndicator', () => {
 
   it('does not render cluster section when cluster is not provided', () => {
     render(<RiskIndicator riskScore={50} riskLevel="medium" />);
-    expect(screen.queryByText('Metabolic Subtype:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Metabolic Profile:')).not.toBeInTheDocument();
   });
 
   it('renders cluster when provided', () => {
     render(<RiskIndicator riskScore={50} riskLevel="medium" cluster="SIRD" />);
-    expect(screen.getByText('Metabolic Subtype:')).toBeInTheDocument();
+    expect(screen.getByText('Metabolic Profile:')).toBeInTheDocument();
     expect(screen.getByText('SIRD')).toBeInTheDocument();
   });
 
@@ -59,7 +78,7 @@ describe('RiskIndicator', () => {
     const { container } = render(
       <RiskIndicator riskScore={50} riskLevel="medium" cluster="SIRD" />
     );
-    const clusterElements = container.querySelectorAll('.bg-purple-100');
+    const clusterElements = container.querySelectorAll('.bg-orange-100');
     expect(clusterElements.length).toBeGreaterThan(0);
   });
 
@@ -67,13 +86,13 @@ describe('RiskIndicator', () => {
     const { container } = render(
       <RiskIndicator riskScore={50} riskLevel="medium" cluster="SIDD" />
     );
-    const clusterElements = container.querySelectorAll('.bg-red-100');
+    const clusterElements = container.querySelectorAll('.bg-rose-100');
     expect(clusterElements.length).toBeGreaterThan(0);
   });
 
   it('applies correct styling for MOD cluster', () => {
     const { container } = render(<RiskIndicator riskScore={50} riskLevel="medium" cluster="MOD" />);
-    const clusterElements = container.querySelectorAll('.bg-orange-100');
+    const clusterElements = container.querySelectorAll('.bg-blue-100');
     expect(clusterElements.length).toBeGreaterThan(0);
   });
 
@@ -81,15 +100,15 @@ describe('RiskIndicator', () => {
     const { container } = render(
       <RiskIndicator riskScore={50} riskLevel="medium" cluster="MARD" />
     );
-    const clusterElements = container.querySelectorAll('.bg-green-100');
+    const clusterElements = container.querySelectorAll('.bg-teal-100');
     expect(clusterElements.length).toBeGreaterThan(0);
   });
 
-  it('applies gray styling for unknown cluster', () => {
+  it('applies slate styling for unknown cluster', () => {
     const { container } = render(
       <RiskIndicator riskScore={50} riskLevel="medium" cluster="UNKNOWN" />
     );
-    const clusterElements = container.querySelectorAll('.bg-gray-100');
+    const clusterElements = container.querySelectorAll('.bg-slate-100');
     expect(clusterElements.length).toBeGreaterThan(0);
   });
 
@@ -116,10 +135,10 @@ describe('RiskIndicator', () => {
       <RiskIndicator riskScore={50} riskLevel="medium" cluster="SIRD" />
     );
     expect(screen.getByText('SIRD')).toBeInTheDocument();
-    expect(container.querySelectorAll('.bg-purple-100').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.bg-orange-100').length).toBeGreaterThan(0);
 
     rerender(<RiskIndicator riskScore={50} riskLevel="medium" cluster="SIDD" />);
     expect(screen.getByText('SIDD')).toBeInTheDocument();
-    expect(container.querySelectorAll('.bg-red-100').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.bg-rose-100').length).toBeGreaterThan(0);
   });
 });
