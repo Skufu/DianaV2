@@ -35,6 +35,9 @@ build:
 
 lint:
 	cd $(BACKEND_DIR) && $(GO) vet ./...
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		cd $(BACKEND_DIR) && golangci-lint run ./... --timeout=5m; \
+	fi
 
 test:
 	cd $(BACKEND_DIR) && $(GO) test ./...

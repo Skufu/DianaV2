@@ -34,7 +34,7 @@ func NewServiceName(store store.Store) *ServiceName {
 |--------|------|----------|------|------|
 | NewPDFExportService | func | pdf_export_service.go | export handler | PDF service constructor |
 | GenerateHealthReport | method | pdf_export_service.go | export handler | Create PDF byte array |
-| getRiskLevel | func | pdf_export_service.go | internal | Risk level string mapper |
+| riskBandLabel | func | pdf_export_service.go | internal | Risk band label mapper (LOW/MODERATE/HIGH RISK) |
 | NewNotificationService | func | notification_service.go | - | Notification service constructor |
 | QueueAssessmentReminder | method | notification_service.go | - | Schedule assessment reminder (24h) |
 | ScheduleMonthlySummary | method | notification_service.go | - | Schedule monthly summary (1st of month) |
