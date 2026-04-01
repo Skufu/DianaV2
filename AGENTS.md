@@ -184,12 +184,16 @@ make lint
 
 ### Frontend (React)
 ```bash
-# Frontend has no 'test' command in package.json
-# Playwright E2E tests are STALE (not maintained) - use at own risk
+# Run unit/component tests (Vitest + React Testing Library)
+cd frontend && npm test
 
-# cd frontend && npx playwright test
-# cd frontend && npx playwright test auth.spec.js
-# cd frontend && npx playwright test --headed
+# Run tests with coverage
+cd frontend && npm run test:coverage
+
+# Playwright E2E tests are ARCHIVED (not in CI, not maintained)
+# See frontend/e2e/AGENTS.md for archival details
+# To run locally (requires browser installation):
+# npx playwright install && cd frontend && npx playwright test
 
 # Lint frontend
 npm run lint

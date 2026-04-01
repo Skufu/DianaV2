@@ -1,5 +1,30 @@
 # E2E TESTING KNOWLEDGE BASE
 
+## ⚠️ ARCHIVAL NOTICE (2026-04-01)
+
+**Status: ARCHIVED - Not actively maintained**
+
+These E2E tests are **NOT in the CI pipeline** and are considered stale. They remain in the repository for reference purposes only.
+
+### Why they were archived:
+1. **Not in CI**: The CI workflow (`ci.yml`) only runs `npm run build` and `npm run lint` for frontend - Playwright tests were never added to CI.
+2. **Browser dependencies missing**: Playwright browsers are not installed by default, requiring `npx playwright install` to run locally.
+3. **Maintenance overhead**: Tests were becoming flaky due to UI changes and mock data drift.
+4. **Component tests preferred**: Vitest + React Testing Library component tests (`src/**/*.test.jsx`) are the primary frontend testing strategy.
+
+### Current frontend testing strategy:
+- **Unit/Component tests**: Vitest with React Testing Library (run via `npm test`)
+- **Contract tests**: Backend-frontend API contract tests (`backend/internal/http/handlers/contract_test.go`)
+- **Load tests**: k6 load tests for performance validation
+
+### To restore E2E tests (if needed):
+1. Install Playwright browsers: `npx playwright install`
+2. Add E2E job to `.github/workflows/ci.yml`
+3. Update test fixtures to match current UI selectors
+4. Fix failing tests by updating mock data and selectors
+
+---
+
 ## OVERVIEW
 Playwright-based end-to-end testing suite for DIANA, featuring mocked API tests and real backend integration tests.
 
