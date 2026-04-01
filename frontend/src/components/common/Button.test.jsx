@@ -12,26 +12,26 @@ describe('Button', () => {
   it('applies primary variant styles by default', () => {
     const { container } = render(<Button>Primary</Button>);
     const button = container.querySelector('button');
-    expect(button).toHaveClass('bg-[#4318FF]');
+    expect(button).toHaveClass('bg-diana-teal');
   });
 
   it('applies outline variant styles', () => {
     const { container } = render(<Button variant="outline">Outline</Button>);
     const button = container.querySelector('button');
     expect(button).toHaveClass('border-2');
-    expect(button).toHaveClass('border-[#4318FF]');
+    expect(button).toHaveClass('border-diana-teal');
   });
 
   it('applies ghost variant styles', () => {
     const { container } = render(<Button variant="ghost">Ghost</Button>);
     const button = container.querySelector('button');
-    expect(button).toHaveClass('text-[#A3AED0]');
+    expect(button).toHaveClass('text-slate-500');
   });
 
   it('applies danger variant styles', () => {
     const { container } = render(<Button variant="danger">Danger</Button>);
     const button = container.querySelector('button');
-    expect(button).toHaveClass('bg-[#EE5D50]');
+    expect(button).toHaveClass('bg-rose-600');
   });
 
   it('calls onClick handler when clicked', async () => {
@@ -87,12 +87,12 @@ describe('Button', () => {
   it('updates correctly when variant prop changes', () => {
     const { rerender, container } = render(<Button variant="primary">Text</Button>);
     let button = container.querySelector('button');
-    expect(button).toHaveClass('bg-[#4318FF]');
+    expect(button).toHaveClass('bg-diana-teal');
 
     rerender(<Button variant="danger">Text</Button>);
     button = container.querySelector('button');
-    expect(button).toHaveClass('bg-[#EE5D50]');
-    expect(button).not.toHaveClass('bg-[#4318FF]');
+    expect(button).toHaveClass('bg-rose-600');
+    expect(button).not.toHaveClass('bg-diana-teal');
   });
 
   it('updates correctly when disabled prop changes', async () => {
