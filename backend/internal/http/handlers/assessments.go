@@ -472,10 +472,40 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	applyCanonicalPredictionResult(&assessment, prediction)
 	ensureAssessmentLineage(&assessment, responseModelVersion, h.datasetHash)
 
+	// Use transaction for atomic assessment creation
+	txStore, err := h.store.BeginTx(c.Request.Context())
+	if err != nil {
+		log.Printf("[ERROR] Failed to begin transaction for assessment: %v", err)
+		ErrInternal(c, "Failed to create assessment")
+		return
+	}
+
+	// Ensure rollback on failure
+	defer func() {
+		if err != nil {
+			if rbErr := txStore.Rollback(c.Request.Context()); rbErr != nil {
+				log.Printf("[ERROR] Failed to rollback assessment transaction: %v", rbErr)
+			}
+		}
+	}()
+
 	// Create assessment in database
-	created, err := h.store.Assessments().Create(c.Request.Context(), assessment)
+	created, err := txStore.Assessments().Create(c.Request.Context(), assessment)
 	if err != nil {
 		log.Printf("Failed to create assessment: %v", err)
+		ErrInternal(c, "Failed to create assessment")
+		return
+	}
+
+	// Update user's last login timestamp (resets assessment reminder)
+	if err := txStore.Users().UpdateLastLogin(c.Request.Context(), int32(userID)); err != nil {
+		log.Printf("[WARN] Failed to update last login for user %d: %v", userID, err)
+		// Don't fail the transaction for this non-critical update
+	}
+
+	// Commit the transaction
+	if err := txStore.Commit(c.Request.Context()); err != nil {
+		log.Printf("[ERROR] Failed to commit assessment transaction: %v", err)
 		ErrInternal(c, "Failed to create assessment")
 		return
 	}
@@ -486,11 +516,6 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 	ensureAssessmentLineage(&assessment, responseModelVersion, h.datasetHash)
 
 	h.invalidateUserCache(c.Request.Context(), userID)
-
-	// Reset last assessment reminder sent date (UpdateLastLogin as proxy, or ignore)
-	if err := h.store.Users().UpdateLastLogin(c.Request.Context(), int32(userID)); err != nil {
-		log.Printf("[WARN] Failed to update last login for user %d: %v", userID, err)
-	}
 
 	c.JSON(http.StatusCreated, assessment)
 }

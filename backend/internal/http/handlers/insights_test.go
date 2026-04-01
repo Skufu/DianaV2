@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -32,6 +33,9 @@ func (m *mockInsightsStore) Cohort() store.CohortRepository              { retur
 func (m *mockInsightsStore) Clinics() store.ClinicRepository             { return nil }
 func (m *mockInsightsStore) AuditEvents() store.AuditEventRepository     { return nil }
 func (m *mockInsightsStore) ModelRuns() store.ModelRunRepository         { return nil }
+func (m *mockInsightsStore) BeginTx(ctx context.Context) (store.TxStore, error) {
+	return nil, fmt.Errorf("mock store does not support transactions")
+}
 
 type mockAssessmentRepo struct {
 	clusterCounts    *[]models.ClusterInsights

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -199,6 +200,9 @@ func (m *mockAdminUsersStore) RefreshTokens() store.RefreshTokenRepository { ret
 func (m *mockAdminUsersStore) Cohort() store.CohortRepository              { return nil }
 func (m *mockAdminUsersStore) Clinics() store.ClinicRepository             { return nil }
 func (m *mockAdminUsersStore) ModelRuns() store.ModelRunRepository         { return nil }
+func (m *mockAdminUsersStore) BeginTx(ctx context.Context) (store.TxStore, error) {
+	return nil, fmt.Errorf("mock store does not support transactions")
+}
 
 func setupAdminUsersRouter() (*gin.Engine, *mockAdminUsersStore) {
 	gin.SetMode(gin.TestMode)

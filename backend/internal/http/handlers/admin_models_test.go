@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -74,6 +75,9 @@ func (m *mockAdminStore) RefreshTokens() store.RefreshTokenRepository { return n
 func (m *mockAdminStore) Cohort() store.CohortRepository              { return nil }
 func (m *mockAdminStore) Clinics() store.ClinicRepository             { return nil }
 func (m *mockAdminStore) AuditEvents() store.AuditEventRepository     { return nil }
+func (m *mockAdminStore) BeginTx(ctx context.Context) (store.TxStore, error) {
+	return nil, fmt.Errorf("mock store does not support transactions")
+}
 
 type mockModelRunRepo struct {
 	runs         []models.ModelRun

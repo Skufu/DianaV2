@@ -7,6 +7,8 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/models"
 )
 
+// Store is the primary interface for database operations.
+// It provides access to all repositories and supports transactions.
 type Store interface {
 	Users() UserRepository
 	Patients() PatientRepository
@@ -17,6 +19,23 @@ type Store interface {
 	AuditEvents() AuditEventRepository
 	ModelRuns() ModelRunRepository
 	Close()
+
+	// Transaction support for multi-step operations
+	// BeginTx starts a new transaction and returns a TxStore
+	BeginTx(ctx context.Context) (TxStore, error)
+}
+
+// TxStore is a transaction-scoped store that shares the same transaction
+// across all repository operations. Changes are not committed until
+// Commit is called. Rollback discards all changes.
+type TxStore interface {
+	Store
+
+	// Commit persists all changes made within the transaction
+	Commit(ctx context.Context) error
+
+	// Rollback discards all changes made within the transaction
+	Rollback(ctx context.Context) error
 }
 
 type UserRepository interface {

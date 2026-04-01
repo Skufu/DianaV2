@@ -50,6 +50,9 @@ func (m *mockAuditStore) Cohort() store.CohortRepository              { return n
 func (m *mockAuditStore) Clinics() store.ClinicRepository             { return nil }
 func (m *mockAuditStore) ModelRuns() store.ModelRunRepository         { return nil }
 func (m *mockAuditStore) Close()                                      {}
+func (m *mockAuditStore) BeginTx(ctx context.Context) (store.TxStore, error) {
+	return nil, fmt.Errorf("mock store does not support transactions")
+}
 
 // Implement AuditEventRepository List method
 func (m *mockAuditStore) List(ctx context.Context, params models.AuditListParams) ([]models.AuditEvent, int, error) {

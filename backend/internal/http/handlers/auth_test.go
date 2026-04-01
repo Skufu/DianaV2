@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -189,6 +190,29 @@ func (f *fakeStoreAuth) AuditEvents() store.AuditEventRepository {
 
 func (f *fakeStoreAuth) ModelRuns() store.ModelRunRepository {
 	return nil
+}
+func (f *fakeStoreAuth) BeginTx(ctx context.Context) (store.TxStore, error) {
+	// Return a fakeTxStoreAuth that wraps this fakeStoreAuth
+	return &fakeTxStoreAuth{fakeStoreAuth: f}, nil
+}
+
+// fakeTxStoreAuth implements store.TxStore for testing
+type fakeTxStoreAuth struct {
+	*fakeStoreAuth
+	committed bool
+}
+
+func (f *fakeTxStoreAuth) Commit(ctx context.Context) error {
+	f.committed = true
+	return nil
+}
+
+func (f *fakeTxStoreAuth) Rollback(ctx context.Context) error {
+	return nil
+}
+
+func (f *fakeTxStoreAuth) BeginTx(ctx context.Context) (store.TxStore, error) {
+	return nil, fmt.Errorf("nested transactions not supported")
 }
 
 func (f *fakeStoreAuth) Close() {}

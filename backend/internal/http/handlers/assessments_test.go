@@ -1507,6 +1507,29 @@ func (f *fakeStore) Cohort() store.CohortRepository              { return nil }
 func (f *fakeStore) Clinics() store.ClinicRepository             { return nil }
 func (f *fakeStore) AuditEvents() store.AuditEventRepository     { return nil }
 func (f *fakeStore) ModelRuns() store.ModelRunRepository         { return nil }
+func (f *fakeStore) BeginTx(ctx context.Context) (store.TxStore, error) {
+	// Return a fakeTxStore that wraps this fakeStore
+	return &fakeTxStore{fakeStore: f}, nil
+}
+
+// fakeTxStore implements store.TxStore for testing
+type fakeTxStore struct {
+	*fakeStore
+	committed bool
+}
+
+func (f *fakeTxStore) Commit(ctx context.Context) error {
+	f.committed = true
+	return nil
+}
+
+func (f *fakeTxStore) Rollback(ctx context.Context) error {
+	return nil
+}
+
+func (f *fakeTxStore) BeginTx(ctx context.Context) (store.TxStore, error) {
+	return nil, fmt.Errorf("nested transactions not supported")
+}
 func (f *fakeStore) Close()                                      {}
 
 // mockAuthMiddleware injects mock user claims for testing

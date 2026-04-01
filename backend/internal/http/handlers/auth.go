@@ -283,7 +283,25 @@ func (h *AuthHandler) register(c *gin.Context) {
 		Role:         models.RoleUser, // Default role for new registrations
 		IsActive:     true,
 	}
-	createdUser, err := h.store.Users().Create(c.Request.Context(), user)
+
+	// Use transaction for atomic user creation with refresh token
+	txStore, err := h.store.BeginTx(c.Request.Context())
+	if err != nil {
+		log.Printf("[ERROR] Failed to begin transaction: %v", err)
+		ErrInternal(c, "Failed to create account")
+		return
+	}
+
+	// Ensure rollback on failure
+	defer func() {
+		if err != nil {
+			if rbErr := txStore.Rollback(c.Request.Context()); rbErr != nil {
+				log.Printf("[ERROR] Failed to rollback transaction: %v", rbErr)
+			}
+		}
+	}()
+
+	createdUser, err := txStore.Users().Create(c.Request.Context(), user)
 	if err != nil {
 		log.Printf("[ERROR] Failed to create user: %v", err)
 		ErrInternal(c, "Failed to create account")
@@ -315,10 +333,17 @@ func (h *AuthHandler) register(c *gin.Context) {
 	refreshToken := base64.URLEncoding.EncodeToString(refreshTokenBytes)
 	refreshTokenHash := hashToken(refreshToken)
 
-	_, err = h.store.RefreshTokens().CreateRefreshToken(c.Request.Context(), refreshTokenHash, int32(createdUser.ID), time.Now().Add(7*24*time.Hour))
+	_, err = txStore.RefreshTokens().CreateRefreshToken(c.Request.Context(), refreshTokenHash, int32(createdUser.ID), time.Now().Add(7*24*time.Hour))
 	if err != nil {
 		log.Printf("[ERROR] Failed to create refresh token: %v", err)
 		ErrInternal(c, "Failed to create refresh token")
+		return
+	}
+
+	// Commit the transaction
+	if err := txStore.Commit(c.Request.Context()); err != nil {
+		log.Printf("[ERROR] Failed to commit transaction: %v", err)
+		ErrInternal(c, "Failed to create account")
 		return
 	}
 
