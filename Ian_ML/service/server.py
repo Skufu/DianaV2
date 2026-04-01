@@ -94,6 +94,23 @@ except ImportError:
     drift_available = False
 
 try:
+    from Ian_ML.service.drift_scheduler import (
+        DriftScheduler,
+        SchedulerConfig,
+        get_drift_scheduler,
+        start_drift_scheduler,
+        stop_drift_scheduler,
+    )
+    drift_scheduler_available = True
+except ImportError:
+    DriftScheduler = None
+    SchedulerConfig = None
+    get_drift_scheduler = None
+    start_drift_scheduler = None
+    stop_drift_scheduler = None
+    drift_scheduler_available = False
+
+try:
     from Ian_ML.service.mlflow_config import get_mlflow_manager
     mlflow_available = True
 except ImportError:
@@ -548,6 +565,23 @@ def predict():
             )
 
         result["model_type"] = model_type
+        
+        # Automatically collect sample for drift monitoring
+        if drift_scheduler_available and get_drift_scheduler is not None:
+            try:
+                scheduler = get_drift_scheduler()
+                # Collect only valid numeric features for drift detection
+                drift_sample = {
+                    k: float(v) for k, v in patient_data.items()
+                    if isinstance(v, (int, float)) and v is not None and k != 'systolic' and k != 'diastolic'
+                }
+                # Remove None values
+                drift_sample = {k: v for k, v in drift_sample.items() if v is not None and not (isinstance(v, float) and (np.isnan(v) or np.isinf(v)))}
+                if drift_sample:
+                    scheduler.add_sample(drift_sample)
+            except Exception as e:
+                logger.debug("Failed to collect drift sample: %s", e)
+        
         return jsonify(result)
 
     except Exception as e:
@@ -993,6 +1027,130 @@ def acknowledge_alert(timestamp):
     if success:
         return jsonify({"success": True})
     return jsonify({"error": "Alert not found"}), 404
+
+
+# =============================================================================
+# DRIFT SCHEDULER ENDPOINTS
+# =============================================================================
+
+@app.route('/monitoring/drift/scheduler/start', methods=['POST'])
+@require_api_key
+@rate_limit
+def start_scheduler():
+    """Start the periodic drift scheduler."""
+    if not drift_scheduler_available or start_drift_scheduler is None:
+        return jsonify({"error": "Drift scheduler not available"}), 503
+    
+    try:
+        data = request.get_json() or {}
+        interval_hours = float(data.get('interval_hours', 24))
+        min_samples = int(data.get('min_samples', 10))
+        
+        config = SchedulerConfig(
+            check_interval_hours=interval_hours,
+            min_samples_for_check=min_samples,
+            enable_mlflow_logging=True,
+            enable_alerts=True,
+        )
+        
+        scheduler = start_drift_scheduler(config)
+        
+        return jsonify({
+            "success": True,
+            "message": f"Drift scheduler started (interval: {interval_hours}h, min_samples: {min_samples})",
+            "status": scheduler.get_status()
+        })
+    except Exception as e:
+        logger.exception("Failed to start drift scheduler")
+        return jsonify({"error": f"Failed to start scheduler: {e}"}), 500
+
+
+@app.route('/monitoring/drift/scheduler/stop', methods=['POST'])
+@require_api_key
+@rate_limit
+def stop_scheduler():
+    """Stop the periodic drift scheduler."""
+    if not drift_scheduler_available or stop_drift_scheduler is None:
+        return jsonify({"error": "Drift scheduler not available"}), 503
+    
+    try:
+        stop_drift_scheduler()
+        return jsonify({"success": True, "message": "Drift scheduler stopped"})
+    except Exception as e:
+        logger.exception("Failed to stop drift scheduler")
+        return jsonify({"error": f"Failed to stop scheduler: {e}"}), 500
+
+
+@app.route('/monitoring/drift/scheduler/status', methods=['GET'])
+@require_api_key
+@rate_limit
+def scheduler_status():
+    """Get drift scheduler status."""
+    if not drift_scheduler_available or get_drift_scheduler is None:
+        return jsonify({"error": "Drift scheduler not available"}), 503
+    
+    scheduler = get_drift_scheduler()
+    return jsonify(scheduler.get_status())
+
+
+@app.route('/monitoring/drift/scheduler/check', methods=['POST'])
+@require_api_key
+@rate_limit
+def manual_drift_check():
+    """Run a manual drift check immediately."""
+    if not drift_scheduler_available or get_drift_scheduler is None:
+        return jsonify({"error": "Drift scheduler not available"}), 503
+    
+    try:
+        scheduler = get_drift_scheduler()
+        report = scheduler.run_check_now()
+        
+        if report is None:
+            return jsonify({
+                "success": False,
+                "message": "Insufficient samples in buffer for drift check"
+            })
+        
+        return jsonify({
+            "success": True,
+            "has_drift": report.has_drift,
+            "severity": report.severity,
+            "feature_drifts": report.feature_drifts,
+            "recommendations": report.recommendations,
+        })
+    except Exception as e:
+        logger.exception("Manual drift check failed")
+        return jsonify({"error": f"Drift check failed: {e}"}), 500
+
+
+@app.route('/monitoring/drift/scheduler/samples', methods=['POST'])
+@require_api_key
+@rate_limit
+def add_drift_samples():
+    """Add feature samples to the drift buffer."""
+    if not drift_scheduler_available or get_drift_scheduler is None:
+        return jsonify({"error": "Drift scheduler not available"}), 503
+    
+    try:
+        data = request.get_json()
+        if not data or 'samples' not in data:
+            return jsonify({"error": "No samples provided"}), 400
+        
+        scheduler = get_drift_scheduler()
+        samples = data['samples']
+        
+        if isinstance(samples, list):
+            scheduler.add_samples(samples)
+        else:
+            scheduler.add_sample(samples)
+        
+        return jsonify({
+            "success": True,
+            "message": f"Added {len(samples) if isinstance(samples, list) else 1} sample(s) to drift buffer"
+        })
+    except Exception as e:
+        logger.exception("Failed to add drift samples")
+        return jsonify({"error": f"Failed to add samples: {e}"}), 500
 
 
 # =============================================================================
@@ -1527,6 +1685,27 @@ if __name__ == '__main__':
             print(f"  [OK] Clinical model: {clinical.models_dir.name} ({len(clinical.features)} features)")
         else:
             print(f"  [!!] Clinical model: NOT FOUND")
+    
+    # Start drift scheduler if enabled
+    drift_scheduler_enabled = os.environ.get('ML_DRIFT_SCHEDULER', 'false').lower() in ('1', 'true', 'yes')
+    drift_interval_hours = float(os.environ.get('ML_DRIFT_INTERVAL_HOURS', '24'))
+    
+    if drift_scheduler_enabled and drift_scheduler_available and start_drift_scheduler is not None:
+        try:
+            config = SchedulerConfig(
+                check_interval_hours=drift_interval_hours,
+                min_samples_for_check=10,
+                enable_mlflow_logging=mlflow_available,
+                enable_alerts=True,
+            )
+            scheduler = start_drift_scheduler(config)
+            print(f"  [OK] Drift scheduler started (interval: {drift_interval_hours}h)")
+        except Exception as e:
+            print(f"  [WARN] Drift scheduler start failed: {e}")
+    elif drift_scheduler_available:
+        print(f"  [INFO] Drift scheduler available (disabled by ML_DRIFT_SCHEDULER)")
+    else:
+        print(f"  [INFO] Drift scheduler not available")
     
     print("=" * 60)
     
