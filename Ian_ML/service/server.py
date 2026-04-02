@@ -126,6 +126,19 @@ ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:8080,http://l
 CORS(app, origins=ALLOWED_ORIGINS if os.environ.get('ENV') == 'production' else '*')
 
 
+# Import and register error handler for request size limits
+from werkzeug.exceptions import RequestEntityTooLarge
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_request_entity_too_large(error):
+    """Return a JSON response for requests exceeding MAX_CONTENT_LENGTH."""
+    return jsonify({
+        "error": "Request Entity Too Large",
+        "message": f"Request body exceeds the maximum allowed size of {MAX_CONTENT_LENGTH // (1024 * 1024)}MB"
+    }), 413
+
+
 def _dataset_hash_from_metrics(metrics):
     if isinstance(metrics, dict):
         value = metrics.get("dataset_hash")
@@ -498,6 +511,10 @@ def predict():
     """
     try:
         data = request.get_json()
+    except RequestEntityTooLarge:
+        raise  # Re-raise to let Flask error handler return 413
+
+    try:
         model_type = request.args.get('model_type', 'clinical')
         lineage_model_version = ""
         lineage_dataset_hash = ""
@@ -915,6 +932,10 @@ def check_drift():
     
     try:
         data = request.get_json()
+    except RequestEntityTooLarge:
+        raise  # Re-raise to let Flask error handler return 413
+
+    try:
         monitor = get_drift_monitor()
         
         if not data or 'features' not in data:
@@ -948,6 +969,10 @@ def set_drift_reference():
     
     try:
         data = request.get_json()
+    except RequestEntityTooLarge:
+        raise  # Re-raise to let Flask error handler return 413
+
+    try:
         monitor = get_drift_monitor()
         
         if not data or 'features' not in data:
@@ -1259,6 +1284,10 @@ def predict_batch():
     """
     try:
         data = request.get_json()
+    except RequestEntityTooLarge:
+        raise  # Re-raise to let Flask error handler return 413
+
+    try:
         model_type = request.args.get('model_type', 'clinical')
 
         if not data or "patients" not in data:
