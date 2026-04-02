@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	sqlcgen "github.com/skufu/DianaV2/backend/internal/store/sqlc"
@@ -17,7 +18,8 @@ import (
 // ============================================================================
 
 type pgAuditEventRepo struct {
-	q *sqlcgen.Queries
+	q  *sqlcgen.Queries
+	tx pgx.Tx // Transaction context for atomicity (used when repo is created via TxStore)
 }
 
 func (r *pgAuditEventRepo) Create(ctx context.Context, event models.AuditEvent) error {
@@ -119,7 +121,8 @@ func (r *pgAuditEventRepo) List(ctx context.Context, params models.AuditListPara
 // ============================================================================
 
 type pgModelRunRepo struct {
-	q *sqlcgen.Queries
+	q  *sqlcgen.Queries
+	tx pgx.Tx // Transaction context for atomicity (used when repo is created via TxStore)
 }
 
 func (r *pgModelRunRepo) List(ctx context.Context, limit, offset int) ([]models.ModelRun, int, error) {

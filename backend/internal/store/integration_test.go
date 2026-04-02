@@ -2613,3 +2613,263 @@ func TestIntegration_ClinicRepository_AdminClinicComparison(t *testing.T) {
 	// Empty slice is acceptable (no clinics exist in test database)
 	// The test verifies the operation completes without error
 }
+
+// ============================================================================
+// Transaction Atomicity Tests - Verify all repositories participate in transactions
+// ============================================================================
+
+func TestIntegration_Transaction_AllRepos_ParticipateInAtomicity(t *testing.T) {
+	if testStore == nil {
+		t.Skip("Integration test database not available")
+	}
+
+	ctx := context.Background()
+
+	// Begin transaction
+	txStore, err := testStore.BeginTx(ctx)
+	if err != nil {
+		t.Fatalf("Failed to begin transaction: %v", err)
+	}
+
+	// Create user in transaction
+	email := testEmail("tx_all_repos")
+	user := models.User{
+		Email:        email,
+		PasswordHash: "hashed_password",
+		Role:         models.RoleUser,
+	}
+	createdUser, err := txStore.Users().Create(ctx, user)
+	if err != nil {
+		txStore.Rollback(ctx)
+		t.Fatalf("Failed to create user: %v", err)
+	}
+
+	// Create refresh token in same transaction
+	tokenHash := testHash("tx_all_repos")
+	expiresAt := time.Now().Add(24 * time.Hour)
+	_, err = txStore.RefreshTokens().CreateRefreshToken(ctx, tokenHash, int32(createdUser.ID), expiresAt)
+	if err != nil {
+		txStore.Rollback(ctx)
+		t.Fatalf("Failed to create refresh token: %v", err)
+	}
+
+	// Create audit event in same transaction
+	auditEvent := models.AuditEvent{
+		Actor:      "test_tx_all_repos",
+		Action:     "test_action",
+		TargetType: "user",
+		TargetID:   int(createdUser.ID),
+		Details:    map[string]any{"test": "transaction_atomicity"},
+	}
+	err = txStore.AuditEvents().Create(ctx, auditEvent)
+	if err != nil {
+		txStore.Rollback(ctx)
+		t.Fatalf("Failed to create audit event: %v", err)
+	}
+
+	// ROLLBACK the transaction
+	err = txStore.Rollback(ctx)
+	if err != nil {
+		t.Fatalf("Failed to rollback: %v", err)
+	}
+
+	// Verify user was NOT persisted
+	_, err = testStore.Users().FindByID(ctx, int32(createdUser.ID))
+	if err == nil {
+		t.Error("Expected user to NOT exist after rollback")
+	}
+
+	// Verify refresh token was NOT persisted
+	_, err = testStore.RefreshTokens().FindRefreshToken(ctx, tokenHash)
+	if err == nil {
+		t.Error("Expected refresh token to NOT exist after rollback")
+	}
+
+	// Verify audit event was NOT persisted
+	params := models.AuditListParams{
+		Page:   1,
+		PageSize: 10,
+		Actor:  "test_tx_all_repos",
+	}
+	events, _, err := testStore.AuditEvents().List(ctx, params)
+	if err != nil {
+		t.Fatalf("Failed to list audit events: %v", err)
+	}
+	for _, e := range events {
+		if e.Actor == "test_tx_all_repos" {
+			t.Error("Expected audit event to NOT exist after rollback")
+		}
+	}
+}
+
+func TestIntegration_Transaction_AllRepos_CommitPersistsAll(t *testing.T) {
+	if testStore == nil {
+		t.Skip("Integration test database not available")
+	}
+
+	ctx := context.Background()
+
+	// Begin transaction
+	txStore, err := testStore.BeginTx(ctx)
+	if err != nil {
+		t.Fatalf("Failed to begin transaction: %v", err)
+	}
+
+	// Create user in transaction
+	email := testEmail("tx_commit_all")
+	user := models.User{
+		Email:        email,
+		PasswordHash: "hashed_password",
+		Role:         models.RoleUser,
+	}
+	createdUser, err := txStore.Users().Create(ctx, user)
+	if err != nil {
+		txStore.Rollback(ctx)
+		t.Fatalf("Failed to create user: %v", err)
+	}
+
+	// Create assessment in same transaction
+	assessment := models.Assessment{
+		UserID:   createdUser.ID,
+		HbA1c:    6.8,
+		Notes:    "integration test tx commit all repos",
+	}
+	_, err = txStore.Assessments().Create(ctx, assessment)
+	if err != nil {
+		txStore.Rollback(ctx)
+		t.Fatalf("Failed to create assessment: %v", err)
+	}
+
+	// COMMIT the transaction
+	err = txStore.Commit(ctx)
+	if err != nil {
+		t.Fatalf("Failed to commit: %v", err)
+	}
+
+	// Verify user exists after commit
+	foundUser, err := testStore.Users().FindByID(ctx, int32(createdUser.ID))
+	if err != nil {
+		t.Fatalf("Expected user to exist after commit: %v", err)
+	}
+	if foundUser.Email != email {
+		t.Errorf("Expected email %s, got %s", email, foundUser.Email)
+	}
+
+	// Verify assessment exists after commit
+	count, err := testStore.Users().GetAssessmentCountByUser(ctx, createdUser.ID)
+	if err != nil {
+		t.Fatalf("Failed to get assessment count: %v", err)
+	}
+	if count < 1 {
+		t.Error("Expected at least 1 assessment after commit")
+	}
+}
+
+func TestIntegration_Transaction_AssessmentRepo_ParticipatesInRollback(t *testing.T) {
+	if testStore == nil {
+		t.Skip("Integration test database not available")
+	}
+
+	ctx := context.Background()
+
+	// Begin transaction
+	txStore, err := testStore.BeginTx(ctx)
+	if err != nil {
+		t.Fatalf("Failed to begin transaction: %v", err)
+	}
+
+	// Create user
+	email := testEmail("tx_assessment_rb")
+	user := models.User{
+		Email:        email,
+		PasswordHash: "hashed_password",
+		Role:         models.RoleUser,
+	}
+	createdUser, err := txStore.Users().Create(ctx, user)
+	if err != nil {
+		txStore.Rollback(ctx)
+		t.Fatalf("Failed to create user: %v", err)
+	}
+
+	// Create assessment via transaction repo
+	assessment := models.Assessment{
+		UserID:   createdUser.ID,
+		HbA1c:    7.5,
+		Notes:    "integration test tx assessment rollback",
+	}
+	_, err = txStore.Assessments().Create(ctx, assessment)
+	if err != nil {
+		txStore.Rollback(ctx)
+		t.Fatalf("Failed to create assessment: %v", err)
+	}
+
+	// ROLLBACK
+	err = txStore.Rollback(ctx)
+	if err != nil {
+		t.Fatalf("Failed to rollback: %v", err)
+	}
+
+	// Verify user does NOT exist (proves atomicity)
+	_, err = testStore.Users().FindByID(ctx, int32(createdUser.ID))
+	if err == nil {
+		t.Error("Expected user to NOT exist after rollback")
+	}
+}
+
+// TestIntegration_Transaction_CohortRepo_ParticipatesInTransaction verifies
+// that CohortRepository operations participate in transactions.
+func TestIntegration_Transaction_CohortRepo_ParticipatesInTransaction(t *testing.T) {
+	if testStore == nil {
+		t.Skip("Integration test database not available")
+	}
+
+	ctx := context.Background()
+
+	// Begin transaction
+	txStore, err := testStore.BeginTx(ctx)
+	if err != nil {
+		t.Fatalf("Failed to begin transaction: %v", err)
+	}
+
+	// CohortRepository has read-only methods, verify they work within transaction
+	_, err = txStore.Cohort().StatsByCluster(ctx)
+	if err != nil {
+		txStore.Rollback(ctx)
+		t.Fatalf("Failed to get cohort stats: %v", err)
+	}
+
+	// Commit should succeed
+	err = txStore.Commit(ctx)
+	if err != nil {
+		t.Fatalf("Failed to commit: %v", err)
+	}
+}
+
+// TestIntegration_Transaction_ClinicRepo_ParticipatesInTransaction verifies
+// that ClinicRepository operations participate in transactions.
+func TestIntegration_Transaction_ClinicRepo_ParticipatesInTransaction(t *testing.T) {
+	if testStore == nil {
+		t.Skip("Integration test database not available")
+	}
+
+	ctx := context.Background()
+
+	// Begin transaction
+	txStore, err := testStore.BeginTx(ctx)
+	if err != nil {
+		t.Fatalf("Failed to begin transaction: %v", err)
+	}
+
+	// ClinicRepository has read-only methods, verify they work within transaction
+	_, err = txStore.Clinics().AdminSystemStats(ctx)
+	if err != nil {
+		txStore.Rollback(ctx)
+		t.Fatalf("Failed to get admin stats: %v", err)
+	}
+
+	// Commit should succeed
+	err = txStore.Commit(ctx)
+	if err != nil {
+		t.Fatalf("Failed to commit: %v", err)
+	}
+}

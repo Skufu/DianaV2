@@ -142,37 +142,37 @@ func (s *pgTxStore) Users() UserRepository {
 
 // Patients returns the PatientRepository implementation using the transaction.
 func (s *pgTxStore) Patients() PatientRepository {
-	return &pgPatientRepo{q: s.q}
+	return &pgPatientRepo{q: s.q, tx: s.tx}
 }
 
 // Assessments returns the AssessmentRepository implementation using the transaction.
 func (s *pgTxStore) Assessments() AssessmentRepository {
-	return &pgAssessmentRepo{q: s.q}
+	return &pgAssessmentRepo{q: s.q, tx: s.tx}
 }
 
 // RefreshTokens returns the RefreshTokenRepository implementation using the transaction.
 func (s *pgTxStore) RefreshTokens() RefreshTokenRepository {
-	return &pgRefreshTokenRepo{q: s.q}
+	return &pgRefreshTokenRepo{q: s.q, tx: s.tx}
 }
 
 // Clinics returns the ClinicRepository implementation using the transaction.
 func (s *pgTxStore) Clinics() ClinicRepository {
-	return &pgClinicRepo{q: s.q}
+	return &pgClinicRepo{q: s.q, tx: s.tx}
 }
 
 // Cohort returns the CohortRepository implementation using the transaction.
 func (s *pgTxStore) Cohort() CohortRepository {
-	return &pgCohortRepo{q: s.q}
+	return &pgCohortRepo{q: s.q, tx: s.tx}
 }
 
 // AuditEvents returns the AuditEventRepository implementation using the transaction.
 func (s *pgTxStore) AuditEvents() AuditEventRepository {
-	return &pgAuditEventRepo{q: s.q}
+	return &pgAuditEventRepo{q: s.q, tx: s.tx}
 }
 
 // ModelRuns returns the ModelRunRepository implementation using the transaction.
 func (s *pgTxStore) ModelRuns() ModelRunRepository {
-	return &pgModelRunRepo{q: s.q}
+	return &pgModelRunRepo{q: s.q, tx: s.tx}
 }
 
 // BeginTx returns an error - nested transactions are not supported.
