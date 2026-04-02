@@ -1,8 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react(),
+    // Bundle visualizer - only in analyze mode
+    mode === 'analyze' && visualizer({
+      open: true,
+      gzipSize: true,
+      brotliSize: true,
+      filename: 'dist/stats.html',
+    }),
+  ].filter(Boolean),
   server: {
     port: 4000,
     proxy: {
@@ -14,7 +24,7 @@ export default defineConfig({
   },
   build: {
     // Enable source maps for debugging (optional, can disable for smaller builds)
-    sourcemap: false,
+    sourcemap: mode === 'analyze',
     // Inline assets smaller than 4KB
     assetsInlineLimit: 4096,
     // Chunk splitting for better caching
@@ -27,6 +37,8 @@ export default defineConfig({
           charts: ['recharts'],
           // Icons library
           icons: ['lucide-react'],
+          // Animation library
+          animation: ['framer-motion'],
         },
       },
     },
@@ -34,5 +46,7 @@ export default defineConfig({
     target: 'es2020',
     // Use esbuild for minification (faster, built-in)
     minify: 'esbuild',
+    // Report chunk sizes
+    reportCompressedSize: true,
   },
-});
+}));

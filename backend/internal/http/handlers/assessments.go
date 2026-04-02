@@ -344,6 +344,19 @@ func applyCanonicalPredictionResult(assessment *models.Assessment, prediction ml
 // See validation.go in the ml package for the canonical implementation.
 
 // Create creates a new assessment for the logged-in user
+// @Summary Create assessment
+// @Description Create a new diabetes risk assessment with ML prediction
+// @Tags Assessments
+// @Accept json
+// @Produce json
+// @Param request body models.UpdateAssessmentRequest true "Assessment data"
+// @Success 201 {object} models.Assessment "Assessment created with risk prediction"
+// @Failure 400 {object} APIError "Invalid request payload"
+// @Failure 401 {object} APIError "Unauthorized"
+// @Failure 403 {object} APIError "Forbidden - Doctors must use binary_v2_no_bp model"
+// @Failure 500 {object} APIError "Internal server error"
+// @Security BearerAuth
+// @Router /users/me/assessments [post]
 func (h *AssessmentsHandler) Create(c *gin.Context) {
 	claims, err := getUserClaims(c)
 	if err != nil {
@@ -521,6 +534,15 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 }
 
 // List returns all assessments for the logged-in user
+// @Summary List user assessments
+// @Description Get all assessments for the authenticated user
+// @Tags Assessments
+// @Produce json
+// @Success 200 {array} models.Assessment "List of assessments"
+// @Failure 401 {object} APIError "Unauthorized"
+// @Failure 500 {object} APIError "Internal server error"
+// @Security BearerAuth
+// @Router /users/me/assessments [get]
 func (h *AssessmentsHandler) List(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
@@ -546,6 +568,18 @@ func (h *AssessmentsHandler) List(c *gin.Context) {
 }
 
 // Get returns a single assessment
+// @Summary Get assessment
+// @Description Get a specific assessment by ID
+// @Tags Assessments
+// @Produce json
+// @Param assessmentID path int true "Assessment ID"
+// @Success 200 {object} models.Assessment "Assessment data"
+// @Failure 400 {object} APIError "Invalid assessment ID"
+// @Failure 401 {object} APIError "Unauthorized"
+// @Failure 403 {object} APIError "Forbidden - Not the owner"
+// @Failure 404 {object} APIError "Assessment not found"
+// @Security BearerAuth
+// @Router /users/me/assessments/{assessmentID} [get]
 func (h *AssessmentsHandler) Get(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {
@@ -577,6 +611,21 @@ func (h *AssessmentsHandler) Get(c *gin.Context) {
 }
 
 // Update modifies an existing assessment
+// @Summary Update assessment
+// @Description Modify an existing assessment with new biomarker values
+// @Tags Assessments
+// @Accept json
+// @Produce json
+// @Param assessmentID path int true "Assessment ID"
+// @Param request body models.UpdateAssessmentRequest true "Updated assessment data"
+// @Success 200 {object} models.Assessment "Assessment updated"
+// @Failure 400 {object} APIError "Invalid request"
+// @Failure 401 {object} APIError "Unauthorized"
+// @Failure 403 {object} APIError "Forbidden - Not the owner"
+// @Failure 404 {object} APIError "Assessment not found"
+// @Failure 500 {object} APIError "Internal server error"
+// @Security BearerAuth
+// @Router /users/me/assessments/{assessmentID} [put]
 func (h *AssessmentsHandler) Update(c *gin.Context) {
 	claims, err := getUserClaims(c)
 	if err != nil {
@@ -698,6 +747,18 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 }
 
 // Delete removes an assessment
+// @Summary Delete assessment
+// @Description Delete an existing assessment
+// @Tags Assessments
+// @Param assessmentID path int true "Assessment ID"
+// @Success 204 "Assessment deleted"
+// @Failure 400 {object} APIError "Invalid assessment ID"
+// @Failure 401 {object} APIError "Unauthorized"
+// @Failure 403 {object} APIError "Forbidden - Not the owner"
+// @Failure 404 {object} APIError "Assessment not found"
+// @Failure 500 {object} APIError "Internal server error"
+// @Security BearerAuth
+// @Router /users/me/assessments/{assessmentID} [delete]
 func (h *AssessmentsHandler) Delete(c *gin.Context) {
 	userID, err := getUserID(c)
 	if err != nil {

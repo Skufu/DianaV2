@@ -1,0 +1,110 @@
+{
+  "version": "1.0.0",
+  "description": "Feature flag configuration for DianaV2 platform",
+  "environment": {
+    "development": {
+      "flags": {
+        "new_assessment_ui": true,
+        "enhanced_shap_explanations": true,
+        "pdf_export": true,
+        "csv_export": true,
+        "model_comparison": true,
+        "clinical_dashboard": true,
+        "audit_logging": true,
+        "rate_limiting": false,
+        "ml_drift_detection": true,
+        "dark_mode": true
+      }
+    },
+    "staging": {
+      "flags": {
+        "new_assessment_ui": true,
+        "enhanced_shap_explanations": true,
+        "pdf_export": true,
+        "csv_export": true,
+        "model_comparison": true,
+        "clinical_dashboard": true,
+        "audit_logging": true,
+        "rate_limiting": true,
+        "ml_drift_detection": true,
+        "dark_mode": true
+      }
+    },
+    "production": {
+      "flags": {
+        "new_assessment_ui": true,
+        "enhanced_shap_explanations": true,
+        "pdf_export": true,
+        "csv_export": true,
+        "model_comparison": false,
+        "clinical_dashboard": true,
+        "audit_logging": true,
+        "rate_limiting": true,
+        "ml_drift_detection": false,
+        "dark_mode": true
+      }
+    }
+  },
+  "flagDefinitions": {
+    "new_assessment_ui": {
+      "description": "Enable redesigned assessment form UI",
+      "type": "boolean",
+      "default": false,
+      "owner": "frontend-team"
+    },
+    "enhanced_shap_explanations": {
+      "description": "Enable advanced SHAP visualization features",
+      "type": "boolean",
+      "default": true,
+      "owner": "ml-team"
+    },
+    "pdf_export": {
+      "description": "Enable PDF report export functionality",
+      "type": "boolean",
+      "default": true,
+      "owner": "backend-team"
+    },
+    "csv_export": {
+      "description": "Enable CSV data export functionality",
+      "type": "boolean",
+      "default": true,
+      "owner": "backend-team"
+    },
+    "model_comparison": {
+      "description": "Enable model comparison features (experimental)",
+      "type": "boolean",
+      "default": false,
+      "owner": "ml-team"
+    },
+    "clinical_dashboard": {
+      "description": "Enable clinical dashboard for healthcare providers",
+      "type": "boolean",
+      "default": true,
+      "owner": "frontend-team"
+    },
+    "audit_logging": {
+      "description": "Enable comprehensive audit logging",
+      "type": "boolean",
+      "default": true,
+      "owner": "backend-team"
+    },
+    "rate_limiting": {
+      "description": "Enable API rate limiting",
+      "type": "boolean",
+      "default": true,
+      "owner": "backend-team"
+    },
+    "ml_drift_detection": {
+      "description": "Enable ML model drift detection",
+      "type": "boolean",
+      "default": false,
+      "owner": "ml-team"
+    },
+    "dark_mode": {
+      "description": "Enable dark mode UI theme",
+      "type": "boolean",
+      "default": true,
+      "owner": "frontend-team"
+    }
+  }
+}

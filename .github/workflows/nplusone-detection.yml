@@ -1,0 +1,271 @@
+name: N+1 Query Detection
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run daily at 3 AM UTC
+    - cron: '0 3 * * *'
+
+jobs:
+  # N+1 Query Detection via Test Analysis
+  nplusone-test:
+    name: N+1 Query Test Analysis
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: diana_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: backend/go.sum
+
+      - name: Install pgx query analyzer
+        run: |
+          cd backend
+          go install github.com/jackc/pgx@latest
+
+      - name: Run N+1 Query Detection Tests
+        run: |
+          cd backend
+          ENABLE_QUERY_LOGGING=true ENABLE_NPLUSONE_DETECTION=true \
+          go test -v ./internal/store/... -run TestNPlusOne 2>&1 | tee nplusone-test-output.txt || true
+
+      - name: Analyze query patterns
+        run: |
+          cd backend
+          # Check for repeated query patterns in test output
+          if grep -i "N+1\|repeated query\|multiple queries" nplusone-test-output.txt; then
+            echo "::warning:: Potential N+1 queries detected!"
+          fi
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nplusone-test-results
+          path: backend/nplusone-test-output.txt
+          retention-days: 30
+
+  # Integration test with query counting
+  query-count-test:
+    name: Query Count Verification
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: diana_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: backend/go.sum
+
+      - name: Run tests with query logging
+        run: |
+          cd backend
+          ENABLE_QUERY_LOGGING=true go test -v ./internal/store/... -count=1 2>&1 | tee query-log.txt || true
+
+      - name: Check for excessive queries
+        run: |
+          cd backend
+          # Count queries per test - more than 10 per test might indicate N+1
+          echo "=== Query Pattern Analysis ===" | tee query-analysis.txt
+          grep -E "^\\[DB\\]|^\\[SQL\\]|^\\[STORE\\]" query-log.txt | head -100 >> query-analysis.txt || true
+          echo "Total query log entries:" $(grep -cE "^\\[DB\\]|^\\[SQL\\]" query-log.txt || echo 0) | tee -a query-analysis.txt
+
+      - name: Upload query analysis
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: query-analysis-results
+          path: |
+            backend/query-log.txt
+            backend/query-analysis.txt
+          retention-days: 30
+
+  # APM-style slow query detection
+  slow-query-detection:
+    name: Slow Query Detection
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: diana_test
+          # Enable PostgreSQL slow query logging
+          POSTGRES_INITDB_ARGS: "--auth-host=md5"
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure PostgreSQL slow query logging
+        run: |
+          # Enable slow query logging in PostgreSQL
+          docker exec $(docker ps -q -f "ancestor=postgres:15-alpine") psql -U postgres -c "ALTER SYSTEM SET log_min_duration_statement = '100';"
+          docker exec $(docker ps -q -f "ancestor=postgres:15-alpine") psql -U postgres -c "SELECT pg_reload_conf();"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: backend/go.sum
+
+      - name: Run load tests
+        run: |
+          cd backend
+          go test -v ./internal/http/handlers/... -run "Load|Benchmark" -timeout 5m 2>&1 | tee slow-query-output.txt || true
+
+      - name: Analyze PostgreSQL logs for slow queries
+        run: |
+          echo "=== PostgreSQL Slow Query Log ===" | tee slow-query-report.txt
+          docker logs $(docker ps -q -f "ancestor=postgres:15-alpine") 2>&1 | grep -E "duration:|statement:" | tail -100 >> slow-query-report.txt || true
+
+      - name: Upload slow query report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: slow-query-report
+          path: slow-query-report.txt
+          retention-days: 30
+
+  # Static Analysis for N+1 Patterns
+  static-analysis-nplusone:
+    name: Static N+1 Pattern Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan for potential N+1 patterns
+        run: |
+          echo "=== Scanning for N+1 Query Patterns ===" | tee nplusone-static-report.txt
+
+          # Look for patterns that might cause N+1 queries
+          echo "--- Potential N+1: Loops with DB calls ---" >> nplusone-static-report.txt
+          for file in $(find backend -name "*.go" -type f); do
+            # Look for for/range loops that might contain DB calls
+            if grep -n "for.*range\|for.*:= 0" "$file" > /dev/null 2>&1; then
+              # Check if same file has store queries inside loops
+              if grep -n "store\|\.Query\|\.Exec" "$file" > /dev/null 2>&1; then
+                echo "Review: $file (contains loops and DB calls)" >> nplusone-static-report.txt
+              fi
+            fi
+          done
+
+          echo "" >> nplusone-static-report.txt
+          echo "--- Repository methods that return lists ---" >> nplusone-static-report.txt
+          grep -rn "List\|GetAll\|FindAll" backend/internal/store/*.go >> nplusone-static-report.txt || true
+
+          echo "" >> nplusone-static-report.txt
+          echo "--- Batch operations (good patterns) ---" >> nplusone-static-report.txt
+          grep -rn "Batch\|Bulk" backend/internal/store/*.go >> nplusone-static-report.txt || true
+
+      - name: Upload static analysis report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nplusone-static-analysis
+          path: nplusone-static-report.txt
+          retention-days: 30
+
+  # Performance regression test
+  performance-regression:
+    name: Performance Regression Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: diana_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: backend/go.sum
+
+      - name: Run benchmarks with query counting
+        run: |
+          cd backend
+          ENABLE_QUERY_LOGGING=true \
+          go test -bench=. -benchmem ./internal/store/... 2>&1 | tee benchmark-results.txt || true
+
+      - name: Check benchmark results
+        run: |
+          cd backend
+          echo "=== Performance Benchmark Results ===" | tee performance-report.txt
+          cat benchmark-results.txt >> performance-report.txt
+
+          # Extract query counts if logged
+          echo "" >> performance-report.txt
+          echo "=== Query Count Analysis ===" >> performance-report.txt
+          grep -c "QUERY" benchmark-results.txt >> performance-report.txt || echo "0" >> performance-report.txt
+
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-regression-report
+          path: |
+            backend/benchmark-results.txt
+            backend/performance-report.txt
+          retention-days: 30

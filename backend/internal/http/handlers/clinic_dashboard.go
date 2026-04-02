@@ -31,7 +31,7 @@ func (h *ClinicDashboardHandler) Register(rg *gin.RouterGroup) {
 // @Description Returns all clinics the current user is a member of
 // @Tags Clinics
 // @Produce json
-// @Success 200 {array} models.UserClinic
+// @Success 200 {array} map[string]any
 // @Failure 500 {object} map[string]string
 // @Router /clinics [get]
 func (h *ClinicDashboardHandler) listClinics(c *gin.Context) {

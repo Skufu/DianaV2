@@ -8,7 +8,9 @@ import (
 )
 
 func TestUserStructJSONSerialization(t *testing.T) {
+	t.Parallel()
 	t.Run("password_hash is excluded from JSON", func(t *testing.T) {
+		t.Parallel()
 		user := User{
 			ID:           1,
 			Email:        "test@example.com",
@@ -36,6 +38,7 @@ func TestUserStructJSONSerialization(t *testing.T) {
 	})
 
 	t.Run("User struct unmarshals correctly", func(t *testing.T) {
+		t.Parallel()
 		jsonData := `{
 			"id": 1,
 			"email": "test@example.com",

@@ -1,0 +1,151 @@
+# GitHub Labels Configuration
+# Apply with: gh label create --file .github/labels.yml
+# Or use GitHub CLI: gh label create -f .github/labels.yml
+
+# Priority Labels
+- name: "priority/P0"
+  color: "B60205"
+  description: "Critical - Immediate attention required (production down, security issue)"
+
+- name: "priority/P1"
+  color: "D93F0B"
+  description: "High - Important issue, fix in next sprint"
+
+- name: "priority/P2"
+  color: "FBCA04"
+  description: "Medium - Normal priority, fix when possible"
+
+- name: "priority/P3"
+  color: "0E8A16"
+  description: "Low - Nice to have, backlog item"
+
+# Type Labels
+- name: "type/bug"
+  color: "D73A4A"
+  description: "Something isn't working"
+
+- name: "type/feature"
+  color: "A2EEEF"
+  description: "New feature or enhancement"
+
+- name: "type/chore"
+  color: "C5DEF5"
+  description: "Maintenance task, refactoring, cleanup"
+
+- name: "type/docs"
+  color: "0075CA"
+  description: "Documentation only changes"
+
+- name: "type/security"
+  color: "D93F0B"
+  description: "Security-related issue or fix"
+
+- name: "type/performance"
+  color: "F9D0C4"
+  description: "Performance optimization or issue"
+
+- name: "type/testing"
+  color: "C2E0C6"
+  description: "Tests or testing infrastructure"
+
+# Area Labels
+- name: "area/backend"
+  color: "0052CC"
+  description: "Go backend (API, database, services)"
+
+- name: "area/frontend"
+  color: "53C4AF"
+  description: "React frontend (UI, components)"
+
+- name: "area/ml"
+  color: "7057FF"
+  description: "ML service (Python, models, predictions)"
+
+- name: "area/database"
+  color: "6F42C1"
+  description: "Database schema, migrations, queries"
+
+- name: "area/infrastructure"
+  color: "1D76DB"
+  description: "DevOps, CI/CD, deployment, infrastructure"
+
+- name: "area/api"
+  color: "0052CC"
+  description: "API design, endpoints, contracts"
+
+- name: "area/auth"
+  color: "B60205"
+  description: "Authentication and authorization"
+
+- name: "area/compliance"
+  color: "D93F0B"
+  description: "GDPR, HIPAA, privacy, regulatory compliance"
+
+# Status Labels
+- name: "status/blocked"
+  color: "F9D0C4"
+  description: "Blocked by another issue or dependency"
+
+- name: "status/needs-review"
+  color: "FEF2C0"
+  description: "Needs code review or design review"
+
+- name: "status/needs-repro"
+  color: "F9D0C4"
+  description: "Needs reproduction steps or investigation"
+
+- name: "status/in-progress"
+  color: "C5DEF5"
+  description: "Currently being worked on"
+
+- name: "status/waiting-feedback"
+  color: "FEF2C0"
+  description: "Waiting for user or stakeholder feedback"
+
+- name: "status/duplicate"
+  color: "CCCCCC"
+  description: "Duplicate of another issue"
+
+- name: "status/wont-fix"
+  color: "CCCCCC"
+  description: "Won't be addressed"
+
+# Clinical/Domain Labels
+- name: "clinical/data-quality"
+  color: "D4C5F9"
+  description: "Clinical data quality, validation"
+
+- name: "clinical/biomarkers"
+  color: "D4C5F9"
+  description: "Biomarker-related (HbA1c, FBS, etc.)"
+
+- name: "clinical/risk-assessment"
+  color: "D4C5F9"
+  description: "Risk assessment and prediction"
+
+# Good First Issue / Help Wanted
+- name: "good first issue"
+  color: "7057FF"
+  description: "Good for newcomers"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention is needed"
+
+# Release Labels
+- name: "release/breaking-change"
+  color: "D93F0B"
+  description: "Introduces breaking API changes"
+
+- name: "release/needs-migration"
+  color: "FBCA04"
+  description: "Requires database migration"
+
+# Automation Labels
+- name: "automated/dependency-update"
+  color: "C5DEF5"
+  description: "Automatically created by dependency management"
+
+- name: "automated/security-scan"
+  color: "D93F0B"
+  description: "Created by automated security scanning"

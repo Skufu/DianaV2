@@ -22,9 +22,19 @@ scipy>=1.12.0
 
 # Additional boosting models
 # catboost==1.2.2  # Commented out: Windows build failure (PyYAML 6.0 cython_sources error)
-#                    CatBoost is optional - production model uses XGBoost
+#                    CatBoost is optional - production model uses XGBBoost
 lightgbm>=4.5.0
 
 # Type stubs for IDE static analysis
 pandas-stubs>=2.2.0.240218
 types-PyYAML>=6.0.12
+
+# Code quality tools
+black>=24.1.0
+mypy>=1.8.0
+vulture>=2.11
+radon>=6.0.1
+import-linter>=2.0
+
+# Dependency analysis
+deptry>=0.16.0

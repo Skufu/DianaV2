@@ -1,0 +1,228 @@
+# DianaV2 Alert Rules
+# Prometheus-style alerting rules for the DianaV2 medical AI platform
+# Configure these in your monitoring system (Prometheus, Grafana, Datadog, etc.)
+
+groups:
+  - name: diana-health
+    interval: 30s
+    rules:
+      # Service availability
+      - alert: DianaBackendDown
+        expr: up{job="diana-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Diana backend is down"
+          description: "The Diana backend service has been down for more than 1 minute"
+          runbook_url: "https://wiki.example.com/runbooks/diana-backend-down"
+
+      - alert: DianaMLServiceDown
+        expr: up{job="diana-ml"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: ml
+        annotations:
+          summary: "Diana ML service is down"
+          description: "The Diana ML service has been down for more than 2 minutes"
+          runbook_url: "https://wiki.example.com/runbooks/diana-ml-down"
+
+      # Health check failures
+      - alert: DianaHealthCheckFailing
+        expr: http_requests_total{job="diana-backend", path="/api/v1/health", status!~"2.."} > 0
+        for: 2m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Diana health checks are failing"
+          description: "Health check endpoint is returning non-2xx status codes"
+
+  - name: diana-performance
+    interval: 1m
+    rules:
+      # High latency
+      - alert: DianaHighLatency
+        expr: histogram_quantile(0.95, http_request_duration_seconds_bucket{job="diana-backend"}) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High latency on Diana API"
+          description: "95th percentile latency is above 2 seconds"
+
+      - alert: DianaVeryHighLatency
+        expr: histogram_quantile(0.99, http_request_duration_seconds_bucket{job="diana-backend"}) > 5
+        for: 3m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Very high latency on Diana API"
+          description: "99th percentile latency is above 5 seconds"
+
+      # Error rate
+      - alert: DianaHighErrorRate
+        expr: rate(http_requests_total{job="diana-backend", status=~"5.."}[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High error rate on Diana API"
+          description: "Error rate is above 10% for the last 5 minutes"
+
+      - alert: DianaCriticalErrorRate
+        expr: rate(http_requests_total{job="diana-backend", status=~"5.."}[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Critical error rate on Diana API"
+          description: "Error rate is above 50% for the last 5 minutes"
+
+  - name: diana-ml
+    interval: 1m
+    rules:
+      # ML circuit breaker
+      - alert: DianaMLCircuitBreakerOpen
+        expr: ml_circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: warning
+          team: ml
+        annotations:
+          summary: "ML circuit breaker is open"
+          description: "The ML service circuit breaker is in OPEN state, using fallback predictor"
+
+      # ML prediction failures
+      - alert: DianaMLPredictionFailures
+        expr: rate(ml_predictions_total{status="failure"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: ml
+        annotations:
+          summary: "ML prediction failures are high"
+          description: "More than 10% of ML predictions are failing"
+
+      # Model drift
+      - alert: DianaMLDriftDetected
+        expr: ml_drift_alerts_unacknowledged > 0
+        for: 1h
+        labels:
+          severity: warning
+          team: ml
+        annotations:
+          summary: "Model drift detected"
+          description: "There are unacknowledged drift alerts"
+
+  - name: diana-business
+    interval: 5m
+    rules:
+      # Assessment volume
+      - alert: DianaLowAssessmentVolume
+        expr: rate(assessments_created_total[1h]) < 1
+        for: 1h
+        labels:
+          severity: info
+          team: product
+        annotations:
+          summary: "Low assessment volume"
+          description: "Less than 1 assessment per hour in the last hour"
+
+      # Circuit breaker usage
+      - alert: DianaCircuitBreakerTriggered
+        expr: changes(ml_circuit_breaker_state[1h]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          team: ml
+        annotations:
+          summary: "Circuit breaker state changed"
+          description: "The ML circuit breaker state has changed in the last hour"
+
+  - name: diana-security
+    interval: 1m
+    rules:
+      # High rate limiting
+      - alert: DianaHighRateLimiting
+        expr: rate(http_requests_total{status="429"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "High rate limiting"
+          description: "Many requests are being rate limited"
+
+      # Authentication failures
+      - alert: DianaHighAuthFailures
+        expr: rate(http_requests_total{path="/api/v1/auth/login", status="401"}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Many authentication attempts are failing"
+
+# Alert routing configuration (for Alertmanager)
+# This would be in a separate alertmanager.yml file
+alertmanager_config: |
+  global:
+    slack_api_url: '${SLACK_WEBHOOK_URL}'
+    smtp_smarthost: 'smtp.gmail.com:587'
+    smtp_from: 'alerts@diana.example.com'
+    smtp_auth_username: '${SMTP_USER}'
+    smtp_auth_password: '${SMTP_PASS}'
+
+  route:
+    receiver: default
+    group_by: ['alertname', 'severity', 'team']
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+      - match:
+          severity: critical
+        receiver: critical
+        continue: true
+      - match:
+          team: ml
+        receiver: ml-team
+      - match:
+          team: platform
+        receiver: platform-team
+
+  receivers:
+    - name: default
+      slack_configs:
+        - channel: '#alerts'
+          title: 'Diana Alert: {{ .GroupLabels.alertname }}'
+          text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}'
+
+    - name: critical
+      pagerduty_configs:
+        - service_key: '${PAGERDUTY_KEY}'
+          severity: critical
+      slack_configs:
+        - channel: '#critical-alerts'
+          title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+          text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}'
+
+    - name: ml-team
+      slack_configs:
+        - channel: '#ml-alerts'
+          title: 'ML Alert: {{ .GroupLabels.alertname }}'
+          text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ end }}'
+
+    - name: platform-team
+      email_configs:
+        - to: 'platform-team@example.com'
+          subject: 'Diana Platform Alert: {{ .GroupLabels.alertname }}'
+          body: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}'

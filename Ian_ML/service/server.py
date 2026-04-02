@@ -26,13 +26,14 @@ Usage:
     
 Environment:
     ML_PORT: Port to run on (default: 5000)
+    SENTRY_ENABLED: Enable Sentry error tracking (default: false)
+    SENTRY_DSN: Sentry DSN
 """
 
 import importlib
 import os
 import sys
 import json
-import logging
 import threading
 import functools
 import time
@@ -41,6 +42,13 @@ import math
 from collections import defaultdict
 from typing import Any
 import numpy as np
+
+# Setup structured logging and Sentry
+from Ian_ML.service.logging_config import setup_logging, set_request_context, clear_request_context
+from Ian_ML.service.sentry_config import init_sentry, capture_exception, set_tag, configure_sentry_for_flask
+
+# Initialize logging first
+logger = setup_logging(service_name='diana-ml', version='2.0.0')
 flask_module = importlib.import_module("flask")
 Flask = flask_module.Flask
 request = flask_module.request
@@ -117,10 +125,14 @@ except ImportError:
     get_mlflow_manager = None
     mlflow_available = False
 
-logger = logging.getLogger(__name__)
+# Use the already initialized logger
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
+
+# Initialize Sentry
+init_sentry()
+configure_sentry_for_flask(app)
 
 ALLOWED_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:8080,http://localhost:4000').split(',')
 CORS(app, origins=ALLOWED_ORIGINS if os.environ.get('ENV') == 'production' else '*')
@@ -224,6 +236,65 @@ def _drift_baseline_for_lineage(model_version: str, dataset_hash: str, feature_s
     if feature_schema_version and not baseline.get("feature_schema_version"):
         baseline["feature_schema_version"] = feature_schema_version
     return baseline
+
+
+# Request context middleware - extract trace headers
+@app.before_request
+def set_request_context_from_headers():
+    """Extract distributed tracing headers and set request context."""
+    # Get trace headers
+    request_id = request.headers.get('X-Request-ID')
+    trace_id = request.headers.get('X-Trace-ID')
+    span_id = request.headers.get('X-Span-ID')
+    parent_span_id = request.headers.get('X-Parent-Span-ID')
+
+    # Set request context for logging
+    set_request_context(
+        request_id=request_id,
+        trace_id=trace_id,
+        span_id=span_id
+    )
+
+    # Set Sentry tags
+    if request_id:
+        set_tag('request.id', request_id)
+    if trace_id:
+        set_tag('trace.id', trace_id)
+    if span_id:
+        set_tag('span.id', span_id)
+
+    # Store in Flask g for access in views
+    g.request_id = request_id
+    g.trace_id = trace_id
+    g.span_id = span_id
+    g.parent_span_id = parent_span_id
+
+
+@app.after_request
+def add_trace_headers(response):
+    """Add trace headers to response."""
+    # Propagate trace context back
+    if hasattr(g, 'request_id') and g.request_id:
+        response.headers['X-Request-ID'] = g.request_id
+    if hasattr(g, 'trace_id') and g.trace_id:
+        response.headers['X-Trace-ID'] = g.trace_id
+
+    # Log response
+    logger.info(
+        "Request completed",
+        extra={
+            'method': request.method,
+            'path': request.path,
+            'status': response.status_code,
+            'request_id': getattr(g, 'request_id', None),
+            'trace_id': getattr(g, 'trace_id', None),
+        }
+    )
+
+    # Clear context after request
+    clear_request_context()
+
+    return response
 
 
 class RateLimiter:
@@ -376,7 +447,7 @@ def require_api_key(f):
 
 @app.route('/health', methods=['GET'])
 def health():
-    """Health check endpoint."""
+    """Health check endpoint with observability info."""
     clinical_available = get_clinical_predictor() is not None
     return jsonify({
         "status": "healthy",
@@ -388,6 +459,11 @@ def health():
         "features": {
             "ada": REQUIRED_FEATURES,
             "clinical": CLINICAL_FEATURES
+        },
+        "observability": {
+            "request_id": getattr(g, 'request_id', None),
+            "trace_id": getattr(g, 'trace_id', None),
+            "span_id": getattr(g, 'span_id', None),
         }
     })
 

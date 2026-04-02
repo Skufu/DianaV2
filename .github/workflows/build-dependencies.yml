@@ -1,0 +1,493 @@
+name: Build & Dependencies
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # 1. Large File Detection - Flags files over 500KB
+  large-file-detection:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect large files
+        run: |
+          echo "🔍 Scanning for files over 500KB..."
+          LARGE_FILES=$(find . -type f -size +500k \
+            ! -path "./.git/*" \
+            ! -path "./node_modules/*" \
+            ! -path "./venv/*" \
+            ! -path "./.venv/*" \
+            ! -path "./__pycache__/*" \
+            ! -path "./frontend/node_modules/*" \
+            ! -path "./backend/vendor/*" \
+            ! -name "*.lock" \
+            ! -name "package-lock.json" \
+            ! -name "Pipfile.lock" \
+            ! -name "go.sum" \
+            ! -name "*.bin" \
+            ! -name "*.pb" \
+            2>/dev/null | head -50)
+
+          if [ -n "$LARGE_FILES" ]; then
+            echo "❌ ERROR: Found files over 500KB limit:"
+            echo "$LARGE_FILES" | while read file; do
+              SIZE=$(du -h "$file" | cut -f1)
+              echo "  - $file ($SIZE)"
+            done
+            echo ""
+            echo "Please remove these large files or add them to .gitignore if they should be excluded."
+            exit 1
+          else
+            echo "✅ No files over 500KB found"
+          fi
+
+      - name: Check git history for large files
+        run: |
+          echo "🔍 Checking git history for large files..."
+          # Check the last 20 commits for files that were added and are now large
+          git rev-list --objects --all --max-count=20 | \
+            git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' | \
+            awk '$1 == "blob" && $3 > 512000 {print $3, $4}' | sort -rn | head -20 > /tmp/large_in_history.txt || true
+
+          if [ -s /tmp/large_in_history.txt ]; then
+            echo "⚠️ WARNING: Large files found in recent git history (>500KB):"
+            cat /tmp/large_in_history.txt | while read size file; do
+              SIZE_HUMAN=$(numfmt --to=iec $size)
+              echo "  - $file ($SIZE_HUMAN)"
+            done
+            echo ""
+            echo "Note: These may be acceptable if they're binary assets (images, models, etc.)"
+          else
+            echo "✅ No large files in recent git history"
+          fi
+
+  # 2. Technical Debt Tracking - TODO/FIXME scanner
+  tech-debt-tracking:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Scan for TODO/FIXME/HACK markers
+        run: |
+          echo "🔍 Scanning for technical debt markers..."
+
+          # Create output file
+          mkdir -p reports
+
+          # Scan for TODO, FIXME, HACK, XXX markers (excluding this workflow and third-party)
+          echo "## Technical Debt Report" > reports/tech-debt-report.md
+          echo "Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> reports/tech-debt-report.md
+          echo "" >> reports/tech-debt-report.md
+
+          # Count markers by type
+          TODO_COUNT=$(grep -r "TODO" --include="*.go" --include="*.py" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.sql" --exclude-dir={node_modules,venv,.venv,__pycache__,.git,vendor} . 2>/dev/null | wc -l || echo "0")
+          FIXME_COUNT=$(grep -r "FIXME" --include="*.go" --include="*.py" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.sql" --exclude-dir={node_modules,venv,.venv,__pycache__,.git,vendor} . 2>/dev/null | wc -l || echo "0")
+          HACK_COUNT=$(grep -r "HACK" --include="*.go" --include="*.py" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.sql" --exclude-dir={node_modules,venv,.venv,__pycache__,.git,vendor} . 2>/dev/null | wc -l || echo "0")
+          XXX_COUNT=$(grep -r "XXX" --include="*.go" --include="*.py" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.sql" --exclude-dir={node_modules,venv,.venv,__pycache__,.git,vendor} . 2>/dev/null | wc -l || echo "0")
+
+          echo "### Summary" >> reports/tech-debt-report.md
+          echo "- **TODO**: $TODO_COUNT" >> reports/tech-debt-report.md
+          echo "- **FIXME**: $FIXME_COUNT" >> reports/tech-debt-report.md
+          echo "- **HACK**: $HACK_COUNT" >> reports/tech-debt-report.md
+          echo "- **XXX**: $XXX_COUNT" >> reports/tech-debt-report.md
+          echo "" >> reports/tech-debt-report.md
+
+          TOTAL=$((TODO_COUNT + FIXME_COUNT + HACK_COUNT + XXX_COUNT))
+
+          if [ $TOTAL -gt 0 ]; then
+            echo "### Details" >> reports/tech-debt-report.md
+            echo "" >> reports/tech-debt-report.md
+
+            echo "#### TODO items" >> reports/tech-debt-report.md
+            grep -rn "TODO" --include="*.go" --include="*.py" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.sql" --exclude-dir={node_modules,venv,.venv,__pycache__,.git,vendor} . 2>/dev/null | head -30 >> reports/tech-debt-report.md || echo "None found" >> reports/tech-debt-report.md
+            echo "" >> reports/tech-debt-report.md
+
+            echo "#### FIXME items" >> reports/tech-debt-report.md
+            grep -rn "FIXME" --include="*.go" --include="*.py" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.sql" --exclude-dir={node_modules,venv,.venv,__pycache__,.git,vendor} . 2>/dev/null | head -30 >> reports/tech-debt-report.md || echo "None found" >> reports/tech-debt-report.md
+            echo "" >> reports/tech-debt-report.md
+
+            echo "#### HACK items" >> reports/tech-debt-report.md
+            grep -rn "HACK" --include="*.go" --include="*.py" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --include="*.sql" --exclude-dir={node_modules,venv,.venv,__pycache__,.git,vendor} . 2>/dev/null | head -30 >> reports/tech-debt-report.md || echo "None found" >> reports/tech-debt-report.md
+          fi
+
+          cat reports/tech-debt-report.md
+
+          echo ""
+          echo "📊 Technical Debt Summary:"
+          echo "  - TODO: $TODO_COUNT"
+          echo "  - FIXME: $FIXME_COUNT"
+          echo "  - HACK: $HACK_COUNT"
+          echo "  - XXX: $XXX_COUNT"
+          echo "  - Total: $TOTAL"
+
+          # Fail if there are critical FIXME items (more than 10)
+          if [ $FIXME_COUNT -gt 10 ]; then
+            echo "❌ ERROR: More than 10 FIXME items found. Please address technical debt."
+            exit 1
+          fi
+
+      - name: Upload tech debt report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tech-debt-report
+          path: reports/tech-debt-report.md
+          retention-days: 30
+
+  # 3. Monorepo Tooling - Verify workspace configuration
+  monorepo-tooling:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify workspace configuration
+        run: |
+          echo "🔍 Verifying monorepo workspace configuration..."
+
+          if [ ! -f "package.json" ]; then
+            echo "❌ ERROR: Root package.json not found"
+            exit 1
+          fi
+
+          if ! grep -q '"workspaces"' package.json; then
+            echo "❌ ERROR: Workspaces not configured in root package.json"
+            exit 1
+          fi
+
+          echo "✅ Root package.json with workspaces found"
+
+          # Verify frontend has its own package.json
+          if [ ! -f "frontend/package.json" ]; then
+            echo "❌ ERROR: frontend/package.json not found"
+            exit 1
+          fi
+
+          echo "✅ Frontend package.json found"
+
+          # Verify Ian_ML has pyproject.toml
+          if [ ! -f "Ian_ML/pyproject.toml" ]; then
+            echo "❌ ERROR: Ian_ML/pyproject.toml not found"
+            exit 1
+          fi
+
+          echo "✅ Ian_ML pyproject.toml found"
+
+          echo "✅ Monorepo structure validated"
+
+      - name: Check for Turborepo configuration (optional)
+        run: |
+          if [ -f "turbo.json" ]; then
+            echo "✅ Turborepo configuration found"
+          else
+            echo "ℹ️ Turborepo not configured (optional)"
+          fi
+
+  # 4. Feature Flag Infrastructure - Verify configuration exists
+  feature-flag-infrastructure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify feature flag configuration
+        run: |
+          echo "🔍 Verifying feature flag infrastructure..."
+
+          # Check for feature flags config
+          if [ -f "configs/feature-flags.json" ] || [ -f "configs/feature-flags.yaml" ] || [ -f "configs/feature-flags.yml" ]; then
+            echo "✅ Feature flags configuration found in configs/"
+          else
+            echo "⚠️ WARNING: Feature flags configuration not found in configs/"
+            echo "  Expected: configs/feature-flags.json or .yaml/.yml"
+          fi
+
+          # Check backend for feature flag support
+          if grep -r "FeatureFlag\|feature.*flag\|FEATURE_FLAG" --include="*.go" backend/ 2>/dev/null | head -5; then
+            echo "✅ Backend feature flag references found"
+          else
+            echo "ℹ️ No backend feature flag implementation detected"
+          fi
+
+          # Check frontend for feature flag support
+          if grep -r "featureFlag\|useFeatureFlag\|FEATURE_FLAG" --include="*.js" --include="*.jsx" frontend/src/ 2>/dev/null | head -5; then
+            echo "✅ Frontend feature flag references found"
+          else
+            echo "ℹ️ No frontend feature flag implementation detected"
+          fi
+
+  # 5. Release Notes Automation - Check conventional commits
+  release-notes-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify conventional commits
+        run: |
+          echo "🔍 Checking conventional commit format..."
+
+          # Get commits from the last 30 days
+          COMMITS=$(git log --since="30 days ago" --pretty=format:"%s" --no-merges)
+
+          # Check if commits follow conventional commit format
+          CONVENTIONAL_PATTERN="^(feat|fix|docs|style|refactor|test|chore|build|ci|perf)(\(.+\))?: .+"
+
+          NON_CONVENTIONAL=$(echo "$COMMITS" | grep -vE "$CONVENTIONAL_PATTERN" | head -10 || true)
+
+          if [ -n "$NON_CONVENTIONAL" ]; then
+            echo "⚠️ WARNING: Some commits don't follow conventional commit format:"
+            echo "$NON_CONVENTIONAL" | while read commit; do
+              echo "  - $commit"
+            done
+            echo ""
+            echo "Expected format: type(scope): description"
+            echo "Types: feat, fix, docs, style, refactor, test, chore, build, ci, perf"
+          else
+            echo "✅ Recent commits follow conventional commit format"
+          fi
+
+      - name: Generate changelog preview
+        run: |
+          echo "## Changelog Preview (Last 20 commits)" > changelog-preview.md
+          echo "" >> changelog-preview.md
+
+          # Group commits by type
+          echo "### Features" >> changelog-preview.md
+          git log --since="30 days ago" --pretty=format:"- %s" --no-merges | grep -E "^.*feat(\(.+\))?:" | head -10 >> changelog-preview.md || echo "- None" >> changelog-preview.md
+          echo "" >> changelog-preview.md
+
+          echo "### Bug Fixes" >> changelog-preview.md
+          git log --since="30 days ago" --pretty=format:"- %s" --no-merges | grep -E "^.*fix(\(.+\))?:" | head -10 >> changelog-preview.md || echo "- None" >> changelog-preview.md
+          echo "" >> changelog-preview.md
+
+          echo "### Documentation" >> changelog-preview.md
+          git log --since="30 days ago" --pretty=format:"- %s" --no-merges | grep -E "^.*docs(\(.+\))?:" | head -10 >> changelog-preview.md || echo "- None" >> changelog-preview.md
+          echo "" >> changelog-preview.md
+
+          echo "### Other Changes" >> changelog-preview.md
+          git log --since="30 days ago" --pretty=format:"- %s" --no-merges | grep -vE "^(feat|fix|docs)(\(.+\))?:" | head -10 >> changelog-preview.md || echo "- None" >> changelog-preview.md
+
+          cat changelog-preview.md
+
+  # 6. Heavy Dependency Detection - Bundle size analysis
+  bundle-size-analysis:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build with bundle analysis
+        run: npm run build
+
+      - name: Analyze bundle size
+        run: |
+          echo "🔍 Analyzing bundle size..."
+
+          # Check if dist directory exists
+          if [ ! -d "dist" ]; then
+            echo "❌ ERROR: dist directory not found after build"
+            exit 1
+          fi
+
+          # Get total size
+          TOTAL_SIZE=$(du -sb dist/ | cut -f1)
+          TOTAL_SIZE_MB=$(echo "scale=2; $TOTAL_SIZE / 1024 / 1024" | bc)
+
+          echo "Total bundle size: ${TOTAL_SIZE_MB}MB"
+
+          # Create size report
+          mkdir -p ../reports
+          echo "## Bundle Size Report" > ../reports/bundle-size-report.md
+          echo "Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> ../reports/bundle-size-report.md
+          echo "" >> ../reports/bundle-size-report.md
+          echo "### Total Size" >> ../reports/bundle-size-report.md
+          echo "${TOTAL_SIZE_MB}MB ($TOTAL_SIZE bytes)" >> ../reports/bundle-size-report.md
+          echo "" >> ../reports/bundle-size-report.md
+
+          echo "### Largest Files" >> ../reports/bundle-size-report.md
+          find dist/ -type f -exec du -h {} + | sort -rh | head -20 >> ../reports/bundle-size-report.md
+
+          cat ../reports/bundle-size-report.md
+
+          # Set size limit (e.g., 10MB)
+          SIZE_LIMIT=$((10 * 1024 * 1024))  # 10MB in bytes
+
+          if [ $TOTAL_SIZE -gt $SIZE_LIMIT ]; then
+            echo "❌ ERROR: Bundle size exceeds 10MB limit"
+            exit 1
+          else
+            echo "✅ Bundle size within acceptable range (<10MB)"
+          fi
+
+      - name: Check for source map explorer
+        run: |
+          if npm list --depth=0 | grep -q "source-map-explorer"; then
+            echo "✅ source-map-explorer found for detailed analysis"
+          else
+            echo "ℹ️ source-map-explorer not installed (optional for detailed analysis)"
+          fi
+
+      - name: Upload bundle report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bundle-size-report
+          path: reports/bundle-size-report.md
+          retention-days: 30
+
+  # 7. Unused Dependencies Detection
+  unused-dependencies:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [frontend, ml, backend]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Frontend - depcheck
+      - name: Setup Node.js (Frontend)
+        if: matrix.component == 'frontend'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Check frontend unused dependencies
+        if: matrix.component == 'frontend'
+        working-directory: frontend
+        run: |
+          echo "🔍 Checking frontend for unused dependencies..."
+
+          # Install depcheck
+          npm install -g depcheck
+
+          # Run depcheck
+          depcheck --json > ../reports/frontend-unused-deps.json || true
+
+          echo "### Frontend Unused Dependencies" > ../reports/unused-deps-report.md
+          echo "" >> ../reports/unused-deps-report.md
+          cat ../reports/frontend-unused-deps.json | jq -r '.dependencies[] | "- \(.)"' >> ../reports/unused-deps-report.md 2>/dev/null || echo "None detected" >> ../reports/unused-deps-report.md
+          echo "" >> ../reports/unused-deps-report.md
+
+          echo "### Frontend Missing Dependencies" >> ../reports/unused-deps-report.md
+          cat ../reports/frontend-unused-deps.json | jq -r '.missing | keys[] | "- \(.)"' >> ../reports/unused-deps-report.md 2>/dev/null || echo "None detected" >> ../reports/unused-deps-report.md
+
+          cat ../reports/unused-deps-report.md
+
+      # Python ML - deptry
+      - name: Setup Python (ML)
+        if: matrix.component == 'ml'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: Ian_ML/requirements.txt
+
+      - name: Check ML unused dependencies
+        if: matrix.component == 'ml'
+        working-directory: Ian_ML
+        run: |
+          echo "🔍 Checking ML service for unused dependencies..."
+
+          # Install dependencies first
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+          # Install deptry
+          pip install deptry
+
+          # Run deptry
+          deptry . --output ../reports/ml-unused-deps.txt || true
+
+          echo "### ML Unused Dependencies" > ../reports/ml-unused-deps-report.md
+          if [ -f ../reports/ml-unused-deps.txt ]; then
+            cat ../reports/ml-unused-deps.txt >> ../reports/ml-unused-deps-report.md
+          else
+            echo "No unused dependencies detected" >> ../reports/ml-unused-deps-report.md
+          fi
+
+          cat ../reports/ml-unused-deps-report.md
+
+      # Go Backend - go mod tidy check
+      - name: Setup Go (Backend)
+        if: matrix.component == 'backend'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: backend/go.sum
+
+      - name: Check Go unused dependencies
+        if: matrix.component == 'backend'
+        working-directory: backend
+        run: |
+          echo "🔍 Checking Go backend for unused dependencies..."
+
+          # Copy go.mod and go.sum for comparison
+          cp go.mod go.mod.before
+          cp go.sum go.sum.before
+
+          # Run go mod tidy
+          go mod tidy
+
+          # Check if there are changes
+          if ! diff -q go.mod.before go.mod >/dev/null 2>&1 || ! diff -q go.sum.before go.sum >/dev/null 2>&1; then
+            echo "⚠️ WARNING: go mod tidy found unused or missing dependencies"
+            echo "### Go Module Changes Required" > ../reports/go-unused-deps-report.md
+            echo "" >> ../reports/go-unused-deps-report.md
+            echo "go.mod changes:" >> ../reports/go-unused-deps-report.md
+            diff go.mod.before go.mod >> ../reports/go-unused-deps-report.md 2>&1 || true
+            echo "" >> ../reports/go-unused-deps-report.md
+            echo "go.sum changes:" >> ../reports/go-unused-deps-report.md
+            diff go.sum.before go.sum >> ../reports/go-unused-deps-report.md 2>&1 || true
+
+            cat ../reports/go-unused-deps-report.md
+
+            # Restore original files
+            mv go.mod.before go.mod
+            mv go.sum.before go.sum
+
+            exit 1
+          else
+            echo "✅ Go module dependencies are clean"
+            echo "### Go Backend Dependencies" > ../reports/go-unused-deps-report.md
+            echo "✅ All dependencies are used" >> ../reports/go-unused-deps-report.md
+          fi
+
+      - name: Upload unused deps report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unused-dependencies-reports
+          path: reports/*-unused-deps-report.md
+          retention-days: 30

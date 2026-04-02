@@ -54,6 +54,30 @@ db_down:
 db_status:
 	$(GOOSE) -dir $(MIGRATIONS_DIR) postgres "$$DB_DSN" status
 
+# Swagger/OpenAPI documentation generation
+swagger:
+	@echo "Generating Swagger documentation..."
+	cd $(BACKEND_DIR) && if command -v swag >/dev/null 2>&1; then \
+		swag init -g cmd/server/main.go -d . --parseDependency --parseInternal -o ./docs; \
+	else \
+		echo "swag not found, installing..."; \
+		go install github.com/swaggo/swag/cmd/swag@latest && \
+		swag init -g cmd/server/main.go -d . --parseDependency --parseInternal -o ./docs; \
+	fi
+
+swagger-validate:
+	@echo "Validating Swagger documentation..."
+	@if [ ! -f $(BACKEND_DIR)/docs/swagger.json ]; then \
+		echo "❌ swagger.json not found. Run 'make swagger' first."; \
+		exit 1; \
+	fi
+	@echo "✓ swagger.json exists"
+	@if command -v jq >/dev/null 2>&1; then \
+		jq empty $(BACKEND_DIR)/docs/swagger.json 2>/dev/null && echo "✓ swagger.json is valid JSON"; \
+	else \
+		echo "⚠️  jq not installed, skipping JSON validation"; \
+	fi
+
 sqlc:
 	cd $(BACKEND_DIR) && $(SQLC) generate
 
@@ -83,6 +107,12 @@ ml:
 
 ml-train:
 	$(PYTHON) Ian_ML/training/train_binary_v2_no_bp.py
+
+test-ml:
+	cd Ian_ML && python -m pytest tests/ -v --tb=short
+
+# Migration shortcut
+migrate: db_up
 
 # Start all services (ML + Backend + Frontend)
 start-all:
