@@ -164,7 +164,12 @@ catboost_info/
 # Ralph logs and tmp
 ralph/*.txt
 ralph/tmp/
-.opencode
+
+# Tool/agent directories
+.opencode/
+.factory/
+.skills/
+.odino/
 
 # Nested repositories
 Neoron_ML/
