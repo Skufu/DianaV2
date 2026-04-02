@@ -9,6 +9,9 @@ import json
 from types import SimpleNamespace
 from unittest.mock import patch
 
+# Import constants from server for testing
+from ..service.server import MAX_CONTENT_LENGTH, MAX_BATCH_SIZE
+
 
 @pytest.fixture
 def mock_client():
@@ -660,3 +663,132 @@ class TestDriftLineageMetadata:
         assert baseline['dataset_hash'] == 'dataset-sha-xyz'
         assert baseline['feature_schema_version'] == 'features:6'
         assert baseline['lineage_status'] == 'healthy'
+
+
+class TestRequestSizeValidation:
+    """Test that request body size limits are enforced to prevent memory exhaustion."""
+
+    def test_max_content_length_is_10mb(self):
+        """Verify MAX_CONTENT_LENGTH is set to 10MB."""
+        assert MAX_CONTENT_LENGTH == 10 * 1024 * 1024
+
+    def test_max_batch_size_is_1000(self):
+        """Verify MAX_BATCH_SIZE is set to 1000 patients."""
+        assert MAX_BATCH_SIZE == 1000
+
+    def test_predict_rejects_oversized_payload_413(self, mock_client):
+        """Test that /predict endpoint rejects payloads exceeding MAX_CONTENT_LENGTH with 413."""
+        # Create a payload larger than 10MB (11MB)
+        oversized_data = {
+            'bmi': 32.0,
+            'triglycerides': 150.0,
+            'ldl': 130.0,
+            'hdl': 50.0,
+            'age': 55,
+            # Add a large payload field to exceed the limit
+            'oversized_field': 'x' * (11 * 1024 * 1024)
+        }
+
+        response = mock_client.post('/predict',
+            json=oversized_data,
+            content_type='application/json')
+
+        # Flask returns 413 Request Entity Too Large when MAX_CONTENT_LENGTH is exceeded
+        assert response.status_code == 413
+
+    def test_predict_accepts_normal_sized_payload(self, mock_client, mock_predictor):
+        """Test that /predict endpoint accepts normal sized payloads."""
+        with patch('Ian_ML.service.server.get_clinical_predictor_for') as mock_get_clinical:
+            mock_get_clinical.return_value = mock_predictor
+            response = mock_client.post('/predict',
+                json={
+                    'bmi': 32.0,
+                    'triglycerides': 150.0,
+                    'ldl': 130.0,
+                    'hdl': 50.0,
+                    'age': 55
+                })
+
+        assert response.status_code == 200
+
+    def test_predict_batch_rejects_oversized_payload_413(self, mock_client):
+        """Test that /predict/batch endpoint rejects payloads exceeding MAX_CONTENT_LENGTH."""
+        # Create a batch payload larger than 10MB
+        patients = []
+        for i in range(100):
+            patients.append({
+                'bmi': 32.0,
+                'triglycerides': 150.0,
+                'ldl': 130.0,
+                'hdl': 50.0,
+                'age': 55,
+                'oversized_field': 'x' * (150 * 1024)  # 150KB per patient, 100 patients = 15MB
+            })
+
+        response = mock_client.post('/predict/batch',
+            json={'patients': patients},
+            content_type='application/json')
+
+        # Flask returns 413 Request Entity Too Large when MAX_CONTENT_LENGTH is exceeded
+        assert response.status_code == 413
+
+    def test_predict_batch_rejects_exceeds_max_batch_size(self, mock_client, mock_predictor):
+        """Test that /predict/batch rejects requests with more than MAX_BATCH_SIZE patients."""
+        # Create a batch with more than 1000 patients
+        patients = [{'bmi': 30.0, 'triglycerides': 100.0, 'ldl': 100.0, 'hdl': 50.0, 'age': 50}
+                    for _ in range(1001)]
+
+        with patch('Ian_ML.service.server.get_predictor') as mock_get_predictor:
+            mock_get_predictor.return_value = mock_predictor
+            response = mock_client.post('/predict/batch',
+                json={'patients': patients})
+
+        assert response.status_code == 400
+        data = json.loads(response.data)
+        assert 'exceeds maximum' in data.get('error', '').lower()
+
+    def test_predict_batch_accepts_max_batch_size(self, mock_client, mock_predictor):
+        """Test that /predict/batch accepts exactly MAX_BATCH_SIZE patients."""
+        # Create a batch with exactly 1000 patients (the maximum)
+        patients = [{'bmi': 30.0, 'triglycerides': 100.0, 'ldl': 100.0, 'hdl': 50.0, 'age': 50}
+                    for _ in range(1000)]
+
+        with patch('Ian_ML.service.server.get_predictor') as mock_get_predictor:
+            mock_get_predictor.return_value = mock_predictor
+            response = mock_client.post('/predict/batch',
+                json={'patients': patients})
+
+        assert response.status_code == 200
+
+    def test_drift_reference_rejects_oversized_payload_413(self, mock_client):
+        """Test that /monitoring/drift/reference endpoint rejects oversized payloads."""
+        # Create a payload larger than 10MB
+        oversized_data = {
+            'features': {
+                'bmi': [25.0] * (3 * 1024 * 1024),  # Large array to exceed 10MB
+                'triglycerides': [150.0] * (3 * 1024 * 1024),
+            }
+        }
+
+        response = mock_client.post('/monitoring/drift/reference',
+            json=oversized_data,
+            content_type='application/json')
+
+        # Flask returns 413 Request Entity Too Large when MAX_CONTENT_LENGTH is exceeded
+        assert response.status_code == 413
+
+    def test_drift_check_rejects_oversized_payload_413(self, mock_client):
+        """Test that /monitoring/drift/check endpoint rejects oversized payloads."""
+        # Create a payload larger than 10MB
+        oversized_data = {
+            'features': {
+                'bmi': [25.0] * (5 * 1024 * 1024),  # Large array to exceed 10MB
+            }
+        }
+
+        response = mock_client.post('/monitoring/drift/check',
+            json=oversized_data,
+            content_type='application/json')
+
+        # Flask returns 413 Request Entity Too Large when MAX_CONTENT_LENGTH is exceeded
+        assert response.status_code == 413
