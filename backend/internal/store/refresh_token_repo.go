@@ -6,12 +6,14 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/skufu/DianaV2/backend/internal/models"
 	sqlcgen "github.com/skufu/DianaV2/backend/internal/store/sqlc"
 )
 
 type pgRefreshTokenRepo struct {
-	q *sqlcgen.Queries
+	q  *sqlcgen.Queries
+	tx pgx.Tx // Transaction context for atomicity (used when repo is created via TxStore)
 }
 
 // ============================================================================
