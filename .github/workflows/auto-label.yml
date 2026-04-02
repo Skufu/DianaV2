@@ -1,0 +1,118 @@
+name: Auto Label
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited, synchronize]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  # Auto-label based on issue/PR content
+  auto-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Auto-label based on content
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const title = issue.title.toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const text = title + ' ' + body;
+
+            const labels = [];
+
+            // Type detection
+            if (text.includes('bug') || text.includes('fix') || text.includes('error') || text.includes('crash')) {
+              labels.push('type/bug');
+            }
+            if (text.includes('feature') || text.includes('enhancement') || text.includes('add') || text.includes('implement')) {
+              labels.push('type/feature');
+            }
+            if (text.includes('doc') || text.includes('readme') || text.includes('documentation')) {
+              labels.push('type/docs');
+            }
+            if (text.includes('security') || text.includes('vulnerability') || text.includes('cve')) {
+              labels.push('type/security');
+            }
+            if (text.includes('performance') || text.includes('slow') || text.includes('speed') || text.includes('optimize')) {
+              labels.push('type/performance');
+            }
+            if (text.includes('test') || text.includes('testing')) {
+              labels.push('type/testing');
+            }
+            if (text.includes('refactor') || text.includes('cleanup') || text.includes('chore')) {
+              labels.push('type/chore');
+            }
+
+            // Area detection
+            if (text.includes('backend') || text.includes('go ') || text.includes('api') || text.includes('handler')) {
+              labels.push('area/backend');
+            }
+            if (text.includes('frontend') || text.includes('react') || text.includes('ui') || text.includes('component') || text.includes('jsx')) {
+              labels.push('area/frontend');
+            }
+            if (text.includes('ml') || text.includes('model') || text.includes('prediction') || text.includes('python')) {
+              labels.push('area/ml');
+            }
+            if (text.includes('database') || text.includes('db') || text.includes('sql') || text.includes('migration') || text.includes('postgres')) {
+              labels.push('area/database');
+            }
+            if (text.includes('auth') || text.includes('login') || text.includes('jwt') || text.includes('permission')) {
+              labels.push('area/auth');
+            }
+            if (text.includes('ci') || text.includes('cd') || text.includes('deploy') || text.includes('docker') || text.includes('infrastructure')) {
+              labels.push('area/infrastructure');
+            }
+            if (text.includes('gdpr') || text.includes('privacy') || text.includes('compliance') || text.includes('hipaa')) {
+              labels.push('area/compliance');
+            }
+
+            // Priority detection
+            if (text.includes('critical') || text.includes('urgent') || text.includes('production down') || text.includes('p0')) {
+              labels.push('priority/P0');
+            } else if (text.includes('high priority') || text.includes('important') || text.includes('p1')) {
+              labels.push('priority/P1');
+            }
+
+            // Add labels if found
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+              console.log(`Added labels: ${labels.join(', ')}`);
+            }
+
+  # Auto-label PRs based on file changes
+  pr-labels:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Label PR based on file changes
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          configuration-path: .github/labeler.yml
+          sync-labels: true

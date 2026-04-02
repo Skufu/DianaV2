@@ -12,9 +12,14 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/http/handlers"
 	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 	"github.com/skufu/DianaV2/backend/internal/http/sse"
+	"github.com/skufu/DianaV2/backend/internal/metrics"
 	"github.com/skufu/DianaV2/backend/internal/ml"
 	"github.com/skufu/DianaV2/backend/internal/models"
+	"github.com/skufu/DianaV2/backend/internal/sentry"
 	"github.com/skufu/DianaV2/backend/internal/store"
+
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 // New creates and configures the Gin router with all routes and middleware.
@@ -23,6 +28,16 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// Initialize zerolog with appropriate settings for the environment
 	middleware.InitLogger(cfg.Env)
 
+	// Initialize Sentry (if configured)
+	if err := sentry.Init(sentry.LoadConfig()); err != nil {
+		// Log but don't fail - Sentry is optional
+		// Log is not available yet, will be logged later
+		_ = err
+	}
+
+	// Initialize Prometheus metrics
+	metrics.Init()
+
 	// Set Gin mode based on environment
 	if cfg.Env == "production" || cfg.Env == "prod" {
 		gin.SetMode(gin.ReleaseMode)
@@ -30,19 +45,28 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 
 	r := gin.New()
 
-	// Recovery middleware
-	r.Use(gin.Recovery())
+	// Recovery middleware (with Sentry integration)
+	r.Use(sentry.RecoveryMiddleware())
+
+	// Distributed tracing middleware (adds trace IDs)
+	r.Use(middleware.DistributedTracing("diana-api"))
 
 	// Request ID (must be before Logger)
 	r.Use(middleware.RequestID())
 
+	// Sentry middleware for error tracking
+	r.Use(sentry.Middleware())
+
 	// Logging middleware
 	r.Use(middleware.Logger())
+
+	// Prometheus HTTP metrics middleware
+	r.Use(metrics.HTTPMiddleware())
 
 	// CORS configuration (must be before other middleware that might reject requests)
 	corsConfig := cors.Config{
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-CSRF-Token"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -50,9 +74,9 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	if cfg.Env == "production" || cfg.Env == "prod" {
 		corsConfig.AllowOrigins = cfg.CORSOrigins
 	} else {
-		corsConfig.AllowOriginFunc = func(origin string) bool {
-			return true
-		}
+		// In development, allow all origins to avoid CORS issues with proxies
+		corsConfig.AllowAllOrigins = true
+		corsConfig.AllowCredentials = false // AllowAllOrigins requires AllowCredentials=false
 	}
 	r.Use(cors.New(corsConfig))
 
@@ -92,12 +116,6 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		predictor = ml.NewMockPredictor()
 	}
 
-	// -------------------------------------------------------------------------
-	// Root-level health check (for load balancers and monitoring)
-	// -------------------------------------------------------------------------
-	healthHandler := handlers.NewHealthHandler(st, predictor)
-	healthHandler.Register(r.Group("/health"))
-
 	// =========================================================================
 	// API v1 Routes
 	// =========================================================================
@@ -107,8 +125,22 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// Public routes (no authentication required)
 	// -------------------------------------------------------------------------
 
-	// Legacy simple health checks (Kubernetes-style) - no dependency verification
+	// Swagger documentation (publicly accessible)
+	// Re-doc alternative: r.GET("/api/v1/docs", gin.WrapH(redocHandler()))
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, func(c *ginSwagger.Config) {
+		c.Title = "DIANA API Documentation"
+		c.DefaultModelsExpandDepth = 1
+	}))
+
+	// Health checks
 	handlers.RegisterHealth(api)
+
+	// Metrics endpoint (public for Prometheus scraping, but should be protected in production)
+	api.GET("/metrics", metrics.Handler())
+
+	// Debug endpoints (only in non-production environments)
+	debugHandler := handlers.NewDebugHandler(cfg.Env != "production" && cfg.Env != "prod")
+	debugHandler.Register(api.Group("/debug"))
 
 	// SSE broker for auth events (must be created before auth handler)
 	broker := sse.NewBroker(1) // batchSize of 1 for immediate event delivery
@@ -140,6 +172,10 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		// User's export functionality
 		exportHandler := handlers.NewExportHandler(st)
 		exportHandler.Register(userGroup.Group("/export"))
+
+		// GDPR/Privacy compliance endpoints
+		privacyHandler := handlers.NewPrivacyHandler(st)
+		privacyHandler.Register(userGroup.Group("/privacy"))
 	}
 
 	insightsGroup := protected.Group("/insights")
@@ -196,15 +232,6 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	{
 		adminModelsHandler := handlers.NewAdminModelsHandler(st, predictor)
 		adminModelsHandler.Register(adminModels)
-	}
-
-	// -------------------------------------------------------------------------
-	// ML Proxy routes (proxies frontend ML calls to internal ML service)
-	// -------------------------------------------------------------------------
-	if cfg.ModelURL != "" {
-		mlGroup := protected.Group("/ml")
-		mlProxyHandler := handlers.NewMLProxyHandler(cfg.ModelURL, cfg.MLAPIKey, cfg.ModelTimeoutMS)
-		mlProxyHandler.Register(mlGroup)
 	}
 
 	// =========================================================================

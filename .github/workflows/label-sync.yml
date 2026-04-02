@@ -1,0 +1,68 @@
+name: Sync Labels
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '.github/labels.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
+
+      - name: Authenticate with GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh auth status
+
+      - name: Sync labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== Syncing GitHub Labels ==="
+
+          # Read labels.yml and create/update each label
+          yq eval '.[] | select(.name != null) | .name + "|" + .color + "|" + .description' .github/labels.yml | while IFS='|' read -r name color description; do
+            # Check if label exists
+            if gh label list --json name | grep -q "\"$name\""; then
+              echo "Updating label: $name"
+              gh label edit "$name" --color "$color" --description "$description" || echo "Failed to update: $name"
+            else
+              echo "Creating label: $name"
+              gh label create "$name" --color "$color" --description "$description" || echo "Failed to create: $name"
+            fi
+          done
+
+      - name: Verify labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== Current Labels ==="
+          gh label list --limit 100
+
+      - name: Report sync status
+        run: |
+          echo "✅ Label sync completed"
+          echo "Labels defined in .github/labels.yml have been synced to the repository"

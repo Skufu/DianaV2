@@ -1,0 +1,120 @@
+# Auto-label configuration for PRs based on file changes
+# See: https://github.com/actions/labeler
+
+# Area labels based on file paths
+area/backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'backend/**'
+          - 'go.mod'
+          - 'go.sum'
+          - 'build/Dockerfile'
+
+area/frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'frontend/**'
+          - 'frontend/package.json'
+          - 'frontend/package-lock.json'
+          - 'frontend/Dockerfile'
+
+area/ml:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'Ian_ML/**'
+          - 'Ian_ML/**/*.py'
+          - 'Ian_ML/requirements.txt'
+          - 'Ian_ML/Dockerfile'
+          - 'scripts/train/**'
+          - 'scripts/ml/**'
+
+area/database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'backend/internal/store/queries/**'
+          - 'backend/migrations/**'
+          - 'backend/internal/store/*.go'
+          - '**/*.sql'
+
+area/infrastructure:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - 'docker-compose*.yml'
+          - 'deployment/**'
+          - 'build/**'
+          - 'scripts/deploy/**'
+          - 'Makefile'
+
+area/auth:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'backend/internal/http/middleware/auth*.go'
+          - 'backend/internal/http/handlers/auth*.go'
+          - 'backend/internal/http/handlers/users.go'
+          - 'frontend/src/components/auth/**'
+
+area/api:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'backend/internal/http/handlers/*.go'
+          - 'backend/internal/http/router/**'
+          - 'backend/internal/models/*.go'
+
+area/compliance:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'backend/internal/http/handlers/export*.go'
+          - 'backend/internal/http/handlers/privacy*.go'
+          - 'docs/**/privacy*'
+          - 'docs/**/gdpr*'
+          - 'docs/**/compliance*'
+
+# Type labels
+type/docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - '**/*.md'
+          - 'README*'
+          - 'CONTRIBUTING*'
+          - 'AGENTS*'
+
+type/testing:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*_test.go'
+          - '**/*.test.jsx'
+          - '**/*.test.js'
+          - '**/*.spec.js'
+          - 'frontend/e2e/**'
+          - '**/tests/**'
+
+type/security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/security*'
+          - '.github/dependabot.yml'
+          - '**/*security*'
+          - 'backend/internal/http/middleware/security*.go'
+
+type/performance:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'backend/**/*_benchmark*.go'
+          - 'backend/**/*_load_test*.go'
+          - 'scripts/benchmark/**'
+          - '**/*cache*'
+
+# Release labels
+release/needs-migration:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'backend/migrations/**'
+
+release/breaking-change:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'backend/internal/models/*.go'
+          - 'backend/internal/http/handlers/*.go'
+          - 'frontend/src/api.js'

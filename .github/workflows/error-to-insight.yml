@@ -1,0 +1,176 @@
+# Error-to-Insight Pipeline
+# Automatically creates GitHub issues from Sentry errors and links them to releases
+
+name: Error-to-Insight Pipeline
+
+on:
+  # Trigger on Sentry webhook (configured in Sentry)
+  repository_dispatch:
+    types: [sentry_error]
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      error_id:
+        description: 'Sentry error ID'
+        required: true
+      error_message:
+        description: 'Error message'
+        required: true
+      error_type:
+        description: 'Error type'
+        required: true
+      sentry_url:
+        description: 'Sentry issue URL'
+        required: true
+
+env:
+  SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+  SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+jobs:
+  process-error:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get release info
+        id: release
+        run: |
+          # Get the current release version
+          VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Check for existing issue
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const errorId = context.payload.client_payload?.error_id || '${{ github.event.inputs.error_id }}';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              labels: 'sentry-error',
+              per_page: 100
+            });
+            const existing = issues.find(i => i.title.includes(errorId) || i.body?.includes(errorId));
+            if (existing) {
+              core.setOutput('exists', 'true');
+              core.setOutput('issue_number', existing.number);
+            } else {
+              core.setOutput('exists', 'false');
+            }
+
+      - name: Create GitHub issue
+        if: steps.check.outputs.exists == 'false'
+        id: create
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const errorId = context.payload.client_payload?.error_id || '${{ github.event.inputs.error_id }}';
+            const errorMessage = context.payload.client_payload?.error_message || '${{ github.event.inputs.error_message }}';
+            const errorType = context.payload.client_payload?.error_type || '${{ github.event.inputs.error_type }}';
+            const sentryUrl = context.payload.client_payload?.sentry_url || '${{ github.event.inputs.sentry_url }}';
+            const version = '${{ steps.release.outputs.version }}';
+            const commit = '${{ steps.release.outputs.commit }}';
+
+            const title = `[Sentry] ${errorType}: ${errorMessage.substring(0, 50)}${errorMessage.length > 50 ? '...' : ''}`;
+            
+            const body = `## Automated Error Report
+
+**Error ID:** ${errorId}
+**Error Type:** ${errorType}
+**Release:** ${version} (${commit.substring(0, 7)})
+
+### Error Message
+\`\`\`
+${errorMessage}
+\`\`\`
+
+### Links
+- [View in Sentry](${sentryUrl})
+- [Release ${{ steps.release.outputs.version }}](https://github.com/${{ github.repository }}/releases/tag/${{ steps.release.outputs.version }})
+
+### Context
+This issue was automatically created from a Sentry error report.
+
+### Next Steps
+- [ ] Review the error details in Sentry
+- [ ] Determine severity and priority
+- [ ] Assign to appropriate team member
+- [ ] Update this issue with findings and resolution
+
+<!-- sentry-error -->
+<!-- error-id: ${errorId} -->
+`;
+
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['sentry-error', 'bug', 'automated']
+            });
+
+            core.setOutput('issue_number', issue.number);
+            console.log(`Created issue #${issue.number}: ${issue.html_url}`);
+
+      - name: Link to Sentry release
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          if [ -n "$SENTRY_AUTH_TOKEN" ]; then
+            curl -X POST "https://sentry.io/api/0/organizations/$SENTRY_ORG/releases/${{ steps.release.outputs.version }}/deploys/" \
+              -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "environment": "production",
+                "name": "${{ github.workflow }}",
+                "url": "${{ github.server_url }}/${{ github.repository }}/issues/${{ steps.create.outputs.issue_number || steps.check.outputs.issue_number }}"
+              }' || echo "Failed to link to Sentry (optional)"
+          fi
+
+      - name: Add comment to existing issue
+        if: steps.check.outputs.exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const errorMessage = context.payload.client_payload?.error_message || '${{ github.event.inputs.error_message }}';
+            const sentryUrl = context.payload.client_payload?.sentry_url || '${{ github.event.inputs.sentry_url }}';
+            const version = '${{ steps.release.outputs.version }}';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.check.outputs.issue_number }},
+              body: `## Recurring Error Report
+
+This error occurred again in release ${version}.
+
+### Error Message
+\`\`\`
+${errorMessage}
+\`\`\`
+
+[Sentry Link](${sentryUrl})
+
+---
+*This is an automated comment.*
+`
+            });
+
+  update-sentry:
+    runs-on: ubuntu-latest
+    needs: process-error
+    if: always()
+    steps:
+      - name: Notify Sentry of issue creation
+        run: |
+          if [ -n "$SENTRY_AUTH_TOKEN" ] && [ "${{ needs.process-error.result }}" == "success" ]; then
+            echo "Successfully created GitHub issue from Sentry error"
+          fi

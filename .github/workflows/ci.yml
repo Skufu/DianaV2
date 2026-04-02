@@ -38,7 +38,7 @@ jobs:
           go-version: '1.24'
           cache-dependency-path: backend/go.sum
 
-      - name: golangci-lint
+      - name: Install golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
           version: latest
@@ -66,15 +66,27 @@ jobs:
         working-directory: .
 
 
-      - name: Test
-        run: go test -v -race -coverprofile=coverage.out ./...
+      - name: Test with coverage and timing
+        run: |
+          go test -v -race -coverprofile=coverage.out -covermode=atomic -json ./... > test-results.json 2>&1 || true
+          go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
         env:
           DB_SOURCE: "postgres://postgres:postgres@localhost:5432/diana_test?sslmode=disable"
           ENVIRONMENT: "test"
 
-      - name: Contract Tests
-        run: go test -v -run "TestContract_" ./internal/http/handlers/
-        working-directory: backend
+      - name: Generate coverage report
+        run: |
+          go tool cover -func=coverage.out > coverage-summary.txt
+          cat coverage-summary.txt
+          # Check if coverage is below 70%
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage: ${COVERAGE}%"
+          if (( $(echo "${COVERAGE} < 70" | bc -l) )); then
+            echo "❌ Coverage ${COVERAGE}% is below 70% threshold"
+            exit 1
+          else
+            echo "✓ Coverage ${COVERAGE}% meets 70% threshold"
+          fi
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -83,7 +95,18 @@ jobs:
           flags: backend
         continue-on-error: true
 
-  # Frontend build and lint
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: |
+            backend/test-results.json
+            backend/coverage-summary.txt
+            backend/coverage.out
+          retention-days: 30
+
+  # Frontend build, lint, and test
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -112,18 +135,19 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        run: npm test
+      - name: Test with coverage
+        run: npm run test:coverage
         env:
           VITE_API_BASE: http://localhost:8080
           VITE_ML_BASE: http://localhost:5000
 
-      - name: Upload test coverage
+      - name: Upload frontend coverage
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: frontend-coverage
-          path: frontend/coverage/
+          path: |
+            frontend/coverage/
           retention-days: 30
 
   # Python ML server tests
@@ -147,7 +171,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install flake8 pytest
+          pip install flake8 pytest pytest-cov pytest-randomly pytest-xdist
 
       - name: Lint with flake8
         run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -157,10 +181,28 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
 
-      - name: Run ML tests
-        run: pytest tests/ -v --tb=short
+      - name: Run ML tests with coverage and timing
+        run: pytest tests/ -v --tb=short --durations=10 --cov=service --cov=common --cov=training --cov-report=xml --cov-report=html --cov-report=term --cov-fail-under=70
         env:
           PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload ML coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ml-coverage
+          path: |
+            Ian_ML/htmlcov/
+            Ian_ML/coverage.xml
+          retention-days: 30
+
+      - name: Upload test durations report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ml-test-durations
+          path: Ian_ML/.pytest_cache/
+          retention-days: 14
 
   # Docker build test
   docker:

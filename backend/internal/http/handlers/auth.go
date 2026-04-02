@@ -60,6 +60,18 @@ func (h *AuthHandler) Register(rg *gin.RouterGroup) {
 	rg.POST("/logout", h.logout)
 }
 
+// LoginResponse represents the response from login/refresh endpoints
+type LoginResponse struct {
+	Message      string `json:"message"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	User         struct {
+		ID    int64  `json:"id"`
+		Email string `json:"email"`
+		Role  string `json:"role"`
+	} `json:"user"`
+}
+
 // parseAuthValidationErrors converts Gin binding errors into user-friendly field-specific messages.
 func parseAuthValidationErrors(err error) map[string]string {
 	fieldErrors := make(map[string]string)
@@ -131,6 +143,18 @@ func validatePasswordComplexity(password string) map[string]string {
 	}
 }
 
+// login authenticates a user and returns JWT tokens
+// @Summary Login user
+// @Description Authenticate user and return JWT tokens
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body loginRequest true "Login credentials"
+// @Success 200 {object} LoginResponse "Login successful"
+// @Failure 400 {object} APIError "Invalid request payload"
+// @Failure 401 {object} APIError "Invalid credentials"
+// @Failure 403 {object} APIError "Account inactive"
+// @Router /auth/login [post]
 func (h *AuthHandler) login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -238,6 +262,17 @@ func (h *AuthHandler) login(c *gin.Context) {
 	})
 }
 
+// register creates a new user account
+// @Summary Register new user
+// @Description Create a new user account
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body registerRequest true "Registration details"
+// @Success 201 {object} LoginResponse "Registration successful"
+// @Failure 400 {object} APIError "Invalid input"
+// @Failure 409 {object} APIError "Email already exists"
+// @Router /auth/register [post]
 func (h *AuthHandler) register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -280,28 +315,10 @@ func (h *AuthHandler) register(c *gin.Context) {
 	user := models.User{
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
-		Role:         models.RoleUser, // Default role for new registrations
+		Role:         "user", // Default role for new registrations
 		IsActive:     true,
 	}
-
-	// Use transaction for atomic user creation with refresh token
-	txStore, err := h.store.BeginTx(c.Request.Context())
-	if err != nil {
-		log.Printf("[ERROR] Failed to begin transaction: %v", err)
-		ErrInternal(c, "Failed to create account")
-		return
-	}
-
-	// Ensure rollback on failure
-	defer func() {
-		if err != nil {
-			if rbErr := txStore.Rollback(c.Request.Context()); rbErr != nil {
-				log.Printf("[ERROR] Failed to rollback transaction: %v", rbErr)
-			}
-		}
-	}()
-
-	createdUser, err := txStore.Users().Create(c.Request.Context(), user)
+	createdUser, err := h.store.Users().Create(c.Request.Context(), user)
 	if err != nil {
 		log.Printf("[ERROR] Failed to create user: %v", err)
 		ErrInternal(c, "Failed to create account")
@@ -333,17 +350,10 @@ func (h *AuthHandler) register(c *gin.Context) {
 	refreshToken := base64.URLEncoding.EncodeToString(refreshTokenBytes)
 	refreshTokenHash := hashToken(refreshToken)
 
-	_, err = txStore.RefreshTokens().CreateRefreshToken(c.Request.Context(), refreshTokenHash, int32(createdUser.ID), time.Now().Add(7*24*time.Hour))
+	_, err = h.store.RefreshTokens().CreateRefreshToken(c.Request.Context(), refreshTokenHash, int32(createdUser.ID), time.Now().Add(7*24*time.Hour))
 	if err != nil {
 		log.Printf("[ERROR] Failed to create refresh token: %v", err)
 		ErrInternal(c, "Failed to create refresh token")
-		return
-	}
-
-	// Commit the transaction
-	if err := txStore.Commit(c.Request.Context()); err != nil {
-		log.Printf("[ERROR] Failed to commit transaction: %v", err)
-		ErrInternal(c, "Failed to create account")
 		return
 	}
 
@@ -373,27 +383,36 @@ func (h *AuthHandler) register(c *gin.Context) {
 	})
 }
 
+// RefreshTokenRequest represents the refresh token request
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+// refresh generates new access token from refresh token
+// @Summary Refresh access token
+// @Description Generate new access token using refresh token
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body RefreshTokenRequest true "Refresh token"
+// @Success 200 {object} LoginResponse "Token refreshed successfully"
+// @Failure 400 {object} APIError "Invalid request"
+// @Failure 401 {object} APIError "Invalid or expired refresh token"
+// @Router /auth/refresh [post]
 func (h *AuthHandler) refresh(c *gin.Context) {
-	var req struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil && err.Error() != "invalid character 'e' looking for beginning of value" {
+	var req RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		ErrBadRequest(c, "invalid payload")
 		return
 	}
 
-	refreshToken := req.RefreshToken
-	if refreshToken == "" {
-		cookieToken, err := c.Cookie("diana_refresh_token")
-		if err != nil || cookieToken == "" {
-			ErrUnauthorized(c)
-			return
-		}
-		refreshToken = cookieToken
+	if req.RefreshToken == "" {
+		ErrUnauthorized(c)
+		return
 	}
 
 	// Hash refresh token to look it up in database
-	tokenHash := hashToken(refreshToken)
+	tokenHash := hashToken(req.RefreshToken)
 
 	// Validate refresh token
 	tokenRecord, err := h.store.RefreshTokens().FindRefreshToken(c.Request.Context(), tokenHash)
@@ -491,21 +510,34 @@ func (h *AuthHandler) refresh(c *gin.Context) {
 	})
 }
 
+// LogoutRequest represents the logout request
+type LogoutRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+// LogoutResponse represents the logout response
+type LogoutResponse struct {
+	Message string `json:"message"`
+}
+
+// logout revokes the refresh token and clears cookies
+// @Summary Logout user
+// @Description Revoke refresh token and clear authentication cookies
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body LogoutRequest false "Optional refresh token to revoke"
+// @Success 200 {object} LogoutResponse "Logged out successfully"
+// @Router /auth/logout [post]
 func (h *AuthHandler) logout(c *gin.Context) {
-	var req struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-	// Allow empty body - we can get the token from cookie
-	_ = c.ShouldBindJSON(&req)
-
-	refreshToken := req.RefreshToken
-	if refreshToken == "" {
-		cookieToken, _ := c.Cookie("diana_refresh_token")
-		refreshToken = cookieToken
+	var req LogoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		ErrBadRequest(c, "invalid payload")
+		return
 	}
 
-	if refreshToken != "" {
-		tokenHash := hashToken(refreshToken)
+	if req.RefreshToken != "" {
+		tokenHash := hashToken(req.RefreshToken)
 		if err := h.store.RefreshTokens().RevokeRefreshToken(c.Request.Context(), tokenHash); err != nil {
 			log.Printf("[WARN] Failed to revoke refresh token during logout: %v", err)
 		}
@@ -514,7 +546,6 @@ func (h *AuthHandler) logout(c *gin.Context) {
 	c.SetSameSite(http.SameSiteStrictMode)
 	c.SetCookie("diana_token", "", -1, "/", "", h.isSecure(), true)
 	c.SetCookie("diana_refresh_token", "", -1, "/", "", h.isSecure(), true)
-	c.SetCookie("diana_csrf_token", "", -1, "/", "", h.isSecure(), false)
 
 	// Publish logout event (using email from context if available)
 	if h.broker != nil {

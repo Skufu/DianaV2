@@ -32,7 +32,7 @@ func (h *AdminDashboardHandler) Register(rg *gin.RouterGroup) {
 // @Description Returns system-wide statistics (admin only)
 // @Tags Admin
 // @Produce json
-// @Success 200 {object} models.SystemStats
+// @Success 200 {object} map[string]any
 // @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /admin/dashboard [get]
@@ -69,7 +69,7 @@ func (h *AdminDashboardHandler) getDashboard(c *gin.Context) {
 // @Description Returns all clinics in the system
 // @Tags Admin
 // @Produce json
-// @Success 200 {array} models.Clinic
+// @Success 200 {array} map[string]any
 // @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /admin/clinics [get]
@@ -96,7 +96,7 @@ func (h *AdminDashboardHandler) listAllClinics(c *gin.Context) {
 // @Description Returns statistics comparing all clinics
 // @Tags Admin
 // @Produce json
-// @Success 200 {array} models.ClinicComparison
+// @Success 200 {array} map[string]any
 // @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /admin/clinic-comparison [get]

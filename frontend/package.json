@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:analyze": "vite build --mode analyze",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives",
     "lint:fix": "eslint . --ext js,jsx --fix",
@@ -15,7 +16,10 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:api-contract": "vitest run src/api.contract.test.js",
-    "test:headed": "playwright test --headed"
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "analyze": "vite-bundle-visualizer",
+    "size-check": "bundlesize"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.20",
@@ -33,7 +37,10 @@
     "@vitejs/plugin-react": "^4.2.1",
     "@vitest/coverage-v8": "^1.6.0",
     "autoprefixer": "^10.4.17",
+    "bundlesize": "^0.18.2",
+    "depcheck": "^1.4.7",
     "eslint": "^8.57.0",
+    "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
@@ -43,11 +50,20 @@
     "playwright": "^1.57.0",
     "postcss": "^8.4.35",
     "prettier": "^3.2.5",
+    "rollup-plugin-visualizer": "^5.14.0",
     "tailwindcss": "^3.4.1",
     "vite": "^5.0.0",
-    "vitest": "^1.6.0"
+    "vite-bundle-visualizer": "^1.0.0",
+    "vitest": "^4.0.18"
   },
-  "optionalDependencies": {
-    "@rolldown/binding-darwin-arm64": "^1.0.0-rc.12"
-  }
+  "bundlesize": [
+    {
+      "path": "./dist/assets/*.js",
+      "maxSize": "500 kB"
+    },
+    {
+      "path": "./dist/assets/*.css",
+      "maxSize": "50 kB"
+    }
+  ]
 }

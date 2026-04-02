@@ -10,6 +10,7 @@ import (
 )
 
 func TestParsePagination(t *testing.T) {
+	t.Parallel()
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
@@ -86,6 +87,7 @@ func TestParsePagination(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			req := httptest.NewRequest("GET", "/test"+tc.query, nil)
 
 			c, _ := gin.CreateTestContext(nil)
@@ -107,6 +109,7 @@ func TestParsePagination(t *testing.T) {
 }
 
 func TestNewPaginatedResponse(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		data       any
@@ -153,6 +156,7 @@ func TestNewPaginatedResponse(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			response := NewPaginatedResponse(tc.data, tc.params, tc.totalItems)
 
 			if response.Data == nil {
@@ -176,6 +180,7 @@ func TestNewPaginatedResponse(t *testing.T) {
 }
 
 func TestParseIDParam(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		param     string
@@ -215,6 +220,7 @@ func TestParseIDParam(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			req := httptest.NewRequest("GET", "/test/"+tc.param, nil)
 
 			c, _ := gin.CreateTestContext(nil)
@@ -235,6 +241,7 @@ func TestParseIDParam(t *testing.T) {
 }
 
 func TestGetUserID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		claims    middleware.UserClaims
@@ -280,6 +287,7 @@ func TestGetUserID(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			c, _ := gin.CreateTestContext(nil)
 
 			if tc.claims.UserID != 0 || tc.claims.Email != "" {
@@ -305,6 +313,7 @@ func TestGetUserID(t *testing.T) {
 }
 
 func TestSanitizeForAudit(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		input    string
@@ -347,6 +356,7 @@ func TestSanitizeForAudit(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			result := sanitizeForAudit(tc.input)
 			t.Logf("input=%q result=%q", tc.input, result)
 			if result != tc.expected {
@@ -357,6 +367,7 @@ func TestSanitizeForAudit(t *testing.T) {
 }
 
 func TestSanitizeAuditDetails(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		input    map[string]any
@@ -407,6 +418,7 @@ func TestSanitizeAuditDetails(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			result := sanitizeAuditDetails(tc.input)
 
 			if tc.expected == nil && result != nil {

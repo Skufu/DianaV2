@@ -3,22 +3,11 @@ package models
 
 import "time"
 
-// Role constants for authorization and user management.
-// These constants replace hardcoded role strings throughout the backend,
-// ensuring type safety and reducing the risk of typos in role checks.
-//
-// Role derivation (from postgres.go):
-//   - RoleAdmin: User with is_admin=true in database
-//   - RoleDoctor: User with role='doctor' in database (menopause specialists)
-//   - RoleUser: Default role for standard patients/users
-//
-// Usage in authorization:
-//   middleware.RoleRequired(models.RoleAdmin, models.RoleDoctor)
-//   if claims.Role == models.RoleAdmin { ... }
+// Role constants for user authorization
 const (
-	RoleAdmin  = "admin"  // Administrator with full system access
-	RoleDoctor = "doctor" // Medical professional (restricted to binary_v2_no_bp model)
-	RoleUser   = "user"   // Standard patient/user (default role for new registrations)
+	RoleAdmin  = "admin"
+	RoleDoctor = "doctor"
+	RoleUser   = "user"
 )
 
 type AuthEvent struct {
@@ -54,9 +43,9 @@ type User struct {
 	// Medical History
 	Hypertension     string `json:"hypertension,omitempty" binding:"omitempty,oneof=no controlled uncontrolled"`
 	HeartDisease     string `json:"heart_disease,omitempty" binding:"omitempty,oneof=no yes"`
-	SmokingStatus    string `json:"smoking_status,omitempty" binding:"omitempty,oneof=never former current unknown"`
-	PhysicalActivity string `json:"physical_activity,omitempty" binding:"omitempty,oneof=Active Moderate Sedentary Unknown"`
-	Alcohol          string `json:"alcohol,omitempty" binding:"omitempty,oneof=Current Former Never Unknown"`
+	SmokingStatus    string `json:"smoking_status,omitempty" binding:"omitempty,oneof=never former current"`
+	PhysicalActivity string `json:"physical_activity,omitempty" binding:"omitempty"`
+	Alcohol          string `json:"alcohol,omitempty" binding:"omitempty"`
 
 	// Consent
 	ConsentPersonalData          bool      `json:"consent_personal_data"`
@@ -219,9 +208,9 @@ type OnboardingRequest struct {
 	YearsMenopause               int    `json:"years_menopause" binding:"omitempty,min=0,max=50"`
 	Hypertension                 string `json:"hypertension" binding:"omitempty,oneof=no controlled uncontrolled"`
 	HeartDisease                 string `json:"heart_disease" binding:"omitempty,oneof=no yes"`
-	SmokingStatus                string `json:"smoking_status" binding:"omitempty,oneof=never former current unknown"`
-	PhysicalActivity             string `json:"physical_activity" binding:"omitempty,oneof=Active Moderate Sedentary Unknown"`
-	Alcohol                      string `json:"alcohol" binding:"omitempty,oneof=Current Former Never Unknown"`
+	SmokingStatus                string `json:"smoking_status" binding:"omitempty,oneof=never former current"`
+	PhysicalActivity             string `json:"physical_activity" binding:"omitempty"`
+	Alcohol                      string `json:"alcohol" binding:"omitempty"`
 	ConsentPersonalData          bool   `json:"consent_personal_data"`
 	ConsentResearchParticipation bool   `json:"consent_research_participation"`
 	ConsentEmailUpdates          bool   `json:"consent_email_updates"`
@@ -262,7 +251,7 @@ type UpdateAssessmentRequest struct {
 	HeartDisease          string   `json:"heart_disease" binding:"omitempty,max=50"`
 	BMI                   *float64 `json:"bmi" binding:"omitempty,min=10,max=100"`
 	Notes                 string   `json:"notes" binding:"omitempty,max=2000"`
-	ModelType             string   `json:"model_type" binding:"omitempty,oneof=ada binary_v2_no_bp binary_v2_bp"`
+	ModelType             string   `json:"model_type" binding:"omitempty,oneof=clinical ada binary_v2_no_bp binary_v2_bp"`
 }
 
 // -----------------------------------------------------------------------------

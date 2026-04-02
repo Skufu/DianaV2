@@ -1,0 +1,1346 @@
+basePath: /api/v1
+definitions:
+  github_com_skufu_DianaV2_backend_internal_models.Assessment:
+    properties:
+      activity:
+        type: string
+      age:
+        type: integer
+      alcohol:
+        type: string
+      at_risk_probability:
+        type: number
+      bmi:
+        type: number
+      cholesterol:
+        type: integer
+      cluster:
+        description: ML Results
+        type: string
+      cluster_capability:
+        additionalProperties: {}
+        type: object
+      cluster_description:
+        type: string
+      created_at:
+        type: string
+      dataset_hash:
+        type: string
+      diastolic:
+        type: integer
+      drift_baseline:
+        additionalProperties: {}
+        type: object
+      family_history_diabetes:
+        type: boolean
+      fbs:
+        type: number
+      feature_set:
+        additionalProperties: {}
+        type: object
+      hba1c:
+        type: number
+      hdl:
+        type: integer
+      heart_disease:
+        type: string
+      history_flag:
+        type: boolean
+      hypertension:
+        type: string
+      id:
+        type: integer
+      is_self_reported:
+        description: Self-assessment fields
+        type: boolean
+      ldl:
+        type: integer
+      model_version:
+        type: string
+      notes:
+        type: string
+      output_capabilities:
+        additionalProperties: {}
+        type: object
+      patient_id:
+        type: integer
+      predicted_status:
+        type: string
+      risk_label:
+        type: string
+      risk_level:
+        type: string
+      risk_score:
+        type: integer
+      smoking:
+        type: string
+      source:
+        description: '''manual'', ''device'''
+        type: string
+      systolic:
+        type: integer
+      treatment_focus:
+        type: string
+      triglycerides:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        description: Changed from PatientID
+        type: integer
+      validation_status:
+        type: string
+      waist_circumference:
+        type: number
+    type: object
+  github_com_skufu_DianaV2_backend_internal_models.ModelRun:
+    properties:
+      created_at:
+        type: string
+      dataset_hash:
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      model_version:
+        type: string
+      notes:
+        type: string
+    type: object
+  github_com_skufu_DianaV2_backend_internal_models.PaginatedResponse:
+    properties:
+      data: {}
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  github_com_skufu_DianaV2_backend_internal_models.UpdateAssessmentRequest:
+    properties:
+      activity:
+        maxLength: 50
+        type: string
+      age:
+        maximum: 120
+        minimum: 18
+        type: integer
+      alcohol:
+        maxLength: 50
+        type: string
+      bmi:
+        maximum: 100
+        minimum: 10
+        type: number
+      cholesterol:
+        maximum: 1000
+        minimum: 0
+        type: integer
+      diastolic:
+        maximum: 200
+        minimum: 30
+        type: integer
+      family_history_diabetes:
+        type: boolean
+      fbs:
+        maximum: 1000
+        minimum: 0
+        type: number
+      hba1c:
+        maximum: 20
+        minimum: 0
+        type: number
+      hdl:
+        maximum: 200
+        minimum: 0
+        type: integer
+      heart_disease:
+        maxLength: 50
+        type: string
+      history_flag:
+        type: boolean
+      hypertension:
+        maxLength: 50
+        type: string
+      ldl:
+        maximum: 500
+        minimum: 0
+        type: integer
+      model_type:
+        enum:
+        - clinical
+        - ada
+        - binary_v2_no_bp
+        - binary_v2_bp
+        type: string
+      notes:
+        maxLength: 2000
+        type: string
+      smoking:
+        maxLength: 50
+        type: string
+      systolic:
+        maximum: 300
+        minimum: 50
+        type: integer
+      triglycerides:
+        maximum: 2000
+        minimum: 0
+        type: integer
+      waist_circumference:
+        maximum: 200
+        minimum: 40
+        type: number
+    type: object
+  github_com_skufu_DianaV2_backend_internal_models.User:
+    properties:
+      account_status:
+        type: string
+      address:
+        maxLength: 255
+        type: string
+      alcohol:
+        type: string
+      assessment_frequency_months:
+        description: Settings
+        maximum: 12
+        minimum: 1
+        type: integer
+      consent_analytics:
+        type: boolean
+      consent_email_updates:
+        type: boolean
+      consent_personal_data:
+        description: Consent
+        type: boolean
+      consent_research_participation:
+        type: boolean
+      consent_updated_at:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      date_of_birth:
+        type: string
+      deleted_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        description: Personal Information
+        maxLength: 100
+        type: string
+      heart_disease:
+        enum:
+        - "no"
+        - "yes"
+        type: string
+      hypertension:
+        description: Medical History
+        enum:
+        - "no"
+        - controlled
+        - uncontrolled
+        type: string
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      is_admin:
+        type: boolean
+      last_assessment_reminder_sent:
+        type: string
+      last_login_at:
+        type: string
+      last_name:
+        maxLength: 100
+        type: string
+      menopause_status:
+        description: Menopausal Health
+        enum:
+        - pre
+        - peri
+        - post
+        - surgical
+        type: string
+      menopause_type:
+        enum:
+        - natural
+        - surgical
+        type: string
+      onboarding_completed:
+        type: boolean
+      phone:
+        maxLength: 20
+        type: string
+      physical_activity:
+        type: string
+      reminder_email:
+        type: boolean
+      role:
+        description: |-
+          Account Management
+          Authorization
+          Role is derived from is_admin for JWT claims compatibility
+          Not stored directly in database (removed in migration 0011)
+        type: string
+      smoking_status:
+        enum:
+        - never
+        - former
+        - current
+        type: string
+      updated_at:
+        type: string
+      years_menopause:
+        maximum: 50
+        minimum: 0
+        type: integer
+    type: object
+  internal_http_handlers.APIError:
+    properties:
+      code:
+        type: string
+      details: {}
+      message:
+        type: string
+    type: object
+  internal_http_handlers.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      role:
+        enum:
+        - admin
+        - user
+        - doctor
+        type: string
+    required:
+    - email
+    - password
+    - role
+    type: object
+  internal_http_handlers.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      message:
+        type: string
+      refresh_token:
+        type: string
+      user:
+        properties:
+          email:
+            type: string
+          id:
+            type: integer
+          role:
+            type: string
+        type: object
+    type: object
+  internal_http_handlers.LogoutRequest:
+    properties:
+      refresh_token:
+        type: string
+    type: object
+  internal_http_handlers.LogoutResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  internal_http_handlers.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  internal_http_handlers.SimpleHealthResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  internal_http_handlers.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      role:
+        enum:
+        - admin
+        - user
+        - doctor
+        type: string
+    type: object
+  internal_http_handlers.loginRequest:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 128
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_http_handlers.registerRequest:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 128
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@diana-health.com
+    name: DIANA Support
+  description: Diabetes Insulin Activity and Nutrition Analyzer (DIANA) - Risk assessment
+    and patient management API
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: DIANA API
+  version: "1.0"
+paths:
+  /admin/audit:
+    get:
+      description: Returns paginated list of audit events with optional filters
+      parameters:
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
+      - description: Filter by actor email
+        in: query
+        name: actor
+        type: string
+      - description: Filter by action type
+        in: query
+        name: action
+        type: string
+      - description: Filter from date (ISO 8601)
+        in: query
+        name: start_date
+        type: string
+      - description: Filter to date (ISO 8601)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.PaginatedResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List audit events (admin only)
+      tags:
+      - Admin
+  /admin/clinic-comparison:
+    get:
+      description: Returns statistics comparing all clinics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get clinic comparison (admin only)
+      tags:
+      - Admin
+  /admin/clinics:
+    get:
+      description: Returns all clinics in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all clinics (admin only)
+      tags:
+      - Admin
+  /admin/dashboard:
+    get:
+      description: Returns system-wide statistics (admin only)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get admin dashboard
+      tags:
+      - Admin
+  /admin/models:
+    get:
+      description: Returns history of ML model training runs
+      parameters:
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20)
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.PaginatedResponse'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List model runs (admin only)
+      tags:
+      - Admin
+  /admin/models/active:
+    get:
+      description: Returns the currently active/latest ML model version
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.ModelRun'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get active model (admin only)
+      tags:
+      - Admin
+  /admin/models/sync:
+    post:
+      description: Fetches active model from ML server and adds it if it doesn't exist
+        in historical tracking
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.ModelRun'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Sync model run tracking (admin only)
+      tags:
+      - Admin
+  /admin/users:
+    get:
+      description: Returns paginated list of users with optional filters
+      parameters:
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: page_size
+        type: integer
+      - description: Search by email
+        in: query
+        name: search
+        type: string
+      - description: Filter by role
+        in: query
+        name: role
+        type: string
+      - description: Filter by active status
+        in: query
+        name: is_active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.PaginatedResponse'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all users (admin only)
+      tags:
+      - Admin
+    post:
+      consumes:
+      - application/json
+      description: Creates a new clinician or admin account
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Email already exists
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new user (admin only)
+      tags:
+      - Admin
+  /admin/users/{id}:
+    delete:
+      description: Soft-deletes a user account (can be reactivated)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Deactivate user (admin only)
+      tags:
+      - Admin
+    get:
+      description: Returns a single user's details
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.User'
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user by ID (admin only)
+      tags:
+      - Admin
+    put:
+      consumes:
+      - application/json
+      description: Updates user email or role
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated user data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update user (admin only)
+      tags:
+      - Admin
+  /admin/users/{id}/activate:
+    post:
+      description: Reactivates a previously deactivated user account
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Activate user (admin only)
+      tags:
+      - Admin
+  /analytics/summary:
+    get:
+      description: Returns summary analytics for authenticated user (cached for 5
+        minutes)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user analytics summary
+      tags:
+      - Analytics
+  /api/v1/healthz:
+    get:
+      description: Simple health endpoints for load balancers and orchestrators
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.SimpleHealthResponse'
+      summary: Kubernetes health checks
+      tags:
+      - Health
+  /api/v1/livez:
+    get:
+      description: Simple health endpoints for load balancers and orchestrators
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http_handlers.SimpleHealthResponse'
+      summary: Kubernetes health checks
+      tags:
+      - Health
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT tokens
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: '#/definitions/internal_http_handlers.LoginResponse'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "403":
+          description: Account inactive
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+      summary: Login user
+      tags:
+      - Authentication
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Revoke refresh token and clear authentication cookies
+      parameters:
+      - description: Optional refresh token to revoke
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/internal_http_handlers.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logged out successfully
+          schema:
+            $ref: '#/definitions/internal_http_handlers.LogoutResponse'
+      summary: Logout user
+      tags:
+      - Authentication
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Generate new access token using refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token refreshed successfully
+          schema:
+            $ref: '#/definitions/internal_http_handlers.LoginResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "401":
+          description: Invalid or expired refresh token
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+      summary: Refresh access token
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: Registration details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http_handlers.registerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Registration successful
+          schema:
+            $ref: '#/definitions/internal_http_handlers.LoginResponse'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "409":
+          description: Email already exists
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+      summary: Register new user
+      tags:
+      - Authentication
+  /clinics:
+    get:
+      description: Returns all clinics the current user is a member of
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List user's clinics
+      tags:
+      - Clinics
+  /clinics/{id}/dashboard:
+    get:
+      description: Returns aggregate statistics for a specific clinic (clinic_admin
+        only)
+      parameters:
+      - description: Clinic ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get clinic dashboard
+      tags:
+      - Clinics
+  /insights/cohort:
+    get:
+      description: Returns risk factor comparison across patient groups
+      parameters:
+      - default: cluster
+        description: 'Grouping parameter: cluster, risk_level, age_group, menopause_status'
+        in: query
+        name: groupBy
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get cohort analysis statistics
+      tags:
+      - Insights
+  /users/me/assessments:
+    get:
+      description: Get all assessments for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of assessments
+          schema:
+            items:
+              $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.Assessment'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+      security:
+      - BearerAuth: []
+      summary: List user assessments
+      tags:
+      - Assessments
+    post:
+      consumes:
+      - application/json
+      description: Create a new diabetes risk assessment with ML prediction
+      parameters:
+      - description: Assessment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.UpdateAssessmentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Assessment created with risk prediction
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.Assessment'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "403":
+          description: Forbidden - Doctors must use binary_v2_no_bp model
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+      security:
+      - BearerAuth: []
+      summary: Create assessment
+      tags:
+      - Assessments
+  /users/me/assessments/{assessmentID}:
+    delete:
+      description: Delete an existing assessment
+      parameters:
+      - description: Assessment ID
+        in: path
+        name: assessmentID
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Assessment deleted
+        "400":
+          description: Invalid assessment ID
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "403":
+          description: Forbidden - Not the owner
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "404":
+          description: Assessment not found
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+      security:
+      - BearerAuth: []
+      summary: Delete assessment
+      tags:
+      - Assessments
+    get:
+      description: Get a specific assessment by ID
+      parameters:
+      - description: Assessment ID
+        in: path
+        name: assessmentID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assessment data
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.Assessment'
+        "400":
+          description: Invalid assessment ID
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "403":
+          description: Forbidden - Not the owner
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "404":
+          description: Assessment not found
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+      security:
+      - BearerAuth: []
+      summary: Get assessment
+      tags:
+      - Assessments
+    put:
+      consumes:
+      - application/json
+      description: Modify an existing assessment with new biomarker values
+      parameters:
+      - description: Assessment ID
+        in: path
+        name: assessmentID
+        required: true
+        type: integer
+      - description: Updated assessment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.UpdateAssessmentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assessment updated
+          schema:
+            $ref: '#/definitions/github_com_skufu_DianaV2_backend_internal_models.Assessment'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "403":
+          description: Forbidden - Not the owner
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "404":
+          description: Assessment not found
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_http_handlers.APIError'
+      security:
+      - BearerAuth: []
+      summary: Update assessment
+      tags:
+      - Assessments
+securityDefinitions:
+  BearerAuth:
+    description: 'JWT Bearer token. Format: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
