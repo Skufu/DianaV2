@@ -2,6 +2,11 @@
 # DianaV2 Database Backup Script
 # Automated PostgreSQL backup with retention policy and durable storage
 #
+# Security Feature: Uses .pgpass file for credential authentication instead of
+# PGPASSWORD environment variable. This prevents credential exposure in process
+# listings (ps, top) and shell history. The .pgpass file is created in a secure
+# temp directory with 0600 permissions and cleaned up after each operation.
+#
 # Usage:
 #   ./scripts/backup.sh                  # Create backup
 #   ./scripts/backup.sh --restore FILE   # Restore from backup
@@ -16,6 +21,7 @@
 #   BACKUP_DIR - Local backup directory - default: ./backups
 #
 # Validation Contract: VAL-DP-002
+# Security: Credentials handled via secure .pgpass file (not PGPASSWORD export)
 
 set -e
 
@@ -71,6 +77,42 @@ log_backup() {
     echo "[$(date)] ${status}: ${message}" >> "$LOG_FILE"
 }
 
+# Setup secure password file (.pgpass) for PostgreSQL authentication
+# This avoids exposing credentials in environment variables or process listings
+setup_pgpass() {
+    # Create secure temporary directory for pgpass file
+    local pgpass_dir
+    pgpass_dir=$(mktemp -d -t diana_backup_XXXXXX)
+    
+    # Create pgpass file with restricted permissions (0600 - only owner can read)
+    local pgpass_file="${pgpass_dir}/.pgpass"
+    
+    # Format: hostname:port:database:username:password
+    # Using wildcard for database to allow connection to any database on this host
+    echo "${DB_HOST}:${DB_PORT}:*:${DB_USER}:${DB_PASS}" > "$pgpass_file"
+    
+    # Set restrictive permissions - PostgreSQL requires 0600 or refuses to use the file
+    chmod 0600 "$pgpass_file"
+    
+    # Return the file path via global variable
+    PGPASS_FILE="$pgpass_file"
+    PGPASS_DIR="$pgpass_dir"
+    
+    log_backup "INFO" "Created secure .pgpass file at: ${pgpass_file}"
+}
+
+# Cleanup secure password file - must be called after pg operations complete
+cleanup_pgpass() {
+    if [[ -n "$PGPASS_FILE" && -f "$PGPASS_FILE" ]]; then
+        rm -f "$PGPASS_FILE"
+        log_backup "INFO" "Removed secure .pgpass file"
+    fi
+    if [[ -n "$PGPASS_DIR" && -d "$PGPASS_DIR" ]]; then
+        rm -rf "$PGPASS_DIR"
+    fi
+    unset PGPASS_FILE PGPASS_DIR
+}
+
 # Create database backup
 create_backup() {
     parse_db_dsn
@@ -78,8 +120,14 @@ create_backup() {
     
     log_backup "INFO" "Starting backup for database: $DB_NAME"
     
-    # Create backup using pg_dump with compression
-    export PGPASSWORD="$DB_PASS"
+    # Setup secure pgpass file (avoids PGPASSWORD environment variable exposure)
+    setup_pgpass
+    
+    # Ensure cleanup happens even on error
+    trap cleanup_pgpass EXIT
+    
+    # Set PGPASSFILE to use our secure temp file instead of default ~/.pgpass
+    export PGPASSFILE="$PGPASS_FILE"
     
     local backup_path="${BACKUP_DIR}/${BACKUP_NAME}"
     
@@ -105,7 +153,7 @@ create_backup() {
         exit 1
     fi
     
-    unset PGPASSWORD
+    # Cleanup handled by trap on EXIT
 }
 
 # Upload backup to S3
@@ -182,7 +230,14 @@ restore_backup() {
     
     log_backup "INFO" "Starting restoration from: $(basename "$backup_path")"
     
-    export PGPASSWORD="$DB_PASS"
+    # Setup secure pgpass file (avoids PGPASSWORD environment variable exposure)
+    setup_pgpass
+    
+    # Ensure cleanup happens even on error
+    trap cleanup_pgpass EXIT
+    
+    # Set PGPASSFILE to use our secure temp file
+    export PGPASSFILE="$PGPASS_FILE"
     
     # Restore database
     if gunzip -c "$backup_path" | psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"; then
@@ -194,7 +249,7 @@ restore_backup() {
         exit 1
     fi
     
-    unset PGPASSWORD
+    # Cleanup handled by trap on EXIT
     
     # Cleanup temp file if downloaded from S3
     if [[ "$backup_file" == "s3://"* ]]; then
@@ -243,7 +298,14 @@ test_restoration() {
     
     log_backup "INFO" "Creating test database: ${test_db}"
     
-    export PGPASSWORD="$DB_PASS"
+    # Setup secure pgpass file (avoids PGPASSWORD environment variable exposure)
+    setup_pgpass
+    
+    # Ensure cleanup happens even on error
+    trap cleanup_pgpass EXIT
+    
+    # Set PGPASSFILE to use our secure temp file
+    export PGPASSFILE="$PGPASS_FILE"
     
     # Create test database
     psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "CREATE DATABASE ${test_db};"
@@ -272,7 +334,7 @@ test_restoration() {
     # Cleanup test database
     psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d postgres -c "DROP DATABASE IF EXISTS ${test_db};"
     
-    unset PGPASSWORD
+    # Cleanup handled by trap on EXIT
     
     # Record test result
     local test_log="${BACKUP_DIR}/restoration_tests/test_${TIMESTAMP}.log"
