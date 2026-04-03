@@ -286,7 +286,7 @@ jobs:
 
       - name: Build ML image for scanning
         run: |
-          docker build -f Ian_ML/Dockerfile -t diana-ml:scan ./Ian_ML
+          docker build -f Ian_ML/Dockerfile -t diana-ml:scan .
 
       - name: Build frontend image for scanning
         run: |
