@@ -231,7 +231,7 @@ jobs:
       - name: Build ML image
         uses: docker/build-push-action@v5
         with:
-          context: ./Ian_ML
+          context: .
           file: Ian_ML/Dockerfile
           push: false
           tags: diana-ml:test
