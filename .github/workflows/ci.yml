@@ -74,6 +74,9 @@ jobs:
           DB_SOURCE: "postgres://postgres:postgres@localhost:5432/diana_test?sslmode=disable"
           ENVIRONMENT: "test"
 
+      - name: Install bc for coverage comparison
+        run: sudo apt-get install -y bc
+
       - name: Generate coverage report
         run: |
           go tool cover -func=coverage.out > coverage-summary.txt
