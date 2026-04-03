@@ -421,6 +421,11 @@ func (h *PrivacyHandler) WithdrawConsent(c *gin.Context) {
 		return
 	}
 
+	if h.store == nil {
+		ErrInternal(c, "Store not configured")
+		return
+	}
+
 	ctx := c.Request.Context()
 
 	// Get current consent settings

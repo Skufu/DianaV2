@@ -150,6 +150,10 @@ func (m *mockCircuitBreakerPredictor) GetDriftAlerts(ctx context.Context, unackn
 	return nil, errors.New("not implemented")
 }
 
+func (m *mockCircuitBreakerPredictor) IsAvailable() bool {
+	return true
+}
+
 func TestCircuitBreakerPredictor_Success(t *testing.T) {
 	config := DefaultCircuitBreakerConfig()
 	

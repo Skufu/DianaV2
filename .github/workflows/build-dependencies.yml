@@ -27,12 +27,16 @@ jobs:
             ! -path "./__pycache__/*" \
             ! -path "./frontend/node_modules/*" \
             ! -path "./backend/vendor/*" \
+            ! -path "./data/nhanes/*" \
+            ! -path "./models/*" \
             ! -name "*.lock" \
             ! -name "package-lock.json" \
             ! -name "Pipfile.lock" \
             ! -name "go.sum" \
             ! -name "*.bin" \
             ! -name "*.pb" \
+            ! -name "*.joblib" \
+            ! -name "*.csv" \
             2>/dev/null | head -50)
 
           if [ -n "$LARGE_FILES" ]; then
@@ -300,13 +304,13 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build with bundle analysis
-        run: npm run build
+        run: npm run build --workspace=frontend
 
       - name: Install bc for size calculation
         run: sudo apt-get update && sudo apt-get install -y bc
@@ -384,7 +388,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install jq
         if: matrix.component == 'frontend'
@@ -393,25 +397,28 @@ jobs:
 
       - name: Check frontend unused dependencies
         if: matrix.component == 'frontend'
-        working-directory: frontend
         run: |
           echo "🔍 Checking frontend for unused dependencies..."
+
+          # Install dependencies
+          npm ci --legacy-peer-deps
 
           # Install depcheck
           npm install -g depcheck
 
           # Run depcheck
-          depcheck --json > ../reports/frontend-unused-deps.json || true
+          mkdir -p reports
+          depcheck --json > reports/frontend-unused-deps.json || true
 
-          echo "### Frontend Unused Dependencies" > ../reports/unused-deps-report.md
-          echo "" >> ../reports/unused-deps-report.md
-          cat ../reports/frontend-unused-deps.json | jq -r '.dependencies[] | "- \(.)"' >> ../reports/unused-deps-report.md 2>/dev/null || echo "None detected" >> ../reports/unused-deps-report.md
-          echo "" >> ../reports/unused-deps-report.md
+          echo "### Frontend Unused Dependencies" > reports/unused-deps-report.md
+          echo "" >> reports/unused-deps-report.md
+          cat reports/frontend-unused-deps.json | jq -r '.dependencies[] | "- \(.)"' >> reports/unused-deps-report.md 2>/dev/null || echo "None detected" >> reports/unused-deps-report.md
+          echo "" >> reports/unused-deps-report.md
 
-          echo "### Frontend Missing Dependencies" >> ../reports/unused-deps-report.md
-          cat ../reports/frontend-unused-deps.json | jq -r '.missing | keys[] | "- \(.)"' >> ../reports/unused-deps-report.md 2>/dev/null || echo "None detected" >> ../reports/unused-deps-report.md
+          echo "### Frontend Missing Dependencies" >> reports/unused-deps-report.md
+          cat reports/frontend-unused-deps.json | jq -r '.missing | keys[] | "- \(.)"' >> reports/unused-deps-report.md 2>/dev/null || echo "None detected" >> reports/unused-deps-report.md
 
-          cat ../reports/unused-deps-report.md
+          cat reports/unused-deps-report.md
 
       # Python ML - deptry
       - name: Setup Python (ML)
@@ -434,6 +441,9 @@ jobs:
 
           # Install deptry
           pip install deptry
+
+          # Create reports directory
+          mkdir -p ../reports
 
           # Run deptry
           deptry . --output ../reports/ml-unused-deps.txt || true
@@ -460,6 +470,9 @@ jobs:
         working-directory: backend
         run: |
           echo "🔍 Checking Go backend for unused dependencies..."
+
+          # Create reports directory
+          mkdir -p ../reports
 
           # Copy go.mod and go.sum for comparison
           cp go.mod go.mod.before
