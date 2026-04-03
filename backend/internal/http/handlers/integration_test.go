@@ -13,20 +13,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/skufu/DianaV2/backend/internal/http/middleware"
 )
-
-func createAuthenticatedContext(role string) (*gin.Context, *httptest.ResponseRecorder) {
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-	c.Set("user", middleware.UserClaims{
-		UserID: 1,
-		Email:  "test@example.com",
-		Role:   role,
-	})
-	return c, w
-}
 
 // TestHealthEndpointIntegration tests the health endpoint
 func TestHealthEndpointIntegration(t *testing.T) {

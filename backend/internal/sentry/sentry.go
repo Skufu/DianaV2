@@ -88,7 +88,7 @@ func Init(config Config) error {
 			event.Tags["go_arch"] = runtime.GOARCH
 			
 			// Filter out common non-actionable errors
-			if event.Exception != nil && len(event.Exception) > 0 {
+			if len(event.Exception) > 0 {
 				for _, exc := range event.Exception {
 					if shouldIgnoreError(exc.Value) {
 						return nil
