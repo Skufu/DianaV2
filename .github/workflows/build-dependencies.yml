@@ -178,13 +178,13 @@ jobs:
 
           echo "✅ Frontend package.json found"
 
-          # Verify Ian_ML has pyproject.toml
-          if [ ! -f "Ian_ML/pyproject.toml" ]; then
-            echo "❌ ERROR: Ian_ML/pyproject.toml not found"
+          # Verify Ian_ML has requirements.txt (Flask service uses pip, not pyproject.toml)
+          if [ ! -f "Ian_ML/requirements.txt" ]; then
+            echo "❌ ERROR: Ian_ML/requirements.txt not found"
             exit 1
           fi
 
-          echo "✅ Ian_ML pyproject.toml found"
+          echo "✅ Ian_ML requirements.txt found"
 
           echo "✅ Monorepo structure validated"
 
