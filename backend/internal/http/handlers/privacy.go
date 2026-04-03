@@ -198,19 +198,19 @@ func (h *PrivacyHandler) exportDataAsZip(c *gin.Context, data DataExportResponse
 	// Add user profile as JSON
 	profileJSON, _ := json.MarshalIndent(data.UserProfile, "", "  ")
 	profileFile, _ := zipWriter.Create("user_profile.json")
-	profileFile.Write(profileJSON)
+	_, _ = profileFile.Write(profileJSON)
 
 	// Add assessments as JSON
 	assessmentsJSON, _ := json.MarshalIndent(data.Assessments, "", "  ")
 	assessmentsFile, _ := zipWriter.Create("assessments.json")
-	assessmentsFile.Write(assessmentsJSON)
+	_, _ = assessmentsFile.Write(assessmentsJSON)
 
 	// Add assessments as CSV
 	csvBuf := new(bytes.Buffer)
 	csvWriter := csv.NewWriter(csvBuf)
-	csvWriter.Write([]string{"ID", "Created At", "Risk Score", "Cluster", "HbA1c", "BMI", "FBS", "Model Version"})
+	_ = csvWriter.Write([]string{"ID", "Created At", "Risk Score", "Cluster", "HbA1c", "BMI", "FBS", "Model Version"})
 	for _, a := range data.Assessments {
-		csvWriter.Write([]string{
+		_ = csvWriter.Write([]string{
 			fmt.Sprintf("%d", a.ID),
 			a.CreatedAt.Format(time.RFC3339),
 			fmt.Sprintf("%d", a.RiskScore),
@@ -223,12 +223,12 @@ func (h *PrivacyHandler) exportDataAsZip(c *gin.Context, data DataExportResponse
 	}
 	csvWriter.Flush()
 	csvFile, _ := zipWriter.Create("assessments.csv")
-	csvFile.Write(csvBuf.Bytes())
+	_, _ = csvFile.Write(csvBuf.Bytes())
 
 	// Add consent history
 	consentJSON, _ := json.MarshalIndent(data.ConsentHistory, "", "  ")
 	consentFile, _ := zipWriter.Create("consent_history.json")
-	consentFile.Write(consentJSON)
+	_, _ = consentFile.Write(consentJSON)
 
 	// Add README
 	readme := fmt.Sprintf(`DIANA V2 Data Export
@@ -249,7 +249,7 @@ For questions about your data, contact: privacy@diana-health.com
 `, data.ExportMetadata.ExportID, data.ExportMetadata.ExportedAt.Format(time.RFC3339),
 		user.Email, data.ExportMetadata.FormatVersion)
 	readmeFile, _ := zipWriter.Create("README.txt")
-	readmeFile.Write([]byte(readme))
+	_, _ = readmeFile.Write([]byte(readme))
 
 	zipWriter.Close()
 
@@ -266,28 +266,28 @@ func (h *PrivacyHandler) exportDataAsCSV(c *gin.Context, data DataExportResponse
 	writer := csv.NewWriter(buf)
 
 	// Write header and user info
-	writer.Write([]string{"Field", "Value"})
-	writer.Write([]string{"Export ID", data.ExportMetadata.ExportID})
-	writer.Write([]string{"Exported At", data.ExportMetadata.ExportedAt.Format(time.RFC3339)})
-	writer.Write([]string{"User ID", fmt.Sprintf("%d", user.ID)})
-	writer.Write([]string{"Email", user.Email})
-	writer.Write([]string{"First Name", user.FirstName})
-	writer.Write([]string{"Last Name", user.LastName})
-	writer.Write([]string{"Account Status", user.AccountStatus})
-	writer.Write([]string{"Created At", user.CreatedAt.Format(time.RFC3339)})
-	writer.Write([]string{})
+	_ = writer.Write([]string{"Field", "Value"})
+	_ = writer.Write([]string{"Export ID", data.ExportMetadata.ExportID})
+	_ = writer.Write([]string{"Exported At", data.ExportMetadata.ExportedAt.Format(time.RFC3339)})
+	_ = writer.Write([]string{"User ID", fmt.Sprintf("%d", user.ID)})
+	_ = writer.Write([]string{"Email", user.Email})
+	_ = writer.Write([]string{"First Name", user.FirstName})
+	_ = writer.Write([]string{"Last Name", user.LastName})
+	_ = writer.Write([]string{"Account Status", user.AccountStatus})
+	_ = writer.Write([]string{"Created At", user.CreatedAt.Format(time.RFC3339)})
+	_ = writer.Write([]string{})
 
 	// Write consent info
-	writer.Write([]string{"Consent Personal Data", fmt.Sprintf("%t", user.ConsentPersonalData)})
-	writer.Write([]string{"Consent Research", fmt.Sprintf("%t", user.ConsentResearchParticipation)})
-	writer.Write([]string{"Consent Emails", fmt.Sprintf("%t", user.ConsentEmailUpdates)})
-	writer.Write([]string{"Consent Analytics", fmt.Sprintf("%t", user.ConsentAnalytics)})
-	writer.Write([]string{})
+	_ = writer.Write([]string{"Consent Personal Data", fmt.Sprintf("%t", user.ConsentPersonalData)})
+	_ = writer.Write([]string{"Consent Research", fmt.Sprintf("%t", user.ConsentResearchParticipation)})
+	_ = writer.Write([]string{"Consent Emails", fmt.Sprintf("%t", user.ConsentEmailUpdates)})
+	_ = writer.Write([]string{"Consent Analytics", fmt.Sprintf("%t", user.ConsentAnalytics)})
+	_ = writer.Write([]string{})
 
 	// Write assessments
-	writer.Write([]string{"Assessment ID", "Date", "Risk Score", "Cluster", "HbA1c", "BMI", "FBS"})
+	_ = writer.Write([]string{"Assessment ID", "Date", "Risk Score", "Cluster", "HbA1c", "BMI", "FBS"})
 	for _, a := range data.Assessments {
-		writer.Write([]string{
+		_ = writer.Write([]string{
 			fmt.Sprintf("%d", a.ID),
 			a.CreatedAt.Format(time.RFC3339),
 			fmt.Sprintf("%d", a.RiskScore),
@@ -341,7 +341,7 @@ func (h *PrivacyHandler) DeleteUserData(c *gin.Context) {
 	}
 
 	// Log the deletion request in audit
-	h.store.AuditEvents().Create(ctx, models.AuditEvent{
+	_ = h.store.AuditEvents().Create(ctx, models.AuditEvent{
 		Actor:      user.Email,
 		Action:     "data_deletion_requested",
 		TargetType: "user",
@@ -360,7 +360,7 @@ func (h *PrivacyHandler) DeleteUserData(c *gin.Context) {
 	}
 
 	// Revoke all refresh tokens
-	h.store.RefreshTokens().RevokeAllUserTokens(ctx, int32(userClaims.UserID))
+	_ = h.store.RefreshTokens().RevokeAllUserTokens(ctx, int32(userClaims.UserID))
 
 	// Return deletion confirmation
 	c.JSON(http.StatusOK, gin.H{
@@ -462,7 +462,7 @@ func (h *PrivacyHandler) WithdrawConsent(c *gin.Context) {
 	}
 
 	// Log the consent withdrawal
-	h.store.AuditEvents().Create(ctx, models.AuditEvent{
+	_ = h.store.AuditEvents().Create(ctx, models.AuditEvent{
 		Actor:      user.Email,
 		Action:     "consent_withdrawn",
 		TargetType: "user",
