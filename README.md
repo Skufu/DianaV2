@@ -6,6 +6,55 @@ A full-stack health application designed for menopausal women to assess diabetes
 
 ---
 
+## Table of Contents
+
+<details>
+<summary>Navigation</summary>
+
+- [Directory Index](#directory-index)
+- [File Search Index](#file-search-index)
+  - [Backend (Go)](#backend-go)
+  - [Frontend (React)](#frontend-react)
+  - [ML (Python)](#ml-python)
+- [Tech Stack](#tech-stack)
+- [System Architecture](#system-architecture)
+  - [Architecture Diagram](#architecture-diagram)
+  - [Key Design Decisions](#key-design-decisions)
+- [Features](#features)
+  - [Clinical Highlights](#clinical-highlights)
+- [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites-auto-install-enabled)
+  - [Automated Setup](#automated-setup-one-command---does-everything)
+  - [Setup Verification](#setup-verification)
+  - [Common Issues](#common-issues)
+- [API Endpoints Summary](#api-endpoints-summary)
+- [Available Commands](#available-commands)
+- [Environment Variables](#environment-variables)
+- [Production Deployment](#production-deployment)
+  - [Prerequisites Checklist](#prerequisites-checklist)
+  - [Environment Variable Checklist](#environment-variable-checklist)
+  - [Docker Compose Production Deployment](#docker-compose-production-deployment)
+  - [SSL/TLS Setup](#ssltls-setup)
+  - [Security Hardening](#security-hardening)
+  - [Backup & Monitoring](#backup--monitoring)
+- [Testing](#testing)
+  - [Backend (Go)](#backend-go-1)
+  - [Frontend (React)](#frontend-react-1)
+  - [ML Service (Python)](#ml-service-python)
+  - [Test Summary](#test-summary)
+- [Demo Credentials](#demo-credentials)
+- [Troubleshooting](#troubleshooting)
+- [Documentation](#documentation)
+- [Security](#security)
+  - [Vulnerability Reporting](#vulnerability-reporting)
+  - [Health Data Privacy](#health-data-privacy)
+  - [Authentication Security](#authentication-security)
+  - [ML Disclaimer](#ml-disclaimer)
+- [License](#license)
+- [Search Keywords](#search-keywords)
+
+</details>
+
 ## - Directory Index
 
 | Directory | Purpose | Key Files | README |

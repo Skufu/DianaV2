@@ -1,0 +1,15 @@
+{
+  "session_id": "2026-04-04-threshold-research",
+  "type": "deep-dive",
+  "original_query": "Research clinical best practices for selecting decision thresholds in medical screening models for T2DM screening",
+  "provider": "perplexity",
+  "queries": [
+    {"id": 1, "topic": "ADA WHO T2DM screening sensitivity guidelines", "status": "completed", "output": "clinical-threshold-optimization.md"},
+    {"id": 2, "topic": "Youden's J vs G-Mean vs constrained threshold selection", "status": "completed", "output": "clinical-threshold-optimization.md"},
+    {"id": 3, "topic": "Clinical score weighting formulas in diabetes screening papers", "status": "completed", "output": "clinical-threshold-optimization.md"},
+    {"id": 4, "topic": "Threshold leakage prevention cross-validation best practices", "status": "completed", "output": "clinical-threshold-optimization.md"},
+    {"id": 5, "topic": "Published diabetes screening model threshold values ranges", "status": "completed", "output": "clinical-threshold-optimization.md"}
+  ],
+  "started_at": "2026-04-04T00:00:00Z",
+  "status": "completed"
+}

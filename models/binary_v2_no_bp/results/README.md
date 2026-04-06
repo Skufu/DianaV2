@@ -36,7 +36,9 @@
 | `best_model` | Selected algorithm (Logistic Regression) |
 | `n_features` | Number of input features (9) |
 | `validation_method` | CV strategy used |
-| `decision_thresholds.at_risk` | Classification threshold (0.448) |
+| `decision_thresholds.at_risk` | Classification threshold (0.478) |
+| `metrics.mean_threshold` | Mean decision threshold across LOGO folds |
+| `metrics.std_threshold` | Standard deviation of per-fold thresholds |
 | `metrics.auc_roc` | Primary performance metric (0.727) |
 | `metrics.sensitivity` | True positive rate (74.8%) |
 | `metrics.npv` | Negative predictive value (65.7%) |
