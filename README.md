@@ -472,6 +472,247 @@ VITE_ML_API_KEY=your-secure-ml-api-key  # Must match ML_API_KEY
 
 ---
 
+## Production Deployment
+
+> **Beyond Quick Start: This section covers production-specific configuration, security hardening, and SSL/TLS setup.**
+
+### Prerequisites Checklist
+
+Before deploying to production, ensure the following are configured:
+
+| Category | Item | Status |
+|----------|------|--------|
+| **Infrastructure** | Domain configured and pointing to server IP | ✅ Required |
+| **Infrastructure** | Ports 80 and 443 open on firewall | ✅ Required |
+| **Infrastructure** | PostgreSQL database accessible (external or managed) | ✅ Required |
+| **Infrastructure** | Docker installed (or container orchestration platform) | ✅ Required |
+| **Security** | Strong JWT_SECRET (min 32 chars, cryptographically random) | ✅ Required |
+| **Security** | ML_API_KEY configured for ML service auth | ✅ Required |
+| **Security** | CORS_ORIGINS set to trusted domains only | ✅ Required |
+| **Security** | SSL/TLS certificates obtained | ✅ Required |
+| **Monitoring** | Database backup automation configured | ⚠️ Recommended |
+| **Monitoring** | Health check endpoints monitored | ⚠️ Recommended |
+
+### Environment Variable Checklist
+
+| Variable | Required | Security Note | Production Value |
+|----------|----------|---------------|------------------|
+| `JWT_SECRET` | ✅ **Required** | **⚠️ Min 32 chars, use `openssl rand -base64 32`** | Cryptographically random string |
+| `POSTGRES_PASSWORD` | ✅ **Required** | **⚠️ Strong password, never reuse** | Secure database password |
+| `ML_API_KEY` | ✅ **Required** | **⚠️ Strong random key for ML auth** | Match in backend + ML + frontend |
+| `CORS_ORIGINS` | ✅ **Required** | Only trusted HTTPS domains | `https://yourdomain.com` |
+| `DB_DSN` | ✅ **Required** | Include `sslmode=require` for TLS | `postgres://...?sslmode=require` |
+| `DOMAIN` | ✅ **Required** | Your production domain | `api.yourdomain.com` |
+| `ENV` | ✅ **Required** | Must be `production` | `production` |
+| `PORT` | ⚠️ Optional | Default 8080 | Standard or custom |
+| `MODEL_VERSION` | ⚠️ Optional | Default `binary_v2_no_bp` | Choose validated model |
+| `RATE_LIMIT_REQUESTS` | ⚠️ Optional | Rate limiting threshold | `100` (recommended) |
+| `RATE_LIMIT_WINDOW` | ⚠️ Optional | Rate limiting window (seconds) | `60` (recommended) |
+
+### Docker Compose Production Deployment
+
+DianaV2 provides a production Docker Compose configuration with TLS/SSL termination:
+
+```bash
+# 1. Create production .env file
+cp env.example .env.prod
+# Edit .env.prod with production values (see checklist above)
+
+# 2. Set required environment variables
+export JWT_SECRET=$(openssl rand -base64 32)
+export POSTGRES_PASSWORD=$(openssl rand -base64 24)
+export ML_API_KEY=$(openssl rand -base64 32)
+export DOMAIN=your-domain.com
+export SSL_EMAIL=admin@your-domain.com
+
+# 3. Obtain SSL/TLS certificates (Let's Encrypt)
+./scripts/setup-ssl.sh --domain $DOMAIN --email $SSL_EMAIL
+
+# 4. Deploy production stack with TLS
+make deploy-prod
+# OR manually:
+# docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+# 5. Verify deployment
+make ssl-verify
+curl -sf https://$DOMAIN/api/v1/healthz
+```
+
+#### Production Architecture
+
+The production deployment uses:
+- **Nginx reverse proxy** for TLS termination (port 443)
+- **HTTP to HTTPS redirect** (port 80 → 443)
+- **Certbot** for automatic certificate renewal
+- **Internal network isolation** (services not exposed externally)
+- **Rate limiting** via backend configuration
+
+```mermaid
+flowchart LR
+    subgraph External["External Access"]
+        Client["Client Browser"]
+    end
+    
+    subgraph Production["Production Stack"]
+        Nginx["Nginx Proxy<br/>(TLS/SSL)"]
+        Backend["Go Backend<br/>(Internal)"]
+        ML["ML Server<br/>(Internal)"]
+        Frontend["React Frontend<br/>(Static)"]
+        DB["PostgreSQL<br/>(Internal)"]
+    end
+    
+    Client -->|"HTTPS 443"| Nginx
+    Nginx -->|"Proxy"| Backend
+    Nginx -->|"Proxy"| ML
+    Nginx -->|"Static Files"| Frontend
+    Backend --> DB
+    Backend --> ML
+```
+
+### SSL/TLS Setup
+
+DianaV2 uses Let's Encrypt for free, automatic SSL certificates:
+
+#### Quick SSL Setup
+
+```bash
+# Obtain and configure SSL certificates
+./scripts/setup-ssl.sh --domain api.yourdomain.com --email admin@yourdomain.com
+
+# Verify TLS configuration
+./scripts/verify-tls.sh --domain api.yourdomain.com
+
+# Test with SSL Labs (external)
+# Visit: https://www.ssllabs.com/ssltest/analyze.html?d=api.yourdomain.com
+```
+
+#### SSL Certificate Details
+
+| Item | Path/Command |
+|------|--------------|
+| Certificate location | `/etc/letsencrypt/live/$DOMAIN/` |
+| Nginx SSL directory | `/etc/nginx/ssl/` (copies for Docker) |
+| Renewal automation | Daily cron job (auto-setup) |
+| Manual renewal | `certbot renew` |
+
+#### SSL Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.prod.yml` | Production overlay with Nginx TLS proxy |
+| `scripts/setup-ssl.sh` | Let's Encrypt certificate automation |
+| `scripts/verify-tls.sh` | TLS configuration verification |
+| `frontend/nginx-ssl.conf` | Nginx TLS configuration |
+
+### Security Hardening
+
+#### JWT Secret Requirements
+
+```bash
+# Generate secure JWT secret (minimum 32 characters)
+openssl rand -base64 32
+
+# ⚠️ WARNING: Never use:
+# - Simple passwords
+# - Dictionary words
+# - Short strings (< 32 chars)
+# - Same secret across environments
+```
+
+#### ML API Key Configuration
+
+The ML service requires API key authentication in production:
+
+```bash
+# Generate ML API key
+openssl rand -base64 32
+
+# Configure in three locations:
+# 1. Backend: ML_API_KEY=<generated-key>
+# 2. ML Server: ML_API_KEY=<generated-key>
+# 3. Frontend: VITE_ML_API_KEY=<generated-key>
+```
+
+#### CORS Security
+
+```bash
+# Production CORS (HTTPS only, specific domains)
+CORS_ORIGINS=https://yourdomain.com,https://api.yourdomain.com
+
+# ⚠️ WARNING: Never use:
+# - Wildcards (*) in production
+# - HTTP origins (only HTTPS)
+# - localhost URLs (except dev)
+```
+
+#### Database Security
+
+```bash
+# Production DB connection string (SSL required)
+DB_DSN=postgres://diana:$POSTGRES_PASSWORD@db-host:5432/diana?sslmode=require
+
+# ⚠️ WARNING:
+# - Always use sslmode=require in production
+# - Never store password in code
+# - Use managed database services when possible
+```
+
+### Backup & Monitoring
+
+#### Database Backups
+
+```bash
+# Run backup manually
+make backup
+
+# List available backups
+make backup-list
+
+# Restore from backup
+make backup-restore backups/diana_backup_YYYYMMDD.sql.gz
+
+# Test restoration process
+make backup-test
+```
+
+See [deployment/BACKUP-README.md](./deployment/BACKUP-README.md) for full backup documentation.
+
+#### Health Monitoring
+
+```bash
+# Check backend health
+curl -sf https://$DOMAIN/api/v1/healthz
+
+# Check ML service health
+curl -sf https://$DOMAIN/ml/health
+
+# Docker container status
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+
+# View logs
+make deploy-prod-logs
+```
+
+### Production Commands Summary
+
+```bash
+# Deployment
+make deploy-prod          # Deploy production stack
+make deploy-prod-down     # Stop production stack
+make deploy-prod-logs     # View nginx proxy logs
+
+# SSL/TLS
+make ssl-setup DOMAIN=your-domain.com SSL_EMAIL=admin@your-domain.com
+make ssl-verify DOMAIN=your-domain.com
+
+# Backups
+make backup               # Run backup
+make backup-list          # List backups
+make backup-test          # Test restoration
+```
+
+---
+
 ## Demo Credentials
 
 | Role | Email | Password |
