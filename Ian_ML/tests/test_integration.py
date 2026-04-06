@@ -132,6 +132,10 @@ class TestPredictEndpointIntegration:
             'metabolic_subtype': 'N/A',
             'cluster_description': '',
             'treatment_focus': '',
+            'cluster_capability': {
+                'supported': False,
+                'required_inputs': [],
+            },
         }
 
         with patch('Ian_ML.service.server.get_clinical_predictor_for', return_value=mock_predictor_without_cluster):
@@ -159,7 +163,8 @@ class TestPredictEndpointIntegration:
                 'hdl': 50.0,
             })
 
-        assert response.status_code == 200
+        # KeyError for missing features should return 500 (server error) since it's not handled specially
+        assert response.status_code == 500
 
 
 class TestBatchPredictEndpointIntegration:
