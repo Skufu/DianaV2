@@ -187,21 +187,21 @@ jobs:
 
       - name: Upload Snyk Go results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: env.SNYK_TOKEN != ''
         with:
           sarif_file: snyk-go.sarif
           category: snyk-go
 
       - name: Upload Snyk Node results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: env.SNYK_TOKEN != ''
         with:
           sarif_file: snyk-node.sarif
           category: snyk-node
 
       - name: Upload Snyk Python results
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        if: env.SNYK_TOKEN != ''
         with:
           sarif_file: snyk-python.sarif
           category: snyk-python
