@@ -130,6 +130,34 @@ A full-stack health application designed for menopausal women to assess diabetes
 
 ---
 
+## Features
+
+DianaV2 provides a comprehensive suite of features for diabetes risk assessment and health management:
+
+| Icon | Feature | Description |
+|------|---------|-------------|
+| 🔐 | **JWT Authentication** | Secure login with JWT tokens, refresh flow, and role-based access control (RBAC) |
+| 🤖 | **ML Diabetes Risk Prediction** | Dual predictor system: ADA baseline model + clinical metabolic models (binary_v2_no_bp, clinical_3class) with AUC ~0.72 |
+| 📊 | **Personal Health Trends** | Track biomarkers over time: HbA1c, fasting blood sugar, BMI, cholesterol with interactive charts |
+| 📄 | **PDF Report Export** | Generate downloadable insights reports with risk scores, SHAP explanations, and clinical recommendations |
+| 🔍 | **SHAP Explainability** | Feature contribution waterfall charts showing why predictions were made (top factors influencing risk) |
+| 👨‍💼 | **Admin Dashboard** | User management, system statistics, ML model traceability, and authentication event logs |
+| 📝 | **Audit Logs** | Complete action tracking: login events, assessment creation, profile updates, admin operations |
+| 📤 | **CSV Data Export** | Filterable export by menopause status, risk level, patient demographics, and assessment records |
+| 📈 | **Cohort Analysis** | Comparative group analysis: risk distribution by demographics, biomarker correlations |
+| 🎯 | **K-Means Clustering** | Ahlqvist diabetes subtypes classification (SIRD, SIDD, MOD, MARD) with personalized recommendations |
+| 📋 | **Multi-Step Onboarding** | Guided consent flow, health profile setup, and menopause status collection |
+| 💻 | **Responsive Frontend** | React 18 with lazy loading, Tailwind CSS styling, and device performance tiering |
+
+### Clinical Highlights
+
+- **Screening-First Design**: ML models provide risk scores for clinical review, not standalone diagnoses
+- **Evidence-Based Models**: Trained on NHANES 2011-2024 menopausal women dataset with defensible nested cross-validation
+- **Biomarker Validation**: Input ranges checked against clinical thresholds (HbA1c 4.0-15.0, FBS 70-200 mg/dL)
+- **Doctor Model Locking**: Clinician accounts use validated screening model (binary_v2_no_bp) for consistent assessments
+
+---
+
 ## Quick Start
 
 ### Prerequisites (Auto-Install Enabled!)
