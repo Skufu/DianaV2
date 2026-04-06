@@ -13,6 +13,18 @@ import (
 	sqlcgen "github.com/skufu/DianaV2/backend/internal/store/sqlc"
 )
 
+// safeInt32 converts an int to int32 with bounds checking
+func safeInt32(i int) int32 {
+	if i > 2147483647 {
+		return 2147483647
+	}
+	if i < -2147483648 {
+		return -2147483648
+	}
+	return int32(i)
+}
+
+
 // ============================================================================
 // AuditEventRepository implementation
 // ============================================================================
@@ -36,7 +48,7 @@ func (r *pgAuditEventRepo) Create(ctx context.Context, event models.AuditEvent) 
 		Actor:      pgtype.Text{String: event.Actor, Valid: event.Actor != ""},
 		Action:     pgtype.Text{String: event.Action, Valid: event.Action != ""},
 		TargetType: pgtype.Text{String: event.TargetType, Valid: event.TargetType != ""},
-		TargetID:   pgtype.Int4{Int32: int32(event.TargetID), Valid: event.TargetID != 0},
+		TargetID:   pgtype.Int4{Int32: safeInt32(event.TargetID), Valid: event.TargetID != 0},
 		Details:    detailsJSON,
 	})
 }
@@ -86,8 +98,8 @@ func (r *pgAuditEventRepo) List(ctx context.Context, params models.AuditListPara
 		Column2: params.Action,
 		Column3: startDate,
 		Column4: endDate,
-		Limit:   int32(pageSize),
-		Offset:  int32(offset),
+		Limit:   safeInt32(pageSize),
+		Offset:  safeInt32(offset),
 	})
 	if err != nil {
 		return nil, 0, err
@@ -145,8 +157,8 @@ func (r *pgModelRunRepo) List(ctx context.Context, limit, offset int) ([]models.
 
 	// Get paginated list
 	rows, err := r.q.ListModelRuns(ctx, sqlcgen.ListModelRunsParams{
-		Limit:  int32(limit),
-		Offset: int32(offset),
+		Limit:  safeInt32(limit),
+		Offset: safeInt32(offset),
 	})
 	if err != nil {
 		return nil, 0, err
