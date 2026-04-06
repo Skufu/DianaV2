@@ -57,6 +57,9 @@
     "vite-bundle-visualizer": "^1.0.0",
     "vitest": "^4.0.18"
   },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.53.3"
+  },
   "bundlesize": [
     {
       "path": "./dist/assets/*.js",
