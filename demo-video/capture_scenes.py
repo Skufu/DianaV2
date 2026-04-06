@@ -4,7 +4,6 @@ Diana V2 Demo Video Screen Recorder
 Captures screenshots of all key scenes for the demo video.
 """
 
-import os
 import time
 import requests
 from pathlib import Path
