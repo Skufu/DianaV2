@@ -1,6 +1,6 @@
 # Frontend Dockerfile - Multi-stage build
 # Stage 1: Build React app
-FROM node:20-alpine AS build
+FROM node:20-alpine3.20 AS build
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve with Nginx
-FROM nginx:alpine
+FROM nginx:alpine3.20
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
