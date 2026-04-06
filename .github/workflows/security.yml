@@ -90,7 +90,32 @@ jobs:
                   --exclude=node_modules \
                   --exclude=venv \
                   --exclude=__pycache__ \
-                  . || echo '{"$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","version":"2.1.0","runs":[]}' > semgrep-results.sarif
+                  . || true
+
+      - name: Ensure valid SARIF output
+        run: |
+          # Check if SARIF file exists and has content
+          if [ ! -s semgrep-results.sarif ]; then
+            # Create minimal valid SARIF with empty run (required by upload-sarif)
+            cat > semgrep-results.sarif << 'EOF'
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Semgrep",
+          "informationUri": "https://semgrep.dev",
+          "rules": []
+        }
+      },
+      "results": []
+    }
+  ]
+}
+EOF
+          fi
 
       - name: Upload Semgrep results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
