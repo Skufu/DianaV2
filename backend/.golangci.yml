@@ -1,3 +1,5 @@
+version: "2"
+
 run:
   timeout: 5m
   modules-download-mode: readonly
@@ -12,11 +14,10 @@ linters:
     - unused
   disable:
     - typecheck  # Already handled by go build
-
-linters-settings:
-  errcheck:
-    check-type-assertions: false
-    check-blank: false
+  settings:
+    errcheck:
+      check-type-assertions: false
+      check-blank: false
 
 issues:
   exclude-rules:
