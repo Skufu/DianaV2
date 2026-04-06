@@ -57,6 +57,7 @@ A full-stack health application designed for menopausal women to assess diabetes
   - [Authentication Security](#authentication-security)
   - [ML Disclaimer](#ml-disclaimer)
 - [License](#license)
+- [References & Acknowledgments](#references--acknowledgments)
 - [Search Keywords](#search-keywords)
 
 </details>
@@ -1111,6 +1112,56 @@ Copyright © 2024 DianaV2 Contributors. All rights reserved until license is for
 ### License File
 
 Once a license is chosen, a `LICENSE` file should be created in the repository root containing the full license text. This README section should then be updated to reference that file.
+
+---
+
+## References & Acknowledgments
+
+> **Citations and acknowledgments for research data, methodology, and clinical guidelines used in DianaV2.**
+
+### Data Sources
+
+| Source | Citation | Usage |
+|--------|----------|-------|
+| **NHANES** | Centers for Disease Control and Prevention (CDC). National Center for Health Statistics (NCHS). National Health and Nutrition Examination Survey Data. Hyattsville, MD: U.S. Department of Health and Human Services, Centers for Disease Control and Prevention, [2009-2023](https://wwwn.cdc.gov/nchs/nhanes/default.aspx). | Primary dataset for ML training: biomarkers, demographics, lifestyle factors from postmenopausal women (cycles F-L). |
+
+### Clinical Guidelines & Classification
+
+| Source | Citation | Usage |
+|--------|----------|-------|
+| **ADA Standards** | American Diabetes Association. Standards of Care in Diabetes—2024. *Diabetes Care* 2024;47(Suppl 1):S1–S321. DOI: [10.2337/dc24-S001](https://doi.org/10.2337/dc24-S001). | Diabetes classification thresholds (HbA1c ≥6.5%, FBS ≥126 mg/dL) and glycemic status definitions. |
+| **Ahlqvist Clustering** | Ahlqvist, E., et al. (2018). Novel subgroups of adult-onset diabetes and their association with outcomes: a data-driven cluster analysis of six variables. *The Lancet Diabetes & Endocrinology*, 6(5), 361–372. DOI: [10.1016/S2213-8587(18)30051-2](https://doi.org/10.1016/S2213-8587(18)30051-2). | K-Means clustering framework (K=4): SIRD, SIDD, MOD, MARD diabetes subtypes adapted for DIANA. |
+
+### ML Methodology
+
+| Source | Citation | Usage |
+|--------|----------|-------|
+| **SHAP Values** | Lundberg, S. M., & Lee, S. I. (2017). A Unified Approach to Interpreting Model Predictions. *Advances in Neural Information Processing Systems*, 30. [NeurIPS Proceedings](https://proceedings.neurips.cc/paper/2017/hash/8a20a862115ef7d44bc5290ed57d2d1d-Abstract.html). | Feature contribution explainability for clinical dashboard (waterfall charts, risk factor attribution). |
+| **MICE Imputation** | Van Buuren, S., & Groothuis-Oudshoorn, K. (2011). mice: Multivariate Imputation by Chained Equations in R. *Journal of Statistical Software*, 45(3), 1–67. DOI: [10.18637/jss.v045.i03](https://doi.org/10.18637/jss.v045.i03). | Missing biomarker imputation preserving physiological correlations. |
+| **Nested CV** | Vabalas, A., et al. (2019). Machine learning algorithm validation with a limited sample size. *PLOS ONE*, 14(11), e0224365. DOI: [10.1371/journal.pone.0224365](https://doi.org/10.1371/journal.pone.0224365). | Defensible performance estimation (Leave-One-Cycle-Out validation). |
+
+### Ethics & Governance
+
+| Source | Citation | Usage |
+|--------|----------|-------|
+| **WHO AI Ethics** | World Health Organization. Ethics and Governance of Artificial Intelligence for Health: WHO Guidance. Geneva: WHO, 2021. [ISBN 9789240029200](https://www.who.int/publications/i/item/9789240029200). | "Screening, not diagnosis" positioning, transparency, and human-in-the-loop clinical judgment. |
+
+### Thesis & Research Documentation
+
+| Document | Location | Description |
+|----------|----------|-------------|
+| **Manuscript** | [docs/07-research/thesis-drafts/manuscript.md](./docs/07-research/thesis-drafts/manuscript.md) | Complete thesis manuscript for DIANA research. |
+| **Methodology** | [docs/07-research/thesis-drafts/METHODOLOGY.md](./docs/07-research/thesis-drafts/METHODOLOGY.md) | Detailed methodology documentation with defensibility justification. |
+| **Defense Citations** | [docs/03-ml/defense/diana-citations.md](./docs/03-ml/defense/diana-citations.md) | Panel-facing citation appendix for ML methodology defense. |
+| **Diabetes Subgroups** | [docs/07-research/diabetes_subgroups.md](./docs/07-research/diabetes_subgroups.md) | Analysis of Ahlqvist subtypes and DIANA adaptations. |
+| **Paper Requirements** | [docs/07-research/paper-requirements.md](./docs/07-research/paper-requirements.md) | Publication requirements and research specifications. |
+
+### Acknowledgments
+
+- **CDC/NCHS**: Public availability of NHANES data enabling population health research
+- **Ahlqvist et al.**: Foundational clustering framework for diabetes subtyping
+- **Scikit-learn**: Open-source ML library enabling reproducible research
+- **Clinical Experts**: Doctor interviews for feature weight validation (see [docs/07-research/doctor-interview-*.md](./docs/07-research/))
 
 ---
 
