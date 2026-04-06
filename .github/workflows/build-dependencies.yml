@@ -18,29 +18,23 @@ jobs:
 
       - name: Detect large files
         run: |
-          echo "🔍 Scanning for files over 500KB..."
-          LARGE_FILES=$(find . -type f -size +500k \
-            ! -path "./.git/*" \
-            ! -path "./node_modules/*" \
-            ! -path "./venv/*" \
-            ! -path "./.venv/*" \
-            ! -path "./__pycache__/*" \
-            ! -path "./frontend/node_modules/*" \
-            ! -path "./backend/vendor/*" \
-            ! -path "./data/nhanes/*" \
-            ! -path "./models/*" \
-            ! -name "*.lock" \
-            ! -name "package-lock.json" \
-            ! -name "Pipfile.lock" \
-            ! -name "go.sum" \
-            ! -name "*.bin" \
-            ! -name "*.pb" \
-            ! -name "*.joblib" \
-            ! -name "*.csv" \
-            2>/dev/null | head -50)
+          echo "🔍 Scanning tracked files for files over 500KB..."
+          # Only check git-tracked files, ignoring local-only artifacts while
+          # preserving repo-specific exemptions for datasets/models/lockfiles.
+          LARGE_FILES=$(git ls-files --cached --exclude-standard | while read file; do
+            case "$file" in
+              data/nhanes/*|models/*|*.lock|package-lock.json|Pipfile.lock|go.sum|*.bin|*.pb|*.joblib|*.csv)
+                continue
+                ;;
+            esac
+
+            if [ -f "$file" ] && [ $(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null) -gt 512000 ]; then
+              echo "$file"
+            fi
+          done | head -50)
 
           if [ -n "$LARGE_FILES" ]; then
-            echo "❌ ERROR: Found files over 500KB limit:"
+            echo "❌ ERROR: Found tracked files over 500KB limit:"
             echo "$LARGE_FILES" | while read file; do
               SIZE=$(du -h "$file" | cut -f1)
               echo "  - $file ($SIZE)"
@@ -49,7 +43,7 @@ jobs:
             echo "Please remove these large files or add them to .gitignore if they should be excluded."
             exit 1
           else
-            echo "✅ No files over 500KB found"
+            echo "✅ No tracked files over 500KB found"
           fi
 
       - name: Check git history for large files
@@ -292,9 +286,6 @@ jobs:
   # 6. Heavy Dependency Detection - Bundle size analysis
   bundle-size-analysis:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -316,6 +307,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y bc
 
       - name: Analyze bundle size
+        working-directory: frontend
         run: |
           echo "🔍 Analyzing bundle size..."
 
@@ -356,6 +348,7 @@ jobs:
           fi
 
       - name: Check for source map explorer
+        working-directory: frontend
         run: |
           if npm list --depth=0 | grep -q "source-map-explorer"; then
             echo "✅ source-map-explorer found for detailed analysis"
