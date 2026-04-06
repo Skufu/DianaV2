@@ -398,6 +398,76 @@ VITE_ML_API_KEY=your-secure-ml-api-key  # Must match ML_API_KEY
 
 ---
 
+## Security
+
+> **This application handles sensitive health data for diabetes risk assessment. Security is a critical priority.**
+
+### Vulnerability Reporting
+
+If you discover a security vulnerability in DianaV2, please report it responsibly:
+
+**Preferred Method (Email):**
+- Send details to: [security@diana.app](mailto:security@diana.app)
+- Include: vulnerability description, steps to reproduce, potential impact
+- Response time: We aim to respond within 48 hours
+
+**GitHub Security Issue:**
+- For non-critical issues, use [GitHub Security Advisories](https://github.com/Skufu/DianaV2/security/advisories)
+- Mark as "Security Vulnerability" when creating
+
+**Please do NOT:**
+- Open public GitHub issues for security vulnerabilities
+- Exploit vulnerabilities beyond minimal proof-of-concept
+- Share vulnerability details publicly before fix is released
+
+### Health Data Privacy
+
+DianaV2 is designed to handle sensitive health data including:
+- Biomarker values (HbA1c, Fasting Blood Sugar, cholesterol, BMI)
+- Medical history and demographics
+- Diabetes risk predictions
+
+**Key Privacy Considerations:**
+- All data transmission uses HTTPS/TLS encryption
+- User authentication requires JWT tokens with secure signing
+- Database credentials are stored securely (never in source code)
+- ML predictions are stored with user consent tracking
+
+**HIPAA Awareness:**
+This application handles health-related data. Organizations deploying DianaV2 in healthcare settings should:
+- Conduct proper HIPAA compliance assessment
+- Implement appropriate administrative, physical, and technical safeguards
+- Maintain audit logs (built-in audit trail in admin dashboard)
+- Ensure proper data retention and disposal policies
+
+### Authentication Security
+
+**JWT Best Practices (Implemented):**
+- JWT secrets must be at least 32 characters (`JWT_SECRET` environment variable)
+- Tokens have configurable expiration (refresh token flow available)
+- Authorization checks enforced via RBAC middleware
+- Session events tracked via audit logging
+
+**Recommendations for Production:**
+- Use strong, unique JWT secrets generated with cryptographic tools
+- Enable `ML_API_KEY` authentication for ML service calls
+- Set `CORS_ORIGINS` to only trusted frontend domains
+- Review audit logs regularly for suspicious authentication patterns
+
+### ML Disclaimer
+
+> **⚠️ Important Clinical Disclaimer**
+
+The machine learning models in DianaV2 are **screening tools**, not diagnostic devices:
+- Risk scores are probabilities, not medical diagnoses
+- Predictions should be reviewed by qualified healthcare professionals
+- ML outputs do not replace clinical judgment or laboratory testing
+- Users should consult healthcare providers before making medical decisions
+
+See [docs/03-ml/methodology.md](./docs/03-ml/methodology.md) for methodology details.
+
+---
+
 ## License
 
 This project is currently **unlicensed**. A formal license should be established before public distribution or commercial use.
