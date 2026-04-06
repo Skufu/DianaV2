@@ -713,6 +713,114 @@ make backup-test          # Test restoration
 
 ---
 
+## Testing
+
+DianaV2 has a comprehensive test suite across all three tiers: Go backend, React frontend, and Python ML service.
+
+### Backend (Go)
+
+The backend uses Go's built-in testing framework with coverage support.
+
+```bash
+# Run all backend tests
+make test
+# Or directly:
+cd backend && go test ./...
+
+# Run tests with verbose output
+cd backend && go test -v ./...
+
+# Run tests with coverage report
+cd backend && go test -race -coverprofile=coverage.out ./...
+
+# View coverage report
+cd backend && go tool cover -html=coverage.out
+
+# Run specific test package
+cd backend && go test -v ./internal/ml
+
+# Run specific test file
+cd backend && go test -v ./internal/ml/mock_test.go -run TestMockPredictor_Predict
+
+# Run contract tests (API validation)
+make test-contract
+# Or directly:
+cd backend && go test -v -run "TestContract_" ./internal/http/handlers/
+
+# Run linter
+make lint
+# Or directly:
+cd backend && go vet ./...
+```
+
+### Frontend (React)
+
+The frontend uses Vitest for unit/component tests with React Testing Library.
+
+```bash
+# Run all frontend tests (single run)
+cd frontend && npm test
+# Or directly:
+cd frontend && vitest run
+
+# Run tests in watch mode (for development)
+cd frontend && npm run test:watch
+# Or directly:
+cd frontend && vitest
+
+# Run tests with coverage report
+cd frontend && npm run test:coverage
+# Or directly:
+cd frontend && vitest run --coverage
+
+# Run API contract tests
+cd frontend && npm run test:api-contract
+
+# Run linter
+cd frontend && npm run lint
+
+# Fix linting issues automatically
+cd frontend && npm run lint:fix
+
+# Check code formatting
+cd frontend && npm run format:check
+
+# Format code automatically
+cd frontend && npm run format
+```
+
+**Note**: Playwright E2E tests are archived (see [frontend/e2e/AGENTS.md](./frontend/e2e/AGENTS.md) for details). They are not in CI and not actively maintained.
+
+### ML Service (Python)
+
+The ML service uses pytest for testing.
+
+```bash
+# Run all ML tests
+make test-ml
+# Or directly:
+cd Ian_ML && python -m pytest tests/ -v --tb=short
+
+# Run tests with coverage
+cd Ian_ML && python -m pytest tests/ -v --cov=service --cov-report=html
+
+# Run specific test file
+cd Ian_ML && pytest tests/test_predict.py -v
+
+# Run specific test function
+cd Ian_ML && pytest tests/test_predict.py -v -k "test_prediction_endpoint"
+```
+
+### Test Summary
+
+| Tier | Framework | Command | Coverage |
+|------|-----------|---------|----------|
+| Backend | Go testing | `make test` | `go test -race -coverprofile=coverage.out ./...` |
+| Frontend | Vitest + RTL | `cd frontend && npm test` | `vitest run --coverage` |
+| ML | pytest | `make test-ml` | `pytest --cov=service` |
+
+---
+
 ## Demo Credentials
 
 | Role | Email | Password |
