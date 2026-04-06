@@ -18,12 +18,13 @@ linters:
       check-blank: false
 
 issues:
-  exclude-rules:
-    # Exclude some linters from running on tests
-    - path: _test\.go
-      linters:
-        - errcheck
-    # Ignore generated files
-    - path: sqlc/
-      linters:
-        - errcheck
+  exclusions:
+    rules:
+      # Exclude some linters from running on tests
+      - path: _test\.go
+        linters:
+          - errcheck
+      # Ignore generated files
+      - path: sqlc/
+        linters:
+          - errcheck
