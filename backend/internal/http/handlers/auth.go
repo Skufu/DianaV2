@@ -21,6 +21,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// sanitizeLog removes newlines and control characters from log input to prevent log injection
+func sanitizeLog(input string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(input, "\n", " "), "\r", " ")
+}
+
+
 type AuthHandler struct {
 	cfg    config.Config
 	store  store.Store
@@ -175,8 +181,7 @@ func (h *AuthHandler) login(c *gin.Context) {
 	}
 	user, err := h.store.Users().FindByEmail(c.Request.Context(), req.Email)
 	if err != nil {
-		log.Printf("[ERROR] Login failed for email %s: %v", strings.ReplaceAll(req.Email, "
-", " "), err)
+		log.Printf("[ERROR] Login failed for email %s: %v", sanitizeLog(req.Email), err)
 		// Publish failed login event
 		if h.broker != nil {
 			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "user not found"})
@@ -185,8 +190,7 @@ func (h *AuthHandler) login(c *gin.Context) {
 		return
 	}
 	if !user.IsActive || user.AccountStatus != "active" {
-		log.Printf("[WARN] Login blocked for inactive user %s", strings.ReplaceAll(req.Email, "
-", " "))
+		log.Printf("[WARN] Login blocked for inactive user %s", sanitizeLog(req.Email))
 		if h.broker != nil {
 			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "account_inactive"})
 		}
@@ -194,8 +198,7 @@ func (h *AuthHandler) login(c *gin.Context) {
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		log.Printf("[WARN] Invalid password attempt for email %s", strings.ReplaceAll(req.Email, "
-", " "))
+		log.Printf("[WARN] Invalid password attempt for email %s", sanitizeLog(req.Email))
 		// Publish failed login event
 		if h.broker != nil {
 			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "invalid password"})
@@ -303,8 +306,7 @@ func (h *AuthHandler) register(c *gin.Context) {
 
 	existingUser, err := h.store.Users().FindByEmail(c.Request.Context(), req.Email)
 	if err == nil && existingUser != nil {
-		log.Printf("[WARN] Registration attempt with existing email: %s", strings.ReplaceAll(req.Email, "
-", " "))
+		log.Printf("[WARN] Registration attempt with existing email: %s", sanitizeLog(req.Email))
 		ErrValidation(c, map[string]string{"email": "This email is already registered"})
 		return
 	}
