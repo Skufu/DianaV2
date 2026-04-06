@@ -130,6 +130,93 @@ A full-stack health application designed for menopausal women to assess diabetes
 
 ---
 
+## System Architecture
+
+DianaV2 is a multi-tier medical AI platform designed for diabetes risk assessment. The architecture follows a clear separation of concerns with four primary components:
+
+| Component | Technology | Responsibility |
+|-----------|------------|----------------|
+| **Frontend** | React 18 + Vite + Tailwind | User interface, assessment forms, dashboards, trends visualization |
+| **Backend** | Go + Gin + SQLC | REST API, JWT authentication, business logic, data persistence |
+| **ML Service** | Python + Flask + scikit-learn | Diabetes risk prediction, SHAP explainability, K-Means clustering |
+| **Database** | PostgreSQL | User profiles, assessment records, audit logs, analytics data |
+
+### Component Interactions
+
+The request flow follows a clear pattern: **Frontend → Backend → ML Service → Database**
+
+1. **User Authentication**: Frontend sends credentials → Backend validates via bcrypt, issues JWT → Token stored in localStorage
+2. **Assessment Flow**: Frontend submits biomarkers → Backend validates input ranges → Calls ML predictor → Persists results → Returns risk score and cluster classification
+3. **Data Retrieval**: Frontend requests trends/history → Backend queries PostgreSQL via SQLC → Returns paginated JSON
+4. **Admin Operations**: Frontend requests user list/audit logs → Backend enforces RBAC middleware → Returns filtered data
+
+### Architecture Diagram
+
+```mermaid
+flowchart TB
+    subgraph Client["Client Layer"]
+        Browser["Web Browser"]
+        React["React SPA<br/>(Vite + Tailwind)"]
+    end
+    
+    subgraph API["API Layer"]
+        Gin["Go/Gin Server<br/>(Port 8080)"]
+        JWT["JWT Auth Middleware"]
+        Handlers["REST Handlers<br/>(/api/v1/*)"]
+        Validator["Biomarker<br/>Validation"]
+    end
+    
+    subgraph ML["ML Layer"]
+        Flask["Flask Server<br/>(Port 5001)"]
+        DianaPred["DianaPredictor<br/>(ADA baseline)"]
+        ClinicalPred["ClinicalPredictor<br/>(Metabolic)"]
+        SHAP["SHAP Explainer"]
+    end
+    
+    subgraph Data["Data Layer"]
+        PG["PostgreSQL<br/>(Port 5432)"]
+        Users["Users Table"]
+        Assessments["Assessments Table"]
+        Audit["Audit Logs"]
+    end
+    
+    Browser --> React
+    React -->|"JWT Token"| Gin
+    Gin --> JWT
+    JWT --> Handlers
+    Handlers --> Validator
+    
+    Handlers -->|"POST /predict<br/>biomarker JSON"| Flask
+    Flask --> DianaPred
+    Flask --> ClinicalPred
+    DianaPred --> SHAP
+    ClinicalPred --> SHAP
+    Flask -->|"risk_score, cluster"| Handlers
+    
+    Handlers -->|"SQLC Queries"| PG
+    PG --> Users
+    PG --> Assessments
+    PG --> Audit
+    
+    React -->|"GET trends/history"| Handlers
+    Handlers -->|"JSON Response"| React
+    
+    style Client fill:#e1f5fe
+    style API fill:#fff3e0
+    style ML fill:#f3e5f5
+    style Data fill:#e8f5e9
+```
+
+### Key Design Decisions
+
+- **SQLC for Type-Safe Queries**: Database queries are defined in SQL files, generating Go code for compile-time safety
+- **Pluggable ML Predictor**: Backend uses HTTP predictor interface with deterministic mock fallback for local development
+- **JWT-Based Authentication**: Tokens signed with `JWT_SECRET`, 24-hour expiration with refresh flow
+- **Audit Trail**: All authentication events and assessment operations logged for clinical traceability
+- **Mock Mode**: When `MODEL_URL` is empty, backend uses `MockPredictor` for stable dev/test (not for production)
+
+---
+
 ## Features
 
 DianaV2 provides a comprehensive suite of features for diabetes risk assessment and health management:
