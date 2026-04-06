@@ -17,6 +17,7 @@ A full-stack health application designed for menopausal women to assess diabetes
   - [Frontend (React)](#frontend-react)
   - [ML (Python)](#ml-python)
 - [Tech Stack](#tech-stack)
+- [Prerequisites](#prerequisites)
 - [System Architecture](#system-architecture)
   - [Architecture Diagram](#architecture-diagram)
   - [Key Design Decisions](#key-design-decisions)
@@ -176,6 +177,22 @@ A full-stack health application designed for menopausal women to assess diabetes
 | Frontend | React 18, Vite, Tailwind CSS |
 | Database | PostgreSQL (Goose migrations) |
 | ML | Python 3.10+, Flask, scikit-learn (Logistic Regression, Random Forest) |
+
+---
+
+## Prerequisites
+
+Before setting up DianaV2, ensure your system meets the following version requirements:
+
+| Tool | Minimum Version | How to Check | Installation |
+|------|-----------------|--------------|--------------|
+| **Go** | 1.24+ | `go version` | [go.dev/doc/install](https://go.dev/doc/install) |
+| **Node.js** | 18+ | `node --version` | [nodejs.org](https://nodejs.org/) |
+| **Python** | 3.10+ | `python3 --version` | [python.org](https://python.org/) |
+| **PostgreSQL** | 16+ | `psql --version` | [postgresql.org](https://postgresql.org/download/) |
+| **Docker** | Optional | `docker --version` | [docker.com](https://docker.com/) |
+
+> **Note**: The setup script attempts to auto-install missing tools via Homebrew (macOS), apt-get/yum (Linux), or winget/choco (Windows). See [Quick Start](#quick-start) for automated setup details.
 
 ---
 
