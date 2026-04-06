@@ -4,7 +4,6 @@ Diana V2 Demo Video Generator
 Creates a complete demo video using FFmpeg with all 9 scenes.
 """
 
-import os
 import subprocess
 from pathlib import Path
 
