@@ -149,19 +149,19 @@ func TestErrorResponseFormat(t *testing.T) {
 		{
 			name:       "bad request error",
 			statusCode: http.StatusBadRequest,
-			code:       "invalid_input",
+			code:       "BAD_REQUEST",
 			message:    "Invalid input provided",
 		},
 		{
 			name:       "not found error",
 			statusCode: http.StatusNotFound,
-			code:       "resource_not_found",
-			message:    "Resource not found",
+			code:       "NOT_FOUND",
+			message:    "Resource",
 		},
 		{
 			name:       "internal error",
 			statusCode: http.StatusInternalServerError,
-			code:       "internal_error",
+			code:       "INTERNAL_ERROR",
 			message:    "Something went wrong",
 		},
 	}
@@ -195,8 +195,13 @@ func TestErrorResponseFormat(t *testing.T) {
 			if response.Code != tt.code {
 				t.Errorf("Code = %s, want %s", response.Code, tt.code)
 			}
-			if response.Message != tt.message {
-				t.Errorf("Message = %s, want %s", response.Message, tt.message)
+			// ErrNotFound appends " not found" to the resource name
+			expectedMessage := tt.message
+			if tt.statusCode == http.StatusNotFound {
+				expectedMessage = tt.message + " not found"
+			}
+			if response.Message != expectedMessage {
+				t.Errorf("Message = %s, want %s", response.Message, expectedMessage)
 			}
 		})
 	}
