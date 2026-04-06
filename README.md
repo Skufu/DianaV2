@@ -23,6 +23,7 @@ A full-stack health application designed for menopausal women to assess diabetes
   - [Key Design Decisions](#key-design-decisions)
 - [Features](#features)
   - [Clinical Highlights](#clinical-highlights)
+- [Screenshots](#screenshots)
 - [Quick Start](#quick-start)
   - [Prerequisites](#prerequisites-auto-install-enabled)
   - [Automated Setup](#automated-setup-one-command---does-everything)
@@ -308,6 +309,48 @@ DianaV2 provides a comprehensive suite of features for diabetes risk assessment 
 - **Evidence-Based Models**: Trained on NHANES 2011-2024 menopausal women dataset with defensible nested cross-validation
 - **Biomarker Validation**: Input ranges checked against clinical thresholds (HbA1c 4.0-15.0, FBS 70-200 mg/dL)
 - **Doctor Model Locking**: Clinician accounts use validated screening model (binary_v2_no_bp) for consistent assessments
+
+---
+
+## Screenshots
+
+> **Visual Preview of DianaV2 Interface**
+
+The following screenshots showcase the key user interfaces of DianaV2. Actual screenshots will be added as the project matures.
+
+### User Dashboard
+
+| Placeholder | Description |
+|-------------|-------------|
+| `![Dashboard screenshot placeholder]` | **User Dashboard**: Main overview showing assessment count, latest risk score with color-coded RiskIndicator (Low/Medium/High), quick action cards for logging assessments, viewing trends, and exporting reports. Displays the user's most recent biomarker values and cluster classification (SIRD, SIDD, MOD, MARD). |
+
+### Assessment Form
+
+| Placeholder | Description |
+|-------------|-------------|
+| `![Assessment Form screenshot placeholder]` | **Assessment Form**: Biomarker input form for diabetes risk prediction. Fields include HbA1c (%), Fasting Blood Sugar (mg/dL), BMI (kg/m²), Total Cholesterol (mg/dL), Age, and Menopause Status. Each field shows unit labels and validates against clinical ranges. Submit triggers ML prediction via backend API. |
+
+### Insights Dashboard
+
+| Placeholder | Description |
+|-------------|-------------|
+| `![Insights screenshot placeholder]` | **Insights Dashboard**: ML analytics visualization showing cluster distribution (Ahlqvist diabetes subtypes), risk score trends over time, and SHAP feature importance waterfall charts. Includes biomarker correlation analysis, cohort comparison tools, and model performance metrics (AUC ~0.72). |
+
+### Admin Dashboard
+
+| Placeholder | Description |
+|-------------|-------------|
+| `![Admin Dashboard screenshot placeholder]` | **Admin Dashboard**: System administration interface with user management table (CRUD operations), audit log viewer showing authentication events and admin actions, ML model traceability tracking model versions and dataset hashes, and system statistics overview. |
+
+### Demo Video
+
+A comprehensive demo video showcasing the full user flow is available:
+
+| File | Location |
+|------|----------|
+| **Demo Video** | [demo-video/DianaV2_Demo_Final.mp4](./demo-video/DianaV2_Demo_Final.mp4) |
+
+> **Note**: Screenshots will be captured and added in future releases. For immediate visual preview, watch the demo video or run the application locally following the [Quick Start](#quick-start) guide.
 
 ---
 
