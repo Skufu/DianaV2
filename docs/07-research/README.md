@@ -15,12 +15,12 @@ This directory contains all research-related documentation for the DIANA (Diabet
 │   ├── ch3+4.md                       # Chapters 3 & 4 (Methodology sections)
 │   ├── manuscript.md                  # Full manuscript
 │   ├── METHODOLOGY.md                 # Complete methodology documentation
-│   ├── DRAFT CHAP 4-5.docx            # Word document drafts
+│   ├── local draft .docx files        # Large local-only Word draft assets (not committed)
 │   ├── Manuscript_part1.md            # Split manuscript parts
 │   ├── manuscript_part2.md
 │   ├── manuscript_part3.md
 │   ├── Transcript.md                  # Interview transcripts
-│   └── SEIRViz_FinalDocument-3.pdf    # Visualization document
+│   └── local reference .pdf files     # Large local-only PDF assets (not committed)
 ├── data_pipeline.md                   # Data processing pipeline documentation
 ├── diabetes_subgroups.md              # Diabetes subgroup analysis
 ├── doctor-interview-quick.md          # Doctor interview summaries
