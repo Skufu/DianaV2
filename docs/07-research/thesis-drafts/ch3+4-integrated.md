@@ -113,7 +113,9 @@ Clinical Score = 0.35 * Sensitivity + 0.30 * Specificity + 0.25 * F1 + 0.10 * Ac
 
 The mean threshold across folds was **0.448** (SD = 0.XX - per-fold variation), reflecting an intentional downward adjustment from the default 0.50 to prioritize sensitivity in a screening setting. This aligns with clinical guidelines that favor high sensitivity for initial T2DM screening, with confirmatory testing (FPG, OGTT) reserved for screen-positive cases.
 
-**Implementation Reference:** Ian_ML/training/train_binary_v2_no_bp.py:302-406
+**Guardrail Safety Layer:** After initial strategy selection, a deterministic guardrail checks for specificity collapse under temporal prevalence shift. If the winning strategy yields specificity below an adaptive floor (0.40-0.45, raised to 0.45 when sensitivity ≥ 0.85) while sensitivity ≥ 0.85, the system cascades through: (1) selecting the next-best eligible strategy meeting both constraints, (2) finding the nearest feasible threshold on the ROC curve satisfying minimum sensitivity and specificity, or (3) falling back to the neutral 0.50 default. Additionally, folds exhibiting a severe prevalence-shift signature (sensitivity ≥ 0.85, specificity < 0.45, provisional threshold ≤ 0.38) receive a hard minimum threshold bump to 0.46 to prevent unstable low-threshold operating points. In the final Logistic Regression model, guardrail arbitration was activated in **2 of 6 LOGO folds**, with Youden's J as the dominant threshold mode.
+
+**Implementation Reference:** Ian_ML/training/train_binary_v2_no_bp.py:333-611 (threshold optimization with guardrails)
 
 ---
 
