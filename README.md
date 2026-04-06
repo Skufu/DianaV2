@@ -4,6 +4,10 @@
 
 A full-stack health application designed for menopausal women to assess diabetes risk using machine learning predictions. Built with Go, React, Flask (Python), and PostgreSQL.
 
+[![CI](https://github.com/Skufu/DianaV2/actions/workflows/ci.yml/badge.svg)](https://github.com/Skufu/DianaV2/actions/workflows/ci.yml)
+[![CD](https://github.com/Skufu/DianaV2/actions/workflows/cd.yml/badge.svg)](https://github.com/Skufu/DianaV2/actions/workflows/cd.yml)
+[![Security](https://github.com/Skufu/DianaV2/actions/workflows/security.yml/badge.svg)](https://github.com/Skufu/DianaV2/actions/workflows/security.yml)
+
 ---
 
 ## Table of Contents
