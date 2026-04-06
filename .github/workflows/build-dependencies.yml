@@ -502,6 +502,6 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: unused-dependencies-reports
+          name: unused-deps-report-${{ matrix.component }}
           path: reports/*-unused-deps-report.md
           retention-days: 30
