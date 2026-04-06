@@ -336,7 +336,6 @@ def start_drift_scheduler(config: Optional[SchedulerConfig] = None) -> DriftSche
 
 def stop_drift_scheduler() -> None:
     """Stop the drift scheduler."""
-    global _scheduler
     with _scheduler_lock:
         if _scheduler is not None:
             _scheduler.stop()
