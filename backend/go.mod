@@ -1,16 +1,16 @@
 module github.com/skufu/DianaV2/backend
 
-go 1.24.0
+go 1.25.0
 
-toolchain go1.24.1
+toolchain go1.25.8
 
 require (
 	github.com/getsentry/sentry-go v0.44.1
-	github.com/gin-contrib/cors v1.5.0
+	github.com/gin-contrib/cors v1.6.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-pdf/fpdf v0.9.0
 	github.com/go-playground/validator/v10 v10.30.1
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/joho/godotenv v1.5.1
 	github.com/pressly/goose/v3 v3.26.0
