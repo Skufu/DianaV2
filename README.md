@@ -398,6 +398,30 @@ VITE_ML_API_KEY=your-secure-ml-api-key  # Must match ML_API_KEY
 
 ---
 
+## License
+
+This project is currently **unlicensed**. A formal license should be established before public distribution or commercial use.
+
+### Recommended License Options
+
+For open-source distribution, consider one of the following licenses:
+
+| License | Use Case | Key Features |
+|---------|----------|--------------|
+| **MIT** | Open source, permissive | Simple, permissive, allows commercial use with attribution |
+| **Apache-2.0** | Open source, patent-aware | Permissive, includes patent grant, attribution required |
+| **Proprietary** | Commercial, restricted | Custom terms, restricts modification/distribution |
+
+### Copyright Notice
+
+Copyright © 2024 DianaV2 Contributors. All rights reserved until license is formally established.
+
+### License File
+
+Once a license is chosen, a `LICENSE` file should be created in the repository root containing the full license text. This README section should then be updated to reference that file.
+
+---
+
 ## Search Keywords
 
 `diabetes` `prediction` `menopausal women` `biomarkers` `HbA1c` `machine learning` `Go` `Gin` `React` `Vite` `PostgreSQL` `Flask` `Logistic Regression` `Random Forest` `K-Means` `clustering` `NHANES` `ADA criteria` `SIRD` `SIDD` `MOD` `MARD` `JWT` `authentication` `REST API` `SQLC`
