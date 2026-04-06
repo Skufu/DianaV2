@@ -1,5 +1,5 @@
 ### Builder stage: compile the Go server
-FROM golang:1.24-alpine AS build
+FROM golang:1.25-alpine AS build
 WORKDIR /app
 
 # Enable modules and avoid CGO for simpler deployment
@@ -17,7 +17,7 @@ WORKDIR /app/backend
 RUN go build -o /app/server ./cmd/server
 
 #### Runtime stage: minimal image with certs
-FROM alpine:3.19
+FROM alpine:3.20
 WORKDIR /app
 
 RUN apk add --no-cache ca-certificates curl
