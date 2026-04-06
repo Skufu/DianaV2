@@ -82,21 +82,21 @@ jobs:
         continue-on-error: true
         run: |
           semgrep --config=auto \
-                  --json \
-                  --output=semgrep-results.json \
+                  --sarif \
+                  --output=semgrep-results.sarif \
                   --metrics=off \
                   --exclude=tests \
                   --exclude=test \
                   --exclude=node_modules \
                   --exclude=venv \
                   --exclude=__pycache__ \
-                  . || echo '{"runs":[]}' > semgrep-results.json
+                  . || echo '{"$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","version":"2.1.0","runs":[]}' > semgrep-results.sarif
 
       - name: Upload Semgrep results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: semgrep-results.json
+          sarif_file: semgrep-results.sarif
           category: semgrep
 
       - name: Upload Semgrep results artifact
@@ -104,7 +104,7 @@ jobs:
         if: always()
         with:
           name: semgrep-results
-          path: semgrep-results.json
+          path: semgrep-results.sarif
           retention-days: 30
 
   # Snyk Security Scanning
