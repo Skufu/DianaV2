@@ -349,13 +349,13 @@ The main product surfaces are summarized below. A demo video is linked at the en
 
 ### Demo Video
 
-A demo video of the full user flow is available:
+The final demo export is intentionally kept out of the git-tracked repository to avoid shipping a large binary in normal checkouts.
 
-| File | Location |
-|------|----------|
-| **Demo Video** | [demo-video/DianaV2_Demo_Final.mp4](./demo-video/DianaV2_Demo_Final.mp4) |
+| Asset | Notes |
+|------|-------|
+| **Demo Video** | `demo-video/DianaV2_Demo_Final.mp4` is a local/generated asset and is not committed to the repository. |
 
-> **Note**: For a live walkthrough, watch the demo video or run the application locally with the [Quick Start](#quick-start) flow.
+> **Note**: For a live walkthrough, generate the demo video locally from the `demo-video/` assets or run the application with the [Quick Start](#quick-start) flow.
 
 ---
 
