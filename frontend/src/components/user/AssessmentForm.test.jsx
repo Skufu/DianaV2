@@ -291,14 +291,14 @@ describe('AssessmentForm', () => {
   });
 
   it('displays error message on failed submission', async () => {
-    const user = userEvent.setup();
     renderAssessmentForm();
 
-    const submitButton = screen.getByRole('button', { name: /submit for analysis/i });
-    await user.click(submitButton);
+    // Submit form directly via the form element to bypass framer-motion button mock
+    const form = document.querySelector('form');
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
 
-    await waitFor(() => {
-      expect(screen.getByText(/please complete all required fields/i)).toBeInTheDocument();
-    });
+    // Use findByText which has built-in retry/wait semantics
+    const errorMessage = await screen.findByText(/please complete all required fields/i);
+    expect(errorMessage).toBeInTheDocument();
   });
 });
