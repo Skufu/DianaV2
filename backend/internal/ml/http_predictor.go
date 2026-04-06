@@ -14,6 +14,12 @@ import (
 	"github.com/skufu/DianaV2/backend/internal/models"
 )
 
+// sanitizeModelType removes newlines from model type to prevent log injection
+func sanitizeModelType(input string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(input, "\n", " "), "\r", " ")
+}
+
+
 type HTTPPredictor struct {
 	client  *http.Client
 	url     string
@@ -279,13 +285,11 @@ func (p *HTTPPredictor) queueDriftCheck(modelType string, input models.Assessmen
 
 	features := buildDriftFeatures(modelType, input)
 	if len(features) == 0 {
-		log.Printf("[ML][DRIFT] skipped drift check for model_type=%s: no supported numeric features", strings.ReplaceAll(modelType, "
-", " "))
+		log.Printf("[ML][DRIFT] skipped drift check for model_type=%s: no supported numeric features", sanitizeModelType(modelType))
 		return
 	}
 
-	log.Printf("[ML][DRIFT] queued non-blocking drift check for model_type=%s feature_count=%d", strings.ReplaceAll(modelType, "
-", " "), len(features))
+	log.Printf("[ML][DRIFT] queued non-blocking drift check for model_type=%s feature_count=%d", sanitizeModelType(modelType), len(features))
 
 	payload := driftCheckReq{
 		Features:     features,
@@ -298,8 +302,7 @@ func (p *HTTPPredictor) queueDriftCheck(modelType string, input models.Assessmen
 		defer cancel()
 
 		if err := p.sendDriftCheck(driftCtx, payload); err != nil {
-			log.Printf("[ML][DRIFT] drift check failed for model_type=%s: %v", strings.ReplaceAll(modelType, "
-", " "), err)
+			log.Printf("[ML][DRIFT] drift check failed for model_type=%s: %v", sanitizeModelType(modelType), err)
 		}
 	}()
 }
