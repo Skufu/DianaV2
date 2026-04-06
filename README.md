@@ -510,30 +510,75 @@ make build      # Build backend
 
 ## Environment Variables
 
-### Backend (.env)
+### Backend Environment Variables
+
+| Variable | Required | Security Note | Default / Example |
+|----------|----------|---------------|-------------------|
+| `PORT` | ⚠️ Optional | None | `8080` |
+| `ENV` | ⚠️ Optional | Set to `production` for prod | `dev` |
+| `DB_DSN` | ✅ **Required** | **⚠️ Include `sslmode=require` for production** | `postgres://user:pass@host:5432/diana?sslmode=disable` |
+| `JWT_SECRET` | ✅ **Required** | **⚠️ SECURITY WARNING: Min 32 characters, cryptographically random. Use `openssl rand -base64 32`. NEVER use simple passwords, dictionary words, or short strings.** | Generate with `openssl rand -base64 32` |
+| `CORS_ORIGINS` | ✅ **Required** | Only trusted HTTPS domains in prod | `http://localhost:4000` (dev) |
+| `MODEL_URL` | ⚠️ Optional | Empty triggers mock mode for dev | `http://localhost:5001/predict` |
+| `ML_PORT` | ⚠️ Optional | Port for ML server | `5001` |
+| `ML_API_KEY` | ⚠️ Optional (dev) / ✅ **Required** (prod) | **⚠️ SECURITY WARNING: Strong random key for ML authentication. Match in backend, ML server, and frontend. Use `openssl rand -base64 32`.** | Generate with `openssl rand -base64 32` |
+| `MODEL_VERSION` | ⚠️ Optional | Choose validated model | `binary_v2_no_bp` |
+| `MODEL_DATASET_HASH` | ⚠️ Optional | Training dataset reference | `nhanes_postmenopausal_2011_2024` |
+| `MODEL_TIMEOUT_MS` | ⚠️ Optional | ML request timeout | `2000` |
+
+> **Critical Security Notes:**
+> - `JWT_SECRET` is **required** for ALL environments (dev, staging, prod). The application fails to start if missing.
+> - `ML_API_KEY` is **required for production**. Omit for local dev to allow unauthenticated ML calls.
+> - When `MODEL_URL` is empty, backend uses `MockPredictor` for stable dev/test (not for production).
+
+### ML Service Environment Variables
+
+| Variable | Required | Security Note | Default / Example |
+|----------|----------|---------------|-------------------|
+| `ML_PORT` | ⚠️ Optional | Port for Flask server | `5000` |
+| `ML_API_KEY` | ⚠️ Optional (dev) / ✅ **Required** (prod) | **⚠️ Must match backend `ML_API_KEY`** | Same as backend |
+| `PYTHONUNBUFFERED` | ⚠️ Optional | Recommended for logs | `1` |
+| `ENV` | ⚠️ Optional | Set to `production` for prod | `production` |
+| `CORS_ORIGINS` | ⚠️ Optional | Trusted backend origins | `http://localhost:8080` |
+
+### Frontend Environment Variables
+
+| Variable | Required | Security Note | Default / Example |
+|----------|----------|---------------|-------------------|
+| `VITE_API_BASE` | ⚠️ Optional | Backend API URL | `http://localhost:8080` |
+| `VITE_ML_BASE` | ⚠️ Optional | ML server URL | `http://localhost:5001` |
+| `VITE_ML_API_KEY` | ⚠️ Optional (dev) / ✅ **Required** (prod) | **⚠️ Must match `ML_API_KEY` in backend/ML** | Same as backend |
+
+### Database Environment Variables (docker-compose.yml)
+
+| Variable | Required | Security Note | Default |
+|----------|----------|---------------|---------|
+| `POSTGRES_USER` | ⚠️ Optional | None | `diana` |
+| `POSTGRES_PASSWORD` | ✅ **Required** | **⚠️ Strong password, never reuse. Required by docker-compose.** | Required - no default |
+| `POSTGRES_DB` | ⚠️ Optional | None | `diana` |
+
+### Environment Files Example
+
+**Backend `.env`:**
 ```bash
 PORT=8080
 ENV=dev
-DB_DSN=postgres://user:pass@localhost:5432/diana?sslmode=disable
-JWT_SECRET=your-secure-random-secret-min-32-chars  # REQUIRED for ALL environments
+DB_DSN=postgres://diana:diana@localhost:5432/diana?sslmode=disable
+JWT_SECRET=$(openssl rand -base64 32)  # Generate securely!
 CORS_ORIGINS=http://localhost:4000
 MODEL_URL=http://localhost:5001/predict
 ML_PORT=5001
-MODEL_VERSION=binary_v2_no_bp  # Options: binary_v2_no_bp (default) or clinical_3class
+MODEL_VERSION=binary_v2_no_bp
 MODEL_DATASET_HASH=nhanes_postmenopausal_2011_2024
 MODEL_TIMEOUT_MS=2000
-ML_API_KEY=your-secure-ml-api-key  # Optional for dev, required for production
+ML_API_KEY=  # Optional in dev, required in production
 ```
 
-**Important**: `JWT_SECRET` is **required** for ALL environments (development, staging, production). The application will fail to start with a fatal error if `JWT_SECRET` is missing. Use a secure random string of at least 32 characters.
-
-**ML API Key**: `ML_API_KEY` is **required** for production ML service authentication. In local development, it can be omitted to allow unauthenticated ML calls; the ML server will return 401 Unauthorized when a key is configured but missing in requests. The frontend should set `VITE_ML_API_KEY` to match when auth is enabled.
-
-### Frontend (frontend/.env.local)
+**Frontend `frontend/.env.local`:**
 ```bash
 VITE_API_BASE=http://localhost:8080
 VITE_ML_BASE=http://localhost:5001
-VITE_ML_API_KEY=your-secure-ml-api-key  # Must match ML_API_KEY
+VITE_ML_API_KEY=  # Must match ML_API_KEY when set
 ```
 
 ---
