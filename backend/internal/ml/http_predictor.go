@@ -279,11 +279,13 @@ func (p *HTTPPredictor) queueDriftCheck(modelType string, input models.Assessmen
 
 	features := buildDriftFeatures(modelType, input)
 	if len(features) == 0 {
-		log.Printf("[ML][DRIFT] skipped drift check for model_type=%s: no supported numeric features", modelType)
+		log.Printf("[ML][DRIFT] skipped drift check for model_type=%s: no supported numeric features", strings.ReplaceAll(modelType, "
+", " "))
 		return
 	}
 
-	log.Printf("[ML][DRIFT] queued non-blocking drift check for model_type=%s feature_count=%d", modelType, len(features))
+	log.Printf("[ML][DRIFT] queued non-blocking drift check for model_type=%s feature_count=%d", strings.ReplaceAll(modelType, "
+", " "), len(features))
 
 	payload := driftCheckReq{
 		Features:     features,
@@ -296,7 +298,8 @@ func (p *HTTPPredictor) queueDriftCheck(modelType string, input models.Assessmen
 		defer cancel()
 
 		if err := p.sendDriftCheck(driftCtx, payload); err != nil {
-			log.Printf("[ML][DRIFT] drift check failed for model_type=%s: %v", modelType, err)
+			log.Printf("[ML][DRIFT] drift check failed for model_type=%s: %v", strings.ReplaceAll(modelType, "
+", " "), err)
 		}
 	}()
 }
