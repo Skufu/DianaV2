@@ -1,0 +1,5 @@
+[tool.deptry]
+# DEP001: Missing dependencies - ignore internal package and optional deps
+# DEP002: Unused dependencies - these are dev tools and optional dependencies
+# DEP003: Transitive dependencies - werkzeug is brought in by flask
+per_rule_ignores = {DEP001 = ["sentry_sdk", "Ian_ML", "catboost"], DEP002 = ["pyreadstat", "flask-cors", "pandas-stubs", "types-PyYAML", "black", "mypy", "vulture", "radon", "import-linter", "deptry", "imbalanced-learn"], DEP003 = ["werkzeug"]}
