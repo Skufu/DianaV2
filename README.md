@@ -62,7 +62,7 @@ A full-stack health application designed for menopausal women to assess diabetes
 
 </details>
 
-## - Directory Index
+## Directory Index
 
 | Directory | Purpose | Key Files | README |
 |-----------|---------|-----------|--------|
@@ -171,7 +171,7 @@ A full-stack health application designed for menopausal women to assess diabetes
 | Feature Selection | `scripts/data/feature_selection.py` | Mutual Information + IG analysis |
 | Cluster Training | `scripts/train/train_clusters.py` | K-Means (Ahlqvist K=4) |
 | Thesis Outputs | `scripts/thesis/generate_thesis_outputs.py` | All-in-one thesis artifact generator |
-| ML Rationale | `docs/03-ml/rationale.md` | Defense-ready methodology justification |
+| ML Rationale | `docs/03-ml/methodology.md` | Defense-ready methodology justification |
 
 ---
 
@@ -179,7 +179,7 @@ A full-stack health application designed for menopausal women to assess diabetes
 
 | Layer | Technology |
 |-------|------------|
-| Backend | Go 1.21+, Gin, SQLC |
+| Backend | Go 1.24+, Gin, SQLC |
 | Frontend | React 18, Vite, Tailwind CSS |
 | Database | PostgreSQL (Goose migrations) |
 | ML | Python 3.10+, Flask, scikit-learn (Logistic Regression, Random Forest) |
@@ -1015,7 +1015,7 @@ cd Ian_ML && pytest tests/test_predict.py -v -k "test_prediction_endpoint"
 | Admin Dashboard | [docs/02-guides/admin.md](./docs/02-guides/admin.md) |
 | ML API Contract | [docs/03-ml/api-contract.md](./docs/03-ml/api-contract.md) |
 | ML Methodology | [docs/03-ml/methodology.md](./docs/03-ml/methodology.md) |
-| Local Setup | [docs/04-development/local-setup.md](./docs/04-development/local-setup.md) |
+| Local Setup | See [Quick Start](#quick-start) section for setup instructions |
 | Deployment | [docs/06-operations/deployment.md](./docs/06-operations/deployment.md) |
 | Documentation Hub | [docs/README.md](./docs/README.md) |
 
