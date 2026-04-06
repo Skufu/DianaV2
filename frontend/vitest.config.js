@@ -8,6 +8,9 @@ export default defineConfig({
     environment: 'happy-dom',
     setupFiles: ['./src/test/setup.js'],
     css: true,
+    // Only run unit tests from src/, exclude Playwright E2E specs
+    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
     // Reporter configuration for CI
     reporters: ['verbose', 'junit'],
     outputFile: './coverage/junit-report.xml',
