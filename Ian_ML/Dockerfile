@@ -1,6 +1,6 @@
 # Python ML Server Dockerfile
 # Build context must be the repo root (not Ian_ML/) to access models/
-FROM python:3.11-slim
+FROM python:3.12-slim-bookworm
 
 WORKDIR /app/Ian_ML
 
