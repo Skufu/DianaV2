@@ -175,7 +175,8 @@ func (h *AuthHandler) login(c *gin.Context) {
 	}
 	user, err := h.store.Users().FindByEmail(c.Request.Context(), req.Email)
 	if err != nil {
-		log.Printf("[ERROR] Login failed for email %s: %v", req.Email, err)
+		log.Printf("[ERROR] Login failed for email %s: %v", strings.ReplaceAll(req.Email, "
+", " "), err)
 		// Publish failed login event
 		if h.broker != nil {
 			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "user not found"})
@@ -184,7 +185,8 @@ func (h *AuthHandler) login(c *gin.Context) {
 		return
 	}
 	if !user.IsActive || user.AccountStatus != "active" {
-		log.Printf("[WARN] Login blocked for inactive user %s", req.Email)
+		log.Printf("[WARN] Login blocked for inactive user %s", strings.ReplaceAll(req.Email, "
+", " "))
 		if h.broker != nil {
 			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "account_inactive"})
 		}
@@ -192,7 +194,8 @@ func (h *AuthHandler) login(c *gin.Context) {
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		log.Printf("[WARN] Invalid password attempt for email %s", req.Email)
+		log.Printf("[WARN] Invalid password attempt for email %s", strings.ReplaceAll(req.Email, "
+", " "))
 		// Publish failed login event
 		if h.broker != nil {
 			h.broker.PublishAuthEvent("failed_login", req.Email, c.ClientIP(), c.GetHeader("User-Agent"), false, map[string]any{"reason": "invalid password"})
@@ -300,7 +303,8 @@ func (h *AuthHandler) register(c *gin.Context) {
 
 	existingUser, err := h.store.Users().FindByEmail(c.Request.Context(), req.Email)
 	if err == nil && existingUser != nil {
-		log.Printf("[WARN] Registration attempt with existing email: %s", req.Email)
+		log.Printf("[WARN] Registration attempt with existing email: %s", strings.ReplaceAll(req.Email, "
+", " "))
 		ErrValidation(c, map[string]string{"email": "This email is already registered"})
 		return
 	}
