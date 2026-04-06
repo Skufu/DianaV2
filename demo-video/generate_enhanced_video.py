@@ -4,7 +4,6 @@ Diana V2 Demo Video Generator - Enhanced Version with Real Screenshots
 Creates a complete demo video using FFmpeg with actual app screenshots.
 """
 
-import os
 import subprocess
 from pathlib import Path
 
