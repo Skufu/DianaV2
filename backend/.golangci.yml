@@ -12,8 +12,6 @@ linters:
     - ineffassign
     - staticcheck
     - unused
-  disable:
-    - typecheck  # Already handled by go build
   settings:
     errcheck:
       check-type-assertions: false
