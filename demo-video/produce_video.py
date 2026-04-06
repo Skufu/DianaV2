@@ -12,10 +12,7 @@ Usage:
 import argparse
 import subprocess
 import json
-import os
-import sys
 from pathlib import Path
-from datetime import datetime
 
 # Configuration
 PROJECT_ROOT = Path("/Users/adriangabriellfrancisco/workspace/github.com/Skufu/dianav2")
@@ -355,7 +352,7 @@ def main():
     thumb_parser.add_argument('--output', default=str(OUTPUT_DIR / 'thumbnail.jpg'))
     
     # Full production command
-    full_parser = subparsers.add_parser('full-production', help='Run full production pipeline')
+    _ = subparsers.add_parser('full-production', help='Run full production pipeline')
     
     args = parser.parse_args()
     
