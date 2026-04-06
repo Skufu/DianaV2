@@ -39,11 +39,6 @@ jobs:
           go-version: '1.24'
           cache-dependency-path: backend/go.sum
 
-      - name: Install pgx query analyzer
-        run: |
-          cd backend
-          go install github.com/jackc/pgx@latest
-
       - name: Run N+1 Query Detection Tests
         run: |
           cd backend
