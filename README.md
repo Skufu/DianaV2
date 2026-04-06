@@ -1,8 +1,8 @@
 # Diana V2
 
-> **Predictive diabetes risk assessment application for menopausal women**
+> **Diabetes risk assessment platform for menopausal women**
 
-A full-stack health application designed for menopausal women to assess diabetes risk using machine learning predictions. Built with Go, React, Flask (Python), and PostgreSQL.
+Full-stack application for diabetes risk assessment with a Go backend, React frontend, Python ML service, and PostgreSQL.
 
 [![CI](https://github.com/Skufu/DianaV2/actions/workflows/ci.yml/badge.svg)](https://github.com/Skufu/DianaV2/actions/workflows/ci.yml)
 [![CD](https://github.com/Skufu/DianaV2/actions/workflows/cd.yml/badge.svg)](https://github.com/Skufu/DianaV2/actions/workflows/cd.yml)
@@ -291,7 +291,7 @@ flowchart TB
 
 ## Features
 
-DianaV2 provides a comprehensive suite of features for diabetes risk assessment and health management:
+Core product features:
 
 | Icon | Feature | Description |
 |------|---------|-------------|
@@ -321,52 +321,50 @@ DianaV2 provides a comprehensive suite of features for diabetes risk assessment 
 
 > **Visual Preview of DianaV2 Interface**
 
-The following screenshots showcase the key user interfaces of DianaV2. Actual screenshots will be added as the project matures.
+The main product surfaces are summarized below. A demo video is linked at the end of this section.
 
 ### User Dashboard
 
-| Placeholder | Description |
-|-------------|-------------|
-| `![Dashboard screenshot placeholder]` | **User Dashboard**: Main overview showing assessment count, latest risk score with color-coded RiskIndicator (Low/Medium/High), quick action cards for logging assessments, viewing trends, and exporting reports. Displays the user's most recent biomarker values and cluster classification (SIRD, SIDD, MOD, MARD). |
+| View | Description |
+|------|-------------|
+| User Dashboard | Main overview showing assessment count, latest risk score with color-coded RiskIndicator (Low/Medium/High), quick action cards for logging assessments, viewing trends, and exporting reports. Displays the user's most recent biomarker values and cluster classification (SIRD, SIDD, MOD, MARD). |
 
 ### Assessment Form
 
-| Placeholder | Description |
-|-------------|-------------|
-| `![Assessment Form screenshot placeholder]` | **Assessment Form**: Biomarker input form for diabetes risk prediction. Fields include HbA1c (%), Fasting Blood Sugar (mg/dL), BMI (kg/m²), Total Cholesterol (mg/dL), Age, and Menopause Status. Each field shows unit labels and validates against clinical ranges. Submit triggers ML prediction via backend API. |
+| View | Description |
+|------|-------------|
+| Assessment Form | Biomarker input form for diabetes risk prediction. Fields include HbA1c (%), Fasting Blood Sugar (mg/dL), BMI (kg/m²), Total Cholesterol (mg/dL), Age, and Menopause Status. Each field shows unit labels and validates against clinical ranges. Submit triggers ML prediction via backend API. |
 
 ### Insights Dashboard
 
-| Placeholder | Description |
-|-------------|-------------|
-| `![Insights screenshot placeholder]` | **Insights Dashboard**: ML analytics visualization showing cluster distribution (Ahlqvist diabetes subtypes), risk score trends over time, and SHAP feature importance waterfall charts. Includes biomarker correlation analysis, cohort comparison tools, and model performance metrics (AUC ~0.72). |
+| View | Description |
+|------|-------------|
+| Insights Dashboard | ML analytics visualization showing cluster distribution (Ahlqvist diabetes subtypes), risk score trends over time, and SHAP feature importance waterfall charts. Includes biomarker correlation analysis, cohort comparison tools, and model performance metrics (AUC ~0.72). |
 
 ### Admin Dashboard
 
-| Placeholder | Description |
-|-------------|-------------|
-| `![Admin Dashboard screenshot placeholder]` | **Admin Dashboard**: System administration interface with user management table (CRUD operations), audit log viewer showing authentication events and admin actions, ML model traceability tracking model versions and dataset hashes, and system statistics overview. |
+| View | Description |
+|------|-------------|
+| Admin Dashboard | System administration interface with user management table (CRUD operations), audit log viewer showing authentication events and admin actions, ML model traceability tracking model versions and dataset hashes, and system statistics overview. |
 
 ### Demo Video
 
-A comprehensive demo video showcasing the full user flow is available:
+A demo video of the full user flow is available:
 
 | File | Location |
 |------|----------|
 | **Demo Video** | [demo-video/DianaV2_Demo_Final.mp4](./demo-video/DianaV2_Demo_Final.mp4) |
 
-> **Note**: Screenshots will be captured and added in future releases. For immediate visual preview, watch the demo video or run the application locally following the [Quick Start](#quick-start) guide.
+> **Note**: For a live walkthrough, watch the demo video or run the application locally with the [Quick Start](#quick-start) flow.
 
 ---
 
 ## Quick Start
 
-### Prerequisites (Auto-Install Enabled!)
-The setup script **WILL ATTEMPT TO AUTO-INSTALL** missing tools. If you don't have them, the script will try to install them for you.
+### Prerequisites
+The setup script attempts to install missing tools automatically. If that fails, it prints the manual commands for your platform.
 
-**If auto-install fails, you'll get exact manual installation commands.**
-
-### Automated Setup (One Command - Does EVERYTHING)
+### Automated Setup
 
 #### macOS / Linux
 ```bash
@@ -389,10 +387,10 @@ bash scripts/dev/setup.sh
 bash scripts/dev/start-all.sh
 ```
 
-**What the setup script does (literally everything):**
+**Setup script summary:**
 
 **🔧 Tool Installation (with auto-attempt):**
-1. ✅ **ATTEMPTS AUTO-INSTALL** of missing Go, Node.js, Python
+1. ✅ Attempts auto-install of missing Go, Node.js, Python
 2. ✅ Auto-installs Goose (database migration tool)
 3. ✅ Checks for Docker (optional, for PostgreSQL)
 
@@ -402,7 +400,7 @@ bash scripts/dev/start-all.sh
 6. ✅ Creates frontend environment config
 
 **🗄️ Database Setup:**
-7. ✅ **AUTO-CREATES PostgreSQL database with Docker** (if available)
+7. ✅ Creates a PostgreSQL database with Docker when available
 8. ✅ Runs database migrations automatically
 
 **📦 Dependencies:**
@@ -415,9 +413,9 @@ bash scripts/dev/start-all.sh
 13. ✅ Creates `.setup-verification.txt` with full setup log
 14. ✅ Checks for ML models and warns if missing
 
-### Auto-Install Feature
+### Auto-Install Behavior
 
-The setup script **aggressively tries to install missing tools** before giving up:
+The setup script tries common package managers before falling back to manual steps:
 
 **macOS/Linux:**
 - Tries `brew install` for macOS
@@ -428,7 +426,7 @@ The setup script **aggressively tries to install missing tools** before giving u
 - Tries `choco install` (Chocolatey)
 
 **If auto-install fails:**
-- The script will show **EXACT installation commands** for your OS
+- The script will show exact installation commands for your OS
 - It creates `.setup-verification.txt` showing what was attempted
 - You can copy the commands and run them manually
 - Then just re-run the setup script
@@ -453,12 +451,12 @@ After installing, re-run: bash scripts/dev/setup.sh
 ```
 
 ### Setup Verification
-After setup completes, verify everything worked:
+After setup completes:
 ```bash
 # Check the verification file
 cat .setup-verification.txt
 
-# Should show:
+# Expected output includes:
 # - All tools installed ✓
 # - PostgreSQL running ✓
 # - Dependencies installed ✓
@@ -575,8 +573,8 @@ make build      # Build backend
 | `MODEL_TIMEOUT_MS` | ⚠️ Optional | ML request timeout | `2000` |
 
 > **Critical Security Notes:**
-> - `JWT_SECRET` is **required** for ALL environments (dev, staging, prod). The application fails to start if missing.
-> - `ML_API_KEY` is **required for production**. Omit for local dev to allow unauthenticated ML calls.
+> - `JWT_SECRET` is enforced at startup outside `local` and `test`; local and test modes use built-in development defaults.
+> - `ML_API_KEY` is supported for backend→ML authentication and is enforced by the ML service when configured.
 > - When `MODEL_URL` is empty, backend uses `MockPredictor` for stable dev/test (not for production).
 
 ### ML Service Environment Variables
@@ -584,7 +582,7 @@ make build      # Build backend
 | Variable | Required | Security Note | Default / Example |
 |----------|----------|---------------|-------------------|
 | `ML_PORT` | ⚠️ Optional | Port for Flask server | `5000` |
-| `ML_API_KEY` | ⚠️ Optional (dev) / ✅ **Required** (prod) | **⚠️ Must match backend `ML_API_KEY`** | Same as backend |
+| `ML_API_KEY` | ⚠️ Optional | Enforced by the ML service when set; must match backend `ML_API_KEY` | Same as backend |
 | `PYTHONUNBUFFERED` | ⚠️ Optional | Recommended for logs | `1` |
 | `ENV` | ⚠️ Optional | Set to `production` for prod | `production` |
 | `CORS_ORIGINS` | ⚠️ Optional | Trusted backend origins | `http://localhost:8080` |
@@ -595,7 +593,7 @@ make build      # Build backend
 |----------|----------|---------------|-------------------|
 | `VITE_API_BASE` | ⚠️ Optional | Backend API URL | `http://localhost:8080` |
 | `VITE_ML_BASE` | ⚠️ Optional | ML server URL | `http://localhost:5001` |
-| `VITE_ML_API_KEY` | ⚠️ Optional (dev) / ✅ **Required** (prod) | **⚠️ Must match `ML_API_KEY` in backend/ML** | Same as backend |
+| `VITE_ML_API_KEY` | ⚠️ Optional | Must match `ML_API_KEY` when ML auth is enabled end-to-end | Same as backend |
 
 ### Database Environment Variables (docker-compose.yml)
 
@@ -619,7 +617,7 @@ ML_PORT=5001
 MODEL_VERSION=binary_v2_no_bp
 MODEL_DATASET_HASH=nhanes_postmenopausal_2011_2024
 MODEL_TIMEOUT_MS=2000
-ML_API_KEY=  # Optional in dev, required in production
+ML_API_KEY=  # Optional unless ML auth is enabled
 ```
 
 **Frontend `frontend/.env.local`:**
@@ -633,248 +631,69 @@ VITE_ML_API_KEY=  # Must match ML_API_KEY when set
 
 ## Production Deployment
 
-> **Beyond Quick Start: This section covers production-specific configuration, security hardening, and SSL/TLS setup.**
+Production assets exist in the repo, but deployment is still infrastructure-driven rather than one-command automated.
 
-### Prerequisites Checklist
+### Included Assets
 
-Before deploying to production, ensure the following are configured:
+| File / Surface | Purpose |
+|----------------|---------|
+| `docker-compose.prod.yml` | Production-oriented Compose overlay |
+| `frontend/nginx-ssl.conf` | Nginx TLS proxy configuration |
+| `scripts/setup-ssl.sh` | Let's Encrypt helper script |
+| `scripts/verify-tls.sh` | TLS verification helper |
+| `backend/internal/http/router/router.go` | Production CORS, rate limiting, security headers, request size limits |
+| `/api/v1/healthz`, `/health` | Backend and ML health endpoints |
 
-| Category | Item | Status |
-|----------|------|--------|
-| **Infrastructure** | Domain configured and pointing to server IP | ✅ Required |
-| **Infrastructure** | Ports 80 and 443 open on firewall | ✅ Required |
-| **Infrastructure** | PostgreSQL database accessible (external or managed) | ✅ Required |
-| **Infrastructure** | Docker installed (or container orchestration platform) | ✅ Required |
-| **Security** | Strong JWT_SECRET (min 32 chars, cryptographically random) | ✅ Required |
-| **Security** | ML_API_KEY configured for ML service auth | ✅ Required |
-| **Security** | CORS_ORIGINS set to trusted domains only | ✅ Required |
-| **Security** | SSL/TLS certificates obtained | ✅ Required |
-| **Monitoring** | Database backup automation configured | ⚠️ Recommended |
-| **Monitoring** | Health check endpoints monitored | ⚠️ Recommended |
+### Production Configuration Baseline
 
-### Environment Variable Checklist
+| Variable | Status | Notes |
+|----------|--------|-------|
+| `ENV=production` | Required | Enables production middleware behavior |
+| `JWT_SECRET` | Required | Enforced at backend startup outside `local` and `test` |
+| `POSTGRES_PASSWORD` | Required for Compose-based Postgres | Use a strong secret |
+| `DB_DSN` | Required | Use a production DSN; include `sslmode=require` when your database expects TLS |
+| `CORS_ORIGINS` | Required | Set explicit trusted frontend origins |
+| `ML_API_KEY` | Optional / deployment-specific | Enforced by the ML service when configured |
+| `RATE_LIMIT_PER_MINUTE` | Optional | Overrides backend rate limiting |
+| `MODEL_VERSION` | Optional | Defaults to `binary_v2_no_bp` |
 
-| Variable | Required | Security Note | Production Value |
-|----------|----------|---------------|------------------|
-| `JWT_SECRET` | ✅ **Required** | **⚠️ Min 32 chars, use `openssl rand -base64 32`** | Cryptographically random string |
-| `POSTGRES_PASSWORD` | ✅ **Required** | **⚠️ Strong password, never reuse** | Secure database password |
-| `ML_API_KEY` | ✅ **Required** | **⚠️ Strong random key for ML auth** | Match in backend + ML + frontend |
-| `CORS_ORIGINS` | ✅ **Required** | Only trusted HTTPS domains | `https://yourdomain.com` |
-| `DB_DSN` | ✅ **Required** | Include `sslmode=require` for TLS | `postgres://...?sslmode=require` |
-| `DOMAIN` | ✅ **Required** | Your production domain | `api.yourdomain.com` |
-| `ENV` | ✅ **Required** | Must be `production` | `production` |
-| `PORT` | ⚠️ Optional | Default 8080 | Standard or custom |
-| `MODEL_VERSION` | ⚠️ Optional | Default `binary_v2_no_bp` | Choose validated model |
-| `RATE_LIMIT_REQUESTS` | ⚠️ Optional | Rate limiting threshold | `100` (recommended) |
-| `RATE_LIMIT_WINDOW` | ⚠️ Optional | Rate limiting window (seconds) | `60` (recommended) |
+### Operational Model
 
-### Docker Compose Production Deployment
+- Nginx terminates TLS in front of the frontend, backend, and ML service.
+- Backend production mode applies explicit CORS allowlists, security headers, request-size limits, and rate limiting.
+- ML authentication is available through `ML_API_KEY` and is enforced by the ML service when enabled.
+- Health endpoints are available for backend and ML process checks.
 
-DianaV2 provides a production Docker Compose configuration with TLS/SSL termination:
+### Verification
 
 ```bash
-# 1. Create production .env file
-cp env.example .env.prod
-# Edit .env.prod with production values (see checklist above)
+# Backend health
+curl -sf http://localhost:8080/api/v1/healthz
 
-# 2. Set required environment variables
-export JWT_SECRET=$(openssl rand -base64 32)
-export POSTGRES_PASSWORD=$(openssl rand -base64 24)
-export ML_API_KEY=$(openssl rand -base64 32)
-export DOMAIN=your-domain.com
-export SSL_EMAIL=admin@your-domain.com
+# ML service health
+curl -sf http://localhost:5001/health
 
-# 3. Obtain SSL/TLS certificates (Let's Encrypt)
-./scripts/setup-ssl.sh --domain $DOMAIN --email $SSL_EMAIL
+# Inspect rendered Compose config
+docker compose -f docker-compose.yml -f docker-compose.prod.yml config
 
-# 4. Deploy production stack with TLS
-make deploy-prod
-# OR manually:
-# docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-
-# 5. Verify deployment
-make ssl-verify
-curl -sf https://$DOMAIN/api/v1/healthz
+# Inspect running containers
+docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
 ```
 
-#### Production Architecture
-
-The production deployment uses:
-- **Nginx reverse proxy** for TLS termination (port 443)
-- **HTTP to HTTPS redirect** (port 80 → 443)
-- **Certbot** for automatic certificate renewal
-- **Internal network isolation** (services not exposed externally)
-- **Rate limiting** via backend configuration
-
-```mermaid
-flowchart LR
-    subgraph External["External Access"]
-        Client["Client Browser"]
-    end
-    
-    subgraph Production["Production Stack"]
-        Nginx["Nginx Proxy<br/>(TLS/SSL)"]
-        Backend["Go Backend<br/>(Internal)"]
-        ML["ML Server<br/>(Internal)"]
-        Frontend["React Frontend<br/>(Static)"]
-        DB["PostgreSQL<br/>(Internal)"]
-    end
-    
-    Client -->|"HTTPS 443"| Nginx
-    Nginx -->|"Proxy"| Backend
-    Nginx -->|"Proxy"| ML
-    Nginx -->|"Static Files"| Frontend
-    Backend --> DB
-    Backend --> ML
-```
-
-### SSL/TLS Setup
-
-DianaV2 uses Let's Encrypt for free, automatic SSL certificates:
-
-#### Quick SSL Setup
-
-```bash
-# Obtain and configure SSL certificates
-./scripts/setup-ssl.sh --domain api.yourdomain.com --email admin@yourdomain.com
-
-# Verify TLS configuration
-./scripts/verify-tls.sh --domain api.yourdomain.com
-
-# Test with SSL Labs (external)
-# Visit: https://www.ssllabs.com/ssltest/analyze.html?d=api.yourdomain.com
-```
-
-#### SSL Certificate Details
-
-| Item | Path/Command |
-|------|--------------|
-| Certificate location | `/etc/letsencrypt/live/$DOMAIN/` |
-| Nginx SSL directory | `/etc/nginx/ssl/` (copies for Docker) |
-| Renewal automation | Daily cron job (auto-setup) |
-| Manual renewal | `certbot renew` |
-
-#### SSL Configuration Files
+### TLS Assets
 
 | File | Purpose |
 |------|---------|
 | `docker-compose.prod.yml` | Production overlay with Nginx TLS proxy |
-| `scripts/setup-ssl.sh` | Let's Encrypt certificate automation |
-| `scripts/verify-tls.sh` | TLS configuration verification |
+| `scripts/setup-ssl.sh` | Let's Encrypt certificate helper |
+| `scripts/verify-tls.sh` | TLS verification helper |
 | `frontend/nginx-ssl.conf` | Nginx TLS configuration |
-
-### Security Hardening
-
-#### JWT Secret Requirements
-
-```bash
-# Generate secure JWT secret (minimum 32 characters)
-openssl rand -base64 32
-
-# ⚠️ WARNING: Never use:
-# - Simple passwords
-# - Dictionary words
-# - Short strings (< 32 chars)
-# - Same secret across environments
-```
-
-#### ML API Key Configuration
-
-The ML service requires API key authentication in production:
-
-```bash
-# Generate ML API key
-openssl rand -base64 32
-
-# Configure in three locations:
-# 1. Backend: ML_API_KEY=<generated-key>
-# 2. ML Server: ML_API_KEY=<generated-key>
-# 3. Frontend: VITE_ML_API_KEY=<generated-key>
-```
-
-#### CORS Security
-
-```bash
-# Production CORS (HTTPS only, specific domains)
-CORS_ORIGINS=https://yourdomain.com,https://api.yourdomain.com
-
-# ⚠️ WARNING: Never use:
-# - Wildcards (*) in production
-# - HTTP origins (only HTTPS)
-# - localhost URLs (except dev)
-```
-
-#### Database Security
-
-```bash
-# Production DB connection string (SSL required)
-DB_DSN=postgres://diana:$POSTGRES_PASSWORD@db-host:5432/diana?sslmode=require
-
-# ⚠️ WARNING:
-# - Always use sslmode=require in production
-# - Never store password in code
-# - Use managed database services when possible
-```
-
-### Backup & Monitoring
-
-#### Database Backups
-
-```bash
-# Run backup manually
-make backup
-
-# List available backups
-make backup-list
-
-# Restore from backup
-make backup-restore backups/diana_backup_YYYYMMDD.sql.gz
-
-# Test restoration process
-make backup-test
-```
-
-See [deployment/BACKUP-README.md](./deployment/BACKUP-README.md) for full backup documentation.
-
-#### Health Monitoring
-
-```bash
-# Check backend health
-curl -sf https://$DOMAIN/api/v1/healthz
-
-# Check ML service health
-curl -sf https://$DOMAIN/ml/health
-
-# Docker container status
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
-
-# View logs
-make deploy-prod-logs
-```
-
-### Production Commands Summary
-
-```bash
-# Deployment
-make deploy-prod          # Deploy production stack
-make deploy-prod-down     # Stop production stack
-make deploy-prod-logs     # View nginx proxy logs
-
-# SSL/TLS
-make ssl-setup DOMAIN=your-domain.com SSL_EMAIL=admin@your-domain.com
-make ssl-verify DOMAIN=your-domain.com
-
-# Backups
-make backup               # Run backup
-make backup-list          # List backups
-make backup-test          # Test restoration
-```
 
 ---
 
 ## Testing
 
-DianaV2 has a comprehensive test suite across all three tiers: Go backend, React frontend, and Python ML service.
+Tests are available for the Go backend, React frontend, and Python ML service.
 
 ### Backend (Go)
 
@@ -1023,7 +842,7 @@ cd Ian_ML && pytest tests/test_predict.py -v -k "test_prediction_endpoint"
 
 ## Security
 
-> **This application handles sensitive health data for diabetes risk assessment. Security is a critical priority.**
+> **This application handles health-related data used for diabetes risk assessment.**
 
 ### Vulnerability Reporting
 
@@ -1045,37 +864,24 @@ If you discover a security vulnerability in DianaV2, please report it responsibl
 
 ### Health Data Privacy
 
-DianaV2 is designed to handle sensitive health data including:
+DianaV2 stores health-related data including:
 - Biomarker values (HbA1c, Fasting Blood Sugar, cholesterol, BMI)
 - Medical history and demographics
 - Diabetes risk predictions
 
 **Key Privacy Considerations:**
-- All data transmission uses HTTPS/TLS encryption
+- Production deployments are expected to run behind HTTPS/TLS termination; the repository includes Nginx and SSL helper assets for that setup
 - User authentication requires JWT tokens with secure signing
 - Database credentials are stored securely (never in source code)
 - ML predictions are stored with user consent tracking
 
-**HIPAA Awareness:**
-This application handles health-related data. Organizations deploying DianaV2 in healthcare settings should:
-- Conduct proper HIPAA compliance assessment
-- Implement appropriate administrative, physical, and technical safeguards
-- Maintain audit logs (built-in audit trail in admin dashboard)
-- Ensure proper data retention and disposal policies
-
 ### Authentication Security
 
-**JWT Best Practices (Implemented):**
-- JWT secrets must be at least 32 characters (`JWT_SECRET` environment variable)
-- Tokens have configurable expiration (refresh token flow available)
-- Authorization checks enforced via RBAC middleware
-- Session events tracked via audit logging
-
-**Recommendations for Production:**
-- Use strong, unique JWT secrets generated with cryptographic tools
-- Enable `ML_API_KEY` authentication for ML service calls
-- Set `CORS_ORIGINS` to only trusted frontend domains
-- Review audit logs regularly for suspicious authentication patterns
+**Implemented Security Measures:**
+- `JWT_SECRET` is enforced at backend startup outside `local` and `test`, with deployment docs standardizing 32+ character secrets
+- `ML_API_KEY` is supported for backend→ML authentication and enforced by the ML service when configured
+- `CORS_ORIGINS` is restricted to explicit trusted domains in production
+- Audit logging and admin auth-event monitoring are available for operational review
 
 ### ML Disclaimer
 
@@ -1083,9 +889,9 @@ This application handles health-related data. Organizations deploying DianaV2 in
 
 The machine learning models in DianaV2 are **screening tools**, not diagnostic devices:
 - Risk scores are probabilities, not medical diagnoses
-- Predictions should be reviewed by qualified healthcare professionals
+- Predictions require review by qualified healthcare professionals
 - ML outputs do not replace clinical judgment or laboratory testing
-- Users should consult healthcare providers before making medical decisions
+- Medical decisions belong with qualified healthcare providers
 
 See [docs/03-ml/methodology.md](./docs/03-ml/methodology.md) for methodology details.
 
@@ -1093,25 +899,11 @@ See [docs/03-ml/methodology.md](./docs/03-ml/methodology.md) for methodology det
 
 ## License
 
-This project is currently **unlicensed**. A formal license should be established before public distribution or commercial use.
-
-### Recommended License Options
-
-For open-source distribution, consider one of the following licenses:
-
-| License | Use Case | Key Features |
-|---------|----------|--------------|
-| **MIT** | Open source, permissive | Simple, permissive, allows commercial use with attribution |
-| **Apache-2.0** | Open source, patent-aware | Permissive, includes patent grant, attribution required |
-| **Proprietary** | Commercial, restricted | Custom terms, restricts modification/distribution |
+This repository does not include a `LICENSE` file yet. Until a license is added, redistribution and reuse terms are not granted by the repository itself.
 
 ### Copyright Notice
 
 Copyright © 2024 DianaV2 Contributors. All rights reserved until license is formally established.
-
-### License File
-
-Once a license is chosen, a `LICENSE` file should be created in the repository root containing the full license text. This README section should then be updated to reference that file.
 
 ---
 
