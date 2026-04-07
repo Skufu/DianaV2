@@ -11,10 +11,10 @@ vi.mock('../../assets/logo-icon.png', () => ({
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }) => <div {...props}>{children}</div>,
-    input: ({ children, ...props }) => <input {...props}>{children}</input>,
-    button: ({ children, ...props }) => <button {...props}>{children}</button>,
-    p: ({ children, ...props }) => <p {...props}>{children}</p>,
+    div: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <div {...props}>{children}</div>,
+    input: ({ whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <input {...props} />,
+    button: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <button {...props}>{children}</button>,
+    p: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <p {...props}>{children}</p>,
   },
   AnimatePresence: ({ children }) => <>{children}</>,
 }));
@@ -201,9 +201,9 @@ describe('Login', () => {
     const submitButton = screen.getByRole('button', { name: /sign in to dashboard/i });
     await user.click(submitButton);
 
-    // Button should be disabled during loading
+    // Form is unmounted and replaced by skeleton during loading
     await waitFor(() => {
-      expect(submitButton).toBeDisabled();
+      expect(screen.getByTestId('login-skeleton')).toBeInTheDocument();
     });
   });
 

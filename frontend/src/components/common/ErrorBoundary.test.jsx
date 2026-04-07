@@ -97,9 +97,15 @@ describe('ErrorBoundary', () => {
   });
 
   it('resets error state when onRetry is called', () => {
-    const { container } = render(
+    const { rerender } = render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
+      </ErrorBoundary>
+    );
+
+    rerender(
+      <ErrorBoundary>
+        <ThrowError shouldThrow={false} />
       </ErrorBoundary>
     );
 
