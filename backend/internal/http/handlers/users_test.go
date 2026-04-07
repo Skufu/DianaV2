@@ -179,8 +179,8 @@ func TestUsersHandler_GetUserProfile_Success(t *testing.T) {
 	var response models.UserProfile
 	err := json.NewDecoder(w.Body).Decode(&response)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(123), response.User.ID)
-	assert.Equal(t, "test@example.com", response.User.Email)
+	assert.Equal(t, int64(123), response.ID)
+	assert.Equal(t, "test@example.com", response.Email)
 }
 
 func TestUsersHandler_GetUserProfile_AuthRequired(t *testing.T) {

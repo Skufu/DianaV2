@@ -76,7 +76,7 @@ func (s *PDFExportService) GenerateHealthReport(user models.UserProfile, assessm
 	if user.DateOfBirth != nil {
 		age = fmt.Sprintf("%d years", time.Now().Year()-user.DateOfBirth.Year())
 	}
-	s.drawInfoRow(pdf, "Age / ID:", fmt.Sprintf("%s (ID: #%d)", age, user.User.ID), 30)
+	s.drawInfoRow(pdf, "Age / ID:", fmt.Sprintf("%s (ID: #%d)", age, user.ID), 30)
 	s.drawInfoRow(pdf, "Status:", casesTitle(user.MenopauseStatus), 30)
 	s.drawInfoRow(pdf, "Reported:", time.Now().Format("Jan 02, 2006"), 30)
 	if hasLatestAssessment {

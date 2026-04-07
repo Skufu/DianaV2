@@ -93,7 +93,7 @@ func (h *MLProxyHandler) doProxy(c *gin.Context, method, targetURL string, body 
 		ErrServiceUnavailable(c, "ML service unavailable")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Copy response headers
 	for key, values := range resp.Header {
