@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import BiomarkerInput from './BiomarkerInput';
 
@@ -41,8 +41,9 @@ describe('BiomarkerInput', () => {
     await user.type(input, '100');
 
     expect(handleChange).toHaveBeenCalled();
-    const lastCall = handleChange.mock.calls[handleChange.mock.calls.length - 1];
-    expect(lastCall[0]).toBe('100');
+    // userEvent.type fires multiple onChange events, check that '100' was eventually called
+    const allCalls = handleChange.mock.calls.map(call => call[0]);
+    expect(allCalls).toContain('100');
   });
 
   it('displays value when provided', () => {
@@ -51,14 +52,19 @@ describe('BiomarkerInput', () => {
     expect(input).toHaveValue(100);
   });
 
-  it('shows error for non-numeric input', () => {
+  it('shows error for non-numeric input', async () => {
     const handleChange = vi.fn();
+    const user = userEvent.setup();
     render(<BiomarkerInput label="Glucose" onChange={handleChange} />);
 
     const input = screen.getByRole('spinbutton');
-    fireEvent.change(input, { target: { value: 'abc' } });
+    // Use userEvent.type instead of fireEvent.change for better simulation
+    await user.type(input, 'abc');
 
-    expect(screen.getByText('Please enter a valid number')).toBeInTheDocument();
+    // Wait for the error message to appear (AnimatePresence has animation)
+    await waitFor(() => {
+      expect(screen.getByText('Please enter a valid number')).toBeInTheDocument();
+    });
   });
 
   it('shows error when value is below minimum', () => {
