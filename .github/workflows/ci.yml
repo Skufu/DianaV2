@@ -112,6 +112,9 @@ jobs:
   # Frontend build, lint, and test
   frontend:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -127,16 +130,16 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Build
-        run: npm run build --workspace=frontend
+        run: npm run build
         env:
           VITE_API_BASE: http://localhost:8080
           VITE_ML_BASE: http://localhost:5000
 
       - name: Lint
-        run: npm run lint --workspace=frontend
+        run: npm run lint
 
       - name: Test with coverage
-        run: npm run test:coverage --workspace=frontend
+        run: npm run test:coverage
         env:
           VITE_API_BASE: http://localhost:8080
           VITE_ML_BASE: http://localhost:5000

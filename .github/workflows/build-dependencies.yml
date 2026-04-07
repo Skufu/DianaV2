@@ -286,6 +286,9 @@ jobs:
   # 6. Heavy Dependency Detection - Bundle size analysis
   bundle-size-analysis:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -301,13 +304,12 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Build with bundle analysis
-        run: npm run build --workspace=frontend
+        run: npm run build
 
       - name: Install bc for size calculation
         run: sudo apt-get update && sudo apt-get install -y bc
 
       - name: Analyze bundle size
-        working-directory: frontend
         run: |
           echo "🔍 Analyzing bundle size..."
 
@@ -348,7 +350,6 @@ jobs:
           fi
 
       - name: Check for source map explorer
-        working-directory: frontend
         run: |
           if npm list --depth=0 | grep -q "source-map-explorer"; then
             echo "✅ source-map-explorer found for detailed analysis"
@@ -390,6 +391,7 @@ jobs:
 
       - name: Check frontend unused dependencies
         if: matrix.component == 'frontend'
+        working-directory: frontend
         run: |
           echo "🔍 Checking frontend for unused dependencies..."
 
@@ -400,18 +402,18 @@ jobs:
           npm install -g depcheck
 
           # Run depcheck
-          mkdir -p reports
-          depcheck --json > reports/frontend-unused-deps.json || true
+          mkdir -p ../reports
+          depcheck --json > ../reports/frontend-unused-deps.json || true
 
-          echo "### Frontend Unused Dependencies" > reports/unused-deps-report.md
-          echo "" >> reports/unused-deps-report.md
-          cat reports/frontend-unused-deps.json | jq -r '.dependencies[] | "- \(.)"' >> reports/unused-deps-report.md 2>/dev/null || echo "None detected" >> reports/unused-deps-report.md
-          echo "" >> reports/unused-deps-report.md
+          echo "### Frontend Unused Dependencies" > ../reports/unused-deps-report.md
+          echo "" >> ../reports/unused-deps-report.md
+          cat ../reports/frontend-unused-deps.json | jq -r '.dependencies[] | "- \(.)"' >> ../reports/unused-deps-report.md 2>/dev/null || echo "None detected" >> ../reports/unused-deps-report.md
+          echo "" >> ../reports/unused-deps-report.md
 
-          echo "### Frontend Missing Dependencies" >> reports/unused-deps-report.md
-          cat reports/frontend-unused-deps.json | jq -r '.missing | keys[] | "- \(.)"' >> reports/unused-deps-report.md 2>/dev/null || echo "None detected" >> reports/unused-deps-report.md
+          echo "### Frontend Missing Dependencies" >> ../reports/unused-deps-report.md
+          cat ../reports/frontend-unused-deps.json | jq -r '.missing | keys[] | "- \(.)"' >> ../reports/unused-deps-report.md 2>/dev/null || echo "None detected" >> ../reports/unused-deps-report.md
 
-          cat reports/unused-deps-report.md
+          cat ../reports/unused-deps-report.md
 
       # Python ML - deptry
       - name: Setup Python (ML)
