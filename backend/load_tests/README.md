@@ -60,8 +60,7 @@ make load-test-assessment
 # Via k6 directly
 k6 run backend/load_tests/assessment_load_test.js
 
-# Via services.yaml command
-# (defined in .factory/services.yaml)
+# Via direct script invocation from this repository
 ```
 
 #### Stress Test (200 VUs, 5 minutes)
@@ -131,6 +130,6 @@ If thresholds fail, investigate:
 
 ### Related Documentation
 
-- [Validation Contract](/.factory/missions/eda5c9b3-47c4-470d-a5eb-81e7b68ee211/validation-contract.md) - VAL-BT-004
+- [Testing Strategy](/TESTING.md#load-testing) - Load testing guidance and thresholds
 - [Backend Testing Strategy](/TESTING.md) - Overall test approach
 - [AGENTS.md](/AGENTS.md) - Project conventions and patterns

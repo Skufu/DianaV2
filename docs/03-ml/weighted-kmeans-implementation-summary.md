@@ -588,6 +588,4 @@ print(f\"Cluster: {r['risk_cluster']}, Method: {r['assignment_method']}\")
 
 ---
 
-**Implementation completed by:** Sisyphus build agent
 **Date:** 2026-03-10
-**Plan:** `.sisyphus/plans/weighted-kmeans-subtyping.md`
