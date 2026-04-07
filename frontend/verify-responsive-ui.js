@@ -1,4 +1,4 @@
-const { chromium, devices } = require('playwright');
+const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
@@ -130,7 +130,7 @@ async function setupMocks(page) {
 }
 
 async function captureScreenshots() {
-  const outputDir = path.join(__dirname, '..', '..', '.sisyphus', 'notepads', 'education-results-responsive-fix', 'screenshots');
+  const outputDir = path.join(__dirname, 'test-results', 'responsive-ui-screenshots');
   fs.mkdirSync(outputDir, { recursive: true });
 
   const browser = await chromium.launch({ headless: true });
