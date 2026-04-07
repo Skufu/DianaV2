@@ -361,7 +361,7 @@ func TestExportHandler_ExportPDF_UsesStoredAssessmentContract(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.True(t, pdf.called)
-	assert.Equal(t, int64(1), pdf.lastUser.User.ID)
+	assert.Equal(t, int64(1), pdf.lastUser.ID)
 	assert.Len(t, pdf.lastAssessments, 1)
 	assert.Equal(t, storedAssessment.ID, pdf.lastAssessments[0].ID)
 	assert.Equal(t, storedAssessment.RiskScore, pdf.lastAssessments[0].RiskScore)
