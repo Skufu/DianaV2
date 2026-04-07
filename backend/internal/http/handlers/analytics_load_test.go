@@ -66,7 +66,7 @@ func TestAnalyticsLoadTest_1000Requests(t *testing.T) {
 	var successCount int32 = 0
 	var errorCount int32 = 0
 	var totalLatency int64 = 0
-	var minLatency int64 = int64(^uint64(0) >> 1)
+	var minLatency = int64(^uint64(0) >> 1)
 	var maxLatency int64 = 0
 
 	var wg sync.WaitGroup

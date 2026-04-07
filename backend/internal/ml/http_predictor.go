@@ -226,7 +226,7 @@ func (p *HTTPPredictor) IsAvailable() bool {
 	if err != nil {
 		return false
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	return resp.StatusCode == http.StatusOK
 }
@@ -335,7 +335,7 @@ func (p *HTTPPredictor) sendDriftCheck(ctx context.Context, payload driftCheckRe
 	if err != nil {
 		return fmt.Errorf("drift request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -393,7 +393,7 @@ func (p *HTTPPredictor) predictWithModelType(ctx context.Context, input models.A
 		log.Printf("[ML] Request failed: %v", err)
 		return Prediction{}, fmt.Errorf("ml request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -476,7 +476,7 @@ func (p *HTTPPredictor) GetActiveModelMetadata(ctx context.Context) (*ModelMetad
 		log.Printf("[ML] Metadata request failed: %v", err)
 		return nil, fmt.Errorf("ml metadata request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -511,7 +511,7 @@ func (p *HTTPPredictor) GetDriftStatus(ctx context.Context) (*DriftStatus, error
 	if err != nil {
 		return nil, fmt.Errorf("ml drift status request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -559,7 +559,7 @@ func (p *HTTPPredictor) GetDriftAlerts(ctx context.Context, unacknowledgedOnly b
 	if err != nil {
 		return nil, fmt.Errorf("ml drift alerts request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)

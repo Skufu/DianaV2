@@ -21,7 +21,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var mockErrNotFound = errors.New("not found")
+var errMockNotFound = errors.New("not found")
 
 type mockUserStore struct {
 	users     []models.User
@@ -49,7 +49,7 @@ func (m *mockUserStore) FindByEmail(ctx context.Context, email string) (*models.
 			return &u, nil
 		}
 	}
-	return nil, mockErrNotFound
+	return nil, errMockNotFound
 }
 
 func (m *mockUserStore) FindByID(ctx context.Context, id int32) (*models.User, error) {
@@ -61,7 +61,7 @@ func (m *mockUserStore) FindByID(ctx context.Context, id int32) (*models.User, e
 			return &u, nil
 		}
 	}
-	return nil, mockErrNotFound
+	return nil, errMockNotFound
 }
 
 func (m *mockUserStore) GetUserByID(ctx context.Context, id int32) (*models.User, error) {
@@ -79,7 +79,7 @@ func (m *mockUserStore) Update(ctx context.Context, user models.User) (*models.U
 			return &user, nil
 		}
 	}
-	return nil, mockErrNotFound
+	return nil, errMockNotFound
 }
 
 func (m *mockUserStore) UpdateUser(ctx context.Context, user models.User) (*models.User, error) {
@@ -103,7 +103,7 @@ func (m *mockUserStore) Deactivate(ctx context.Context, id int32) error {
 			return nil
 		}
 	}
-	return mockErrNotFound
+	return errMockNotFound
 }
 
 func (m *mockUserStore) Activate(ctx context.Context, id int32) error {
@@ -113,7 +113,7 @@ func (m *mockUserStore) Activate(ctx context.Context, id int32) error {
 			return nil
 		}
 	}
-	return mockErrNotFound
+	return errMockNotFound
 }
 
 func (m *mockUserStore) UpdateLastLogin(ctx context.Context, id int32) error {
@@ -124,11 +124,11 @@ func (m *mockUserStore) UpdateLastLogin(ctx context.Context, id int32) error {
 			return nil
 		}
 	}
-	return mockErrNotFound
+	return errMockNotFound
 }
 
 func (m *mockUserStore) GetLatestAssessmentByUser(ctx context.Context, userID int64) (*models.Assessment, error) {
-	return nil, mockErrNotFound
+	return nil, errMockNotFound
 }
 
 func (m *mockUserStore) GetAssessmentCountByUser(ctx context.Context, userID int64) (int, error) {
@@ -136,7 +136,7 @@ func (m *mockUserStore) GetAssessmentCountByUser(ctx context.Context, userID int
 }
 
 func (m *mockUserStore) GetUserTrends(ctx context.Context, userID int64, months int) (*models.TrendData, error) {
-	return nil, mockErrNotFound
+	return nil, errMockNotFound
 }
 
 func (m *mockUserStore) SoftDeleteUser(ctx context.Context, userID int64) error {
