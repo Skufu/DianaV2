@@ -251,7 +251,7 @@ For questions about your data, contact: privacy@diana-health.com
 	readmeFile, _ := zipWriter.Create("README.txt")
 	_, _ = readmeFile.Write([]byte(readme))
 
-	zipWriter.Close()
+	_ = zipWriter.Close()
 
 	filename := fmt.Sprintf("diana_data_export_%s_%s.zip", user.Email, time.Now().Format("2006-01-02"))
 	c.Header("Content-Type", "application/zip")
