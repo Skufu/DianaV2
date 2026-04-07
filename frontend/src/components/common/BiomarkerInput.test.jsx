@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import BiomarkerInput from './BiomarkerInput';
 
@@ -51,60 +51,52 @@ describe('BiomarkerInput', () => {
     expect(input).toHaveValue(100);
   });
 
-  it('shows error for non-numeric input', async () => {
+  it('shows error for non-numeric input', () => {
     const handleChange = vi.fn();
-    const user = userEvent.setup();
     render(<BiomarkerInput label="Glucose" onChange={handleChange} />);
 
     const input = screen.getByRole('spinbutton');
-    await user.type(input, 'abc');
+    fireEvent.change(input, { target: { value: 'abc' } });
 
     expect(screen.getByText('Please enter a valid number')).toBeInTheDocument();
   });
 
-  it('shows error when value is below minimum', async () => {
+  it('shows error when value is below minimum', () => {
     const handleChange = vi.fn();
-    const user = userEvent.setup();
     render(<BiomarkerInput label="Glucose" onChange={handleChange} min={70} />);
 
     const input = screen.getByRole('spinbutton');
-    await user.clear(input);
-    await user.type(input, '50');
+    fireEvent.change(input, { target: { value: '50' } });
 
     expect(screen.getByText('Must be at least 70')).toBeInTheDocument();
   });
 
-  it('shows error when value is above maximum', async () => {
+  it('shows error when value is above maximum', () => {
     const handleChange = vi.fn();
-    const user = userEvent.setup();
     render(<BiomarkerInput label="Glucose" onChange={handleChange} max={200} />);
 
     const input = screen.getByRole('spinbutton');
-    await user.clear(input);
-    await user.type(input, '250');
+    fireEvent.change(input, { target: { value: '250' } });
 
     expect(screen.getByText('Must not exceed 200')).toBeInTheDocument();
   });
 
-  it('includes unit in error message when provided', async () => {
+  it('includes unit in error message when provided', () => {
     const handleChange = vi.fn();
-    const user = userEvent.setup();
     render(<BiomarkerInput label="Glucose" unit="mg/dL" onChange={handleChange} min={70} />);
 
     const input = screen.getByRole('spinbutton');
-    await user.clear(input);
-    await user.type(input, '50');
+    fireEvent.change(input, { target: { value: '50' } });
 
     expect(screen.getByText('Must be at least 70 mg/dL')).toBeInTheDocument();
   });
 
-  it('allows empty input when not required', async () => {
+  it('allows empty input when not required', () => {
     const handleChange = vi.fn();
-    const user = userEvent.setup();
     render(<BiomarkerInput label="Glucose" onChange={handleChange} value="100" />);
 
     const input = screen.getByRole('spinbutton');
-    await user.clear(input);
+    fireEvent.change(input, { target: { value: '' } });
 
     expect(screen.queryByText(/must be at least/i)).not.toBeInTheDocument();
     expect(handleChange).toHaveBeenCalledWith('');

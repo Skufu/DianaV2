@@ -96,7 +96,8 @@ describe('ErrorBoundary', () => {
     );
   });
 
-  it('resets error state when onRetry is called', () => {
+  it('resets error state when onRetry is called', async () => {
+    const user = (await import('@testing-library/user-event')).default.setup();
     const { rerender } = render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
@@ -110,7 +111,7 @@ describe('ErrorBoundary', () => {
     );
 
     const retryButton = screen.getByRole('button', { name: /try again/i });
-    retryButton.click();
+    await user.click(retryButton);
 
     expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument();
   });
