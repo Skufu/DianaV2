@@ -133,7 +133,7 @@ describe('AssessmentForm', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/please complete all required fields/i)).toBeInTheDocument();
+      expect(screen.getByText(/please complete all required fields for the clinical assessment/i)).toBeInTheDocument();
     });
   });
 
@@ -153,7 +153,7 @@ describe('AssessmentForm', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/age must be between 45-60/i)).toBeInTheDocument();
+      expect(screen.getByText(/age must be between 45-60 years for postmenopausal women/i)).toBeInTheDocument();
     });
   });
 
@@ -173,7 +173,7 @@ describe('AssessmentForm', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/bmi must be between 15-60/i)).toBeInTheDocument();
+      expect(screen.getByText(/bmi must be between 15-60 kg\/m²/i)).toBeInTheDocument();
     });
   });
 
@@ -209,10 +209,13 @@ describe('AssessmentForm', () => {
     const select = screen.getByLabelText(/physical activity/i);
     await user.click(select);
 
-    expect(screen.getAllByRole('option', { name: /unknown/i })[0]).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /sedentary/i })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /moderate/i })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: /active/i })).toBeInTheDocument();
+    // Get options within the physical activity select to avoid ambiguity with alcohol's "Moderate" option
+    const options = screen.getAllByRole('option');
+    expect(options.some(opt => opt.textContent.match(/unknown/i))).toBe(true);
+    expect(options.some(opt => opt.textContent.match(/sedentary/i))).toBe(true);
+    expect(options.some(opt => opt.textContent.match(/active/i))).toBe(true);
+    // Physical activity has "Moderate (1-3 days/week)" which is unique from alcohol's "Moderate"
+    expect(options.some(opt => opt.textContent.match(/moderate.*1-3 days/i))).toBe(true);
   });
 
   it('renders alcohol use options', async () => {
@@ -243,10 +246,10 @@ describe('AssessmentForm', () => {
     const submitButton = screen.getByRole('button', { name: /submit for analysis/i });
     await user.click(submitButton);
 
-    // Form should show the result modal after submission
+    // Wait for the async mutation to complete and modal to appear
     await waitFor(() => {
       expect(screen.getByTestId('ml-result-modal')).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it('shows model type selector when showModelSelector is true', () => {
