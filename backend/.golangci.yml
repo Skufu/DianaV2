@@ -16,15 +16,13 @@ linters:
     errcheck:
       check-type-assertions: false
       check-blank: false
-
 issues:
-  exclusions:
-    rules:
-      # Exclude some linters from running on tests
-      - path: _test\.go
-        linters:
-          - errcheck
-      # Ignore generated files
-      - path: sqlc/
-        linters:
-          - errcheck
+  exclude-rules:
+    # Exclude some linters from running on tests
+    - path: _test\.go
+      linters:
+        - errcheck
+    # Ignore generated files
+    - path: sqlc/
+      linters:
+        - errcheck
