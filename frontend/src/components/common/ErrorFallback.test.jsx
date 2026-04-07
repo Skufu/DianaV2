@@ -134,7 +134,7 @@ describe('ErrorFallback', () => {
 
   it('has correct styling classes', () => {
     const { container } = render(<ErrorFallback />);
-    const errorCard = container.querySelector('div');
+    const errorCard = container.firstChild.firstChild;
     expect(errorCard).toHaveClass('max-w-md');
     expect(errorCard).toHaveClass('rounded-2xl');
   });

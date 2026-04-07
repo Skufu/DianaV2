@@ -110,57 +110,48 @@ describe('BiomarkerInput', () => {
     expect(handleChange).toHaveBeenCalledWith('');
   });
 
-  it('displays normal range when value is in normal reference', async () => {
+  it('displays normal range when value is in normal reference', () => {
     const handleChange = vi.fn();
     const referenceRanges = {
       normal: { min: 70, max: 99, unit: 'mg/dL' },
       prediabetic: { min: 100, max: 125, unit: 'mg/dL' },
       diabetic: { min: 126, max: 999, unit: 'mg/dL' },
     };
-    const user = userEvent.setup();
+    
     render(
-      <BiomarkerInput label="Glucose" onChange={handleChange} referenceRanges={referenceRanges} />
+      <BiomarkerInput label="Glucose" onChange={handleChange} referenceRanges={referenceRanges} value="85" />
     );
-
-    const input = screen.getByRole('spinbutton');
-    await user.type(input, '85');
 
     expect(screen.getByText(/Normal range/i)).toBeInTheDocument();
     expect(screen.getByText(/70-99/i)).toBeInTheDocument();
   });
 
-  it('displays prediabetic range when value is in prediabetic reference', async () => {
+  it('displays prediabetic range when value is in prediabetic reference', () => {
     const handleChange = vi.fn();
     const referenceRanges = {
       normal: { min: 70, max: 99, unit: 'mg/dL' },
       prediabetic: { min: 100, max: 125, unit: 'mg/dL' },
       diabetic: { min: 126, max: 999, unit: 'mg/dL' },
     };
-    const user = userEvent.setup();
-    render(
-      <BiomarkerInput label="Glucose" onChange={handleChange} referenceRanges={referenceRanges} />
-    );
 
-    const input = screen.getByRole('spinbutton');
-    await user.type(input, '110');
+    render(
+      <BiomarkerInput label="Glucose" onChange={handleChange} referenceRanges={referenceRanges} value="110" />
+    );
 
     expect(screen.getByText(/Prediabetic range/i)).toBeInTheDocument();
   });
 
-  it('displays diabetic range when value is in diabetic reference', async () => {
+  it('displays diabetic range when value is in diabetic reference', () => {
     const handleChange = vi.fn();
     const referenceRanges = {
       normal: { min: 70, max: 99, unit: 'mg/dL' },
       prediabetic: { min: 100, max: 125, unit: 'mg/dL' },
       diabetic: { min: 126, max: 999, unit: 'mg/dL' },
     };
-    const user = userEvent.setup();
+    
     render(
-      <BiomarkerInput label="Glucose" onChange={handleChange} referenceRanges={referenceRanges} />
+      <BiomarkerInput label="Glucose" onChange={handleChange} referenceRanges={referenceRanges} value="150" />
     );
-
-    const input = screen.getByRole('spinbutton');
-    await user.type(input, '150');
 
     expect(screen.getByText(/Diabetic range/i)).toBeInTheDocument();
   });

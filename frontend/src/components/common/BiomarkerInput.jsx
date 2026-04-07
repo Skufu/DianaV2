@@ -15,8 +15,8 @@ const BiomarkerInput = React.memo(
         if (numVal >= referenceRanges.diabetic.min && numVal < referenceRanges.diabetic.max) {
           return 'Diabetic range';
         } else if (
-          numVal >= referenceRanges.predabetic.min &&
-          numVal < referenceRanges.predabetic.max
+          numVal >= referenceRanges.prediabetic.min &&
+          numVal < referenceRanges.prediabetic.max
         ) {
           return 'Prediabetic range';
         } else if (numVal >= referenceRanges.normal.min && numVal < referenceRanges.normal.max) {
