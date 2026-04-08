@@ -44,8 +44,14 @@ from typing import Any
 import numpy as np
 
 # Setup structured logging and Sentry
-from Ian_ML.service.logging_config import setup_logging, set_request_context, clear_request_context
-from Ian_ML.service.sentry_config import init_sentry, capture_exception, set_tag, configure_sentry_for_flask
+try:
+    from Ian_ML.service.logging_config import setup_logging, set_request_context, clear_request_context
+    from Ian_ML.service.sentry_config import init_sentry, capture_exception, set_tag, configure_sentry_for_flask
+except ModuleNotFoundError:
+    # Add parent directory to path for imports
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    from Ian_ML.service.logging_config import setup_logging, set_request_context, clear_request_context
+    from Ian_ML.service.sentry_config import init_sentry, capture_exception, set_tag, configure_sentry_for_flask
 
 # Initialize logging first
 logger = setup_logging(service_name='diana-ml', version='2.0.0')
@@ -57,9 +63,6 @@ g = flask_module.g
 
 cors_module = importlib.import_module("flask_cors")
 CORS = cors_module.CORS
-
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from Ian_ML.common.paths import MODELS_ROOT
 from Ian_ML.service.predict import (
