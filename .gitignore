@@ -58,6 +58,7 @@ frontend/dist/
 frontend/.vite/
 frontend/.turbo/
 frontend/.cache/
+frontend/coverage/
 
 # Frontend build artifacts
 frontend/build/
