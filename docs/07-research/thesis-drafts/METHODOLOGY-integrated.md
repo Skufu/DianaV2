@@ -317,9 +317,9 @@ Model validation employed **nested Leave-One-Group-Out (LOGO)** cross-validation
 |--------|-------|--------|----------------|
 | AUC-ROC | 0.727 | 0.700–0.753 | Acceptable screening discrimination |
 | Sensitivity | 0.711 | 0.680–0.741 | Captures 71% of at-risk cases |
-| Specificity | 0.551 | — | Moderate false positive rate |
+| Specificity | 0.629 | — | Moderate false positive rate |
 | F1 Score | 0.699 | — | Balanced precision-recall |
-| Threshold | 0.448 | — | Optimized for screening |
+| Threshold | 0.478 | — | Optimized for screening |
 
 The AUC-ROC of 0.727 (95% CI: 0.700–0.753) represents clinically acceptable screening performance for a non-circular surrogate marker model. The sensitivity of 0.711 (95% CI: 0.680–0.741) aligns with the screening-optimized threshold selection strategy, prioritizing case detection over diagnostic precision.
 

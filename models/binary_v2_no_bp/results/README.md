@@ -40,8 +40,8 @@
 | `metrics.mean_threshold` | Mean decision threshold across LOGO folds |
 | `metrics.std_threshold` | Standard deviation of per-fold thresholds |
 | `metrics.auc_roc` | Primary performance metric (0.727) |
-| `metrics.sensitivity` | True positive rate (74.8%) |
-| `metrics.npv` | Negative predictive value (65.7%) |
+| `metrics.sensitivity` | True positive rate (71.1%) |
+| `metrics.npv` | Negative predictive value (65.6%) |
 | `features[]` | List of 9 clinical features |
 
 **Why It Matters**: This is the source of truth for model performance claims in documentation and thesis.
@@ -185,9 +185,9 @@
 **Key Findings**:
 | Model | Mean AUC | Std AUC | Mean Sensitivity | Mean Specificity |
 |-------|----------|---------|------------------|------------------|
-| Logistic Regression | 0.7306 | 0.0248 | 0.7495 | 0.5786 |
-| Random Forest | 0.7142 | 0.0207 | 0.7590 | 0.5574 |
-| LightGBM | 0.7026 | 0.0163 | 0.7807 | 0.5011 |
+| Logistic Regression | 0.7306 | 0.0248 | 0.7111 | 0.6421 |
+| Random Forest | 0.7138 | 0.0206 | 0.7376 | 0.5933 |
+| LightGBM | 0.7026 | 0.0163 | 0.7598 | 0.5374 |
 
 **Interpretation**:
 - Logistic Regression has highest mean AUC (0.7306)
