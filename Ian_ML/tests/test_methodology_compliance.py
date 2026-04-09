@@ -30,9 +30,16 @@ from ..common.feature_constants import (
 # Constants from METHODOLOGY.md Section 3.5
 # =============================================================================
 
-# Mean threshold across LOGO folds: 0.455 (range: 0.39-0.50)
-# Using test-specific value that matches existing test patterns
-ACTIVE_AT_RISK_THRESHOLD = 0.4483333333333331
+# Universal threshold source: models/binary_v2_no_bp/threshold.json
+# This file replaces all hardcoded threshold values across service + tests.
+import json
+from pathlib import Path
+
+_THRESHOLD_CONFIG = json.load(open(
+    Path(__file__).resolve().parents[2]
+    / "models" / "binary_v2_no_bp" / "threshold.json"
+))
+ACTIVE_AT_RISK_THRESHOLD = _THRESHOLD_CONFIG["at_risk"]
 EPSILON = 1e-7
 
 # =============================================================================

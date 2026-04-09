@@ -650,7 +650,16 @@ class ClinicalPredictor:
                 self.metrics = json.load(f)
         else:
             self.metrics = {}
-        self.decision_thresholds = self.metrics.get("decision_thresholds", {})
+
+        # Load canonical threshold from threshold.json (universal truth source)
+        # Falls back to best_model_report.json for backward compatibility.
+        threshold_path = self.results_dir / "threshold.json"
+        if threshold_path.exists():
+            with open(threshold_path) as f:
+                threshold_config = json.load(f)
+            self.decision_thresholds = {"at_risk": threshold_config["at_risk"]}
+        else:
+            self.decision_thresholds = self.metrics.get("decision_thresholds", {})
 
     def _normalize_feature_weights(self, payload: Any) -> list[float]:
         """Normalize feature_weights.json payload to an ordered weight vector."""

@@ -2317,13 +2317,13 @@ The glycemic class distribution of the cohort, derived from the self-reported di
 
 | Glycemic Class | n | Percentage |
 |---|---|---|
-| Normal | 627 | 45.6% |
-| Pre-diabetic | 420 | 30.5% |
-| Diabetic | 329 | 23.9% |
+| Normal | 642 | 46.7% |
+| Pre-diabetic | 457 | 33.2% |
+| Diabetic | 277 | 20.1% |
 
 _Table X: Glycemic Class Distribution_
 
-For the primary binary screening model, Normal (Class 0) comprised 627 records (45.6%), while At-Risk (Pre-diabetic + Diabetic, Class 1) comprised 749 records (54.4%). This slight class imbalance was addressed algorithmically using `class_weight='balanced'` in the Logistic Regression estimator, preserving the strict physiological reality of the biomarker associations without introducing synthetic data generation techniques such as SMOTE.
+For the primary binary screening model, Normal (Class 0) comprised 642 records (46.7%), while At-Risk (Pre-diabetic + Diabetic, Class 1) comprised 734 records (53.3%). This slight class imbalance was addressed algorithmically using `class_weight='balanced'` in the Logistic Regression estimator, preserving the strict physiological reality of the biomarker associations without introducing synthetic data generation techniques such as SMOTE.
 
 The dataset was stratified across seven NHANES survey cycles (2009–2010, 2011–2012, 2013–2014, 2015–2016, 2017–2018, September 2019–March 2020, and August 2021–August 2023), enabling the Nested Leave-One-Group-Out (LOGO) cross-validation strategy described in the methodology.
 
@@ -2380,33 +2380,33 @@ The aggregated confusion matrix for the binary screening model, computed from th
 
 | | Predicted Normal | Predicted At-Risk |
 |---|---|---|
-| **Actual Normal** | TN = 346 | FP = 281 |
-| **Actual At-Risk** | FN = 189 | TP = 560 |
+| **Actual Normal** | TN = 404 | FP = 238 |
+| **Actual At-Risk** | FN = 212 | TP = 522 |
 
-_Table X: Aggregated Confusion Matrix (Binary Screening Model, Threshold = 0.4483)_
+_Table X: Aggregated Confusion Matrix (Binary Screening Model, Mean Optimized Threshold = 0.478)_
 
-The confusion matrix confirms that the model correctly identified 560 of 749 at-risk patients (True Positives) while generating 281 false alarms among the 627 normal patients (False Positives). The 189 false negatives represent at-risk patients who were incorrectly classified as normal. At an at-risk threshold of 0.4483, the model achieves the following metrics:
+The confusion matrix confirms that the model correctly identified 522 of 734 at-risk patients (True Positives) while generating 238 false alarms among the 642 normal patients (False Positives). The 212 false negatives represent at-risk patients who were incorrectly classified as normal. At a mean at-risk threshold of 0.478 (computed as the mean of per-fold optimized thresholds after guardrail arbitration), the model achieves the following pooled metrics:
 
 | Metric | Value |
 |---|---|
 | AUC-ROC | 0.7267 (95% CI: 0.6995–0.7526) |
-| Accuracy | 0.6563 |
-| Sensitivity (Recall) | 0.7480 (95% CI: 0.7168–0.7767) |
-| Specificity | 0.5514 |
-| Positive Predictive Value (PPV) | 0.6559 |
-| Negative Predictive Value (NPV) | 0.6568 |
-| F1-Score | 0.6989 |
+| Accuracy | 0.6730 |
+| Sensitivity (Recall) | 0.7112 (95% CI: 0.6798–0.7414) |
+| Specificity | 0.6293 |
+| Positive Predictive Value (PPV) | 0.6868 |
+| Negative Predictive Value (NPV) | 0.6558 |
+| F1-Score | 0.6988 |
 
 _Table X: Binary Screening Model Performance Summary_
 
-The ROC curve for the binary screening model is presented in Figure X. The curve illustrates the trade-off between sensitivity and (1 − specificity) across varying probability thresholds, with the optimized operating point (threshold = 0.4483) marked.
+The ROC curve for the binary screening model is presented in Figure X. The curve illustrates the trade-off between sensitivity and (1 − specificity) across varying probability thresholds, with the optimized operating point (mean threshold = 0.478) marked.
 
 <p align="center">
 [Insert ROC Curve Here: ROC curve with AUC = 0.72 annotated, optimal threshold point marked, and diagonal reference line.]
 </p>
 _Figure X: Receiver Operating Characteristic (ROC) Curve for the Binary Screening Model_
 
-The optimized at-risk threshold of 0.4483 was selected using a composite thresholding metric that evaluated three candidate strategies: Youden's Index, a screening-prioritized threshold (requiring minimum sensitivity ≥ 0.80 and specificity ≥ 0.40), and geometric mean optimization. The composite formula weighted Sensitivity (0.35), Specificity (0.30), F1-Score (0.25), and Accuracy (0.10). These researcher-defined weights deliberately penalize false negatives more heavily than false positives, reflecting the greater clinical cost of missing an at-risk patient in a first-line screening context. The threshold selection methodology aligns with calibration best practices established by Van Calster et al. (2019), who identified calibration as a critical requirement for clinical prediction models. For probability calibration, Platt scaling (Platt, 1999) provides a parametric approach using logistic sigmoid fitting, while isotonic regression (Zadrozny & Elkan, 2002) offers a non-parametric alternative for transforming classifier scores into accurate probability estimates. Van Calster et al. (2016) further established a calibration hierarchy for risk models, from weak empirical calibration to strong methodological calibration, providing quality standards that guided the DIANA model's threshold optimization process.
+The optimized at-risk threshold of 0.478 was selected using a composite thresholding metric that evaluated three candidate strategies: Youden's Index, a screening-prioritized threshold (requiring minimum sensitivity ≥ 0.80 and specificity ≥ 0.40), and geometric mean optimization. The mean threshold of 0.478 reflects the final per-fold thresholds after guardrail arbitration — 2 of 6 LOGO folds triggered the severe shift signature guardrail (bumping from ~0.37 to 0.46), and Youden's J was the dominant strategy. The composite formula weighted Sensitivity (0.35), Specificity (0.30), F1-Score (0.25), and Accuracy (0.10). These researcher-defined weights deliberately penalize false negatives more heavily than false positives, reflecting the greater clinical cost of missing an at-risk patient in a first-line screening context. The threshold selection methodology aligns with calibration best practices established by Van Calster et al. (2019), who identified calibration as a critical requirement for clinical prediction models. For probability calibration, Platt scaling (Platt, 1999) provides a parametric approach using logistic sigmoid fitting, while isotonic regression (Zadrozny & Elkan, 2002) offers a non-parametric alternative for transforming classifier scores into accurate probability estimates. Van Calster et al. (2016) further established a calibration hierarchy for risk models, from weak empirical calibration to strong methodological calibration, providing quality standards that guided the DIANA model's threshold optimization process.
 
 **4.5 Temporal Validation (LOGO by NHANES Cycle)**
 
@@ -2414,12 +2414,12 @@ Leave-One-Cycle-Out validation demonstrated temporal stability across NHANES cyc
 
 | Held-Out Cycle | AUC-ROC | Sensitivity | Specificity | Threshold |
 |---|---|---|---|---|
-| 2009–2010 | 0.7172 | 0.8803 | 0.4571 | 0.37 |
+| 2009–2010 | 0.7172 | 0.7350 | 0.6000 | 0.46 |
 | 2011–2012 | 0.7030 | 0.6071 | 0.7436 | 0.50 |
 | 2013–2014 | 0.7335 | 0.6591 | 0.6058 | 0.48 |
 | 2015–2016 | 0.7761 | 0.6992 | 0.7358 | 0.50 |
 | 2017–2018 | 0.7296 | 0.7273 | 0.6569 | 0.47 |
-| 2021–2023 | 0.7242 | 0.9237 | 0.2721 | 0.37 |
+| 2021–2023 | 0.7242 | 0.8390 | 0.5102 | 0.46 |
 
 _Table X: Per-Cycle LOGO Performance Breakdown (Logistic Regression)_
 
@@ -2427,9 +2427,9 @@ A comparison between Logistic Regression, Random Forest, and LightGBM models acr
 
 | Algorithm | Mean AUC (σ) | Mean Sensitivity | Mean Specificity |
 |---|---|---|---|
-| **Logistic Regression** | 0.7306 (0.0248) | 0.7495 | 0.5786 |
-| **Random Forest** | 0.7142 (0.0207) | 0.7590 | 0.5574 |
-| **LightGBM** | 0.7026 (0.0163) | 0.7807 | 0.5011 |
+| **Logistic Regression** | 0.7306 (0.0248) | 0.7111 | 0.6421 |
+| **Random Forest** | 0.7138 (0.0206) | 0.7376 | 0.5933 |
+| **LightGBM** | 0.7026 (0.0163) | 0.7598 | 0.5374 |
 
 _Table X: Binary Model LOGO Summary by Algorithm_
 
@@ -2438,25 +2438,28 @@ _Table X: Binary Model LOGO Summary by Algorithm_
 </p>
 _Figure X: Model Comparison — Logistic Regression vs. Random Forest vs. LightGBM (LOGO Mean)_
 
-The data presented in Table X and Figure X reveal that Logistic Regression achieved a higher mean AUC (0.7306 vs. 0.7142), while maintaining stable sensitivity and specificity. The marginal performance difference, coupled with the interpretability advantages of Logistic Regression (coefficient transparency, probability calibration), justifies the deployment of the linear model for clinical screening. AUC variability across cycles (σ = 0.0248 for LR) reflects realistic cohort shifts inherent to temporal validation, while maintaining performance above the 0.70 acceptability threshold established in Chapter 3.
+The data presented in Table X and Figure X reveal that Logistic Regression achieved a higher mean AUC (0.7306 vs. 0.7138), while maintaining stable sensitivity and specificity. The marginal performance difference, coupled with the interpretability advantages of Logistic Regression (coefficient transparency, probability calibration), justifies the deployment of the linear model for clinical screening. AUC variability across cycles (σ = 0.0248 for LR) reflects realistic cohort shifts inherent to temporal validation, while maintaining performance above the 0.70 acceptability threshold established in Chapter 3.
 
 **4.6 Subtype Clustering (Weighted K-Means, K=4)**
 
 Prior to applying K-Means clustering, the optimal number of clusters was evaluated using the Elbow Method (within-cluster sum of squared errors, WCSS) and Silhouette Analysis. The evaluation results for K = 2 through K = 6 are summarized in Table X.
 
-| K | Silhouette Score | Davies-Bouldin Index | Calinski-Harabasz Index |
-|---|---|---|---|
-| 2 | 0.1444 | 2.1614 | 254.07 |
-| **4** | **0.1068** | **2.3080** | **187.09** |
+| K | Silhouette Score | Davies-Bouldin Index | Calinski-Harabasz Index | WCSS |
+|---|---|---|---|---|
+| 2 | 0.2054 | 1.7217 | 162.14 | 4552.78 |
+| 3 | 0.2008 | 1.5711 | 154.51 | 3703.55 |
+| **4** | **0.1804** | **1.5905** | **132.44** | **3212.77** |
+| 5 | 0.1546 | 1.6750 | 116.64 | 2975.56 |
+| 6 | 0.1513 | 1.6444 | 109.90 | 2773.51 |
 
-_Table X: Clustering Validation Metrics for K = 2 and K = 4_
+_Table X: Clustering Validation Metrics for K = 2 through K = 6_
 
 <p align="center">
 [Insert Elbow Plot + Silhouette Plot Here: Dual-panel figure showing WCSS vs. K (elbow) and Silhouette Score vs. K.]
 </p>
 _Figure X: Elbow Method and Silhouette Analysis for Optimal K Selection_
 
-While the silhouette analysis suggested K = 2 as the statistically optimal cluster count, K = 4 was selected based on the Ahlqvist et al. (2018) diabetes subtyping literature, which established four clinically meaningful phenotypes. This decision prioritized clinical interpretability over mathematical compactness, as the four-cluster solution enables actionable risk stratification aligned with established endocrinological subgroups.
+While the silhouette analysis suggested K = 2 as the statistically optimal cluster count, **K = 4 was selected based on the Ahlqvist et al. (2018) diabetes subtyping literature**, which established four clinically meaningful phenotypes (SIRD, SIDD, MOD, MARD). This decision prioritized clinical interpretability over mathematical compactness, as the four-cluster solution enables actionable risk stratification aligned with established endocrinological subgroups. The moderate Silhouette Score (0.1804) at K = 4 reflects the inherent metabolic overlap characteristic of a postmenopausal population — where BMI, lipid, and insulin resistance markers are physiologically correlated — rather than an artifact of poor clustering. The robustness of this choice was confirmed by a **feature weight perturbation analysis**: across all ±20% weight perturbations, cluster assignment stability exceeded **98%** (mean = 99.3%, worst-case = 98.0% for triglycerides -20%), with Adjusted Rand Index consistently above 0.95 (`weighted_kmeans_sensitivity_analysis.csv`). This demonstrates that the clinical subtype assignments are stable to reasonable uncertainty in the literature-derived feature weights.
 
 Weighted K-means clustering (K=4) was applied to the at-risk subset only (diabetes_label >= 1), producing four phenotypic proxy subgroups. The clustering distance metric used expert-elicited feature weights applied post-standardization (weighted Euclidean distance). For deterministic Ahlqvist-inspired label assignment, centroids were inverse-transformed to raw clinical units and ranked via LAP, LDL, and BMI rules. DIANA outward-facing subtype outputs use SIRD-like/SIDD-like/MOD-like/MARD-like semantics to emphasize proxy status rather than diagnosis. The resultant cluster distributions and biomarker profiles are detailed in Table X.
 
@@ -2522,7 +2525,7 @@ The application provides clinicians with a unified interface for entering patien
 
 **4.9 Summary of the Chapter**
 
-In this chapter, the complete results of the DIANA predictive model pipeline were presented. The dataset comprised 1,376 postmenopausal women from the NHANES 2009–2023 cohort. Feature selection via Mutual Information (Information Gain) identified HDL-C, TG/HDL Ratio, and Metabolic Syndrome Score as the most informative non-circular predictors. The binary screening model (Logistic Regression) achieved an AUC-ROC of 0.7267 (95% CI: 0.6995–0.7526) with sensitivity of 0.7480 utilizing non-circular features, demonstrating stable temporal generalization across six NHANES cycles via Nested LOGO validation (AUC range: 0.7030–0.7761). K-means clustering yielded four clinically interpretable subtypes—SIDD, SIRD, MOD, and MARD—with distinct metabolic signatures identified using the LAP heuristic for insulin resistance approximation. SHAP analysis confirmed feature importance rankings and enabled patient-level explainability. These results collectively provide empirical support for population-level screening and phenotype-aware risk stratification for menopausal women.
+In this chapter, the complete results of the DIANA predictive model pipeline were presented. The dataset comprised 1,376 postmenopausal women from the NHANES 2009–2023 cohort. Feature selection via Mutual Information (Information Gain) identified HDL-C, TG/HDL Ratio, and Metabolic Syndrome Score as the most informative non-circular predictors. The binary screening model (Logistic Regression) achieved an AUC-ROC of 0.7267 (95% CI: 0.6995–0.7526) with sensitivity of 0.7112 utilizing non-circular features, demonstrating stable temporal generalization across six NHANES cycles via Nested LOGO validation (AUC range: 0.7030–0.7761). K-means clustering yielded four clinically interpretable subtypes—SIDD, SIRD, MOD, and MARD—with distinct metabolic signatures identified using the LAP heuristic for insulin resistance approximation. SHAP analysis confirmed feature importance rankings and enabled patient-level explainability. These results collectively provide empirical support for population-level screening and phenotype-aware risk stratification for menopausal women.
 
 **4.10 Functional Testing Results**
 
@@ -2609,11 +2612,11 @@ The DIANA user interface was designed following established UX principles and ac
 
 **5.1 Interpretation of Screening Performance (Non-Circular Methodology)**
 
-The observed AUC of approximately 0.72 was interpreted in light of the non-circular constraint: by explicitly excluding HbA1c and FBS (which define the outcome labels), the model was tasked with inferring risk strictly from surrogate metabolic markers. This approach prevents label leakage—a common flaw where predictive models essentially redisgnose known cases using defining criteria. By forcing the algorithm to rely on secondary markers (e.g., lipids, BMI), the DIANA model addresses a substantially harder and more clinically defensible problem, yielding a true screening instrument rather than a circular diagnostic lookup. The resulting sensitivity of 0.745 reflects the system’s prioritization of case-finding over specificity, which aligns with standard screening workflows that channel flagged individuals toward confirmatory testing.
+The observed AUC of approximately 0.72 was interpreted in light of the non-circular constraint: by explicitly excluding HbA1c and FBS (which define the outcome labels), the model was tasked with inferring risk strictly from surrogate metabolic markers. This approach prevents label leakage—a common flaw where predictive models essentially redisgnose known cases using defining criteria. By forcing the algorithm to rely on secondary markers (e.g., lipids, BMI), the DIANA model addresses a substantially harder and more clinically defensible problem, yielding a true screening instrument rather than a circular diagnostic lookup. The resulting sensitivity of 0.711 reflects the system’s prioritization of case-finding over specificity, which aligns with standard screening workflows that channel flagged individuals toward confirmatory testing.
 
 **5.2 Clinical Implications, Subtype Stratification, and The LAP Approximation**
 
-The DIANA predictive model-based application bridges the gap between raw biomarker data and actionable clinical insights through a dual-layered risk assessment approach. Primarily, the Logistic Regression screening output was designed to support clinical triage by mapping continuous risk probabilities into discrete, actionable categories: Low (0–33%), Moderate (34–66%), and High (67–100%). The empirically calibrated at-risk threshold of 0.4483 provides an optimized operating point that prioritizes case-finding.
+The DIANA predictive model-based application bridges the gap between raw biomarker data and actionable clinical insights through a dual-layered risk assessment approach. Primarily, the Logistic Regression screening output was designed to support clinical triage by mapping continuous risk probabilities into discrete, actionable categories: Low (0–33%), Moderate (34–66%), and High (67–100%). The empirically calibrated at-risk threshold of 0.478 provides an optimized operating point that prioritizes case-finding.
 
 Furthermore, integrating K-Means clustering significantly enhanced the clinical utility of the system by transitioning from generalized risk assessment to phenotype-aware personalized medicine. By stratifying the cohort into distinct subgroups (SIDD, SIRD, MOD, MARD), DIANA enables healthcare providers to visualize the underlying metabolic drivers. A critical methodological adaptation within this clustering pipeline involved diagnosing the Severe Insulin-Resistant (SIRD) phenotype. Because routine clinical datasets often lack markers for true insulin deficiency (like C-peptide), the SIRD cluster was approximated using a Lipid Accumulation Product (LAP)-style heuristic. This LAP approximation relies on surrogate markers (triglycerides and waist circumference with a baseline subtraction constant) to accurately capture profound insulin resistance without requiring specialized blood panels. Classifying a menopausal patient into this SIRD cluster allows clinicians to proactively tailor interventions targeting insulin resistance and weight management, demonstrating how this adapted mathematical approach operationalizes complex metabolic phenotyping for accessible personalized care.
 
@@ -2641,7 +2644,11 @@ Key strengths of the study include the deliberate use of non-circular predictors
 
 **5.5 Limitations**
 
-Several limitations were acknowledged in this research. The development dataset was derived from U.S. NHANES cohorts, which necessitates Philippine-specific external validation before clinical adoption. The cross-sectional nature of NHANES restricted the model to identifying current undiagnosed risk rather than prospective incidence. Additionally, automated blindspot detection within the training pipeline flagged the 2021–2023 held-out cycle as exhibiting degraded specificity (0.2721), likely attributable to COVID-era data collection disruptions. This temporal instability underscores the importance of continuous model monitoring in deployment. Clustering separation was observed to be moderate (Silhouette Score = 0.1068 for K=4), meaning subtype labels should be interpreted as exploratory phenotypes pending further clinician validation. A methodological limitation of the clustering pipeline involved the heuristic assignment of the Severe Insulin-Resistant (SIRD) centroid. The assignment utilized a Lipid Accumulation Product (LAP)-style proxy, incorporating a baseline waist circumference subtraction constant originally derived from Western cohorts. Future iterations should calibrate this baseline constant to region-specific anthropometric standards.
+Several limitations were acknowledged in this research. The development dataset was derived from U.S. NHANES cohorts, which necessitates Philippine-specific external validation before clinical adoption. The cross-sectional nature of NHANES restricted the model to identifying current undiagnosed risk rather than prospective incidence. Additionally, automated blindspot detection within the training pipeline flagged the 2021–2023 held-out cycle as exhibiting the lowest specificity among all folds (0.5102), likely attributable to COVID-era data collection disruptions. This temporal instability underscores the importance of continuous model monitoring in deployment.
+
+The specificity of 0.6293 implies that approximately 37% of normal patients would be flagged as at-risk (false positives). In a screening context, this false positive rate is clinically acceptable: each false positive incurs only the cost of a confirmatory HbA1c test (~$20–40 USD), whereas each false negative (missed at-risk patient) risks delayed diagnosis and progression to diabetic complications with substantially higher human and financial costs. This asymmetric cost structure is consistent with established screening principles (Wang et al., 2024) and validated screening tools such as FINDRISC and the CDC Prediabetes Risk Test, which similarly prioritize sensitivity over specificity in first-line population screening.
+
+Clustering separation was observed to be moderate (Silhouette Score = 0.1804 for K=4), meaning subtype labels should be interpreted as exploratory phenotypes pending further clinician validation. This moderate Silhouette is expected in postmenopausal populations where metabolic biomarkers (BMI, lipids, waist circumference) exhibit high physiological correlation, producing inherently overlapping cluster boundaries. Nevertheless, cluster assignments demonstrated >98% stability under ±20% feature weight perturbations, supporting the robustness of the subtype framework despite moderate separation metrics. A methodological limitation of the clustering pipeline involved the heuristic assignment of the Severe Insulin-Resistant (SIRD) centroid. The assignment utilized a Lipid Accumulation Product (LAP)-style proxy, incorporating a baseline waist circumference subtraction constant originally derived from Western cohorts. Future iterations should calibrate this baseline constant to region-specific anthropometric standards.
 
 **5.6 Future Work**
 

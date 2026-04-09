@@ -4,9 +4,9 @@
     "auc": 0.7267288870780175,
     "auc_ci_low": 0.6995203261556218,
     "auc_ci_high": 0.7526645470751937,
-    "sensitivity": 0.7397820163487738,
-    "specificity": 0.5654205607476636,
-    "accuracy": 0.6584302325581395,
+    "sensitivity": 0.7111716621253406,
+    "specificity": 0.6292834890965732,
+    "accuracy": 0.6729651162790697,
     "algorithm": "Logistic Regression",
     "n_features": 9,
     "validation": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)"

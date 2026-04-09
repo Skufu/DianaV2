@@ -54,10 +54,10 @@ Source: `models/binary_v2_no_bp/results/best_model_report.json`
 
 - Best model: Logistic Regression
 - Validation method: Nested LOGO (outer) + GroupKFold pipeline CV (inner)
-- AUC-ROC: `0.7199975`
-- Sensitivity: `0.7452`
-- Specificity: `0.5717`
-- Decision threshold (At‑Risk): `0.4567`
+- AUC-ROC: `0.7267`
+- Sensitivity: `0.7112`
+- Specificity: `0.6293`
+- Decision threshold (At‑Risk): `0.478`
 
 Interpretation: tuned for high at‑risk capture; false positives are expected.
 
@@ -65,21 +65,21 @@ Interpretation: tuned for high at‑risk capture; false positives are expected.
 
 Source: `models/binary_v2_no_bp/results/best_model_report.json`
 
-- **Best model:** Logistic Regression (Threshold: 0.4567)
+- **Best model:** Logistic Regression (Threshold: 0.478)
 - **Validation method:** Nested LOGO (outer) + GroupKFold pipeline CV (inner)
-- **AUC-ROC:** `0.7199975`
-- **Sensitivity:** `0.7452`
-- **Specificity:** `0.5717`
-- **NPV:** `0.6625`
+- **AUC-ROC:** `0.7267`
+- **Sensitivity:** `0.7112`
+- **Specificity:** `0.6293`
+- **NPV:** `0.6558`
 
 #### February 2026 Specificity Optimization
 
-The current binary_v2_no_bp screening model uses a calibrated threshold (0.4567) to balance sensitivity and specificity for screening:
+The current binary_v2_no_bp screening model uses a calibrated threshold (0.478) to balance sensitivity and specificity for screening:
 
 1. **Threshold selection**: prioritize at‑risk recall while preserving usable specificity.
 2. **Model selection**: compare Logistic Regression and Random Forest; select best by LOGO AUC.
 
-**Results:** Sensitivity (`0.7452`) with specificity (`0.5717`) is acceptable for screening; Logistic Regression won the cross‑validated pipeline competition.
+**Results:** Sensitivity (`0.7112`) with specificity (`0.6293`) is acceptable for screening; Logistic Regression won the cross‑validated pipeline competition.
 
 ---
 

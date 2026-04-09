@@ -8,15 +8,15 @@
 Two algorithms were evaluated for the screening model: **Logistic Regression** and **Random Forest**, both trained on the **13-feature non-circular contract** (excluding HbA1c/FBS). The screening task is **binary** (Normal vs At‑Risk), combining pre‑diabetic and diabetic cases into a single risk class.
 
 **Binary Screening Results (AUC‑ROC):**
-- **Logistic Regression**: **0.720** (best, selected)
-- **Random Forest**: ~0.72 (close but not superior)
+- **Logistic Regression**: **0.727** (best, selected)
+- **Random Forest**: ~0.714 (close but not superior)
 
 The selected **Logistic Regression** model (binary_v2_no_bp) achieved:
-- **AUC‑ROC**: **0.720**
-- **Accuracy**: **0.664**
-- **Sensitivity (Recall)**: **0.745**
-- **F1‑Score**: **0.703**
-- **Decision Threshold**: **0.4567** (At‑Risk)
+- **AUC‑ROC**: **0.727**
+- **Accuracy**: **0.673**
+- **Sensitivity (Recall)**: **0.711**
+- **F1‑Score**: **0.699**
+- **Decision Threshold**: **0.478** (At‑Risk)
 
 This aligns with DIANA’s goal as a **screening** tool: prioritize sensitivity and interpretability while avoiding circular features (HbA1c/FBS) that define labels." 
 

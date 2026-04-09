@@ -4,7 +4,16 @@ import pytest
 from ..service.predict import ClinicalPredictor
 
 
-ACTIVE_AT_RISK_THRESHOLD = 0.4483333333333331
+# Universal threshold source: models/binary_v2_no_bp/threshold.json
+# This file replaces all hardcoded threshold values across service + tests.
+import json
+from pathlib import Path
+
+_THRESHOLD_CONFIG = json.load(open(
+    Path(__file__).resolve().parents[2]
+    / "models" / "binary_v2_no_bp" / "threshold.json"
+))
+ACTIVE_AT_RISK_THRESHOLD = _THRESHOLD_CONFIG["at_risk"]
 EPSILON = 1e-7
 
 
@@ -154,8 +163,10 @@ class TestClinicalPredictorClusterGatingRegression:
         below_result = below.predict(patient_input)
         at_threshold_result = at_threshold.predict(patient_input)
 
-        assert below_result["at_risk_probability"] == 0.448
-        assert at_threshold_result["at_risk_probability"] == 0.448
+        # Probability is rounded to 3 decimal places; compare against rounded threshold
+        ROUNDED_THRESHOLD = round(ACTIVE_AT_RISK_THRESHOLD, 3)
+        assert below_result["at_risk_probability"] == ROUNDED_THRESHOLD
+        assert at_threshold_result["at_risk_probability"] == ROUNDED_THRESHOLD
         assert below_result["predicted_status"] == "Normal"
         assert at_threshold_result["predicted_status"] == "At-Risk"
 
