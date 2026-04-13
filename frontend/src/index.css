@@ -43,13 +43,33 @@
   /* Font Families */
   --font-serif: 'Inter', sans-serif;
   --font-sans: 'Inter', sans-serif;
+  --diana-font-scale: 1.0625;
+}
+
+:root[data-font-scale='standard'] {
+  --diana-font-scale: 1;
+}
+
+:root[data-font-scale='comfortable'] {
+  --diana-font-scale: 1.0625;
+}
+
+:root[data-font-scale='large'] {
+  --diana-font-scale: 1.125;
+}
+
+html {
+  font-size: calc(16px * var(--diana-font-scale));
 }
 
 body {
   font-family: var(--font-sans);
   background-color: var(--diana-cream);
   color: var(--diana-text-primary);
+  font-size: 1rem;
+  line-height: 1.6;
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
