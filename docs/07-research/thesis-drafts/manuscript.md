@@ -2423,20 +2423,21 @@ Leave-One-Cycle-Out validation demonstrated temporal stability across NHANES cyc
 
 _Table X: Per-Cycle LOGO Performance Breakdown (Logistic Regression)_
 
-A comparison between Logistic Regression, Random Forest, and LightGBM models across the aggregated LOGO cycles is presented in Table X.
+A comparison between Logistic Regression, Random Forest, LightGBM, and XGBoost models across the aggregated LOGO cycles is presented in Table X.
 
 | Algorithm | Mean AUC (σ) | Mean Sensitivity | Mean Specificity |
 |---|---|---|---|
 | **Logistic Regression** | 0.7306 (0.0248) | 0.7111 | 0.6421 |
 | **Random Forest** | 0.7138 (0.0206) | 0.7376 | 0.5933 |
 | **LightGBM** | 0.7026 (0.0163) | 0.7598 | 0.5374 |
+| **XGBoost** | 0.7020 (N/A) | 0.7657 | 0.5498 |
 
 _Table X: Binary Model LOGO Summary by Algorithm_
 
 <p align="center">
-[Insert Grouped Bar Graph Here: Comparing Logistic Regression, Random Forest, and LightGBM metrics (AUC, Sensitivity, Specificity) with exact values on bars.]
+[Insert Grouped Bar Graph Here: Comparing Logistic Regression, Random Forest, LightGBM, and XGBoost metrics (AUC, Sensitivity, Specificity) with exact values on bars.]
 </p>
-_Figure X: Model Comparison — Logistic Regression vs. Random Forest vs. LightGBM (LOGO Mean)_
+_Figure X: Model Comparison — Logistic Regression vs. Random Forest vs. LightGBM vs. XGBoost (LOGO Mean)_
 
 The data presented in Table X and Figure X reveal that Logistic Regression achieved a higher mean AUC (0.7306 vs. 0.7138), while maintaining stable sensitivity and specificity. The marginal performance difference, coupled with the interpretability advantages of Logistic Regression (coefficient transparency, probability calibration), justifies the deployment of the linear model for clinical screening. AUC variability across cycles (σ = 0.0248 for LR) reflects realistic cohort shifts inherent to temporal validation, while maintaining performance above the 0.70 acceptability threshold established in Chapter 3.
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { User, Calendar, Shield, Mail, Save, AlertTriangle, ArrowLeft, Plus } from 'lucide-react';
+import { User, Calendar, Shield, Save, AlertTriangle, ArrowLeft, Activity, Type } from 'lucide-react';
 import { useUserProfile, useUpdateProfile, useDeleteAccount } from '../../api';
-import AssessmentForm from './AssessmentForm';
+import { FONT_SCALE_OPTIONS } from '../../utils/accessibilityPreferences';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../common/Button';
 import {
@@ -9,18 +9,15 @@ import {
   fadeIn,
   slideUp,
   useInputFocusVariants,
-  useReducedMotion,
 } from '../../utils/animations';
 
-const UserProfile = ({ setActiveTab }) => {
-  const isReduced = useReducedMotion();
+const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleChange }) => {
   const inputFocusVariants = useInputFocusVariants();
   const { data: profileData = {}, isLoading, error, refetch } = useUserProfile();
   const updateProfileMutation = useUpdateProfile();
   const deleteAccountMutation = useDeleteAccount();
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showAssessmentForm, setShowAssessmentForm] = useState(false);
   const [formData, setFormData] = useState({});
   const [formError, setFormError] = useState(null);
 
@@ -133,34 +130,18 @@ const UserProfile = ({ setActiveTab }) => {
           </Button>
           <div className="flex-1">
             <h1 className="text-3xl font-serif font-bold text-white">My Profile</h1>
-            <p className="text-blue-100">Manage your personal information and preferences</p>
+            <p className="text-blue-100 text-base leading-relaxed max-w-2xl">
+              Manage your health profile, account details, and reading preferences in one place.
+            </p>
           </div>
           <Button
-            onClick={() => setShowAssessmentForm(!showAssessmentForm)}
+            onClick={onStartAssessment}
             className="!bg-white !text-diana-forest hover:!bg-blue-50 shadow-sm"
           >
-            <Plus size={18} className="mr-2" />
             Log Assessment
           </Button>
         </div>
       </motion.div>
-
-      <AnimatePresence>
-        {showAssessmentForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <AssessmentForm
-              initialData={profileData}
-              onSubmit={() => setShowAssessmentForm(false)}
-              onCancel={() => setShowAssessmentForm(false)}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {formError && (
@@ -176,6 +157,50 @@ const UserProfile = ({ setActiveTab }) => {
         )}
       </AnimatePresence>
 
+      <motion.div
+        variants={fadeIn}
+        className="glass-card p-8 bg-white"
+      >
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-2xl">
+            <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-2 flex items-center gap-3 border-b border-diana-sand pb-4">
+              <Type size={24} className="text-diana-forest" />
+              Display & Accessibility
+            </h2>
+            <p className="text-diana-text-secondary leading-relaxed mt-4">
+              Choose the text size that feels most comfortable. Your preference applies across the
+              app and saves automatically for future visits.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[420px]">
+            {FONT_SCALE_OPTIONS.map(option => {
+              const isSelected = fontScale === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => onFontScaleChange(option.value)}
+                  aria-pressed={isSelected}
+                  className={`rounded-2xl border px-4 py-4 text-left transition-all focus:outline-none focus:ring-2 focus:ring-diana-forest/30 ${
+                    isSelected
+                      ? 'border-diana-forest bg-blue-50 shadow-sm'
+                      : 'border-diana-sand bg-white hover:border-diana-forest-light hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="block text-base font-semibold text-diana-text-primary">
+                    {option.label}
+                  </span>
+                  <span className="mt-1 block text-sm leading-relaxed text-diana-text-secondary">
+                    {option.description}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </motion.div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <motion.div
           variants={fadeIn}
@@ -187,6 +212,9 @@ const UserProfile = ({ setActiveTab }) => {
             <User size={24} className="text-diana-forest" />
             Personal Information
           </h2>
+          <p className="text-diana-text-secondary mb-6 leading-relaxed">
+            Keep the details used across your account and reports up to date.
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
@@ -195,10 +223,14 @@ const UserProfile = ({ setActiveTab }) => {
               { label: 'Age', name: 'age', type: 'number', min: 45, max: 80 },
             ].map(field => (
               <div key={field.name}>
-                <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                <label
+                  htmlFor={field.name}
+                  className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2"
+                >
                   {field.label}
                 </label>
                 <motion.input
+                  id={field.name}
                   whileFocus="focus"
                   variants={inputFocusVariants}
                   type={field.type}
@@ -214,10 +246,14 @@ const UserProfile = ({ setActiveTab }) => {
               </div>
             ))}
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+              <label
+                htmlFor="email"
+                className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2"
+              >
                 Email Address
               </label>
               <input
+                id="email"
                 type="email"
                 readOnly
                 value={formData.email || ''}
@@ -238,13 +274,20 @@ const UserProfile = ({ setActiveTab }) => {
             <Calendar size={24} className="text-diana-lime-dark" />
             Menopausal Health
           </h2>
+          <p className="text-diana-text-secondary mb-6 leading-relaxed">
+            Update the menopause details that support your assessments and personalized insights.
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+              <label
+                htmlFor="menopause_status"
+                className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2"
+              >
                 Menopause Status
               </label>
               <select
+                id="menopause_status"
                 name="menopause_status"
                 value={formData.menopause_status || ''}
                 onChange={handleChange}
@@ -263,10 +306,14 @@ const UserProfile = ({ setActiveTab }) => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
               >
-                <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+                <label
+                  htmlFor="menopause_type"
+                  className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2"
+                >
                   Menopause Type
                 </label>
                 <select
+                  id="menopause_type"
                   name="menopause_type"
                   value={formData.menopause_type || ''}
                   onChange={handleChange}
@@ -280,10 +327,14 @@ const UserProfile = ({ setActiveTab }) => {
             )}
 
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+              <label
+                htmlFor="years_menopause"
+                className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2"
+              >
                 Years Post-Menopause
               </label>
               <motion.input
+                id="years_menopause"
                 whileFocus="focus"
                 variants={inputFocusVariants}
                 type="number"
@@ -303,18 +354,23 @@ const UserProfile = ({ setActiveTab }) => {
           className="glass-card p-8 bg-white"
         >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
-            <div className="w-6 h-6 rounded-full bg-diana-sage/20 flex items-center justify-center">
-              🏃‍♀️
-            </div>
+            <Activity size={24} className="text-diana-forest-light" />
             Lifestyle Habits
           </h2>
+          <p className="text-diana-text-secondary mb-6 leading-relaxed">
+            Share the routines that help contextualize your health profile.
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+              <label
+                htmlFor="physical_activity"
+                className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2"
+              >
                 Physical Activity Level
               </label>
               <select
+                id="physical_activity"
                 name="physical_activity"
                 value={formData.physical_activity || ''}
                 onChange={handleChange}
@@ -329,10 +385,14 @@ const UserProfile = ({ setActiveTab }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+              <label
+                htmlFor="alcohol"
+                className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2"
+              >
                 Alcohol Consumption
               </label>
               <select
+                id="alcohol"
                 name="alcohol"
                 value={formData.alcohol || ''}
                 onChange={handleChange}
@@ -358,13 +418,20 @@ const UserProfile = ({ setActiveTab }) => {
             <Shield size={24} className="text-amber-500" />
             Medical History
           </h2>
+          <p className="text-diana-text-secondary mb-6 leading-relaxed">
+            Review the medical history fields that can affect your risk assessments.
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+              <label
+                htmlFor="hypertension"
+                className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2"
+              >
                 Hypertension
               </label>
               <select
+                id="hypertension"
                 name="hypertension"
                 value={formData.hypertension || ''}
                 onChange={handleChange}
@@ -378,10 +445,14 @@ const UserProfile = ({ setActiveTab }) => {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+              <label
+                htmlFor="heart_disease"
+                className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2"
+              >
                 Heart Disease
               </label>
               <select
+                id="heart_disease"
                 name="heart_disease"
                 value={formData.heart_disease || ''}
                 onChange={handleChange}
@@ -396,10 +467,14 @@ const UserProfile = ({ setActiveTab }) => {
             {/* Family history removed based on gap analysis */}
 
             <div>
-              <label className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2">
+              <label
+                htmlFor="smoking_status"
+                className="block text-sm font-bold text-diana-text-secondary uppercase tracking-wider mb-2"
+              >
                 Smoking Status
               </label>
               <select
+                id="smoking_status"
                 name="smoking_status"
                 value={formData.smoking_status || ''}
                 onChange={handleChange}
@@ -436,6 +511,9 @@ const UserProfile = ({ setActiveTab }) => {
             <AlertTriangle size={24} className="text-rose-600" />
           </div>
           <div className="flex-1">
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-rose-600 mb-2">
+              Danger Zone
+            </p>
             <h2 className="text-xl font-serif font-bold text-slate-900 mb-2">Delete Account</h2>
             <p className="text-slate-500 text-base mb-6 leading-relaxed">
               Deleting your account will permanently remove all your health data and activity logs.

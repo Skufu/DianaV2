@@ -13,6 +13,11 @@ import ResetPassword from './components/auth/ResetPassword';
 import VerifyEmail from './components/auth/VerifyEmail';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import AssessmentForm from './components/user/AssessmentForm';
+import {
+  applyFontScalePreference,
+  getStoredFontScale,
+  persistFontScalePreference,
+} from './utils/accessibilityPreferences';
 import { motion, AnimatePresence } from 'framer-motion';
 import { pageVariants, useReducedMotion, breathing } from './utils/animations';
 
@@ -59,6 +64,7 @@ const App = () => {
 
   const [authError, setAuthError] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [fontScale, setFontScale] = useState(() => getStoredFontScale());
 
   const queryClient = useQueryClient();
   const {
@@ -137,6 +143,11 @@ const App = () => {
     }
   }, []);
 
+  useEffect(() => {
+    applyFontScalePreference(fontScale);
+    persistFontScalePreference(fontScale);
+  }, [fontScale]);
+
   const handleLogout = useCallback(async () => {
     clearAuthTokens();
     queryClient.cancelQueries({ queryKey: ['user'] });
@@ -202,7 +213,15 @@ const App = () => {
           />
         );
       case 'profile':
-        return <UserProfile userId={userId} setActiveTab={setActiveTab} />;
+        return (
+          <UserProfile
+            userId={userId}
+            setActiveTab={setActiveTab}
+            onStartAssessment={handleStartAssessment}
+            fontScale={fontScale}
+            onFontScaleChange={setFontScale}
+          />
+        );
       case 'trends':
         return <PersonalTrends userId={userId} onStartAssessment={handleStartAssessment} />;
       case 'education':
@@ -212,7 +231,7 @@ const App = () => {
       default:
         return <Dashboard_user userId={userId} />;
     }
-  }, [userId, activeTab, showOnboarding, handleStartAssessment]);
+  }, [userId, activeTab, showOnboarding, handleStartAssessment, fontScale]);
 
   const renderAdminContent = useCallback(() => {
     return (
