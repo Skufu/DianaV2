@@ -31,6 +31,7 @@ from Ian_ML.common.feature_constants import (
     KMEANS_K,
     MIN_CLINICAL_FEATURES,
     MAX_CLINICAL_FEATURES,
+    SERVING_VALIDATION_RANGES,
 )
 
 
@@ -318,14 +319,7 @@ class DianaPredictor:
             return False, missing
         
         errors = []
-        ranges = {
-            'bmi': (10, 80),
-            'triglycerides': (20, 1500),
-            'ldl': (10, 400),
-            'hdl': (10, 150),
-            'age': (18, 100),
-        }
-        for feature, (min_val, max_val) in ranges.items():
+        for feature, (min_val, max_val) in SERVING_VALIDATION_RANGES.items():
             if feature in data and data[feature] is not None:
                 val = data[feature]
                 if val < min_val or val > max_val:
@@ -456,22 +450,7 @@ class DianaPredictor:
             },
         }
     
-    def _get_risk_label(self, cluster_id: int) -> str:
-        """Map cluster ID to risk label based on analysis."""
-        cluster_sizes = self.cluster_analysis.get("cluster_sizes", {})
-        
-        # The clustering.py sorted clusters by mean biomarker values
-        # Low Risk has lowest HbA1c/FBS, High Risk has highest
-        if "Low Risk" in cluster_sizes:
-            # Use the mapping from cluster_analysis
-            for risk_label in ["Low Risk", "Moderate Risk", "High Risk"]:
-                if cluster_sizes.get(risk_label, 0) > 0:
-                    pass  # Find which cluster maps to which label
-        
-        # Default fallback based on typical distribution
-        risk_map = {0: "High Risk", 1: "Low Risk", 2: "Moderate Risk"}
-        return risk_map.get(cluster_id, f"Cluster-{cluster_id}")
-    
+
     def predict_batch(self, patients: list[Mapping[str, Any]]) -> list[Dict[str, Any]]:
         """Predict for multiple patients."""
         return [self.predict(p) for p in patients]
@@ -838,14 +817,7 @@ class ClinicalPredictor:
             return False, missing
         
         errors = []
-        ranges = {
-            'bmi': (10, 80),
-            'triglycerides': (20, 1500),
-            'ldl': (10, 400),
-            'hdl': (10, 150),
-            'age': (18, 120),
-        }
-        for feature, (min_val, max_val) in ranges.items():
+        for feature, (min_val, max_val) in SERVING_VALIDATION_RANGES.items():
             if feature in data and data[feature] is not None:
                 val = data[feature]
                 if val < min_val or val > max_val:
@@ -948,7 +920,10 @@ class ClinicalPredictor:
             
             # Recalculate risk_score after potential boost
             risk_score = int(at_risk_prob * 100)
-            confidence = round(float(np.max(proba_arr)), 3)
+            # Confidence must reflect the boosted probability, not the
+            # original (pre-boost) proba_arr, to avoid contradictory output
+            # where a boosted At-Risk patient is flagged "Indeterminate".
+            confidence = round(max(at_risk_prob, 1.0 - at_risk_prob), 3)
         except Exception as e:
             return {"success": False, "error": str(e)}
         
@@ -1185,10 +1160,7 @@ class ClinicalPredictor:
             return cluster_analysis_labels[str(cluster_id)]
         return {"label": f"Cluster-{cluster_id}", "risk_level": "UNKNOWN"}
     
-    def _get_risk_label(self, cluster_id: int) -> str:
-        """Map cluster ID to risk label."""
-        cluster_info = self._get_cluster_info(cluster_id)
-        return cluster_info.get("risk_label", cluster_info.get("label", f"Cluster-{cluster_id}"))
+
     
     def predict_batch(self, patients: list[Mapping[str, Any]]) -> list[Dict[str, Any]]:
         """Predict for multiple patients."""

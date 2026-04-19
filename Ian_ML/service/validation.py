@@ -1,15 +1,13 @@
 # Input validation for ML predictions
 # Validates that input values are within training data ranges
 
+from Ian_ML.common.feature_constants import CLINICAL_PLAUSIBILITY_RANGES
+
+# Merge centralized plausibility ranges with BP-specific ranges
+# (BP ranges are not in the centralized set because BP is not in
+# the active no-BP model's feature list)
 TRAINING_DATA_RANGES = {
-    'bmi': (15.0, 60.0),
-    'triglycerides': (20.0, 800.0),
-    'ldl': (20.0, 300.0),
-    'hdl': (10.0, 120.0),
-    'age': (18, 100),
-    'waist_circumference': (50.0, 180.0),
-    'hba1c': (3.5, 15.0),
-    'fbs': (50.0, 400.0),
+    **CLINICAL_PLAUSIBILITY_RANGES,
     'systolic': (50, 300),
     'diastolic': (30, 200),
 }

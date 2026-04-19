@@ -276,7 +276,7 @@ class TestSHAPExplainEndpoint:
                 }
                 
                 def create_explainer(*args, **kwargs):
-                    if kwargs.get("model_type") == "tree":
+                    if kwargs.get("model_type") == "linear":
                         return mock_explainer
                     return mock_kernel_explainer
                 
@@ -330,7 +330,7 @@ class TestSHAPExplainEndpoint:
                 }
                 
                 def create_explainer(*args, **kwargs):
-                    if kwargs.get("model_type") == "tree":
+                    if kwargs.get("model_type") == "linear":
                         return mock_tree_explainer
                     return mock_kernel_explainer
                 

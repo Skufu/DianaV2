@@ -990,8 +990,10 @@ def train_serving_kmeans(
 
         cluster_profiles[k] = profile
 
-    # Save artifacts
-    joblib.dump(kmeans, MODELS_DIR / "kmeans_model.joblib")
+    # Save clustering artifacts.
+    # NOTE: weighted_kmeans_model.joblib is saved by clustering.py (the active
+    # KMeans artifact used by ClinicalPredictor). Do NOT save a competing
+    # kmeans_model.joblib here — it would be a dead artifact.
     joblib.dump(scaler, MODELS_DIR / "cluster_scaler.joblib")
     joblib.dump(imputer, MODELS_DIR / "cluster_imputer.joblib")
 
@@ -1101,7 +1103,13 @@ def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) ->
     with open(RESULTS_DIR / "best_model_report.json", 'w') as f:
         json.dump(report, f, indent=2)
     
+    # Save standalone threshold.json (consumed by tests and ClinicalPredictor)
+    threshold_config = {"at_risk": float(best_row["Mean_Threshold"])}
+    with open(RESULTS_DIR / "threshold.json", 'w') as f:
+        json.dump(threshold_config, f, indent=2)
+    
     print(f"[SAVED] Best model report to {RESULTS_DIR / 'best_model_report.json'}")
+    print(f"[SAVED] Threshold config to {RESULTS_DIR / 'threshold.json'}")
 
 
 def generate_roc_curve(aggregated: dict[str, dict[str, object]], best_model_name: str) -> None:
