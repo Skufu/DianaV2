@@ -31,14 +31,22 @@ from ..common.feature_constants import (
 # =============================================================================
 
 # Universal threshold source: models/binary_v2_no_bp/threshold.json
-# This file replaces all hardcoded threshold values across service + tests.
+# Falls back to best_model_report.json for backward compatibility.
 import json
 from pathlib import Path
 
-_THRESHOLD_CONFIG = json.load(open(
-    Path(__file__).resolve().parents[2]
-    / "models" / "binary_v2_no_bp" / "threshold.json"
-))
+_MODELS_DIR = Path(__file__).resolve().parents[2] / "models" / "binary_v2_no_bp"
+_threshold_path = _MODELS_DIR / "threshold.json"
+_report_path = _MODELS_DIR / "results" / "best_model_report.json"
+
+if _threshold_path.exists():
+    _THRESHOLD_CONFIG = json.load(open(_threshold_path))
+elif _report_path.exists():
+    _report = json.load(open(_report_path))
+    _THRESHOLD_CONFIG = _report.get("decision_thresholds", {"at_risk": 0.5})
+else:
+    _THRESHOLD_CONFIG = {"at_risk": 0.5}
+
 ACTIVE_AT_RISK_THRESHOLD = _THRESHOLD_CONFIG["at_risk"]
 EPSILON = 1e-7
 

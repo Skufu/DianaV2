@@ -232,7 +232,7 @@ func (p *HTTPPredictor) IsAvailable() bool {
 }
 
 func addDriftFeature(features map[string][]float64, name string, value float64) {
-	if value <= 0 {
+	if value < 0 {
 		return
 	}
 	features[name] = []float64{value}

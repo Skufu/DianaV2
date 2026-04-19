@@ -403,6 +403,18 @@ def _get_shap_cache_key(model_id: str, explainer_type: str, bg_source: str) -> t
     return (model_id, explainer_type, bg_source)
 
 
+def _unwrap_pipeline(model):
+    """Extract the inner estimator from a sklearn Pipeline.
+
+    SHAP explainers and coefficient extraction (IG endpoint) need the inner
+    model, not the Pipeline wrapper.  When the model is already a plain
+    estimator this is a no-op.
+    """
+    if hasattr(model, 'named_steps'):
+        return model.named_steps.get('model', model)
+    return model
+
+
 def get_predictor():
     """Lazy load ADA baseline predictor."""
     return _predictor_manager.get_predictor()
@@ -743,14 +755,19 @@ def predict_explain():
             result = clin_predictor.predict(patient_data)
             
             # Get SHAP explanation with proper cache scoping
-            model_id = f"clinical_{id(clin_predictor.classifier)}"
+            # Unwrap Pipeline to get the inner estimator for SHAP.
+            # The saved background is already preprocessed, so the inner
+            # model (not the full Pipeline) must be used to avoid double-
+            # preprocessing (Bug 9 fix).
+            inner_model = _unwrap_pipeline(clin_predictor.classifier)
+            model_id = f"clinical_{id(inner_model)}"
             
-            # Try TreeExplainer first
-            cache_key = _get_shap_cache_key(model_id, "tree", "none")
+            # Try LinearExplainer first (correct for LogisticRegression)
+            cache_key = _get_shap_cache_key(model_id, "linear", "none")
             shap_explainer = _shap_explainer_cache.get(cache_key)
             
             if shap_explainer is None:
-                shap_explainer = SHAPExplainer(clin_predictor.classifier, model_type="tree")
+                shap_explainer = SHAPExplainer(inner_model, model_type="linear")
                 if shap_explainer.is_available:
                     _shap_explainer_cache[cache_key] = shap_explainer
                 else:
@@ -760,7 +777,7 @@ def predict_explain():
             if shap_explainer is None or not shap_explainer.is_available:
                 explainer_type = "kernel"
                 
-                # Try loading saved background
+                # Try loading saved background (already preprocessed)
                 bg_artifact = clin_predictor.get_shap_background()
                 
                 if bg_artifact is not None:
@@ -782,8 +799,9 @@ def predict_explain():
                 shap_explainer = _shap_explainer_cache.get(cache_key)
                 
                 if shap_explainer is None:
+                    # Use inner model (not Pipeline) to avoid double-preprocessing
                     shap_explainer = SHAPExplainer(
-                        clin_predictor.classifier,
+                        inner_model,
                         model_type="kernel",
                         background_data=background,
                     )
@@ -1615,9 +1633,11 @@ def get_information_gain():
         
         # If no IG file exists, compute feature importance from the model
         clin = get_clinical_predictor()
-        if clin is not None and hasattr(clin.classifier, 'coef_'):
+        # Unwrap Pipeline to access inner estimator's coef_/feature_importances_
+        inner_model = _unwrap_pipeline(clin.classifier) if clin is not None else None
+        if inner_model is not None and hasattr(inner_model, 'coef_'):
             # For linear models, use absolute coefficients
-            coefs = np.abs(clin.classifier.coef_[0]) if len(clin.classifier.coef_.shape) > 1 else np.abs(clin.classifier.coef_)
+            coefs = np.abs(inner_model.coef_[0]) if len(inner_model.coef_.shape) > 1 else np.abs(inner_model.coef_)
             features = clin.features
             # Normalize to 0-1 range (information gain-like)
             total = np.sum(coefs)
@@ -1637,9 +1657,9 @@ def get_information_gain():
                 "model_type": clin.model_type or "clinical"
             }
             return jsonify(result)
-        elif clin is not None and hasattr(clin.classifier, 'feature_importances_'):
+        elif inner_model is not None and hasattr(inner_model, 'feature_importances_'):
             # For tree-based models, use feature_importances_
-            importances = clin.classifier.feature_importances_
+            importances = inner_model.feature_importances_
             features = clin.features
             feature_ranking = [
                 {"feature": features[i], "ig": safe_float(importances[i])}
@@ -1744,19 +1764,21 @@ if __name__ == '__main__':
                 # Preload SHAP explainer
                 if shap_module_available and SHAPExplainer is not None:
                     try:
-                        model_id = f"clinical_{id(clinical.classifier)}"
-                        cache_key = _get_shap_cache_key(model_id, "tree", "none")
-                        shap_explainer = SHAPExplainer(clinical.classifier, model_type="tree")
+                        # Unwrap Pipeline to get inner estimator for SHAP
+                        inner_model = _unwrap_pipeline(clinical.classifier)
+                        model_id = f"clinical_{id(inner_model)}"
+                        cache_key = _get_shap_cache_key(model_id, "linear", "none")
+                        shap_explainer = SHAPExplainer(inner_model, model_type="linear")
                         if shap_explainer.is_available:
                             _shap_explainer_cache[cache_key] = shap_explainer
-                            print(f"  [OK] SHAP TreeExplainer preloaded")
+                            print(f"  [OK] SHAP LinearExplainer preloaded")
                         else:
-                            # Try with saved background data
+                            # Try KernelExplainer with saved background data
                             bg_artifact = clinical.get_shap_background()
                             if bg_artifact is not None:
                                 cache_key = _get_shap_cache_key(model_id, "kernel", "saved_training_data")
                                 shap_explainer = SHAPExplainer(
-                                    clinical.classifier,
+                                    inner_model,
                                     model_type="kernel",
                                     background_data=bg_artifact["background"]
                                 )

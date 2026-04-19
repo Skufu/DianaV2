@@ -175,3 +175,29 @@ AHLQVIST_SUBTYPES = {
         'risk_level': 'LOW',
     },
 }
+
+# =============================================================================
+# VALIDATION RANGES — Single Source of Truth
+# =============================================================================
+# Serving validation: permissive bounds to accept edge-case patients without
+# rejecting valid predictions.  Used by predict.py validate_input().
+SERVING_VALIDATION_RANGES = {
+    'bmi': (10, 80),
+    'triglycerides': (20, 1500),
+    'ldl': (10, 400),
+    'hdl': (10, 150),
+    'age': (18, 120),
+}
+
+# Clinical plausibility: tighter bounds for data quality checks and outlier
+# detection during training.  Used by validation.py and data_processing.py.
+CLINICAL_PLAUSIBILITY_RANGES = {
+    'bmi': (15.0, 60.0),
+    'triglycerides': (20.0, 800.0),
+    'ldl': (20.0, 300.0),
+    'hdl': (10.0, 120.0),
+    'hba1c': (3.5, 15.0),
+    'fbs': (50.0, 400.0),
+    'age': (18, 100),
+    'waist_circumference': (50.0, 180.0),
+}
