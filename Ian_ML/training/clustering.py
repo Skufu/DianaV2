@@ -411,19 +411,25 @@ def main(k: int = 4):
     df_at_risk = df.loc[at_risk_mask].copy()
     print(f"   At-risk records (diabetes_label >= 1): {len(df_at_risk)} / {len(df)}")
     
-    # Prepare data on at-risk subset (preserve complete-case clustering flow)
-    df_clean = df_at_risk.dropna(subset=available_features)
-    X = df_clean[available_features].values
-    print(f"   At-risk complete records: {len(X)}")
+    # Prepare data on at-risk subset.
+    # Previously, dropna() was called before imputation, which biased the median
+    # towards the healthy, complete-case population. Now we impute first.
+    X_at_risk = df_at_risk[available_features].values
+    print(f"   At-risk total records: {len(X_at_risk)}")
 
-    # Keep canonical imputer artifact for inference compatibility.
-    # Fit on the complete-case clustering matrix to preserve current behavior.
+    # Fit imputer on ALL at-risk records to properly capture population medians.
+    # This prevents inference bias when new patients have missing values.
     imputer = SimpleImputer(strategy='median')
-    X_imputed = imputer.fit_transform(X)
+    X_imputed = imputer.fit_transform(X_at_risk)
 
     # Standardize
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_imputed)
+
+    # We use the full imputed at-risk dataset for clustering and profiling
+    df_clean = df_at_risk.copy()
+    df_clean[available_features] = X_imputed
+    X = X_imputed
 
     # Build ordered expert feature weight vector (post-standardization distance metric).
     feature_weights = build_feature_weight_vector(available_features)
