@@ -1,196 +1,51 @@
-# Environment variables
-.env
-.env.local
-.env.*.local
-*.env
-frontend/.env.local
-.env.backup*
-
-
-# Build and binary artifacts
-bin/
+# === Go ===
 *.exe
-backend/*.exe
 *.exe~
 *.dll
 *.so
 *.dylib
 *.test
-*.test
-diana-backend
-seed
-server
-
-# Go workspace state
 *.out
+vendor/
 go.work
 go.work.sum
+bin/
 
-# Go test coverage
-cover.*
-*.coverprofile
-coverage.txt
-coverage.html
-
-# IDE/editor
-.vscode/
-.idea/
-.claude/
-.cursor/
-*.swp
-*.swo
-*~
-.project
-.classpath
-.settings/
-*.sublime-project
-*.sublime-workspace
-
-# Dependency/module caches
-/vendor/
+# === Node ===
 node_modules/
-frontend/node_modules/
 .pnp
 .pnp.js
-
-# Vite/Tailwind build outputs
-frontend/dist/
-frontend/.vite/
-frontend/.turbo/
-frontend/.cache/
-frontend/coverage/
-
-# Frontend build artifacts
-frontend/build/
-frontend/.next/
-frontend/out/
-
-# Logs
+dist/
+build/
+coverage/
 *.log
-logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
 lerna-debug.log*
 
-# OS-specific files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-*.db-shm
-*.db-wal
-
-# Temporary files
-*.tmp
-*.temp
-*.bak
-*.backup
-
-# Docker
-.dockerignore
-docker-compose.override.yml
-
-# CI/CD
-.ci/
-.github/workflows/*.local.yml
-
-# Generated files
-*.generated.*
-sqlc/sqlc.yaml.local
-internal/store/sqlc/
-
-# Documentation/PDFs (non-source)
-# *.pdf
-# !docs/**/*.pdf
-
-# Miscellaneous
-*.pid
-*.seed
-*.pid.lock
-.cache/
-.temp/
-venv/
-.venv/
-env/
-.env/
-
-# Python cache
+# === Python ===
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 .Python
-
-# Pytest cache
+env/
+venv/
+.venv/
+pip-log.txt
+*.egg-info/
 .pytest_cache/
+.coverage
+.ipynb_checkpoints
 
-# MLflow
-mlruns/
-
-# Playwright test artifacts
-frontend/playwright-report/
-frontend/test-results/
-
-# Generated summaries
-GIT_CHANGES_SUMMARY.md
-ARCHITECTURE_CHANGES.md
-FILE_CHANGES.md
-IMPLEMENTATION_PLAN.md
-MIGRATION_SUMMARY.txt
-PLANNING_COMPLETE.md
-PLANNING_INDEX.txt
-REFACTORING_README.md
-
-# Backups
-**/*_old.js
-**/backup/
-
-# Large files
-*.pdf
-!docs/**/*.pdf
-*.XPT
-catboost_info/
-.sisyphus
-data/nhanes_raw_data.tar.gz
-demo-video/DianaV2_Demo_Final.mp4
-docs/07-research/thesis-drafts/*.docx
-docs/07-research/thesis-drafts/*.pdf
-frontend/e2e/screenshots/*
-frontend/test-results-summary.json
-
-# Ralph logs and tmp
-ralph/*.txt
-ralph/tmp/
-
-# Tool/agent directories
-.opencode/
-.factory/
-.skills/
-.odino/
-
-# Nested repositories
-Neoron_ML/
-Neuron_ML/
-
-
-.setup-verification.txt
-.credentials
-
-# Assistant and temporary files
-.agents/
-autoresearch/
-frontend/lint_output.txt
-logs-backend
-logs-ml
-
-skills/
+# === General ===
+.env
+.env.local
+.env.*.local
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
