@@ -41,6 +41,7 @@ func main() {
 		{Email: "admin@diana.app", Password: "admin123", Role: "admin"},
 		{Email: "doctor@diana.app", Password: "doctor123", Role: "doctor"},
 		{Email: "demo@diana.app", Password: "demopassword123", Role: "user", FirstName: "Demo", LastName: "User"},
+		{Email: "test@test.com", Password: "password123", Role: "user", FirstName: "Test", LastName: "User"},
 	}
 
 	for _, u := range users {

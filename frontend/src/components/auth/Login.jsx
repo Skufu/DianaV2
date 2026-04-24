@@ -194,7 +194,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
         </div>
 
         {/* Right Side: High-Contrast Login Form (Clean White) */}
-        <div className="w-full lg:flex-1 p-10 sm:p-12 lg:p-16 bg-white relative flex flex-col justify-center">
+        <div className="w-full lg:flex-1 p-6 sm:p-10 lg:p-16 bg-white relative flex flex-col justify-center">
           <div className="max-w-[420px] w-full mx-auto space-y-8">
             {/* Mobile-only branding backup (if stacked) */}
             <div className="lg:hidden flex items-center gap-3 mb-4">

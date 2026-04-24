@@ -153,7 +153,7 @@ const StatusSummaryCard = ({
       <motion.div
         initial={isReduced ? false : { opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 rounded-[32px] p-8 md:p-10 text-white shadow-xl relative overflow-hidden"
+        className="bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 rounded-[32px] p-6 sm:p-8 md:p-10 text-white shadow-xl relative overflow-hidden"
       >
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-4">
@@ -212,7 +212,7 @@ const StatusSummaryCard = ({
       animate={{ opacity: 1, y: 0 }}
       className={`bg-white/80 backdrop-blur-xl rounded-[32px] shadow-sm border border-slate-200/60 overflow-hidden relative ${theme.glow}`}
     >
-      <div className={`p-6 md:p-8 border-b ${theme.border} ${theme.gradient} relative overflow-hidden`}>
+      <div className={`p-5 sm:p-6 md:p-8 border-b ${theme.border} ${theme.gradient} relative overflow-hidden`}>
         <div className="flex items-start justify-between relative z-10">
           <div className="flex items-center gap-3 mb-2">
             <div className={`w-10 h-10 rounded-xl bg-white/50 backdrop-blur-sm border ${theme.border} flex items-center justify-center shadow-sm`}>
@@ -230,7 +230,7 @@ const StatusSummaryCard = ({
         <h2 className="text-2xl md:text-3xl font-bold font-serif text-slate-800 mt-2 relative z-10">{theme.statusText}</h2>
       </div>
 
-      <div className="p-6 md:p-8">
+      <div className="p-5 sm:p-6 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-5">
             <div className="flex items-end gap-3 mb-4">

@@ -35,7 +35,7 @@ func ValidateBiomarkers(input models.Assessment, thresholds config.ClinicalThres
 
 	if input.BMI >= thresholds.BMIObese {
 		warnings = append(warnings, "bmi_obese")
-	} else if input.BMI >= thresholds.BMINormal {
+	} else if input.BMI >= thresholds.BMIOverweight {
 		warnings = append(warnings, "bmi_overweight")
 	}
 

@@ -118,7 +118,7 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
     >
       <motion.div
         variants={slideUp}
-        className="bg-gradient-to-r from-diana-forest to-diana-forest-light rounded-3xl p-8 shadow-lg text-white"
+        className="bg-gradient-to-r from-diana-forest to-diana-forest-light rounded-3xl p-6 sm:p-8 shadow-lg text-white"
       >
         <div className="flex items-center gap-4 mb-2">
           <Button
@@ -158,8 +158,8 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
       </AnimatePresence>
 
       <motion.div
-        variants={fadeIn}
-        className="glass-card p-8 bg-white"
+        variants={slideUp}
+        className="glass-card p-5 sm:p-6 md:p-8 bg-white"
       >
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl">
@@ -206,7 +206,7 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
           variants={fadeIn}
           whileHover={{ scale: 1.02 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="glass-card p-8 bg-white"
+          className="glass-card p-5 sm:p-6 md:p-8 bg-white"
         >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
             <User size={24} className="text-diana-forest" />
@@ -268,7 +268,7 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
           variants={fadeIn}
           whileHover={{ scale: 1.02 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="glass-card p-8 bg-white"
+          className="glass-card p-5 sm:p-6 md:p-8 bg-white"
         >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
             <Calendar size={24} className="text-diana-lime-dark" />
@@ -351,7 +351,7 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
           variants={fadeIn}
           whileHover={{ scale: 1.02 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="glass-card p-8 bg-white"
+          className="glass-card p-5 sm:p-6 md:p-8 bg-white"
         >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
             <Activity size={24} className="text-diana-forest-light" />
@@ -412,7 +412,7 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
           variants={fadeIn}
           whileHover={{ scale: 1.02 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-          className="glass-card p-8 bg-white"
+          className="glass-card p-5 sm:p-6 md:p-8 bg-white"
         >
           <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-6 flex items-center gap-3 border-b border-diana-sand pb-4">
             <Shield size={24} className="text-amber-500" />
@@ -503,8 +503,8 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
       </form>
 
       <motion.div
-        variants={fadeIn}
-        className="bg-white rounded-[32px] p-8 shadow-sm border border-rose-100"
+        variants={slideUp}
+        className="bg-white rounded-[32px] p-6 sm:p-8 shadow-sm border border-rose-100"
       >
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center shrink-0">
@@ -534,10 +534,10 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-[32px] p-8 max-w-md w-full mx-4 border border-slate-100 shadow-2xl"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-[32px] p-6 sm:p-8 max-w-md w-full mx-4 border border-slate-100 shadow-2xl"
             >
               <div className="w-16 h-16 rounded-3xl bg-rose-50 flex items-center justify-center mb-6">
                 <AlertTriangle size={32} className="text-rose-600" />

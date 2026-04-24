@@ -180,7 +180,7 @@ const ResetPassword = ({ onShowLogin, initialToken = '' }) => {
           variants={cardVariants}
           initial="offscreen"
           animate="onscreen"
-          className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8"
+          className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 sm:p-8"
         >
           <motion.form onSubmit={handleSubmit} className="space-y-5" initial={false} noValidate>
             {/* Token Field */}

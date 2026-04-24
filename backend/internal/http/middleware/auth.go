@@ -69,7 +69,7 @@ func Auth(jwtSecret string, users UserFinder) gin.HandlerFunc {
 		} else {
 			authz := c.GetHeader("Authorization")
 			if authz == "" || !strings.HasPrefix(authz, "Bearer ") {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing bearer token"})
+				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "missing bearer token"})
 				return
 			}
 			tokenStr = strings.TrimPrefix(authz, "Bearer ")
@@ -85,55 +85,55 @@ func Auth(jwtSecret string, users UserFinder) gin.HandlerFunc {
 		}, jwt.WithValidMethods([]string{"HS256"}))
 
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
 			return
 		}
 
 		// Extract claims
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok || !token.Valid {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "invalid token claims"})
 			return
 		}
 
 		// Validate required claims
 		sub, ok := claims["sub"].(string)
 		if !ok || sub == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing subject claim"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "missing subject claim"})
 			return
 		}
 
 		role, ok := claims["role"].(string)
 		if !ok || role == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing role claim"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "missing role claim"})
 			return
 		}
 
 		scope, ok := claims["scope"].(string)
 		if !ok || scope != "diana" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid scope"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "invalid scope"})
 			return
 		}
 
 		// Extract user_id from claims
 		userID, ok := claims["user_id"].(float64) // JSON numbers are float64
 		if !ok {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing user_id claim"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "missing user_id claim"})
 			return
 		}
 
 		userIDInt := int64(userID)
 		if users == nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "auth store not configured"})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, map[string]string{"error": "auth store not configured"})
 			return
 		}
 		user, err := users.FindByID(c.Request.Context(), int32(userIDInt))
 		if err != nil || user == nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "user not found"})
 			return
 		}
 		if !user.IsActive || user.AccountStatus != "active" {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "account inactive"})
+			c.AbortWithStatusJSON(http.StatusForbidden, map[string]string{"error": "account inactive"})
 			return
 		}
 

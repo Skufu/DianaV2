@@ -150,7 +150,6 @@ NX|- Manual `strconv.Atoi` for pagination - Use `ParsePagination()` from utils.
 NH|- `interface{}` in Go 1.18+ - Use explicit interfaces or `any` with documentation (5 occurrences).
 SK|- Fire-and-forget goroutines in `audit.go` - errors are logged but don't block response (potential data loss if DB unavailable).
 XZ|- Manual `gin.H{"error": ...}` in handlers - Use `ErrBadRequest()`, `ErrInternal()` from utils.go.
-YB|- Manual `strconv.Atoi` in users.go:258, clinic_dashboard.go:63 - Use `ParsePagination()`.
 
 ### CI/CD Issues
 BV|- **Deploy job is no-op**: `cd.yml` deploy job only echoes instructions, no actual deployment.

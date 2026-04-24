@@ -110,8 +110,8 @@ FBSDiabetic:             getEnvFloat("CLINICAL_FBS_DIABETIC", 126),
 		BPSysNormal:             getEnvInt("CLINICAL_BP_SYS_NORMAL", 120),
 		BPSysElevated:           getEnvInt("CLINICAL_BP_SYS_ELEVATED", 140),
 		BPDiaNormal:             getEnvInt("CLINICAL_BP_DIA_NORMAL", 80),
-		BMINormal:               getEnvFloat("CLINICAL_BMI_NORMAL", 23.0),     // PH Asia-Pacific WHO
-		BMIOverweight:           getEnvFloat("CLINICAL_BMI_OVERWEIGHT", 25.0), // PH Asia-Pacific WHO
+		BMINormal:               getEnvFloat("CLINICAL_BMI_NORMAL", 18.5),     // PH Asia-Pacific WHO
+		BMIOverweight:           getEnvFloat("CLINICAL_BMI_OVERWEIGHT", 23.0), // PH Asia-Pacific WHO
 		BMIObese:                getEnvFloat("CLINICAL_BMI_OBESE", 25.0),      // PH Asia-Pacific WHO
 		CholesterolHigh:         getEnvFloat("CLINICAL_CHOLESTEROL_HIGH", 200),
 		CholesterolBorderline:   getEnvFloat("CLINICAL_CHOLESTEROL_BORDERLINE", 200),

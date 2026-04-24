@@ -427,7 +427,7 @@ const App = () => {
           </AnimatePresence>
 
           <main
-            className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? 'lg:ml-72 p-6 lg:p-8' : ''}`}
+            className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? 'lg:ml-72 p-4 sm:p-6 lg:p-8' : ''}`}
           >
             <ErrorBoundary section={activeTab}>
               <Suspense fallback={<LoadingSkeleton />}>
@@ -461,7 +461,7 @@ const App = () => {
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
-                  className="relative z-10 w-full max-w-2xl"
+                  className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl"
                 >
                   <AssessmentForm
                     initialData={profile}
