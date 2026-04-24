@@ -286,10 +286,10 @@ const AssessmentForm = ({
 
   return (
     <>
-      {isClinicalView ? (
+      {isClinicalView && (
         <motion.div
           variants={slideUp}
-          className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 p-8 text-white shadow-xl mb-6"
+          className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 p-6 sm:p-8 text-white shadow-xl mb-6"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 opacity-100" />
           <div className="absolute inset-0 opacity-10 mix-blend-overlay" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.2) 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
@@ -318,35 +318,38 @@ const AssessmentForm = ({
             )}
           </div>
         </motion.div>
-      ) : (
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-diana-forest/10 flex items-center justify-center">
-              <motion.div whileHover={{ rotate: 15, scale: 1.1 }} transition={{ duration: 0.3 }}>
-                <Activity size={20} className="text-diana-forest" />
-              </motion.div>
-            </div>
-            <h2 className="text-xl font-bold text-diana-text-primary">Log New Assessment</h2>
-          </div>
-          {onCancel && (
-            <Button
-              variant="ghost"
-              onClick={onCancel}
-              className="!p-2 !bg-white/10 hover:!bg-white/20 !text-diana-text-muted hover:text-diana-text-primary"
-            >
-              <X size={18} />
-            </Button>
-          )}
-        </div>
       )}
 
       <motion.div
         variants={slideUp}
         initial="hidden"
         animate="visible"
-        className="glass-card p-8 bg-white"
+        className="glass-card bg-white overflow-hidden shadow-2xl"
       >
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {!isClinicalView && (
+          <div className="flex items-center justify-between p-5 sm:p-6 md:p-8 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center shadow-sm border border-indigo-100/50">
+                <motion.div whileHover={{ rotate: 15, scale: 1.1 }} transition={{ duration: 0.3 }}>
+                  <Activity size={24} className="text-indigo-600" />
+                </motion.div>
+              </div>
+              <h2 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">Log New Assessment</h2>
+            </div>
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="p-5 sm:p-6 md:p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
           {showModelSelector && !lockedModelType && (
             <div>
               <label
@@ -371,7 +374,7 @@ const AssessmentForm = ({
           {/* Body Metrics Section */}
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Body Metrics</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               {/* Height Field */}
               <motion.div
                 whileHover={{ y: -2 }}
@@ -486,7 +489,7 @@ const AssessmentForm = ({
           {/* Lipid Profile Section */}
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Lipid Profile</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
               {/* Triglycerides Field */}
               <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
                 <label
@@ -558,7 +561,7 @@ const AssessmentForm = ({
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Enrichment (Optional)</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Enrichment (Optional - Estimated from BMI if blank)</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
                   <label
@@ -703,7 +706,7 @@ const AssessmentForm = ({
 
           <div>
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Lifestyle</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>
                 <label
                   htmlFor="smoking_status"
@@ -823,6 +826,7 @@ const AssessmentForm = ({
             )}
           </AnimatePresence>
         </form>
+        </div>
       </motion.div>
 
       <MLResultModal

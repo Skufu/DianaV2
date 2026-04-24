@@ -210,8 +210,8 @@ def get_medical_status(hba1c):
 def _engineer_ada_features(data: Mapping[str, Any]):
     """Engineer ADA predictor features in REQUIRED_FEATURES order."""
     smoking_map = {'Never': 0, 'Former': 1, 'Current': 2, 'Unknown': 1}
-    activity_map = {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Unknown': 1}
-    alcohol_map = {'None': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
+    activity_map = {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Vigorous': 2, 'Unknown': 1}
+    alcohol_map = {'None': 0, 'Never': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
 
     smoking_raw = str(data.get('smoking_status', 'Unknown') or 'Unknown').strip()
     smoking_key = smoking_raw.title() if smoking_raw.lower() != 'unknown' else 'Unknown'
@@ -222,7 +222,7 @@ def _engineer_ada_features(data: Mapping[str, Any]):
     activity_encoded = activity_map.get(activity_key, 1)
 
     alcohol_raw = str(data.get('alcohol_use', 'Unknown') or 'Unknown').strip()
-    alcohol_key = alcohol_raw.title() if alcohol_raw.lower() != 'none' else 'None'
+    alcohol_key = alcohol_raw.title() if alcohol_raw.lower() not in ('none', 'never') else alcohol_raw.title()
     alcohol_encoded = alcohol_map.get(alcohol_key, 1)
 
     waist = data.get('waist_circumference', np.nan)
@@ -713,18 +713,18 @@ class ClinicalPredictor:
         smoking_key = smoking_raw.title() if smoking_raw.lower() != 'unknown' else 'Unknown'
         smoking_encoded = smoking_map.get(smoking_key, 1)
 
-        activity_map = {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Unknown': 1}
+        activity_map = {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Vigorous': 2, 'Unknown': 1}
         activity_raw = str(data.get('physical_activity', 'Unknown') or 'Unknown').strip()
         activity_key = activity_raw.title() if activity_raw.lower() != 'unknown' else 'Unknown'
         activity_encoded = activity_map.get(activity_key, 1)
 
-        alcohol_map = {'None': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
+        alcohol_map = {'None': 0, 'Never': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
         alcohol_raw = str(data.get('alcohol_use', 'Unknown') or 'Unknown').strip()
-        alcohol_key = alcohol_raw.title() if alcohol_raw.lower() != 'none' else 'None'
+        alcohol_key = alcohol_raw.title() if alcohol_raw.lower() not in ('none', 'never') else alcohol_raw.title()
         alcohol_encoded = alcohol_map.get(alcohol_key, 1)
 
         metabolic_score = 0
-        if tg > 150:
+        if tg >= 150:
             metabolic_score += 1
         if hdl < 50:
             metabolic_score += 1
@@ -840,14 +840,31 @@ class ClinicalPredictor:
                 "error": f"Missing required features: {missing}"
             }
         
+        # Make a mutable copy of data to apply clinical heuristics before feature extraction
+        data_work = dict(data)
+        
+        # CLINICAL GUARDRAIL: BMI-Concordant Waist Imputation
+        # Scikit-learn's median imputer injects ~97cm for missing waist. For slim patients (e.g. BMI 21.5),
+        # this physiologically impossible value artificially inflates risk via false visceral adiposity.
+        # We intercept missing waist and estimate it using the NHANES postmenopausal average ratio (3.33).
+        waist = data_work.get('waist_circumference', np.nan)
+        if waist in (None, "", 0):
+            waist = np.nan
+            
+        bmi = data_work.get('bmi', 0)
+        if np.isnan(waist) and bmi and float(bmi) > 0:
+            estimated_waist = float(bmi) * 3.33
+            data_work['waist_circumference'] = estimated_waist
+            logger.info(f"Missing waist imputed from BMI ({bmi}) -> {estimated_waist:.1f} cm (prevents median imputer penalty)")
+
         # Prepare model feature vector in training order (features determined by features.json).
-        X = self._build_feature_vector(data)
+        X = self._build_feature_vector(data_work)
 
         # Transform features (handles both Pipeline and separate scaler/imputer)
         X_scaled = self._transform_features(X)
 
         # Build separate cluster feature vector (6 features for KMeans)
-        X_cluster = self._build_cluster_vector(data)
+        X_cluster = self._build_cluster_vector(data_work)
         if self.cluster_scaler is not None and self.cluster_imputer is not None:
             # Impute NaNs first, then scale
             X_cluster_imputed = self.cluster_imputer.transform(X_cluster)
@@ -907,7 +924,7 @@ class ClinicalPredictor:
             predicted_status = status_map.get(predicted_class, "Unknown")
             # Apply metabolic syndrome boost for high-risk profiles
             original_prob = at_risk_prob
-            at_risk_prob, metabolic_syndrome_info = self._apply_metabolic_syndrome_boost_with_info(at_risk_prob, data)
+            at_risk_prob, metabolic_syndrome_info = self._apply_metabolic_syndrome_boost_with_info(at_risk_prob, data_work)
             diabetes_prob = at_risk_prob  # Keep probability consistent
 
             # Recalculate predicted_status if boost changed the probability across threshold
@@ -1094,11 +1111,11 @@ class ClinicalPredictor:
         Boost probability for patients with metabolic syndrome markers.
         Returns tuple of (boosted_probability, info_dict).
 
-        Metabolic syndrome criteria (ATPIII):
+        Metabolic syndrome criteria (ATPIII / WHO Asia-Pacific):
         - TG >= 150 mg/dL
         - HDL < 50 mg/dL (female) or < 40 mg/dL (male)
         - BMI >= 25 (overweight)
-        - Age 45-60 (postmenopausal)
+        - Waist Circumference >= 80 cm (Asian threshold for women)
 
         If 3+ criteria met, boost probability to at least 0.65
         If 2 criteria met, boost probability by +0.15
@@ -1115,9 +1132,13 @@ class ClinicalPredictor:
         if data.get('bmi', 0) >= 25:
             criteria_met += 1
             criteria_details.append(f"BMI={data.get('bmi')}")
-        if 45 <= data.get('age', 0) <= 60:
+            
+        waist = data.get('waist_circumference', np.nan) or np.nan
+        if waist == 0:
+            waist = np.nan
+        if not np.isnan(waist) and waist >= 80:
             criteria_met += 1
-            criteria_details.append(f"Age={data.get('age')}")
+            criteria_details.append(f"Waist={waist}")
 
         info = {
             "boost_applied": False,

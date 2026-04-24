@@ -205,7 +205,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
           variants={cardVariants}
           initial="offscreen"
           animate="onscreen"
-          className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8"
+          className="bg-white rounded-2xl shadow-xl border border-slate-200 p-5 sm:p-6 md:p-8"
         >
           <AnimatePresence mode="wait">
             {loading ? (

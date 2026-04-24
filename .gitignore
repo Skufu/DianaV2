@@ -10,6 +10,11 @@ vendor/
 go.work
 go.work.sum
 bin/
+server
+seed
+backend/server
+backend/cmd/seed/seed
+
 
 # === Node ===
 node_modules/
@@ -23,6 +28,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
+frontend/playwright-report/
+frontend/test-results/
+frontend/test-results-summary.json
+frontend/e2e/screenshots/
+
 
 # === Python ===
 __pycache__/
@@ -38,6 +48,8 @@ pip-log.txt
 .pytest_cache/
 .coverage
 .ipynb_checkpoints
+mlruns/
+catboost_info/
 
 # === General ===
 .env
@@ -49,3 +61,17 @@ pip-log.txt
 *.swo
 .DS_Store
 Thumbs.db
+
+# === Data & Models ===
+data/nhanes/raw/
+data/*.tar.gz
+
+# === Temp & Local ===
+.sisyphus/
+sandbox-notes/
+.setup-verification.txt
+*.backup
+*.bak
+docker-compose.override.yml
+backend/internal/pdf/*.pdf
+backend/internal/services/*.pdf

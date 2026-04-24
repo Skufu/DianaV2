@@ -146,7 +146,7 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
           variants={cardVariants}
           initial="offscreen"
           animate="onscreen"
-          className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8"
+          className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 sm:p-8"
         >
           <form onSubmit={handleVerify} className="space-y-5" noValidate>
             <div className="space-y-1.5">

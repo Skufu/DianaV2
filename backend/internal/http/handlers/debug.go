@@ -202,13 +202,13 @@ func (h *DebugHandler) runtimeStats(c *gin.Context) {
 func (h *DebugHandler) setGCPercent(c *gin.Context) {
 	percentStr := c.PostForm("percent")
 	if percentStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "percent parameter required"})
+		ErrBadRequest(c, "percent parameter required")
 		return
 	}
 	
 	percent, err := strconv.Atoi(percentStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid percent value"})
+		ErrBadRequest(c, "invalid percent value")
 		return
 	}
 	

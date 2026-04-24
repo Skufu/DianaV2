@@ -166,7 +166,7 @@ const Onboarding = ({ onComplete }) => {
         initial="hidden"
         animate="visible"
         variants={slideUp}
-        className="w-full max-w-2xl bg-white shadow-xl border border-slate-200 rounded-2xl p-8 md:p-10"
+        className="w-full max-w-2xl bg-white shadow-xl border border-slate-200 rounded-2xl p-6 md:p-10"
       >
         {/* Header & Progress */}
         <div className="mb-10">
@@ -340,7 +340,7 @@ const Onboarding = ({ onComplete }) => {
                   animate="visible"
                   className="space-y-6"
                 >
-                  <div className="grid grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <motion.div variants={fadeIn} className="group space-y-1.5">
                       <label
                         htmlFor="onboarding-first-name"
@@ -492,7 +492,7 @@ const Onboarding = ({ onComplete }) => {
                   animate="visible"
                   className="space-y-5"
                 >
-                  <div className="grid grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <motion.div variants={fadeIn} className="group space-y-1.5">
                       <label
                         htmlFor="onboarding-smoking-status"
@@ -522,7 +522,7 @@ const Onboarding = ({ onComplete }) => {
                     </motion.div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <motion.div variants={fadeIn} className="group space-y-1.5">
                       <label
                         htmlFor="onboarding-physical-activity"
@@ -567,9 +567,10 @@ const Onboarding = ({ onComplete }) => {
                           className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
                         >
                           <option value="">Select...</option>
-                          <option value="Current">Current</option>
-                          <option value="Former">Former</option>
-                          <option value="Never">Never</option>
+                          <option value="None">None</option>
+                          <option value="Light">Light</option>
+                          <option value="Moderate">Moderate</option>
+                          <option value="Heavy">Heavy</option>
                           <option value="Unknown">Unknown</option>
                         </select>
                         <ChevronRight

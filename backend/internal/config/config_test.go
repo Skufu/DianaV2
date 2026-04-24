@@ -214,11 +214,11 @@ t.Errorf("FBSDiabetic = %v, want 126", cfg.ClinicalThresholds.FBSDiabetic)
 	if cfg.ClinicalThresholds.BPDiaNormal != 80 {
 		t.Errorf("BPDiaNormal = %d, want 80", cfg.ClinicalThresholds.BPDiaNormal)
 	}
-	if cfg.ClinicalThresholds.BMINormal != 23.0 {
-		t.Errorf("BMINormal = %v, want 23.0", cfg.ClinicalThresholds.BMINormal)
+	if cfg.ClinicalThresholds.BMINormal != 18.5 {
+		t.Errorf("BMINormal = %v, want 18.5", cfg.ClinicalThresholds.BMINormal)
 	}
-	if cfg.ClinicalThresholds.BMIOverweight != 25.0 {
-		t.Errorf("BMIOverweight = %v, want 25.0", cfg.ClinicalThresholds.BMIOverweight)
+	if cfg.ClinicalThresholds.BMIOverweight != 23.0 {
+		t.Errorf("BMIOverweight = %v, want 23.0", cfg.ClinicalThresholds.BMIOverweight)
 	}
 	if cfg.ClinicalThresholds.BMIObese != 25.0 {
 		t.Errorf("BMIObese = %v, want 25.0", cfg.ClinicalThresholds.BMIObese)

@@ -317,7 +317,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
         transition={shouldReduceMotion ? { duration: 0 } : undefined}
         className="relative z-10 w-full max-w-xl"
       >
-        <div className="bg-white rounded-[32px] p-12 text-center shadow-2xl">
+        <div className="bg-white rounded-[32px] p-8 sm:p-12 text-center shadow-2xl">
           <div className="relative inline-block mb-6">
             <div className="w-24 h-24 border-[6px] border-rose-100 border-t-rose-400 rounded-full animate-spin motion-reduce:animate-none" />
             <Heart
@@ -365,7 +365,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
           >
             {/* Header */}
             <div
-              className={`bg-gradient-to-br ${colors.gradient} p-8 text-white relative shrink-0`}
+              className={`bg-gradient-to-br ${colors.gradient} px-6 py-5 sm:p-8 text-white relative shrink-0`}
             >
               <motion.button
                 whileHover={
@@ -376,29 +376,26 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                 whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
                 onClick={onClose}
                 aria-label="Close results"
-                className="absolute top-6 right-6 p-2.5 rounded-full bg-white/20 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-white/10"
+                className="absolute top-5 sm:top-6 right-5 sm:right-6 p-2 rounded-full bg-white/20 transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-white/10"
               >
-                <X size={20} />
+                <X size={18} />
               </motion.button>
 
-              <div className="flex items-center gap-3 mb-2 opacity-90">
-                <Sparkles size={24} />
-                <span className="text-sm font-semibold uppercase tracking-widest leading-none mt-1">
-                  AI-Assisted Results
-                </span>
-              </div>
-              <h2 className="text-[34px] font-medium tracking-tight mb-2 leading-tight">
-                Metabolic Risk Assessment
-              </h2>
-              {isDoctorModel && (
-                <div className="text-sm text-white/80 font-medium">
-                  <span className="uppercase tracking-wide opacity-80">Model:</span> {modelLabel}
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 mb-1 opacity-90">
+                  <Sparkles size={16} />
+                  <span className="text-sm font-medium tracking-wide">
+                    {isDoctorModel ? 'Clinical Screening' : 'AI Analysis'}
+                  </span>
                 </div>
-              )}
+                <h2 className="text-[22px] sm:text-[32px] font-bold tracking-tight pr-10">
+                  Assessment Result
+                </h2>
+              </div>
             </div>
 
             {/* Scrollable Content Body */}
-            <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-8 w-full">
+            <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-6 sm:py-8 w-full">
               <AnimatePresence mode="wait">
                 {!showContent ? (
                   <motion.div
@@ -425,37 +422,34 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                     <motion.div
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`${colors.bg} rounded-3xl p-6 sm:p-7 shadow-sm border ${colors.border}`}
+                      className={`${colors.bg} rounded-3xl p-6 sm:p-8 shadow-sm`}
                     >
                       {hasPredictedStatus && (
-                        <div className="mb-3">
-                          <span className="inline-block px-4 py-1.5 rounded-full bg-slate-800 text-white text-[15px] font-semibold tracking-wide">
-                            Predicted Status: {predicted_status}
+                        <div className="mb-4">
+                          <span className="inline-block px-3 py-1 rounded-[10px] bg-slate-800/5 text-slate-800 text-[13px] font-bold uppercase tracking-wider">
+                            Status: {predicted_status}
                           </span>
                         </div>
                       )}
-                      <div className="flex items-baseline gap-3 mb-4 flex-wrap">
-                        <span className="text-lg font-medium text-slate-700">
-                          Risk Probability:
-                        </span>
+                      
+                      <div className="flex items-baseline gap-2 mb-3">
                         {hasAtRiskProbability ? (
-                          <span
-                            className={`text-[56px] leading-[1.1] font-light tracking-tighter ${colors.text}`}
-                          >
+                          <span className={`text-[64px] leading-none font-bold tracking-tighter ${colors.text}`}>
                             {probabilityText}
                           </span>
                         ) : (
-                          <span className={`text-[36px] leading-[1.1] font-light ${colors.text}`}>
+                          <span className={`text-[48px] leading-none font-bold ${colors.text}`}>
                             {probabilityText}
                           </span>
                         )}
+                        <span className="text-sm uppercase tracking-wider font-bold text-slate-500">
+                          Risk
+                        </span>
                       </div>
 
-                      <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-white">
-                        <p className="text-slate-700 leading-relaxed font-medium text-[16px]">
-                          {colors.advice}
-                        </p>
-                      </div>
+                      <p className="text-slate-700 leading-relaxed font-medium text-[15px] pt-3 border-t border-slate-900/10">
+                        {colors.advice}
+                      </p>
                     </motion.div>
 
                     {/* Section 2: Biomarker Snapshot (Understanding) */}
@@ -463,7 +457,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                       <motion.div
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100"
+                        className="bg-white rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-100"
                       >
                         <h3 className="text-[19px] font-semibold text-slate-800 mb-4 flex items-center gap-2">
                           <Activity className="text-indigo-400" size={20} />
@@ -497,7 +491,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                     <motion.div
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100"
+                      className="bg-white rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-100"
                     >
                       <h3 className="text-[19px] font-semibold text-slate-800 mb-5 flex items-center gap-2">
                         <Leaf className="text-teal-500" size={20} />
@@ -560,7 +554,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                       <motion.div
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-amber-50/50 rounded-3xl p-6 border border-amber-200"
+                        className="bg-amber-50/50 rounded-3xl p-5 sm:p-6 border border-amber-200"
                       >
                         <h3 className="text-base font-semibold text-amber-800 mb-2 flex items-center gap-2">
                           <AlertCircle size={20} className="text-amber-500" />
@@ -589,7 +583,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                     <motion.div
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-100"
+                      className="bg-white rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-100"
                     >
                       <h3 className="text-[19px] font-semibold text-slate-800 mb-5 flex items-center gap-2">
                         <ShieldCheck size={20} className="text-indigo-500" />
@@ -611,7 +605,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                     </motion.div>
 
                     {/* Clinical Guardrails (Footer Context) */}
-                    <div className="bg-slate-100/70 border border-slate-200/50 rounded-2xl p-5 mb-4">
+                    <div className="bg-slate-100/70 border border-slate-200/50 rounded-2xl p-4 sm:p-5 mb-4">
                       <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-widest mb-2">
                         Clinical Guardrails
                       </h4>
@@ -633,14 +627,14 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                   ? { duration: 0 }
                   : { type: 'spring', stiffness: 260, damping: 24 }
               }
-              className="shrink-0 border-t border-slate-200/70 bg-white/95 px-6 sm:px-8 py-5 backdrop-blur-md rounded-b-[32px] pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+              className="shrink-0 border-t border-slate-200/70 bg-white/95 px-5 sm:px-8 py-4 backdrop-blur-md rounded-b-[32px] pb-[calc(env(safe-area-inset-bottom)+1rem)]"
             >
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+              <div className="flex items-center gap-3 w-full">
                 <motion.button
                   whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
                   whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
                   onClick={onClose}
-                  className="w-full py-3.5 text-slate-500 font-semibold text-[16px] rounded-xl hover:bg-slate-100 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+                  className="px-5 py-3.5 text-slate-500 font-semibold text-[15px] rounded-xl hover:bg-slate-100 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                 >
                   Close
                 </motion.button>
@@ -648,7 +642,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                   whileHover={shouldReduceMotion ? undefined : { scale: 1.02 }}
                   whileTap={shouldReduceMotion ? undefined : { scale: 0.98 }}
                   onClick={onConfirm}
-                  className="w-full py-3.5 bg-slate-800 text-white font-semibold text-[16px] rounded-xl shadow-lg shadow-slate-800/10 hover:bg-slate-700 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+                  className="flex-1 py-3.5 bg-slate-800 text-white font-semibold text-[15px] rounded-xl shadow-lg shadow-slate-800/10 hover:bg-slate-700 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                 >
                   Save My Results
                 </motion.button>

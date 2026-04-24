@@ -220,7 +220,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
   return (
     <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-8">
       {/* HEADER TILE */}
-      <motion.div className="bg-gradient-to-br from-diana-forest to-[#1A365D] rounded-3xl p-8 md:p-10 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between">
+      <motion.div className="bg-gradient-to-br from-diana-forest to-[#1A365D] rounded-3xl p-6 md:p-10 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between">
         <div className="relative z-10 max-w-xl">
           <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3">Health Trends</h1>
           <p className="text-blue-100 text-lg leading-relaxed">
@@ -296,7 +296,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
           {/* RISK SCORE CHART */}
           <motion.div
             variants={fadeIn}
-            className="p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-slate-100"
+            className="p-5 sm:p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-slate-100"
           >
             <h2 className="text-xl font-serif font-bold text-slate-900 mb-6">Risk Score History</h2>
             <div className="w-full overflow-x-auto pb-4">
@@ -397,7 +397,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
           {/* KEY BIOMARKER TRENDS */}
           <motion.div
             variants={fadeIn}
-            className="p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-slate-100"
+            className="p-5 sm:p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-slate-100"
           >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <h2 className="text-xl font-serif font-bold text-slate-900">Key Biomarker Trends</h2>
