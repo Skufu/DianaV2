@@ -394,7 +394,7 @@ The integrated DIANA platform was subjected to comprehensive functional testing 
 
 ### 4.7.1 Backend API and Data Access Layer
 
-The Go backend test suite (22 tests) validated the repository pattern, SQLC query logic, and JWT-based authentication middleware. All primary business logic services, including PDF report generation and biomarker validation, achieved 100% pass rates on functional unit tests.
+The Go backend test suite, comprising 117 unit tests across 10 packages, validated the full application stack including configuration loading, HTTP handlers, authentication middleware, ML integration, data models, PDF report generation, business logic services, and the SQLC-based data access layer. All packages achieved 100% pass rates on functional unit tests.
 
 ### 4.7.2 ML Service and Prediction Integrity
 
