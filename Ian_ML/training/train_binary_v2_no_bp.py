@@ -908,6 +908,33 @@ def train_serving_kmeans(
     features: list[str],
     diabetes_labels: np.ndarray | None = None,
 ) -> dict[int, dict[str, object]]:
+    """
+    Train K-Means clustering on at-risk patients for Ahlqvist subtype classification.
+
+    Args:
+        X: Feature matrix (n_samples, n_features)
+        y: Binary target array (n_samples,) where 1 = at-risk
+        features: List of feature names corresponding to X columns
+        diabetes_labels: Optional original 3-class labels for diabetic rate analysis
+
+    Returns:
+        Dictionary mapping cluster IDs to subtype profile dictionaries
+
+    Raises:
+        ValueError: If input array shapes are inconsistent or empty
+    """
+    # Input validation
+    if X.shape[0] == 0:
+        raise ValueError("X cannot be empty")
+    if len(y) == 0:
+        raise ValueError("y cannot be empty")
+    if X.shape[0] != len(y):
+        raise ValueError(f"X and y must have same number of samples: {X.shape[0]} != {len(y)}")
+    if diabetes_labels is not None and len(diabetes_labels) != len(y):
+        raise ValueError(
+            f"diabetes_labels must have same length as y: {len(diabetes_labels)} != {len(y)}"
+        )
+
     # Use base clinical features for clustering (same as clinical_3class)
     # IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
     cluster_features = CLUSTER_FEATURES
