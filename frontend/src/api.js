@@ -216,6 +216,7 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
     method: options.method || 'GET',
     headers,
     credentials: 'include',
+    signal: options.signal,
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 

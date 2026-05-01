@@ -25,6 +25,8 @@ const lifestyleOptions = ['Unknown', 'Never', 'Former', 'Current'];
 const activityOptions = ['Unknown', 'Sedentary', 'Moderate', 'Active'];
 const alcoholOptions = ['Unknown', 'None', 'Light', 'Moderate', 'Heavy'];
 const DOCTOR_LOCKED_MODEL_TYPE = 'binary_v2_no_bp';
+const COHORT_MIN_AGE = 45;
+const COHORT_MAX_AGE = 60;
 
 const ClinicalExplainability = ({ userRole = 'admin' }) => {
   const isDoctor = userRole === 'doctor';
@@ -46,27 +48,26 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
 
   const patientPayload = useMemo(() => {
     if (!submittedData) return null;
+    const submittedModelType = isDoctor ? DOCTOR_LOCKED_MODEL_TYPE : submittedData.modelType;
     const payload = {
       age: Number(submittedData.age),
       bmi: Number(submittedData.bmi),
       triglycerides: Number(submittedData.triglycerides),
       ldl: Number(submittedData.ldl),
       hdl: Number(submittedData.hdl),
-      systolic: submittedData.systolic ? Number(submittedData.systolic) : undefined,
-      diastolic: submittedData.diastolic ? Number(submittedData.diastolic) : undefined,
       waist_circumference: submittedData.waist_circumference ? Number(submittedData.waist_circumference) : undefined,
       smoking: submittedData.smoking,
       activity: submittedData.activity,
       alcohol: submittedData.alcohol,
-      model_type: isDoctor ? DOCTOR_LOCKED_MODEL_TYPE : submittedData.modelType,
+      model_type: submittedModelType,
     };
 
-    if (submittedData.modelType === 'ada') {
+    if (submittedModelType === 'ada') {
       payload.hba1c = Number(submittedData.hba1c);
       payload.fbs = Number(submittedData.fbs);
     }
 
-    if (submittedData.modelType === 'binary_v2_bp') {
+    if (submittedModelType === 'binary_v2_bp') {
       payload.systolic = Number(submittedData.systolic);
       payload.diastolic = Number(submittedData.diastolic);
     }
@@ -103,14 +104,14 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
     }
 
     const age = Number(formData.age);
-    if (!Number.isFinite(age) || age < 45) {
-      setError('Age must be 45+ to match the DIANA menopausal cohort.');
+    if (!Number.isFinite(age) || age < COHORT_MIN_AGE || age > COHORT_MAX_AGE) {
+      setError('Age must be between 45-60 years to match the DIANA menopausal cohort.');
       return;
     }
 
     setSubmittedData({
       ...formData,
-      modelType: isDoctor ? DOCTOR_LOCKED_MODEL_TYPE : formData.modelType,
+      modelType: activeModelType,
     });
   };
 
@@ -213,6 +214,7 @@ const ClinicalExplainability = ({ userRole = 'admin' }) => {
               value={formData.age}
               onChange={handleChange}
               min="45"
+              max="60"
               className="w-full rounded-xl border border-slate-200 px-3 py-2 text-slate-700"
             />
           </div>

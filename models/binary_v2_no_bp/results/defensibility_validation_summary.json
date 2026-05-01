@@ -1,0 +1,31 @@
+{
+  "generated_at_utc": "2026-04-28T08:00:50.117265+00:00",
+  "status": "PASS",
+  "checks": {
+    "required_artifacts_found": [
+      "best_model_report.json",
+      "logo_fold_metrics.csv",
+      "threshold.json",
+      "calibration_report.json",
+      "cluster_analysis.json",
+      "cluster_profiles.csv",
+      "benchmark_comparison.json",
+      "inference_benchmark.json"
+    ],
+    "required_artifacts_missing": [],
+    "report_sanity_issues": [],
+    "threshold_consistency_issues": [],
+    "logo_fold_metrics_issues": [],
+    "clustering_consistency_issues": [],
+    "headline_metrics": {
+      "best_model": "Logistic Regression",
+      "auc_roc": 0.7267288870780175,
+      "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
+      "decision_thresholds": {
+        "at_risk": 0.4783333333333332
+      }
+    }
+  },
+  "issues": [],
+  "note": "This verifier checks for scientific traceability of existing artifacts. It does not compute new evaluation metrics."
+}

@@ -36,7 +36,7 @@ def predictor():
 
 @pytest.fixture(scope="module")
 def threshold():
-    path = _MODELS_DIR / "threshold.json"
+    path = _MODELS_DIR / "results" / "threshold.json"
     if path.exists():
         return json.load(open(path))["at_risk"]
     return 0.5

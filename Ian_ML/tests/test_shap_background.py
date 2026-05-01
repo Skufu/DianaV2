@@ -197,6 +197,7 @@ class TestSHAPExplainEndpoint:
         """Response should include shap_metadata with background_source."""
         with mock.patch('Ian_ML.service.server.get_clinical_predictor_for') as mock_get:
             mock_predictor = mock.MagicMock()
+            mock_predictor.validate_input.return_value = (True, [])
             mock_predictor.predict.return_value = {
                 "success": True,
                 "predicted_status": "At-Risk",
@@ -246,6 +247,7 @@ class TestSHAPExplainEndpoint:
         """When saved background exists, should use 'saved_training_data'."""
         with mock.patch('Ian_ML.service.server.get_clinical_predictor_for') as mock_get:
             mock_predictor = mock.MagicMock()
+            mock_predictor.validate_input.return_value = (True, [])
             mock_predictor.predict.return_value = {
                 "success": True,
                 "predicted_status": "At-Risk",
@@ -303,6 +305,7 @@ class TestSHAPExplainEndpoint:
         """When no saved background, should use 'patient_data_fallback'."""
         with mock.patch('Ian_ML.service.server.get_clinical_predictor_for') as mock_get:
             mock_predictor = mock.MagicMock()
+            mock_predictor.validate_input.return_value = (True, [])
             mock_predictor.predict.return_value = {
                 "success": True,
                 "predicted_status": "At-Risk",
@@ -358,6 +361,7 @@ class TestSHAPExplainEndpoint:
         """/predict/explain should explicitly route canonical screening model IDs through clinical predictor."""
         with mock.patch('Ian_ML.service.server.get_clinical_predictor_for') as mock_get:
             mock_predictor = mock.MagicMock()
+            mock_predictor.validate_input.return_value = (True, [])
             mock_predictor.predict.return_value = {
                 "success": True,
                 "predicted_status": "At-Risk",
@@ -367,6 +371,7 @@ class TestSHAPExplainEndpoint:
             mock_predictor._build_feature_vector.return_value = np.array([[1.0, 2.0, 3.0]])
             mock_predictor._transform_features.return_value = np.array([[1.0, 2.0, 3.0]])
             mock_predictor.classifier = mock.MagicMock()
+            mock_predictor.get_shap_background.return_value = None
             mock_get.return_value = mock_predictor
 
             with mock.patch('Ian_ML.service.server.SHAPExplainer') as mock_explainer_cls:
@@ -396,4 +401,52 @@ class TestSHAPExplainEndpoint:
                 mock_get.assert_called_once_with(model_type)
                 data = response.get_json()
                 assert data["model_type"] == model_type
-                assert data["shap_metadata"]["explainer_type"] == "tree"
+                assert data["shap_metadata"]["explainer_type"] == "linear"
+                assert data["shap_metadata"]["explanation_available"] is True
+
+    def test_explain_returns_explicit_unavailable_payload_for_empty_explanation(self, client):
+        """Empty SHAP explanations should not be surfaced as zero-valued attributions."""
+        with mock.patch('Ian_ML.service.server.get_clinical_predictor_for') as mock_get:
+            mock_predictor = mock.MagicMock()
+            mock_predictor.validate_input.return_value = (True, [])
+            mock_predictor.predict.return_value = {
+                "success": True,
+                "predicted_status": "At-Risk",
+                "risk_score": 70,
+            }
+            mock_predictor.features = ["a", "b", "c"]
+            mock_predictor._build_feature_vector.return_value = np.array([[1.0, 2.0, 3.0]])
+            mock_predictor._transform_features.return_value = np.array([[1.0, 2.0, 3.0]])
+            mock_predictor.classifier = mock.MagicMock()
+            mock_predictor.get_shap_background.return_value = None
+            mock_get.return_value = mock_predictor
+
+            with mock.patch('Ian_ML.service.server.SHAPExplainer') as mock_explainer_cls:
+                mock_explainer = mock.MagicMock()
+                mock_explainer.is_available = True
+                mock_explainer.explain.return_value = {
+                    "base_value": 0.0,
+                    "shap_values": [0.0, 0.0, 0.0],
+                    "feature_values": [0.0, 0.0, 0.0],
+                    "feature_names": ["a", "b", "c"],
+                    "contributions": [],
+                    "error": "SHAP not available",
+                }
+                mock_explainer_cls.return_value = mock_explainer
+
+                response = client.post(
+                    '/predict/explain?model_type=binary_v2_no_bp',
+                    json={
+                        "bmi": 28,
+                        "triglycerides": 150,
+                        "ldl": 120,
+                        "hdl": 45,
+                        "age": 55,
+                    }
+                )
+
+                assert response.status_code == 200
+                data = response.get_json()
+                assert data["explanation"]["available"] is False
+                assert data["shap_metadata"]["explanation_available"] is False
+                assert data["shap_metadata"]["fallback_reason"] == "SHAP not available"

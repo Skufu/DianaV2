@@ -36,7 +36,7 @@ cd "$PROJECT_DIR"
 if [ ! -d "data/nhanes/raw" ]; then
     echo -e "${RED}ERROR: Run this script from the project root directory${NC}"
     echo "  cd /path/to/DianaV2"
-    echo "  ./scripts/dev/retrain-binary_v2_no_bp.sh"
+    echo "  ./scripts/dev/retrain-binary.sh"
     exit 1
 fi
 

@@ -3,8 +3,13 @@ import numpy as np
 from pathlib import Path
 from ..service.predict import ClinicalPredictor
 
+try:
+    from Ian_ML.common.paths import MODELS_ROOT
+except ImportError:
+    from common.paths import MODELS_ROOT
+
 def run_audit():
-    p = ClinicalPredictor(models_dir=Path('../models/binary_v2_no_bp'))
+    p = ClinicalPredictor(models_dir=MODELS_ROOT / 'binary_v2_no_bp')
     
     print("="*60)
     print("DIANA ML PIPELINE EDGE-CASE AUDIT")
