@@ -309,7 +309,7 @@ const App = () => {
         // Admin Layout - Clean & Distinct
         <motion.div
           key="admin"
-          className="flex min-h-screen relative overflow-hidden bg-diana-stone"
+          className="flex flex-col min-h-screen relative bg-diana-stone overflow-x-hidden"
         >
           {/* Admin Mobile Header - Animated */}
           <AnimatePresence>
@@ -317,6 +317,7 @@ const App = () => {
               initial={{ y: isReduced ? 0 : -16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: isReduced ? 0 : 0.2 }}
+              className="w-full z-40 sticky top-0 lg:hidden"
             >
               <AdminMobileHeader
                 activeView={adminView}
@@ -357,7 +358,7 @@ const App = () => {
             </motion.div>
           </AnimatePresence>
 
-          <main className={`relative z-10 flex-1 transition-all duration-300 lg:ml-72 p-6 lg:p-8`}>
+          <main className={`relative z-10 flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'} p-6 lg:p-8`}>
             <ErrorBoundary section={adminView}>
               <AnimatePresence mode="wait">
                 <motion.div
@@ -427,7 +428,7 @@ const App = () => {
           </AnimatePresence>
 
           <main
-            className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? 'lg:ml-72 p-4 sm:p-6 lg:p-8' : ''}`}
+            className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? `${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'} p-4 sm:p-6 lg:p-8` : ''}`}
           >
             <ErrorBoundary section={activeTab}>
               <Suspense fallback={<LoadingSkeleton />}>

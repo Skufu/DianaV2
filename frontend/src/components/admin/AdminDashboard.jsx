@@ -4,13 +4,11 @@ import Insights from '../insights/Insights';
 import { useAdminDashboard, useClinicComparison, useUserProfile } from '../../api';
 import { shouldDisableHeavyEffects } from '../../utils/deviceCapabilities';
 import {
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -47,9 +45,9 @@ const ModelTraceability = lazy(() => import('./ModelTraceability'));
 const AssessmentForm = lazy(() => import('../user/AssessmentForm'));
 const AuthEventLogViewer = lazy(() => import('./AuthEventLogViewer'));
 const ModelRationale = lazy(() => import('./ModelRationale'));
-const ClinicalExplainability = lazy(() => import('./ClinicalExplainability'));
 
-const COLORS = ['#7C3AED', '#06B6D4', '#10B981', '#F59E0B', '#F43F5E', '#6366F1'];
+
+const PREMIUM_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#06B6D4', '#F43F5E'];
 
 // activeView and setActiveView are now passed from App.jsx
 // Navigation is handled by AdminSidebar
@@ -72,7 +70,7 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
   }
 
   const ADMIN_ONLY_VIEWS = ['overview', 'users', 'audit', 'auth-events', 'models'];
-  const DOCTOR_ALLOWED_VIEWS = ['assessment', 'explainability', 'rationale'];
+  const DOCTOR_ALLOWED_VIEWS = ['assessment', 'rationale'];
 
   const isAdminViewAllowed = userRole !== 'admin' || ADMIN_ONLY_VIEWS.includes(activeView);
   const isDoctorViewAllowed = userRole !== 'doctor' || DOCTOR_ALLOWED_VIEWS.includes(activeView);
@@ -107,12 +105,7 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
             <ModelRationale />
           </Suspense>
         );
-      case 'explainability':
-        return (
-          <Suspense fallback={<LoadingSpinner />}>
-            <ClinicalExplainability userRole={userRole} />
-          </Suspense>
-        );
+
       case 'users':
         return (
           <Suspense fallback={<LoadingSpinner />}>
@@ -186,8 +179,8 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
             className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center">
-                <Users className="text-violet-600" size={24} />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-purple-500/20 flex items-center justify-center">
+                <Users className="text-white" size={24} />
               </div>
             </div>
             <h3 className="text-3xl font-bold text-slate-900">{stats.total_users || 0}</h3>
@@ -206,8 +199,8 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
             className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center">
-                <Activity className="text-teal-600" size={24} />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg shadow-blue-500/20 flex items-center justify-center">
+                <Activity className="text-white" size={24} />
               </div>
             </div>
             <h3 className="text-3xl font-bold text-slate-900">{stats.total_patients || 0}</h3>
@@ -223,8 +216,8 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
             className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-cyan-100 flex items-center justify-center">
-                <TrendingUp className="text-cyan-600" size={24} />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-teal-500/20 flex items-center justify-center">
+                <TrendingUp className="text-white" size={24} />
               </div>
             </div>
             <h3 className="text-3xl font-bold text-slate-900">{stats.total_assessments || 0}</h3>
@@ -243,8 +236,8 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
             className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center">
-                <AlertTriangle className="text-rose-600" size={24} />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-400 to-red-500 shadow-lg shadow-rose-500/20 flex items-center justify-center">
+                <AlertTriangle className="text-white" size={24} />
               </div>
             </div>
             <h3 className="text-3xl font-bold text-slate-900">{stats.high_risk_count || 0}</h3>
@@ -275,20 +268,27 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
                     nameKey="cluster"
                     cx="50%"
                     cy="50%"
+                    innerRadius={60}
                     outerRadius={100}
-                    label={({ cluster, count }) => `${cluster}: ${count}`}
+                    paddingAngle={3}
+                    cornerRadius={6}
+                    stroke="none"
+                    label={({ cluster, count }) => `${cluster} (${count})`}
+                    labelLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
                     isAnimationActive={!shouldDisableHeavyEffects()}
                   >
                     {clusterDist.map(c => (
-                      <Cell key={c.cluster} fill={COLORS[clusterDist.indexOf(c) % COLORS.length]} />
+                      <Cell key={c.cluster} fill={PREMIUM_COLORS[clusterDist.indexOf(c) % PREMIUM_COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#1B2559',
-                      border: 'none',
+                      backgroundColor: 'rgba(27, 37, 89, 0.9)',
+                      backdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(255,255,255,0.1)',
                       borderRadius: '12px',
                       color: '#fff',
+                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
                     }}
                     itemStyle={{ color: '#fff' }}
                   />
@@ -313,36 +313,52 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
             <h3 className="text-2xl font-bold text-slate-900 mb-6">Biomarker Trends</h3>
             <ResponsiveContainer width="100%" height={300}>
               {trends && trends.length > 0 ? (
-                <LineChart data={trends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="label" stroke="#64748b" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#64748b" />
+                <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#F43F5E" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorBmi" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#fff',
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      backdropFilter: 'blur(8px)',
                       border: '1px solid #e2e8f0',
                       borderRadius: '12px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                       color: '#0f172a',
                     }}
                   />
-                  <Legend />
-                  <Line
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                  <Area
                     type="monotone"
                     dataKey="risk_score"
                     name="Avg Risk Score"
                     stroke="#F43F5E"
-                    strokeWidth={2}
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorRisk)"
                     isAnimationActive={!shouldDisableHeavyEffects()}
                   />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="bmi"
                     name="Avg BMI"
                     stroke="#10B981"
-                    strokeWidth={2}
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorBmi)"
                     isAnimationActive={!shouldDisableHeavyEffects()}
                   />
-                </LineChart>
+                </AreaChart>
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-slate-400">
                   No trend data available
@@ -385,7 +401,7 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
                     <td className="py-3 px-4 font-medium flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: COLORS[clinics.indexOf(clinic) % COLORS.length] }}
+                        style={{ backgroundColor: PREMIUM_COLORS[clinics.indexOf(clinic) % PREMIUM_COLORS.length] }}
                       />
                       {clinic.clinic_name}
                     </td>

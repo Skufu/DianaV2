@@ -339,8 +339,8 @@ const SHAPExplanation = ({
                 <p className="text-sm text-indigo-700">
                   SHAP values show how each feature contributes to the prediction in a standardized
                   feature space (mean=0, std=1).
-                  <span className="text-emerald-600 font-medium"> Green bars</span> increase risk,
-                  <span className="text-rose-600 font-medium"> red bars</span> decrease risk.
+                  <span className="text-rose-600 font-medium"> Red bars</span> increase risk,
+                  <span className="text-emerald-600 font-medium"> green bars</span> decrease risk.
                 </p>
               </div>
 
@@ -376,7 +376,7 @@ const SHAPExplanation = ({
                     <ReferenceLine x={0} stroke="#94a3b8" strokeDasharray="3 3" />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                       {chartData.map(entry => (
-                        <Cell key={entry.feature} fill={entry.value >= 0 ? '#10b981' : '#f43f5e'} />
+                        <Cell key={entry.feature} fill={entry.value >= 0 ? '#f43f5e' : '#10b981'} />
                       ))}
                     </Bar>
                   </BarChart>
