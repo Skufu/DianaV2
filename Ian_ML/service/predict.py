@@ -924,7 +924,7 @@ class ClinicalPredictor:
             predicted_status = status_map.get(predicted_class, "Unknown")
             # Apply metabolic syndrome boost for high-risk profiles
             original_prob = at_risk_prob
-            at_risk_prob, metabolic_syndrome_info = self._apply_metabolic_syndrome_boost_with_info(at_risk_prob, data_work)
+            at_risk_prob, metabolic_syndrome_info = self._apply_metabolic_syndrome_boost_with_info(at_risk_prob, data)
             diabetes_prob = at_risk_prob  # Keep probability consistent
 
             # Recalculate predicted_status if boost changed the probability across threshold

@@ -63,6 +63,37 @@ const resolveExplainModelType = modelType => {
   return 'binary_v2_no_bp';
 };
 
+const buildExplainRequestPayload = (patientData, resolvedModelType) => {
+  const payload = {
+    ...patientData,
+    model_type: resolvedModelType,
+  };
+
+  if (resolvedModelType === 'binary_v2_no_bp') {
+    delete payload.hba1c;
+    delete payload.fbs;
+    delete payload.systolic;
+    delete payload.diastolic;
+    delete payload.family_history_diabetes;
+  }
+
+  if (resolvedModelType === 'binary_v2_bp') {
+    delete payload.hba1c;
+    delete payload.fbs;
+  }
+
+  if (resolvedModelType === 'ada') {
+    delete payload.systolic;
+    delete payload.diastolic;
+    delete payload.waist_circumference;
+    delete payload.family_history_diabetes;
+  }
+
+  return Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined && value !== '')
+  );
+};
+
 const EXPLAINABILITY_UNAVAILABLE_PATTERNS = [
   /shap/i,
   /explainer/i,
@@ -110,13 +141,16 @@ const SHAPExplanation = ({
 
     setLoading(true);
     setError(null);
+    setRiskCluster(null);
+    setClusterInfo(null);
 
     try {
+      const requestPayload = buildExplainRequestPayload(patientData, resolvedModelType);
       const data = await mlFetchJson(
         `/predict/explain?model_type=${resolvedModelType}&format=full&include_plot=waterfall`,
         {
           method: 'POST',
-          body: patientData,
+          body: requestPayload,
           signal: abortControllerRef.current.signal,
         }
       );
@@ -127,6 +161,9 @@ const SHAPExplanation = ({
 
       const fallbackReason =
         explanationPayload?.reason ||
+        (isExplainabilityUnavailableMessage(explanationPayload?.error)
+          ? explanationPayload.error
+          : null) ||
         data?.shap_metadata?.fallback_reason ||
         (data?.shap_metadata?.explanation_available === false ? 'explainability_unavailable' : null);
 

@@ -725,9 +725,11 @@ def predict_explain():
         
         if not data:
             return jsonify({"error": "No data provided"}), 400
+        if model_type not in ('binary_v2_no_bp', 'binary_v2_bp', 'clinical', 'ada'):
+            return jsonify({"error": f"Unsupported model_type: {model_type}"}), 400
         
         # Initialize provenance metadata
-        explainer_type = "tree"
+        explainer_type = None
         bg_source = "none"
         background = None
         
@@ -750,6 +752,14 @@ def predict_explain():
                 "waist_circumference": data.get("waist_circumference"),
                 "family_history_diabetes": data.get("family_history_diabetes"),
             }
+
+            valid, validation_errors = clin_predictor.validate_input(patient_data)
+            if not valid:
+                return jsonify({
+                    "error": "Invalid clinical explainability payload",
+                    "details": validation_errors,
+                    "model_type": model_type,
+                }), 400
             
             # Make prediction
             result = clin_predictor.predict(patient_data)
@@ -761,30 +771,37 @@ def predict_explain():
             # preprocessing (Bug 9 fix).
             inner_model = _unwrap_pipeline(clin_predictor.classifier)
             model_id = f"clinical_{id(inner_model)}"
+
+            bg_artifact = clin_predictor.get_shap_background()
+            if bg_artifact is not None:
+                bg_source = "saved_training_data"
+                background = bg_artifact["background"]
+                logger.info("Using saved SHAP background from training (%d samples)", len(background))
             
-            # Try LinearExplainer first (correct for LogisticRegression)
-            cache_key = _get_shap_cache_key(model_id, "linear", "none")
+            # Try LinearExplainer first (correct for LogisticRegression).
+            # Pass the saved preprocessed training background when available so
+            # the baseline reflects the model's training distribution.
+            cache_key = _get_shap_cache_key(model_id, "linear", bg_source)
             shap_explainer = _shap_explainer_cache.get(cache_key)
             
             if shap_explainer is None:
-                shap_explainer = SHAPExplainer(inner_model, model_type="linear")
+                shap_explainer = SHAPExplainer(
+                    inner_model,
+                    model_type="linear",
+                    background_data=background,
+                )
                 if shap_explainer.is_available:
                     _shap_explainer_cache[cache_key] = shap_explainer
                 else:
                     shap_explainer = None
+            if shap_explainer is not None and shap_explainer.is_available:
+                explainer_type = "linear"
             
             # Fallback to KernelExplainer with saved background
             if shap_explainer is None or not shap_explainer.is_available:
                 explainer_type = "kernel"
                 
-                # Try loading saved background (already preprocessed)
-                bg_artifact = clin_predictor.get_shap_background()
-                
-                if bg_artifact is not None:
-                    bg_source = "saved_training_data"
-                    background = bg_artifact["background"]
-                    logger.info("Using saved SHAP background from training (%d samples)", len(background))
-                else:
+                if background is None:
                     bg_source = "patient_data_fallback"
                     logger.warning(
                         "No saved SHAP background found - using patient data (less reliable). "
@@ -847,6 +864,7 @@ def predict_explain():
 
             if shap_explainer is None:
                 return jsonify({"error": "SHAP explainer unavailable"}), 503
+            explainer_type = "tree"
 
             features = np.array([[patient_data[f] for f in REQUIRED_FEATURES]], dtype=float)
             if ada_predictor.scaler is not None:
@@ -863,6 +881,29 @@ def predict_explain():
                     feature_values_override=features[0]
                 )
         
+        explanation_error = explanation.get("error") if isinstance(explanation, dict) else None
+        if explanation_error:
+            result['explanation'] = {
+                "available": False,
+                "reason": explanation_error,
+                "summary": "Detailed SHAP explainability is currently unavailable. Review risk outputs with clinical judgment.",
+                "limitations": [
+                    "Detailed SHAP feature attributions are unavailable for this assessment.",
+                    "This output supports screening discussion only and does not replace clinical judgment.",
+                    "No feature-level SHAP values are shown in fallback mode.",
+                ],
+                "feature_names": explanation.get("feature_names", []),
+            }
+            result['shap_metadata'] = {
+                "explainer_type": explainer_type,
+                "background_source": bg_source,
+                "background_samples": len(background) if background is not None else None,
+                "explanation_available": False,
+                "fallback_reason": explanation_error,
+            }
+            result['model_type'] = model_type
+            return jsonify(result)
+
         # Format response
         if output_format == 'clinician':
             if format_for_clinician is None:
@@ -882,6 +923,7 @@ def predict_explain():
             "explainer_type": explainer_type,
             "background_source": bg_source,
             "background_samples": len(background) if background is not None else None,
+            "explanation_available": True,
         }
         
         result['model_type'] = model_type
