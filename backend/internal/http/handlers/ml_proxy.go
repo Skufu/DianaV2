@@ -95,8 +95,13 @@ func (h *MLProxyHandler) doProxy(c *gin.Context, method, targetURL string, body 
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	// Copy response headers
+	// Copy response headers, but skip CORS headers since the Go CORS
+	// middleware already handles them. Duplicates cause browsers to reject
+	// the response ("multiple values" error).
 	for key, values := range resp.Header {
+		if strings.HasPrefix(strings.ToLower(key), "access-control-") {
+			continue
+		}
 		for _, value := range values {
 			c.Writer.Header().Add(key, value)
 		}

@@ -39,8 +39,7 @@ const AdminSidebar = ({
 
   // Doctor clinical workflow items - focused on patient care tools
   const doctorNavItems = [
-    { id: 'assessment', icon: FileText, label: 'Log Assessment' },
-    { id: 'explainability', icon: Brain, label: 'Clinical Explainability' },
+    { id: 'assessment', icon: FileText, label: 'Assessment & Explainability' },
     { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
   ];
 
@@ -130,14 +129,14 @@ const AdminSidebar = ({
                 />
               )}
 
-              <div className="relative z-20 flex items-center gap-4">
+              <div className="relative z-20 flex items-center gap-4 w-full min-w-0">
                 <Icon
                   size={20}
-                  className={
+                  className={`shrink-0 ${
                     isActive
                       ? 'text-indigo-600'
                       : 'text-slate-400 group-hover:text-slate-600 transition-colors'
-                  }
+                  }`}
                 />
                 <AnimatePresence mode="wait">
                   {!isCollapsed && (
@@ -146,7 +145,7 @@ const AdminSidebar = ({
                       initial="hidden"
                       animate="visible"
                       exit="exit"
-                      className="hidden lg:block font-medium whitespace-nowrap overflow-hidden"
+                      className="hidden lg:block font-medium truncate text-left w-full"
                     >
                       {item.label}
                     </motion.span>

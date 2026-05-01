@@ -137,3 +137,57 @@ describe('SHAPExplanation graceful fallback', () => {
     });
   });
 });
+
+describe('SHAPExplanation values and styling', () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders base value and final prediction correctly', async () => {
+    mlFetchJson.mockResolvedValueOnce({
+      prediction: 0.289,
+      explanation: {
+        base_value: -0.088,
+        shap_values: [
+          { feature: 'bmi', shap_value: 0.15, feature_value: 29 },
+          { feature: 'age', shap_value: -0.05, feature_value: 56 }
+        ],
+      },
+      shap_metadata: {
+        explanation_available: true,
+      },
+    });
+
+    render(<SHAPExplanation patientData={basePatientData} modelType="binary_v2_no_bp" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('-0.088')).toBeInTheDocument();
+      expect(screen.getByText('28.9%')).toBeInTheDocument();
+    });
+  });
+
+  it('renders correct descriptive text for SHAP colors', async () => {
+    mlFetchJson.mockResolvedValueOnce({
+      prediction: 0.289,
+      explanation: {
+        base_value: -0.088,
+        shap_values: [
+          { feature: 'bmi', shap_value: 0.15, feature_value: 29 },
+        ],
+      },
+      shap_metadata: {
+        explanation_available: true,
+      },
+    });
+
+    render(<SHAPExplanation patientData={basePatientData} modelType="binary_v2_no_bp" />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Red bars/i)).toBeInTheDocument();
+      expect(screen.getByText(/green bars/i)).toBeInTheDocument();
+    });
+    
+    expect(screen.getByText(/increase risk/i)).toBeInTheDocument();
+    expect(screen.getByText(/decrease risk/i)).toBeInTheDocument();
+  });
+});

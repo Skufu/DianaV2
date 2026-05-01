@@ -196,6 +196,13 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		analyticsHandler.Register(analyticsGroup)
 	}
 
+	// ML proxy routes (proxies to internal ML service, keeps API key server-side)
+	if cfg.ModelURL != "" {
+		mlGroup := protected.Group("/ml")
+		mlProxyHandler := handlers.NewMLProxyHandler(cfg.ModelURL, cfg.MLAPIKey, cfg.ModelTimeoutMS)
+		mlProxyHandler.Register(mlGroup)
+	}
+
 	// Clinics endpoints (for clinic members)
 	clinicsGroup := protected.Group("/clinics")
 	{

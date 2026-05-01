@@ -19,7 +19,6 @@ import (
 // It captures the actor (from JWT claims), action type, target entity, and request details.
 type AuditLogger struct {
 	store store.Store
-	wg    sync.WaitGroup
 }
 
 const AuditTargetIDContextKey = "audit_target_id"
@@ -29,10 +28,8 @@ func NewAuditLogger(st store.Store) *AuditLogger {
 	return &AuditLogger{store: st}
 }
 
-// Shutdown waits for all pending audit log goroutines to complete.
-// This should be called during graceful shutdown to ensure no audit events are lost.
+// Shutdown is kept for backward compatibility but is now a no-op since logging is synchronous.
 func (a *AuditLogger) Shutdown() {
-	a.wg.Wait()
 }
 
 // LogAction creates a middleware that logs the specified action after successful completion.
@@ -72,26 +69,21 @@ func (a *AuditLogger) LogAction(action, targetType string) gin.HandlerFunc {
 		// Build details from request
 		details := buildAuditDetails(c)
 
-		// Capture all data needed for the goroutine BEFORE spawning it
-		// to avoid data races with the gin context
+		// Capture all data needed
 		actorEmail := claims.Email
 		ctx := context.WithoutCancel(c.Request.Context())
 
-		// Create audit event (fire and forget - don't block the response)
-		a.wg.Add(1)
-		go func() {
-			defer a.wg.Done()
-			event := models.AuditEvent{
-				Actor:      actorEmail,
-				Action:     action,
-				TargetType: targetType,
-				TargetID:   targetID,
-				Details:    details,
-			}
-			if err := a.store.AuditEvents().Create(ctx, event); err != nil {
-				log.Printf("[AUDIT FAILURE] Failed to log %s on %s: %v", action, targetType, err)
-			}
-		}()
+		// Create audit event synchronously to ensure it completes before response finishes
+		event := models.AuditEvent{
+			Actor:      actorEmail,
+			Action:     action,
+			TargetType: targetType,
+			TargetID:   targetID,
+			Details:    details,
+		}
+		if err := a.store.AuditEvents().Create(ctx, event); err != nil {
+			log.Printf("[AUDIT FAILURE] Failed to log %s on %s: %v", action, targetType, err)
+		}
 	}
 }
 

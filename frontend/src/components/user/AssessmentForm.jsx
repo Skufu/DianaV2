@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { Activity, Save, AlertCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MLResultModal from '../common/MLResultModal';
+import SHAPExplanation from '../common/SHAPExplanation';
 import Button from '../common/Button';
 import { useCreateAssessment } from '../../api';
 import { slideUp } from '../../utils/animations';
@@ -88,6 +89,7 @@ const AssessmentForm = ({
   const [error, setError] = useState(null);
   const [showResultModal, setShowResultModal] = useState(false);
   const [assessmentResult, setAssessmentResult] = useState(null);
+  const [lastPayload, setLastPayload] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createAssessment = useCreateAssessment();
@@ -151,6 +153,10 @@ const AssessmentForm = ({
   }, [lockedModelType]);
 
   const handleChange = e => {
+    if (lastPayload) {
+      setLastPayload(null);
+      setAssessmentResult(null);
+    }
     const { name, value } = e.target;
     setFormData(prev => {
       const next = { ...prev, [name]: value };
@@ -266,7 +272,10 @@ const AssessmentForm = ({
     try {
       const result = await createAssessment.mutateAsync(payload);
       setAssessmentResult(result);
-      setShowResultModal(true);
+      setLastPayload(payload);
+      if (!isClinicalView) {
+        setShowResultModal(true);
+      }
     } catch (err) {
       setError(err.message || 'Failed to analyze assessment. Please try again.');
     } finally {
@@ -791,8 +800,18 @@ const AssessmentForm = ({
             </div>
           </div>
 
-          {/* Submit Button */}
-          <div className="flex justify-end">
+          {/* Submit and Reset Buttons */}
+          <div className="flex justify-end gap-3">
+            {isClinicalView && (
+              <Button
+                type="button"
+                onClick={resetForm}
+                variant="ghost"
+                className="px-6 py-3 border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Reset
+              </Button>
+            )}
             <Button
               type="submit"
               isLoading={isSubmitting}
@@ -800,7 +819,7 @@ const AssessmentForm = ({
               className="px-8 py-3 shadow-lg shadow-blue-600/20"
               icon={!isSubmitting ? Save : undefined}
             >
-              {isSubmitting ? 'Analyzing...' : 'Submit for Analysis'}
+              {isSubmitting ? 'Analyzing...' : isClinicalView ? 'Generate Explanation' : 'Submit for Analysis'}
             </Button>
           </div>
 
@@ -828,6 +847,23 @@ const AssessmentForm = ({
         </form>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {isClinicalView && lastPayload && assessmentResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="mt-6"
+          >
+            <SHAPExplanation
+              patientData={lastPayload}
+              modelType={resolvedModelType}
+              showTitle
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <MLResultModal
         isOpen={showResultModal}

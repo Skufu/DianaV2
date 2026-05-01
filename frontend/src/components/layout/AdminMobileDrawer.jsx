@@ -32,8 +32,7 @@ const AdminMobileDrawer = ({ isOpen, onClose, activeView, setActiveView, onLogou
   ];
 
   const doctorNavItems = [
-    { id: 'assessment', icon: FileText, label: 'Log Assessment' },
-    { id: 'explainability', icon: Brain, label: 'Clinical Explainability' },
+    { id: 'assessment', icon: FileText, label: 'Assessment & Explainability' },
     { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
   ];
 
@@ -167,15 +166,15 @@ const AdminMobileDrawer = ({ isOpen, onClose, activeView, setActiveView, onLogou
                         : 'bg-white border-transparent text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    <span className="flex items-center gap-3">
+                    <span className="flex items-center gap-3 w-full min-w-0">
                       <span
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                        className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center ${
                           isActive ? 'bg-white text-indigo-600' : 'bg-slate-100 text-slate-500'
                         }`}
                       >
                         <Icon size={18} />
                       </span>
-                      <span className="text-sm font-semibold">{item.label}</span>
+                      <span className="text-sm font-semibold truncate w-full">{item.label}</span>
                     </span>
                   </motion.button>
                 );

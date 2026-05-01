@@ -212,10 +212,10 @@ const Onboarding = ({ onComplete }) => {
                 {step === 4 && 'Privacy & Consent'}
               </h1>
               <p className="text-slate-500">
-                {step === 0 && 'Learn about DIANA and how it can help you understand your diabetes risk.'}
+                {step === 0 && 'Get started in a few simple steps.'}
                 {step === 1 && 'We need a few basic details to personalize your risk assessment.'}
                 {step === 2 && 'Understanding where you are in your menopause journey helps us tailor recommendations.'}
-                {step === 3 && 'This information creates the baseline for your clinical risk assessment.'}
+                {step === 3 && 'Optional context for your risk profile and PDF reports.'}
                 {step === 4 && 'Please review how your data will be used and protected.'}
               </p>
             </motion.div>
@@ -256,77 +256,34 @@ const Onboarding = ({ onComplete }) => {
                   className="space-y-6"
                 >
                   <motion.div variants={fadeIn} className="bg-diana-forest-light/5 border border-diana-forest-light/20 rounded-xl p-6">
-                    <h2 className="text-lg font-semibold text-diana-midnight mb-3 flex items-center gap-2">
+                    <div className="flex items-center gap-2 mb-3">
                       <Heart className="text-diana-forest-light" size={20} />
-                      What is DIANA?
-                    </h2>
-                    <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                      DIANA is a screening tool for <strong>postmenopausal women</strong> aged 45-60.
-                    </p>
+                      <h2 className="text-lg font-semibold text-diana-midnight">Diabetes risk screening for women aged 45–60</h2>
+                    </div>
                     <p className="text-slate-600 text-sm leading-relaxed">
-                      We use basic clinical biomarkers to estimate your risk of developing Type 2 Diabetes, which increases significantly during and after menopause.
+                      DIANA uses your clinical biomarkers to estimate Type 2 Diabetes risk during the menopausal transition.
                     </p>
                   </motion.div>
 
-                  <motion.div variants={fadeIn} className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-                    <h2 className="text-lg font-semibold text-amber-800 mb-3 flex items-center gap-2">
-                      <AlertTriangle className="text-amber-600" size={20} />
-                      Important Disclaimer
-                    </h2>
-                    <ul className="text-amber-900 text-sm space-y-2">
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-500 mt-0.5">•</span>
-                        <span><strong>DIANA is a screening tool, NOT a diagnostic device.</strong></span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-500 mt-0.5">•</span>
-                        <span>Results should be reviewed with a qualified healthcare provider.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-500 mt-0.5">•</span>
-                        <span>This tool does not replace clinical judgment or confirmatory testing.</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="text-amber-500 mt-0.5">•</span>
-                        <span>Always consult your doctor before making health decisions.</span>
-                      </li>
-                    </ul>
+                  <motion.div variants={fadeIn} className="bg-amber-50/60 border border-amber-200/80 rounded-xl px-5 py-3.5 flex items-start gap-3">
+                    <AlertTriangle className="text-amber-500 mt-0.5 shrink-0" size={16} />
+                    <p className="text-amber-900 text-sm leading-relaxed">
+                      <strong>Screening only</strong> — not a diagnosis. Always review results with your doctor.
+                    </p>
                   </motion.div>
 
-                  <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-xl p-6">
-                    <h2 className="text-lg font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                      <Info className="text-slate-500" size={20} />
-                      <Info className="text-slate-500" size={20} />
-                      What You&apos;ll Need
-                    </h2>
-                    <p className="text-slate-600 text-sm mb-3">
-                      To get the most accurate assessment, have these from your recent health checkup:
+                  <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                      <Info className="text-slate-400" size={14} />
+                      Have these ready from a recent checkup
                     </p>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <CheckCircle2 size={14} className="text-diana-forest-light" />
-                        <span>BMI (Body Mass Index)</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <CheckCircle2 size={14} className="text-diana-forest-light" />
-                        <span>Triglycerides</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <CheckCircle2 size={14} className="text-diana-forest-light" />
-                        <span>LDL Cholesterol</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <CheckCircle2 size={14} className="text-diana-forest-light" />
-                        <span>HDL Cholesterol</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <CheckCircle2 size={14} className="text-diana-forest-light" />
-                        <span>Waist Circumference</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <CheckCircle2 size={14} className="text-diana-forest-light" />
-                        <span>HbA1c or Fasting Glucose</span>
-                      </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-slate-600">
+                      {['BMI', 'Triglycerides', 'LDL Cholesterol', 'HDL Cholesterol', 'Waist Circumference', 'HbA1c or Fasting Glucose'].map(item => (
+                        <div key={item} className="flex items-center gap-1.5">
+                          <CheckCircle2 size={13} className="text-diana-forest-light shrink-0" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
                     </div>
                   </motion.div>
                 </motion.div>
@@ -493,93 +450,101 @@ const Onboarding = ({ onComplete }) => {
                   className="space-y-5"
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label
-                        htmlFor="onboarding-smoking-status"
-                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                      >
-                        Smoking Status
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="onboarding-smoking-status"
-                          name="smoking_status"
-                          value={formData.smoking_status}
-                          onChange={handleInputChange}
-                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
+                    {[
+                      {
+                        id: 'onboarding-hypertension',
+                        name: 'hypertension',
+                        label: 'Hypertension',
+                        value: formData.hypertension,
+                        options: [
+                          { value: '', label: 'Select...' },
+                          { value: 'no', label: 'No' },
+                          { value: 'controlled', label: 'Controlled' },
+                          { value: 'uncontrolled', label: 'Uncontrolled' },
+                        ],
+                      },
+                      {
+                        id: 'onboarding-heart-disease',
+                        name: 'heart_disease',
+                        label: 'Heart Disease',
+                        value: formData.heart_disease,
+                        options: [
+                          { value: '', label: 'Select...' },
+                          { value: 'no', label: 'No' },
+                          { value: 'yes', label: 'Yes' },
+                        ],
+                      },
+                      {
+                        id: 'onboarding-smoking-status',
+                        name: 'smoking_status',
+                        label: 'Smoking Status',
+                        value: formData.smoking_status,
+                        options: [
+                          { value: '', label: 'Select...' },
+                          { value: 'never', label: 'Never Smoked' },
+                          { value: 'former', label: 'Former Smoker' },
+                          { value: 'current', label: 'Current Smoker' },
+                        ],
+                      },
+                      {
+                        id: 'onboarding-physical-activity',
+                        name: 'physical_activity',
+                        label: 'Physical Activity',
+                        value: formData.physical_activity,
+                        options: [
+                          { value: '', label: 'Select...' },
+                          { value: 'Active', label: 'Active (4+ days/week)' },
+                          { value: 'Moderate', label: 'Moderate (1-3 days/week)' },
+                          { value: 'Sedentary', label: 'Sedentary (little/no exercise)' },
+                        ],
+                      },
+                      {
+                        id: 'onboarding-alcohol',
+                        name: 'alcohol',
+                        label: 'Alcohol Use',
+                        value: formData.alcohol,
+                        options: [
+                          { value: '', label: 'Select...' },
+                          { value: 'None', label: 'None' },
+                          { value: 'Light', label: 'Light' },
+                          { value: 'Moderate', label: 'Moderate' },
+                          { value: 'Heavy', label: 'Heavy' },
+                        ],
+                      },
+                    ].map(field => (
+                      <motion.div key={field.name} variants={fadeIn} className="group space-y-1.5">
+                        <label
+                          htmlFor={field.id}
+                          className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
                         >
-                          <option value="">Select...</option>
-                          <option value="never">Never Smoked</option>
-                          <option value="former">Former Smoker</option>
-                          <option value="current">Current Smoker</option>
-                          <option value="unknown">Unknown</option>
-                        </select>
-                        <ChevronRight
-                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
-                          size={16}
-                        />
-                      </div>
-                    </motion.div>
+                          {field.label}
+                        </label>
+                        <div className="relative">
+                          <select
+                            id={field.id}
+                            name={field.name}
+                            value={field.value}
+                            onChange={handleInputChange}
+                            className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none cursor-pointer"
+                          >
+                            {field.options.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                          <ChevronRight
+                            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
+                            size={16}
+                          />
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label
-                        htmlFor="onboarding-physical-activity"
-                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                      >
-                        Physical Activity
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="onboarding-physical-activity"
-                          name="physical_activity"
-                          value={formData.physical_activity}
-                          onChange={handleInputChange}
-                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
-                        >
-                          <option value="">Select...</option>
-                          <option value="Active">Active (4+ days/week)</option>
-                          <option value="Moderate">Moderate (1-3 days/week)</option>
-                          <option value="Sedentary">Sedentary (little/no exercise)</option>
-                          <option value="Unknown">Unknown</option>
-                        </select>
-                        <ChevronRight
-                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
-                          size={16}
-                        />
-                      </div>
-                    </motion.div>
-
-                    <motion.div variants={fadeIn} className="group space-y-1.5">
-                      <label
-                        htmlFor="onboarding-alcohol"
-                        className="block text-xs font-semibold text-slate-500 uppercase tracking-wide"
-                      >
-                        Alcohol Use
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="onboarding-alcohol"
-                          name="alcohol"
-                          value={formData.alcohol}
-                          onChange={handleInputChange}
-                          className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none"
-                        >
-                          <option value="">Select...</option>
-                          <option value="None">None</option>
-                          <option value="Light">Light</option>
-                          <option value="Moderate">Moderate</option>
-                          <option value="Heavy">Heavy</option>
-                          <option value="Unknown">Unknown</option>
-                        </select>
-                        <ChevronRight
-                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 rotate-90"
-                          size={16}
-                        />
-                      </div>
-                    </motion.div>
-                  </div>
+                  <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      <strong>All fields are optional.</strong> This info helps contextualize your risk profile and is included in PDF reports.
+                    </p>
+                  </motion.div>
                 </motion.div>
               )}
 
@@ -589,75 +554,79 @@ const Onboarding = ({ onComplete }) => {
                   variants={staggerContainer}
                   initial="hidden"
                   animate="visible"
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   {[
                     {
                       name: 'consent_personal_data',
-                      label: 'I Agree to the Data Usage Agreement',
-                      sub: 'Required for secure processing of your health data for the clinical risk assessment.',
+                      label: 'Data Usage Agreement',
+                      sub: 'Required to process your health data for risk assessment.',
                       required: true,
                     },
                     {
                       name: 'consent_research_participation',
                       label: 'Research Participation',
-                      sub: 'Allow anonymized data to be contributed to diabetes research. (Optional)',
+                      sub: 'Contribute anonymized data to diabetes research.',
                     },
                     {
                       name: 'consent_email_updates',
-                      label: 'Email Communications',
-                      sub: 'Receive health tips and platform updates from DIANA. (Optional)',
+                      label: 'Email Updates',
+                      sub: 'Health tips and platform updates from DIANA.',
                     },
                     {
                       name: 'consent_analytics',
                       label: 'Analytics',
-                      sub: 'Help us improve DIANA by sharing anonymous usage data. (Optional)',
+                      sub: 'Help improve DIANA with anonymous usage data.',
                     },
                   ].map(item => (
-                    <label
+                    <motion.label
                       key={item.name}
-                      className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 hover:border-diana-forest-light/30 cursor-pointer transition-all group"
+                      variants={fadeIn}
+                      className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border cursor-pointer transition-all ${
+                        formData[item.name]
+                          ? 'border-diana-forest-light/40 bg-diana-forest-light/5'
+                          : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50/50'
+                      }`}
                     >
-                      <div className="relative flex items-center pt-0.5">
-                        <input
-                          type="checkbox"
-                          name={item.name}
-                          checked={formData[item.name]}
-                          onChange={handleInputChange}
-                          required={item.required}
-                          className="peer sr-only"
-                        />
-                        <div className="w-4 h-4 rounded border border-slate-300 bg-white flex items-center justify-center peer-checked:bg-diana-forest-light peer-checked:border-diana-forest-light transition-all">
-                          <CheckCircle2
-                            size={10}
-                            className="text-white opacity-0 peer-checked:opacity-100"
-                            strokeWidth={3}
-                          />
-                        </div>
+                      <input
+                        type="checkbox"
+                        name={item.name}
+                        checked={formData[item.name]}
+                        onChange={handleInputChange}
+                        required={item.required}
+                        className="sr-only"
+                      />
+                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
+                        formData[item.name]
+                          ? 'bg-diana-forest-light border-diana-forest-light'
+                          : 'border-slate-300 bg-white'
+                      }`}>
+                        {formData[item.name] && (
+                          <CheckCircle2 size={12} className="text-white" strokeWidth={3} />
+                        )}
                       </div>
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span
-                            className={`text-sm font-medium transition-colors ${formData[item.name] ? 'text-diana-forest-light' : 'text-slate-700'}`}
-                          >
+                          <span className={`text-sm font-medium transition-colors ${
+                            formData[item.name] ? 'text-diana-forest-light' : 'text-slate-700'
+                          }`}>
                             {item.label}
                           </span>
                           {item.required && (
-                            <span className="text-[10px] font-bold text-diana-forest-light/60 bg-diana-forest-light/5 px-1.5 py-0.5 rounded uppercase">
+                            <span className="text-[10px] font-bold text-red-500/80 bg-red-50 px-1.5 py-0.5 rounded uppercase">
                               Required
                             </span>
                           )}
                         </div>
                         <p className="text-xs text-slate-500 mt-0.5">{item.sub}</p>
                       </div>
-                    </label>
+                    </motion.label>
                   ))}
 
-                  <motion.div variants={fadeIn} className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <motion.div variants={fadeIn} className="mt-2 bg-amber-50/60 border border-amber-200/80 rounded-lg px-4 py-3 flex items-start gap-2.5">
+                    <AlertTriangle className="text-amber-500 mt-0.5 shrink-0" size={14} />
                     <p className="text-xs text-amber-800 leading-relaxed">
-                      <strong>Reminder:</strong> DIANA provides screening results only. 
-                      All findings should be discussed with a qualified healthcare provider. 
-                      This tool does not replace professional medical advice, diagnosis, or treatment.
+                      <strong>Screening only</strong> — results should be discussed with a qualified healthcare provider.
                     </p>
                   </motion.div>
                 </motion.div>
