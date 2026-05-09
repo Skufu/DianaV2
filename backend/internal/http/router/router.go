@@ -70,13 +70,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
-	}
-	if cfg.Env == "production" || cfg.Env == "prod" {
-		corsConfig.AllowOrigins = cfg.CORSOrigins
-	} else {
-		// In development, allow specific origins to support credentials
-		corsConfig.AllowOrigins = []string{"http://localhost:4000", "http://localhost:3000", "http://localhost:5173"}
-		corsConfig.AllowCredentials = true
+		AllowAllOrigins:  true,
 	}
 	r.Use(cors.New(corsConfig))
 
