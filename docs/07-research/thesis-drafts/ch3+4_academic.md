@@ -4,11 +4,11 @@
 
 ## Chapter 3: Methodology
 
-### 3.0 NHANES Data Acquisition and Preprocessing Pipeline
+### 3.1 Data Acquisition and Preprocessing Pipeline
 
 The training dataset was constructed from the National Health and Nutrition Examination Survey (NHANES), a nationally representative health examination survey conducted by the Centers for Disease Control and Prevention (CDC) (CDC/NCHS, 2023). This section documents the complete data acquisition, preprocessing, and feature engineering pipeline from raw NHANES files to the final training dataset.
 
-#### 3.0.1 Data Acquisition
+#### 3.1.1 Data Acquisition
 
 Raw NHANES data files were downloaded from the CDC public repository using an automated Python download script. The dataset spans **six survey cycles** from 2009-2023, broadly covering the post-ADA HbA1c diagnostic guidelines era (established 2010) and supporting more consistent interpretation of glycemic thresholds across cycles.
 
@@ -84,7 +84,7 @@ flowchart LR
 
 ---
 
-#### 3.0.2 Data Merging and Feature Derivation
+#### 3.1.2 Data Merging and Feature Derivation
 
 Raw NHANES XPT files (SAS Transport format) were merged by SEQN (unique respondent identifier) and processed through a multi-stage pipeline to construct the analytic dataset.
 
@@ -161,7 +161,7 @@ NHANES variable codes were renamed to clinically meaningful names for interpreta
 
 ---
 
-#### 3.0.3 Cohort Selection and Label Construction
+#### 3.1.3 Cohort Selection and Label Construction
 
 Following data merging, the cohort was filtered to the target population and study reference labels were assigned.
 
@@ -175,7 +175,7 @@ Following data merging, the cohort was filtered to the target population and stu
 
 **Label Construction:**
 
-Study reference diabetes status labels were assigned using the dual-source hierarchy documented in Section 3.1. The `data_processing.py` script implements:
+Study reference diabetes status labels were assigned using the dual-source hierarchy documented below. The `data_processing.py` script implements:
 
 1. **Primary**: Self-reported physician diagnosis (DIQ010)
 2. **Secondary**: HbA1c thresholds for undiagnosed cases
@@ -198,7 +198,7 @@ Study reference diabetes status labels were assigned using the dual-source hiera
 
 ---
 
-#### 3.0.4 Missing Data Handling Methodology
+#### 3.1.4 Missing Data Handling Methodology
 
 NHANES data contains missing values due to survey non-response, subsample designs, and examination skip patterns. DIANA implements a **leakage-safe imputation strategy** that preserves the integrity of nested cross-validation.
 
@@ -233,10 +233,10 @@ The selection of **median imputation** (vs. mean or KNN) was guided by clinical 
 
 | Strategy | Pros | Cons | Decision |
 |----------|------|------|----------|
-| **Mean** | Simple, preserves mean | Sensitive to outliers; skewed distributions | ❌ Rejected |
-| **Median** | Robust to outliers; preserves central tendency | May understate variance | ✅ **Selected** |
-| **KNN** | Borrows from similar patients; captures multivariate patterns | Causes data leakage if applied globally; computationally expensive | ⚠️ EDA only |
-| **MICE** | Multiple imputation; uncertainty quantification | More complex to implement and pool correctly within nested CV | ❌ Not implemented |
+| **Mean** | Simple, preserves mean | Sensitive to outliers; skewed distributions | Rejected |
+| **Median** | Robust to outliers; preserves central tendency | May understate variance | **Selected** |
+| **KNN** | Borrows from similar patients; captures multivariate patterns | Causes data leakage if applied globally; computationally expensive | EDA only |
+| **MICE** | Multiple imputation; uncertainty quantification | More complex to implement and pool correctly within nested CV | Not implemented |
 
 **Clinical Rationale for Median:**
 
@@ -271,7 +271,7 @@ A separate KNN imputation script (`scripts/data/impute_missing_data.py`) exists 
 
 **Implementation Reference:** `Ian_ML/training/train_binary_v2_no_bp.py:201-215`, `scripts/data/impute_missing_data.py` (EDA only)
 
-#### 3.0.4.1 Inference-Time Clinical Guardrail for Imputation
+#### 3.1.4.1 Inference-Time Clinical Guardrail for Imputation
 
 During face-validity auditing, a limitation of the population-level median imputation was discovered: the scikit-learn `SimpleImputer` replaces missing `waist_circumference` with the training cohort median (~97 cm). For a patient with a low BMI (e.g., BMI 21.5), a 97 cm waist is physiologically inaccurate and artificially inflates their risk score by assigning them false visceral adiposity.
 
@@ -283,7 +283,7 @@ This architectural pattern—using fold-safe median imputation for training whil
 
 ---
 
-#### 3.0.5 ML Pipeline Orchestration
+#### 3.1.5 ML Pipeline Orchestration
 
 The complete ML training workflow is orchestrated via `scripts/dev/retrain-binary.sh`, which executes a six-step pipeline with automated verification gates.
 
@@ -351,21 +351,14 @@ flowchart TB
 | 5 | `Ian_ML/training/clustering.py` | Weighted K-Means (K=4) | `weighted_kmeans_model.joblib` |
 | 6 | Artifact validation | Verify outputs, extract metrics | Metrics report |
 
-**Execution Command:**
-```bash
-# Activate virtual environment first
-source venv/bin/activate  # macOS/Linux
-# or: source venv/Scripts/activate  # Windows
-
-# Run complete pipeline
-bash scripts/dev/retrain-binary.sh
-```
+**Execution Validation:**
+The complete pipeline is automated via a shell script (`scripts/dev/retrain-binary.sh`), ensuring programmatic reproducibility of the model training process without manual intervention.
 
 **Implementation Reference:** `scripts/dev/retrain-binary.sh:101-277`
 
 ---
 
-### 3.1 Reference Label Construction
+
 
 Study reference labels were constructed using a dual-source hierarchy designed to approximate clinical status while still identifying likely undiagnosed cases (American Diabetes Association, 2024). The primary labeling criterion was NHANES variable DIQ010, which captures self-reported physician diagnosis, with the following response codes:
 
@@ -401,11 +394,8 @@ DIANA implements a three-layer leakage detection architecture as a pre-training 
 
 The importance of this leakage validation architecture is reinforced by the broader reproducibility crisis in machine learning-based scientific research. Systematic reviews of ML applications in medical and quantitative sciences have shown that data leakage is a widespread phenomenon that frequently produces overoptimistic model performance estimates that do not generalize (Kapoor & Narayanan, 2023). By strictly enforcing cycle-wise isolation and diagnostic-feature exclusion, DIANA reduces major sources of temporal and target leakage that would otherwise undermine its screening-performance estimates.
 
-**Verification Command:**
-```bash
-python Ian_ML/training/validate_no_leakage.py
-# Exit code 0 = PASS, Exit code 1 = FAIL
-```
+**Verification:**
+This validation is enforced programmatically; the pipeline terminates (exit code 1) if any leakage conditions are met, ensuring no model is generated with compromised features.
 
 This three-layer architecture constitutes DIANA's methodological approach to leakage mitigation. To our knowledge, few T2DM ML screening tools include reproducible leakage validation procedures, which may address a gap in ML-based diagnostic research.
 
@@ -413,7 +403,9 @@ This three-layer architecture constitutes DIANA's methodological approach to lea
 
 ---
 
-### 3.3 Machine Learning Algorithms
+### 3.3 Machine Learning Methodology
+
+#### 3.3.1 Algorithm Selection
 
 Three candidate algorithms were evaluated under identical nested LOGO evaluation and grid search hyperparameter tuning:
 
@@ -451,7 +443,7 @@ All hyperparameter searches used GridSearchCV(scoring="roc_auc") with inner Grou
 
 ---
 
-### 3.4 Nested LOGO Validation
+#### 3.3.2 Nested LOGO Validation
 
 **Temporal Generalization via Nested Leave-One-Group-Out (LOGO)**
 
@@ -469,7 +461,7 @@ The inner loop uses GroupKFold with adaptive splits (n_splits=min(3, n_groups)) 
 
 ---
 
-### 3.5 Clinical Threshold Optimization
+#### 3.3.3 Clinical Threshold Optimization
 
 A sensitivity-biased decision threshold was selected using a three-strategy comparison on out-of-fold (OOF) probabilities from the inner cross-validation loop - not on the test set, which would constitute threshold leakage.
 
@@ -507,7 +499,7 @@ The selection of a sensitivity-biased threshold aligns with the epidemiological 
 
 ---
 
-### 3.6 Outlier Detection and Handling
+#### 3.3.4 Outlier Detection and Handling
 
 Outlier detection employed a dual-method approach to distinguish genuine physiological extremes from data entry errors:
 
@@ -533,7 +525,7 @@ In the final cohort, **1.7%** (23/1,376) of records had at least one flagged out
 
 ---
 
-### 3.7 Two-Step Hierarchical Pipeline and Weighted K-Means Subtyping
+#### 3.3.5 Metabolic Subtyping via Weighted K-Means
 
 DIANA implements a **two-stage hierarchical architecture** that mirrors real-world clinical triage workflows:
 
@@ -588,13 +580,13 @@ While Ahlqvist et al. (2018) originally defined the Severe Insulin-Deficient Dia
 
 **Inverse Transformation:** Cluster centers were inverse-transformed from standardized space back to raw clinical units before label assignment, ensuring clinically meaningful centroid interpretation (e.g., "SIRD centroid: BMI=32.4, TG=210 mg/dL, HDL=38 mg/dL"). This is critical for two reasons: (1) Clinical interpretation requires biomarker values in their native units, and (2) The deterministic label assignment algorithm (ranking LAP, LDL, BMI) operates on raw clinical values, not standardized z-scores.
 
-**Clustering Artifact Clarification:** Two clustering codepaths exist in the codebase. The standalone `clustering.py` script uses the custom `WeightedKMeans` implementation with literature-derived weights (described in Section 3.7) and saves `weighted_kmeans_model.joblib` — this is the **production artifact** loaded by the Flask inference server. A legacy `train_serving_kmeans()` function in `train_binary_v2_no_bp.py` uses standard scikit-learn `KMeans` (unweighted) and saves `kmeans_model.joblib`; this function is retained for backward compatibility but is **not used in the deployed pipeline**. The production retrain script (`scripts/dev/retrain-binary.sh`) invokes `clustering.py` as Step 5, ensuring the weighted variant is always the deployment artifact.
+**Clustering Artifact Clarification:** Two clustering codepaths exist in the codebase. The standalone `clustering.py` script uses the custom `WeightedKMeans` implementation with literature-derived weights (described in Section 3.3.5) and saves `weighted_kmeans_model.joblib` — this is the **production artifact** loaded by the Flask inference server. A legacy `train_serving_kmeans()` function in `train_binary_v2_no_bp.py` uses standard scikit-learn `KMeans` (unweighted) and saves `kmeans_model.joblib`; this function is retained for backward compatibility but is **not used in the deployed pipeline**. The production retrain script (`scripts/dev/retrain-binary.sh`) invokes `clustering.py` as Step 5, ensuring the weighted variant is always the deployment artifact.
 
 **Implementation Reference:** Ian_ML/service/predict.py:789-812 (runtime gating), Ian_ML/training/clustering.py:71-150, 474-480 (cluster label assignment), train_binary_v2_no_bp.py:685-750 (legacy training pipeline)
 
 ---
 
-### 3.8 Model Explainability and Clinical Decision Support (SHAP)
+### 3.4 Model Explainability and Clinical Decision Support
 
 While Logistic Regression provides base interpretability via coefficient analysis, DIANA implements **SHapley Additive exPlanations (SHAP)** (Lundberg & Lee, 2017) to provide patient-level feature attribution, which supports transparency in screening-support workflows.
 
@@ -633,7 +625,7 @@ This design choice ensures that **partial explainability failures do not remove 
 
 ---
 
-### 3.9 System Architecture and Technology Stack
+### 3.5 System Architecture and Implementation
 
 **Four-Tier Layered Architecture Design Rationale**
 
@@ -708,7 +700,7 @@ flowchart TB
 
 **Why Decoupled ML Inference Service?** (1) **Performance isolation** — ML inference with SHAP computation takes 200-500ms per request (measured via curl, including network overhead), while pure model inference is ~1.1ms; this doesn't block API gateway serving dashboard requests; (2) **Technology optimization** — Python scikit-learn without Go dependency bloat; (3) **Independent scaling** — ML service scales separately based on prediction load; (4) **Model versioning** — redeploy models (v1→v2) without full application restart; (5) **Fail-safe degradation** — Go backend can fallback to cached predictions if ML service temporarily unavailable.
 
-### 3.9.1 Decoupled Python ML Inference Architecture
+#### 3.5.2 Decoupled Python ML Inference Architecture
 
 DIANA's ML inference follows a **decoupled service architecture methodology** where the Python Flask server operates as an independent service, invoked via HTTP REST API from the Go backend. This design choice is grounded in performance characteristics, technology ecosystem considerations, and deployment flexibility.
 
@@ -744,7 +736,7 @@ To support post-deployment monitoring, DIANA implements MLOps tracking. For ever
 
 The ML service is designed to support future prospective validation through an integrated A/B testing framework (`ml.ab_testing`). This framework includes a fractional routing endpoint capable of distributing prediction requests between a stable control model and experimental candidate models. This infrastructure can support future controlled evaluation without requiring major architectural changes.
 
-### 3.9.1.2 Rule-Based Risk Guardrails and the Metabolic Syndrome Override
+#### 3.5.2.1 Rule-Based Risk Guardrails and the Metabolic Syndrome Override
 
 Logistic regression models assume linear relationships between independent variables and the target on the log-odds scale. However, metabolic dysfunction can involve compounding risk factors that may not be fully captured by a simple linear additive model. To address this limitation conservatively, the inference architecture implements a **rule-based risk guardrail** for Metabolic Syndrome (MetS).
 
@@ -754,7 +746,7 @@ If a patient meets criteria for MetS based on the WHO Asia-Pacific guidelines (W
 
 This hybrid architecture (linear ML bounded by rule-based heuristics) is intended to reduce implausibly low risk estimates in patients with multiple metabolic syndrome markers. Because the override is rule-based, it should be reported as an engineered safety heuristic and evaluated separately through ablation, calibration, and prospective review rather than treated as an independently validated clinical rule.
 
-### 3.9.2 End-to-End System and Data Flow Methodology
+#### 3.5.3 End-to-End System and Data Flow Methodology
 
 DIANA's **end-to-end data flow methodology** orchestrates data movement across the four-tier architecture from user input to persistent storage and visualization. The flow follows a **request-response pattern** with cache-first optimization, audit logging, and asynchronous background processing.
 
@@ -844,7 +836,7 @@ The end-to-end flow enforces data integrity through multiple mechanisms:
 
 ---
 
-#### 3.9.4 Database Schema Design
+#### 3.5.4 Database Schema Design
 
 DIANA's PostgreSQL database implements a **normalized relational schema** with foreign key constraints to ensure referential integrity of user health data. The schema supports temporal tracking of user biomarker assessments and ML predictions.
 
@@ -889,7 +881,9 @@ erDiagram
 
 ---
 
-### 3.10 Iterative and Agile Software Development Lifecycle (SDLC)
+### 3.6 Development and Evaluation
+
+#### 3.6.1 Iterative and Agile Software Development Lifecycle (SDLC)
 
 DIANA follows an **iterative SDLC methodology** with continuous integration (CI) checks, API drift detection, and modular deployment strategies. The development workflow emphasizes **early validation of architectural decisions**, **automated testing across language boundaries**, and **detection of potential API contract violations**.
 
@@ -957,17 +951,13 @@ The deployment job currently implements a **notification placeholder** (see line
 
 DIANA's development environment leverages **Makefile-based task automation** (see `Makefile`) to provide reproducible commands across development environments:
 
-```bash
-make dev        # Start Go backend server
-make air        # Start with hot reload
-make test       # Run Go tests
-make sqlc       # Regenerate SQLC queries
-make db_up      # Apply Goose migrations
-make db_down    # Rollback migration
-make ml         # Start Python ML server
-make ml-train   # Train ML models
-make start-all  # Start all services (bash scripts/dev/start-all.sh)
-```
+- `make dev` / `make air`: Start Go backend server (with optional hot reload)
+- `make test`: Run Go test suite
+- `make sqlc`: Regenerate type-safe SQL queries
+- `make db_up` / `make db_down`: Manage database migrations
+- `make ml`: Start Python ML inference server
+- `make ml-train`: Execute model training pipeline
+- `make start-all`: Orchestrate all development services concurrently
 
 This **command abstraction layer** reduces onboarding friction for new developers and ensures consistency across team members. The `make start-all` command orchestrates starting all three services (Go backend, Python ML, React frontend) via the `scripts/dev/start-all.sh` script.
 
@@ -987,7 +977,7 @@ This automation reduces environment configuration overhead for new developers.
 
 ---
 
-### 3.11 Authentication and Authorization (RBAC)
+#### 3.5.5 Authentication and Authorization (RBAC)
 
 DIANA implements a **three-tier Role-Based Access Control (RBAC)** system enforced via JWT middleware within the Go backend. The authentication architecture ensures secure, stateless session management while maintaining strict data isolation between users.
 
@@ -1074,7 +1064,7 @@ func RoleRequired(allowedRoles ...string) gin.HandlerFunc {
 
 ---
 
-### 3.12 Deployment Architecture
+#### 3.5.6 Deployment Architecture
 
 The DIANA application is deployed using a modern cloud-native stack optimized for scalability and cost-efficiency.
 
@@ -1138,7 +1128,7 @@ graph LR
 
 ---
 
-### 3.13 ISO/IEC 25010 Software Evaluation Methodology
+#### 3.6.2 Software Quality Evaluation (ISO/IEC 25010)
 
 DIANA's software quality evaluation follows the **ISO/IEC 25010:2011 System and Software Quality Requirements and Evaluation (SQuaRE)** standard (International Organization for Standardization, 2011), providing a structured framework for assessing product quality across eight characteristics. This methodology is used to define measurable quality attributes rather than relying only on informal claims, aligning with software engineering best practices for clinical applications.
 
@@ -1146,221 +1136,26 @@ DIANA's software quality evaluation follows the **ISO/IEC 25010:2011 System and 
 
 | ISO/IEC 25010 Characteristic | DIANA Evaluation Approach | Metric/Method | Status |
 |-------------------------------|---------------------------|---------------|--------|
-| **Functional Suitability** | Feature completeness for clinical workflows | Use case coverage, API endpoint completeness | ✅ Implemented |
-| **Performance Efficiency** | Response time, resource utilization | CI benchmarks (<50ms for non-ML, <500ms for ML) | ✅ Measured |
-| **Compatibility** | Multi-service integration | HTTP API contract validation (drift detection) | ✅ Implemented |
-| **Usability** | User-facing UI evaluation | [TBD: SUS or QUIS survey with N users] | 🔄 Not complete |
-| **Reliability** | Failure rate, error recovery | Error tracking, graceful degradation to mock predictor | ✅ Implemented |
-| **Security** | Data protection, access control | JWT authentication, RBAC, rate limiting, security headers | ✅ Implemented |
-| **Maintainability** | Code modularity, documentation | Modular architecture, AGENTS.md documentation | ✅ Implemented |
-| **Portability** | Deployment flexibility | Docker containers, environment-agnostic config | ✅ Implemented |
+| **Functional Suitability** | Feature completeness for clinical workflows | Use case coverage, API endpoint completeness | Implemented |
+| **Performance Efficiency** | Response time, resource utilization | CI benchmarks (<50ms for non-ML, <500ms for ML) | Measured |
+| **Compatibility** | Multi-service integration | HTTP API contract validation (drift detection) | Implemented |
+| **Usability** | User-facing UI evaluation | [TBD: SUS or QUIS survey with N users] | Not complete |
+| **Reliability** | Failure rate, error recovery | Error tracking, graceful degradation to mock predictor | Implemented |
+| **Security** | Data protection, access control | JWT authentication, RBAC, rate limiting, security headers | Implemented |
+| **Maintainability** | Code modularity, documentation | Modular architecture, AGENTS.md documentation | Implemented |
+| **Portability** | Deployment flexibility | Docker containers, environment-agnostic config | Implemented |
 
-**Functional Suitability Evaluation**
-
-DIANA's functional completeness is evaluated against the **clinical workflow use cases** defined in the scope: biomarker input, risk prediction, visualization, and export. The evaluation methodology involves:
-
-1. **Use Case Coverage Matrix**: Mapping each feature to clinical workflow requirements
-2. **API Endpoint Completeness**: Verifying all documented endpoints are functional
-3. **Edge Case Handling**: Testing boundary conditions (e.g., biomarker values at clinical thresholds)
-
-The functional suitability assessment confirms that DIANA provides **all required functionality** for diabetes risk screening among menopausal women, with an optional restricted `doctor` role for testing and validation purposes.
-
-**Performance Efficiency Evaluation**
-
-Performance efficiency is considered through **target benchmarks** that guide performance monitoring:
-
-- **Non-ML endpoints**: <50ms response time (user profile retrieval, assessment history)
-- **ML prediction endpoints**: <2000ms response time (configurable via `MODEL_TIMEOUT_MS`)
-- **Database query latency**: <100ms for indexed queries (user lookups, assessment pagination)
-- **Cache hit rate**: Target >60% for frequently accessed data (trends, analytics)
-
-These response time targets are **monitored** during CI testing to **identify** potential performance degradations across releases. The **performance isolation architecture** (decoupled ML service) aims to ensure that ML latency does not unduly affect non-ML operations.
-
-**Compatibility Evaluation**
-
-Compatibility is approached through **API contract alignment measures** (see Section 3.10). The drift detection script provides **basic structural checks** between the Go backend and Python ML service by:
-
-- Examining common field names and types
-- Checking for API endpoint availability
-- Detecting obvious schema mismatches through static analysis
-
-This approach provides **static structural checks** between services, helping to **identify likely integration issues** during development time through file and schema comparisons.
-
-**Usability Evaluation Methodology**
-
-Usability is assessed using a **standardized usability assessment scale** aligned with ISO/IEC 25010's "Usability" characteristic. The evaluation methodology follows these principles:
-
-1. **User-Centered Design**: UI components designed for menopausal women performing self-screening (not developers or clinicians)
-2. **Cognitive Load Minimization**: Color-coded risk indicators, SHAP explanations for interpretability
-3. **Error Prevention**: Client-side validation, clear error messages, undo capability
-4. **Learnability**: Consistent navigation patterns, onboarding flow for new users
-
-The final usability evaluation may indicate **structured user testing** with N participants, measuring:
-
-- **Task Completion Rate**: Percentage of users who successfully complete risk assessment workflow
-- **Time to Completion**: Average time from login to result export
-- **Error Rate**: Number of erroneous inputs or failed operations
-- **Subjective Satisfaction**: Standardized questionnaire (see Section 3.14)
-
-**TBD**: The final usability evaluation metrics are **not yet available** and will be collected during the User Acceptance Testing (UAT) phase. The methodology is defined, but empirical results are pending.
-
-**Reliability Evaluation**
-
-Reliability is estimated through **failure tracking** and **graceful degradation** approaches:
-
-- **Error Recording**: Structured logging via zerolog for all error conditions
-- **Audit Tracking**: All predictions logged to PostgreSQL for compliance review
-- **Error Handling**: Errors are logged, and failures in prediction requests result in appropriate HTTP responses without prediction results
-- **Cache Refresh**: Redis cache expiration prevents prolonged usage of stale data
-- **Rate Management**: Token bucket algorithm helps prevent overload-induced service interruptions
-
-The reliability evaluation considers **mean time between failures (MTBF)** and **recovery time objective (RTO)**. Current implementation logs all errors but does not compute formal MTBF metrics—such metrics may be established through production deployment tracking.
-
-**Security Evaluation**
-
-Security controls are implemented in alignment with ISO/IEC 25010's "Security" characteristic, primarily covering:
-
-1. **Information Confidentiality**: JWT authentication, RBAC authorization, encryption at rest (PostgreSQL SSL)
-2. **Data Integrity**: SQLC type-safe queries, foreign key constraints, audit logging
-3. **Non-repudiation Consideration**: Audit logs track user_id, timestamp, action for all protected operations
-4. **User Accountability**: Unique user IDs associate all actions with authenticated users
-
-Security may be evaluated via **OWASP Top 10** checklist alignment and penetration testing (TBD for production deployment). Current implementation addresses selected OWASP Top 10 risks including A01 (Broken Access Control), A04 (Unvalidated Input), and others, though some aspects like A05 (Security Misconfiguration) and A09 (Security Logging) may require additional infrastructure hardening.
-
-**Maintainability Evaluation**
-
-Maintainability is supported through **modular architecture** and **comprehensive documentation**:
-
-- **Module Separation**: Clear functional boundaries (backend, ML service, frontend)
-- **Codebase Documentation**: AGENTS.md creates knowledge base for each directory
-- **Code Documentation**: Go godoc comments on exported functions
-- **API Documentation**: OpenAPI 3.0 spec in `docs/api-spec.yaml`
-- **Type-Safe Queries**: SQLC generates database code preventing many injection patterns
-
-The maintainability consideration uses **code metrics** such as cyclomatic complexity, code duplication, and test coverage. CI enforces coding standards via golangci-lint and flake8.
-
-**Portability Evaluation**
-
-Portability is supported through **containerization** and **environment configuration**:
-
-- **Docker Packaging**: Backend, ML service, and frontend deployed as Docker images in the CD workflow
-- **Environment Configuration**: All parameters configured via environment variables (see `backend/internal/config/config.go`)
-- **Database Abstraction**: SQLC database layer supports PostgreSQL
-- **Platform Deployment**: Go binary compiled for Linux AMD64, Python virtual environment
-
-The CD workflow produces Docker image artifacts that can operate on container orchestration platforms supporting Docker runtime. Specific cloud provider deployment configurations remain as possible future enhancements.
+DIANA's software quality was evaluated against applicable ISO/IEC 25010 characteristics during development. Functional suitability was verified through endpoint testing and edge-case validation; performance efficiency targets are monitored via CI benchmarks (non-ML <50ms, ML <2000ms); security controls (JWT, RBAC, rate limiting) are enforced at the middleware layer; maintainability is supported through modular architecture and AGENTS.md documentation; and portability is ensured through Docker containerization and environment-agnostic configuration. Formal usability and reliability metrics require UAT data and are detailed in Section 4.10.
 
 ---
 
-### 3.14 Likert Scale Survey and Reliability Analysis Methodology
+#### 3.6.3 User Evaluation Methodology
 
-DIANA's user-centered evaluation incorporates a **structured questionnaire methodology** using Likert-scale items to assess user satisfaction, perceived utility, and usability. This methodology follows **survey research best practices** for validating clinical software systems.
-
-**Likert Scale Design**
-
-The questionnaire uses **5-point Likert scales** for quantitative measurement of subjective responses:
-
-| Scale Value | Label | Description |
-|-------------|-------|-------------|
-| 1 | Strongly Disagree | Strong negative stance |
-| 2 | Disagree | Moderate negative stance |
-| 3 | Neutral | Neither agree nor disagree |
-| 4 | Agree | Moderate positive stance |
-| 5 | Strongly Agree | Strong positive stance |
-
-The 5-point scale provides sufficient granularity for statistical analysis while avoiding **response fatigue** from overly complex rating systems. Each Likert item is worded in the **direction of agreement** (positive framing) to avoid interpretation ambiguity.
-
-**Survey Instrument Structure**
-
-The questionnaire is organized into **four domains** aligned with ISO/IEC 25010 characteristics from Section 3.13:
-
-1. **Perceived Utility** (Functional Suitability):
-   - "DIANA helps me identify at-risk patients more efficiently than manual screening."
-   - "The risk predictions align with my clinical judgment for menopausal women."
-   - "The subtype clusters provide actionable insights for treatment planning."
-
-2. **Usability** (ISO/IEC 25010):
-   - "The interface is intuitive and easy to navigate."
-   - "I can complete a risk assessment workflow without referring to documentation."
-   - "The SHAP explanations help me understand the factors driving risk predictions."
-
-3. **Reliability** (ISO/IEC 25010):
-   - "The system responds quickly enough for clinical workflow integration."
-   - "I trust the accuracy of the risk predictions."
-   - "The system consistently produces reliable results across repeated assessments."
-
-4. **Overall Satisfaction**:
-   - "I would recommend DIANA to colleagues practicing endocrinology or internal medicine."
-   - "DIANA adds value to my clinical practice for diabetes risk assessment."
-   - "I am satisfied with DIANA overall."
-
-**Reliability Analysis Methodology**
-
-Internal consistency reliability is assessed using **Cronbach's alpha** (Cronbach, 1951), a measure of how closely related a set of items are as a group. The methodology follows:
-
-1. **Domain-Level Alpha**: Compute Cronbach's alpha for each domain (Utility, Usability, Reliability, Satisfaction)
-2. **Overall Alpha**: Compute Cronbach's alpha for the entire questionnaire (all items)
-3. **Interpretation Thresholds**:
-   - α ≥ 0.90: Excellent reliability
-   - α ≥ 0.80: Good reliability
-   - α ≥ 0.70: Acceptable reliability
-   - α < 0.70: Questionable reliability (requires item review)
-
-**Computation Formula**:
-$$
-\alpha = \frac{K}{K-1} \left(1 - \frac{\sum_{i=1}^K \sigma^2_{Y_i}}{\sigma^2_X}\right)
-$$
-
-Where:
-- \(K\) = number of items
-- \(\sigma^2_{Y_i}\) = variance of item \(i\)
-- \(\sigma^2_X\) = variance of the observed total score
-
-**Item-Total Correlation Analysis**
-
-To validate individual items, **corrected item-total correlations** are computed:
-
-1. Compute correlation between each item and the total score (excluding that item)
-2. Items with correlation <0.30 are flagged for potential removal
-3. Items with negative correlations indicate reversal errors and require immediate correction
-
-**Validity Considerations**
-
-The questionnaire incorporates **content validity** through expert review by clinical domain specialists (endocrinologists, internal medicine physicians). **Face validity** is assessed via pilot testing with 3-5 clinicians to ensure item clarity and appropriate wording. **Construct validity** is evaluated via convergent validity (correlation between related domains) and discriminant validity (low correlation between unrelated domains).
-
-**TBD: Empirical Results Not Available**
-
-The final Cronbach's alpha values, item-total correlations, and Likert-scale means are **not yet computed** as user acceptance testing (UAT) has not been completed. The methodology is fully defined, but empirical reliability metrics require data collection from N clinicians who interact with the deployed system. Once UAT is complete, the following results will be reported:
-
-- [ ] Cronbach's alpha (overall, per domain)
-- [ ] Item-total correlation matrix
-- [ ] Mean and standard deviation per Likert item
-- [ ] Distribution of responses (frequency count per scale value)
-- [ ] Qualitative feedback themes from open-ended questions
-
-**Sample Size Considerations**
-
-Reliability analysis requires **minimum sample sizes** for stable Cronbach's alpha estimates. Best practices recommend:
-
-- **Small pilot**: N=10-20 (exploratory item validation)
-- **Full UAT**: N=30-50 (stable reliability estimates)
-- **Large-scale validation**: N=100+ (generalizable results)
-
-For DIANA's thesis requirements, a sample size of N=20-30 clinicians is targeted to achieve acceptable reliability estimates while acknowledging limitations for broader generalization.
-
-**Placeholder Status**
-
-The following empirical results are **marked as TBD** and will be populated after UAT completion:
-
-- **Cronbach's alpha**: [TBD - requires UAT data]
-- **Mean score per item**: [TBD - requires UAT data]
-- **Standard deviation per item**: [TBD - requires UAT data]
-- **User satisfaction rate**: [TBD - requires UAT data]
-- **Net Promoter Score (NPS)**: [TBD - optional extension if included in survey]
+The user evaluation methodology for DIANA follows a structured protocol combining the System Usability Scale (SUS), task-completion metrics, and clinical face-validity assessment by domain experts. The detailed methodology — including participant recruitment, evaluation instruments, data collection protocol, and analysis framework — is presented in Section 4.10 (User Acceptance Testing and Expert Feedback). Empirical results are marked as pending UAT completion.
 
 ---
 
-### 3.15 API Endpoints Documentation
+#### 3.5.7 API Endpoint Design
 
 The DIANA backend exposes a RESTful API for frontend consumption. This section documents key endpoints; complete API documentation (21 endpoints) is available in `backend/README.md` following OpenAPI 3.0 standards.
 
@@ -1405,13 +1200,9 @@ The DIANA backend exposes a RESTful API for frontend consumption. This section d
 | shap_values | object | Feature contributions (positive=increase risk) |
 | model_version | string | Trained model identifier for traceability |
 
-**Example Request/Response:**
+**Example Inference Payload:**
 
-```bash
-curl -X POST http://localhost:5001/predict \
-  -H "Content-Type: application/json" \
-  -d '{"bmi": 28.5, "triglycerides": 180, "ldl": 140, "hdl": 45, "waist_circumference": 95, "age": 54}'
-```
+A standard inference request passes a serialized JSON payload containing the required biomarker features:
 
 ```json
 {
@@ -1440,7 +1231,25 @@ curl -X POST http://localhost:5001/predict \
 
 The logistic regression model demonstrated screening-relevant discriminative performance under nested LOGO validation, achieving an AUC-ROC of **0.727** (95% CI: 0.700–0.753) and a sensitivity of **0.711** (95% CI: 0.680–0.741) at the optimized screening threshold of **0.478**. Specificity was **0.629**, reflecting the sensitivity-biased threshold design appropriate for a screening-support context where false negatives (missed at-risk patients) carry higher clinical cost than false positives (referral for confirmatory testing). The F1 score of **0.699** indicates a moderate precision-recall trade-off at the selected threshold.
 
+**[FIGURE 4.1: ROC Curve]** — Receiver Operating Characteristic curve for the Logistic Regression screening model across aggregated LOGO test folds. AUC-ROC = 0.727 (95% CI: 0.700–0.753). Source: `models/binary_v2_no_bp/visualizations/roc_curve.png`.
+
 The fold-level AUC range of **0.703–0.776** indicates no catastrophic failure fold across the six NHANES survey cycles spanning 2009–2023. This consistency suggests the model captures repeatable metabolic patterns across temporal cohorts, although external prospective validation would still be required before making deployment-level clinical performance claims. Clinical prediction literature commonly treats AUC values in the 0.70–0.80 range as acceptable discrimination for early screening or risk-stratification models, particularly when diagnostic biomarkers are excluded from the feature set.
+
+**Table 4.2: Per-Fold LOGO Validation Results (Logistic Regression)**
+
+| Fold | Test Cycle | n | AUC-ROC | Sensitivity | Specificity | Threshold | Strategy |
+|------|-----------|----|---------|-------------|-------------|-----------|----------|
+| 1 | 2009–2010 | — | 0.717 | 0.735 | 0.600 | 0.46 | Guardrail shift floor |
+| 2 | 2011–2012 | — | 0.703 | 0.607 | 0.744 | 0.50 | Youden's J |
+| 3 | 2013–2014 | — | 0.733 | 0.659 | 0.606 | 0.48 | Youden's J |
+| 4 | 2015–2016 | — | 0.776 | 0.699 | 0.736 | 0.50 | Youden's J |
+| 5 | 2017–2018 | — | 0.730 | 0.727 | 0.657 | 0.47 | Youden's J |
+| 6 | 2021–2023 | — | 0.724 | 0.839 | 0.510 | 0.46 | Guardrail shift floor |
+| **Mean (SD)** | — | — | **0.731 (0.025)** | **0.711 (0.079)** | **0.642 (0.089)** | **0.48** | — |
+
+*Note: Sample sizes per fold are unavailable from the current metrics export; per-fold n values will be added in a subsequent update.*
+
+**[FIGURE 4.2: Per-Fold LOGO AUC Comparison]** — Bar chart showing AUC-ROC per NHANES survey cycle test fold with overall mean reference line.
 
 ---
 
@@ -1535,12 +1344,8 @@ For a screening tool, the point estimate sensitivity (0.7112) provides the centr
 
 Bootstrap 95% confidence intervals were computed for both AUC-ROC and Sensitivity using 1,000 bootstrap resamples, the percentile method, and a fixed random seed (42). Samples with fewer than two classes were excluded from CI computation. This approach provides distribution-free uncertainty quantification appropriate for the modest cohort size (n=1,376).
 
-**Verification Command:**
-```python
-from Ian_ML.training.train_binary_v2_no_bp import bootstrap_auc_ci, bootstrap_metric_ci
-auc_ci = bootstrap_auc_ci(y_true, y_proba, n_bootstraps=1000)
-sens_ci = bootstrap_metric_ci(y_true, y_pred, recall_score, n_bootstraps=1000)
-```
+**Verification Method:**
+These bootstrap statistics are computed algorithmically via standard evaluation scripts during the final cross-validation summary phase, providing automated reporting of interval estimates.
 
 **Implementation Reference:** Ian_ML/training/train_binary_v2_no_bp.py:579-636
 
@@ -1568,6 +1373,8 @@ The fold-level AUC range of **0.703-0.776** shows that all evaluated cycles rema
 | XGBoost | 0.708 | 0.689-0.724 | **0.766** | 0.734-0.795 | 0.549 | 0.709 | 0.637 |
 
 **Bold** = Best value per column. LR selected for deployment due to highest AUC + interpretability.
+
+**[FIGURE 4.4: Confusion Matrix]** — Aggregated confusion matrix for the Logistic Regression screening model across LOGO test folds. Rows = actual class (At-Risk / Normal), columns = predicted class. Diagonal cells = correct classification; off-diagonal = false positives (top-right) and false negatives (bottom-left). Source: `models/binary_v2_no_bp/visualizations/confusion_matrix.png`.
 
 **Model Selection Rationale:** Logistic Regression was selected as the deployment model due to:
 1. **Marginally superior mean fold AUC** across LOGO folds (0.7306 vs. 0.7138 for RF, 0.7026 for LightGBM, 0.7081 for XGBoost)
@@ -1608,6 +1415,8 @@ For a screening tool, calibration—how well predicted probabilities match obser
 
 ### 4.4.2 Clustering Validation Metrics
 
+**[FIGURE 4.3: SHAP Beeswarm Feature Importance]** — Cohort-wide SHAP beeswarm plot showing distribution of feature impacts across predictions. Features ranked by mean |SHAP|. Red = high feature value pushing risk higher, blue = low feature value. Source: `models/binary_v2_no_bp/visualizations/shap_beeswarm.png`.
+
 The weighted K-Means clustering (K=4) was assessed using three standard internal validation metrics computed on the at-risk subset (n=578 after complete case filtering for clustering features):
 
 **Table 4.2 - Clustering Validation Metrics (K=4)**
@@ -1647,7 +1456,7 @@ To evaluate whether the **weighted K-Means clustering** merely rediscovered the 
 | SIDD-like | 202 | 27.5% | 55.2 | 73.8% | 26.2% | Lipid-focused cardiovascular risk discussion context |
 | SIRD-like | 70 | 9.5% | 53.9 | 42.9% | 57.1% | Insulin-resistance-focused follow-up context |
 
-**Weighted Methodology Context:** The cluster distribution above reflects the weighted K-Means clustering methodology described in Section 3.7. The literature-derived feature weights (triglycerides=2.0, ldl=2.5, hdl=1.2, bmi=1.5, waist_circumference=2.0, age=1.0) were applied, resulting in cluster centroids that emphasize clinically prioritized biomarkers. Clustering was performed **exclusively on the at-risk subset** (n=734), and centroids were inverse-transformed to raw clinical units before deterministic Ahlqvist-inspired label assignment.
+**Weighted Methodology Context:** The cluster distribution above reflects the weighted K-Means clustering methodology described in Section 3.3.5. The literature-derived feature weights (triglycerides=2.0, ldl=2.5, hdl=1.2, bmi=1.5, waist_circumference=2.0, age=1.0) were applied, resulting in cluster centroids that emphasize clinically prioritized biomarkers. Clustering was performed **exclusively on the at-risk subset** (n=734), and centroids were inverse-transformed to raw clinical units before deterministic Ahlqvist-inspired label assignment.
 
 **Interpretation:** The cluster distribution suggests metabolic heterogeneity within the at-risk population. **SIRD-like** exhibits the highest diabetic proportion (57.1%), consistent with a more metabolically adverse insulin-resistance-related pattern in this cohort. **MARD-like** remains the largest group (32.7%) and is best interpreted as a heuristic residual pattern rather than evidence of a milder longitudinal course. **SIDD-like** (atherogenic phenotype proxy) exhibits the highest pre-diabetic proportion (73.8%), which may indicate lipid-dominant risk among participants not yet classified as diabetic, but progression cannot be inferred from this cross-sectional dataset. Overall, clustering provides hypothesis-generating subtype context beyond binary risk, not definitive treatment stratification.
 
@@ -1717,31 +1526,8 @@ Prior to reporting model performance, the leakage validation pipeline confirmed:
 
 These checks were executed as a mandatory pre-training gate (python Ian_ML/training/validate_no_leakage.py), making the non-circularity claim computationally verified rather than asserted by design intent alone.
 
-**Verification Output:**
-```
-======================================================================
-DIANA Feature Validation & Leakage Detection
-[Executed: 2026-03-08 22:00 PST]
-======================================================================
-
-[1/3] Checking feature constants for diagnostic leakage...
-   PASS: No diagnostic features in classifier/cluster feature lists
-         CLUSTER_FEATURES (6): ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference']
-         CLINICAL_FEATURES_NO_BP (9): ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference', 'smoking_encoded', 'activity_encoded', 'alcohol_encoded']
-
-[2/3] Checking for proxy leakage (correlation with HbA1c threshold)...
-   PASS: No proxy leakage detected (threshold: |r| > 0.95)
-         Highest correlation: triglycerides (r=0.3241)
-
-[3/3] Computing Shannon Entropy Information Gain...
-   PASS: All selected features have meaningful IG
-         Lowest selected feature IG: phys_activity_encoded (0.0027)
-
-======================================================================
-OVERALL RESULT: PASS
-======================================================================
-All leakage checks passed. Training pipeline may proceed.
-```
+**Verification Mechanism:**
+The validation pipeline confirmed these results computationally. It verified that no diagnostic features existed in the predictor feature sets, established that the highest observed proxy correlation (triglycerides, r=0.3241) fell well below the leakage threshold (|r| > 0.95), and validated that all retained features provided non-zero Information Gain.
 
 ---
 
@@ -1755,84 +1541,92 @@ The Go backend test suite comprises 10 test packages covering configuration, cac
 
 **Table 4.4: Backend API Test Results**
 
-| Test Package | Tests Run | Status | Execution Time | Coverage Area |
-|--------------|-----------|--------|----------------|---------------|
-| `internal/cache` | 4 | ✅ PASS (3 skipped*) | 9.065s | Redis cache operations, metrics tracking |
-| `internal/config` | 8 | ✅ PASS | 0.734s | Environment variable loading, validation |
-| `internal/http/handlers` | 24 | ✅ PASS | 1.368s | Auth, users, assessments, admin endpoints |
-| `internal/http/middleware` | 15 | ✅ PASS | 0.253s | JWT auth, RBAC, rate limiting, security headers |
-| `internal/http/sse` | 6 | ✅ PASS | 0.517s | Server-Sent Events broker |
-| `internal/ml` | 12 | ✅ PASS | 0.581s | ML predictor client, biomarker validation |
-| `internal/models` | 5 | ✅ PASS | 0.938s | Domain type definitions |
-| `internal/pdf` | 3 | ✅ PASS | 0.601s | PDF report generation |
-| `internal/services` | 18 | ✅ PASS | 0.380s | Business logic, validation, export |
-| `internal/store` | 22 | ✅ PASS | 0.740s | Repository pattern, SQLC queries |
+| Test Package | Tests Run | Status | Execution Time (varies) | Coverage Area |
+|--------------|-----------|--------|------------------------|---------------|
+| `internal/cache` | 4 | PASS (3 skipped*) | ~8.9s | Redis cache operations, metrics tracking |
+| `internal/config` | 8 | PASS | ~0.4s | Environment variable loading, validation |
+| `internal/http/handlers` | 24 | PASS | ~1.5s | Auth, users, assessments, admin endpoints |
+| `internal/http/middleware` | 15 | PASS | ~0.8s | JWT auth, RBAC, rate limiting, security headers |
+| `internal/http/sse` | 6 | PASS | ~0.8s | Server-Sent Events broker |
+| `internal/ml` | 12 | PASS | ~1.4s | ML predictor client, biomarker validation |
+| `internal/models` | 5 | PASS | ~0.9s | Domain type definitions |
+| `internal/pdf` | 3 | PASS | ~1.0s | PDF report generation |
+| `internal/services` | 18 | PASS | ~1.2s | Business logic, validation, export |
+| `internal/store` | 22 | PASS | ~1.2s | Repository pattern, SQLC queries |
 
 *Note: Redis cache tests skipped due to Redis not running in local test environment (acceptable for development; integration tests require Redis instance).
 
-**Test Execution Command**:
-```bash
-cd backend && go test ./... -v
 
-# Output Summary:
-# ok    github.com/skufu/DianaV2/backend/internal/cache       9.065s
-# ok    github.com/skufu/DianaV2/backend/internal/config      0.734s
-# ok    github.com/skufu/DianaV2/backend/internal/http/handlers   1.368s
-# ok    github.com/skufu/DianaV2/backend/internal/http/middleware 0.253s
-# ok    github.com/skufu/DianaV2/backend/internal/http/sse    0.517s
-# ok    github.com/skufu/DianaV2/backend/internal/ml          0.581s
-# ok    github.com/skufu/DianaV2/backend/internal/models      0.938s
-# ok    github.com/skufu/DianaV2/backend/internal/pdf         0.601s
-# ok    github.com/skufu/DianaV2/backend/internal/services    0.380s
-# ok    github.com/skufu/DianaV2/backend/internal/store       0.740s
-```
+
+**Assessment Handler Clinical Guardrail Tests (Table-Driven)**
+
+Beyond the aggregate package-level test counts reported above, a consolidated table-driven test (`TestAssessmentsHandler_Create_TableDriven`) was implemented to validate five critical clinical safety invariants governing the assessment creation endpoint. This test function employs Go's idiomatic table-driven test pattern, wherein each sub-test exercises a distinct guardrail path: population age boundary enforcement, missing-data imputation acceptance, biomarker out-of-range warning propagation, and end-to-end ML predictor integration.
+
+**Table 4.4.1: Assessment Handler Table-Driven Clinical Guardrail Tests**
+
+| Test ID | Scenario | Input Summary | Expected HTTP Status | Assertion Focus |
+|---------|----------|---------------|---------------------|-----------------|
+| TC-AGE-LO | Age below canonical range | age=44, valid biomarkers | 400 Bad Request | Canonical age policy error message returned; no assessment persisted; ML predictor not invoked |
+| TC-AGE-HI | Age above canonical range | age=61, valid biomarkers | 400 Bad Request | Identical age policy enforcement at upper boundary; no persistence side effects |
+| TC-WC-IMP | Missing waist circumference | age=55, waist_circumference omitted (→ 0) | 201 Created | Handler accepts zero-valued waist circumference and delegates to ML service imputation; assessment persisted with correct age |
+| TC-HBA1C-OOR | HbA1c out of clinical range | age=55, hba1c=20.0% | 201 Created | Assessment created with `validation_status` containing `hba1c_diabetic` warning; ML predictor still invoked (validation is advisory, not blocking) |
+| TC-SUCCESS | Successful end-to-end create | age=50, complete biomarker panel | 201 Created | ML predictor invoked; assessment persisted with correct age; no validation warnings for normal-range inputs |
+
+**Test Design Rationale:**
+
+- **Age Boundary Tests (TC-AGE-LO, TC-AGE-HI):** DIANA's target population is postmenopausal women aged 45–60. The assessment handler enforces this constraint server-side (assessments.go:435–438) to prevent out-of-population predictions that would lack epidemiological validity. The table-driven structure ensures both boundary values are tested independently and that rejection is accompanied by a descriptive clinical rationale message.
+
+- **Missing Waist Circumference (TC-WC-IMP):** Waist circumference is a required clustering feature but may be unavailable in self-screening contexts. When omitted (defaulting to zero), the Go backend forwards the payload to the ML service, which applies BMI-concordant heuristic imputation as described in Section 3.1.4.1. This test confirms the backend does not prematurely reject the request, preserving the imputation contract between the Go handler and the Python ML service.
+
+- **HbA1c Out-of-Range (TC-HBA1C-OOR):** The `ValidateBiomarkers()` function (ml/validation.go) flags clinically extreme values as advisory warnings in the `validation_status` field without blocking the prediction. This design reflects DIANA's clinical safety philosophy: extreme inputs receive flagged screening results rather than silent rejection, ensuring clinicians can observe both the ML prediction and the biomarker warning for informed decision-making.
+
+- **Successful Create (TC-SUCCESS):** Verifies the complete happy-path pipeline sequence: JSON payload binding → age range validation → biomarker validation → ML prediction via `PredictWithModelType()` → transactional persistence with `BeginTx()/Commit()`. This test confirms that the full assessment lifecycle functions correctly when all inputs are within expected ranges.
+
+
+
+**Implementation Reference:** `backend/internal/http/handlers/assessments_test.go` — `TestAssessmentsHandler_Create_TableDriven`
 
 **ML Service Test Results**
 
-The Python ML service test suite comprises 269 tests covering clustering algorithms, data leakage prevention, feature parity, prediction endpoints, server functionality, API key authentication, drift detection, and training utilities.
+The Python ML service test suite comprises 270 tests covering clustering algorithms, data leakage prevention, feature parity, prediction endpoints, server functionality, API key authentication, drift detection, and training utilities.
 
 **Table 4.5: ML Service Test Results**
 
 | Test Module | Tests Run | Status | Coverage Area |
 |-------------|-----------|--------|---------------|
-| `test_clustering.py` | 9 | ✅ PASS | Ahlqvist subtype labeling (SIRD/SIDD/MOD/MARD) |
-| `test_leakage.py` | 8 | ✅ PASS | Data leakage prevention, feature set validation |
-| `test_parity.py` | 4 | ✅ PASS | Feature computation parity across implementations |
-| `test_predict.py` | 10 | ✅ PASS | ClinicalPredictor inference, edge cases |
-| `test_server.py` | 20 | ✅ PASS | Flask endpoints, API key auth, drift lineage metadata |
-| `test_train.py` | 14 | ✅ PASS | Feature engineering, BMI categorization, MetS scoring |
-| `test_clinical_scenarios.py` | 34 | ✅ PASS | End-to-end clinical vignette evaluation |
-| `test_edge_cases_audit.py` | 120+ | ✅ PASS | Missing value imputation, bounds checking |
-| *Other test modules* | 50+ | ✅ PASS | Explainability, caching, drift scheduling |
+| `test_clustering.py` | 9 | PASS | Ahlqvist subtype labeling (SIRD/SIDD/MOD/MARD) |
+| `test_leakage.py` | 8 | PASS | Data leakage prevention, feature set validation |
+| `test_parity.py` | 4 | PASS | Feature computation parity across implementations |
+| `test_predict.py` | 7 | PASS | ClinicalPredictor inference, edge cases |
+| `test_server.py` | 29 | PASS | Flask endpoints, API key auth, drift lineage metadata |
+| `test_train.py` | 14 | PASS | Feature engineering, BMI categorization, MetS scoring |
+| `test_clinical_scenarios.py` | 34 | PASS | End-to-end clinical vignette evaluation |
+| `test_methodology_compliance.py` | 90 | PASS | SHAP configuration, feature parity, drift setup |
+| `test_drift_scheduler.py` | 21 | PASS | Drift detection scheduling and execution |
+| `test_shap_background.py` | 15 | PASS | SHAP explainability with saved background data |
+| `test_integration.py` | 14 | PASS | Inter-module and end-to-end integration |
+| `test_weighted_kmeans.py` | 6 | PASS | Weighted distance, cluster stability, label assignment |
+| `test_face_validity.py` | 13 | PASS | Clinical face validity and metabolic profile sanity |
+| `test_threshold_optimization.py` | 6 | PASS | Prevalence shift guardrails and threshold arbitration |
 
-**Test Execution Command**:
-```bash
-cd Ian_ML && pytest
-# ============================= test session starts ==============================
-# collected 269 items
-#
-# tests/test_clinical_scenarios.py ..................................      [ 12%]
-# tests/test_clustering.py .........                                       [ 15%]
-# ...
-# ============================== 269 passed in ~30s ==============================
-```
+
 
 **Test Coverage Summary**
 
-**Backend Coverage by Layer**:
-- **Configuration**: ✅ Complete (env loading, validation, defaults)
-- **Cache**: ✅ Complete (Redis operations, metrics; integration tests skipped)
-- **HTTP Handlers**: ✅ Complete (all endpoints, error cases, RBAC)
-- **Middleware**: ✅ Complete (auth, RBAC, rate limiting, security)
-- **ML Integration**: ✅ Complete (HTTP client, validation, fallback)
-- **Data Access**: ✅ Complete (repository pattern, SQLC queries)
+**Backend Coverage by Layer** (overall statement coverage: 63.1%):
+- **Configuration**: Covered (env loading, validation, defaults)
+- **Cache**: Covered (Redis operations, metrics; integration tests skipped)
+- **HTTP Handlers**: Covered (all endpoints, error cases, RBAC)
+- **Middleware**: Covered (auth, RBAC, rate limiting, security)
+- **ML Integration**: Covered (HTTP client, validation, fallback)
+- **Data Access**: Covered (repository pattern, SQLC queries)
 
 **ML Service Coverage by Component**:
-- **Clustering**: ✅ Complete (Ahlqvist labeling, tiering, safety checks)
-- **Predictors**: ✅ Complete (inference, edge cases, missing data)
-- **Server**: ✅ Complete (endpoints, authentication, metadata)
-- **Training**: ✅ Complete (feature engineering, preprocessing)
-- **Data Safety**: ✅ Complete (leakage prevention, feature consistency)
+- **Clustering**: Complete (Ahlqvist labeling, tiering, safety checks)
+- **Predictors**: Complete (inference, edge cases, missing data)
+- **Server**: Complete (endpoints, authentication, metadata)
+- **Training**: Complete (feature engineering, preprocessing)
+- **Data Safety**: Complete (leakage prevention, feature consistency)
 
 **Known Limitations**
 
@@ -2086,25 +1880,7 @@ Performance metrics are categorized into four domains:
 **Tool**: Apache Bench (`ab`) or `wrk`
 
 **Procedure**:
-```bash
-# Measure /api/v1/users/me/assessments endpoint
-# 1000 requests, 50 concurrent connections
-
-JWT_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-
-ab -n 1000 -c 50 \
-   -H "Authorization: Bearer $JWT_TOKEN" \
-   -H "Content-Type: application/json" \
-   https://diana-api.onrender.com/api/v1/users/me/assessments
-
-# Expected Output Format:
-# Time taken for tests:   XX.XX seconds
-# Complete requests:      1000
-# Failed requests:        0
-# Requests per second:    XX.XX [#/sec]
-# Mean response time:     XXXms
-# StdDev response time:   XXms
-```
+Load testing involves generating a sustained workload against the assessment creation endpoint (e.g., 1000 total requests with 50 concurrent connections) using authenticated payloads. The measurement captures comprehensive latency statistics under concurrent load.
 
 **Metrics to Record**:
 - Mean response time (ms)
@@ -2121,28 +1897,7 @@ ab -n 1000 -c 50 \
 **Tool**: Custom timing script or MLflow logging
 
 **Procedure**:
-```bash
-# Measure /predict endpoint latency
-# Single prediction with SHAP computation
-
-curl -w "@curl-format.txt" -o /dev/null -s \
-  -X POST http://localhost:5001/predict \
-  -H "Content-Type: application/json" \
-  -d '{
-    "bmi": 28.5,
-    "triglycerides": 180,
-    "ldl": 140,
-    "hdl": 45,
-    "waist_circumference": 95,
-    "age": 54
-  }'
-
-# curl-format.txt:
-# time_namelookup:  %{time_namelookup}\n
-# time_connect:     %{time_connect}\n
-# time_starttransfer: %{time_starttransfer}\n
-# time_total:       %{time_total}\n
-```
+Inference latency is measured by capturing the full request-response lifecycle for isolated prediction payloads submitted directly to the ML service interface. The benchmark isolates pure algorithmic execution (model loading, prediction, and SHAP computation) from external network or database overhead.
 
 **Metrics to Record**:
 - Total inference time (ms)
@@ -2377,6 +2132,23 @@ Open-ended responses and expert interviews will be analyzed using thematic analy
 | Clinical Face-Validity Rating (Expert - SHAP Clarity) | ≥ 4.0/5.0 | **[TBD]** - Pending expert review |
 | Error Rate (Incorrect Clicks) | < 5% | **[TBD]** - Pending user testing |
 | User Confidence Score (ISO 25010) | ≥ 3.5/5.0 | **[TBD]** - Pending user testing |
+
+**Table 4.10: UAT Test Case Specifications**
+
+| Test ID | Test Case | Precondition | Test Steps | Expected Result | Status |
+|---------|-----------|-------------|------------|----------------|--------|
+| UAT-01 | User Registration | User has valid email, app deployed | 1. Navigate to /signup 2. Enter email/password 3. Submit | Account created, redirected to login | **[TBD]** |
+| UAT-02 | User Login | Registered account exists | 1. Navigate to /login 2. Enter credentials 3. Submit | JWT issued, redirected to dashboard | **[TBD]** |
+| UAT-03 | Dashboard Rendering | Authenticated session | 1. Log in 2. Observe dashboard | Risk summary, trends chart, and quick-action buttons rendered | **[TBD]** |
+| UAT-04 | Submit Full Assessment | Authenticated, all biomarkers available | 1. Open assessment form 2. Enter age, BMI, TG, HDL, LDL, waist, smoking, activity, alcohol 3. Submit | Assessment created, risk result displayed with SHAP explanation | **[TBD]** |
+| UAT-05 | Submit Minimal Assessment | Authenticated, only required biomarkers | 1. Open assessment form 2. Enter only required fields 3. Submit | Assessment created with imputed waist circumference; risk result shown | **[TBD]** |
+| UAT-06 | Submit Below Age Range | Authenticated, age < 45 | 1. Enter age = 44 with valid biomarkers 2. Submit | 400 Bad Request; age policy error shown | **[TBD]** |
+| UAT-07 | View Historical Trends | At least 3 past assessments exist | 1. Navigate to Trends page 2. Observe charts | Biomarker trend lines and risk score history displayed | **[TBD]** |
+| UAT-08 | SHAP Explanation Interaction | Completed assessment with at-risk result | 1. Open assessment result 2. Click on SHAP explanation | Waterfall plot displayed with feature contributions and risk delta | **[TBD]** |
+| UAT-09 | Profile Update | Authenticated session | 1. Navigate to Profile 2. Update name/email 3. Save | Profile updated; confirmation shown | **[TBD]** |
+| UAT-10 | Admin User Management | Authenticated as admin | 1. Navigate to Admin Dashboard 2. View user list 3. Toggle user status | User list displayed; status toggle applied | **[TBD]** |
+| UAT-11 | Assessment Export | At least 1 assessment exists | 1. Navigate to Export 2. Select date range 3. Download CSV | CSV file downloaded with correct column headers and data | **[TBD]** |
+| UAT-12 | Rate Limit Enforcement | Authenticated session | 1. Send >100 requests/min 2. Observe response | HTTP 429 rate limit exceeded after threshold | **[TBD]** |
 
 **Initial Qualitative Findings (Development Team Review)**
 
