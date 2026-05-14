@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import BiomarkerInput from './BiomarkerInput';
 
 describe('BiomarkerInput', () => {
@@ -35,7 +36,21 @@ describe('BiomarkerInput', () => {
   it('calls onChange with input value', async () => {
     const handleChange = vi.fn();
     const user = userEvent.setup();
-    render(<BiomarkerInput label="Glucose" onChange={handleChange} />);
+    const ControlledInput = () => {
+      const [value, setValue] = useState('');
+      return (
+        <BiomarkerInput
+          label="Glucose"
+          value={value}
+          onChange={nextValue => {
+            handleChange(nextValue);
+            setValue(nextValue);
+          }}
+        />
+      );
+    };
+
+    render(<ControlledInput />);
 
     const input = screen.getByRole('spinbutton');
     await user.type(input, '100');
@@ -52,19 +67,18 @@ describe('BiomarkerInput', () => {
     expect(input).toHaveValue(100);
   });
 
-  it('shows error for non-numeric input', async () => {
+  it('uses the native number input to reject non-numeric input', async () => {
     const handleChange = vi.fn();
     const user = userEvent.setup();
     render(<BiomarkerInput label="Glucose" onChange={handleChange} />);
 
     const input = screen.getByRole('spinbutton');
-    // Use userEvent.type instead of fireEvent.change for better simulation
     await user.type(input, 'abc');
 
-    // Wait for the error message to appear (AnimatePresence has animation)
     await waitFor(() => {
-      expect(screen.getByText('Please enter a valid number')).toBeInTheDocument();
+      expect(input).toHaveValue(null);
     });
+    expect(handleChange).not.toHaveBeenCalled();
   });
 
   it('shows error when value is below minimum', () => {

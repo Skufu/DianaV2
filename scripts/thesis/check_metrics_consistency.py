@@ -26,7 +26,6 @@ RESULTS_DIR = PROJECT_ROOT / "models" / "binary_v2_no_bp" / "results"
 DATA_PATH = PROJECT_ROOT / "data" / "nhanes" / "processed" / "diana_dataset_final.csv"
 DEFAULT_DOCS = [
     PROJECT_ROOT / "docs" / "07-research" / "thesis-drafts" / "ch3+4.md",
-    PROJECT_ROOT / "docs" / "07-research" / "thesis-drafts" / "ch3+4_academic.md",
 ]
 
 

@@ -358,7 +358,7 @@ const AssessmentForm = ({
         )}
 
         <div className="p-5 sm:p-6 md:p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
           {showModelSelector && !lockedModelType && (
             <div>
               <label
