@@ -119,25 +119,33 @@ if (API_BASE && /^[a-zA-Z]:[/\\]/.test(API_BASE)) {
 
 export { API_BASE };
 // Token storage for cross-origin auth (Vercel → Render)
-// Cookies don't work cross-origin with SameSite=Strict, so we use Bearer tokens
-let _accessToken = typeof window !== 'undefined' ? localStorage.getItem('diana_access_token') : null;
-let _refreshToken = typeof window !== 'undefined' ? localStorage.getItem('diana_refresh_token') : null;
+// Cookies don't work cross-origin with SameSite=Strict, so we use Bearer tokens.
+// Guard the storage API for SSR and test environments where localStorage may be absent or partial.
+const getLocalStorage = () => {
+  if (typeof window === 'undefined' || !window.localStorage) return null;
+  return typeof window.localStorage.getItem === 'function' ? window.localStorage : null;
+};
+
+let _accessToken = getLocalStorage()?.getItem('diana_access_token') || null;
+let _refreshToken = getLocalStorage()?.getItem('diana_refresh_token') || null;
 
 export const setAuthTokens = (accessToken, refreshToken) => {
   _accessToken = accessToken;
   _refreshToken = refreshToken;
-  if (typeof window !== 'undefined') {
-    if (accessToken) localStorage.setItem('diana_access_token', accessToken);
-    if (refreshToken) localStorage.setItem('diana_refresh_token', refreshToken);
+  const storage = getLocalStorage();
+  if (storage) {
+    if (accessToken) storage.setItem('diana_access_token', accessToken);
+    if (refreshToken) storage.setItem('diana_refresh_token', refreshToken);
   }
 };
 
 export const clearAuthTokens = () => {
   _accessToken = null;
   _refreshToken = null;
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('diana_access_token');
-    localStorage.removeItem('diana_refresh_token');
+  const storage = getLocalStorage();
+  if (storage) {
+    storage.removeItem('diana_access_token');
+    storage.removeItem('diana_refresh_token');
   }
 };
 
