@@ -5,12 +5,12 @@
 
 ---
 
-## Section 1: Diabetes Subgroups & Clusters (Ahn et al. Framework)
+## Section 1: Diabetes Subgroups & Clusters (Ahlqvist-Inspired Framework)
 
-### 1.1 Original Ahn et al. (2018) Foundation
-**Ahn, C. H., et al. (2018).** *Subtyping of Type 2 Diabetes Determined From Clinical Parameters.* Diabetes, 69(10), 2086-2093.
-- **URL:** https://diabetesjournals.org/diabetes/article/69/10/2086/16081/
-- **Key Finding:** Identified 5 diabetes subtypes: SAID, SIDD, SIRD, MOD, MARD using GAD antibody, age at diagnosis, BMI, HbA1c, and HOMA2 indices
+### 1.1 Original Ahlqvist et al. (2018) Foundation
+**Ahlqvist, E., et al. (2018).** *Novel subgroups of adult-onset diabetes and their association with outcomes: a data-driven cluster analysis of six variables.* The Lancet Diabetes & Endocrinology, 6(5), 361-369.
+- **URL:** https://doi.org/10.1016/S2213-8587(18)30051-2
+- **Key Finding:** Identified 5 diabetes subtypes: SAID, SIDD, SIRD, MOD, MARD using GAD antibody, age at diagnosis, BMI, HbA1c, and HOMA2 estimates
 - **DIANA Relevance:** Foundation for metabolic clustering approach
 
 ### 1.2 Validation Studies
@@ -21,7 +21,7 @@
 
 **Dennis, J. M., et al. (2020).** *Subtyping of Type 2 Diabetes in 5 Cohorts Using Simple Clinical Parameters.* Diabetes Care, 43(8), 1755-1764.
 - **URL:** https://pubmed.ncbi.nlm.nih.gov/32457208/
-- **Key Finding:** Successfully replicated Ahn clusters across 5 independent cohorts
+- **Key Finding:** Replicated Ahlqvist-inspired clusters across 5 independent cohorts
 - **DIANA Relevance:** Cross-validation of clustering methodology
 
 ### 1.3 Recent Meta-Analysis (2025)

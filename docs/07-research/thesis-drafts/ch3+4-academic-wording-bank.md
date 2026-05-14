@@ -4,6 +4,272 @@ This file contains copy-paste-ready academic prose for Chapter 3 and Chapter 4 o
 
 ---
 
+## Panelist-Facing Tables
+
+The following tables are designed for panel review. They summarize the methodological decisions, implementation evidence, results, and remaining limitations most likely to be examined during thesis defense. They may be copied into Chapter 3, Chapter 4, or an appendix, depending on the required manuscript format.
+
+**Table WB-1. Panel Review Evidence Map for Chapter 3 and Chapter 4**
+
+| Panel Review Concern | Evidence to Present | Where It Belongs | Defense Point |
+|---|---|---|---|
+| Whether the model is circular | HbA1c and fasting blood sugar were used for label construction but excluded from model predictors | Chapter 3, data leakage prevention | The model estimates risk from non-diagnostic metabolic, anthropometric, and lifestyle variables rather than from the diagnostic criteria themselves |
+| Whether the cohort is correctly defined | Final analytic cohort of 1,376 postmenopausal women; binary at-risk class contains 734 cases and normal class contains 642 cases | Chapter 3, population of the study | The binary formulation is aligned with the screening objective because pre-diabetic and diabetic cases are combined as users needing follow-up |
+| Whether temporal validation was used | Nested Leave-One-Group-Out validation by NHANES survey release | Chapter 3, model validation; Chapter 4, performance results | Holding out entire survey releases is more conservative than random splitting and tests temporal robustness within NHANES |
+| Whether the selected model is justified | Logistic Regression achieved the strongest mean fold AUC while preserving interpretability and efficient inference | Chapter 4, model comparison | Selection was based on both performance and suitability for clinical explanation, not AUC alone |
+| Whether subtype labels are overclaimed | Weighted K-Means labels are described as SIRD-like, SIDD-like, MOD-like, and MARD-like heuristic proxy patterns | Chapter 3, clustering; Chapter 4, clustering results | Subtypes are descriptive and hypothesis-generating, not validated biological diagnoses or treatment directives |
+| Whether system claims match implementation | React frontend, Go backend, Python ML service, PostgreSQL persistence, optional Redis-compatible cache support, ML proxy, privacy routes, admin routes, and model lineage metadata | Chapter 3, system architecture | The manuscript should report implemented workflows without claiming clinical certification |
+| Whether evaluation evidence is complete | Backend, ML, and frontend tests pass, but Redis-dependent integration evidence, formal UAT, expert review, accessibility audit, production load testing, route-based frontend navigation, and production-hardened browser-token handling remain incomplete | Chapter 4, functional testing and limitations | The chapter should distinguish technical verification from pending user and clinical validation |
+
+**Table WB-2. Recommended Chapter 3 Methodology Tables**
+
+| Table Title | Purpose for Panelists | Essential Content |
+|---|---|---|
+| NHANES Survey Releases Included in the Study | Shows the temporal source of the dataset and justifies cycle grouping | 2009-2010, 2011-2012, 2013-2014, 2015-2016, 2017-2018, and the August 2021-August 2023 post-pandemic release; exclude disrupted 2019-2020 |
+| Final Class Distribution | Makes the study population and binary reformulation transparent | Normal = 642; pre-diabetic = 457; diabetic = 277; at-risk binary class = 734; total = 1,376 |
+| NHANES File Groups and Key Variables | Demonstrates that variables came from standard NHANES data files | DEMO, GHB, GLU, TCHOL, HDL, TRIGLY, BMX, RHQ, DIQ, SMQ, PAQ, ALQ, MCQ, INS, and HSCRP where available |
+| Core Feature Mapping | Connects NHANES variable codes to clinical names | LBXGH to HbA1c, LBXGLU to fasting blood sugar, BMXBMI to BMI, BMXWAIST to waist circumference, LBXTR to triglycerides, LBDHDD to HDL, LBDLDL to LDL |
+| Leakage Prevention Safeguards | Shows how the study avoided inflated performance | Diagnostic-feature scan, proxy-correlation screen, and information-gain review |
+| Candidate Model and Validation Design | Explains why the model comparison is fair | Logistic Regression, Random Forest, LightGBM, and XGBoost evaluated under nested LOGO validation |
+| System Architecture and API Surface | Lets panelists inspect whether the application claims are implemented | Frontend, backend, ML service, database, cache, authentication, assessment routes, privacy routes, admin routes, and ML proxy |
+
+**Table WB-3. Core Study Variables and Their Methodological Roles**
+
+| Variable or Variable Group | Study Role | Included as Predictor? | Methodological Note |
+|---|---|---:|---|
+| HbA1c | Reference-label construction and clinical interpretation | No | Excluded from predictors to avoid circular prediction |
+| Fasting blood sugar or fasting glucose | Clinical interpretation and diagnostic context | No | Excluded from predictors for the same leakage-prevention reason |
+| Triglycerides | Binary model input and clustering feature | Yes | Non-diagnostic metabolic marker used for screening and subtype context |
+| HDL cholesterol | Binary model input and clustering feature | Yes | Inverse lipid-risk marker; used in the metabolic-syndrome serving guardrail |
+| LDL cholesterol | Binary model input and clustering feature | Yes | Atherogenic lipid marker emphasized in weighted clustering |
+| BMI | Binary model input and clustering feature | Yes | Obesity-related anthropometric marker |
+| Waist circumference | Binary model input and clustering feature | Yes | Central adiposity marker; may be imputed at serving time when missing |
+| Age | Binary model input and clustering feature | Yes | Cohort-restricted demographic predictor; not amplified in clustering |
+| Smoking, physical activity, and alcohol use | Binary model inputs | Yes | Lifestyle proxies derived from NHANES questionnaire responses |
+| Insulin, TG/HDL ratio, blood pressure, and composite scores | Reviewed candidate or contextual variables | No | Excluded because of subsample availability, redundancy, accessibility concerns, or interpretability constraints |
+
+**Table WB-4. Model Development and Validation Summary**
+
+| Methodological Component | Implementation in DIANA | Reason for Inclusion |
+|---|---|---|
+| Outcome reformulation | Pre-diabetic and diabetic classes combined into one at-risk class | Matches the screening goal of identifying users who may need follow-up |
+| Feature exclusion rule | HbA1c and fasting blood sugar excluded from predictor set | Prevents circular prediction and inflated performance |
+| Missing-data strategy | Median imputation fitted within cross-validation folds | Prevents leakage from validation or test folds into preprocessing |
+| Temporal validation | Leave-One-Group-Out validation by NHANES release | Evaluates robustness across survey periods rather than random within-cycle splits |
+| Candidate algorithms | Logistic Regression, Random Forest, LightGBM, and XGBoost | Provides interpretable, ensemble, and gradient-boosting comparisons under one framework |
+| Model-selection criterion | Mean fold AUC with interpretability and deployment considerations | Avoids selecting a model based only on pooled performance |
+| Threshold policy | Youden's J, screening-optimized, and geometric-mean thresholds evaluated from out-of-fold probabilities; optimized mean threshold of 0.478 with guardrail arbitration in 2 of 6 folds | Supports screening sensitivity while controlling specificity collapse |
+| Subtype module | Weighted K-Means on at-risk cases only, K = 4 | Adds heuristic metabolic pattern context after binary screening |
+| Explainability | SHAP explanations requested through the explainability flow | Supports transparent discussion of patient-level risk drivers |
+
+## Panelist-Facing Mermaid Figures
+
+The following figures are copy-paste-ready Mermaid diagrams for Chapter 3. They are most useful where a table would otherwise become a long inventory of relationships. Retain numeric result tables for measured values, but use these figures to explain methodological flow, system architecture, API access boundaries, and the assessment request sequence.
+
+**Figure WB-1. Methodological Flow from NHANES Data to the Integrated DIANA System**
+
+Copy-ready lead-in sentence: Figure WB-1 summarizes the methodological progression from secondary data acquisition to model development, system integration, and planned user and expert evaluation.
+
+```mermaid
+flowchart LR
+    A["NHANES releases<br/>2009-2018 and 2021-2023"] --> B["Postmenopausal cohort filtering<br/>final analytic n = 1,376"]
+    B --> C["Reference-label construction<br/>DIQ010 plus HbA1c thresholds"]
+    C --> D["Leakage-safe preprocessing<br/>diagnostic predictors excluded"]
+    D --> E["Nested temporal validation<br/>Leave-One-Group-Out by NHANES release"]
+    E --> F["Candidate model comparison<br/>LR, RF, LightGBM, XGBoost"]
+    F --> G["Selected screening model<br/>Logistic Regression"]
+    G --> H["Threshold optimization<br/>mean threshold = 0.478"]
+    H --> I["At-risk subtyping<br/>weighted K-Means, K = 4"]
+    I --> J["Explainability layer<br/>feature-attribution output when available"]
+    J --> K["Integrated web application<br/>React, Go, Python ML, PostgreSQL, optional cache support"]
+    K --> L["Technical verification and planned evaluation<br/>tests, user acceptance testing, expert review, accessibility, load testing"]
+```
+
+Copy-ready figure interpretation: The methodological pipeline separates label construction from predictor selection before model training. Diagnostic glycemic markers are retained for reference-label construction and clinical interpretation but are excluded from the predictor set. The final screening model, threshold policy, cluster module, and explainability workflow are then integrated into the web application and evaluated through technical tests and planned user and expert review.
+
+**Figure WB-2. DIANA API Surface and Access-Control Boundaries**
+
+Copy-ready lead-in sentence: Figure WB-2 may be used in place of a long API-surface table when the manuscript needs to emphasize route grouping, authentication boundaries, and administrative separation.
+
+```mermaid
+flowchart TB
+    Browser["React frontend"] --> Gateway["Go API gateway<br/>/api/v1"]
+
+    Gateway --> Public["Public endpoints"]
+    Public --> Health["Health, metrics, Swagger, and non-production debug routes"]
+    Public --> Auth["Authentication<br/>login, register, refresh, logout"]
+    Public --> EventStream["Auth-event stream<br/>token-query validation"]
+
+    Gateway --> JWT["JWT-protected endpoints"]
+    JWT --> UserSelf["User self-service<br/>/users/me"]
+    UserSelf --> Profile["Profile, onboarding, consent, trends, account deletion"]
+    UserSelf --> Assessments["Assessment CRUD"]
+    UserSelf --> Privacy["Privacy export, deletion, consent history, withdrawal, processing info"]
+    UserSelf --> Report["PDF health report export"]
+
+    JWT --> Analytics["Personal analytics summary"]
+    JWT --> Clinics["Clinic list and clinic dashboard"]
+
+    JWT --> DoctorAdmin["Doctor or admin RBAC"]
+    DoctorAdmin --> Insights["Insights<br/>cluster distribution, biomarker trends, cohort analysis"]
+
+    JWT --> MLProxy["ML proxy<br/>enabled when MODEL_URL is configured"]
+    MLProxy --> MLService["Internal Python ML service<br/>health, metrics, information gain, clusters, visualizations, SHAP explanation"]
+
+    JWT --> AdminOnly["Admin RBAC"]
+    AdminOnly --> AdminDashboard["Dashboard and clinic comparison"]
+    AdminOnly --> AdminAudit["Audit-log review"]
+    AdminOnly --> AdminUsers["User list, create, update, deactivate, reactivate"]
+    AdminOnly --> AdminModels["Model runs, active model, drift status, alerts, sync"]
+```
+
+Copy-ready figure interpretation: The API surface is organized around a public boundary, an authenticated user boundary, doctor/admin insight routes, ML proxy routes, and admin-only routes. This structure supports separation between self-service health workflows, system administration, model traceability, and internal ML-service access.
+
+**Figure WB-3. Assessment Creation and Explanation Sequence**
+
+Copy-ready lead-in sentence: Figure WB-3 illustrates how a user-submitted assessment moves through authentication, validation, ML inference, persistence, optional cache invalidation, and optional SHAP explanation.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant FE as React frontend
+    participant API as Go API
+    participant ML as Python ML service
+    participant DB as PostgreSQL
+    participant Cache as Optional cache
+
+    User->>FE: Completes assessment form
+    FE->>API: POST /api/v1/users/me/assessments
+    API->>API: Authenticate JWT and validate biomarkers
+    API->>ML: Send model-relevant assessment payload
+    ML-->>API: Return risk score, status, subtype, and lineage metadata
+    API->>DB: Persist assessment and prediction metadata
+    API->>Cache: Invalidate affected trend and analytics keys when configured
+    API-->>FE: Return prediction response
+    FE->>API: POST /api/v1/ml/predict/explain when explanation is requested
+    API->>ML: Proxy SHAP explanation request
+    ML-->>API: Return feature-attribution output
+    API-->>FE: Return explanation for display
+```
+
+Copy-ready figure interpretation: The sequence shows that the frontend does not call the Python ML service directly. The Go backend remains the controlled integration point for authentication, validation, ML-service communication, database persistence, optional cache invalidation, and response shaping.
+
+**Table WB-5. Chapter 4 Headline Results for Panel Reading**
+
+Copy-ready anchor sentence: The final Logistic Regression screening model demonstrated acceptable discrimination under nested LOGO validation, achieving an AUC-ROC of **0.727** (95% CI: **0.700-0.753**) and a sensitivity of **0.711** (95% CI: **0.680-0.741**) at the optimized screening threshold of **0.478**. Specificity was **0.629**, and the F1 score of **0.699** indicates a moderate precision-recall trade-off at the selected threshold.
+
+| Result Area | Main Finding | Interpretation for the Manuscript |
+|---|---|---|
+| Binary screening discrimination | AUC-ROC of **0.727** (95% CI: **0.700-0.753**) | Acceptable internal temporal discrimination for an exploratory screening-support model |
+| Sensitivity | sensitivity of **0.711** (95% CI: **0.680-0.741**) | Central estimate meets the screening target, but the lower confidence bound should be acknowledged |
+| Specificity | 0.629 | Provides a more balanced profile than highly sensitive but low-specificity reconstructed comparators |
+| Screening threshold | 0.478 | Lower than 0.50 because the system prioritizes early identification |
+| Selected model | Logistic Regression | Chosen for mean fold AUC, interpretability, stable probability output, and efficient inference |
+| Calibration | Brier score = 0.2082; ECE = 0.0624; Hosmer-Lemeshow statistic = 21.40 | Probabilities are usable for risk support but should not be presented as exact individualized disease probabilities |
+| Clustering | K = 4 weighted K-Means on the at-risk subset | Provides descriptive metabolic subtype context, not biological subtype diagnosis |
+| Technical testing | Backend Go suite passed, ML suite passed with 270 tests, frontend coverage suite passed with 220 tests | Supports implemented system functionality while leaving Redis integration evidence, UAT, accessibility, route-based navigation, browser-token hardening, and load testing as remaining gaps |
+
+The fold-level AUC range of **0.703-0.776** across the six held-out NHANES survey releases indicates that no single temporal fold collapsed below the acceptable discrimination target.
+
+**Table WB-5A. Confidence Interval Summary**
+
+| Metric | Point Estimate | 95% CI Lower | 95% CI Upper | Target |
+|---|---:|---:|---:|---|
+| Sensitivity | 0.7112 | 0.680 | 0.741 | >= 0.70 |
+| AUC-ROC | 0.7267 | 0.700 | 0.753 | >= 0.70 |
+
+**Table WB-5B. Threshold Mode Distribution**
+
+| Threshold Mode | Fold Count | Interpretation |
+|---|---:|---|
+| Youden's J | 4/6 | Standard discrimination-based threshold selected in most folds |
+| Guardrail Shift Floor | 2/6 | Safety arbitration activated where specificity would otherwise fall below the acceptable floor |
+
+**Table WB-5C. Calibration Metrics**
+
+| Metric | Value | Interpretation |
+|---|---:|---|
+| **Brier Score** | **0.2082** | Moderate combined calibration/discrimination loss; lower values are better |
+| **Expected Calibration Error (ECE)** | **0.0624** | Approximately six percentage-point average calibration gap |
+| **Hosmer-Lemeshow χ²** | **21.40** | Moderate fit; should be interpreted cautiously because the statistic is sensitive to sample size and binning |
+
+**Table WB-6. Candidate Model Comparison for Copy-Paste Use**
+
+| Algorithm | AUC-ROC | AUC 95% CI | Sensitivity | Sens 95% CI | Specificity | F1 | Mean Threshold | Manuscript Interpretation |
+|---|---:|---|---:|---|---:|---:|---:|---|
+| Logistic Regression | 0.731 | 0.700-0.753 | 0.711 | 0.680-0.741 | 0.642 | 0.699 | 0.478 | Selected for deployment because it provided the strongest mean fold AUC and the most defensible interpretability profile |
+| Random Forest | 0.714 | 0.689-0.746 | 0.738 | 0.706-0.768 | 0.593 | 0.704 | 0.482 | Competitive non-linear ensemble baseline but did not exceed Logistic Regression |
+| LightGBM | 0.703 | 0.681-0.726 | 0.760 | 0.740-0.799 | 0.537 | 0.699 | 0.455 | Gradient-boosting model with acceptable discrimination but weaker balance |
+| XGBoost | 0.708 | 0.689-0.724 | 0.766 | 0.734-0.795 | 0.549 | 0.709 | 0.637 | Higher sensitivity but lower specificity, making it less suitable as the selected screening model |
+
+Copy-ready inference sentence: Logistic Regression also demonstrated efficient inference: LR inference averages **1.08 ms** in the benchmarked environment, compared with **40.74 ms** for RF and **1.40 ms** for LightGBM. These timing results should be interpreted as local inference benchmarks rather than production load-test results.
+
+**Table WB-6A. Information Gain Feature Rankings**
+
+| Rank | Feature | Type | IG | IG% | In Model? |
+|---:|---|---|---:|---:|---|
+| 1 | Fasting Insulin | Numeric | 0.378539 | 37.98% | No |
+| 2 | TG/HDL Ratio | Numeric | 0.259632 | 26.05% | No |
+| 3 | Triglycerides | Numeric | 0.244786 | 24.56% | Yes |
+| 4 | HDL | Numeric | 0.090256 | 9.05% | Yes |
+| 5 | Waist Circumference | Numeric | 0.084017 | 8.43% | Yes |
+| 6 | Systolic BP | Numeric | 0.080274 | 8.05% | No |
+| 7 | Diastolic BP | Numeric | 0.061783 | 6.20% | No |
+| 8 | BMI | Numeric | 0.058757 | 5.89% | Yes |
+| 9 | Metabolic Syndrome Score | Numeric | 0.058490 | 5.87% | No |
+| 10 | LDL | Numeric | 0.044970 | 4.51% | Yes |
+| 11 | BMI Category | Numeric | 0.034278 | 3.44% | No |
+| 12 | Total Cholesterol | Numeric | 0.028459 | 2.86% | No |
+| 13 | Age | Numeric | 0.004261 | 0.43% | Yes |
+| 14 | Smoking Status (encoded) | Ordinal | 0.004023 | 0.40% | Yes |
+| 15 | Physical Activity (encoded) | Ordinal | 0.002738 | 0.27% | Yes |
+| 16 | Alcohol Use (encoded) | Ordinal | 0.000000 | 0.00% | Yes |
+
+**Table WB-7. At-Risk Cluster Distribution and Centroid Summary**
+
+| Subtype | Count | Percentage of At-Risk Cases | BMI | Triglycerides | LDL | HDL | Age | Waist Circumference | Interpretation |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| SIRD-like | 70 | 9.5% | 31.85 | 322.77 | 116.47 | 42.10 | 53.89 | 106.60 | High triglyceride and central-adiposity pattern; heuristic insulin-resistance-like proxy |
+| SIDD-like | 202 | 27.5% | 28.78 | 140.88 | 166.05 | 53.37 | 55.19 | 98.21 | LDL-dominant atherogenic pattern; not a direct replication of insulin-deficient diabetes |
+| MOD-like | 222 | 30.2% | 42.23 | 117.36 | 112.37 | 51.54 | 54.31 | 124.04 | Obesity-dominant pattern; severe obesity in this cohort despite the MOD-like label |
+| MARD-like | 240 | 32.7% | 28.73 | 99.67 | 100.90 | 60.88 | 55.33 | 95.97 | Residual milder metabolic pattern within the at-risk cohort |
+
+**Table WB-8. Technical Evidence and Remaining Readiness Gaps**
+
+| Evidence Area | Current Status | How to Report It |
+|---|---|---|
+| Backend tests | Passed in the current verification run | Report as technical verification of backend handlers, middleware, ML integration, services, PDF generation, and data access behavior |
+| ML service tests | 270 tests passed | Report as verification of prediction, leakage prevention, clustering, drift utilities, SHAP-related behavior, and clinical scenarios |
+| Frontend unit and contract coverage suite | 220 tests passed | Report as verification of selected UI behavior, API contract assumptions, and broad source coverage smoke tests |
+| Frontend coverage threshold | Coverage gates passed with 72.64 percent line and statement coverage, 60.24 percent branch coverage, and 42.85 percent function coverage | Report as current frontend technical verification under the configured source coverage policy |
+| Redis integration tests | Environment dependent | Avoid claiming full Redis integration verification unless run with a Redis service |
+| UAT and expert review | Protocol defined but not yet executed | Keep SUS, task success rates, ratings, and quotations as placeholders until data collection is complete |
+| Accessibility audit | Readiness features implemented, formal contrast and assistive-technology audit pending | Present as accessibility readiness, not WCAG certification |
+| Production load testing | Not yet completed | Avoid production-scale readiness claims until concurrent load evidence is collected |
+
+**Table WB-8A. Internal Benchmark Reconstruction Results**
+
+| Tool | AUC-ROC | Sensitivity | Specificity | Interpretation |
+|---|---:|---:|---:|---|
+| FINDRISC-like upper-bound | 0.849 (±0.034) | 0.818 | 0.729 | Optimistic comparator using glycemic proxy |
+| DIANA | 0.727 [0.700-0.753] | 0.711 | 0.629 | Non-circular and optimized for NHANES postmenopausal cohort |
+| OmniRisk (Approximated) | 0.688 (±0.025) | 0.931 | 0.278 | Very high sensitivity with low specificity |
+| Simple Clinical Model | 0.677 (±0.021) | 0.944 | 0.222 | Minimal feature model with low specificity |
+| ADA Risk Test reconstruction | 0.589 (±0.028) | 0.918 | 0.203 | Limited discrimination under this reconstruction |
+
+**Table WB-9. Panelist Questions and Defensible Answers**
+
+| Likely Panel Question | Short Defensible Answer |
+|---|---|
+| Why not include HbA1c or fasting blood sugar as predictors? | They were used to construct or interpret the reference label, so including them as predictors would create circular performance and undermine the screening objective. |
+| Why combine pre-diabetic and diabetic cases? | DIANA is designed as a screening and triage-support tool; both groups represent users who may require confirmatory testing or clinical review. |
+| Why use LOGO validation instead of random k-fold validation? | LOGO holds out entire NHANES releases, reducing within-cycle leakage and testing whether the model generalizes across survey periods. |
+| Why select Logistic Regression over more complex models? | It achieved the best mean fold AUC while preserving interpretability, stable probability outputs, and efficient deployment. |
+| Are the subtype labels clinically diagnostic? | No. The labels are Ahlqvist-inspired heuristic proxy patterns generated from accessible metabolic features and should not guide treatment by themselves. |
+| Is the system clinically validated? | No. The current evidence supports an internally validated screening-support prototype; external validation, UAT, expert review, and prospective evaluation remain future work. |
+| Can the system replace physician judgment? | No. The system supports risk discussion and follow-up decisions but does not diagnose diabetes or replace clinical judgment. |
+
+---
+
 ## Chapter 3: Methodology
 
 ### 3.1 Research Design
@@ -16,7 +282,7 @@ The research design does not position DIANA as a diagnostic system. Instead, the
 
 ### 3.2 Research Locale
 
-The primary modeling dataset was obtained from the NHANES public data repository maintained by the Centers for Disease Control and Prevention. NHANES served as the data locale for model construction because it provides standardized demographic, laboratory, examination, and questionnaire data across multiple survey cycles. Six NHANES releases were used: 2009-2010, 2011-2012, 2013-2014, 2015-2016, 2017-2018, and 2021-2023. The 2019-2020 cycle was excluded because field operations were disrupted by the COVID-19 pandemic. The 2021-2023 release was treated as a COVID-adapted three-year release rather than as a regular biennial release.
+The primary modeling dataset was obtained from the NHANES public data repository maintained by the Centers for Disease Control and Prevention. NHANES served as the data locale for model construction because it provides standardized demographic, laboratory, examination, and questionnaire data across multiple survey cycles. Six NHANES releases were used: 2009-2010, 2011-2012, 2013-2014, 2015-2016, 2017-2018, and 2021-2023. The 2019-2020 cycle was excluded because field operations were disrupted by the COVID-19 pandemic. The 2021-2023 files were treated as the August 2021-August 2023 post-pandemic release rather than as a standard biennial NHANES release.
 
 For planned user acceptance testing, the intended user locale consists of online communities of Filipino women discussing perimenopause and menopause-related health concerns. The source chapter identifies the "Usapang Perimenopause at Menopause" Facebook interest group as the target recruitment setting. This online locale provides access to potential end users who may evaluate the application's usability, clarity, and practical relevance. Formal recruitment and feedback collection should proceed only after administrative permission, consent procedures, and data privacy requirements are satisfied.
 
@@ -74,7 +340,7 @@ Each phase produced a defined output. The early phases produced the analytic dat
 
 ### 3.7 Phase 1: Data Acquisition and Biomarker Preparation
 
-This phase executed the extraction, cleaning, integration, and standardization of NHANES records. The automated pipeline acquired six survey releases from 2009 to 2023, excluding the incomplete 2019-2020 cycle and treating 2021-2023 as a COVID-adapted three-year release. The raw files were merged by SEQN to form a unified respondent-level dataset.
+This phase executed the extraction, cleaning, integration, and standardization of NHANES records. The automated pipeline acquired six survey releases from 2009 to 2023, excluding the incomplete 2019-2020 cycle and treating 2021-2023 as the August 2021-August 2023 post-pandemic release. The raw files were merged by SEQN to form a unified respondent-level dataset.
 
 Following record integration, the preprocessing pipeline derived the target postmenopausal cohort and standardized clinical feature names. The pipeline retained variables needed for label construction, predictive modeling, clustering, and system display. HbA1c and fasting blood sugar were preserved for label construction but were not included as predictor inputs. This distinction established the foundation for the study's non-circular prediction design.
 
@@ -106,11 +372,29 @@ NHANES survey weights were not incorporated into model training. The survey weig
 
 This phase established the decision threshold used to convert predicted probabilities into binary screening classifications. The threshold was optimized for a screening context rather than defaulting to the conventional 0.50 probability boundary. Because missed at-risk cases may delay confirmatory testing, the thresholding strategy prioritized sensitivity while maintaining a minimum specificity constraint.
 
-Three threshold strategies were evaluated using out-of-fold probabilities: Youden's J, a screening-optimized rule, and the geometric mean of sensitivity and specificity. A composite clinical score was then used to select the fold-specific strategy. The final mean threshold was 0.478. This downward adjustment from 0.50 reflected the screening objective of early case identification.
+Youden's J was included because it is a conventional threshold-selection criterion that maximizes sensitivity plus specificity minus one. In this study, however, Youden's J was not treated as an automatic final threshold. DIANA is a screening-support system, so the clinical consequences are asymmetric: a false negative may delay confirmatory testing and preventive counseling, while a false positive mainly prompts follow-up review. For this reason, Youden's J was evaluated as one candidate operating point alongside a screening-optimized rule and the geometric mean of sensitivity and specificity.
+
+Three threshold strategies were evaluated using out-of-fold probabilities: Youden's J, a screening-optimized rule, and the geometric mean of sensitivity and specificity. The screening-optimized rule prioritized sensitivity while enforcing a minimum specificity constraint. The geometric-mean rule provided a balance-oriented alternative for folds where sensitivity and specificity diverged. A composite clinical score was then used to select the fold-specific strategy:
+
+`Clinical Score = 0.35 * Sensitivity + 0.30 * Specificity + 0.25 * F1 + 0.10 * Accuracy`
+
+The final mean threshold was 0.478. This downward adjustment from 0.50 reflected the screening objective of early case identification. The threshold was not manually chosen after viewing test performance; it was derived from out-of-fold predictions within the validation workflow.
 
 A deterministic guardrail was implemented to prevent specificity collapse under temporal prevalence shift. If a selected threshold produced high sensitivity but inadequate specificity, the algorithm searched for a feasible threshold satisfying minimum operating constraints or reverted toward a safer threshold. In the final Logistic Regression model, guardrail arbitration was activated in 2 of 6 LOGO folds.
 
 The serving layer also includes a rule-based Metabolic Syndrome risk guardrail. The rule evaluates triglycerides of at least 150 mg/dL, HDL cholesterol below 50 mg/dL, BMI of at least 25, and waist circumference of at least 80 cm. When three or more criteria are met, the at-risk probability is raised to at least 0.65. When two criteria are met, the at-risk probability is increased by 0.15 and capped at 0.95. This rule should be described as an engineered safety heuristic for preventing implausibly low risk estimates in metabolically concordant high-risk profiles, not as an independently validated clinical rule.
+
+**Copy-Paste Table: Executable ML Safeguards and Medical Rationale**
+
+| Safeguard | Implementation | Medical or Methodological Rationale |
+|---|---|---|
+| Diagnostic leakage gate | Training is blocked if HbA1c, fasting blood sugar, fasting glucose, or related aliases appear in classifier or clustering feature lists | Prevents the model from learning the same glycemic criteria used to construct the reference label |
+| Nested temporal validation | Inner grouped cross-validation performs model selection; outer LOGO validation holds out one NHANES release at a time | Reduces optimistic bias and tests stability across survey periods |
+| Youden's J candidate threshold | Evaluates the threshold that maximizes sensitivity plus specificity minus one | Provides a standard diagnostic-threshold baseline for comparison |
+| Screening-optimized threshold | Prioritizes sensitivity while enforcing a minimum specificity floor | Reflects the screening priority of reducing missed at-risk cases without excessive false-positive inflation |
+| Geometric-mean threshold | Balances sensitivity and specificity through their geometric mean | Provides an alternative when operating characteristics are uneven across folds |
+| Guardrail arbitration | Raises or replaces unstable low thresholds when specificity collapses under high-sensitivity selections | Protects against fold-specific prevalence shift producing a threshold that over-flags normal profiles |
+| Metabolic-syndrome serving guardrail | Raises low model probability when triglycerides, HDL, BMI, and waist circumference show concordant metabolic risk | Prevents implausibly low risk outputs for metabolically concordant high-risk profiles; requires further ablation and clinical review |
 
 ### 3.11 Phase 5: Cluster-Based Risk Group Identification
 
@@ -118,7 +402,9 @@ This phase implemented the second stage of the DIANA inference pipeline. The fir
 
 Weighted K-Means clustering was trained exclusively on the at-risk subset of 734 cases. The clustering features included triglycerides, LDL cholesterol, HDL cholesterol, BMI, waist circumference, and age. Feature weights were applied before distance computation to emphasize clinically relevant dimensions. LDL received the highest weight as an atherogenic lipid differentiator. Triglycerides and waist circumference were strongly weighted because of their relationship to insulin resistance and central adiposity. BMI served as an obesity-pattern anchor, HDL as an inverse lipid-risk marker, and age as a baseline variable.
 
-Cluster centroids were inverse-transformed from standardized space back to raw clinical units before interpretation. This ensured that subtype labels were assigned using clinically meaningful values. The resulting subtype labels were Ahlqvist-inspired proxy labels: SIRD-like, SIDD-like, MOD-like, and MARD-like. These labels are heuristic descriptions of metabolic pattern similarity and should not be interpreted as validated biological subtype diagnoses or treatment directives.
+Cluster centroids were inverse-transformed from standardized space back to raw clinical units before interpretation. This ensured that subtype labels were assigned using clinically meaningful values. The resulting subtype labels were Ahlqvist-inspired proxy labels: SIRD-like, SIDD-like, MOD-like, and MARD-like. The term "Ahlqvist-inspired" should be retained because DIANA does not implement the original biological subtype framework directly. The original framework used variables such as GAD antibody status and HOMA2 estimates of beta-cell function and insulin resistance, while DIANA uses accessible non-glycemic screening features and deliberately excludes HbA1c and fasting blood sugar from predictor inputs. Therefore, the labels describe phenotypic similarity to known metabolic patterns rather than validated biological subtype membership.
+
+The SIDD-like label requires special caution. True SIDD classification requires beta-cell function markers such as HOMA2-B or C-peptide, which were unavailable in the NHANES feature set used by DIANA. In this study, SIDD-like is therefore interpreted as an atherogenic or lipid-driven proxy label based primarily on elevated LDL patterns rather than as a true insulin-deficiency subtype diagnosis. The SAID category should not be assigned because autoimmune markers were unavailable. These labels are heuristic, hypothesis-generating descriptors, not treatment directives or substitutes for clinical judgment.
 
 ### 3.12 Phase 6: Model Explainability and Clinical Decision Support
 
@@ -130,21 +416,35 @@ SHAP explanations are generated through the explainability endpoint and displaye
 
 The implementation also includes graceful degradation when detailed SHAP output is unavailable. In that case, the frontend displays an explanation-unavailable panel and states that no feature-level SHAP values are shown in fallback mode. This behavior preserves the screening result while avoiding fabricated feature attributions.
 
+In addition to the reported model metrics, DIANA implements several safety and traceability controls around the ML workflow. These controls make the methodology executable in the codebase rather than treating leakage prevention, explanation handling, drift awareness, and model lineage as documentation-only claims.
+
+**Copy-Paste Table: ML Safety and Traceability Controls**
+
+| Control | Implemented Behavior | Methodological Value |
+|---|---|---|
+| Leakage validation gate | Diagnostic features such as HbA1c and fasting blood sugar are blocked from classifier and clustering feature sets before training | Reduces circular prediction risk |
+| Feature-contract management | Shared feature constants and model artifact feature files document the active clinical and clustering feature contracts | Reduces training-serving mismatch risk after earlier feature-count drift |
+| SHAP fallback behavior | If detailed SHAP output is unavailable, the frontend shows an explanation-unavailable state instead of fabricated feature attributions | Preserves transparency without inventing explanations |
+| Drift monitoring hooks | Prediction workflows can queue non-blocking drift checks, and administrative routes expose drift status and alerts | Supports post-deployment monitoring without changing the immediate risk result |
+| Model lineage metadata | Assessments store prediction metadata such as model version, dataset hash, status, risk score, subtype context, and drift-baseline information where available | Supports traceability between a displayed result and the model artifact that generated it |
+
 ### 3.13 Phase 7: Web Application Development and System Integration
 
-This phase integrated the predictive model into the DIANA web application. The system was implemented as a four-tier architecture consisting of a React frontend, a Go backend API, a Python ML inference service, and a PostgreSQL data layer with Redis caching. The frontend uses React 18 and Vite. The backend uses Go 1.25 with Gin. The ML service uses Python 3.12 with Flask. The database layer uses NeonDB PostgreSQL 16, while Redis 7 supports cached trend, analytics, and cluster-distribution data. Rate limiting is implemented separately through Go token-bucket middleware.
+This phase integrated the predictive model into the DIANA web application. The system was implemented as a four-tier application architecture consisting of a React frontend, a Go backend API, a Python ML inference service, and a PostgreSQL persistence layer with optional cache support. The frontend uses React 18 and Vite. The backend uses Go 1.25 with Gin. The ML service uses Python 3.12 with Flask. The database layer uses PostgreSQL 16. The backend contains Redis-compatible cache handlers for trends, analytics, and cluster-distribution responses, but Redis-dependent integration evidence should be reported separately because those tests require a running Redis service. The current deployment package is Docker Compose-based, with a production overlay for Nginx TLS termination on a self-managed VPS or dedicated server. Rate limiting is implemented separately through Go token-bucket middleware.
 
-The Go backend and Python ML service were decoupled to isolate ML inference and explanation tasks from routine API operations. The backend forwards validated assessment input to the ML service, receives prediction and lineage metadata, persists the result, invalidates affected cache entries, and returns the response to the frontend. If `MODEL_URL` is unset during local development, the router can select a mock predictor. In production-oriented flows, prediction failures are propagated as structured errors rather than hidden behind an undocumented fallback.
+The Go backend and Python ML service were decoupled to isolate ML inference and explanation tasks from routine API operations. The backend forwards validated assessment input to the ML service, receives prediction and lineage metadata, persists the result, invalidates affected cache entries when caching is configured, and returns the response to the frontend. If `MODEL_URL` is unset during local development, the router can select a mock predictor. In production-oriented flows, prediction failures are propagated as structured errors rather than hidden behind an undocumented fallback.
 
 The implemented API surface supports the assessment workflow through authenticated user, assessment, export, and administrative routes. Core user routes include profile retrieval and update, onboarding, consent settings, trend retrieval, account deletion, assessment creation, assessment retrieval, assessment update, and assessment deletion under `/api/v1/users/me`. Administrative user-management routes under `/api/v1/admin/users` support listing, creation, retrieval, update, deactivation, and reactivation of users. The ML proxy exposes health, information-gain, clustering, visualization, and explainability routes, with detailed SHAP explanation requested through `/api/v1/ml/predict/explain`.
 
 The frontend workflow includes authentication, dashboard review, assessment entry, result display, SHAP explanation, trend visualization, and export support. The assessment form collects demographic, biomarker, anthropometric, lifestyle, and family-history inputs. The result modal displays risk probability, risk label, subtype context when applicable, model version, and dataset lineage. The trend view allows users to review longitudinal biomarker and risk-score changes across assessments.
 
+The frontend should be described as a functional research prototype rather than a finalized clinical product shell. Navigation is implemented through application state and tab selection rather than URL-addressable React Router routes, so deep linking and browser back-button workflows are limited. Authentication uses Bearer tokens stored through guarded browser `localStorage` to support the cross-origin API flow. This is acceptable for prototype demonstration and testing, but a production clinical deployment should harden this design through route-based navigation, stronger browser-token protections, formal XSS review, and a deployment-compatible HttpOnly cookie or session strategy where feasible.
+
 ### 3.14 Phase 8: System Testing and Technical Validation
 
 This phase verified the system across backend, ML service, and frontend layers. Backend tests covered configuration, caching, HTTP handlers, middleware, ML integration, data models, services, PDF generation, and data access behavior. Table-driven assessment handler tests validated age-boundary enforcement, missing-waist handling for ML imputation, advisory warnings for out-of-range HbA1c, and successful end-to-end assessment creation.
 
-The ML service test suite covered clustering behavior, leakage prevention, prediction endpoints, API authentication, drift utilities, SHAP-related functionality, threshold optimization, and clinical scenario checks. The frontend Vitest suite covered API contracts, assessment form behavior, authentication flows, and selected UI components. The test results support the claim that the implemented system performs the core screening workflow, while the frontend coverage-threshold failure remains a readiness gap.
+The ML service test suite covered clustering behavior, leakage prevention, prediction endpoints, API authentication, drift utilities, SHAP-related functionality, threshold optimization, and clinical scenario checks. The frontend Vitest coverage suite covered API contracts, assessment form behavior, authentication flows, selected UI components, and broad source coverage smoke tests. The test results support the claim that the implemented system performs the core screening workflow, while Redis integration evidence, route-based navigation, browser-token hardening, formal UAT, expert review, accessibility audit, and production load testing remain readiness gaps.
 
 ### 3.15 User Evaluation and Expert Review Methodology
 
@@ -167,6 +467,8 @@ The fold-level AUC values ranged from 0.703 to 0.776 across the six held-out NHA
 The sensitivity estimate is clinically relevant but should be interpreted cautiously. The point estimate exceeded the screening target of 0.70, but the lower bound of the confidence interval was 0.680. This means that the central estimate supports the screening objective, while the interval still reflects uncertainty under temporal variation. This limitation strengthens the need for prospective and external validation.
 
 At the threshold-policy level, Youden's J was selected in 4 of 6 LOGO folds, while guardrail shift-floor arbitration was activated in 2 of 6 folds. This distribution indicates that the final threshold policy was not a simple default cutoff; it combined conventional discrimination-based selection with a safety mechanism for folds vulnerable to specificity collapse.
+
+Medically, this means that the deployed threshold policy prioritized early identification without allowing the model to classify too many normal profiles as at risk in unstable folds. Youden's J was retained when the fold-level operating point produced an acceptable sensitivity-specificity balance. In folds where the selected low threshold produced a high-sensitivity but low-specificity pattern, the guardrail shifted the decision threshold upward to a safer operating point. This adjustment changed the classification threshold, not the trained model coefficients.
 
 ### 4.2 Information Gain and Feature Relevance
 
@@ -196,6 +498,8 @@ The cluster distribution showed metabolic heterogeneity within the at-risk class
 
 Centroid analysis further clarified subtype interpretation. The MOD-like centroid had a BMI of approximately 42.23, indicating severe obesity in this cohort rather than moderate obesity. The SIRD-like centroid was characterized by high triglycerides and waist circumference, while the SIDD-like centroid was distinguished by elevated LDL cholesterol. Since assignments are based on weighted distance to centroids, subtype outputs should be understood as geometric pattern assignments rather than rule-based clinical diagnoses.
 
+The Ahlqvist-inspired interpretation should therefore be read as subtype-context support rather than as biological subtype validation. DIANA does not assign SAID because autoimmune markers are unavailable, and the SIDD-like group is interpreted as lipid-driven or atherogenic rather than as confirmed insulin-deficient diabetes. The cluster results support the presence of heterogeneous metabolic patterns among at-risk users, but they do not establish treatment categories.
+
 ### 4.6 Leakage Validation Results
 
 The leakage validation pipeline confirmed that diagnostic glycemic variables were absent from the classifier and clustering feature lists. It also confirmed that no retained non-diagnostic feature exceeded the proxy-leakage threshold of |r| > 0.95 with the HbA1c diagnostic threshold. The highest observed proxy correlation was triglycerides at r = 0.3241, which remained far below the leakage threshold.
@@ -206,9 +510,9 @@ This result supports the central methodological claim of the study. DIANA's disc
 
 Functional testing verified the implemented system across backend, frontend, and ML service layers. The backend Go test suite passed in the current verification run and covered configuration, caching, HTTP handlers, middleware, ML integration, models, services, PDF generation, and store behavior. Assessment handler tests verified critical clinical guardrails, including target age-boundary enforcement, missing waist-circumference acceptance for ML imputation, out-of-range HbA1c warning behavior, and successful assessment creation.
 
-The Python ML service test suite passed with 270 tests. These tests covered clustering, leakage prevention, feature parity, prediction behavior, server endpoints, API authentication, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract tests passed with 214 tests.
+The Python ML service test suite passed with 270 tests. These tests covered clustering, leakage prevention, feature parity, prediction behavior, server endpoints, API authentication, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 220 tests.
 
-The frontend coverage-threshold run remains a technical readiness gap. The tests pass, but the configured global coverage thresholds are not currently met. The coverage report showed 33.56 percent lines/statements and 36.7 percent functions against configured 70 percent thresholds. This gap should be reported honestly unless additional frontend tests are added or the coverage policy is formally recalibrated.
+The current frontend coverage run met the configured source coverage gates, with 72.64 percent line and statement coverage, 60.24 percent branch coverage, and 42.85 percent function coverage. Remaining technical-readiness gaps should therefore be reported as Redis integration evidence, formal UAT, expert review, accessibility audit, and production load testing rather than as an unresolved frontend coverage gate.
 
 ### 4.8 UI Workflow Integration
 
@@ -256,7 +560,7 @@ These benchmark results should be interpreted as internal contextual comparisons
 
 Several limitations constrain interpretation of the study. First, all model development and validation were conducted within NHANES. Although LOGO validation provides evidence of temporal robustness across survey cycles, it does not replace validation in an independent clinical cohort or prospective deployment setting. Second, the reference label is operational rather than a definitive diagnostic gold standard because it combines self-reported physician diagnosis with single-measurement glycemic thresholds.
 
-Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired labels as heuristic descriptions rather than validated biological subtypes. Fourth, deployment guardrails such as waist-circumference imputation and metabolic syndrome risk floors require further ablation, calibration, and clinical review. Fifth, formal UAT, expert face-validity review, accessibility testing, and production load testing remain incomplete.
+Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired labels as heuristic descriptions rather than validated biological subtypes. True biological subtype validation would require autoimmune markers, beta-cell function markers, insulin-resistance estimates, longitudinal outcomes, and independent clinical datasets. Fourth, deployment guardrails such as waist-circumference imputation and metabolic syndrome risk floors require further ablation, calibration, and clinical review. Fifth, formal UAT, expert face-validity review, accessibility testing, and production load testing remain incomplete. Sixth, the frontend uses state-driven tab navigation rather than URL-addressable routing, and browser-token storage remains a prototype security tradeoff that should be hardened before clinical production use.
 
 For these reasons, DIANA should be presented as a screening-support prototype with promising internal validation, not as a clinically validated diagnostic system.
 
