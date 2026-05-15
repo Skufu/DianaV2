@@ -57,6 +57,16 @@ DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
 DIAGNOSTIC_FEATURES = {"hba1c", "fbs", "fasting_blood_sugar", "fasting_glucose"}
 
 
+def normalize_alcohol_category(value: object) -> str:
+    text = str(value).strip()
+    lower = text.lower()
+    if lower in {"", "nan", "unknown"}:
+        return "Unknown"
+    if lower in {"none", "never", "no alcohol", "abstinent"}:
+        return "Never"
+    return text.title()
+
+
 # =============================================================================
 # PART 1: Data Leakage Detection
 # =============================================================================
@@ -302,10 +312,10 @@ def main() -> int:
                 lambda value: activity_map.get(str(value).strip().title() if str(value).strip().lower() != 'unknown' else 'Unknown', 1)
             )
 
-        alcohol_map = {"None": 0, "Light": 1, "Moderate": 2, "Heavy": 3, "Unknown": 1}
+        alcohol_map = {"Never": 0, "None": 0, "Light": 1, "Moderate": 2, "Heavy": 3, "Unknown": 1}
         if "alcohol_use" in df.columns:
             df["alcohol_encoded"] = df["alcohol_use"].fillna("Unknown").map(
-                lambda value: alcohol_map.get(str(value).strip().title() if str(value).strip().lower() != 'none' else 'None', 1)
+                lambda value: alcohol_map.get(normalize_alcohol_category(value), 1)
             )
 
         # Metabolic syndrome score (same as train_binary_v2_no_bp.py)

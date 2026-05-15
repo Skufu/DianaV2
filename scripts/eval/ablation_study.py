@@ -151,7 +151,7 @@ def ablation_minimal_features(fold_metrics: pd.DataFrame) -> Dict[str, Any]:
                             if f not in MINIMAL_FEATURES],
         'features_remaining': MINIMAL_FEATURES,
         'note': 'Based on literature estimates (Bergmann et al., 2007). '
-                'BMI+Age alone achieve ~0.55-0.60 AUC vs 0.73 full model.',
+                f'BMI+Age alone achieve ~0.55-0.60 AUC vs {baseline_auc:.2f} full model.',
         'status': 'literature_based'
     }
 
@@ -189,7 +189,7 @@ def ablation_fixed_threshold(fold_metrics: pd.DataFrame) -> Dict[str, Any]:
         'estimated_sensitivity': baseline_metrics['sensitivity'] - estimated_sensitivity_drop,
         'estimated_sensitivity_delta': -estimated_sensitivity_drop,
         'note': 'Fixed threshold typically reduces sensitivity by 5-10% '
-                'in screening contexts. Optimized threshold (0.45 avg) '
+                f"in screening contexts. Optimized threshold ({lr_metrics['Threshold'].mean():.3f} avg) "
                 'prioritizes case detection.',
         'guardrail_folds': len(guardrail_folds),
         'optimized_folds': len(optimized_folds),
@@ -359,7 +359,7 @@ def generate_ablation_report(results: Dict[str, Any], baseline: Dict[str, float]
     report.append(f"   - Extreme reduction to BMI+Age drops AUC to ~0.58 (dAUC -0.15)")
     report.append("")
     report.append("2. THRESHOLD OPTIMIZATION:")
-    report.append(f"   - Optimized threshold (0.45) improves sensitivity by ~8% vs fixed 0.50")
+    report.append(f"   - Optimized threshold ({baseline['threshold']:.3f}) improves sensitivity by ~8% vs fixed 0.50")
     report.append(f"   - Critical for screening context where false negatives are costly")
     report.append("")
     report.append("3. MODEL SELECTION:")
@@ -369,7 +369,7 @@ def generate_ablation_report(results: Dict[str, Any], baseline: Dict[str, float]
     report.append(f"   - Four algorithms evaluated under identical LOGO conditions")
     report.append("")
     report.append("4. TWO-STAGE ARCHITECTURE:")
-    report.append(f"   - Binary classifier: Provides screening decision (0.727 AUC)")
+    report.append(f"   - Binary classifier: Provides screening decision ({baseline['auc_roc']:.3f} AUC)")
     report.append(f"   - K-Means clustering: Provides subtype stratification (no predictive impact)")
     report.append(f"   - Clustering value is clinical (personalization), not predictive")
     report.append("")
@@ -394,9 +394,9 @@ def generate_ablation_report(results: Dict[str, Any], baseline: Dict[str, float]
     report.append("  • SIDD patients: Atherogenic dyslipidemia pattern")
     report.append("")
     report.append("THRESHOLD SELECTION RATIONALE:")
-    report.append(f"  • Optimized threshold (0.455) prioritizes sensitivity (0.74)")
+    report.append(f"  • Optimized threshold ({baseline['threshold']:.3f}) prioritizes sensitivity ({baseline['sensitivity']:.2f})")
     report.append(f"  • Fixed 0.50 would reduce sensitivity to ~0.66")
-    report.append(f"  • Guardrail triggered on 2/6 folds to prevent specificity collapse")
+    report.append(f"  • Guardrail triggered on {fixed['guardrail_folds']}/{baseline['n_folds']} folds to prevent specificity collapse")
     report.append("")
     
     report.append("=" * 80)

@@ -87,8 +87,20 @@ def encode_categoricals(df: pd.DataFrame) -> pd.DataFrame:
     activity_map = {"Sedentary": 0, "Moderate": 1, "Active": 2, "Unknown": 0}
     df["activity_encoded"] = df["physical_activity"].map(activity_map).fillna(0)
     
-    # Alcohol: Never=0, Former=1, Current=2
-    alcohol_map = {"Never": 0, "Former": 1, "Current": 2, "Unknown": 0}
+    # Alcohol: pipeline categories are Never/Light/Moderate/Heavy after
+    # NHANES ALQ harmonization; legacy names are accepted for old artifacts.
+    alcohol_map = {
+        "None": 0,
+        "Never": 0,
+        "No Alcohol": 0,
+        "Abstinent": 0,
+        "Light": 1,
+        "Moderate": 2,
+        "Heavy": 3,
+        "Former": 1,
+        "Current": 2,
+        "Unknown": 0,
+    }
     df["alcohol_encoded"] = df["alcohol_use"].map(alcohol_map).fillna(0)
     
     # Family history: binary

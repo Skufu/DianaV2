@@ -58,6 +58,7 @@ frontend/dist/
 frontend/.vite/
 frontend/.turbo/
 frontend/.cache/
+frontend/coverage/
 
 # Frontend build artifacts
 frontend/build/
@@ -137,8 +138,10 @@ __pycache__/
 mlruns/
 
 # Playwright test artifacts
+e2e/screenshots/*
 frontend/playwright-report/
 frontend/test-results/
+frontend/lighthouse-report.json
 
 # Generated summaries
 GIT_CHANGES_SUMMARY.md
@@ -166,6 +169,8 @@ docs/07-research/thesis-drafts/*.docx
 docs/07-research/thesis-drafts/*.pdf
 frontend/e2e/screenshots/*
 frontend/test-results-summary.json
+deployment/restoration-test-log.json
+research/session.json
 
 # Ralph logs and tmp
 ralph/*.txt

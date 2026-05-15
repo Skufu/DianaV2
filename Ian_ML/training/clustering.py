@@ -23,6 +23,8 @@ from pathlib import Path
 from collections.abc import Mapping, Sequence
 from typing import Any, cast
 from numpy.typing import NDArray
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler

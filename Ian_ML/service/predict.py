@@ -211,7 +211,7 @@ def _engineer_ada_features(data: Mapping[str, Any]):
     """Engineer ADA predictor features in REQUIRED_FEATURES order."""
     smoking_map = {'Never': 0, 'Former': 1, 'Current': 2, 'Unknown': 1}
     activity_map = {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Vigorous': 2, 'Unknown': 1}
-    alcohol_map = {'None': 0, 'Never': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
+    alcohol_map = {'None': 0, 'Never': 0, 'No Alcohol': 0, 'Abstinent': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
 
     smoking_raw = str(data.get('smoking_status', 'Unknown') or 'Unknown').strip()
     smoking_key = smoking_raw.title() if smoking_raw.lower() != 'unknown' else 'Unknown'
@@ -222,7 +222,7 @@ def _engineer_ada_features(data: Mapping[str, Any]):
     activity_encoded = activity_map.get(activity_key, 1)
 
     alcohol_raw = str(data.get('alcohol_use', 'Unknown') or 'Unknown').strip()
-    alcohol_key = alcohol_raw.title() if alcohol_raw.lower() not in ('none', 'never') else alcohol_raw.title()
+    alcohol_key = alcohol_raw.title() if alcohol_raw.lower() not in ('none', 'never', 'no alcohol', 'abstinent') else alcohol_raw.title()
     alcohol_encoded = alcohol_map.get(alcohol_key, 1)
 
     waist = data.get('waist_circumference', np.nan)
@@ -718,9 +718,9 @@ class ClinicalPredictor:
         activity_key = activity_raw.title() if activity_raw.lower() != 'unknown' else 'Unknown'
         activity_encoded = activity_map.get(activity_key, 1)
 
-        alcohol_map = {'None': 0, 'Never': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
+        alcohol_map = {'None': 0, 'Never': 0, 'No Alcohol': 0, 'Abstinent': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
         alcohol_raw = str(data.get('alcohol_use', 'Unknown') or 'Unknown').strip()
-        alcohol_key = alcohol_raw.title() if alcohol_raw.lower() not in ('none', 'never') else alcohol_raw.title()
+        alcohol_key = alcohol_raw.title() if alcohol_raw.lower() not in ('none', 'never', 'no alcohol', 'abstinent') else alcohol_raw.title()
         alcohol_encoded = alcohol_map.get(alcohol_key, 1)
 
         metabolic_score = 0
