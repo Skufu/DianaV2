@@ -64,15 +64,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	r.Use(metrics.HTTPMiddleware())
 
 	// CORS configuration (must be before other middleware that might reject requests)
-	corsConfig := cors.Config{
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
-		ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-		AllowAllOrigins:  true,
-	}
-	r.Use(cors.New(corsConfig))
+	r.Use(cors.New(newCORSConfig(cfg.CORSOrigins)))
 
 	// Security headers
 	r.Use(middleware.SecurityHeaders())
@@ -215,6 +207,8 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	admin := protected.Group("/admin")
 	admin.Use(middleware.RoleRequired(models.RoleAdmin))
 	{
+		operationsLimiter := middleware.NewRateLimiter(60, time.Minute)
+
 		// Admin dashboard and system stats
 		adminDashboardHandler := handlers.NewAdminDashboardHandler(st)
 		adminDashboardHandler.Register(admin)
@@ -226,6 +220,12 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 		// Audit logs
 		adminAuditHandler := handlers.NewAdminAuditHandler(st)
 		adminAuditHandler.Register(admin)
+
+		// Read-only operations health and app log viewing
+		adminOperations := admin.Group("")
+		adminOperations.Use(middleware.RateLimit(operationsLimiter))
+		adminOperationsHandler := handlers.NewAdminOperationsHandler(cfg, st)
+		adminOperationsHandler.Register(adminOperations)
 	}
 
 	adminModels := protected.Group("/admin")
@@ -243,6 +243,39 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	}
 
 	return r, auditLogger
+}
+
+func newCORSConfig(origins []string) cors.Config {
+	corsConfig := cors.Config{
+		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{
+			"Origin",
+			"Content-Type",
+			"Accept",
+			"Authorization",
+			"X-Requested-With",
+			"X-CSRF-Token",
+		},
+		ExposeHeaders: []string{"Content-Length", "Content-Disposition"},
+		MaxAge:        12 * time.Hour,
+	}
+
+	for _, origin := range origins {
+		if strings.TrimSpace(origin) == "*" {
+			corsConfig.AllowAllOrigins = true
+			// Browsers reject wildcard origins when credentials are included.
+			corsConfig.AllowCredentials = false
+			return corsConfig
+		}
+	}
+
+	if len(origins) == 0 {
+		corsConfig.AllowOrigins = []string{"http://localhost:4000", "http://localhost:3000", "http://localhost:3001"}
+	} else {
+		corsConfig.AllowOrigins = origins
+	}
+	corsConfig.AllowCredentials = true
+	return corsConfig
 }
 
 // printRoutes logs all registered routes (for debugging)

@@ -69,11 +69,23 @@ def compute_calibration_metrics():
         {'Sedentary': 0, 'Moderate': 1, 'Active': 2, 'Unknown': 1}
     )
     df_clean['alcohol_encoded'] = df_clean['alcohol_use'].fillna('Unknown').map(
-        {'None': 0, 'Light': 1, 'Moderate': 2, 'Heavy': 3, 'Unknown': 1}
-    )
+        {
+            'None': 0,
+            'Never': 0,
+            'No Alcohol': 0,
+            'Abstinent': 0,
+            'Light': 1,
+            'Moderate': 2,
+            'Heavy': 3,
+            'Unknown': 1,
+        }
+    ).fillna(1)
     
     available_features = [f for f in CLINICAL_FEATURES if f in df_clean.columns]
-    df_clean = df_clean.dropna(subset=available_features + ['at_risk_binary_v2_no_bp'])
+    # The production model is a sklearn Pipeline with an embedded imputer, so
+    # calibration should evaluate the same missing-data behavior used at serving
+    # time instead of silently dropping incomplete feature rows.
+    df_clean = df_clean.dropna(subset=['at_risk_binary_v2_no_bp'])
     
     X = df_clean[available_features].values
     y = df_clean['at_risk_binary_v2_no_bp'].values

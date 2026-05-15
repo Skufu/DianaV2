@@ -1,25 +1,25 @@
 {
   "diana": {
     "name": "DIANA (Current)",
-    "auc": 0.7267288870780175,
-    "auc_ci_low": 0.6995203261556218,
-    "auc_ci_high": 0.7526645470751937,
-    "sensitivity": 0.7111716621253406,
-    "specificity": 0.6292834890965732,
-    "accuracy": 0.6729651162790697,
+    "auc": 0.7365776227219096,
+    "auc_ci_low": 0.7097872884975052,
+    "auc_ci_high": 0.7628064501938975,
+    "sensitivity": 0.7479564032697548,
+    "specificity": 0.5903426791277259,
+    "accuracy": 0.6744186046511628,
     "algorithm": "Logistic Regression",
     "n_features": 9,
     "validation": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)"
   },
   "benchmarks": [
     {
-      "auc_mean": 0.8487402955873115,
-      "auc_std": 0.034203224554475144,
-      "sensitivity_mean": 0.817945308656863,
-      "sensitivity_std": 0.07196701779905315,
-      "specificity_mean": 0.7291108847990091,
-      "specificity_std": 0.160599959175997,
-      "accuracy_mean": 0.784245007134312,
+      "auc_mean": 0.8490525673886874,
+      "auc_std": 0.03469642440297462,
+      "sensitivity_mean": 0.8419566080918912,
+      "sensitivity_std": 0.04179437790498643,
+      "specificity_mean": 0.7030337872933402,
+      "specificity_std": 0.12273719166695761,
+      "accuracy_mean": 0.7804714222286516,
       "fold_results": [
         {
           "fold": 1,
@@ -79,25 +79,25 @@
         {
           "fold": 6,
           "test_cycle": "2021-2023",
-          "auc": 0.9023694223452093,
-          "sensitivity": 0.6864406779661016,
-          "specificity": 1.0,
-          "accuracy": 0.8603773584905661,
-          "threshold": 0.1326530612244898,
+          "auc": 0.9042430531534646,
+          "sensitivity": 0.8305084745762712,
+          "specificity": 0.8435374149659864,
+          "accuracy": 0.8377358490566038,
+          "threshold": 0.1,
           "n_test": 265,
           "n_positive": 118
         }
       ],
-      "overall_auc": 0.8493680341575627,
+      "overall_auc": 0.8500269508603053,
       "tool": "FINDRISC"
     },
     {
-      "auc_mean": 0.5887003460208476,
-      "auc_std": 0.027831245502915714,
-      "sensitivity_mean": 0.9183809927919063,
-      "sensitivity_std": 0.05214680056892365,
-      "specificity_mean": 0.2031310322871287,
-      "specificity_std": 0.12459554373378616,
+      "auc_mean": 0.59748719409341,
+      "auc_std": 0.03339062074960081,
+      "sensitivity_mean": 0.931092857198686,
+      "sensitivity_std": 0.048687532946539165,
+      "specificity_mean": 0.19292695065447563,
+      "specificity_std": 0.11866604958446718,
       "accuracy_mean": 0.5908844220830053,
       "fold_results": [
         {
@@ -158,16 +158,16 @@
         {
           "fold": 6,
           "test_cycle": "2021-2023",
-          "auc": 0.5861005419116798,
-          "sensitivity": 0.8728813559322034,
-          "specificity": 0.29931972789115646,
+          "auc": 0.6388216303470541,
+          "sensitivity": 0.9491525423728814,
+          "specificity": 0.23809523809523808,
           "accuracy": 0.5547169811320755,
-          "threshold": 0.36122448979591837,
+          "threshold": 0.1653061224489796,
           "n_test": 265,
           "n_positive": 118
         }
       ],
-      "overall_auc": 0.5850363306085377,
+      "overall_auc": 0.6018625803220521,
       "tool": "ADA Risk Test"
     },
     {
@@ -250,13 +250,13 @@
       "tool": "Simple Clinical Model"
     },
     {
-      "auc_mean": 0.6882261632650594,
-      "auc_std": 0.024617469269278425,
-      "sensitivity_mean": 0.9313580545623745,
-      "sensitivity_std": 0.049986522548209546,
-      "specificity_mean": 0.27806209324561953,
-      "specificity_std": 0.11190798284467478,
-      "accuracy_mean": 0.6338173378995554,
+      "auc_mean": 0.6879234998268027,
+      "auc_std": 0.024581007676613996,
+      "sensitivity_mean": 0.9257083370482503,
+      "sensitivity_std": 0.059249628532035414,
+      "specificity_mean": 0.28939996172634513,
+      "specificity_std": 0.12755598615054933,
+      "accuracy_mean": 0.6375909228052158,
       "fold_results": [
         {
           "fold": 1,
@@ -316,16 +316,16 @@
         {
           "fold": 6,
           "test_cycle": "2021-2023",
-          "auc": 0.6919462700334371,
-          "sensitivity": 0.8559322033898306,
-          "specificity": 0.41496598639455784,
-          "accuracy": 0.6113207547169811,
-          "threshold": 0.6061224489795919,
+          "auc": 0.6901302894038972,
+          "sensitivity": 0.8220338983050848,
+          "specificity": 0.48299319727891155,
+          "accuracy": 0.6339622641509434,
+          "threshold": 0.5571428571428572,
           "n_test": 265,
           "n_positive": 118
         }
       ],
-      "overall_auc": 0.6851449828957532,
+      "overall_auc": 0.6907887476975052,
       "tool": "OmniRisk (Approximated)"
     }
   ],

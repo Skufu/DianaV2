@@ -18,7 +18,7 @@ flowchart TB
     D --> E["Nested temporal validation<br/>Leave-One-Group-Out by NHANES release"]
     E --> F["Candidate model comparison<br/>Logistic Regression, Random Forest, LightGBM, XGBoost"]
     F --> G["Selected binary screening model<br/>Logistic Regression"]
-    G --> H["Clinical threshold optimization<br/>mean threshold = 0.478"]
+    G --> H["Clinical threshold optimization<br/>mean threshold = 0.465"]
     H --> I["At-risk subtype context<br/>weighted K-Means, K = 4"]
     I --> J["Explainability workflow<br/>feature-attribution output when available"]
     J --> K["Integrated web application<br/>React, Go, Python ML service, PostgreSQL, optional cache support"]
@@ -64,7 +64,9 @@ The planned user-evaluation population consists of menopausal or postmenopausal 
 
 ### 3.4 Data Gathering Tools and Procedures
 
-This study used secondary data from NHANES. Raw XPT files were acquired from the CDC public repository and processed through an automated Python data pipeline. The collected files included demographic records, glycohemoglobin records, fasting glucose records, total cholesterol records, HDL cholesterol records, triglyceride and LDL records, body-measurement records, reproductive-health questionnaire responses, diabetes questionnaire responses, smoking variables, physical-activity variables, alcohol-use variables, family-history variables, insulin records where available, and high-sensitivity CRP records where available.
+This study used secondary data from NHANES. Raw XPT files were acquired from the CDC public repository and processed through an automated Python data pipeline. The collected files included demographic records, glycohemoglobin records, fasting glucose records, total cholesterol records, HDL cholesterol records, triglyceride and LDL records, body-measurement records, blood-pressure records, reproductive-health questionnaire responses, diabetes questionnaire responses, smoking variables, physical-activity variables, alcohol-use variables, family-history variables, insulin records where available, and high-sensitivity CRP records where available.
+
+The refreshed data pipeline used a cycle-specific active manifest containing 91 expected NHANES XPT files across the six included releases. The downloader verified that each active file was a SAS transport file rather than an HTML error page or incomplete response by checking the XPT header, minimum file size, and metadata readability. A post-download verification run confirmed that all 91 active XPT files were present and readable. Thirty-one older raw XPT files from excluded 2003-2008 cycles were present in the raw-data folder but were ignored by the active manifest and were not used in the final analytic dataset.
 
 **Table 3.3. NHANES File Groups and Key Variables**
 
@@ -75,20 +77,21 @@ This study used secondary data from NHANES. Raw XPT files were acquired from the
 | GLU | Fasting glucose | Fasting plasma glucose (LBXGLU), used for clinical interpretation |
 | TCHOL | Total cholesterol | Total cholesterol (LBXTC) |
 | HDL | HDL cholesterol | HDL cholesterol (LBDHDD) |
-| TRIGLY | Triglycerides and LDL | Triglycerides (LBXTR), calculated LDL cholesterol |
+| TRIGLY | Triglycerides and LDL | Triglycerides (LBXTR or LBXTLG), calculated LDL cholesterol |
+| BPX/BPXO | Blood pressure examination | Systolic and diastolic blood pressure where available |
 | BMX | Body measurements | BMI (BMXBMI), waist circumference (BMXWAIST) |
 | RHQ | Reproductive health | Postmenopausal filter using RHQ031 |
 | DIQ | Diabetes questionnaire | Self-reported diabetes or borderline diabetes (DIQ010) |
 | SMQ | Smoking questionnaire | Smoking status derived from SMQ020 and SMQ040 |
-| PAQ | Physical activity questionnaire | Activity categories derived from PAQ605, PAQ650, and PAQ665 |
-| ALQ | Alcohol questionnaire | Alcohol-use categories derived from ALQ variables |
+| PAQ | Physical activity questionnaire | Activity categories derived from PAQ605, PAQ650, PAQ665, and 2021-2023 PAQ equivalents |
+| ALQ | Alcohol questionnaire | Alcohol-use categories derived from ALQ101/ALQ120Q/ALQ120U/ALQ130 and 2017+ ALQ equivalents |
 | MCQ | Medical conditions | Family history of diabetes where available |
 | INS | Insulin | Fasting insulin, available only in subsamples |
-| HSCRP | High-sensitivity CRP | Inflammation marker where available |
+| HSCRP | High-sensitivity CRP | Inflammation marker (LBXHSCRP) where available |
 
-Raw NHANES records were linked through SEQN, the unique respondent identifier. After merging, the pipeline standardized NHANES variable codes into clinically interpretable feature names. For example, LBXGH was mapped to HbA1c, LBXGLU to fasting blood sugar, BMXBMI to BMI, BMXWAIST to waist circumference, LBXTR to triglycerides, LBDHDD to HDL cholesterol, and LBDLDL to LDL cholesterol.
+Raw NHANES records were linked through SEQN, the unique respondent identifier. After merging, the pipeline standardized NHANES variable codes into clinically interpretable feature names. For example, LBXGH was mapped to HbA1c, LBXGLU to fasting blood sugar, BMXBMI to BMI, BMXWAIST to waist circumference, LBXTR or LBXTLG to triglycerides, LBDHDD to HDL cholesterol, LBDLDL to LDL cholesterol, and LBXHSCRP to high-sensitivity CRP. For the 2021-2023 release, blood-pressure variables were read from the BPXO_L file rather than the legacy BPX naming pattern used in earlier releases.
 
-Lifestyle variables were derived through rule-based classification. Smoking status was derived from SMQ020 and SMQ040 and categorized as never, former, current, or unknown. Physical activity was derived from PAQ605, PAQ650, and PAQ665 and categorized as active, moderate, sedentary, or unknown. Alcohol use was derived from ALQ variables and categorized as none, light, moderate, heavy, or unknown. The physical-activity variable was treated as a simplified categorical proxy rather than as an exact measure of weekly guideline adherence because NHANES questionnaire responses do not consistently provide complete minute-level activity records for every respondent.
+Lifestyle variables were derived through rule-based classification. Smoking status was derived from SMQ020 and SMQ040 and categorized as never, former, current, or unknown. Physical activity was derived from PAQ605, PAQ650, and PAQ665 in earlier releases and from the corresponding PAD790/PAD800/PAD810/PAD820/PAD680 fields in the 2021-2023 release; it was categorized as active, moderate, sedentary, or unknown. Alcohol use was derived from ALQ variables and categorized as never, light, moderate, heavy, or unknown. The physical-activity variable was treated as a simplified categorical proxy rather than as an exact measure of weekly guideline adherence because NHANES questionnaire responses do not consistently provide complete minute-level activity records for every respondent.
 
 **Table 3.4. Core Feature Mapping**
 
@@ -98,9 +101,12 @@ Lifestyle variables were derived through rule-based classification. Smoking stat
 | LBXGLU | fbs | Fasting blood sugar (mg/dL) |
 | BMXBMI | bmi | Body mass index (kg/m2) |
 | BMXWAIST | waist_circumference | Waist circumference (cm) |
-| LBXTR | triglycerides | Triglycerides (mg/dL) |
+| LBXTR / LBXTLG | triglycerides | Triglycerides (mg/dL) |
 | LBDHDD | hdl | HDL cholesterol (mg/dL) |
 | LBDLDL | ldl | LDL cholesterol (mg/dL) |
+| LBXHSCRP | crp | High-sensitivity C-reactive protein (mg/L) |
+| BPXSY1 / BPXOSY1 | systolic_bp | Systolic blood pressure (mmHg), when used in secondary descriptions |
+| BPXDI1 / BPXODI1 | diastolic_bp | Diastolic blood pressure (mmHg), when used in secondary descriptions |
 
 ### 3.5 Reference-Label Construction
 
@@ -108,7 +114,7 @@ Reference labels were constructed using a dual-source hierarchy. The primary sou
 
 For respondents without self-reported diabetes or borderline diabetes, American Diabetes Association (ADA) HbA1c thresholds were applied. HbA1c values of 6.5 percent or higher were labeled diabetic, values from 5.7 to 6.4 percent were labeled pre-diabetic, and values below 5.7 percent were labeled normal. A hard override was applied so that any record with HbA1c of 6.5 percent or higher was labeled diabetic regardless of self-reported status. This rule reduced the chance that undiagnosed biochemical diabetes would be mislabeled as normal based only on self-report.
 
-Agreement between DIQ010-derived labels and HbA1c-threshold labels was 94.8 percent, corresponding to 1,304 of 1,376 records. The remaining 5.2 percent reflected discordance between self-report and a single biochemical measurement. These discordant records may represent undiagnosed diabetes, recall error, treatment effects, timing differences, or biological and laboratory variability. The label used in this study should therefore be interpreted as an operational reference label rather than as a perfect diagnostic gold standard.
+Agreement between DIQ010-derived labels and HbA1c-threshold labels was 94.1 percent, corresponding to 1,295 of 1,376 records. The remaining 5.9 percent reflected discordance between self-report and a single biochemical measurement. These discordant records may represent undiagnosed diabetes, recall error, treatment effects, timing differences, or biological and laboratory variability. The label used in this study should therefore be interpreted as an operational reference label rather than as a perfect diagnostic gold standard.
 
 ### 3.6 Data Preparation, Missing Data, and Outlier Handling
 
@@ -116,7 +122,7 @@ NHANES records contain missing values because of non-response, subsample designs
 
 At inference time, missing waist circumference is handled by a separate serving-layer guardrail. During face-validity review, median imputation was found to be problematic for low-BMI users because a training-cohort median waist value of approximately 97 cm could create an implausible visceral-adiposity signal. When waist circumference is unavailable but BMI is present, the ML service estimates waist circumference as BMI multiplied by 3.33. This rule is a pragmatic usability safeguard intended to reduce implausible individual-level substitution; it is not a validated clinical estimator and should be evaluated further through sensitivity analysis.
 
-Outlier handling used clinical plausibility ranges rather than automatic row deletion. Values outside plausible clinical bounds were flagged through a binary outlier indicator, but records were retained. This decision preserved sample size and avoided excluding genuinely extreme metabolic profiles that may be clinically meaningful. In the final cohort, 23 of 1,376 records, or 1.7 percent, had at least one flagged outlier.
+Outlier handling used clinical plausibility ranges rather than automatic row deletion. Values outside plausible clinical bounds were flagged through a binary outlier indicator, but records were retained. This decision preserved sample size and avoided excluding genuinely extreme metabolic profiles that may be clinically meaningful. In the final cohort, 35 of 1,376 records, or 2.5 percent, had at least one flagged outlier.
 
 ### 3.7 Data Leakage Prevention
 
@@ -158,9 +164,9 @@ Three threshold strategies were evaluated using out-of-fold probabilities: Youde
 
 `Clinical Score = 0.35 * Sensitivity + 0.30 * Specificity + 0.25 * F1 + 0.10 * Accuracy`
 
-The final mean threshold was 0.478. This downward adjustment from 0.50 reflects the screening objective of detecting at-risk cases while preserving acceptable specificity. The threshold was not manually chosen after viewing test results; it was derived from out-of-fold predictions inside the validation procedure. A deterministic guardrail was also implemented to reduce specificity collapse under temporal prevalence shift. If a selected threshold produced very high sensitivity but inadequate specificity, the algorithm searched for a feasible threshold satisfying minimum operating constraints or reverted toward a safer operating point. In the final Logistic Regression model, guardrail arbitration was activated in 2 of 6 LOGO folds.
+The final mean threshold was 0.465. This downward adjustment from 0.50 reflects the screening objective of detecting at-risk cases while preserving acceptable specificity. The threshold was not manually chosen after viewing test results; it was derived from out-of-fold predictions inside the validation procedure. A deterministic guardrail was also implemented to reduce specificity collapse under temporal prevalence shift. If a selected threshold produced very high sensitivity but inadequate specificity, the algorithm searched for a feasible threshold satisfying minimum operating constraints or reverted toward a safer operating point. In the final Logistic Regression model, guardrail arbitration was activated in 1 of 6 LOGO folds.
 
-**Table 3.5A. Executable ML Safeguards and Medical Rationale**
+**Table 3.6. Executable ML Safeguards and Medical Rationale**
 
 | Safeguard | Implementation | Medical or Methodological Rationale |
 |---|---|---|
@@ -180,7 +186,7 @@ DIANA uses a two-stage inference structure. The first stage classifies a user as
 
 Weighted K-Means clustering was trained exclusively on the at-risk subset of 734 cases. The clustering features were BMI, triglycerides, LDL cholesterol, HDL cholesterol, age, and waist circumference. Feature weights were applied before Euclidean distance computation to emphasize clinically relevant dimensions. LDL received the highest weight as an atherogenic lipid differentiator. Triglycerides and waist circumference were strongly weighted because of their relationship to lipid dysregulation, central adiposity, and insulin-resistance patterns. BMI served as an obesity-pattern anchor, HDL as an inverse lipid marker, and age as a baseline variable.
 
-**Table 3.6. Weighted K-Means Feature Weights**
+**Table 3.7. Weighted K-Means Feature Weights**
 
 | Feature | Weight | Interpretation |
 |---|---:|---|
@@ -201,7 +207,7 @@ The SIDD-like label requires particular caution. True SIDD classification requir
 flowchart TB
     A["Validated assessment input<br/>non-diagnostic predictors"] --> B["Logistic Regression<br/>binary screening probability"]
     B --> C["Serving guardrails<br/>waist estimate when missing and metabolic-risk floor when applicable"]
-    C --> D["Optimized screening threshold<br/>mean threshold = 0.478"]
+    C --> D["Optimized screening threshold<br/>mean threshold = 0.465"]
     D --> E{"Screening result"}
     E -->|"Normal"| F["Normal screening output<br/>no disease-pattern subtype assigned"]
     E -->|"At risk"| G["Weighted K-Means subtyping<br/>trained on 734 at-risk cases"]
@@ -223,7 +229,7 @@ The implementation includes graceful degradation when SHAP output is unavailable
 
 In addition to the reported model metrics, DIANA implements several safety and traceability controls around the ML workflow. These controls make the methodology executable in the codebase rather than treating leakage prevention, explanation handling, drift awareness, and model lineage as documentation-only claims.
 
-**Table 3.6A. ML Safety and Traceability Controls**
+**Table 3.8. ML Safety and Traceability Controls**
 
 | Control | Implemented Behavior | Methodological Value |
 |---|---|---|
@@ -235,19 +241,21 @@ In addition to the reported model metrics, DIANA implements several safety and t
 
 ### 3.12 System Architecture and Implementation
 
-DIANA was implemented as a four-tier application architecture consisting of a React frontend, a Go backend API, a Python ML inference service, and a PostgreSQL persistence layer with optional cache support. The frontend uses React 18 and Vite. The backend uses Go 1.25 with Gin. The ML service uses Python 3.12 with Flask. The database layer uses PostgreSQL 16. The backend contains Redis-compatible cache handlers for trends, analytics, and cluster-distribution responses, but Redis-dependent integration evidence is reported separately because those tests require a running Redis service. The current deployment package is Docker Compose-based, with a production overlay for Nginx TLS termination on a self-managed VPS or dedicated server. Rate limiting is implemented separately through Go token-bucket middleware.
+DIANA was implemented as a four-tier application architecture consisting of a React frontend, a Go backend API, a Python ML inference service, and a PostgreSQL persistence layer with optional cache support. The frontend uses React 18 and Vite. The backend uses Go 1.25 with Gin. The ML service uses Python 3.12 with Flask. The database layer uses PostgreSQL 16 through NeonDB. The backend contains Redis-compatible cache handlers for trends, analytics, and cluster-distribution responses, but Redis-dependent integration evidence is reported separately because those tests require a running Redis service.
 
-**Table 3.7. Technology Stack**
+The verified production deployment uses a hybrid cloud/VPS arrangement. The React frontend is deployed on Vercel. The Go backend and Python ML service run as Docker containers on a self-managed VPS behind Caddy, which provides Let's Encrypt TLS termination and reverse-proxy routing. NeonDB provides the external managed PostgreSQL database, so no database container or database port is exposed on the VPS. Rate limiting is implemented separately through Go token-bucket middleware.
+
+**Table 3.9. Technology Stack**
 
 | Component | Technology | Rationale |
 |---|---|---|
 | Frontend | React 18 + Vite | Component-based UI, efficient rendering, and fast development workflow |
 | Backend | Go 1.25 + Gin | Concurrent request handling, static typing, and compiled deployment |
 | ML Service | Python 3.12 + Flask | Access to scikit-learn, SHAP, and ML tooling |
-| Database | PostgreSQL 16 | ACID-compliant persistence for user and assessment records |
-| Cache support | Redis-compatible cache layer | TTL-based caching and targeted invalidation for repeated read queries when configured |
+| Database | NeonDB PostgreSQL 16 | Managed ACID-compliant persistence for user and assessment records |
+| Cache support | Optional Redis-compatible cache layer | TTL-based caching and targeted invalidation for repeated read queries when configured |
 | Authentication | JWT (HS256) | Stateless authentication with access and refresh token support |
-| Deployment | Docker Compose + Nginx/TLS production overlay | Containerized deployment for frontend, backend, ML service, PostgreSQL, and reverse proxy on a VPS or dedicated server |
+| Deployment | Vercel + Caddy-backed VPS + NeonDB | Static frontend hosting, TLS reverse proxy, containerized backend/ML services, and managed PostgreSQL |
 | Charts | Recharts + Plotly | Interactive biomarker trends and explainability visualizations |
 
 **Figure 3.3. DIANA Four-Tier System Architecture**
@@ -267,7 +275,7 @@ flowchart TB
     end
 
     subgraph Data["Persistence and Optional Cache Layer"]
-        D["PostgreSQL 16<br/>users, assessments, model metadata, audit records"]
+        D["NeonDB PostgreSQL 16<br/>users, assessments, model metadata, audit records"]
         E["Redis-compatible cache support<br/>trend, analytics, and cluster-distribution responses when configured"]
     end
 
@@ -277,6 +285,8 @@ flowchart TB
     B -->|"SQLC-generated queries"| D
     B -->|"optional TTL cache reads and targeted invalidation"| E
 ```
+
+In the deployed environment, browser requests first load the frontend from Vercel. API calls are then sent over HTTPS to the VPS reverse proxy, where Caddy terminates TLS and forwards `/api/v1` traffic to the Go backend container. The backend communicates with the ML container over the private Docker network and with NeonDB over an external encrypted database connection. This arrangement keeps the ML service and database inaccessible as public host ports while preserving a simple deployment model suitable for the project scope.
 
 The Go backend and Python ML service were decoupled to isolate ML inference and explanation tasks from routine API operations. The backend validates assessment input, forwards the model-relevant payload to the ML service, receives prediction and lineage metadata, persists the assessment, invalidates affected cache keys when caching is configured, and returns the result to the frontend. If `MODEL_URL` is unset during local development, the router can select a mock predictor. In production-oriented flows, prediction failures are propagated as structured errors rather than hidden behind undocumented fallback behavior.
 
@@ -305,9 +315,9 @@ sequenceDiagram
     API-->>FE: Return explanation for display
 ```
 
-The implemented API surface supports authenticated user workflows, assessment management, exports, privacy-oriented self-service operations, model explanations, administrative user management, audit review, model traceability, and analytics. Core user routes include profile retrieval and update, onboarding, consent settings, trend retrieval, account deletion, assessment creation, assessment retrieval, assessment update, and assessment deletion under `/api/v1/users/me`. Additional self-service privacy routes support data export, deletion requests, consent history, consent withdrawal, and processing-information retrieval. Administrative routes support dashboard summaries, audit-log review, user-management actions, model traceability, drift-status review, and authentication-event streaming. The ML proxy exposes health, information-gain, clustering, visualization, and explainability routes, with detailed SHAP explanation requested through `/api/v1/ml/predict/explain`. Table 3.8 lists the selected endpoint groups, while Figure 3.5 summarizes their access-control boundaries.
+The implemented API surface supports authenticated user workflows, assessment management, exports, privacy-oriented self-service operations, model explanations, administrative user management, audit review, model traceability, and analytics. Core user routes include profile retrieval and update, onboarding, consent settings, trend retrieval, account deletion, assessment creation, assessment retrieval, assessment update, and assessment deletion under `/api/v1/users/me`. Additional self-service privacy routes support data export, deletion requests, consent history, consent withdrawal, and processing-information retrieval. Administrative routes support dashboard summaries, audit-log review, user-management actions, model traceability, drift-status review, and authentication-event streaming. The ML proxy exposes health, information-gain, clustering, visualization, and explainability routes, with detailed SHAP explanation requested through `/api/v1/ml/predict/explain`. Table 3.10 lists the selected endpoint groups, while Figure 3.5 summarizes their access-control boundaries.
 
-**Table 3.8. Selected API Surface**
+**Table 3.10. Selected API Surface**
 
 | Route Group | Selected Routes | Purpose |
 |---|---|---|
@@ -363,7 +373,7 @@ The database schema links assessments directly to authenticated users. This desi
 
 DIANA implements JWT-based authentication, role-based access control, request-size limiting, rate limiting, security headers, CORS filtering, and password hashing with bcrypt. Three main roles are recognized: user, doctor, and admin. Users can create assessments, view their own predictions, export reports, and review personal trends. Doctors are treated as a testing and validation role with model-locked assessment creation using `binary_v2_no_bp`. Administrators can access system administration functions such as user management, audit logs, model traceability, and dashboard summaries.
 
-**Table 3.9. Security Controls**
+**Table 3.11. Security Controls**
 
 | Control | Implementation | Purpose |
 |---|---|---|
@@ -372,7 +382,10 @@ DIANA implements JWT-based authentication, role-based access control, request-si
 | RBAC | Middleware enforcement | Apply least-privilege access |
 | Rate limiting | Go native token bucket | Reduce brute-force and denial-of-service risk |
 | CORS | Whitelist enforcement | Restrict cross-origin access |
-| TLS | Nginx/TLS production overlay | Protect transport confidentiality |
+| TLS | Caddy with Let's Encrypt | Protect transport confidentiality |
+| Public ingress control | Only the reverse proxy exposes host ports 80 and 443 | Reduce direct service exposure |
+| Internal ML access | Backend communicates with ML over the private Docker network | Prevent direct public invocation of the inference service |
+| Secret management | Locked environment file; no raw database DSN in proxy or compose configuration | Reduce accidental credential disclosure |
 
 Software quality evaluation followed ISO/IEC 25010-informed characteristics. Functional suitability was evaluated through endpoint tests, model-serving tests, and frontend unit tests. Performance efficiency was evaluated through inference benchmarks and planned load-testing methodology. Security was evaluated through authentication, RBAC, rate-limiting, and middleware tests. Maintainability was supported through modular architecture, generated database access, and separated frontend/backend/ML services. Formal usability, accessibility, expert face-validity, and reliability results require separate UAT and expert-review execution.
 
@@ -384,13 +397,11 @@ The planned user evaluation follows an ISO/IEC 25010-informed usability framewor
 
 The planned user cohort consists of approximately 30 menopausal or postmenopausal Filipino women recruited from the target online community, subject to approval and consent procedures. The planned clinical expert cohort consists of two licensed medical professionals, preferably one endocrinologist and one obstetrics-gynecology specialist, with experience in menopausal and metabolic health. Expert review will evaluate risk-output plausibility, SHAP explanation clarity, clinical workflow fit, and perceived utility. Because formal UAT and expert review have not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations must remain placeholders until empirical evidence is collected.
 
----
-
 # Chapter 4: Results and Discussion
 
 ### 4.1 Binary Screening Model Performance
 
-The final Logistic Regression screening model demonstrated acceptable discrimination under nested LOGO validation, achieving an AUC-ROC of **0.727** (95% CI: **0.700-0.753**) and a sensitivity of **0.711** (95% CI: **0.680-0.741**) at the optimized screening threshold of **0.478**. Specificity was **0.629**, and the F1 score of **0.699** indicates a moderate precision-recall trade-off at the selected threshold.
+The final Logistic Regression screening model demonstrated acceptable discrimination under nested LOGO validation, achieving a pooled out-of-fold AUC-ROC of **0.737** (95% CI: **0.710-0.763**) and a sensitivity of **0.748** (95% CI: **0.717-0.776**) at the optimized screening threshold of **0.465**. Specificity was **0.590**, and the F1 score of **0.710** indicates a moderate precision-recall trade-off at the selected threshold.
 
 The reported confidence intervals were computed using 1,000 bootstrap resamples, the percentile method, and a fixed random seed of 42. Bootstrap samples containing fewer than two outcome classes were excluded from confidence-interval computation. This procedure provides distribution-free uncertainty estimates appropriate for the modest sample size and the temporal validation design.
 
@@ -398,52 +409,54 @@ The reported confidence intervals were computed using 1,000 bootstrap resamples,
 
 | Metric | Value |
 |---|---:|
-| AUC-ROC | 0.7267 |
-| 95% CI for AUC-ROC | 0.700-0.753 |
-| Optimized threshold | 0.478 |
-| Sensitivity | 0.7112 |
-| 95% CI for sensitivity | 0.680-0.741 |
-| Specificity | 0.629 |
-| Positive predictive value | 0.687 |
-| Negative predictive value | 0.656 |
-| F1 score | 0.699 |
+| Pooled AUC-ROC | 0.7366 |
+| 95% CI for pooled AUC-ROC | 0.710-0.763 |
+| Optimized threshold | 0.465 |
+| Sensitivity | 0.7480 |
+| 95% CI for sensitivity | 0.717-0.776 |
+| Specificity | 0.590 |
+| Positive predictive value | 0.676 |
+| Negative predictive value | 0.672 |
+| F1 score | 0.710 |
 
 **Table 4.1.1. Confidence Interval Summary**
 
 | Metric | Point Estimate | 95% CI Lower | 95% CI Upper | Target |
 |---|---:|---:|---:|---|
-| Sensitivity | 0.7112 | 0.680 | 0.741 | >= 0.70 |
-| AUC-ROC | 0.7267 | 0.700 | 0.753 | >= 0.70 |
+| Sensitivity | 0.7480 | 0.717 | 0.776 | >= 0.70 |
+| Pooled AUC-ROC | 0.7366 | 0.710 | 0.763 | >= 0.70 |
 
-The fold-level AUC range of **0.703-0.776** across the six held-out NHANES survey releases indicates that no single temporal fold collapsed below the acceptable discrimination target. The result supports the interpretation that the classifier learned repeatable metabolic risk patterns across NHANES releases. However, because the evaluation remains internal to NHANES, the result should be interpreted as temporal validation rather than external clinical validation.
+The fold-level AUC range of **0.711-0.788** across the six held-out NHANES survey releases indicates that no single temporal fold collapsed below the acceptable discrimination target. The result supports the interpretation that the classifier learned repeatable metabolic risk patterns across NHANES releases. However, because the evaluation remains internal to NHANES, the result should be interpreted as temporal validation rather than external clinical validation.
 
 **Table 4.2. Per-Fold LOGO Validation Results for Logistic Regression**
 
-| Fold | Test Release | AUC-ROC | Sensitivity | Specificity | Threshold | Strategy |
+| Fold | Test Release | Fold AUC-ROC | Sensitivity | Specificity | Threshold | Strategy |
 |---:|---|---:|---:|---:|---:|---|
-| 1 | 2009-2010 | 0.717 | 0.735 | 0.600 | 0.46 | Guardrail shift floor |
-| 2 | 2011-2012 | 0.703 | 0.607 | 0.744 | 0.50 | Youden's J |
-| 3 | 2013-2014 | 0.733 | 0.659 | 0.606 | 0.48 | Youden's J |
-| 4 | 2015-2016 | 0.776 | 0.699 | 0.736 | 0.50 | Youden's J |
-| 5 | 2017-2018 | 0.730 | 0.727 | 0.657 | 0.47 | Youden's J |
-| 6 | 2021-2023 | 0.724 | 0.839 | 0.510 | 0.46 | Guardrail shift floor |
-| Mean | - | 0.731 | 0.711 | 0.642 | 0.48 | - |
+| 1 | 2009-2010 | 0.711 | 0.761 | 0.581 | 0.47 | Youden's J |
+| 2 | 2011-2012 | 0.713 | 0.634 | 0.718 | 0.49 | Youden's J |
+| 3 | 2013-2014 | 0.736 | 0.727 | 0.567 | 0.47 | Youden's J |
+| 4 | 2015-2016 | 0.788 | 0.772 | 0.679 | 0.48 | Youden's J |
+| 5 | 2017-2018 | 0.738 | 0.735 | 0.637 | 0.47 | Youden's J |
+| 6 | 2021-2023 | 0.731 | 0.856 | 0.449 | 0.41 | Guardrail nearest feasible |
+| Mean | - | 0.736 | 0.748 | 0.605 | 0.465 | - |
 
-The sensitivity point estimate exceeded the pre-specified screening target of 0.70, but the lower bound of the 95 percent confidence interval was 0.680. This should be reported transparently. The result is defensible as an exploratory screening-support model because the point estimate meets the target, but the below-target lower bound indicates uncertainty under adverse temporal variation and supports the need for external or prospective validation.
+The AUC values in Tables 4.2 and 4.4 are mean fold AUC-ROC values averaged across the six held-out LOGO test releases. By contrast, Table 4.1 reports the pooled out-of-fold AUC-ROC computed from all held-out predictions combined, with bootstrap confidence intervals. This distinction explains why the headline pooled estimate is 0.7366 while the Logistic Regression mean fold AUC is 0.736.
 
-At the threshold-policy level, Youden's J was selected in 4 of 6 LOGO folds, while guardrail shift-floor arbitration was activated in 2 of 6 folds. This distribution indicates that the final threshold policy was not a simple default cutoff. It combined conventional discrimination-based selection with a safety mechanism for folds vulnerable to specificity collapse.
+The sensitivity point estimate exceeded the pre-specified screening target of 0.70, and the lower bound of the 95 percent confidence interval was 0.717. This should be reported transparently as evidence that the refreshed model met the target under internal temporal validation, while still requiring external or prospective validation before clinical deployment claims.
+
+At the threshold-policy level, Youden's J was selected in 5 of 6 LOGO folds, while guardrail nearest-feasible arbitration was activated in 1 of 6 folds. This distribution indicates that the final threshold policy was not a simple default cutoff. It combined conventional discrimination-based selection with a safety mechanism for folds vulnerable to specificity collapse.
 
 **Table 4.2.1. Threshold Mode Distribution**
 
 | Threshold Mode | Occurrence (6 folds) | Interpretation |
 |---|---:|---|
-| Youden's J | 4/6 | Primary strategy balancing sensitivity and specificity |
-| Guardrail Shift Floor | 2/6 | Safety fallback preventing specificity collapse under temporal shift |
+| Youden's J | 5/6 | Primary strategy balancing sensitivity and specificity |
+| Guardrail Nearest Feasible | 1/6 | Safety fallback selecting the nearest feasible threshold under temporal shift |
 
-Medically, this means that the deployed threshold policy prioritized early identification without allowing the model to classify too many normal profiles as at risk in unstable folds. Youden's J was retained when the fold-level operating point produced an acceptable sensitivity-specificity balance. In folds where the selected low threshold produced a high-sensitivity but low-specificity pattern, the guardrail shifted the decision threshold upward to a safer operating point. This adjustment changed the classification threshold, not the trained model coefficients.
+Medically, this means that the deployed threshold policy prioritized early identification without allowing the model to classify too many normal profiles as at risk in unstable folds. Youden's J was retained when the fold-level operating point produced an acceptable sensitivity-specificity balance. In the 2021-2023 fold, the guardrail selected the nearest feasible threshold to reduce specificity collapse under a high-sensitivity operating point. This adjustment changed the classification threshold, not the trained model coefficients.
 
-**Figure 4.1 Placeholder. ROC Curve for the Logistic Regression Screening Model**
-[PLACEHOLDER: insert verified ROC figure from `models/binary_v2_no_bp/visualizations/roc_curve.png`.]
+**Figure 4.1. ROC Curve for the Logistic Regression Screening Model**
+[Figure note: insert verified ROC figure from `models/binary_v2_no_bp/visualizations/roc_curve.png`.]
 
 ### 4.2 Feature Relevance and Feature-Selection Results
 
@@ -476,46 +489,46 @@ Alcohol use had zero univariate Information Gain in the discretized validation o
 
 ### 4.3 Model Comparison
 
-The candidate algorithms were compared under the same nested LOGO validation framework. Logistic Regression achieved the highest mean fold AUC at 0.731. Random Forest achieved an AUC of 0.714, LightGBM achieved 0.703, and XGBoost achieved 0.708. Although some non-linear models produced higher sensitivity, they generally did so at the expense of specificity.
+The candidate algorithms were compared under the same nested LOGO validation framework. Logistic Regression achieved the highest pooled AUC and the highest mean fold AUC at approximately 0.736. Random Forest achieved a mean fold AUC of 0.716, LightGBM achieved 0.712, and XGBoost achieved 0.713. Although the non-linear models produced competitive sensitivity, Logistic Regression provided the strongest discrimination with the clearest interpretability profile.
 
 **Table 4.4. Model Comparison Under LOGO Validation**
 
-| Algorithm | AUC-ROC | AUC 95% CI | Sensitivity | Sens 95% CI | Specificity | F1 | Mean Threshold |
+| Algorithm | Mean Fold AUC-ROC | Pooled AUC 95% CI | Sensitivity | Sens 95% CI | Specificity | F1 | Mean Threshold |
 |---|---:|---|---:|---|---:|---:|---:|
-| Logistic Regression | 0.731 | 0.700-0.753 | 0.711 | 0.680-0.741 | 0.642 | 0.699 | 0.478 |
-| Random Forest | 0.714 | 0.689-0.746 | 0.738 | 0.706-0.768 | 0.593 | 0.704 | 0.482 |
-| LightGBM | 0.703 | 0.681-0.726 | 0.760 | 0.740-0.799 | 0.537 | 0.699 | 0.455 |
-| XGBoost | 0.708 | 0.689-0.724 | 0.766 | 0.734-0.795 | 0.549 | 0.709 | 0.637 |
+| Logistic Regression | 0.736 | 0.710-0.763 | 0.748 | 0.717-0.776 | 0.590 | 0.710 | 0.465 |
+| Random Forest | 0.714 | 0.686-0.742 | 0.732 | 0.701-0.762 | 0.597 | 0.702 | 0.485 |
+| LightGBM | 0.711 | 0.684-0.738 | 0.723 | 0.692-0.754 | 0.595 | 0.696 | 0.475 |
+| XGBoost | 0.709 | 0.681-0.737 | 0.730 | 0.698-0.763 | 0.589 | 0.699 | 0.655 |
 
-Logistic Regression was selected because it provided the most appropriate balance of performance and interpretability for a screening-support system. Its coefficients can be interpreted more directly than those of ensemble models, and its probability outputs are suitable for threshold optimization and SHAP-based explanation. It also demonstrated efficient inference: LR inference averages **1.08 ms** in the benchmarked environment, compared with **40.74 ms** for RF and **1.40 ms** for LightGBM. These timing results should be interpreted as local inference benchmarks rather than production load-test results.
+Logistic Regression was selected because it provided the most appropriate balance of performance and interpretability for a screening-support system. Its coefficients can be interpreted more directly than those of ensemble models, and its probability outputs are suitable for threshold optimization and SHAP-based explanation. It also demonstrated efficient inference: LR inference averages **0.62 ms** in the benchmarked environment, compared with **13.09 ms** for RF and **0.25 ms** for LightGBM. These timing results should be interpreted as local inference benchmarks rather than production load-test results.
 
 ### 4.4 Calibration Analysis
 
-Calibration analysis assessed whether predicted probabilities aligned with observed outcomes. The Logistic Regression model produced a Brier score of 0.2082, an expected calibration error of 0.0624, and a Hosmer-Lemeshow statistic of 21.40 in the evaluated calibration subset of 1,047 samples. These results indicate moderate probability alignment rather than perfect calibration.
+Calibration analysis assessed whether predicted probabilities aligned with observed outcomes. The Logistic Regression model produced a Brier score of 0.2087, an expected calibration error of 0.0563, and a Hosmer-Lemeshow statistic of 24.75 across the full analytic cohort of 1,376 records. These results indicate acceptable probability alignment rather than perfect calibration.
 
 **Table 4.5. Calibration Metrics**
 
 | Metric | Value | Interpretation |
 |---|---:|---|
-| Brier Score | 0.2082 | Moderate combined calibration/discrimination loss |
-| Expected Calibration Error (ECE) | 0.0624 | Approximately six percentage-point average calibration gap |
-| Hosmer-Lemeshow χ² | 21.40 | Moderate calibration fit, sensitive to binning and sample size |
-| Calibration subset size | 1,047 | Number of records used in calibration analysis |
-| Calibration subset positives | 578 | Positive class count in calibration subset |
+| Brier Score | 0.2087 | Acceptable combined calibration/discrimination loss |
+| Expected Calibration Error (ECE) | 0.0563 | Approximately six percentage-point average calibration gap |
+| Hosmer-Lemeshow χ² | 24.75 | Moderate calibration fit, sensitive to binning and sample size |
+| Calibration sample size | 1,376 | Number of records used in calibration analysis |
+| Calibration positives | 734 | Positive class count in calibration analysis |
 
 The calibrated probabilities should therefore be communicated as approximate risk-support estimates. A high predicted probability should prompt confirmatory testing, clinical review, or preventive counseling, but it should not be interpreted as a confirmed diagnosis or exact individualized disease probability.
 
 ### 4.5 Clustering Validation and Subtype Distribution
 
-Weighted K-Means clustering with K = 4 was evaluated on the at-risk subset of 734 cases. The clustering produced a silhouette score of 0.1740, Davies-Bouldin index of 1.6331, and Calinski-Harabasz index of 152.75. These metrics indicate modest separation, which is expected in overlapping metabolic phenotypes.
+Weighted K-Means clustering with K = 4 was evaluated on the at-risk subset of 734 cases. The clustering produced a silhouette score of 0.1762, Davies-Bouldin index of 1.5950, and Calinski-Harabasz index of 154.32. These metrics indicate modest separation, which is expected in overlapping metabolic phenotypes.
 
 **Table 4.6. Internal Clustering Validation Metrics**
 
 | Metric | Value | Interpretation |
 |---|---:|---|
-| Silhouette score | 0.1740 | Weak-to-moderate separation |
-| Davies-Bouldin index | 1.6331 | Moderate distinctness |
-| Calinski-Harabasz index | 152.75 | Moderate between/within variance ratio |
+| Silhouette score | 0.1762 | Weak-to-moderate separation |
+| Davies-Bouldin index | 1.5950 | Moderate distinctness |
+| Calinski-Harabasz index | 154.32 | Moderate between/within variance ratio |
 | K selected | 4 | Retained for Ahlqvist-inspired four-pattern interpretation |
 | K optimal by silhouette | 2 | Indicates that K = 4 sacrifices separation for interpretive granularity |
 
@@ -525,17 +538,17 @@ The K = 4 solution was retained to preserve the Ahlqvist-inspired four-pattern i
 
 | Subtype | Count | Percentage | BMI | TG | LDL | HDL | Age | Waist |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| SIRD-like | 70 | 9.5% | 31.85 | 322.77 | 116.47 | 42.10 | 53.89 | 106.60 |
-| SIDD-like | 202 | 27.5% | 28.78 | 140.88 | 166.05 | 53.37 | 55.19 | 98.21 |
-| MOD-like | 222 | 30.2% | 42.23 | 117.36 | 112.37 | 51.54 | 54.31 | 124.04 |
-| MARD-like | 240 | 32.7% | 28.73 | 99.67 | 100.90 | 60.88 | 55.33 | 95.97 |
+| SIRD-like | 77 | 10.5% | 32.25 | 335.16 | 109.53 | 41.73 | 54.51 | 107.66 |
+| SIDD-like | 199 | 27.1% | 29.01 | 148.26 | 166.15 | 52.01 | 54.95 | 98.64 |
+| MOD-like | 226 | 30.8% | 42.05 | 119.64 | 113.13 | 51.95 | 54.27 | 123.53 |
+| MARD-like | 232 | 31.6% | 28.25 | 97.78 | 102.55 | 62.40 | 55.42 | 94.98 |
 
-The cluster distribution demonstrates metabolic heterogeneity within the at-risk class. MARD-like was the largest cluster, followed by MOD-like, SIDD-like, and SIRD-like. The MOD-like centroid had a BMI of approximately 42.23, indicating severe obesity in this cohort rather than moderate obesity. The SIRD-like centroid was characterized by high triglycerides and waist circumference, while the SIDD-like centroid was distinguished by elevated LDL cholesterol. Because assignments are based on weighted distance to centroids, subtype outputs should be understood as geometric pattern assignments rather than rule-based clinical diagnoses.
+The cluster distribution demonstrates metabolic heterogeneity within the at-risk class. MARD-like was the largest cluster, followed by MOD-like, SIDD-like, and SIRD-like. The MOD-like centroid had a BMI of approximately 42.05, indicating severe obesity in this cohort rather than moderate obesity. The SIRD-like centroid was characterized by high triglycerides, low HDL cholesterol, and elevated waist circumference, while the SIDD-like centroid was distinguished by elevated LDL cholesterol. Because assignments are based on weighted distance to centroids, subtype outputs should be understood as geometric pattern assignments rather than rule-based clinical diagnoses.
 
 The Ahlqvist-inspired interpretation should therefore be read as subtype-context support rather than as biological subtype validation. DIANA does not assign SAID because autoimmune markers are unavailable, and the SIDD-like group is interpreted as lipid-driven or atherogenic rather than as confirmed insulin-deficient diabetes. The cluster results support the presence of heterogeneous metabolic patterns among at-risk users, but they do not establish treatment categories.
 
-**Figure 4.2 Placeholder. Cluster Distribution and Centroid Profiles**
-[PLACEHOLDER: insert verified clustering figures from `models/binary_v2_no_bp/visualizations/cluster_distribution.png` and `models/binary_v2_no_bp/visualizations/cluster_profiles.png`, if available.]
+**Figure 4.2. Cluster Distribution and Centroid Profiles**
+[Figure note: insert verified clustering figures from `models/binary_v2_no_bp/visualizations/cluster_distribution.png` and `models/binary_v2_no_bp/visualizations/cluster_heatmap.png`; `cluster_scatter.png` may be used as a supplemental clustering plot if space permits.]
 
 ### 4.6 Leakage Validation Results
 
@@ -560,6 +573,8 @@ The Python ML service test suite passed with 270 tests. These tests covered clus
 | Frontend coverage threshold | Source coverage gates: 70% statements, 70% lines, 60% branches, and 40% functions | PASS: 72.64% lines/statements, 60.24% branches, and 42.85% functions |
 | Redis integration tests | Require running Redis service | Environment dependent |
 
+The function-coverage gate is lower than the statement and line gates because several frontend files are callback-heavy UI modules whose rendering paths are already exercised through broader component and contract tests. The 42.85 percent function result should therefore be reported as a passed repository coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
+
 The remaining technical-readiness gaps therefore concern environment-dependent Redis integration evidence, formal UAT, expert review, accessibility audit, and production load testing rather than the frontend coverage gate.
 
 ### 4.8 UI Workflow Integration
@@ -570,17 +585,17 @@ After form submission, the backend validates the request, sends the relevant ass
 
 The result interface presents outputs in a layered hierarchy. The first layer shows binary screening classification through risk score, risk category, and threshold context. The second layer shows metabolic subtype context only for at-risk predictions. The third layer presents SHAP explanation when available. Normal predictions receive neutral subtype semantics so that disease-pattern labels are not assigned to users classified as normal.
 
-**Figure 4.3 Placeholder. Main Dashboard Interface**
-[PLACEHOLDER: insert verified screenshot captured from the running application.]
+**Figure 4.3. Main Dashboard Interface**
+[Figure note: insert verified screenshot captured from the running application.]
 
-**Figure 4.4 Placeholder. Assessment Form With Real-Time Validation**
-[PLACEHOLDER: insert verified screenshot captured from the running application.]
+**Figure 4.4. Assessment Form With Real-Time Validation**
+[Figure note: insert verified screenshot captured from the running application.]
 
-**Figure 4.5 Placeholder. ML Result Modal With SHAP Explanation**
-[PLACEHOLDER: insert verified screenshot captured from the running application. Do not use synthetic SHAP values.]
+**Figure 4.5. ML Result Modal With SHAP Explanation**
+[Figure note: insert verified screenshot captured from the running application. Do not use synthetic SHAP values.]
 
-**Figure 4.6 Placeholder. Personal Trends Visualization**
-[PLACEHOLDER: insert verified screenshot captured from an account with sufficient historical assessments.]
+**Figure 4.6. Personal Trends Visualization**
+[Figure note: insert verified screenshot captured from an account with sufficient historical assessments.]
 
 This workflow demonstrates that the model was not evaluated only as an isolated algorithm. It was integrated into a functioning screening-support application with authentication, persistence, visualization, explainability, trends, and report-generation capabilities.
 
@@ -588,9 +603,23 @@ This workflow demonstrates that the model was not evaluated only as an isolated 
 
 The system architecture separates routine API operations from ML inference and explanation generation. The Go backend manages authentication, validation, persistence, caching, and response orchestration, while the Python ML service performs prediction, clustering, explainability, and monitoring-related functions. This separation reduces the risk that computationally heavier ML operations will degrade ordinary application interactions.
 
-Pure model inference benchmarks indicate that Logistic Regression averages approximately 1.08 ms per prediction in the benchmarked environment, while Random Forest averages approximately 40.74 ms and LightGBM averages approximately 1.40 ms. The current source measurements also document approximate service interaction and explanation-related overhead of 205 ms in the measured environment. These measurements support interactive feasibility, but they do not replace production load testing.
+Pure model inference benchmarks indicate that Logistic Regression averages approximately 0.62 ms per prediction in the benchmarked environment, while Random Forest averages approximately 13.09 ms and LightGBM averages approximately 0.25 ms. The current source measurements also document approximate service interaction and explanation-related overhead of 205 ms in the measured environment. These measurements support interactive feasibility, but they do not replace production load testing.
 
 Production performance claims should therefore remain qualified. Concurrent load testing with authenticated users, database writes, cache invalidation, ML requests, and frontend rendering has not yet been completed. The final manuscript should avoid claiming production-scale readiness until load-test evidence is collected.
+
+As part of deployment-readiness verification, the production VPS was checked for public exposure, routing behavior, service isolation, and secret placement. Sensitive operational details such as server addresses, usernames, private file paths, and connection strings are excluded from the manuscript.
+
+**Production Deployment Verification Summary**
+
+| Verification Item | Expected Result | Observed Result | Status |
+|---|---|---|---|
+| Public ingress | Only HTTP/HTTPS exposed through reverse proxy | Only Caddy exposed host ports 80 and 443 | Pass |
+| Backend routing | Backend reachable through reverse proxy health endpoint | `/api/v1/healthz` returned HTTP 200 through Caddy | Pass |
+| ML isolation | ML service not publicly reachable | Direct public access to the ML service port failed | Pass |
+| Database exposure | No database listener exposed on the VPS host | No PostgreSQL host port was listening | Pass |
+| Secret handling | Secrets loaded from environment file rather than raw proxy or compose configuration | Environment file permissions were locked down; no raw database DSN was found in proxy or compose configuration | Pass |
+
+The verification also identified stale container-level healthcheck probes for the backend and ML containers. The public backend route was functioning, but the Docker healthcheck path and ML internal port required alignment with the actual service endpoints. This was documented as an operations-readiness correction rather than as evidence of public routing failure.
 
 ### 4.10 User Acceptance Testing and Expert Feedback
 
@@ -664,11 +693,11 @@ DIANA was compared with reconstructed screening baselines under the same NHANES 
 
 | Tool | AUC-ROC | Sensitivity | Specificity | Interpretation |
 |---|---:|---:|---:|---|
-| FINDRISC-like upper-bound | 0.849 (±0.034) | 0.818 | 0.729 | Optimistic comparator using glycemic proxy |
-| DIANA | 0.727 [0.700-0.753] | 0.711 | 0.629 | Non-circular and optimized for NHANES postmenopausal cohort |
-| OmniRisk (Approximated) | 0.688 (±0.025) | 0.931 | 0.278 | Very high sensitivity with low specificity |
+| FINDRISC-like upper-bound | 0.849 (±0.035) | 0.842 | 0.703 | Optimistic comparator using glycemic proxy |
+| DIANA | 0.737 [0.710-0.763] | 0.748 | 0.590 | Non-circular and optimized for NHANES postmenopausal cohort |
+| OmniRisk (Approximated) | 0.688 (±0.025) | 0.926 | 0.289 | Very high sensitivity with low specificity |
 | Simple Clinical Model | 0.677 (±0.021) | 0.944 | 0.222 | Minimal feature model with low specificity |
-| ADA Risk Test reconstruction | 0.589 (±0.028) | 0.918 | 0.203 | Limited discrimination under this reconstruction |
+| ADA Risk Test reconstruction | 0.597 (±0.033) | 0.931 | 0.193 | Limited discrimination under this reconstruction |
 
 Compared with OmniRisk, the Simple Clinical model, and the ADA Risk Test reconstruction, DIANA showed a more balanced sensitivity-specificity profile. Several comparator tools achieved high sensitivity but very low specificity, which would increase false-positive referrals in a screening workflow. These benchmark results should be interpreted as internal contextual comparisons, not as proof of superiority over published tools. Some published tools require variables unavailable in NHANES or require approximation. Therefore, the benchmark analysis supports contextual interpretation but does not replace external head-to-head validation.
 

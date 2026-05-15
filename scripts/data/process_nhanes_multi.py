@@ -29,6 +29,16 @@ CYCLES = [
     ("F", "2009-2010"),
 ]
 
+MISSING_NUMERIC_CODES = {7, 9, 77, 99, 777, 999, 7777, 9999}
+OLD_PAQ_COLS = ['PAQ605', 'PAQ620', 'PAQ635', 'PAQ650', 'PAQ665']
+NEW_PAQ_COLS = ['PAD790Q', 'PAD790U', 'PAD800', 'PAD810Q', 'PAD810U', 'PAD820', 'PAD680']
+OLD_ALQ_COLS = ['ALQ101', 'ALQ120Q', 'ALQ120U', 'ALQ130']
+NEW_ALQ_COLS = ['ALQ111', 'ALQ121', 'ALQ142', 'ALQ270', 'ALQ280', 'ALQ151', 'ALQ170']
+BP_FILE_BY_SUFFIX = {"L": "BPXO"}
+INS_AVAILABLE_SUFFIXES = {"H", "I", "J", "L"}
+HSCRP_AVAILABLE_SUFFIXES = {"I", "J", "L"}
+NO_ALCOHOL_LABEL = "Never"
+
 
 def load_xpt(filename: str) -> pd.DataFrame:
     path = RAW_DIR / f"{filename}.XPT"
@@ -45,6 +55,48 @@ def load_xpt(filename: str) -> pd.DataFrame:
             print(f"  [ERROR] Failed to read {filename}.XPT: {e}")
             return pd.DataFrame()
     return df
+
+
+def first_existing_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
+    for col in candidates:
+        if col in df.columns:
+            return col
+    return None
+
+
+def clean_numeric(value, invalid_codes: set[int] = MISSING_NUMERIC_CODES):
+    if pd.isna(value):
+        return np.nan
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return np.nan
+    if int(numeric) == numeric and int(numeric) in invalid_codes:
+        return np.nan
+    return numeric
+
+
+def has_positive_frequency(row, quantity_col: str, unit_col: str | None = None, duration_col: str | None = None) -> bool | None:
+    """Return whether a newer NHANES frequency/duration pair reports activity."""
+    quantity = clean_numeric(row.get(quantity_col), {7777, 9999, 77, 99})
+    if pd.isna(quantity):
+        return None
+    if quantity <= 0:
+        return False
+
+    if unit_col is not None:
+        unit = row.get(unit_col)
+        if pd.isna(unit) or str(unit).strip() == "":
+            return None
+
+    if duration_col is not None:
+        duration = clean_numeric(row.get(duration_col), {7777, 9999, 77, 99})
+        if pd.isna(duration):
+            return None
+        if duration <= 0:
+            return False
+
+    return True
 
 
 def derive_smoking_status(df: pd.DataFrame) -> pd.Series:
@@ -93,6 +145,17 @@ def derive_physical_activity(df: pd.DataFrame) -> pd.Series:
         
         # Can't determine
         if pd.isna(paq605) and pd.isna(paq650) and pd.isna(paq665):
+            # 2021-2023 changed from yes/no PAQ605-style variables to
+            # frequency + unit + duration variables.
+            vigorous = has_positive_frequency(row, 'PAD810Q', 'PAD810U', 'PAD820')
+            moderate = has_positive_frequency(row, 'PAD790Q', 'PAD790U', 'PAD800')
+
+            if vigorous is True:
+                return 'Active'
+            if moderate is True:
+                return 'Moderate'
+            if vigorous is False and moderate is False:
+                return 'Sedentary'
             return 'Unknown'
         
         return 'Sedentary'
@@ -101,7 +164,58 @@ def derive_physical_activity(df: pd.DataFrame) -> pd.Series:
 
 
 def derive_alcohol_use(df: pd.DataFrame) -> pd.Series:
+    def classify_new_alq(row):
+        """Classify 2017+ alcohol questionnaire variables."""
+        alq111 = clean_numeric(row.get('ALQ111'), {7, 9, 77, 99})
+        alq121 = clean_numeric(row.get('ALQ121'), {77, 99})
+        alq130 = clean_numeric(row.get('ALQ130'), {777, 999})
+
+        if pd.isna(alq111):
+            return None
+        if alq111 == 2:
+            return NO_ALCOHOL_LABEL
+        if alq111 != 1:
+            return 'Unknown'
+
+        # ALQ121 frequency codes: 1=daily, 2=nearly daily, 3=3-4/week,
+        # 4=2/week, 5=1/week, 6=2-3/month, 7=monthly, 8=7-11/year,
+        # 9=3-6/year, 10=1-2/year, 0=never in past year.
+        frequency_per_week = {
+            0: 0.0,
+            1: 7.0,
+            2: 5.0,
+            3: 3.5,
+            4: 2.0,
+            5: 1.0,
+            6: 2.5 / 4.345,
+            7: 1.0 / 4.345,
+            8: 9.0 / 52.0,
+            9: 4.5 / 52.0,
+            10: 1.5 / 52.0,
+        }
+
+        if pd.isna(alq121):
+            return 'Light'
+        weekly_frequency = frequency_per_week.get(int(alq121))
+        if weekly_frequency is None:
+            return 'Unknown'
+        if weekly_frequency == 0:
+            return NO_ALCOHOL_LABEL
+        if pd.isna(alq130):
+            return 'Light'
+
+        weekly_drinks = weekly_frequency * alq130
+        if weekly_drinks > 7:
+            return 'Heavy'
+        if weekly_drinks > 3:
+            return 'Moderate'
+        return 'Light'
+
     def classify(row):
+        new_status = classify_new_alq(row)
+        if new_status is not None:
+            return new_status
+
         alq101 = row.get('ALQ101')
         alq130 = row.get('ALQ130')
         alq120q = row.get('ALQ120Q')
@@ -111,10 +225,14 @@ def derive_alcohol_use(df: pd.DataFrame) -> pd.Series:
             return 'Unknown'
         
         if alq101 == 2:  # No drinking
-            return 'None'
+            return NO_ALCOHOL_LABEL
         
         if alq101 == 1:  # Drinks
             # Try to estimate weekly drinks
+            alq120q = clean_numeric(alq120q, {777, 999, 77, 99})
+            alq120u = clean_numeric(alq120u, {7, 9, 77, 99})
+            alq130 = clean_numeric(alq130, {777, 999, 77, 99})
+
             if not pd.isna(alq120q) and not pd.isna(alq120u) and not pd.isna(alq130):
                 if alq120u == 1:  # per week
                     weekly_drinks = alq120q * alq130
@@ -158,10 +276,11 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
     hdl = load_xpt(f"HDL_{suffix}")
     trigly = load_xpt(f"TRIGLY_{suffix}")
     bmx = load_xpt(f"BMX_{suffix}")
-    # BP file: try BPX first, then BPXO (oscillometric, used in 2021-2023)
-    bpx = load_xpt(f"BPX_{suffix}")
-    if bpx.empty:
-        bpx = load_xpt(f"BPXO_{suffix}")  # Fallback for 2021-2023
+    # BP file: 2021-2023 uses oscillometric BPXO instead of BPX.
+    bpx_file_base = BP_FILE_BY_SUFFIX.get(suffix, "BPX")
+    bpx = load_xpt(f"{bpx_file_base}_{suffix}")
+    if bpx.empty and bpx_file_base != "BPX":
+        bpx = load_xpt(f"BPX_{suffix}")
     rhq = load_xpt(f"RHQ_{suffix}")
     
     # Load lifestyle files
@@ -174,8 +293,8 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
     
     # Load new enrichment files
     mcq = load_xpt(f"MCQ_{suffix}")    # Medical conditions (family history)
-    ins = load_xpt(f"INS_{suffix}")    # Fasting insulin
-    hscrp = load_xpt(f"HSCRP_{suffix}")  # C-reactive protein
+    ins = load_xpt(f"INS_{suffix}") if suffix in INS_AVAILABLE_SUFFIXES else pd.DataFrame()
+    hscrp = load_xpt(f"HSCRP_{suffix}") if suffix in HSCRP_AVAILABLE_SUFFIXES else pd.DataFrame()
     
     if demo.empty:
         return pd.DataFrame()
@@ -203,12 +322,16 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
     # Triglycerides
     if not trigly.empty:
         tg_cols = ['SEQN']
-        if 'LBXTR' in trigly.columns:
-            tg_cols.append('LBXTR')
+        trigly_col = first_existing_column(trigly, ['LBXTR', 'LBXTLG'])
+        if trigly_col is not None:
+            tg_cols.append(trigly_col)
         if 'LBDLDL' in trigly.columns:
             tg_cols.append('LBDLDL')
         if len(tg_cols) > 1:
-            df = df.merge(trigly[tg_cols], on='SEQN', how='left')
+            trigly_merge = trigly[tg_cols].copy()
+            if trigly_col is not None and trigly_col != 'LBXTR':
+                trigly_merge = trigly_merge.rename(columns={trigly_col: 'LBXTR'})
+            df = df.merge(trigly_merge, on='SEQN', how='left')
     
     # BMI and waist circumference (both from BMX file)
     if not bmx.empty:
@@ -246,7 +369,7 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
     
     if not paq.empty:
         paq_cols = ['SEQN']
-        for col in ['PAQ605', 'PAQ620', 'PAQ635', 'PAQ650', 'PAQ665']:
+        for col in OLD_PAQ_COLS + NEW_PAQ_COLS:
             if col in paq.columns:
                 paq_cols.append(col)
         if len(paq_cols) > 1:
@@ -254,7 +377,7 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
     
     if not alq.empty:
         alq_cols = ['SEQN']
-        for col in ['ALQ101', 'ALQ120Q', 'ALQ120U', 'ALQ130']:
+        for col in OLD_ALQ_COLS + NEW_ALQ_COLS:
             if col in alq.columns:
                 alq_cols.append(col)
         if len(alq_cols) > 1:
@@ -282,10 +405,16 @@ def process_cycle(suffix: str, year: str) -> pd.DataFrame:
         df = df.merge(ins[['SEQN', 'LBXIN']], on='SEQN', how='left')
         print(f"  Fasting insulin available: {df['LBXIN'].notna().sum()} records")
     
-    # Merge LBXCRP (C-reactive protein)
-    if not hscrp.empty and 'LBXCRP' in hscrp.columns:
-        df = df.merge(hscrp[['SEQN', 'LBXCRP']], on='SEQN', how='left')
-        print(f"  CRP available: {df['LBXCRP'].notna().sum()} records")
+    # Merge high-sensitivity C-reactive protein.
+    # 2015+ files use LBXHSCRP; older code expected LBXCRP.
+    if not hscrp.empty:
+        crp_col = first_existing_column(hscrp, ['LBXCRP', 'LBXHSCRP'])
+        if crp_col is not None:
+            crp_merge = hscrp[['SEQN', crp_col]].copy()
+            if crp_col != 'LBXCRP':
+                crp_merge = crp_merge.rename(columns={crp_col: 'LBXCRP'})
+            df = df.merge(crp_merge, on='SEQN', how='left')
+            print(f"  CRP available: {df['LBXCRP'].notna().sum()} records")
     
     df['cycle'] = year
     print(f"  Raw records: {len(df)}")

@@ -14,9 +14,19 @@ Output:
 import sys
 import time
 import json
+import os
+import tempfile
+import warnings
 import numpy as np
+import pandas as pd
 from pathlib import Path
 from datetime import datetime
+
+os.environ.setdefault("MPLCONFIGDIR", str(Path(tempfile.gettempdir()) / "diana-matplotlib"))
+warnings.filterwarnings(
+    "ignore",
+    message="X has feature names, but SimpleImputer was fitted without feature names",
+)
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -88,6 +98,7 @@ def train_comparison_models(X_sample, y_sample=None):
         X_train[:, 3] = np.clip(X_train[:, 3] * 15 + 50, 10, 100)  # HDL
         X_train[:, 4] = np.clip(X_train[:, 4] * 10 + 55, 18, 100)  # Age
         X_train[:, 5] = np.clip(X_train[:, 5] * 15 + 95, 50, 180)  # Waist
+        X_train = pd.DataFrame(X_train, columns=FEATURE_NAMES)
         y_train = np.random.randint(0, 2, n_samples)
     else:
         X_train = X_sample
@@ -166,7 +177,7 @@ def main():
     print()
     
     # Prepare sample input
-    X = np.array([[SAMPLE_INPUT[f] for f in FEATURE_NAMES]])
+    X = pd.DataFrame([[SAMPLE_INPUT[f] for f in FEATURE_NAMES]], columns=FEATURE_NAMES)
     
     # Load deployed model (Logistic Regression)
     print("[1/3] Loading deployed Logistic Regression model...")

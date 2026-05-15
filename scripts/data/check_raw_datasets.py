@@ -3,6 +3,13 @@ import pyreadstat
 import pandas as pd
 from collections import Counter
 from pathlib import Path
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from scripts.data.download_nhanes_multi import expected_filenames, validate_xpt_file
 
 def get_row_count(file_path):
     """Attempt to get row count from XPT file using various methods."""
@@ -55,7 +62,13 @@ def check_datasets(data_dir):
     for filename in files:
         file_path = raw_path / filename
         category = filename.split('_')[0]
-        
+
+        valid, validation_msg = validate_xpt_file(file_path)
+        if not valid:
+            print(f"{filename:<25} | INVALID: {validation_msg}")
+            category_counts[category] += 1
+            continue
+
         count = get_row_count(file_path)
         
         if isinstance(count, int):
@@ -80,8 +93,26 @@ def check_datasets(data_dir):
         print(f"{cat:<15} | {category_counts[cat]:<5} | {category_records[cat]:<15,}")
     print("-" * 55 + "\n")
 
+    expected = set(expected_filenames())
+    actual = set(files)
+    missing = sorted(expected - actual)
+    extras = sorted(actual - expected)
+
+    print("ACTIVE PIPELINE MANIFEST")
+    print("-" * 55)
+    print(f"Expected active files: {len(expected)}")
+    print(f"Present active files:  {len(expected & actual)}")
+    if missing:
+        print("Missing active files:")
+        for filename in missing:
+            print(f"  - {filename}")
+    else:
+        print("Missing active files: none")
+    print(f"Extra raw files ignored by active pipeline: {len(extras)}")
+    if extras:
+        print("  " + ", ".join(extras))
+    print("-" * 55 + "\n")
+
 if __name__ == "__main__":
-    SCRIPT_DIR = Path(__file__).parent
-    PROJECT_ROOT = SCRIPT_DIR.parent
     RAW_DATA_DIR = PROJECT_ROOT / "data" / "nhanes" / "raw"
     check_datasets(RAW_DATA_DIR)

@@ -32,7 +32,7 @@ BIOMARKER_RANGES = {
     'age': (18, 100),                  # years
     'waist_circumference': (50.0, 180.0),  # cm
     'fasting_insulin': (1.0, 300.0),       # µU/mL
-    'crp': (0.01, 30.0),                   # mg/dL
+    'crp': (0.01, 30.0),                   # hs-CRP mg/L
 }
 
 

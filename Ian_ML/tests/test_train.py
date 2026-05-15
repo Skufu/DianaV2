@@ -158,14 +158,14 @@ def test_physical_activity_encoding():
 
 def test_alcohol_use_encoding():
     df = pd.DataFrame({
-        'alcohol_use': ['None', 'Light', 'Moderate', 'Heavy'],
-        'bmi': [25.0] * 4,
-        'triglycerides': [150.0] * 4,
-        'hdl': [50.0] * 4,
+        'alcohol_use': ['None', 'Never', 'Light', 'Moderate', 'Heavy'],
+        'bmi': [25.0] * 5,
+        'triglycerides': [150.0] * 5,
+        'hdl': [50.0] * 5,
     })
     result = engineer_features_reduced(df)
     
-    expected = [0, 1, 2, 3]
+    expected = [0, 0, 1, 2, 3]
     assert list(result['alcohol_encoded']) == expected, \
         f"Alcohol encoding incorrect: {list(result['alcohol_encoded'])} vs {expected}"
 
