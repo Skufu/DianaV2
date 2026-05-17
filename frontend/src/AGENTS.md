@@ -2,9 +2,10 @@
 
 **Directory**: `frontend/src`
 **Generated:** 2026-01-28
+**Updated:** 2026-05-17
 
 ## OVERVIEW
-React 18 application entry point with custom routing, authentication state, and performance optimization.
+React 18 application entry point with custom tab routing, auth orchestration through `api.js` hooks, and Framer Motion transitions.
 
 ## WHERE TO LOOK
 
@@ -34,23 +35,19 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
 #### State Management
 ```jsx
-// Authentication state
 const [isAuthenticated, setIsAuthenticated] = useState(false);
-const [token, setToken] = useState(null);
-const [refreshToken, setRefreshToken] = useState(null);
 const [userRole, setUserRole] = useState(null);
 const [isAdmin, setIsAdmin] = useState(false);
 const [userId, setUserId] = useState(null);
-
-// Navigation state
 const [activeTab, setActiveTab] = useState('dashboard');
-const [showOnboarding, setShowOnboarding] = useState(false);
-const [showSignup, setShowSignup] = useState(false);
+const [adminView, setAdminView] = useState('overview');
+const [authView, setAuthView] = useState('login');
+const [showAssessmentModal, setShowAssessmentModal] = useState(false);
 
-// Performance state (computed)
-const performanceTier = useMemo(() => getPerformanceTier(), []);
-const animationNodeCount = useMemo(() => getAnimationNodeCount(), []);
-const disableHeavyEffects = useMemo(() => shouldDisableHeavyEffects(), []);
+const { data: profile } = useUserProfile(isAuthenticated);
+const { data: assessments } = useAssessments(isAuthenticated);
+const loginMutation = useLogin();
+const logoutMutation = useLogout();
 ```
 
 #### Routing (Custom Implementation)
@@ -59,22 +56,18 @@ No React Router - uses tab-based routing:
 ```jsx
 const renderContent = () => {
   switch(activeTab) {
-    case 'dashboard':
-      return <Dashboard_user token={token} userId={userId} />;
-    case 'profile':
-      return <UserProfile token={token} userId={userId} />;
-    case 'trends':
-      return <PersonalTrends token={token} />;
-    case 'insights':
-      return <Insights token={token} />;
-    case 'education':
-      return <Education />;
-    case 'export':
-      return <Export token={token} />;
-    case 'admin':
-      return isAdmin ? <AdminDashboard ... /> : <Dashboard_user ... />;
-    default:
-      return <Dashboard_user ... />;
+	case 'dashboard':
+	    return <Dashboard_user userId={userId} />;
+	case 'profile':
+	    return <UserProfile userId={userId} ... />;
+	case 'trends':
+	    return <PersonalTrends userId={userId} ... />;
+	case 'education':
+	    return <Education />;
+	case 'export':
+	    return <Export />;
+	default:
+	    return <Dashboard_user ... />;
   }
 };
 ```
@@ -85,7 +78,6 @@ const Dashboard_user = lazy(() => import('./components/user/Dashboard_user'));
 const UserProfile = lazy(() => import('./components/user/UserProfile'));
 const Onboarding = lazy(() => import('./components/user/Onboarding'));
 const PersonalTrends = lazy(() => import('./components/user/PersonalTrends'));
-const Insights = lazy(() => import('./components/insights/Insights'));
 const Education = lazy(() => import('./components/education/Education'));
 const Export = lazy(() => import('./components/export/Export'));
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
@@ -98,34 +90,30 @@ const Signup = lazy(() => import('./components/auth/Signup'));
 ```jsx
 1. User enters credentials in Login component
 2. handleLogin(email, password) called
-3. loginApi() called → POST /auth/login
+3. `useLogin()` mutation calls POST /auth/login
 4. Response received: {access_token, refresh_token, user: {...}}
-5. JWT decoded → extract role, user_id
+5. Tokens stored with `setAuthTokens(access_token, refresh_token)`
 6. State updated:
    - setIsAuthenticated(true)
-   - setToken(access_token)
-   - setRefreshToken(refresh_token)
-   - setUserRole(payload.role)
-   - setIsAdmin(payload.role === 'admin')
-   - setUserId(payload.user_id)
-7. Tokens saved to localStorage:
-   - localStorage.setItem('diana_token', access_token)
+   - setUserRole(res.user.role)
+   - setIsAdmin(role === 'admin' || role === 'doctor')
+   - setUserId(res.user.id)
+7. Tokens are saved by api.js:
+   - localStorage.setItem('diana_access_token', access_token)
    - localStorage.setItem('diana_refresh_token', refresh_token)
 ```
 
 ### Logout Process
 ```jsx
 1. handleLogout() called
-2. logoutApi(refreshToken) called → POST /auth/logout
-3. All state cleared:
+2. clearAuthTokens() clears local auth state and storage
+3. React Query user/assessment caches are cancelled and cleared
+4. App auth state is cleared:
    - setIsAuthenticated(false)
-   - setToken(null)
-   - setRefreshToken(null)
    - setUserRole(null)
    - setIsAdmin(false)
    - setUserId(null)
-4. localStorage.removeItem('diana_token')
-5. localStorage.removeItem('diana_refresh_token')
+5. `useLogout()` mutation attempts POST /auth/logout
 ```
 
 ### Token Refresh
@@ -134,58 +122,37 @@ Implemented in `api.js` - automatically refreshes expired tokens.
 ### Onboarding Check
 ```jsx
 useEffect(() => {
-  const load = async () => {
-    const profile = await getUserProfileApi(token);
-    if (profile?.onboarding_completed === true) {
-      setShowOnboarding(false);
-    } else {
-      setShowOnboarding(true);  // Show onboarding if incomplete
-    }
-  };
-  load();
-}, [token, userId]);
+  if (!isAuthenticated) return;
+  if (profile && !profileLoading && !profileError) {
+    const hasAssessments = assessments && assessments.length > 0;
+    setShowOnboarding(!(profile?.onboarding_completed === true || hasAssessments));
+  }
+}, [profile, profileLoading, profileError, isAuthenticated, assessments, queryClient]);
 ```
 
 ## PERFORMANCE OPTIMIZATION
 
 ### Device Detection
-Uses `deviceCapabilities.js` for hardware-aware performance:
+Uses `deviceCapabilities.js` indirectly through `utils/animations.js` and `components/layout/BiologicalNetwork.jsx`:
 
 ```jsx
-const performanceTier = useMemo(() => getPerformanceTier(), []);
+const performanceTier = getPerformanceTier();
 // Returns: 'HIGH', 'MEDIUM', 'LOW'
 
-const animationNodeCount = useMemo(() => getAnimationNodeCount(), []);
+const animationNodeCount = getAnimationNodeCount();
 // Returns: 40 (HIGH), 20 (MEDIUM), 0 (LOW)
 
-const disableHeavyEffects = useMemo(() => shouldDisableHeavyEffects(), []);
+const disableHeavyEffects = shouldDisableHeavyEffects();
 // Returns: true for LOW tier
-```
-
-### Global CSS Classes
-```jsx
-useEffect(() => {
-  if (disableHeavyEffects) {
-    document.body.classList.add('low-perf');  // Disables animations
-  }
-  if (performanceTier !== 'HIGH') {
-    document.body.classList.add('reduced-motion');  // Reduces motion
-  }
-  return () => {
-    document.body.classList.remove('low-perf', 'reduced-motion');
-  };
-}, [disableHeavyEffects, performanceTier]);
 ```
 
 ### Conditional Rendering
 ```jsx
-// BiologicalNetwork only rendered on HIGH tier
-{animationNodeCount > 0 && (
-  <BiologicalNetwork nodeCount={animationNodeCount} ... />
-)}
+// BiologicalNetwork self-disables heavy canvas work on LOW tier
+const shouldDisableEffects = shouldDisableHeavyEffects();
 
-// Layout adjusted based on active tab
-<main className={`relative z-10 flex-1 ${isAssessmentOpen ? '' : 'ml-20 lg:ml-72'}`}>
+// Page transitions use Framer Motion
+<AnimatePresence mode="wait">
 ```
 
 ## CODE MAP
@@ -196,37 +163,33 @@ useEffect(() => {
 | UserProfile | lazy component | App.jsx | - | User profile |
 | Onboarding | lazy component | App.jsx | - | Onboarding flow |
 | PersonalTrends | lazy component | App.jsx | - | Trend charts |
-| Insights | lazy component | App.jsx | - | ML insights |
 | Education | lazy component | App.jsx | - | Health education |
 | Export | lazy component | App.jsx | - | PDF export |
 | AdminDashboard | lazy component | App.jsx | - | Admin dashboard |
 | Signup | lazy component | App.jsx | - | User registration |
 | LoadingSkeleton | component | App.jsx | - | Loading placeholder |
 | App | component | App.jsx | main.jsx | Root component |
-| loginApi | func | api.js | App.jsx | Login API call |
-| getUserProfileApi | func | api.js | App.jsx | Get profile API |
-| logoutApi | func | api.js | App.jsx | Logout API call |
-| getPerformanceTier | func | deviceCapabilities.js | App.jsx | Detect hardware |
-| getAnimationNodeCount | func | deviceCapabilities.js | App.jsx | Animation count |
-| shouldDisableHeavyEffects | func | deviceCapabilities.js | App.jsx | Disable effects |
-| PERF_TIER | const | deviceCapabilities.js | App.jsx | Performance tiers |
-| BiologicalNetwork | component | layout/ | App.jsx | Animated background |
+| useLogin | hook | api.js | App.jsx | Login mutation |
+| useUserProfile | hook | api.js | App.jsx | Profile query |
+| useLogout | hook | api.js | App.jsx | Logout mutation |
+| useAssessments | hook | api.js | App.jsx | Assessment query |
+| getPerformanceTier | func | deviceCapabilities.js | utils/animations, BiologicalNetwork | Detect hardware |
+| getAnimationNodeCount | func | deviceCapabilities.js | BiologicalNetwork | Animation count |
+| shouldDisableHeavyEffects | func | deviceCapabilities.js | utils/animations, BiologicalNetwork | Disable effects |
+| PERF_TIER | const | deviceCapabilities.js | deviceCapabilities | Performance tiers |
 | Sidebar | component | layout/ | App.jsx | Navigation sidebar |
 | ErrorBoundary | component | common/ | App.jsx | Error wrapper |
-| CustomCursor | component | common/ | App.jsx | Custom cursor |
-
 ## API LAYER (`api.js`)
 
 ### Configuration
 ```javascript
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080/api/v1';
-const ML_BASE = import.meta.env.VITE_ML_BASE || `http://localhost:${import.meta.env.VITE_ML_PORT || '5001'}`;
+const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 ```
 
 ### API Client
 ```javascript
 const apiFetch = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('diana_token');
+  const token = getAuthTokens().accessToken;
   const headers = {
     'Content-Type': 'application/json',
   };
@@ -251,31 +214,27 @@ const apiFetch = async (endpoint, options = {}) => {
 
 ### ML Client
 ```javascript
-const mlFetch = async (path) => {
-  const response = await fetch(`${ML_BASE}${path}`);
-  if (!response.ok) {
-    throw new Error(`ML API error: ${response.status}`);
-  }
-  return response.json();
+const mlFetchJson = async (path, options = {}) => {
+  // ML requests go through the Go backend proxy under /api/v1/ml,
+  // keeping ML API keys server-side.
+  return apiFetch(`/ml${path}`, options);
 };
 ```
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
 ### Critical Issues
-- **Missing backend endpoint**: `Signup.jsx` exists but backend has no `/auth/register` route
-- **Admin stats path**: Frontend calls `/admin/stats` but backend route is `/admin/dashboard`
-- **Research export**: Frontend has function but backend endpoint commented out
+- **Archived E2E tests**: Do not use Playwright results as current evidence unless the suite is restored.
+- **Research export**: No active frontend route; backend contains a disabled research-export handler method
 
 ### Technical Debt
 - **No React Router**: Custom tab-based routing instead of standard library
 - **Manual JWT decoding**: JWT parsing done manually with `atob`/`JSON.parse`
-- **No token refresh**: Tokens have expiry but no automatic refresh on 401
-- **No error boundary**: Global error handling minimal (only ErrorBoundary around content)
+- **LocalStorage auth**: Bearer tokens are stored in guarded localStorage for cross-origin prototype flow
 - **Silent errors**: Some API calls have no error handling (logout)
 - **No loading states**: No global loading state management
 - **No retry logic**: Failed API calls not retried
-- **No request caching**: Every API call is fresh fetch
+- **Partial request caching**: React Query is used for many API hooks, but not every direct API helper is cached
 
 ### Anti-Patterns to Avoid
 - **Prop drilling**: Pass state via props instead of Context API
@@ -290,7 +249,7 @@ frontend/src/
 ├── components/           # Domain-organized components
 │   ├── auth/            # Login, Signup
 │   ├── user/            # Dashboard, Profile, Trends, Onboarding
-│   ├── insights/         # ML analytics
+│   ├── insights/         # ML analytics components
 │   ├── admin/            # Admin dashboard, user management
 │   ├── education/        # Health education content
 │   ├── export/           # PDF export
@@ -303,7 +262,8 @@ frontend/src/
 ```
 
 ### Tab Navigation
-- **Tabs**: `dashboard`, `profile`, `trends`, `insights`, `education`, `export`, `admin`
+- **User tabs**: `dashboard`, `profile`, `trends`, `education`, `export`
+- **Admin area**: `admin` tab with internal `adminView`
 - **Switch**: Active tab determines which component renders
 - **Sidebar**: Updates activeTab state
 - **URL**: No URL routing - tab state is source of truth
@@ -320,20 +280,20 @@ frontend/src/
 ### Security Notes
 - **Token storage**: `localStorage` (not HttpOnly cookies)
 - **XSS risk**: JWT in localStorage is vulnerable to XSS attacks
-- **CSRF risk**: No CSRF token mechanism
+- **CSRF support**: `api.js` sends `X-CSRF-Token` for non-GET requests when the CSRF cookie exists
 
 ## TODO
 
-- [ ] Implement React Router (replace tab-based routing)
+- [ ] Implement React Router if URL/deep-link behavior becomes required
 - [ ] Add Context API for auth state management
 - [ ] Use HttpOnly cookies for token storage
-- [ ] Implement automatic token refresh on 401
+- [x] Implement automatic token refresh on 401 in `api.js`
 - [ ] Add global loading state management
 - [ ] Add request retry logic with exponential backoff
-- [ ] Add request caching (React Query, SWR, or Zustand Query)
+- [x] Add React Query for common API hooks
 - [ ] Add request cancelation on component unmount
 - [ ] Add error toast/notification system
 - [ ] Add 404 page
 - [ ] Add loading skeleton screens
-- [ ] Add transition animations between tabs
+- [x] Add transition animations between tabs
 - [ ] Add accessibility improvements (ARIA labels, keyboard nav)

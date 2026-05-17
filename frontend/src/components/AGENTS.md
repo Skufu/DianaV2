@@ -2,6 +2,7 @@
 
 **Directory**: `frontend/src/components`
 **Generated:** 2026-01-28
+**Updated:** 2026-05-17
 
 ## OVERVIEW
 Domain-organized React components with lazy loading and tab-based navigation.
@@ -13,10 +14,10 @@ Domain-organized React components with lazy loading and tab-based navigation.
 | Auth | `auth/` | Login, Signup | Authentication flows |
 | User | `user/` | Dashboard, Profile, Trends, Onboarding | User-facing features |
 | Insights | `insights/` | Insights, CohortAnalysis | ML analytics visualizations |
-| Admin | `admin/` | AdminDashboard, UserManagement, AuditLog, ModelTraceability, AuthEventLog | Admin tools |
+| Admin | `admin/` | AdminDashboard, UserManagement, AuditLog, ModelTraceability, AuthEventLog, AdminOperations | Admin tools |
 | Export | `export/` | Export | PDF download |
 | Education | `education/` | Education | Health education content |
-| Common | `common/` | ErrorBoundary, ErrorFallback, RiskIndicator, BiomarkerInput, PDFExport, Button, CustomCursor, SHAPExplanation | Reusable components |
+| Common | `common/` | ErrorBoundary, ErrorFallback, RiskIndicator, BiomarkerInput, PDFExport, Button, Toast, SHAPExplanation | Reusable components |
 | Layout | `layout/` | Sidebar, AdminSidebar, BiologicalNetwork | Navigation and background |
 
 ## ANIMATION DESIGN SYSTEM (NEW)
@@ -87,7 +88,7 @@ if (error) {
 import { createAssessmentApi } from '../../api';
 
 const handleSubmit = async (data) => {
-  const result = await createAssessmentApi(token, data);
+  const result = await createAssessmentApi(data);
   // Handle result
 };
 ```
@@ -107,13 +108,13 @@ const handleSubmit = async (data) => {
 ### Signup.jsx
 - **Purpose**: User registration
 - **Props**: `onSignup`
-- **Note**: Backend endpoint `/auth/register` NOT IMPLEMENTED
+- **API Call**: `signupApi(email, password)` -> `/auth/register`
 
 ## USER COMPONENTS
 
 ### Dashboard_user.jsx
 - **Purpose**: User overview and quick actions
-- **Props**: `token`, `userId`, `setActiveTab`
+- **Props**: `setActiveTab`, `onStartAssessment`
 - **Features**:
   - Assessment count display
   - Risk level indicator (RiskIndicator)
@@ -123,6 +124,7 @@ const handleSubmit = async (data) => {
 
 ### UserProfile.jsx
 - **Purpose**: User profile management
+- **Props**: `setActiveTab`, `onStartAssessment`, `fontScale`, `onFontScaleChange`
 - **Features**:
   - Personal information form
   - Medical history checkboxes
@@ -136,10 +138,11 @@ const handleSubmit = async (data) => {
   2. Menopause status
   3. Medical history
   4. Consent preferences
-- **API**: `completeOnboardingApi(token, data)`
+- **API**: `completeOnboardingApi(data)`
 
 ### PersonalTrends.jsx
 - **Purpose**: Biomarker trend visualization
+- **Props**: `onStartAssessment`
 - **Chart Library**: Recharts
 - **Features**:
   - Line charts for HbA1c, FBS, cholesterol trends
@@ -150,11 +153,12 @@ const handleSubmit = async (data) => {
 
 ### Insights.jsx
 - **Purpose**: ML analytics dashboard
+- **Status**: Component exists and is covered by smoke tests, but it is not currently mounted as a main App tab
 - **Features**:
   - Cluster distribution visualization
   - Risk score trends
   - SHAP explanations (via SHAPExplanation component)
-- **API**: `fetchClusterDistributionApi(token)`
+- **API**: `fetchClusterDistributionApi()`
 
 ### SHAPExplanation.jsx
 - **Purpose**: Feature importance visualization for ML models
@@ -164,10 +168,12 @@ const handleSubmit = async (data) => {
   - Feature importance ranking
   - Waterfall plot image (from ML server)
   - Base value and final prediction display
-- **API**: `mlFetch('/explain?model_type=clinical')`
+- **API**: `mlFetchJson('/predict/explain?...')`, proxied through the Go backend under `/api/v1/ml`
 
 ### CohortAnalysis.jsx
 - **Purpose**: Comparative analysis across users
+- **Status**: Legacy/standalone insights component; currently accepts a `token` prop
+- **Known issue**: Imports `fetchCohortAnalysisApi`, which is not currently exported by `frontend/src/api.js`
 - **Features**:
   - Age group breakdown
   - Cluster comparison charts
@@ -177,7 +183,7 @@ const handleSubmit = async (data) => {
 
 ### AdminDashboard.jsx
 - **Purpose**: System overview and statistics
-- **API**: `fetchAdminDashboardApi(token)`
+- **API**: `fetchAdminDashboardApi()`
 - **Features**:
   - Total users count
   - Active assessments count
@@ -187,10 +193,10 @@ const handleSubmit = async (data) => {
 ### UserManagement.jsx
 - **Purpose**: User CRUD operations
 - **APIs**:
-  - `adminListUsersApi(token, page, pageSize)`
-  - `createAdminUserApi(token, user)`
-  - `updateAdminUserApi(token, userId, user)`
-  - `deactivateAdminUserApi(token, userId)`
+  - `adminListUsersApi({ page, page_size })`
+  - `createAdminUserApi(user)`
+  - `updateAdminUserApi(userId, user)`
+  - `deactivateAdminUserApi(userId)`
 - **Features**:
   - Paginated user list
   - Create new user form
@@ -200,7 +206,7 @@ const handleSubmit = async (data) => {
 
 ### AuditLogViewer.jsx
 - **Purpose**: View admin audit events
-- **API**: `fetchAuditLogsApi(token, page, pageSize)`
+- **API**: `fetchAuditLogsApi({ page, page_size })`
 - **Features**:
   - Paginated audit log table
   - Event type filtering
@@ -209,7 +215,7 @@ const handleSubmit = async (data) => {
 
 ### AuthEventLogViewer.jsx
 - **Purpose**: View authentication events
-- **API**: Fetch auth events (from store)
+- **API**: Server-sent events from `/api/v1/admin/events/stream`
 - **Features**:
   - Event timeline
   - User identification
@@ -217,11 +223,19 @@ const handleSubmit = async (data) => {
 
 ### ModelTraceability.jsx
 - **Purpose**: Track ML model runs and versions
-- **API**: `fetchModelRunsApi(token, page, pageSize)`
+- **API**: `fetchModelRunsApi({ page, page_size })`
 - **Features**:
   - Model version history
   - Dataset hash tracking
   - Run timestamp logging
+
+### AdminOperations.jsx
+- **Purpose**: Read-only operations health and application-log inspection
+- **API**: `useOperationsHealth()`, `useSystemLogs()`
+- **Features**:
+  - Service health cards
+  - Log source/status display
+  - Manual refresh action
 
 ## COMMON COMPONENTS
 
@@ -275,7 +289,7 @@ const handleSubmit = async (data) => {
 
 ### PDFExport.jsx
 - **Purpose**: Download health report PDF
-- **API**: `exportPDFApi(token)`
+- **API**: `exportPDFApi()`
 - **Features**:
   - Download button with loading state
   - Progress indicator
@@ -284,14 +298,7 @@ const handleSubmit = async (data) => {
 ### SHAPExplanation.jsx
 - **Purpose**: ML feature importance visualization
 - **Library**: Recharts
-- **API**: `mlFetch('/explain?model_type=clinical')`
-
-### CustomCursor.jsx
-- **Purpose**: Custom mouse cursor for branding
-- **Features**:
-  - DIANA logo cursor
-  - Smooth transitions
-  - Hover effects
+- **API**: `mlFetchJson('/predict/explain?...')`
 
 ## LAYOUT COMPONENTS
 
@@ -299,7 +306,7 @@ const handleSubmit = async (data) => {
 - **Purpose**: Main navigation sidebar
 - **Props**: `activeTab`, `setActiveTab`, `onLogout`, `onStartAssessment`, `userRole`, `isAdmin`
 - **Features**:
-  - Tab navigation (dashboard, profile, trends, insights, education, export)
+  - Tab navigation (dashboard, profile, trends, education, export)
   - User role display
   - Admin-specific options
   - Logout button
@@ -332,7 +339,7 @@ const handleSubmit = async (data) => {
 | UserProfile | component | user/UserProfile.jsx | App.jsx | Profile management |
 | Onboarding | component | user/Onboarding.jsx | App.jsx | Onboarding flow |
 | PersonalTrends | component | user/PersonalTrends.jsx | App.jsx | Trend charts |
-| Insights | component | insights/Insights.jsx | App.jsx | ML insights |
+| Insights | component | insights/Insights.jsx | smoke tests, insights exports | ML insights component not mounted as main App tab |
 | CohortAnalysis | component | insights/CohortAnalysis.jsx | Insights | Cohort analysis |
 | SHAPExplanation | component | common/SHAPExplanation.jsx | Insights | Feature importance |
 | AdminDashboard | component | admin/AdminDashboard.jsx | App.jsx | Admin overview |
@@ -340,6 +347,7 @@ const handleSubmit = async (data) => {
 | AuditLogViewer | component | admin/AuditLogViewer.jsx | AdminDashboard | Audit log viewer |
 | AuthEventLogViewer | component | admin/AuthEventLogViewer.jsx | AdminDashboard | Auth event viewer |
 | ModelTraceability | component | admin/ModelTraceability.jsx | AdminDashboard | Model tracking |
+| AdminOperations | component | admin/AdminOperations.jsx | AdminDashboard | Operations health/log viewer |
 | Export | component | export/Export.jsx | App.jsx | PDF download |
 | Education | component | education/Education.jsx | App.jsx | Health education |
 | ErrorBoundary | component | common/ErrorBoundary.jsx | App.jsx | Error catching |
@@ -348,10 +356,9 @@ const handleSubmit = async (data) => {
 | BiomarkerInput | component | common/BiomarkerInput.jsx | UserProfile | Formatted input |
 | Button | component | common/Button.jsx | Multiple | Reusable button |
 | PDFExport | component | common/PDFExport.jsx | Export | Download handler |
-| CustomCursor | component | common/CustomCursor.jsx | App.jsx | Custom cursor |
 | Sidebar | component | layout/Sidebar.jsx | App.jsx | Navigation |
 | AdminSidebar | component | layout/AdminSidebar.jsx | AdminDashboard | Admin navigation |
-| BiologicalNetwork | component | layout/BiologicalNetwork.jsx | App.jsx | Animated background |
+| BiologicalNetwork | component | layout/BiologicalNetwork.jsx | layout components, tests | Animated background |
 
 ## STYLING CONVENTIONS
 
@@ -379,15 +386,15 @@ const handleSubmit = async (data) => {
 ## ANTI-PATTERNS (THIS PROJECT)
 
 ### Critical Issues
-- **No index exports**: Components organized in folders but no index.jsx re-exports
+- **Limited index exports**: Only some component domains expose index exports
 - **Mixed responsibilities**: Some components handle both API calls and UI logic
-- **No global state**: Auth state duplicated across multiple components (from App.jsx props)
+- **Prop-based auth flow**: Auth state is centralized in App/api hooks but still passed to several children by props
 
 ### Technical Debt
 - **No Context API**: Auth state passed via props to all children (prop drilling)
-- **Manual JWT parsing**: JWT decoded manually in each component that needs user info
+- **Manual JWT parsing**: Keep token decoding centralized in App/api utilities; do not add per-component JWT parsing
 - **No error boundary around API calls**: Try/catch only in some components
-- **No loading skeletons**: Missing proper loading states for async operations
+- **Loading state coverage**: Skeleton/loading coverage exists but is not uniform across every async view
 - **No form validation**: Client-side validation minimal (relies on backend)
 
 ### Anti-Patterns to Avoid
@@ -440,14 +447,14 @@ const handleSubmit = async (data) => {
 - [ ] Implement Context API for authentication state
 - [ ] Add proper form validation with error messages
 - [ ] Add loading skeletons for all async operations
-- [ ] Add transition animations between tabs
+- [ ] Audit transition coverage between tabs and modal flows
 - [ ] Implement React Router v6 or React Navigation
 - [ ] Add ARIA labels and roles throughout
 - [ ] Add keyboard navigation support
-- [ ] Add toast/notification system
+- [ ] Expand toast usage for async failures and successes
 - [ ] Add error logging service
 - [ ] Add request retry logic
 - [ ] Test with screen readers
 - [ ] Add internationalization (i18n) support
-- [ ] Add unit tests for components
+- [ ] Expand unit tests for remaining untested components
 - [ ] Add Storybook for component documentation

@@ -1,6 +1,7 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-01-28
+**Updated:** 2026-05-17
 **Commit:** Current
 **Branch:** main
 
@@ -54,11 +55,11 @@ Go/Gin REST API for DIANA diabetes risk assessment. PostgreSQL with SQLC, JWT au
 **Handlers:**
 - Gin context: `c *gin.Context`
 - JSON responses: `c.JSON(http.StatusOK, resp)`
-- Errors: `c.JSON(http.StatusBadRequest, gin.H{"error": "..."})`
-- Use `middleware.Auth(cfg.JWTSecret)` for protected routes
+- Errors: use helpers from `internal/http/handlers/utils.go` such as `ErrBadRequest`, `ErrInternal`, `ErrNotFound`, `ErrForbidden`, and `ErrValidation`
+- Use `middleware.Auth(cfg.JWTSecret, st.Users())` for protected routes
 
 **Database:**
-- Use store repositories via `st.Users()`, `st.Patients()`, etc.
+- Use store repositories via `st.Users()`, `st.Assessments()`, `st.RefreshTokens()`, etc.
 - Methods return `(model, error)` or `(model, bool, error)`
 - Use `context.Background()` or `context.WithTimeout()`
 
@@ -72,7 +73,7 @@ Go/Gin REST API for DIANA diabetes risk assessment. PostgreSQL with SQLC, JWT au
 **CRITICAL:**
 - `_ = err` on audit event creation (middleware, handlers) - failures are logged but async
 - Async audit goroutines without blocking - data loss possible if DB unavailable
-- `interface{}` used instead of `any` (5 occurrences)
+- Legacy `interface{}` usage remains in handlers/tests; prefer `any` in new Go code
 
 **TODO/DEPRECATED:**
 - `notification_service.go`: Email sending not implemented
@@ -82,7 +83,7 @@ Go/Gin REST API for DIANA diabetes risk assessment. PostgreSQL with SQLC, JWT au
 **BUILD/CI:**
 - `golangci-lint` in CI has `continue-on-error: true` - lint failures ignored
 - Backend Dockerfile in `/build/` instead of `/backend/`
-- Go 1.24 in CI, docs say 1.21+ (version drift)
+- Backend module declares Go 1.25 with toolchain 1.25.8; keep CI/runtime docs aligned to that baseline
 
 **DATABASE:**
 - `sslmode=require` in docker-compose (local dev will fail without SSL config)
@@ -90,24 +91,27 @@ Go/Gin REST API for DIANA diabetes risk assessment. PostgreSQL with SQLC, JWT au
 ## UNIQUE STYLES
 
 **ML Integration:**
-- `HTTPPredictor` calls Python/FastAPI ML server
+- `HTTPPredictor` calls the Python Flask ML server
 - Falls back to `MockPredictor` if `MODEL_URL` empty
 - Biomarker validation in `internal/ml/validation.go`
 
 **PDF Reports:**
 - PDF generation in `internal/services/pdf_export_service.go`
-- Uses `gopdf` library
-- Notified via queue (not implemented)
+- Uses `github.com/go-pdf/fpdf`
+- User export route is `/api/v1/users/me/export/pdf`; CSV export handlers are deprecated/not registered
 
 **Refactoring Complete:**
 - Shifted from "Patient-centric" to "User-centric" model (B2B→B2C)
 - `users.go` handler replaces deleted `patients.go`
 - Assessments use `UserID` (legacy `PatientID` dropped)
+- Legacy clinic routes and repository methods still exist, but they are not part of the active thesis workflow
 
 **Admin Features:**
 - Role-based access control (`admin` role for `/api/v1/admin/*`)
 - Audit logs with filtering (`admin_audit.go`)
 - User management (`admin_users.go`)
+- Operations health/log surface (`admin_operations.go`)
+- Model traceability and drift status routes (`admin_models.go`)
 
 ## COMMANDS
 ```bash
@@ -146,7 +150,7 @@ go build -o server.exe ./cmd/server
 - `/tmp/` build artifacts should be gitignored
 
 **Technical Debt:**
-- Refactor `interface{}` → `any` (Go 1.18+)
+- Refactor remaining handwritten `interface{}` usage to `any` where it is not generated or test-specific
 - Fix silenced audit errors (add logging or panic)
 - Implement notification queue/emailing
 - Replace fire-and-forget goroutines with proper async workers

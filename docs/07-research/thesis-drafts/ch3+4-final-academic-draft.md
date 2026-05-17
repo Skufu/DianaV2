@@ -4,7 +4,7 @@
 
 This study used a quantitative, system-development research design to develop and evaluate DIANA, a web-based screening-support system for Type 2 Diabetes risk stratification among postmenopausal women. The quantitative component focused on constructing and validating a predictive model using metabolic, anthropometric, demographic, and lifestyle variables derived from the National Health and Nutrition Examination Survey (NHANES). The system-development component focused on integrating the trained model into a working web application capable of presenting risk predictions, metabolic pattern context, model traceability, and explainability outputs.
 
-The methodological design was structured around two central requirements. First, the predictive model had to estimate risk without using diagnostic glycemic biomarkers as predictor variables, thereby avoiding circular prediction. HbA1c and fasting blood sugar were used for reference-label construction and clinical interpretation, but they were excluded from the model feature set. Second, the system had to present model outputs in a form appropriate for screening support rather than diagnosis. For this reason, DIANA reports risk probability, risk category, subtype context, and feature-attribution information as decision-support outputs that require confirmatory testing and clinical interpretation.
+The methodological design was structured around two central requirements. First, the predictive model had to estimate risk without using diagnostic glycemic biomarkers as predictor variables, thereby avoiding circular prediction. HbA1c and fasting blood sugar were used for reference-label construction and clinical interpretation, but they were excluded from the model feature set. Second, the system had to present model outputs in a form appropriate for screening support rather than diagnosis. For this reason, DIANA reports risk probability, risk category, subtype context, and feature-attribution information as decision-support outputs that require confirmatory testing and clinical interpretation, consistent with health-AI governance principles that emphasize oversight, accountability, and appropriate human use (World Health Organization, 2021).
 
 DIANA is therefore not positioned as a diagnostic device. A screen-positive result indicates that a user's profile resembles metabolic patterns associated with prediabetes or diabetes risk in the NHANES-derived postmenopausal cohort. The result should prompt follow-up discussion, confirmatory laboratory testing, or preventive counseling where appropriate, but it does not establish a clinical diagnosis by itself.
 
@@ -29,7 +29,7 @@ Figure 3.1 summarizes the methodological sequence used in the study. The flow em
 
 ### 3.2 Research Locale
 
-The primary data locale for model development was the NHANES public data repository maintained by the Centers for Disease Control and Prevention. NHANES was selected because it provides standardized demographic, laboratory, examination, and questionnaire data across repeated survey releases. The modeling dataset used six NHANES releases: 2009-2010, 2011-2012, 2013-2014, 2015-2016, 2017-2018, and 2021-2023. The 2019-2020 cycle was excluded because NHANES field operations were disrupted by the COVID-19 pandemic. The 2021-2023 files were treated as the August 2021-August 2023 post-pandemic release rather than as a standard biennial NHANES release.
+The primary data locale for model development was the NHANES public data repository maintained by the Centers for Disease Control and Prevention. NHANES was selected because it provides standardized demographic, laboratory, examination, and questionnaire data across repeated survey releases (Centers for Disease Control and Prevention, National Center for Health Statistics [CDC/NCHS], 2024a). The modeling dataset used six NHANES releases: 2009-2010, 2011-2012, 2013-2014, 2015-2016, 2017-2018, and 2021-2023. The 2019-2020 cycle was excluded because NHANES field operations were disrupted by the COVID-19 pandemic. The 2021-2023 files were treated as the August 2021-August 2023 post-pandemic release rather than as a standard biennial NHANES release (CDC/NCHS, 2024b).
 
 **Table 3.1. NHANES Survey Releases Included in the Study**
 
@@ -46,7 +46,7 @@ For planned user acceptance testing, the target recruitment locale consists of o
 
 ### 3.3 Population of the Study
 
-The modeling population consisted of postmenopausal women represented in NHANES. The final analytic cohort contained 1,376 postmenopausal women who satisfied the study's demographic, reproductive-health, and data-availability criteria. The cohort was restricted to female respondents within the target menopausal age range, with postmenopausal status derived from reproductive-health questionnaire responses. Reproductive-health filtering used RHQ031, which identifies respondents who reported no menstrual period during the past 12 months.
+The modeling population consisted of postmenopausal women represented in NHANES. The final analytic cohort contained 1,376 postmenopausal women who satisfied the study's demographic, reproductive-health, and data-availability criteria. The cohort was restricted to female respondents within the target menopausal age range, with postmenopausal status derived from reproductive-health questionnaire responses. Reproductive-health filtering used RHQ031, which identifies respondents who reported no menstrual period during the past 12 months (CDC/NCHS, 2024c).
 
 The multiclass reference distribution consisted of 642 normal cases, 457 pre-diabetic cases, and 277 diabetic cases. For the deployed screening model, pre-diabetic and diabetic cases were combined into a single at-risk class. This binary reformulation produced 734 at-risk cases and 642 normal cases. The binary formulation reflects the intended use of DIANA as a screening and triage-support tool: the system is designed to identify individuals who may benefit from confirmatory testing or clinical review rather than to assign a definitive diagnosis.
 
@@ -64,7 +64,7 @@ The planned user-evaluation population consists of menopausal or postmenopausal 
 
 ### 3.4 Data Gathering Tools and Procedures
 
-This study used secondary data from NHANES. Raw XPT files were acquired from the CDC public repository and processed through an automated Python data pipeline. The collected files included demographic records, glycohemoglobin records, fasting glucose records, total cholesterol records, HDL cholesterol records, triglyceride and LDL records, body-measurement records, blood-pressure records, reproductive-health questionnaire responses, diabetes questionnaire responses, smoking variables, physical-activity variables, alcohol-use variables, family-history variables, insulin records where available, and high-sensitivity CRP records where available.
+This study used secondary data from NHANES. Raw XPT files were acquired from the CDC public repository and processed through an automated Python data pipeline using public NHANES documentation and codebooks as the source of file and variable definitions (CDC/NCHS, 2024a). The collected files included demographic records, glycohemoglobin records, fasting glucose records, total cholesterol records, HDL cholesterol records, triglyceride and LDL records, body-measurement records, blood-pressure records, reproductive-health questionnaire responses, diabetes questionnaire responses, smoking variables, physical-activity variables, alcohol-use variables, family-history variables, insulin records where available, and high-sensitivity CRP records where available.
 
 The refreshed data pipeline used a cycle-specific active manifest containing 91 expected NHANES XPT files across the six included releases. The downloader verified that each active file was a SAS transport file rather than an HTML error page or incomplete response by checking the XPT header, minimum file size, and metadata readability. A post-download verification run confirmed that all 91 active XPT files were present and readable. Thirty-one older raw XPT files from excluded 2003-2008 cycles were present in the raw-data folder but were ignored by the active manifest and were not used in the final analytic dataset.
 
@@ -89,7 +89,7 @@ The refreshed data pipeline used a cycle-specific active manifest containing 91 
 | INS | Insulin | Fasting insulin, available only in subsamples |
 | HSCRP | High-sensitivity CRP | Inflammation marker (LBXHSCRP) where available |
 
-Raw NHANES records were linked through SEQN, the unique respondent identifier. After merging, the pipeline standardized NHANES variable codes into clinically interpretable feature names. For example, LBXGH was mapped to HbA1c, LBXGLU to fasting blood sugar, BMXBMI to BMI, BMXWAIST to waist circumference, LBXTR or LBXTLG to triglycerides, LBDHDD to HDL cholesterol, LBDLDL to LDL cholesterol, and LBXHSCRP to high-sensitivity CRP. For the 2021-2023 release, blood-pressure variables were read from the BPXO_L file rather than the legacy BPX naming pattern used in earlier releases.
+Raw NHANES records were linked through SEQN, the unique respondent identifier. After merging, the pipeline standardized NHANES variable codes into clinically interpretable feature names based on public NHANES codebooks. For example, LBXGH was mapped to HbA1c, LBXGLU to fasting blood sugar, BMXBMI to BMI, BMXWAIST to waist circumference, LBXTR or LBXTLG to triglycerides, LBDHDD to HDL cholesterol, LBDLDL to LDL cholesterol, and LBXHSCRP to high-sensitivity CRP. For the 2021-2023 release, blood-pressure variables were read from the BPXO_L file rather than the legacy BPX naming pattern used in earlier releases (CDC/NCHS, 2024a).
 
 Lifestyle variables were derived through rule-based classification. Smoking status was derived from SMQ020 and SMQ040 and categorized as never, former, current, or unknown. Physical activity was derived from PAQ605, PAQ650, and PAQ665 in earlier releases and from the corresponding PAD790/PAD800/PAD810/PAD820/PAD680 fields in the 2021-2023 release; it was categorized as active, moderate, sedentary, or unknown. Alcohol use was derived from ALQ variables and categorized as never, light, moderate, heavy, or unknown. The physical-activity variable was treated as a simplified categorical proxy rather than as an exact measure of weekly guideline adherence because NHANES questionnaire responses do not consistently provide complete minute-level activity records for every respondent.
 
@@ -112,13 +112,13 @@ Lifestyle variables were derived through rule-based classification. Smoking stat
 
 Reference labels were constructed using a dual-source hierarchy. The primary source was DIQ010, the NHANES diabetes questionnaire item that records whether a respondent had been told by a physician that she had diabetes or borderline diabetes. Respondents reporting physician-diagnosed diabetes were labeled diabetic, while respondents reporting borderline diabetes were labeled pre-diabetic.
 
-For respondents without self-reported diabetes or borderline diabetes, American Diabetes Association (ADA) HbA1c thresholds were applied. HbA1c values of 6.5 percent or higher were labeled diabetic, values from 5.7 to 6.4 percent were labeled pre-diabetic, and values below 5.7 percent were labeled normal. A hard override was applied so that any record with HbA1c of 6.5 percent or higher was labeled diabetic regardless of self-reported status. This rule reduced the chance that undiagnosed biochemical diabetes would be mislabeled as normal based only on self-report.
+For respondents without self-reported diabetes or borderline diabetes, American Diabetes Association (ADA) HbA1c thresholds were applied. HbA1c values of 6.5 percent or higher were labeled diabetic, values from 5.7 to 6.4 percent were labeled pre-diabetic, and values below 5.7 percent were labeled normal. A hard override was applied so that any record with HbA1c of 6.5 percent or higher was labeled diabetic regardless of self-reported status. This rule reduced the chance that undiagnosed biochemical diabetes would be mislabeled as normal based only on self-report (American Diabetes Association Professional Practice Committee, 2026).
 
 Agreement between DIQ010-derived labels and HbA1c-threshold labels was 94.1 percent, corresponding to 1,295 of 1,376 records. The remaining 5.9 percent reflected discordance between self-report and a single biochemical measurement. These discordant records may represent undiagnosed diabetes, recall error, treatment effects, timing differences, or biological and laboratory variability. The label used in this study should therefore be interpreted as an operational reference label rather than as a perfect diagnostic gold standard.
 
 ### 3.6 Data Preparation, Missing Data, and Outlier Handling
 
-NHANES records contain missing values because of non-response, subsample designs, examination skip patterns, and variable availability across cycles. The defensible training pipeline used leakage-safe median imputation within the cross-validation workflow. Imputation parameters were fitted only on training folds and then applied to held-out folds, ensuring that validation or test information did not influence preprocessing. K-nearest-neighbor imputation was restricted to exploratory analysis and was not used for defensible model training because global imputation before cross-validation would allow the imputation procedure to see held-out fold information.
+NHANES records contain missing values because of non-response, subsample designs, examination skip patterns, and variable availability across cycles. The defensible training pipeline used leakage-safe median imputation within the cross-validation workflow. Imputation parameters were fitted only on training folds and then applied to held-out folds, ensuring that validation or test information did not influence preprocessing. K-nearest-neighbor imputation was restricted to exploratory analysis and was not used for defensible model training because global imputation before cross-validation would allow the imputation procedure to see held-out fold information (Vabalas et al., 2019).
 
 At inference time, missing waist circumference is handled by a separate serving-layer guardrail. During face-validity review, median imputation was found to be problematic for low-BMI users because a training-cohort median waist value of approximately 97 cm could create an implausible visceral-adiposity signal. When waist circumference is unavailable but BMI is present, the ML service estimates waist circumference as BMI multiplied by 3.33. This rule is a pragmatic usability safeguard intended to reduce implausible individual-level substitution; it is not a validated clinical estimator and should be evaluated further through sensitivity analysis.
 
@@ -132,7 +132,7 @@ This validation was enforced programmatically as a pre-training gate. If diagnos
 
 ### 3.8 Predictive Model Development and Validation
 
-Four candidate algorithms were evaluated under the same nested temporal-validation framework: Logistic Regression, Random Forest, LightGBM, and XGBoost. Logistic Regression served as the interpretable linear baseline. Random Forest provided a non-linear ensemble baseline. LightGBM and XGBoost provided gradient-boosting benchmarks for structured tabular prediction.
+Four candidate algorithms were evaluated under the same nested temporal-validation framework: Logistic Regression, Random Forest, LightGBM, and XGBoost. Logistic Regression served as the interpretable linear baseline. Random Forest provided a non-linear ensemble baseline, while LightGBM and XGBoost provided gradient-boosting benchmarks for structured tabular prediction (Breiman, 2001; Ke et al., 2017; Chen & Guestrin, 2016).
 
 **Table 3.5. Hyperparameter Search Space**
 
@@ -150,19 +150,39 @@ Four candidate algorithms were evaluated under the same nested temporal-validati
 | XGBoost | max_depth | 3, 5 |
 | XGBoost | learning_rate | 0.05, 0.1 |
 
-Hyperparameter optimization used grid search with AUC-ROC as the scoring metric. The inner loop used grouped cross-validation so that NHANES survey-cycle boundaries were respected during model selection. The outer loop used Leave-One-Group-Out (LOGO) validation, holding out one entire NHANES release at a time. This nested LOGO design estimated whether a model trained on prior survey groups could generalize to a distinct temporal cohort. It is more conservative than random k-fold validation because observations from the same survey period are not split across training and testing.
+Hyperparameter optimization used grid search with AUC-ROC as the scoring metric. The inner loop used grouped cross-validation so that NHANES survey-cycle boundaries were respected during model selection. The outer loop used Leave-One-Group-Out (LOGO) validation, holding out one entire NHANES release at a time. This nested LOGO design estimated whether a model trained on prior survey groups could generalize to a distinct temporal cohort. It is more conservative than random k-fold validation because observations from the same survey period are not split across training and testing (Vabalas et al., 2019).
 
 The final model was selected based on mean fold AUC rather than pooled aggregate AUC alone. This selection rule favored models that performed consistently across temporal groups. Logistic Regression was selected for deployment because it achieved the strongest mean fold AUC while preserving interpretability, stable probability outputs, and efficient inference.
 
-NHANES survey weights were not incorporated into model training. Survey weights are essential for population-level prevalence estimation and nationally representative descriptive inference, but their role in prediction-model training depends on the target deployment population and modeling objective. In this study, unweighted training was treated as a design choice for learning risk patterns in the analytic cohort. Weighted sensitivity analysis remains an appropriate future extension.
+NHANES survey weights were not incorporated into model training. Survey weights are essential for population-level prevalence estimation and nationally representative descriptive inference, but their role in prediction-model training depends on the target deployment population and modeling objective. In this study, unweighted training was treated as a design choice for learning risk patterns in the analytic cohort. Weighted sensitivity analysis remains an appropriate future extension (Lumley, 2010).
 
 ### 3.9 Clinical Threshold Optimization and Serving Guardrails
 
-The final classifier outputs a probability that must be converted into a binary screening classification. Because DIANA is intended for early risk identification, thresholding was optimized for a screening context rather than defaulting to 0.50. Youden's J was included because it is a conventional operating-point criterion that balances sensitivity and specificity by maximizing sensitivity plus specificity minus one. However, it was treated as one candidate strategy rather than as an automatic final rule because DIANA is a screening-support system. In this context, a false negative may delay confirmatory testing or preventive counseling, while a false positive generally leads to follow-up review rather than immediate treatment.
+The final classifier outputs a probability that must be converted into a binary screening classification. Because DIANA is intended for early risk identification, thresholding was optimized for a screening context rather than defaulting to 0.50. Youden's J was included because it is a conventional operating-point criterion that balances sensitivity and specificity by maximizing sensitivity plus specificity minus one (Youden, 1950). However, it was treated as one candidate strategy rather than as an automatic final rule because DIANA is a screening-support system. In this context, a false negative may delay confirmatory testing or preventive counseling, while a false positive generally leads to follow-up review rather than immediate treatment.
 
-Three threshold strategies were evaluated using out-of-fold probabilities: Youden's J, a screening-optimized rule, and the geometric mean of sensitivity and specificity. The screening-optimized rule explicitly prioritized sensitivity while preserving a minimum specificity constraint. The geometric-mean rule provided a balance-oriented alternative for folds where sensitivity and specificity moved in opposite directions. A composite clinical score was then used to select the fold-specific strategy:
+Three threshold strategies were evaluated using out-of-fold probabilities: Youden's J, a screening-optimized rule, and the geometric mean of sensitivity and specificity. The screening-optimized rule explicitly prioritized sensitivity while preserving a minimum specificity constraint. The geometric-mean rule provided a balance-oriented alternative for folds where sensitivity and specificity moved in opposite directions, which is useful when class imbalance and uneven operating characteristics are present (Luque et al., 2019). The formulas used for threshold selection were:
 
-`Clinical Score = 0.35 * Sensitivity + 0.30 * Specificity + 0.25 * F1 + 0.10 * Accuracy`
+`Sensitivity = TP / (TP + FN)`
+
+`Specificity = TN / (TN + FP)`
+
+`Precision or PPV = TP / (TP + FP)`
+
+`Accuracy = (TP + TN) / (TP + TN + FP + FN)`
+
+`F1 Score = 2 x (Precision x Sensitivity) / (Precision + Sensitivity)`
+
+`Youden's J = Sensitivity + Specificity - 1`
+
+`G-Mean = sqrt(Sensitivity x Specificity)`
+
+`Screening Score = 0.60 x Sensitivity + 0.40 x F1, subject to Sensitivity >= 0.80 and Specificity >= 0.40`
+
+A composite clinical score was then used to select the fold-specific strategy:
+
+`Clinical Score = 0.35 x Sensitivity + 0.30 x Specificity + 0.25 x F1 + 0.10 x Accuracy`
+
+Sensitivity, specificity, predictive values, and related diagnostic testing measures followed the standard confusion-matrix definitions used in diagnostic accuracy evaluation (Shreffler & Huecker, 2023). F1 was included as a harmonic-mean summary of precision and sensitivity (Powers, 2011).
 
 The final mean threshold was 0.465. This downward adjustment from 0.50 reflects the screening objective of detecting at-risk cases while preserving acceptable specificity. The threshold was not manually chosen after viewing test results; it was derived from out-of-fold predictions inside the validation procedure. A deterministic guardrail was also implemented to reduce specificity collapse under temporal prevalence shift. If a selected threshold produced very high sensitivity but inadequate specificity, the algorithm searched for a feasible threshold satisfying minimum operating constraints or reverted toward a safer operating point. In the final Logistic Regression model, guardrail arbitration was activated in 1 of 6 LOGO folds.
 
@@ -178,13 +198,17 @@ The final mean threshold was 0.465. This downward adjustment from 0.50 reflects 
 | Guardrail arbitration | Raises or replaces unstable low thresholds when specificity collapses under high-sensitivity selections | Protects against fold-specific prevalence shift producing a threshold that over-flags normal profiles |
 | Metabolic-syndrome serving guardrail | Raises low model probability when triglycerides, HDL, BMI, and waist circumference show concordant metabolic risk | Prevents implausibly low risk outputs for metabolically concordant high-risk profiles; requires further ablation and clinical review |
 
-The serving layer also includes a rule-based Metabolic Syndrome risk guardrail. This rule evaluates triglycerides of at least 150 mg/dL, HDL cholesterol below 50 mg/dL, BMI of at least 25, and waist circumference of at least 80 cm. When three or more criteria are met, the at-risk probability is raised to at least 0.65. When two criteria are met, the at-risk probability is increased by 0.15 and capped at 0.95. This rule should be interpreted as an engineered safety heuristic for reducing implausibly low risk estimates in metabolically concordant high-risk profiles, not as an independently validated clinical rule.
+The serving layer also includes a rule-based Metabolic Syndrome risk guardrail. This rule evaluates triglycerides of at least 150 mg/dL, HDL cholesterol below 50 mg/dL, BMI of at least 25, and waist circumference of at least 80 cm, reflecting commonly used metabolic-syndrome risk criteria (International Diabetes Federation, 2006; Alberti et al., 2009). When three or more criteria are met, the at-risk probability is raised to at least 0.65. When two criteria are met, the at-risk probability is increased by 0.15 and capped at 0.95. This rule should be interpreted as an engineered safety heuristic for reducing implausibly low risk estimates in metabolically concordant high-risk profiles, not as an independently validated clinical rule.
 
 ### 3.10 Cluster-Based Risk Group Identification
 
 DIANA uses a two-stage inference structure. The first stage classifies a user as normal or at risk using the Logistic Regression screening model. Only users classified as at risk proceed to the weighted K-Means subtyping stage. This gating mechanism prevents the system from assigning disease-pattern subtype labels to users classified as normal.
 
-Weighted K-Means clustering was trained exclusively on the at-risk subset of 734 cases. The clustering features were BMI, triglycerides, LDL cholesterol, HDL cholesterol, age, and waist circumference. Feature weights were applied before Euclidean distance computation to emphasize clinically relevant dimensions. LDL received the highest weight as an atherogenic lipid differentiator. Triglycerides and waist circumference were strongly weighted because of their relationship to lipid dysregulation, central adiposity, and insulin-resistance patterns. BMI served as an obesity-pattern anchor, HDL as an inverse lipid marker, and age as a baseline variable.
+Weighted K-Means clustering was trained exclusively on the at-risk subset of 734 cases. K-Means was selected as a centroid-based method for grouping similar metabolic profiles (MacQueen, 1967). The clustering features were BMI, triglycerides, LDL cholesterol, HDL cholesterol, age, and waist circumference. Feature weights were applied before Euclidean distance computation to emphasize clinically relevant dimensions. For a standardized patient vector z and centroid c_k, the weighted distance used for assignment was:
+
+`Weighted Euclidean Distance = sqrt( sum_j w_j x (z_j - c_kj)^2 )`
+
+where w_j is the feature-specific weight, z_j is the standardized patient value for feature j, and c_kj is the corresponding standardized centroid value for cluster k. LDL received the highest weight as an atherogenic lipid differentiator. Triglycerides and waist circumference were strongly weighted because of their relationship to lipid dysregulation, central adiposity, and insulin-resistance patterns. BMI served as an obesity-pattern anchor, HDL as an inverse lipid marker, and age as a baseline variable.
 
 **Table 3.7. Weighted K-Means Feature Weights**
 
@@ -197,7 +221,7 @@ Weighted K-Means clustering was trained exclusively on the at-risk subset of 734
 | HDL cholesterol | 1.2 | Inverse lipid-risk marker |
 | Age | 1.0 | Baseline demographic variable |
 
-Cluster centroids were inverse-transformed from standardized space into raw clinical units before interpretation. The resulting labels were Ahlqvist-inspired proxy labels: SIRD-like, SIDD-like, MOD-like, and MARD-like. The term "Ahlqvist-inspired" is deliberate. The original adult-onset diabetes subgroup framework used variables that are not available in DIANA's accessible screening feature set, including GAD antibody status and HOMA2 estimates of beta-cell function and insulin resistance. DIANA also excludes HbA1c and fasting blood sugar from model inputs to avoid circular prediction. Therefore, the cluster labels describe phenotypic similarity to known metabolic patterns rather than validated biological subtype membership.
+Cluster centroids were inverse-transformed from standardized space into raw clinical units before interpretation. The resulting labels were Ahlqvist-inspired proxy labels: SIRD-like, SIDD-like, MOD-like, and MARD-like. The term "Ahlqvist-inspired" is deliberate. The original adult-onset diabetes subgroup framework used variables that are not available in DIANA's accessible screening feature set, including GAD antibody status and HOMA2 estimates of beta-cell function and insulin resistance (Ahlqvist et al., 2018). DIANA also excludes HbA1c and fasting blood sugar from model inputs to avoid circular prediction. Therefore, the cluster labels describe phenotypic similarity to known metabolic patterns rather than validated biological subtype membership; this caution is also consistent with work comparing data-driven diabetes subgroups against simpler clinical-feature models (Dennis et al., 2019).
 
 The SIDD-like label requires particular caution. True SIDD classification requires beta-cell function markers such as HOMA2-B or C-peptide, which were unavailable in the NHANES feature set used by DIANA. In this study, SIDD-like is therefore interpreted as an atherogenic or lipid-driven proxy label based primarily on elevated LDL patterns rather than as a true insulin-deficiency subtype diagnosis. The SAID category was not assigned because autoimmune markers were unavailable. These labels are heuristic descriptions, not validated biological subtype diagnoses, not treatment directives, and not replacements for clinical judgment.
 
@@ -221,7 +245,7 @@ Figure 3.2 clarifies the separation between binary screening and subtype assignm
 
 ### 3.11 Model Explainability and Clinical Decision Support
 
-Although Logistic Regression provides coefficient-level interpretability, DIANA also uses SHapley Additive exPlanations (SHAP) to provide patient-level feature attribution. SHAP values indicate how each feature pushes a prediction toward or away from the at-risk class. The explainability workflow supports both cohort-level interpretation, through summary visualizations, and patient-level interpretation, through waterfall-style feature-contribution displays.
+Although Logistic Regression provides coefficient-level interpretability, DIANA also uses SHapley Additive exPlanations (SHAP) to provide patient-level feature attribution (Lundberg & Lee, 2017). SHAP values indicate how each feature pushes a prediction toward or away from the at-risk class. The explainability workflow supports both cohort-level interpretation, through summary visualizations, and patient-level interpretation, through waterfall-style feature-contribution displays.
 
 Detailed SHAP outputs are generated through the explainability endpoint and displayed in the frontend when available. They are not persisted as JSONB fields in the assessment table. The database stores prediction metadata such as risk score, predicted status, model version, dataset hash, and subtype context, while detailed SHAP values remain transient explanation artifacts.
 
@@ -241,9 +265,9 @@ In addition to the reported model metrics, DIANA implements several safety and t
 
 ### 3.12 System Architecture and Implementation
 
-DIANA was implemented as a four-tier application architecture consisting of a React frontend, a Go backend API, a Python ML inference service, and a PostgreSQL persistence layer with optional cache support. The frontend uses React 18 and Vite. The backend uses Go 1.25 with Gin. The ML service uses Python 3.12 with Flask. The database layer uses PostgreSQL 16 through NeonDB. The backend contains Redis-compatible cache handlers for trends, analytics, and cluster-distribution responses, but Redis-dependent integration evidence is reported separately because those tests require a running Redis service.
+DIANA was implemented as a four-tier application architecture consisting of a React frontend, a Go backend API, a Python ML inference service, and a PostgreSQL persistence layer with optional cache support. The frontend uses React 18 and Vite. The backend uses Go 1.25 with Gin. The ML service uses Python 3.12 with Flask. The persistence layer is PostgreSQL 16-compatible, with repository artifacts supporting either an external managed PostgreSQL deployment or a containerized PostgreSQL service depending on environment. The backend contains Redis-compatible cache handlers for trends, analytics, and cluster-distribution responses, but Redis-dependent integration evidence is reported separately because those tests require a running Redis service.
 
-The verified production deployment uses a hybrid cloud/VPS arrangement. The React frontend is deployed on Vercel. The Go backend and Python ML service run as Docker containers on a self-managed VPS behind Caddy, which provides Let's Encrypt TLS termination and reverse-proxy routing. NeonDB provides the external managed PostgreSQL database, so no database container or database port is exposed on the VPS. Rate limiting is implemented separately through Go token-bucket middleware.
+The repository contains deployment support for more than one environment. One documented deployment path uses Vercel for the React frontend, a Caddy-backed VPS for the Go backend and Python ML service, and an external managed PostgreSQL database. The Docker Compose production overlay provides a second path with an Nginx reverse proxy, frontend/backend/ML containers, and an internal PostgreSQL 16 container. For this reason, the thesis treats deployment evidence as configuration and readiness evidence rather than as a claim that only one production topology exists. Rate limiting is implemented separately through Go token-bucket middleware.
 
 **Table 3.9. Technology Stack**
 
@@ -252,11 +276,11 @@ The verified production deployment uses a hybrid cloud/VPS arrangement. The Reac
 | Frontend | React 18 + Vite | Component-based UI, efficient rendering, and fast development workflow |
 | Backend | Go 1.25 + Gin | Concurrent request handling, static typing, and compiled deployment |
 | ML Service | Python 3.12 + Flask | Access to scikit-learn, SHAP, and ML tooling |
-| Database | NeonDB PostgreSQL 16 | Managed ACID-compliant persistence for user and assessment records |
+| Database | PostgreSQL 16-compatible persistence | ACID-compliant persistence for user, assessment, model, auth-event, and audit records |
 | Cache support | Optional Redis-compatible cache layer | TTL-based caching and targeted invalidation for repeated read queries when configured |
 | Authentication | JWT (HS256) | Stateless authentication with access and refresh token support |
-| Deployment | Vercel + Caddy-backed VPS + NeonDB | Static frontend hosting, TLS reverse proxy, containerized backend/ML services, and managed PostgreSQL |
-| Charts | Recharts + Plotly | Interactive biomarker trends and explainability visualizations |
+| Deployment | Vercel/Caddy path and Docker Compose/Nginx path | Static frontend hosting or frontend container, TLS reverse proxy, containerized backend/ML services, and PostgreSQL persistence |
+| Charts | Recharts | Interactive biomarker trends and explainability visualizations |
 
 **Figure 3.3. DIANA Four-Tier System Architecture**
 
@@ -275,7 +299,7 @@ flowchart TB
     end
 
     subgraph Data["Persistence and Optional Cache Layer"]
-        D["NeonDB PostgreSQL 16<br/>users, assessments, model metadata, audit records"]
+        D["PostgreSQL 16-compatible persistence<br/>users, assessments, model metadata, audit records"]
         E["Redis-compatible cache support<br/>trend, analytics, and cluster-distribution responses when configured"]
     end
 
@@ -286,7 +310,7 @@ flowchart TB
     B -->|"optional TTL cache reads and targeted invalidation"| E
 ```
 
-In the deployed environment, browser requests first load the frontend from Vercel. API calls are then sent over HTTPS to the VPS reverse proxy, where Caddy terminates TLS and forwards `/api/v1` traffic to the Go backend container. The backend communicates with the ML container over the private Docker network and with NeonDB over an external encrypted database connection. This arrangement keeps the ML service and database inaccessible as public host ports while preserving a simple deployment model suitable for the project scope.
+In the externally managed deployment variant, browser requests first load the frontend from Vercel. API calls are then sent over HTTPS to the VPS reverse proxy, where Caddy terminates TLS and forwards `/api/v1` traffic to the Go backend container. The backend communicates with the ML container over the private Docker network and with the managed PostgreSQL database over an external database connection. In the Docker Compose production overlay, Nginx provides TLS reverse-proxy routing and the frontend, backend, ML service, and PostgreSQL run as internal containerized services. In both variants, the implementation is organized so that public traffic enters through the reverse proxy rather than through direct public backend or ML service ports.
 
 The Go backend and Python ML service were decoupled to isolate ML inference and explanation tasks from routine API operations. The backend validates assessment input, forwards the model-relevant payload to the ML service, receives prediction and lineage metadata, persists the assessment, invalidates affected cache keys when caching is configured, and returns the result to the frontend. If `MODEL_URL` is unset during local development, the router can select a mock predictor. In production-oriented flows, prediction failures are propagated as structured errors rather than hidden behind undocumented fallback behavior.
 
@@ -315,7 +339,7 @@ sequenceDiagram
     API-->>FE: Return explanation for display
 ```
 
-The implemented API surface supports authenticated user workflows, assessment management, exports, privacy-oriented self-service operations, model explanations, administrative user management, audit review, model traceability, and analytics. Core user routes include profile retrieval and update, onboarding, consent settings, trend retrieval, account deletion, assessment creation, assessment retrieval, assessment update, and assessment deletion under `/api/v1/users/me`. Additional self-service privacy routes support data export, deletion requests, consent history, consent withdrawal, and processing-information retrieval. Administrative routes support dashboard summaries, audit-log review, user-management actions, model traceability, drift-status review, and authentication-event streaming. The ML proxy exposes health, information-gain, clustering, visualization, and explainability routes, with detailed SHAP explanation requested through `/api/v1/ml/predict/explain`. Table 3.10 lists the selected endpoint groups, while Figure 3.5 summarizes their access-control boundaries.
+The implemented API surface supports authenticated user workflows, assessment management, exports, privacy-oriented self-service operations, model explanations, administrative user management, audit review, model traceability, and analytics. Core user routes include profile retrieval and update, onboarding, consent settings, trend retrieval, account deletion, assessment creation, assessment retrieval, assessment update, and assessment deletion under `/api/v1/users/me`. Additional self-service privacy routes support data export, deletion requests, consent history, consent withdrawal, and processing-information retrieval. Administrative routes support dashboard summaries, audit-log review, user-management actions, model traceability, drift-status review, and authentication-event streaming. When `MODEL_URL` is configured, the ML proxy exposes health, information-gain, clustering, visualization, and explainability routes, with detailed SHAP explanation requested through `/api/v1/ml/predict/explain`. Table 3.10 lists the selected endpoint groups, while Figure 3.5 summarizes their access-control boundaries.
 
 **Table 3.10. Selected API Surface**
 
@@ -328,7 +352,7 @@ The implemented API surface supports authenticated user workflows, assessment ma
 | Assessments | `/api/v1/users/me/assessments`, `/api/v1/users/me/assessments/:assessmentID` | Create, list, retrieve, update, and delete assessments |
 | Export | `/api/v1/users/me/export/pdf` | Generate user health report |
 | Insights and analytics | `/api/v1/insights/{cluster-distribution,biomarker-trends,cohort}`, `/api/v1/analytics/summary` | Aggregate cohort, biomarker, subtype, and summary analytics |
-| ML proxy | `/api/v1/ml/{health,insights/metrics,insights/information-gain,insights/clusters,insights/visualizations/:name,predict/explain}` | ML health, model insights, visualizations, and SHAP explanation |
+| ML proxy, when `MODEL_URL` is configured | `/api/v1/ml/{health,insights/metrics,insights/information-gain,insights/clusters,insights/visualizations/:name,predict/explain}` | ML health, model insights, visualizations, and SHAP explanation |
 | Admin dashboard and audit | `/api/v1/admin/{dashboard,audit}`, `/api/v1/admin/events/stream` | Administrative summaries, audit-log review, and authentication-event monitoring |
 | Admin users | `/api/v1/admin/users`, `/api/v1/admin/users/:id`, `/api/v1/admin/users/:id/activate` | Administrative user management |
 | Admin models | `/api/v1/admin/models`, `/api/v1/admin/models/{active,drift,drift/alerts,sync}` | Model traceability and drift-related administration |
@@ -352,7 +376,6 @@ flowchart TB
     UserSelf --> Report["PDF health report export"]
 
     JWT --> Analytics["Personal analytics summary"]
-    JWT --> Clinics["Clinic list and clinic dashboard"]
 
     JWT --> DoctorAdmin["Doctor or admin RBAC"]
     DoctorAdmin --> Insights["Insights<br/>cluster distribution, biomarker trends, cohort analysis"]
@@ -361,7 +384,7 @@ flowchart TB
     MLProxy --> MLService["Internal Python ML service<br/>health, metrics, information gain, clusters, visualizations, SHAP explanation"]
 
     JWT --> AdminOnly["Admin RBAC"]
-    AdminOnly --> AdminDashboard["Dashboard and clinic comparison"]
+    AdminOnly --> AdminDashboard["Dashboard summaries"]
     AdminOnly --> AdminAudit["Audit-log review"]
     AdminOnly --> AdminUsers["User list, create, update, deactivate, reactivate"]
     AdminOnly --> AdminModels["Model runs, active model, drift status, alerts, sync"]
@@ -371,7 +394,7 @@ The database schema links assessments directly to authenticated users. This desi
 
 ### 3.13 Security, Authorization, and Quality Evaluation
 
-DIANA implements JWT-based authentication, role-based access control, request-size limiting, rate limiting, security headers, CORS filtering, and password hashing with bcrypt. Three main roles are recognized: user, doctor, and admin. Users can create assessments, view their own predictions, export reports, and review personal trends. Doctors are treated as a testing and validation role with model-locked assessment creation using `binary_v2_no_bp`. Administrators can access system administration functions such as user management, audit logs, model traceability, and dashboard summaries.
+DIANA implements JWT-based authentication, role-based access control, request-size limiting, rate limiting, security headers, CORS filtering, and password hashing with bcrypt (Jones et al., 2015; Provos & Mazieres, 1999). Three main roles are recognized: user, doctor, and admin. Users can create assessments, view their own predictions, export reports, and review personal trends. Doctors are treated as a testing and validation role with model-locked assessment creation using `binary_v2_no_bp`. Administrators can access system administration functions such as user management, audit logs, model traceability, and dashboard summaries.
 
 **Table 3.11. Security Controls**
 
@@ -382,18 +405,18 @@ DIANA implements JWT-based authentication, role-based access control, request-si
 | RBAC | Middleware enforcement | Apply least-privilege access |
 | Rate limiting | Go native token bucket | Reduce brute-force and denial-of-service risk |
 | CORS | Whitelist enforcement | Restrict cross-origin access |
-| TLS | Caddy with Let's Encrypt | Protect transport confidentiality |
-| Public ingress control | Only the reverse proxy exposes host ports 80 and 443 | Reduce direct service exposure |
-| Internal ML access | Backend communicates with ML over the private Docker network | Prevent direct public invocation of the inference service |
-| Secret management | Locked environment file; no raw database DSN in proxy or compose configuration | Reduce accidental credential disclosure |
+| TLS | Caddy or Nginx reverse-proxy TLS configuration, depending on deployment path | Protect transport confidentiality |
+| Public ingress control | Reverse proxy handles public HTTP/HTTPS ingress | Reduce direct service exposure |
+| Internal ML access | Backend communicates with ML over the private container network in containerized deployments | Prevent direct public invocation of the inference service |
+| Secret management | Runtime secrets are supplied through environment variables or locked environment files rather than committed literal secret values | Reduce accidental credential disclosure |
 
-Software quality evaluation followed ISO/IEC 25010-informed characteristics. Functional suitability was evaluated through endpoint tests, model-serving tests, and frontend unit tests. Performance efficiency was evaluated through inference benchmarks and planned load-testing methodology. Security was evaluated through authentication, RBAC, rate-limiting, and middleware tests. Maintainability was supported through modular architecture, generated database access, and separated frontend/backend/ML services. Formal usability, accessibility, expert face-validity, and reliability results require separate UAT and expert-review execution.
+Software quality evaluation followed ISO/IEC 25010-informed characteristics (International Organization for Standardization, 2011). Functional suitability was evaluated through endpoint tests, model-serving tests, and frontend unit tests. Performance efficiency was evaluated through inference benchmarks and planned load-testing methodology. Security was evaluated through authentication, RBAC, rate-limiting, and middleware tests. Maintainability was supported through modular architecture, generated database access, and separated frontend/backend/ML services. Formal usability, accessibility, expert face-validity, and reliability results require separate UAT and expert-review execution.
 
 The frontend implementation should be interpreted as a research prototype rather than a finalized clinical product shell. Navigation is implemented through application state and tab selection rather than URL-addressable React Router routes, so deep linking and browser back-button workflows are limited. Authentication uses Bearer tokens stored through guarded browser `localStorage` to support the cross-origin API flow. This is acceptable for prototype demonstration and testing, but a production clinical deployment should harden this design through route-based navigation, stronger browser-token protections, formal XSS review, and a deployment-compatible HttpOnly cookie or session strategy where feasible.
 
 ### 3.14 User Acceptance Testing and Expert Review Methodology
 
-The planned user evaluation follows an ISO/IEC 25010-informed usability framework. The protocol evaluates appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence. Planned user participants will complete core tasks such as logging in, navigating the dashboard, submitting an assessment, and interpreting prediction results.
+The planned user evaluation follows an ISO/IEC 25010-informed usability framework (International Organization for Standardization, 2011). The protocol evaluates appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence. Planned user participants will complete core tasks such as logging in, navigating the dashboard, submitting an assessment, and interpreting prediction results.
 
 The planned user cohort consists of approximately 30 menopausal or postmenopausal Filipino women recruited from the target online community, subject to approval and consent procedures. The planned clinical expert cohort consists of two licensed medical professionals, preferably one endocrinologist and one obstetrics-gynecology specialist, with experience in menopausal and metabolic health. Expert review will evaluate risk-output plausibility, SHAP explanation clarity, clinical workflow fit, and perceived utility. Because formal UAT and expert review have not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations must remain placeholders until empirical evidence is collected.
 
@@ -403,7 +426,7 @@ The planned user cohort consists of approximately 30 menopausal or postmenopausa
 
 The final Logistic Regression screening model demonstrated acceptable discrimination under nested LOGO validation, achieving a pooled out-of-fold AUC-ROC of **0.737** (95% CI: **0.710-0.763**) and a sensitivity of **0.748** (95% CI: **0.717-0.776**) at the optimized screening threshold of **0.465**. Specificity was **0.590**, and the F1 score of **0.710** indicates a moderate precision-recall trade-off at the selected threshold.
 
-The reported confidence intervals were computed using 1,000 bootstrap resamples, the percentile method, and a fixed random seed of 42. Bootstrap samples containing fewer than two outcome classes were excluded from confidence-interval computation. This procedure provides distribution-free uncertainty estimates appropriate for the modest sample size and the temporal validation design.
+The reported confidence intervals were computed using 1,000 bootstrap resamples, the percentile method, and a fixed random seed of 42. Bootstrap samples containing fewer than two outcome classes were excluded from confidence-interval computation. This procedure provides distribution-free uncertainty estimates appropriate for the modest sample size and the temporal validation design (Efron & Tibshirani, 1993).
 
 **Table 4.1. Headline Binary Screening Performance**
 
@@ -424,7 +447,7 @@ The reported confidence intervals were computed using 1,000 bootstrap resamples,
 | Metric | Point Estimate | 95% CI Lower | 95% CI Upper | Target |
 |---|---:|---:|---:|---|
 | Sensitivity | 0.7480 | 0.717 | 0.776 | >= 0.70 |
-| Pooled AUC-ROC | 0.7366 | 0.710 | 0.763 | >= 0.70 |
+| AUC-ROC | 0.7366 | 0.710 | 0.763 | >= 0.70 |
 
 The fold-level AUC range of **0.711-0.788** across the six held-out NHANES survey releases indicates that no single temporal fold collapsed below the acceptable discrimination target. The result supports the interpretation that the classifier learned repeatable metabolic risk patterns across NHANES releases. However, because the evaluation remains internal to NHANES, the result should be interpreted as temporal validation rather than external clinical validation.
 
@@ -452,6 +475,7 @@ At the threshold-policy level, Youden's J was selected in 5 of 6 LOGO folds, whi
 |---|---:|---|
 | Youden's J | 5/6 | Primary strategy balancing sensitivity and specificity |
 | Guardrail Nearest Feasible | 1/6 | Safety fallback selecting the nearest feasible threshold under temporal shift |
+| Guardrail Shift Floor | 0/6 | Hard minimum-threshold shift was not used by the selected Logistic Regression model |
 
 Medically, this means that the deployed threshold policy prioritized early identification without allowing the model to classify too many normal profiles as at risk in unstable folds. Youden's J was retained when the fold-level operating point produced an acceptable sensitivity-specificity balance. In the 2021-2023 fold, the guardrail selected the nearest feasible threshold to reduce specificity collapse under a high-sensitivity operating point. This adjustment changed the classification threshold, not the trained model coefficients.
 
@@ -460,28 +484,29 @@ Medically, this means that the deployed threshold policy prioritized early ident
 
 ### 4.2 Feature Relevance and Feature-Selection Results
 
-Information Gain analysis was used to examine feature relevance before final model interpretation. The final model retained triglycerides, HDL cholesterol, LDL cholesterol, BMI, waist circumference, age, smoking status, physical activity, and alcohol use. Several excluded variables had high information gain, including fasting insulin, TG/HDL ratio, blood pressure variables, and metabolic syndrome score. These variables were reviewed but excluded for methodological reasons.
+Information Gain analysis was used to examine feature relevance before final model interpretation. The final model retained triglycerides, HDL cholesterol, LDL cholesterol, BMI, waist circumference, age, smoking status, physical activity, and alcohol use. Several excluded variables had high information gain, including CRP, fasting insulin, TG/HDL ratio, blood pressure variables, and metabolic syndrome score. These variables were reviewed but excluded for methodological reasons.
 
 **Table 4.3. Information Gain Feature Rankings**
 
 | Rank | Feature | Type | IG | IG% | In Model? |
 |---:|---|---|---:|---:|---|
-| 1 | Fasting Insulin | Numeric | 0.378539 | 37.98% | No |
-| 2 | TG/HDL Ratio | Numeric | 0.259632 | 26.05% | No |
-| 3 | Triglycerides | Numeric | 0.244786 | 24.56% | Yes |
-| 4 | HDL | Numeric | 0.090256 | 9.05% | Yes |
+| 1 | crp | Numeric | 0.502669 | 50.43% | No |
+| 2 | Fasting Insulin | Numeric | 0.378539 | 37.98% | No |
+| 3 | HDL | Numeric | 0.090256 | 9.05% | Yes |
+| 4 | TG/HDL Ratio | Numeric | 0.086469 | 8.67% | No |
 | 5 | Waist Circumference | Numeric | 0.084017 | 8.43% | Yes |
 | 6 | Systolic BP | Numeric | 0.080274 | 8.05% | No |
-| 7 | Diastolic BP | Numeric | 0.061783 | 6.20% | No |
-| 8 | BMI | Numeric | 0.058757 | 5.89% | Yes |
-| 9 | Metabolic Syndrome Score | Numeric | 0.058490 | 5.87% | No |
-| 10 | LDL | Numeric | 0.044970 | 4.51% | Yes |
-| 11 | BMI Category | Numeric | 0.034278 | 3.44% | No |
-| 12 | Total Cholesterol | Numeric | 0.028459 | 2.86% | No |
-| 13 | Age | Numeric | 0.004261 | 0.43% | Yes |
-| 14 | Smoking Status (encoded) | Ordinal | 0.004023 | 0.40% | Yes |
-| 15 | Physical Activity (encoded) | Ordinal | 0.002738 | 0.27% | Yes |
-| 16 | Alcohol Use (encoded) | Ordinal | 0.000000 | 0.00% | Yes |
+| 7 | Triglycerides | Numeric | 0.066976 | 6.72% | Yes |
+| 8 | Diastolic BP | Numeric | 0.061783 | 6.20% | No |
+| 9 | BMI | Numeric | 0.058757 | 5.89% | Yes |
+| 10 | Metabolic Syndrome Score | Numeric | 0.046720 | 4.69% | No |
+| 11 | LDL | Numeric | 0.044970 | 4.51% | Yes |
+| 12 | BMI Category | Numeric | 0.034278 | 3.44% | No |
+| 13 | Total Cholesterol | Numeric | 0.028459 | 2.86% | No |
+| 14 | Physical Activity (encoded) | Ordinal | 0.007360 | 0.74% | Yes |
+| 15 | Age | Numeric | 0.004261 | 0.43% | Yes |
+| 16 | Smoking Status (encoded) | Ordinal | 0.004023 | 0.40% | Yes |
+| 17 | Alcohol Use (encoded) | Ordinal | 0.000000 | 0.00% | Yes |
 
 Derived variables such as TG/HDL ratio and metabolic syndrome score were excluded because they duplicate information already present in selected features. Including both composites and their component variables could distort interpretation and inflate apparent feature importance. Blood pressure variables were excluded to preserve the self-screening accessibility goal of the system. This feature-selection process prioritized non-circularity, interpretability, accessibility, and practical deployment.
 
@@ -495,16 +520,16 @@ The candidate algorithms were compared under the same nested LOGO validation fra
 
 | Algorithm | Mean Fold AUC-ROC | Pooled AUC 95% CI | Sensitivity | Sens 95% CI | Specificity | F1 | Mean Threshold |
 |---|---:|---|---:|---|---:|---:|---:|
-| Logistic Regression | 0.736 | 0.710-0.763 | 0.748 | 0.717-0.776 | 0.590 | 0.710 | 0.465 |
-| Random Forest | 0.714 | 0.686-0.742 | 0.732 | 0.701-0.762 | 0.597 | 0.702 | 0.485 |
-| LightGBM | 0.711 | 0.684-0.738 | 0.723 | 0.692-0.754 | 0.595 | 0.696 | 0.475 |
-| XGBoost | 0.709 | 0.681-0.737 | 0.730 | 0.698-0.763 | 0.589 | 0.699 | 0.655 |
+| Logistic Regression | 0.736 | 0.710-0.763 | 0.748 | 0.717-0.776 | 0.605 | 0.711 | 0.465 |
+| Random Forest | 0.716 | 0.686-0.742 | 0.732 | 0.701-0.762 | 0.600 | 0.702 | 0.485 |
+| LightGBM | 0.712 | 0.684-0.738 | 0.724 | 0.692-0.754 | 0.603 | 0.696 | 0.475 |
+| XGBoost | 0.713 | 0.681-0.737 | 0.730 | 0.698-0.763 | 0.589 | 0.699 | 0.655 |
 
 Logistic Regression was selected because it provided the most appropriate balance of performance and interpretability for a screening-support system. Its coefficients can be interpreted more directly than those of ensemble models, and its probability outputs are suitable for threshold optimization and SHAP-based explanation. It also demonstrated efficient inference: LR inference averages **0.62 ms** in the benchmarked environment, compared with **13.09 ms** for RF and **0.25 ms** for LightGBM. These timing results should be interpreted as local inference benchmarks rather than production load-test results.
 
 ### 4.4 Calibration Analysis
 
-Calibration analysis assessed whether predicted probabilities aligned with observed outcomes. The Logistic Regression model produced a Brier score of 0.2087, an expected calibration error of 0.0563, and a Hosmer-Lemeshow statistic of 24.75 across the full analytic cohort of 1,376 records. These results indicate acceptable probability alignment rather than perfect calibration.
+Calibration analysis assessed whether predicted probabilities aligned with observed outcomes. The Logistic Regression model produced a Brier score of 0.2087, an expected calibration error of 0.0563, and a Hosmer-Lemeshow statistic of 24.75 across the full analytic cohort of 1,376 records. These results indicate acceptable probability alignment rather than perfect calibration (Brier, 1950; Hosmer & Lemeshow, 1980; Van Calster et al., 2019).
 
 **Table 4.5. Calibration Metrics**
 
@@ -520,7 +545,7 @@ The calibrated probabilities should therefore be communicated as approximate ris
 
 ### 4.5 Clustering Validation and Subtype Distribution
 
-Weighted K-Means clustering with K = 4 was evaluated on the at-risk subset of 734 cases. The clustering produced a silhouette score of 0.1762, Davies-Bouldin index of 1.5950, and Calinski-Harabasz index of 154.32. These metrics indicate modest separation, which is expected in overlapping metabolic phenotypes.
+Weighted K-Means clustering with K = 4 was evaluated on the at-risk subset of 734 cases. The clustering produced a silhouette score of 0.1762, Davies-Bouldin index of 1.5950, and Calinski-Harabasz index of 154.32. These metrics indicate modest separation, which is expected in overlapping metabolic phenotypes (Rousseeuw, 1987; Davies & Bouldin, 1979; Calinski & Harabasz, 1974).
 
 **Table 4.6. Internal Clustering Validation Metrics**
 
@@ -560,7 +585,7 @@ This result supports the central methodological claim of the study. DIANA's disc
 
 Functional testing verified the implemented system across backend, ML service, and frontend layers. The backend Go test suite passed in the current verification run and covered configuration, caching, HTTP handlers, middleware, ML integration, models, services, PDF generation, and store behavior. Assessment handler tests verified critical clinical guardrails, including target age-boundary enforcement, missing waist-circumference acceptance for ML imputation, out-of-range HbA1c warning behavior, and successful assessment creation.
 
-The Python ML service test suite passed with 270 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, server endpoints, API authentication, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 220 tests. The current frontend coverage run met the configured source coverage gates, with 72.64 percent line and statement coverage, 60.24 percent branch coverage, and 42.85 percent function coverage.
+The Python ML service test suite passed with 270 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, server endpoints, API authentication, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured source coverage gates, with 71.26 percent line and statement coverage, 60.58 percent branch coverage, and 44.24 percent function coverage.
 
 **Table 4.8. Functional Test Summary**
 
@@ -569,11 +594,11 @@ The Python ML service test suite passed with 270 tests. These tests covered clus
 | Backend Go suite | Configuration, cache, handlers, middleware, ML integration, services, store | PASS |
 | Assessment handler guardrails | Age boundaries, missing waist handling, HbA1c warning propagation, successful create | PASS |
 | Python ML suite | 270 tests covering prediction, leakage, clustering, SHAP, drift, clinical scenarios | PASS |
-| Frontend unit and contract coverage suite | 220 tests across API contracts, auth flows, forms, UI components, and broad source coverage smoke tests | PASS |
-| Frontend coverage threshold | Source coverage gates: 70% statements, 70% lines, 60% branches, and 40% functions | PASS: 72.64% lines/statements, 60.24% branches, and 42.85% functions |
+| Frontend unit and contract coverage suite | 232 tests across API contracts, auth flows, forms, UI components, and broad source coverage smoke tests | PASS |
+| Frontend coverage threshold | Source coverage gates: 70% statements, 70% lines, 60% branches, and 40% functions | PASS: 71.26% lines/statements, 60.58% branches, and 44.24% functions |
 | Redis integration tests | Require running Redis service | Environment dependent |
 
-The function-coverage gate is lower than the statement and line gates because several frontend files are callback-heavy UI modules whose rendering paths are already exercised through broader component and contract tests. The 42.85 percent function result should therefore be reported as a passed repository coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
+The function-coverage gate is lower than the statement and line gates because several frontend files are callback-heavy UI modules whose rendering paths are already exercised through broader component and contract tests. The 44.24 percent function result should therefore be reported as a passed repository coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
 
 The remaining technical-readiness gaps therefore concern environment-dependent Redis integration evidence, formal UAT, expert review, accessibility audit, and production load testing rather than the frontend coverage gate.
 
@@ -607,25 +632,25 @@ Pure model inference benchmarks indicate that Logistic Regression averages appro
 
 Production performance claims should therefore remain qualified. Concurrent load testing with authenticated users, database writes, cache invalidation, ML requests, and frontend rendering has not yet been completed. The final manuscript should avoid claiming production-scale readiness until load-test evidence is collected.
 
-As part of deployment-readiness verification, the production VPS was checked for public exposure, routing behavior, service isolation, and secret placement. Sensitive operational details such as server addresses, usernames, private file paths, and connection strings are excluded from the manuscript.
+As part of the final codebase-truth pass, deployment-readiness evidence was checked against the repository's deployment artifacts rather than treated as a single live-infrastructure certification. Sensitive operational details such as server addresses, usernames, private file paths, and connection strings are excluded from the manuscript.
 
-**Production Deployment Verification Summary**
+**Repository Deployment-Readiness Summary**
 
 | Verification Item | Expected Result | Observed Result | Status |
 |---|---|---|---|
-| Public ingress | Only HTTP/HTTPS exposed through reverse proxy | Only Caddy exposed host ports 80 and 443 | Pass |
-| Backend routing | Backend reachable through reverse proxy health endpoint | `/api/v1/healthz` returned HTTP 200 through Caddy | Pass |
-| ML isolation | ML service not publicly reachable | Direct public access to the ML service port failed | Pass |
-| Database exposure | No database listener exposed on the VPS host | No PostgreSQL host port was listening | Pass |
-| Secret handling | Secrets loaded from environment file rather than raw proxy or compose configuration | Environment file permissions were locked down; no raw database DSN was found in proxy or compose configuration | Pass |
+| Public ingress | Public traffic enters through reverse proxy | Caddyfile and Docker Compose production overlay both define reverse-proxy ingress on HTTP/HTTPS | Repository evidence present |
+| Backend routing | Backend health endpoint exists for routing checks | `/api/v1/healthz` is registered in the Go router and used by container health checks | Repository evidence present |
+| ML isolation | ML service is not intended as a public browser-facing service | Production compose resets external ML ports and exposes the ML service only to the container network; Caddy routing forwards public traffic to the backend | Repository evidence present |
+| Database exposure | PostgreSQL should not be exposed as a public application port in production configuration | Production compose resets external PostgreSQL ports; the alternate managed-database path uses an external PostgreSQL service instead of a VPS database listener | Repository evidence present |
+| Secret handling | Secrets are injected at runtime rather than committed as literal secret values | Compose and service configuration use environment variables for passwords, JWT secrets, API keys, and database connection settings | Repository evidence present |
 
-The verification also identified stale container-level healthcheck probes for the backend and ML containers. The public backend route was functioning, but the Docker healthcheck path and ML internal port required alignment with the actual service endpoints. This was documented as an operations-readiness correction rather than as evidence of public routing failure.
+The repository-level review confirms that deployment artifacts exist for reverse-proxy routing, health checks, service isolation, and runtime secret injection. It does not replace a fresh production load test or an infrastructure security audit against the currently running host.
 
 ### 4.10 User Acceptance Testing and Expert Feedback
 
-The UAT protocol and expert review framework were defined but had not yet been executed at the time of manuscript preparation. The planned user evaluation follows ISO/IEC 25010 usability characteristics, including appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence.
+The UAT protocol and expert review framework were defined but had not yet been executed at the time of manuscript preparation. The planned user evaluation follows ISO/IEC 25010 usability characteristics, including appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence (International Organization for Standardization, 2011).
 
-Planned user tasks include login and dashboard navigation, assessment submission, and interpretation of ML results and SHAP explanation. Planned expert review will evaluate risk-output plausibility, explanation clarity, workflow fit, and perceived utility. Since formal data collection has not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations should remain marked as pending rather than reported as completed findings.
+Planned user tasks include login and dashboard navigation, assessment submission, and interpretation of ML results and SHAP explanation. The planned System Usability Scale measure uses Brooke's 10-item instrument and interprets the `> 70` target using empirical SUS benchmarking literature (Brooke, 1996; Bangor et al., 2008). Planned expert review will evaluate risk-output plausibility, explanation clarity, workflow fit, and perceived utility. Since formal data collection has not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations should remain marked as pending rather than reported as completed findings.
 
 **Table 4.9. Planned UAT and Expert Review Metrics**
 
@@ -655,7 +680,7 @@ Planned user tasks include login and dashboard navigation, assessment submission
 | UAT-08 | SHAP explanation interaction | Waterfall plot or clinician-friendly fallback displayed | Protocol defined; not executed |
 | UAT-09 | Profile update | Profile updated and confirmation shown | Protocol defined; not executed |
 | UAT-10 | Admin user management | User list displayed and status action applied | Protocol defined; not executed |
-| UAT-11 | Assessment export | CSV or report export generated with expected content | Protocol defined; not executed |
+| UAT-11 | Assessment export | PDF health report generated with expected content | Protocol defined; not executed |
 | UAT-12 | Rate-limit enforcement | HTTP 429 returned after configured threshold | Protocol defined; not executed |
 
 Internal walkthroughs identified several areas for improvement, including visibility of medical-history fields, SHAP legend clarity, mobile assessment-form usability, and explanation of Ahlqvist-inspired proxy subtype labels. These findings reflect development review rather than formal UAT results.
@@ -671,7 +696,7 @@ Internal walkthroughs identified several areas for improvement, including visibi
 
 The interface applies visual organization principles to support comprehension of clinical information. Related fields are grouped together, risk categories use consistent visual styling, and charts present longitudinal patterns through continuous visual trends. Risk status is communicated through both color and text labels to reduce dependence on color alone.
 
-The application includes accessibility-oriented features such as ARIA labels, keyboard-accessible controls, responsive layouts, visible status text, and device-aware performance tiering. High-capability devices receive full animations and richer chart behavior, while lower-capability devices receive reduced visual complexity. However, formal automated contrast testing and assistive-technology testing have not yet been completed. Therefore, this section should be framed as accessibility readiness rather than WCAG conformance certification.
+The application includes accessibility-oriented features such as ARIA labels, keyboard-accessible controls, responsive layouts, visible status text, and device-aware performance tiering, aligned with WCAG 2.2 accessibility guidance where applicable (World Wide Web Consortium, 2023). High-capability devices receive full animations and richer chart behavior, while lower-capability devices receive reduced visual complexity. However, formal automated contrast testing and assistive-technology testing have not yet been completed. Therefore, this section should be framed as accessibility readiness rather than WCAG conformance certification.
 
 **Table 4.12. Accessibility and UI Readiness Items**
 
@@ -714,3 +739,71 @@ Fifth, formal UAT, expert face-validity review, accessibility testing, and produ
 The results demonstrate that DIANA provides a technically implemented and methodologically conservative screening-support workflow for diabetes risk stratification among postmenopausal women. Its strongest methodological contribution is the separation of diagnostic label construction from predictor inputs, supported by an automated leakage validation pipeline. The final Logistic Regression model achieved acceptable discrimination under conservative temporal validation while preserving interpretability and deployment simplicity.
 
 The weighted clustering module and SHAP explainability layer add clinical context to the binary risk output, but both require careful interpretation. The subtype labels are heuristic and hypothesis-generating, and SHAP values support transparency rather than causal explanation. Overall, DIANA should be understood as a triage-support system that can help identify users who may benefit from confirmatory testing and clinical review. Future work should prioritize external validation, prospective evaluation, formal UAT, expert clinical review, accessibility assessment, production load testing, and calibration in the intended deployment population.
+
+## References
+
+Ahlqvist, E., Storm, P., Karajamaki, A., Martinell, M., Dorkhan, M., Carlsson, A., ... & Groop, L. (2018). Novel subgroups of adult-onset diabetes and their association with outcomes: A data-driven cluster analysis of six variables. *The Lancet Diabetes & Endocrinology*, 6(5), 361-369. https://doi.org/10.1016/S2213-8587(18)30051-2
+
+Alberti, K. G. M. M., Eckel, R. H., Grundy, S. M., Zimmet, P. Z., Cleeman, J. I., Donato, K. A., ... & Smith, S. C. (2009). Harmonizing the metabolic syndrome. *Circulation*, 120(16), 1640-1645. https://doi.org/10.1161/CIRCULATIONAHA.109.192644
+
+American Diabetes Association Professional Practice Committee. (2026). 2. Diagnosis and classification of diabetes: Standards of Care in Diabetes--2026. *Diabetes Care*. https://pmc.ncbi.nlm.nih.gov/articles/PMC12690183/
+
+Bangor, A., Kortum, P. T., & Miller, J. T. (2008). An empirical evaluation of the System Usability Scale. *International Journal of Human-Computer Interaction*, 24(6), 574-594. https://doi.org/10.1080/10447310802205776
+
+Breiman, L. (2001). Random forests. *Machine Learning*, 45, 5-32. https://doi.org/10.1023/A:1010933404324
+
+Brier, G. W. (1950). Verification of forecasts expressed in terms of probability. *Monthly Weather Review*, 78(1), 1-3. https://doi.org/10.1175/1520-0493(1950)078%3C0001:VOFEIT%3E2.0.CO;2
+
+Brooke, J. (1996). SUS: A quick and dirty usability scale. In P. W. Jordan, B. Thomas, B. A. Weerdmeester, & I. L. McClelland (Eds.), *Usability Evaluation in Industry* (pp. 189-194). Taylor & Francis.
+
+Calinski, T., & Harabasz, J. (1974). A dendrite method for cluster analysis. *Communications in Statistics - Theory and Methods*, 3(1), 1-27. https://doi.org/10.1080/03610927408827101
+
+Centers for Disease Control and Prevention, National Center for Health Statistics. (2024a). *NHANES questionnaires, datasets, and related documentation: August 2021-August 2023*. https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/default.aspx?Cycle=2021-2023
+
+Centers for Disease Control and Prevention, National Center for Health Statistics. (2024b). *Brief overview of sample design, nonresponse bias assessment, and analytic guidelines for NHANES August 2021-August 2023*. https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/OverviewBrief.aspx?Cycle=2021-2023
+
+Centers for Disease Control and Prevention, National Center for Health Statistics. (2024c). *Reproductive Health Questionnaire: Data documentation, codebook, and frequencies: RHQ_L, NHANES August 2021-August 2023*. https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/RHQ_L.htm
+
+Chen, T., & Guestrin, C. (2016). XGBoost: A scalable tree boosting system. *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*, 785-794. https://doi.org/10.1145/2939672.2939785
+
+Davies, D. L., & Bouldin, D. W. (1979). A cluster separation measure. *IEEE Transactions on Pattern Analysis and Machine Intelligence*, PAMI-1(2), 224-227. https://doi.org/10.1109/TPAMI.1979.4766909
+
+Dennis, J. M., Shields, B. M., Henley, W. E., Jones, A. G., & Hattersley, A. T. (2019). Disease progression and treatment response in data-driven subgroups of type 2 diabetes compared with models based on simple clinical features: An analysis using clinical trial data. *The Lancet Diabetes & Endocrinology*, 7(6), 442-451. https://doi.org/10.1016/S2213-8587(19)30087-7
+
+Efron, B., & Tibshirani, R. J. (1993). *An Introduction to the Bootstrap*. Chapman & Hall/CRC.
+
+Hosmer, D. W., & Lemeshow, S. (1980). Goodness of fit tests for the multiple logistic regression model. *Communications in Statistics - Theory and Methods*, 9(10), 1043-1069. https://doi.org/10.1080/03610928008827941
+
+International Diabetes Federation. (2006). *The IDF consensus worldwide definition of the metabolic syndrome*. https://idf.org/about-diabetes/resources/idf-consensus-worldwide-definition-of-the-metabolic-syndrome/
+
+International Organization for Standardization. (2011). *ISO/IEC 25010:2011 Systems and software engineering - Systems and software Quality Requirements and Evaluation (SQuaRE) - System and software quality models*. https://www.iso.org/standard/35733.html
+
+Jones, M., Bradley, J., & Sakimura, N. (2015). *JSON Web Token (JWT)* (RFC 7519). Internet Engineering Task Force. https://www.rfc-editor.org/rfc/rfc7519
+
+Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., & Liu, T.-Y. (2017). LightGBM: A highly efficient gradient boosting decision tree. *Advances in Neural Information Processing Systems*, 30. https://papers.nips.cc/paper/6907-lightgbm-a-highly-efficient-gradient-boosting-decision-tree
+
+Lumley, T. (2010). *Complex Surveys: A Guide to Analysis Using R*. John Wiley & Sons.
+
+Lundberg, S. M., & Lee, S. I. (2017). A unified approach to interpreting model predictions. *Advances in Neural Information Processing Systems*, 30. https://papers.neurips.cc/paper/7062-a-unified-approach-to-interpreting-model-predictions
+
+Luque, A., Carrasco, A., Martin, A., & de las Heras, A. (2019). The impact of class imbalance in classification performance metrics based on the binary confusion matrix. *Pattern Recognition*, 91, 216-231. https://doi.org/10.1016/j.patcog.2019.02.023
+
+MacQueen, J. (1967). Some methods for classification and analysis of multivariate observations. In *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability* (Vol. 1, pp. 281-297).
+
+Powers, D. M. W. (2011). Evaluation: From precision, recall and F-measure to ROC, informedness, markedness and correlation. *Journal of Machine Learning Technologies*, 2(1), 37-63.
+
+Provos, N., & Mazieres, D. (1999). A future-adaptable password scheme. In *Proceedings of the 1999 USENIX Annual Technical Conference*. https://www.usenix.org/conference/1999-usenix-annual-technical-conference/future-adaptable-password-scheme
+
+Rousseeuw, P. J. (1987). Silhouettes: A graphical aid to the interpretation and validation of cluster analysis. *Journal of Computational and Applied Mathematics*, 20, 53-65. https://doi.org/10.1016/0377-0427(87)90125-7
+
+Shreffler, J., & Huecker, M. R. (2023). Diagnostic testing accuracy: Sensitivity, specificity, predictive values and likelihood ratios. In *StatPearls*. StatPearls Publishing. https://www.ncbi.nlm.nih.gov/books/NBK557491/
+
+Vabalas, A., Gowen, E., Poliakoff, E., & Casson, A. J. (2019). Machine learning algorithm validation with a limited sample size. *PLOS ONE*, 14(11), e0224365. https://doi.org/10.1371/journal.pone.0224365
+
+Van Calster, B., McLernon, D. J., van Smeden, M., Wynants, L., Steyerberg, E. W., Bossuyt, P., Collins, G. S., Macaskill, P., Moons, K. G. M., & Vickers, A. J. (2019). Calibration: The Achilles heel of predictive analytics. *BMC Medicine*, 17, 230. https://doi.org/10.1186/s12916-019-1466-7
+
+World Health Organization. (2021). *Ethics and governance of artificial intelligence for health: WHO guidance*. https://www.who.int/publications/i/item/9789240029200
+
+World Wide Web Consortium. (2023). *Web Content Accessibility Guidelines (WCAG) 2.2*. https://www.w3.org/TR/WCAG22/
+
+Youden, W. J. (1950). Index for rating diagnostic tests. *Cancer*, 3(1), 32-35. https://doi.org/10.1002/1097-0142(1950)3:1%3C32::AID-CNCR2820030106%3E3.0.CO;2-3

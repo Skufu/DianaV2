@@ -2,6 +2,7 @@
 
 **Directory:** `Ian_ML/training/`
 **Generated:** 2026-03-09
+**Updated:** 2026-05-17
 
 ## OVERVIEW
 Model training scripts for diabetes risk prediction. Primary: defensible nested CV training (train_binary_v2_no_bp.py). Secondary: K-Means clustering for Ahlqvist subtypes.
@@ -10,7 +11,7 @@ Model training scripts for diabetes risk prediction. Primary: defensible nested 
 
 | Task | File | Notes |
 |------|------|-------|
-| Binary classifier (defensible) | `train_binary_v2_no_bp.py` | LOGO/nested-CV, AUC 0.72, 9 features |
+| Binary classifier (defensible) | `train_binary_v2_no_bp.py` | LOGO/nested-CV, mean LR AUC about 0.736, 9 features |
 | Binary classifier (with BP) | `train_binary_v2_with_bp.py` | Includes blood pressure features |
 | K-Means clustering | `clustering.py` | K=4 Ahlqvist subtypes (SIRD, SIDD, MOD, MARD) |
 | Data preprocessing | `data_processing.py` | NHANES label creation, feature engineering |
@@ -34,8 +35,9 @@ MODEL_FEATURES = [
 
 ### Clustering Features (clustering.py)
 ```python
-CLUSTER_FEATURES = ["bmi", "triglycerides", "ldl", "hdl", "age"]
+CLUSTER_FEATURES = ["bmi", "triglycerides", "ldl", "hdl", "age", "waist_circumference"]
 ```
+Current codebase truth: import `CLUSTER_FEATURES` from `Ian_ML.common.feature_constants`; do not duplicate this list in training or serving code.
 
 ## AHLQVIST SUBTYPES
 
@@ -46,7 +48,7 @@ CLUSTER_FEATURES = ["bmi", "triglycerides", "ldl", "hdl", "age"]
 | MOD | Mild Obesity-Related Diabetes | Moderate metabolic dysfunction |
 | MARD | Mild Age-Related Diabetes | Older age, milder presentation |
 
-**LIMITATION**: DIANA lacks HOMA2-B, HOMA2-IR, C-peptide - primary discriminators in Ahlqvist et al. (2018). Labels are "Ahlqvist-inspired" proxy metrics per Tanabe et al. (2024).
+**LIMITATION**: DIANA lacks HOMA2-B, HOMA2-IR, C-peptide, and autoantibody measures used in the original Ahlqvist framework. Labels must be described as Ahlqvist-inspired heuristic proxy labels, not validated biological subtype diagnoses.
 
 ## CONVENTIONS
 
@@ -88,8 +90,10 @@ python Ian_ML/training/feature_selection_analysis.py
 | `scaler.joblib` | `models/binary_v2_no_bp/` | Feature scaler |
 | `features.json` | `models/binary_v2_no_bp/` | Feature manifest |
 | `shap_background.joblib` | `models/binary_v2_no_bp/` | SHAP background data (100 samples from training) |
-| `kmeans_model.joblib` | `models/clinical/` | K-Means model |
-| `cluster_centers.json` | `models/clinical/results/` | Cluster centroids |
+| `kmeans_model.joblib` | `models/binary_v2_no_bp/` | K-Means model |
+| `weighted_kmeans_model.joblib` | `models/binary_v2_no_bp/` | Weighted K-Means model |
+| `cluster_labels.json` | `models/binary_v2_no_bp/` | Cluster label metadata |
+| `cluster_analysis.json` | `models/binary_v2_no_bp/results/` | Cluster analysis and centroids/profiles |
 
 ## SHAP ARTIFACTS
 
@@ -115,6 +119,6 @@ python Ian_ML/training/train_binary_v2_no_bp.py
 
 ## NOTES
 
-- Primary model: `train_binary_v2_no_bp.py` achieves AUC 0.72 with nested CV
+- Primary model: `train_binary_v2_no_bp.py`; current artifact metrics are under `models/binary_v2_no_bp/results/`
 - Clustering is "Ahlqvist-inspired" - not true replication (lacks HOMA2)
 - Archive directory contains deprecated experiments - do not use

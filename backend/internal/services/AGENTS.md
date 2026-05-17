@@ -2,6 +2,7 @@
 
 **Directory**: `backend/internal/services`
 **Generated:** 2026-01-28
+**Updated:** 2026-05-17
 
 ## OVERVIEW
 Business logic layer handling PDF generation, notification scheduling, and biomarker validation.
@@ -10,7 +11,7 @@ Business logic layer handling PDF generation, notification scheduling, and bioma
 
 | Service | File | Purpose | Status |
 |---------|------|---------|--------|
-| PDF Export | `pdf_export_service.go` | Generates user health reports using gopdf | ⚠️ Disabled |
+| PDF Export | `pdf_export_service.go` | Generates user health reports using go-pdf/fpdf | ✅ Implemented |
 | Notifications | `notification_service.go` | Schedules and queues user communications | 🚧 Stub |
 | Validation | `validation_service.go` | Biomarker range validation | ✅ Implemented |
 
@@ -107,30 +108,24 @@ func (s *NotificationService) queueNotification(notification Notification) error
 ## PDF EXPORT SERVICE
 
 ### Current Status
-⚠️ **DISABLED** - Generation is temporarily disabled due to gopdf library update conflicts.
+✅ **ACTIVE** - `GenerateHealthReport()` uses `github.com/go-pdf/fpdf` and is wired to `GET /api/v1/users/me/export/pdf`.
 
-```go
-// From GenerateHealthReport
-err = pdf.Cell(nil, "Health Report generation temporarily disabled due to library updates.")
-if err != nil {
-    return nil, err
-}
-```
-
-### Expected Implementation
-When re-enabled, service should:
-1. Accept `models.UserProfile` and `[]models.Assessment`
-2. Generate multi-page PDF with:
-   - User profile section
-   - Assessment history table
-   - Risk trend charts
-   - Clinical recommendations
-3. Return `[]byte` for HTTP response
+### Current Implementation
+The service:
+1. Accepts `models.UserProfile` and `[]models.Assessment`
+2. Orders assessments by recency and selects the latest assessment
+3. Generates a clinical PDF report with:
+   - Patient profile
+   - Screening interpretation and risk score
+   - Biomarker table
+   - Phenotype summary
+   - Recent assessment history
+   - Smart recommendations
+4. Returns `[]byte` for the HTTP response
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
 ### Critical Issues
-- **PDF generation disabled**: Core feature not working due to library conflicts
 - **Stub notification queue**: `queueNotification()` returns nil without persistence
 - **Silent failures**: No error handling when queue operation fails
 
@@ -143,8 +138,7 @@ When re-enabled, service should:
 1. **Implement notification queue persistence**: Insert into `notification_queue` table
 2. **Background worker**: Process pending notifications periodically
 3. **Email service**: Integrate with email provider API
-4. **Re-enable PDF generation**: Update gopdf or switch to alternative library
-5. **Add PDF tests**: Ensure report generation works correctly
+4. **Add PDF tests**: Ensure report generation works correctly
 
 ## NOTES
 
@@ -193,7 +187,6 @@ CREATE TABLE notification_queue (
 - [ ] Create background worker to process pending notifications
 - [ ] Integrate email service (SendGrid, AWS SES, or SimpleEmail)
 - [ ] Add retry logic for failed notifications
-- [ ] Fix PDF generation (update gopdf or use alternative)
 - [ ] Add unit tests for PDF export service
 - [ ] Add unit tests for notification service
 - [ ] Implement email template system

@@ -1,8 +1,8 @@
 # PROJECT KNOWLEDGE BASE
 
 **Generated:** 2026-03-05
-**Updated:** 2026-03-09
-**Commit:** c56c602
+**Updated:** 2026-05-17
+**Commit:** current workspace
 **Branch:** main
 
 ## OVERVIEW
@@ -25,11 +25,10 @@ Multi-tier medical AI platform: diabetes risk prediction for menopausal women. G
 │   │   ├── components/   # UI modules (admin, auth, user, insights, common, layout)
 │   │   ├── api.js         # Centralized API layer
 │   │   └── utils/         # Device capabilities, validation
-│   └── e2e/            # Playwright E2E tests
+│   └── e2e/            # Archived Playwright E2E tests (not CI-maintained)
 ├── Ian_ML/                   # Python ML service (Flask)
-│   ├── predict.py         # Inference server
-│   ├── train.py           # K-Means clustering
-│   └── mlflow_config.py   # Experiment tracking
+│   ├── service/          # Flask inference server, predictors, SHAP, drift
+│   └── training/         # Defensible training and clustering scripts
 ├── scripts/              # Data pipeline, ML training, dev orchestration
 └── docs/                 # API drift prevention, thesis docs
 ```
@@ -51,7 +50,7 @@ Comprehensive knowledge base documentation for all major directories:
 | `backend/migrations/` | ✅ Complete | Goose migrations, schema evolution |
 | `frontend/src/` | ✅ Complete | App architecture, routing, auth state, performance |
 | `frontend/src/components/` | ✅ Complete | All UI components, patterns, conventions |
-| `frontend/e2e/` | ✅ Complete | Playwright E2E tests, fixtures, integration tests |
+| `frontend/e2e/` | ✅ Archived | Playwright E2E tests retained for reference; not in CI and not thesis evidence |
 | `Ian_ML/` | ✅ Complete | ML service: Flask server, dual predictor, API endpoints |
 | `Ian_ML/training/` | ✅ Complete | ML training: defensible CV, K-Means clustering, features |
 | `scripts/` | ✅ Complete | Data pipeline, ML training orchestration, thesis generation |
@@ -68,30 +67,31 @@ Comprehensive knowledge base documentation for all major directories:
 | ML prediction | Ian_ML/service/predict.py | Dual predictor (ADA baseline vs clinical metabolic) |
 | Validation | backend/internal/ml/validation.go | Biomarker range checks |
 | Auth flow | backend/internal/http/handlers/auth.go | JWT + refresh tokens |
-| PDF export | backend/internal/services/pdf_export_service.go | gopdf library |
+| PDF export | backend/internal/services/pdf_export_service.go | go-pdf/fpdf library |
 | Data layer | backend/internal/store/postgres.go | Repository pattern with SQLC |
 | Admin dashboard | frontend/src/components/admin/ | UserManagement, AuditLog, ModelTraceability |
 | User flows | frontend/src/components/user/ | Onboarding, Dashboard, Trends, Profile |
 | Charts | frontend/src/components/common/ | SHAPExplanation (Recharts integration) |
-| API wrapper | frontend/src/api.js | apiFetch/mlFetch, centralized endpoints |
+| API wrapper | frontend/src/api.js | apiFetch/mlFetchJson, React Query hooks, centralized endpoints |
 | ML training | Ian_ML/training/train_binary_v2_no_bp.py, scripts/train/train_clusters.py | Defensible nested CV, K-Means |
 | Data processing | scripts/data/*.py | NHANES download, merge, imputation |
 | Thesis generation | scripts/thesis/*.py | Manuscript verification, vignettes, outputs |
 | CI/CD | .github/workflows/ci.yml | Multi-language tests, docker builds |
+| Thesis truth audit | docs/07-research/thesis-drafts/ch3+4-codebase-truth-audit.md | Final Chapter 3+4 codebase-truth checklist |
 
 ## CODE MAP
 
 | Symbol | Type | Location | Refs | Role |
 |--------|------|----------|------|------|
-| Predict(ctx) | interface | backend/internal/ml/mock.go | HTTP, handlers, validation | ML abstraction |
-| BiomarkerRanges | map[string]BiomarkerRange | backend/internal/ml/validation.go | validation | Clinical thresholds |
+| Predictor | interface | backend/internal/ml/mock.go | HTTP, handlers, validation | ML abstraction with `Predict` and `PredictWithModelType` |
+| ValidateBiomarkers | func | backend/internal/ml/validation.go | handlers, config thresholds | Clinical biomarker warnings |
 | Store | interface | backend/internal/store/store.go | All repositories | Central contract |
-| UserRepository | interface | backend/internal/store/postgres.go | handlers | User CRUD + trends |
-| AssessmentRepository | interface | backend/internal/store/postgres.go | handlers | Risk assessment CRUD |
-| Predict(a) | func | Ian_ML/service/predict.py | handlers | Inference endpoint |
-| ValidateInput(a) | func | Ian_ML/service/predict.py | internal/ml/validation.go | Safety check |
-| DianaPredictor | class | Ian_ML/service/server.py | Flask router | ADA model wrapper |
-| ClinicalPredictor | class | Ian_ML/service/server.py | Flask router | Metabolic model wrapper |
+| UserRepository | interface | backend/internal/store/store.go | handlers | User CRUD + trends |
+| AssessmentRepository | interface | backend/internal/store/store.go | handlers | Risk assessment CRUD |
+| predict(data, model_type) | func | Ian_ML/service/predict.py | Flask router | Inference dispatch helper |
+| validate_input(data) | method | Ian_ML/service/predict.py | Flask router | Predictor input safety check |
+| DianaPredictor | class | Ian_ML/service/predict.py | Flask router | ADA model wrapper |
+| ClinicalPredictor | class | Ian_ML/service/predict.py | Flask router | Metabolic model wrapper |
 | apiFetch | func | frontend/src/api.js | All components | Backend API calls |
 | mlFetch | func | frontend/src/api.js | All components | ML server calls |
 | deviceCapabilities | func | frontend/src/utils/deviceCapabilities.js | App, Insights | Performance tiering |
@@ -117,13 +117,13 @@ Comprehensive knowledge base documentation for all major directories:
 - **Components**: Organized by domain (admin, auth, user, insights, common, layout, education, export).
 - **Lazy Loading**: `React.lazy()` + `Suspense` in App.jsx for feature-based routes.
 - **State**: Local via `useState` in components. Auth/user data in `App.jsx` (localStorage).
-- **API Calls**: NEVER raw fetch. Use `apiFetch()` (auth) or `mlFetch()` (ML).
+- **API Calls**: NEVER raw fetch in components. Use exported helpers/hooks from `api.js`; ML calls go through `mlFetchJson()` and the backend `/api/v1/ml` proxy.
 - **Performance**: `deviceCapabilities` detects tier (High/Med/Low). Apply CSS classes globally in App.jsx.
 
 ### Frontend Component Domains
 | Domain | Location | Components | Purpose |
 |--------|----------|------------|---------|
-| Export | `components/export/` | Export | CSV data export with filtering (menopause status, risk level), patient demographics, assessment records, PDF insights reports |
+| Export | `components/export/` | Export | PDF health report download for the authenticated user |
 
 ### Database
 - **Migrations**: Use Goose (`go run ./cmd/migrate`). Format: `-- +goose Up` / `-- +goose Down`.
@@ -133,8 +133,8 @@ Comprehensive knowledge base documentation for all major directories:
 ## ANTI-PATTERNS (THIS PROJECT)
 
 ### Critical Clinical Safety (FORBIDDEN)
-- `thesis/generate_executive_summary.py`: "Do NOT use as standalone diagnostic" - ML is screening tool, not diagnosis.
-- `thesis/generate_limitations.py`: "Do NOT replace clinical judgment" - Risk scores require clinician review.
+- `scripts/thesis/generate_executive_summary.py`: "Do NOT use as standalone diagnostic" - ML is screening tool, not diagnosis.
+- `scripts/thesis/generate_limitations.py`: "Do NOT replace clinical judgment" - Risk scores require clinician review.
 
 ### Data Leakage & ML Safety (FORBIDDEN)
 - DO NOT use future biomarker values to predict past outcomes (temporal leakage)
@@ -147,13 +147,13 @@ Comprehensive knowledge base documentation for all major directories:
 ### Technical Debt (AVOID)
 HW|- Direct SQL in `postgres_admin.go` (`r.pool.QueryRow(ctx, sql, ...)`) - Use SQLC queries instead.
 NX|- Manual `strconv.Atoi` for pagination - Use `ParsePagination()` from utils.
-NH|- `interface{}` in Go 1.18+ - Use explicit interfaces or `any` with documentation (5 occurrences).
+NH|- Legacy `interface{}` still appears in handwritten and test code - prefer explicit interfaces or `any` with documentation in new Go code.
 SK|- Fire-and-forget goroutines in `audit.go` - errors are logged but don't block response (potential data loss if DB unavailable).
 XZ|- Manual `gin.H{"error": ...}` in handlers - Use `ErrBadRequest()`, `ErrInternal()` from utils.go.
 
-### CI/CD Issues
-BV|- **Deploy job is no-op**: `cd.yml` deploy job only echoes instructions, no actual deployment.
-KM|- **Makefile stale reference**: `ml-train` target calls `train.py` (should be `train_v2.py`).
+### CI/CD Notes
+BV|- `cd.yml` now builds/pushes Docker images and deploys via SSH on version tags; verify required secrets before relying on it.
+KM|- `make ml-train` currently calls `Ian_ML/training/train_binary_v2_no_bp.py`.
 
 ### Legacy Patterns
 - `scripts/legacy/*.sh`: Python scripts superseded by Python versions - do not use in active workflows.
@@ -240,7 +240,7 @@ make sqlc
 #### Import Organization
 - **Standard library first**: `errors`, `net/http`, `strconv`, `context`, `time`, `testing`
 - **Third-party after**: `github.com/gin-gonic/gin`, `github.com/jackc/pgx/v5/*`, `github.com/pressly/goose/v3`
-- **Internal project**: `github.com/skufu/DianaV2/internal/*`
+- **Internal project**: `github.com/skufu/DianaV2/backend/internal/*`
 - **Blank line** after each import group for readability
 
 #### Error Handling
@@ -297,16 +297,15 @@ make sqlc
 - **Performance tiers**: Use `deviceCapabilities.js` to detect hardware and conditionally render
 
 #### Testing
-- **E2E framework**: Playwright in `e2e/` directory
-- **Test naming**: `*.spec.js` files with `test.describe()` and `it()` patterns
-- **Mocking**: Use `page.route()` to intercept API calls in E2E tests
-- **Fixtures**: Shared test data and selectors in `e2e/fixtures/test-data.js`
+- **Unit/contract framework**: Vitest + React Testing Library.
+- **Coverage command**: `cd frontend && npm run test:coverage`.
+- **E2E status**: Playwright tests in `frontend/e2e/` are archived, not in CI, and should not be used as thesis evidence unless restored.
 
 ### Python ML
 
 #### Code Organization
-- **Entry points**: `predict.py` (Flask server), `train.py` (training script)
-- **Utility modules**: `ml.explainability`, `ml.ab_testing`, `ml.drift_detection`, `ml.mlflow_config`
+- **Entry points**: `service/server.py` (Flask server), `service/predict.py` (predictor classes), `training/train_binary_v2_no_bp.py` (primary training)
+- **Utility modules**: `service/explainability.py`, `service/ab_testing.py`, `service/drift_detection.py`, `service/mlflow_config.py`
 - **Configuration**: Load from environment variables, not hardcoded paths
 
 #### Error Handling
@@ -330,25 +329,25 @@ Migration 0011 dropped `patients` table entirely. Assessments now link directly 
 Rollback of v0011 will re-create a blank `patients` table; it does NOT currently restore deleted patient data from transition.
 
 ### Role Field
-`models.User.Role` is DERIVED from `is_admin` (not in DB). Check `postgres.go` line 64-68 for derivation logic. Required for JWT compatibility with legacy auth.
+`users.role` exists in the database and `is_admin` remains for compatibility. `backend/internal/store/user_repo.go` normalizes both through `normalizeRoleFields()` so admin role and legacy boolean state stay synchronized.
 
 ### Doctor Model Type Locking
 Doctors are restricted to using only the `binary_v2_no_bp` model type for assessments. This constant is synchronized across frontend and backend:
 
-**Backend constant** (assessments.go:33):
+**Backend constant** (`backend/internal/http/handlers/assessments.go`):
 ```go
 doctorLockedModelType = "binary_v2_no_bp"
 ```
 
 **Frontend constants**:
-- `ClinicalExplainability.jsx:27` - `DOCTOR_LOCKED_MODEL_TYPE = 'binary_v2_no_bp'`
-- `AdminDashboard.jsx:99` - `lockedModelType={userRole === 'doctor' ? 'binary_v2_no_bp' : null}`
-- `AssessmentForm.jsx:9` - `DEFAULT_MODEL_TYPE = 'binary_v2_no_bp'`
+- `frontend/src/components/admin/ClinicalExplainability.jsx` - `DOCTOR_LOCKED_MODEL_TYPE = 'binary_v2_no_bp'`
+- `frontend/src/components/admin/AdminDashboard.jsx` - `lockedModelType={userRole === 'doctor' ? 'binary_v2_no_bp' : null}`
+- `frontend/src/components/user/AssessmentForm.jsx` - `DEFAULT_MODEL_TYPE = 'binary_v2_no_bp'`
 
 **Verification**: All constants match exactly (case-sensitive). Do NOT modify without synchronizing all locations.
 
 ### Clinical Thresholds
-HbA1c, FBS, cholesterol ranges are hardcoded in `backend/internal/ml/validation.go`. These represent SIDD/AQR research methodology.
+HbA1c, FBS, BMI, blood pressure, and lipid thresholds are loaded through `backend/internal/config/config.go` defaults and consumed by `backend/internal/ml/validation.go`.
 
 ### Performance Tiering
 Frontend detects hardware capabilities and adjusts animation load:
@@ -356,7 +355,10 @@ Frontend detects hardware capabilities and adjusts animation load:
 - High tier: Full animations, complex visualizations
 
 ### ML Drift Detection
-ML server tracks prediction drift via `ml.drift_detection` and logs to MLflow (`ml.mlflow_config.py`). Not yet integrated with Go backend monitoring.
+ML server tracks drift via `Ian_ML/service/drift_detection.py` and optional scheduler hooks. Go admin model routes expose drift status and alerts through `/api/v1/admin/models/drift` and `/api/v1/admin/models/drift/alerts`.
+
+### Thesis Chapter 3+4
+Use `docs/07-research/thesis-drafts/ch3+4-final-academic-draft.md` as the clean thesis-ready Chapter 3+4 file. Treat `docs/07-research/thesis-drafts/ch3+4.md` as the detailed technical backup. Use APA-style author-date citations. Before submission, prioritize codebase truth using `docs/07-research/thesis-drafts/ch3+4-codebase-truth-audit.md` and `docs/07-research/thesis-drafts/thesis-readiness-audit.md`.
 
 ### API Contract
 Frontend `api.js` exports typed async functions. Backend handlers use structured errors (`ErrBadRequest`, `ErrInternal`). No manual `c.JSON(400, {...})` in handlers.

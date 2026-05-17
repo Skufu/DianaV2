@@ -2,6 +2,7 @@
 
 **Directory**: `backend/internal/store`
 **Generated:** 2026-01-28
+**Updated:** 2026-05-17
 
 ## OVERVIEW
 Repository pattern data access layer using SQLC for type-safe CRUD and pgx/pool for complex queries.
@@ -23,7 +24,13 @@ Repository pattern data access layer using SQLC for type-safe CRUD and pgx/pool 
 // Central Store interface
 type Store interface {
     Users() UserRepository
+    RefreshTokens() RefreshTokenRepository
     Assessments() AssessmentRepository
+    Cohort() CohortRepository
+    Clinics() ClinicRepository
+    AuditEvents() AuditEventRepository
+    ModelRuns() ModelRunRepository
+    BeginTx(ctx context.Context) (TxStore, error)
     // ... other repos
 }
 
@@ -84,8 +91,8 @@ timestampVal(ptr *pgtype.Timestamptz) time.Time
 Each entity has dedicated interface:
 - `UserRepository` - User CRUD, profile, consent, trends
 - `AssessmentRepository` - Assessment CRUD, latest assessment
-- `TokenRepository` - Refresh token management
-- `AuditRepository` - Audit event logging
+- `RefreshTokenRepository` - Refresh token management
+- `AuditEventRepository` - Audit event logging
 - `ModelRunRepository` - ML model tracking
 
 ## CODE MAP
@@ -96,16 +103,16 @@ Each entity has dedicated interface:
 | PostgresStore | struct | postgres.go | server | Concrete implementation |
 | pgUserRepo | struct | postgres.go | handlers | User repository |
 | pgAssessmentRepo | struct | postgres.go | handlers | Assessment repository |
-| pgTokenRepo | struct | postgres.go | handlers | Token repository |
-| pgAuditRepo | struct | postgres.go | handlers | Audit repository |
+| pgTokenRepo | struct | postgres.go | handlers | Refresh token repository |
+| pgAuditRepo | struct | postgres.go | handlers | Audit event repository |
 | pgModelRunRepo | struct | postgres.go | handlers | Model run repository |
-| mapUserModel | func | postgres.go | handlers | SQLC→Domain mapping |
+| mapUserModel | func | user_repo.go | handlers | SQLC→Domain mapping |
 | mapAssessmentModel | func | postgres.go | handlers | SQLC→Domain mapping |
 | NewStore | func | postgres.go | server | Store constructor |
 | Users() | method | PostgresStore | handlers | User repo accessor |
 | Assessments() | method | PostgresStore | handlers | Assessment repo accessor |
-| Tokens() | method | PostgresStore | handlers | Token repo accessor |
-| Audit() | method | PostgresStore | handlers | Audit repo accessor |
+| RefreshTokens() | method | PostgresStore | handlers | Refresh token repo accessor |
+| AuditEvents() | method | PostgresStore | handlers | Audit event repo accessor |
 | ModelRuns() | method | PostgresStore | handlers | Model run repo accessor |
 | itoa | func | postgres.go | postgres_admin | Int to string helper |
 | intVal | func | postgres.go | postgres.go | pgtype conversion |
@@ -155,9 +162,9 @@ LIMIT 1;
 ## ANTI-PATTERNS (THIS PROJECT)
 
 ### Critical Issues
-- **No transaction support**: Multi-step operations lack atomicity
+- **Transaction support exists**: Use `BeginTx(ctx)`/`Commit`/`Rollback` for atomic assessment writes and future multi-step operations
 - **Async audit errors**: Audit goroutines log failures but don't block response
-- **interface{} usage**: Should use `any` (Go 1.18+) - 5 occurrences
+- **Legacy `interface{}` usage**: Prefer `any` in new handwritten Go code unless a generated or test-specific type requires otherwise
 
 ### Technical Debt
 - **itoa manual numbering**: Prone to off-by-one errors in dynamic queries
@@ -166,7 +173,7 @@ LIMIT 1;
 
 ### Refactoring Needed
 - **Separate concerns**: Business logic in postgres.go should move to services
-- **Add transactions**: Support `WithTx(ctx, fn)` for atomic operations
+- **Prefer transactions for multi-step flows**: Transaction primitives exist; use them when adding write paths that span repositories
 - **Error recovery**: Audit goroutines need panic recovery
 
 ## NOTES
@@ -177,14 +184,10 @@ Migration 0011 changed `assessments` foreign key:
 - **After**: `user_id` references `users(id)`
 - **Queries updated**: All assessment queries now use `user_id`
 
-### Role Derivation
-`User.Role` is NOT in database - derived from `is_admin`:
+### Role Handling
+`users.role` now exists in the database, while `is_admin` remains for compatibility. `user_repo.go` normalizes both fields:
 ```go
-// In postgres.go mapping
-user.Role = "admin"
-if !user.IsAdmin {
-    user.Role = "user"
-}
+role, isAdmin := normalizeRoleFields(row.Role, row.IsAdmin)
 ```
 
 ### Pagination Pattern
