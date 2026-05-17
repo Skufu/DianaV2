@@ -11,10 +11,7 @@ const AdminMobileHeader = ({ activeView, userRole, isOpen, onOpen }) => {
     { id: 'audit', label: 'Audit Logs' },
     { id: 'auth-events', label: 'Auth Events' },
     { id: 'models', label: 'Model Tracking' },
-    { id: 'insights', label: 'Insights' },
-    { id: 'rationale', label: 'Model Rationale' },
-    { id: 'assessment', label: 'Log Assessment' },
-    { id: 'explainability', label: 'Clinical Explainability' },
+    { id: 'operations', label: 'Operations' },
   ];
 
   const doctorNavItems = [

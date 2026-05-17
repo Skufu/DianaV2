@@ -129,6 +129,139 @@ const getLocalStorage = () => {
 let _accessToken = getLocalStorage()?.getItem('diana_access_token') || null;
 let _refreshToken = getLocalStorage()?.getItem('diana_refresh_token') || null;
 
+export class APIRequestError extends Error {
+  constructor(message, { status, code, details, payload, endpoint } = {}) {
+    super(message);
+    this.name = 'APIRequestError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
+    this.payload = payload;
+    this.endpoint = endpoint;
+  }
+}
+
+const firstDetailMessage = details => {
+  if (!details) return '';
+  if (typeof details === 'string') return details;
+  if (Array.isArray(details)) {
+    return details.find(item => typeof item === 'string' && item.trim()) || '';
+  }
+  if (typeof details === 'object') {
+    if (typeof details.message === 'string' && details.message.trim()) return details.message;
+    if (typeof details.error === 'string' && details.error.trim()) return details.error;
+    for (const value of Object.values(details)) {
+      if (typeof value === 'string' && value.trim()) return value;
+    }
+  }
+  return '';
+};
+
+export const getErrorMessage = (error, fallback = 'Something went wrong. Please try again.') => {
+  if (!error) return fallback;
+  if (typeof error === 'string') return error;
+
+  return (
+    firstDetailMessage(error.details) ||
+    firstDetailMessage(error.payload?.details) ||
+    error.message ||
+    error.payload?.message ||
+    error.payload?.error ||
+    fallback
+  );
+};
+
+export const getFieldErrors = error => {
+  const details = error?.details;
+  return details && typeof details === 'object' && !Array.isArray(details) ? details : {};
+};
+
+const parseErrorPayload = async response => {
+  const contentType = response.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    return response.json().catch(() => null);
+  }
+
+  const text = await response.text().catch(() => '');
+  return text ? { message: text } : null;
+};
+
+const parseJSONPayload = async (response, endpoint) => {
+  if (response.status === 204 || response.headers.get('content-length') === '0') {
+    return null;
+  }
+
+  const text = await response.text().catch(error => {
+    throw new APIRequestError('Unable to read the server response.', {
+      status: response.status,
+      code: 'INVALID_RESPONSE',
+      details: error?.message,
+      endpoint,
+    });
+  });
+
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new APIRequestError('Received an invalid response from the DIANA server.', {
+      status: response.status,
+      code: 'INVALID_RESPONSE',
+      details: error?.message,
+      endpoint,
+    });
+  }
+};
+
+const buildAPIError = (response, payload, endpoint) => {
+  const fallback = `Request failed with status ${response.status}`;
+  const details = payload?.details;
+  const detailMessage = firstDetailMessage(details);
+  const isGenericValidationMessage =
+    payload?.code === 'VALIDATION_ERROR' &&
+    (!payload?.message || payload.message === 'Invalid request payload');
+  const message =
+    (isGenericValidationMessage && detailMessage) ||
+    payload?.message ||
+    payload?.error ||
+    detailMessage ||
+    response.statusText ||
+    fallback;
+
+  return new APIRequestError(message, {
+    status: response.status,
+    code: payload?.code,
+    details,
+    payload,
+    endpoint,
+  });
+};
+
+const buildNetworkError = (error, endpoint) => {
+  if (error?.name === 'AbortError') {
+    return new APIRequestError('The request was cancelled or timed out.', {
+      status: 0,
+      code: 'REQUEST_ABORTED',
+      details: error.message,
+      endpoint,
+    });
+  }
+
+  return new APIRequestError(
+    'Unable to reach the DIANA server. Please check your connection and try again.',
+    {
+      status: 0,
+      code: 'NETWORK_ERROR',
+      details: error?.message,
+      endpoint,
+    }
+  );
+};
+
+const shouldAttemptRefresh = (endpoint, response, isRetry) =>
+  response.status === 401 && !isRetry && !endpoint.startsWith('/auth/');
+
 export const setAuthTokens = (accessToken, refreshToken) => {
   _accessToken = accessToken;
   _refreshToken = refreshToken;
@@ -138,6 +271,11 @@ export const setAuthTokens = (accessToken, refreshToken) => {
     if (refreshToken) storage.setItem('diana_refresh_token', refreshToken);
   }
 };
+
+export const getAuthTokens = () => ({
+  accessToken: _accessToken || getLocalStorage()?.getItem('diana_access_token') || null,
+  refreshToken: _refreshToken || getLocalStorage()?.getItem('diana_refresh_token') || null,
+});
 
 export const clearAuthTokens = () => {
   _accessToken = null;
@@ -166,40 +304,92 @@ let isRefreshing = false;
 let refreshSubscribers = [];
 
 // Subscribe to token refresh completion
-const subscribeTokenRefresh = callback => {
-  refreshSubscribers.push(callback);
+const subscribeTokenRefresh = subscriber => {
+  refreshSubscribers.push(subscriber);
 };
 
 // Notify all subscribers that refresh completed
 const onTokenRefreshed = () => {
-  refreshSubscribers.forEach(callback => {
-    callback();
-  });
+  const subscribers = refreshSubscribers;
   refreshSubscribers = [];
+  subscribers.forEach(({ resolve, reject, retry }) => {
+    retry().then(resolve).catch(reject);
+  });
+};
+
+const onTokenRefreshFailed = error => {
+  const subscribers = refreshSubscribers;
+  refreshSubscribers = [];
+  subscribers.forEach(({ reject }) => reject(error));
 };
 
 const attemptTokenRefresh = async () => {
-  const response = await fetch(`${API_BASE}/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ refresh_token: _refreshToken }),
-  });
+  const endpoint = '/auth/refresh';
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ refresh_token: _refreshToken }),
+    });
+  } catch (error) {
+    throw buildNetworkError(error, endpoint);
+  }
 
   if (!response.ok) {
+    const payload = await parseErrorPayload(response);
     clearAuthTokens();
-    throw new Error('Token refresh failed');
+    throw buildAPIError(response, payload, endpoint);
   }
 
-  const data = await response.json();
+  const data = (await parseJSONPayload(response, endpoint)) || {};
+  if (!data.access_token) {
+    clearAuthTokens();
+    throw new APIRequestError('Session refresh returned an invalid response.', {
+      status: response.status,
+      code: 'TOKEN_REFRESH_INVALID_RESPONSE',
+      payload: data,
+      endpoint,
+    });
+  }
+
   // Store new tokens from refresh response
-  if (data.access_token) {
-    _accessToken = data.access_token;
-  }
-  if (data.refresh_token) {
-    _refreshToken = data.refresh_token;
-  }
+  _accessToken = data.access_token;
+  _refreshToken = data.refresh_token || _refreshToken;
   return data;
+};
+
+const refreshTokenAndRetry = async (endpoint, retry) => {
+  if (isRefreshing) {
+    return new Promise((resolve, reject) => {
+      subscribeTokenRefresh({ resolve, reject, retry });
+    });
+  }
+
+  isRefreshing = true;
+  try {
+    await attemptTokenRefresh();
+    isRefreshing = false;
+    onTokenRefreshed();
+
+    return retry();
+  } catch (refreshError) {
+    isRefreshing = false;
+    const sessionError = new APIRequestError('Session expired. Please log in again.', {
+      status: 401,
+      code: 'SESSION_EXPIRED',
+      details: refreshError?.message,
+      payload: refreshError?.payload,
+      endpoint,
+    });
+    onTokenRefreshFailed(sessionError);
+
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login?error=session_expired';
+    }
+    throw sessionError;
+  }
 };
 
 const apiFetch = async (endpoint, options = {}, isRetry = false) => {
@@ -220,69 +410,42 @@ const apiFetch = async (endpoint, options = {}, isRetry = false) => {
     }
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    method: options.method || 'GET',
-    headers,
-    credentials: 'include',
-    signal: options.signal,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      method: options.method || 'GET',
+      headers,
+      credentials: 'include',
+      signal: options.signal,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch (error) {
+    throw buildNetworkError(error, endpoint);
+  }
 
   // Handle 401 Unauthorized - attempt token refresh and retry
-  if (response.status === 401 && !isRetry) {
-    if (isRefreshing) {
-      // Wait for ongoing refresh to complete
-      return new Promise((resolve, reject) => {
-        subscribeTokenRefresh(async () => {
-          try {
-            const result = await apiFetch(endpoint, options, true);
-            resolve(result);
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-    }
-
-    // Start token refresh
-    isRefreshing = true;
-    try {
-      await attemptTokenRefresh();
-      onTokenRefreshed();
-      isRefreshing = false;
-
-      return apiFetch(endpoint, options, true);
-    } catch (refreshError) {
-      isRefreshing = false;
-
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login?error=session_expired';
-      }
-      throw new Error('Session expired. Please log in again.');
-    }
+  if (shouldAttemptRefresh(endpoint, response, isRetry)) {
+    return refreshTokenAndRetry(endpoint, () => apiFetch(endpoint, options, true));
   }
 
   if (!response.ok) {
-    const error = await response
-      .json()
-      .catch(() => ({ error: `Request failed with status ${response.status}` }));
-    const message = error.message || error.error || 'Request failed';
-    const requestError = new Error(message);
-    requestError.status = response.status;
-    if (error.code) requestError.code = error.code;
-    throw requestError;
+    const payload = await parseErrorPayload(response);
+    throw buildAPIError(response, payload, endpoint);
   }
 
-  // Handle empty responses (204 No Content or empty body)
-  if (response.status === 204 || response.headers.get('content-length') === '0') {
-    return null;
-  }
-
-  return response.json();
+  return parseJSONPayload(response, endpoint);
 };
 
-const blobFetch = async (endpoint, options = {}) => {
+const blobFetch = async (endpoint, options = {}, isRetry = false) => {
   const headers = {};
+
+  if (_accessToken) {
+    headers['Authorization'] = `Bearer ${_accessToken}`;
+  }
+
+  if (options.body) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   const method = (options.method || 'GET').toUpperCase();
   if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
@@ -292,23 +455,30 @@ const blobFetch = async (endpoint, options = {}) => {
     }
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    method: options.method || 'GET',
-    headers,
-    credentials: 'include',
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      method: options.method || 'GET',
+      headers,
+      credentials: 'include',
+      signal: options.signal,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+  } catch (error) {
+    throw buildNetworkError(error, endpoint);
+  }
+
+  if (shouldAttemptRefresh(endpoint, response, isRetry)) {
+    return refreshTokenAndRetry(endpoint, () => blobFetch(endpoint, options, true));
+  }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || 'Request failed');
+    const payload = await parseErrorPayload(response);
+    throw buildAPIError(response, payload, endpoint);
   }
 
   return response;
 };
-
-
-
 
 // ML API calls routed through Go backend proxy (keeps ML server private & API key server-side)
 export const fetchMLHealthApi = () => apiFetch('/ml/health');
@@ -316,6 +486,38 @@ export const fetchMLMetricsApi = () => apiFetch('/ml/insights/metrics');
 export const fetchMLInformationGainApi = () => apiFetch('/ml/insights/information-gain');
 export const fetchMLClustersApi = () => apiFetch('/ml/insights/clusters');
 export const getMLVisualizationUrl = name => `${API_BASE}/ml/insights/visualizations/${name}`;
+export const fetchMLVisualizationApi = async (name, options = {}, isRetry = false) => {
+  const endpoint = `/ml/insights/visualizations/${name}`;
+  const headers = {
+    'X-API-Key': import.meta.env.VITE_ML_API_KEY || 'dev-ml-api-key',
+  };
+
+  if (_accessToken) {
+    headers['Authorization'] = `Bearer ${_accessToken}`;
+  }
+
+  let response;
+  try {
+    response = await fetch(getMLVisualizationUrl(name), {
+      headers,
+      credentials: 'include',
+      signal: options.signal,
+    });
+  } catch (error) {
+    throw buildNetworkError(error, endpoint);
+  }
+
+  if (shouldAttemptRefresh(endpoint, response, isRetry)) {
+    return refreshTokenAndRetry(endpoint, () => fetchMLVisualizationApi(name, options, true));
+  }
+
+  if (!response.ok) {
+    const payload = await parseErrorPayload(response);
+    throw buildAPIError(response, payload, endpoint);
+  }
+
+  return response.blob();
+};
 
 // ML fetch routed through backend proxy for SHAP explanations
 export const mlFetchJson = async (path, options = {}) => {
@@ -675,10 +877,11 @@ export const useModelRuns = (params = {}) => {
   });
 };
 
-export const useActiveModel = () => {
+export const useActiveModel = (options = {}) => {
   return useQuery({
     queryKey: ['admin', 'models', 'active'],
     queryFn: fetchActiveModelApi,
+    ...options,
   });
 };
 
@@ -686,6 +889,22 @@ export const useClinicComparison = (options = {}) => {
   return useQuery({
     queryKey: ['admin', 'clinics', 'comparison'],
     queryFn: fetchClinicComparisonApi,
+    ...options,
+  });
+};
+
+export const useOperationsHealth = (options = {}) => {
+  return useQuery({
+    queryKey: ['admin', 'operations', 'health'],
+    queryFn: fetchOperationsHealthApi,
+    ...options,
+  });
+};
+
+export const useSystemLogs = (params = {}, options = {}) => {
+  return useQuery({
+    queryKey: ['admin', 'operations', 'logs', params],
+    queryFn: () => fetchSystemLogsApi(params),
     ...options,
   });
 };
@@ -821,12 +1040,16 @@ export const exportPDFApi = async () => {
   const response = await blobFetch('/users/me/export/pdf');
 
   const blob = await response.blob();
-
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'diana_health_report.pdf';
-  a.click();
+  let url = null;
+  try {
+    url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'diana_health_report.pdf';
+    a.click();
+  } finally {
+    if (url) window.URL.revokeObjectURL(url);
+  }
 };
 
 // ============================================================================
@@ -860,6 +1083,15 @@ export const fetchModelRunsApi = async (params = {}) => {
 };
 export const fetchActiveModelApi = async () => {
   return apiFetch('/admin/models/active');
+};
+
+export const fetchOperationsHealthApi = async () => {
+  return apiFetch('/admin/operations/health');
+};
+
+export const fetchSystemLogsApi = async (params = {}) => {
+  const query = new URLSearchParams(params);
+  return apiFetch(`/admin/operations/logs?${query}`);
 };
 
 export const syncModelRunsApi = async () => {

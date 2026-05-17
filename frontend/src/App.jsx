@@ -1,5 +1,13 @@
 import { useEffect, useState, Suspense, lazy, useCallback, memo } from 'react';
-import { useUserProfile, useLogin, useLogout, useAssessments, setAuthTokens, clearAuthTokens } from './api';
+import {
+  useUserProfile,
+  useLogin,
+  useLogout,
+  useAssessments,
+  setAuthTokens,
+  clearAuthTokens,
+  getErrorMessage,
+} from './api';
 import { useQueryClient } from '@tanstack/react-query';
 import Sidebar from './components/layout/Sidebar';
 import AdminSidebar from './components/layout/AdminSidebar';
@@ -81,6 +89,7 @@ const App = () => {
   const handleLogin = useCallback(
     async (email, password) => {
       setLoginError(null);
+      setAuthError(null);
       try {
         const res = await loginMutation.mutateAsync({ email, password });
         if (!res?.user) throw new Error('login failed');
@@ -161,7 +170,9 @@ const App = () => {
 
     logoutMutation.mutate(null, {
       onError: err => {
-        console.error('Logout API error:', err);
+        setAuthError(
+          getErrorMessage(err, 'Signed out locally, but the server could not confirm logout.')
+        );
       },
     });
   }, [logoutMutation, queryClient]);
@@ -190,9 +201,11 @@ const App = () => {
         setUserRole(null);
         setIsAdmin(false);
         setUserId(null);
+        clearAuthTokens();
+        queryClient.clear();
       }
     }
-  }, [profile, profileLoading, profileError, isAuthenticated, assessments]);
+  }, [profile, profileLoading, profileError, isAuthenticated, assessments, queryClient]);
 
   const handleStartAssessment = useCallback(() => {
     setShowAssessmentModal(true);
@@ -235,16 +248,13 @@ const App = () => {
 
   const renderAdminContent = useCallback(() => {
     return (
-      <AdminDashboard
-        userRole={userRole}
-        activeView={adminView}
-        setActiveView={setAdminView}
-      />
+      <AdminDashboard userRole={userRole} activeView={adminView} setActiveView={setAdminView} />
     );
   }, [userRole, adminView]);
 
   const handleSignupSuccess = useCallback(res => {
     if (!res?.user) throw new Error('signup failed');
+    setAuthError(null);
 
     // Store tokens for cross-origin Bearer auth
     if (res.access_token) setAuthTokens(res.access_token, res.refresh_token);
@@ -275,35 +285,37 @@ const App = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <Suspense fallback={<LoadingSkeleton />}>
-            {authView === 'signup' ? (
-              <Signup onSignup={handleSignupSuccess} onShowLogin={() => setAuthView('login')} />
-            ) : authView === 'forgot' ? (
-              <ForgotPassword onShowLogin={() => setAuthView('login')} initialEmail={authEmail} />
-            ) : authView === 'reset' ? (
-              <ResetPassword onShowLogin={() => setAuthView('login')} initialToken={authToken} />
-            ) : authView === 'verify' ? (
-              <VerifyEmail
-                onShowLogin={() => setAuthView('login')}
-                initialToken={authToken}
-                initialEmail={authEmail}
-              />
-            ) : (
-              <Login
-                onLogin={handleLogin}
-                onShowSignup={() => setAuthView('signup')}
-                onShowForgotPassword={email => {
-                  if (email) setAuthEmail(email);
-                  setAuthView('forgot');
-                }}
-                onShowVerify={email => {
-                  if (email) setAuthEmail(email);
-                  setAuthView('verify');
-                }}
-                error={loginError || authError}
-              />
-            )}
-          </Suspense>
+          <ErrorBoundary key={authView} section="Authentication">
+            <Suspense fallback={<LoadingSkeleton />}>
+              {authView === 'signup' ? (
+                <Signup onSignup={handleSignupSuccess} onShowLogin={() => setAuthView('login')} />
+              ) : authView === 'forgot' ? (
+                <ForgotPassword onShowLogin={() => setAuthView('login')} initialEmail={authEmail} />
+              ) : authView === 'reset' ? (
+                <ResetPassword onShowLogin={() => setAuthView('login')} initialToken={authToken} />
+              ) : authView === 'verify' ? (
+                <VerifyEmail
+                  onShowLogin={() => setAuthView('login')}
+                  initialToken={authToken}
+                  initialEmail={authEmail}
+                />
+              ) : (
+                <Login
+                  onLogin={handleLogin}
+                  onShowSignup={() => setAuthView('signup')}
+                  onShowForgotPassword={email => {
+                    if (email) setAuthEmail(email);
+                    setAuthView('forgot');
+                  }}
+                  onShowVerify={email => {
+                    if (email) setAuthEmail(email);
+                    setAuthView('verify');
+                  }}
+                  error={loginError || authError}
+                />
+              )}
+            </Suspense>
+          </ErrorBoundary>
         </motion.div>
       ) : isAdmin ? (
         // Admin Layout - Clean & Distinct
@@ -358,8 +370,10 @@ const App = () => {
             </motion.div>
           </AnimatePresence>
 
-          <main className={`relative z-10 flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'} p-6 lg:p-8`}>
-            <ErrorBoundary section={adminView}>
+          <main
+            className={`relative z-10 flex-1 transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'} p-6 lg:p-8`}
+          >
+            <ErrorBoundary key={adminView} section={adminView}>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={adminView}
@@ -430,7 +444,7 @@ const App = () => {
           <main
             className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? `${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'} p-4 sm:p-6 lg:p-8` : ''}`}
           >
-            <ErrorBoundary section={activeTab}>
+            <ErrorBoundary key={activeTab} section={activeTab}>
               <Suspense fallback={<LoadingSkeleton />}>
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -464,16 +478,18 @@ const App = () => {
                   exit={{ scale: 0.9, opacity: 0 }}
                   className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl"
                 >
-                  <AssessmentForm
-                    initialData={profile}
-                    onSubmit={() => {
-                      setShowAssessmentModal(false);
-                      // Refresh data by invalidating queries
-                      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
-                      queryClient.invalidateQueries({ queryKey: ['user', 'assessments'] });
-                    }}
-                    onCancel={() => setShowAssessmentModal(false)}
-                  />
+                  <ErrorBoundary section="Assessment form">
+                    <AssessmentForm
+                      initialData={profile}
+                      onSubmit={() => {
+                        setShowAssessmentModal(false);
+                        // Refresh data by invalidating queries
+                        queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+                        queryClient.invalidateQueries({ queryKey: ['user', 'assessments'] });
+                      }}
+                      onCancel={() => setShowAssessmentModal(false)}
+                    />
+                  </ErrorBoundary>
                 </motion.div>
               </div>
             )}

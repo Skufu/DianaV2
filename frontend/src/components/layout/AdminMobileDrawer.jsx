@@ -9,7 +9,6 @@ import {
   Cpu,
   Activity,
   BookOpen,
-  Brain,
   LogOut,
   X,
 } from 'lucide-react';
@@ -25,10 +24,7 @@ const AdminMobileDrawer = ({ isOpen, onClose, activeView, setActiveView, onLogou
     { id: 'audit', icon: FileText, label: 'Audit Logs' },
     { id: 'auth-events', icon: Wifi, label: 'Auth Events' },
     { id: 'models', icon: Cpu, label: 'Model Tracking' },
-    { id: 'insights', icon: Activity, label: 'Insights' },
-    { id: 'rationale', icon: BookOpen, label: 'Model Rationale' },
-    { id: 'assessment', icon: FileText, label: 'Log Assessment' },
-    { id: 'explainability', icon: Brain, label: 'Clinical Explainability' },
+    { id: 'operations', icon: Activity, label: 'Operations' },
   ];
 
   const doctorNavItems = [

@@ -1,39 +1,30 @@
 // AdminDashboard: System administration with tabbed subviews
-import React, { useState, useMemo, lazy, Suspense } from 'react';
-import Insights from '../insights/Insights';
-import { useAdminDashboard, useClinicComparison, useUserProfile } from '../../api';
-import { shouldDisableHeavyEffects } from '../../utils/deviceCapabilities';
+import React, { lazy, Suspense } from 'react';
 import {
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
+  getErrorMessage,
+  useActiveModel,
+  useAdminDashboard,
+  useOperationsHealth,
+  useUserProfile,
+} from '../../api';
 import {
   Shield,
   Users,
   Activity,
-  Building2,
-  TrendingUp,
-  AlertTriangle,
   FileText,
   Cpu,
   LayoutDashboard,
   Wifi,
+  UserCheck,
+  Server,
+  Database,
+  CheckCircle,
+  Clock,
+  ArrowRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
-  staggerContainer,
-  fadeIn,
   cardVariants,
-  slideUp,
   useReducedMotion,
   breathing,
 } from '../../utils/animations';
@@ -42,16 +33,14 @@ import {
 const UserManagement = lazy(() => import('./UserManagement'));
 const AuditLogViewer = lazy(() => import('./AuditLogViewer'));
 const ModelTraceability = lazy(() => import('./ModelTraceability'));
+const AdminOperations = lazy(() => import('./AdminOperations'));
 const AssessmentForm = lazy(() => import('../user/AssessmentForm'));
 const AuthEventLogViewer = lazy(() => import('./AuthEventLogViewer'));
 const ModelRationale = lazy(() => import('./ModelRationale'));
 
-
-const PREMIUM_COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#06B6D4', '#F43F5E'];
-
 // activeView and setActiveView are now passed from App.jsx
 // Navigation is handled by AdminSidebar
-const AdminDashboard = ({ userRole, activeView = 'overview' }) => {
+const AdminDashboard = ({ userRole, activeView = 'overview', setActiveView }) => {
   const isReduced = useReducedMotion();
 
   const canViewAdminData = userRole === 'admin';
@@ -60,16 +49,23 @@ const AdminDashboard = ({ userRole, activeView = 'overview' }) => {
     isLoading,
     error,
   } = useAdminDashboard({ enabled: canViewAdminData });
-  const { data: clinicsData } = useClinicComparison({ enabled: canViewAdminData });
+  const { data: operationsData, isLoading: operationsLoading } = useOperationsHealth({
+    enabled: canViewAdminData,
+    refetchInterval: 60_000,
+    retry: false,
+  });
+  const { data: activeModel } = useActiveModel({
+    enabled: canViewAdminData,
+    retry: false,
+  });
   const { data: profile } = useUserProfile(true);
   const canViewAuditData = userRole === 'admin' || userRole === 'doctor';
-  const clinics = clinicsData ?? [];
 
-if (userRole !== 'admin' && userRole !== 'doctor') {
+  if (userRole !== 'admin' && userRole !== 'doctor') {
     return <AccessDenied message="Admin or Doctor role required to view this dashboard." />;
   }
 
-  const ADMIN_ONLY_VIEWS = ['overview', 'users', 'audit', 'auth-events', 'models'];
+  const ADMIN_ONLY_VIEWS = ['overview', 'users', 'audit', 'auth-events', 'models', 'operations'];
   const DOCTOR_ALLOWED_VIEWS = ['assessment', 'rationale'];
 
   const isAdminViewAllowed = userRole !== 'admin' || ADMIN_ONLY_VIEWS.includes(activeView);
@@ -127,6 +123,12 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
             <ModelTraceability />
           </Suspense>
         );
+      case 'operations':
+        return (
+          <Suspense fallback={<LoadingSpinner />}>
+            <AdminOperations />
+          </Suspense>
+        );
       case 'auth-events':
         if (!canViewAuditData) {
           return <AccessDenied message="Admin role required to view auth events." />;
@@ -136,20 +138,12 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
             <AuthEventLogViewer />
           </Suspense>
         );
-      case 'insights':
-        return <Insights />;
       default:
         return renderOverview();
     }
   };
 
   const renderOverview = () => {
-    // If we have a token and data is loading, show spinner
-    // If we don't have a token yet, we might be in a transitional state (handled by App.jsx usually),
-    // but we shouldn't block rendering if we just want to show the shell.
-    // However, for data-dependent views, we do need data.
-    // React Query's isLoading is true for initial fetch. isPending is better in v5.
-    // Assuming v4/v5, safely check loading state only when we expect it to load.
     if (isLoading) {
       return <LoadingSpinner />;
     }
@@ -157,270 +151,299 @@ if (userRole !== 'admin' && userRole !== 'doctor') {
     if (error) {
       return (
         <div className="glass-card p-6 border border-rose-200 text-rose-600 bg-white/80">
-          {error.message || 'Failed to load dashboard data'}
+          {getErrorMessage(error, 'Failed to load dashboard data')}
         </div>
       );
     }
 
     const stats = dashboardData?.stats || {};
-    const clusterDist = dashboardData?.cluster_distribution || null;
-    const trends = dashboardData?.trends || null;
+    const services = operationsData?.services || [];
+    const logSources = operationsData?.log_sources || [];
+    const healthStatus = operationsData?.status || (operationsLoading ? 'checking' : 'unknown');
+    const isHealthy = healthStatus === 'healthy';
+
+    const goTo = view => {
+      if (typeof setActiveView === 'function') {
+        setActiveView(view);
+      }
+    };
+
+    const summaryCards = [
+      {
+        label: 'User Accounts',
+        value: stats.total_users || 0,
+        detail: `+${stats.new_users_this_month || 0} this month`,
+        icon: Users,
+        action: 'Manage users',
+        view: 'users',
+      },
+      {
+        label: 'New Signups',
+        value: stats.new_users_this_month || 0,
+        detail: 'Review access and onboarding',
+        icon: UserCheck,
+        action: 'Open users',
+        view: 'users',
+      },
+      {
+        label: 'Assessment Activity',
+        value: stats.total_assessments || 0,
+        detail: `+${stats.assessments_this_month || 0} this month`,
+        icon: Activity,
+        action: 'Review audit trail',
+        view: 'audit',
+      },
+      {
+        label: 'System Health',
+        value: healthStatus,
+        detail: isHealthy ? 'Backend, DB, and ML responding' : 'Open operations to inspect',
+        icon: Server,
+        action: 'Open operations',
+        view: 'operations',
+      },
+    ];
+
+    const taskCards = [
+      {
+        title: 'Access Control',
+        description: 'Create accounts, change roles, deactivate users, and confirm admin access.',
+        icon: Users,
+        view: 'users',
+        action: 'Manage Users',
+      },
+      {
+        title: 'Audit Review',
+        description: 'Check administrative changes and authentication activity for accountability.',
+        icon: FileText,
+        view: 'audit',
+        action: 'Open Audit Logs',
+      },
+      {
+        title: 'Live Auth Monitoring',
+        description: 'Watch successful and failed login events during demos or security checks.',
+        icon: Wifi,
+        view: 'auth-events',
+        action: 'Open Auth Events',
+      },
+      {
+        title: 'Operations Checks',
+        description: 'Confirm service health and inspect backend or ML logs without SSH.',
+        icon: Server,
+        view: 'operations',
+        action: 'Open Operations',
+      },
+      {
+        title: 'Model Registry',
+        description: 'Verify the active model version, dataset lineage, and sync status.',
+        icon: Cpu,
+        view: 'models',
+        action: 'Open Model Tracking',
+      },
+    ];
 
     return (
       <div className="space-y-6">
-        {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <motion.div
-            variants={cardVariants}
-            initial="offscreen"
-            whileInView="onscreen"
-            viewport={{ once: true, amount: 0.3 }}
-            whileHover="hover"
-            className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-purple-500/20 flex items-center justify-center">
-                <Users className="text-white" size={24} />
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold text-slate-900">{stats.total_users || 0}</h3>
-            <p className="text-slate-500 text-sm mt-1">Total Users</p>
-            <p className="text-emerald-600 text-xs mt-2">
-              +{stats.new_users_this_month || 0} this month
-            </p>
-          </motion.div>
-
-          <motion.div
-            variants={cardVariants}
-            initial="offscreen"
-            whileInView="onscreen"
-            viewport={{ once: true, amount: 0.3 }}
-            whileHover="hover"
-            className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 shadow-lg shadow-blue-500/20 flex items-center justify-center">
-                <Activity className="text-white" size={24} />
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold text-slate-900">{stats.total_patients || 0}</h3>
-            <p className="text-slate-500 text-sm mt-1">Total Patients</p>
-          </motion.div>
-
-          <motion.div
-            variants={cardVariants}
-            initial="offscreen"
-            whileInView="onscreen"
-            viewport={{ once: true, amount: 0.3 }}
-            whileHover="hover"
-            className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-teal-500/20 flex items-center justify-center">
-                <TrendingUp className="text-white" size={24} />
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold text-slate-900">{stats.total_assessments || 0}</h3>
-            <p className="text-slate-500 text-sm mt-1">Total Assessments</p>
-            <p className="text-emerald-600 text-xs mt-2">
-              +{stats.assessments_this_month || 0} this month
-            </p>
-          </motion.div>
-
-          <motion.div
-            variants={cardVariants}
-            initial="offscreen"
-            whileInView="onscreen"
-            viewport={{ once: true, amount: 0.3 }}
-            whileHover="hover"
-            className="glass-card p-6 bg-white/80 shadow-sm border border-slate-200/50"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-400 to-red-500 shadow-lg shadow-rose-500/20 flex items-center justify-center">
-                <AlertTriangle className="text-white" size={24} />
-              </div>
-            </div>
-            <h3 className="text-3xl font-bold text-slate-900">{stats.high_risk_count || 0}</h3>
-            <p className="text-slate-500 text-sm mt-1">High Risk Patients</p>
-            <p className="text-slate-500 text-xs mt-2">
-              Avg Risk: {(stats.avg_risk_score || 0).toFixed(1)}%
-            </p>
-          </motion.div>
+          {summaryCards.map(card => {
+            const Icon = card.icon;
+            return (
+              <motion.button
+                key={card.label}
+                type="button"
+                variants={cardVariants}
+                initial="offscreen"
+                whileInView="onscreen"
+                viewport={{ once: true, amount: 0.3 }}
+                whileHover={isReduced ? undefined : { y: -2 }}
+                onClick={() => goTo(card.view)}
+                className="glass-card min-h-[168px] rounded-lg border border-slate-200/70 bg-white/90 p-5 text-left shadow-sm transition-colors hover:border-indigo-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2"
+              >
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                    <Icon size={21} />
+                  </span>
+                  <ArrowRight size={17} className="text-slate-300" />
+                </div>
+                <p className="text-sm font-medium text-slate-500">{card.label}</p>
+                <h3 className="mt-1 text-2xl font-bold capitalize text-slate-950">{card.value}</h3>
+                <p className="mt-2 text-sm text-slate-500">{card.detail}</p>
+                <p className="mt-4 text-sm font-semibold text-indigo-600">{card.action}</p>
+              </motion.button>
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Cluster Distribution */}
           <motion.div
             variants={cardVariants}
             initial="offscreen"
             whileInView="onscreen"
             viewport={{ once: true, amount: 0.3 }}
-            whileHover="hover"
-            className="glass-card p-8 bg-white/80 shadow-sm border border-slate-200/50"
+            className="glass-card rounded-lg border border-slate-200/70 bg-white/90 p-6 shadow-sm"
           >
-            <h3 className="text-2xl font-bold text-slate-900 mb-6">T2DM Cluster Distribution</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              {clusterDist && clusterDist.length > 0 ? (
-                <PieChart>
-                  <Pie
-                    data={clusterDist}
-                    dataKey="count"
-                    nameKey="cluster"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={3}
-                    cornerRadius={6}
-                    stroke="none"
-                    label={({ cluster, count }) => `${cluster} (${count})`}
-                    labelLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
-                    isAnimationActive={!shouldDisableHeavyEffects()}
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  Admin Work Queue
+                </p>
+                <h3 className="mt-1 text-xl font-bold text-slate-950">Primary Responsibilities</h3>
+              </div>
+              <LayoutDashboard className="text-slate-400" size={22} />
+            </div>
+            <div className="space-y-3">
+              {taskCards.map(task => {
+                const Icon = task.icon;
+                return (
+                  <button
+                    key={task.title}
+                    type="button"
+                    onClick={() => goTo(task.view)}
+                    className="flex w-full items-start gap-4 rounded-lg border border-slate-200 bg-white p-4 text-left transition-colors hover:border-indigo-200 hover:bg-indigo-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 focus-visible:ring-offset-2"
                   >
-                    {clusterDist.map(c => (
-                      <Cell key={c.cluster} fill={PREMIUM_COLORS[clusterDist.indexOf(c) % PREMIUM_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(27, 37, 89, 0.9)',
-                      backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '12px',
-                      color: '#fff',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    }}
-                    itemStyle={{ color: '#fff' }}
-                  />
-                </PieChart>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400">
-                  No cluster data available
-                </div>
-              )}
-            </ResponsiveContainer>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                      <Icon size={19} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-slate-950">
+                        {task.title}
+                      </span>
+                      <span className="mt-1 block text-sm leading-6 text-slate-500">
+                        {task.description}
+                      </span>
+                      <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600">
+                        {task.action}
+                        <ArrowRight size={14} />
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </motion.div>
 
-          {/* Biomarker Trends */}
           <motion.div
             variants={cardVariants}
             initial="offscreen"
             whileInView="onscreen"
             viewport={{ once: true, amount: 0.3 }}
-            whileHover="hover"
-            className="glass-card p-8 bg-white/80 shadow-sm border border-slate-200/50"
+            className="glass-card rounded-lg border border-slate-200/70 bg-white/90 p-6 shadow-sm"
           >
-            <h3 className="text-2xl font-bold text-slate-900 mb-6">Biomarker Trends</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              {trends && trends.length > 0 ? (
-                <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#F43F5E" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#F43F5E" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorBmi" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      backdropFilter: 'blur(8px)',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                      color: '#0f172a',
-                    }}
-                  />
-                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                  <Area
-                    type="monotone"
-                    dataKey="risk_score"
-                    name="Avg Risk Score"
-                    stroke="#F43F5E"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorRisk)"
-                    isAnimationActive={!shouldDisableHeavyEffects()}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="bmi"
-                    name="Avg BMI"
-                    stroke="#10B981"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorBmi)"
-                    isAnimationActive={!shouldDisableHeavyEffects()}
-                  />
-                </AreaChart>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400">
-                  No trend data available
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  Production Status
+                </p>
+                <h3 className="mt-1 text-xl font-bold text-slate-950">System Snapshot</h3>
+              </div>
+              <span
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${
+                  isHealthy ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                }`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${isHealthy ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                />
+                {healthStatus}
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Server size={18} className="text-slate-500" />
+                  <h4 className="font-semibold text-slate-950">Services</h4>
                 </div>
-              )}
-            </ResponsiveContainer>
+                <div className="space-y-2">
+                  {services.length > 0 ? (
+                    services.map(service => (
+                      <div
+                        key={service.name}
+                        className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2"
+                      >
+                        <span className="text-sm font-medium capitalize text-slate-700">
+                          {service.name}
+                        </span>
+                        <span
+                          className={`inline-flex items-center gap-1.5 text-sm font-semibold ${
+                            service.status === 'healthy' ? 'text-emerald-700' : 'text-amber-700'
+                          }`}
+                        >
+                          <CheckCircle size={14} />
+                          {service.status}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500">Service health has not loaded yet.</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="mb-2 flex items-center gap-2 text-slate-500">
+                    <Cpu size={16} />
+                    <span className="text-sm font-medium">Active Model</span>
+                  </div>
+                  <p className="truncate text-lg font-bold text-slate-950">
+                    {activeModel?.model_version || 'Not registered'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => goTo('models')}
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600"
+                  >
+                    View registry
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="mb-2 flex items-center gap-2 text-slate-500">
+                    <Database size={16} />
+                    <span className="text-sm font-medium">Log Sources</span>
+                  </div>
+                  <p className="text-lg font-bold text-slate-950">
+                    {logSources.filter(source => source.available).length}/{logSources.length || 2}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => goTo('operations')}
+                    className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600"
+                  >
+                    Check logs
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
           </motion.div>
         </div>
 
-        {/* Clinic Comparison Table */}
-        {clinics.length > 0 && (
-          <motion.div
-            variants={cardVariants}
-            initial="offscreen"
-            whileInView="onscreen"
-            viewport={{ once: true, amount: 0.3 }}
-            whileHover="hover"
-            className="glass-card p-8 overflow-x-auto bg-white/80 shadow-sm border border-slate-200/50"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <Building2 className="text-teal-600" size={24} />
-              <h3 className="text-2xl font-bold text-slate-900">Clinic Comparison</h3>
+        <motion.div
+          variants={cardVariants}
+          initial="offscreen"
+          whileInView="onscreen"
+          viewport={{ once: true, amount: 0.3 }}
+          className="glass-card rounded-lg border border-slate-200/70 bg-white/90 p-6 shadow-sm"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Admin Boundary
+              </p>
+              <h3 className="mt-1 text-xl font-bold text-slate-950">
+                Clinical analytics moved out of Admin
+              </h3>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+                Cluster distribution, biomarker trends, and high-risk patient review belong to
+                clinical or research views. Admin stays focused on access, auditability, deployment
+                health, logs, and model governance.
+              </p>
             </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-slate-500 border-b border-slate-200">
-                  <th className="text-left py-3 px-4">Clinic</th>
-                  <th className="text-right py-3 px-4">Patients</th>
-                  <th className="text-right py-3 px-4">Assessments</th>
-                  <th className="text-right py-3 px-4">Avg Risk</th>
-                  <th className="text-right py-3 px-4">High Risk</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clinics.map(clinic => (
-                  <tr
-                    key={clinic.clinic_id}
-                    className="border-b border-slate-200 text-slate-700 hover:bg-slate-50"
-                  >
-                    <td className="py-3 px-4 font-medium flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: PREMIUM_COLORS[clinics.indexOf(clinic) % PREMIUM_COLORS.length] }}
-                      />
-                      {clinic.clinic_name}
-                    </td>
-                    <td className="text-right py-3 px-4">{clinic.patient_count}</td>
-                    <td className="text-right py-3 px-4">{clinic.assessment_count}</td>
-                    <td className="text-right py-3 px-4">
-                      {clinic.avg_risk_score?.toFixed(1) || 'N/A'}%
-                    </td>
-                    <td className="text-right py-3 px-4">
-                      <span className={clinic.high_risk_count > 0 ? 'text-rose-600' : ''}>
-                        {clinic.high_risk_count}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </motion.div>
-        )}
+            <Clock className="hidden text-slate-300 md:block" size={36} />
+          </div>
+        </motion.div>
       </div>
     );
   };

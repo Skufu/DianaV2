@@ -1,0 +1,27 @@
+# DianaV2 API - HTTPS powered by Caddy + Let's Encrypt.
+# CORS is intentionally handled by the Go backend so configured origin rules
+# are enforced in one place.
+diana-v2.duckdns.org {
+	header {
+		X-Frame-Options "SAMEORIGIN"
+		X-Content-Type-Options "nosniff"
+		X-XSS-Protection "1; mode=block"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	respond /health "OK" 200
+
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	handle {
+		reverse_proxy backend:8080
+	}
+}
+
+:80 {
+	respond /health "OK" 200
+	redir https://{host}{uri}
+}
