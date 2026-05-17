@@ -39,6 +39,16 @@ type queryExecutor interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
+func normalizeRoleFields(role string, isAdmin bool) (string, bool) {
+	if isAdmin || role == models.RoleAdmin {
+		return models.RoleAdmin, true
+	}
+	if role == "" {
+		return models.RoleUser, false
+	}
+	return role, false
+}
+
 // ============================================================================
 // Basic User CRUD
 // ============================================================================
@@ -51,12 +61,13 @@ func (r *pgUserRepo) FindByEmail(ctx context.Context, email string) (*models.Use
 	if err != nil {
 		return nil, err
 	}
+	role, isAdmin := normalizeRoleFields(row.Role, row.IsAdmin)
 	return &models.User{
 		ID:            int64(row.ID),
 		Email:         row.Email,
 		PasswordHash:  row.PasswordHash,
-		Role:          row.Role,
-		IsAdmin:       row.IsAdmin,
+		Role:          role,
+		IsAdmin:       isAdmin,
 		IsActive:      row.IsActive,
 		AccountStatus: row.AccountStatus,
 		CreatedAt:     row.CreatedAt.Time,
@@ -93,6 +104,7 @@ func (r *pgUserRepo) FindByID(ctx context.Context, id int32) (*models.User, erro
 		deletedAt = &row.DeletedAt.Time
 	}
 
+	role, isAdmin := normalizeRoleFields(row.Role, row.IsAdmin)
 	return &models.User{
 		ID:                           int64(row.ID),
 		Email:                        row.Email,
@@ -119,8 +131,8 @@ func (r *pgUserRepo) FindByID(ctx context.Context, id int32) (*models.User, erro
 		ReminderEmail:                row.ReminderEmail,
 		LastAssessmentReminderSent:   lastAssessmentReminderSent,
 		OnboardingCompleted:          row.OnboardingCompleted,
-		Role:                         row.Role,
-		IsAdmin:                      row.IsAdmin,
+		Role:                         role,
+		IsAdmin:                      isAdmin,
 		IsActive:                     row.IsActive,
 		AccountStatus:                row.AccountStatus,
 		DeletedAt:                    deletedAt,
@@ -212,6 +224,7 @@ func (r *pgUserRepo) List(ctx context.Context, params models.UserListParams) ([]
 		if err != nil {
 			return nil, 0, err
 		}
+		role, isAdmin = normalizeRoleFields(role, isAdmin)
 		u.IsActive = isActive
 		u.Role = role
 		u.IsAdmin = isAdmin
@@ -262,11 +275,7 @@ func (r *pgUserRepo) createWithTx(ctx context.Context, user models.User, exec qu
 	if role == "" {
 		role = models.RoleUser
 	}
-	isAdmin := role == models.RoleAdmin
-	if user.IsAdmin {
-		isAdmin = true
-		role = models.RoleAdmin
-	}
+	role, isAdmin := normalizeRoleFields(role, user.IsAdmin)
 	err := exec.QueryRow(ctx, query,
 		user.Email, user.PasswordHash, role, isAdmin, user.CreatedBy,
 	).Scan(&id, &role, &createdAt, &updatedAt)
@@ -323,6 +332,7 @@ func (r *pgUserRepo) Update(ctx context.Context, user models.User) (*models.User
 		return nil, err
 	}
 
+	role, isAdmin = normalizeRoleFields(role, isAdmin)
 	u.IsActive = isActive
 	u.Role = role
 	u.IsAdmin = isAdmin

@@ -119,6 +119,11 @@ func StreamToGin(c *gin.Context, broker *Broker, ctx context.Context) {
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.Header().Set("X-Accel-Buffering", "no")
 
+	if _, err := c.Writer.WriteString(":connected\n\n"); err != nil {
+		return
+	}
+	c.Writer.Flush()
+
 	keepAlive := time.NewTicker(30 * time.Second)
 	defer keepAlive.Stop()
 

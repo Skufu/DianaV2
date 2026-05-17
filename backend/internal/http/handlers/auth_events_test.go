@@ -36,12 +36,16 @@ func TestAuthEventHandler_StreamAuthEvents_MissingToken(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400, got %d", w.Code)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", w.Code)
 	}
 
-	if !strings.Contains(w.Body.String(), "invalid parameters") {
-		t.Fatalf("expected invalid parameters error, got %s", w.Body.String())
+	if contentType := w.Header().Get("Content-Type"); contentType != "text/event-stream" {
+		t.Fatalf("expected Content-Type text/event-stream, got %s", contentType)
+	}
+
+	if !strings.Contains(w.Body.String(), "Authentication required") {
+		t.Fatalf("expected authentication required error, got %s", w.Body.String())
 	}
 }
 

@@ -68,7 +68,7 @@ func (m *mockAdminStore) ModelRuns() store.ModelRunRepository {
 	return m.modelRuns
 }
 
-func (m *mockAdminStore) Close() {}
+func (m *mockAdminStore) Close()                         {}
 func (m *mockAdminStore) Ping(ctx context.Context) error { return nil }
 
 func (m *mockAdminStore) Users() store.UserRepository                 { return nil }
@@ -308,12 +308,8 @@ func TestAdminModelsHandler_GetActiveModel_NotFound(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusNotFound, w.Code)
-
-	var response map[string]any
-	_ = json.Unmarshal(w.Body.Bytes(), &response)
-	assert.Equal(t, "NOT_FOUND", response["code"])
-	assert.Equal(t, "model runs not found", response["message"])
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	assert.Empty(t, w.Body.String())
 }
 
 func TestAdminModelsHandler_GetActiveModel_StoreError(t *testing.T) {

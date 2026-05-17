@@ -4,12 +4,18 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"io"
+	stdlog "log"
 	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	applog "github.com/skufu/DianaV2/backend/internal/logging"
+	"github.com/skufu/DianaV2/backend/internal/security"
 )
 
 // RequestID middleware adds a unique request ID to each request
@@ -39,7 +45,7 @@ func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
-		raw := c.Request.URL.RawQuery
+		raw := security.SanitizeRawQuery(c.Request.URL.RawQuery)
 
 		requestID := "unknown"
 		if rid, exists := c.Get("request_id"); exists && rid != nil {
@@ -126,12 +132,21 @@ func InitLogger(env string) {
 	zerolog.MessageFieldName = "message"
 	zerolog.LevelFieldName = "level"
 
+	stdWriter := io.Writer(os.Stdout)
+	fileWriter, fileErr := newBackendLogFileWriter()
+	if fileErr != nil {
+		stdlog.Printf("[LOGGING] Failed to initialize backend file logger: %v", fileErr)
+	} else if fileWriter != nil {
+		stdWriter = io.MultiWriter(os.Stdout, fileWriter)
+		stdlog.SetOutput(stdWriter)
+	}
+
 	// Configure log level based on environment
 	switch env {
 	case "prod", "production":
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 		// Production: structured JSON logging
-		log.Logger = zerolog.New(os.Stdout).With().
+		log.Logger = zerolog.New(stdWriter).With().
 			Timestamp().
 			Str("service", "diana-api").
 			Str("version", getVersion()).
@@ -141,7 +156,7 @@ func InitLogger(env string) {
 	case "staging", "stage":
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 		// Staging: JSON with some debug info
-		log.Logger = zerolog.New(os.Stdout).With().
+		log.Logger = zerolog.New(stdWriter).With().
 			Timestamp().
 			Str("service", "diana-api").
 			Str("environment", env).
@@ -150,8 +165,13 @@ func InitLogger(env string) {
 	default: // dev, development, or any other value
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 		// Development: pretty console logging
+		devWriter := io.Writer(os.Stderr)
+		if fileWriter != nil {
+			devWriter = io.MultiWriter(os.Stderr, fileWriter)
+			stdlog.SetOutput(devWriter)
+		}
 		consoleWriter := zerolog.ConsoleWriter{
-			Out:        os.Stderr,
+			Out:        devWriter,
 			TimeFormat: "15:04:05",
 			NoColor:    false,
 		}
@@ -165,6 +185,41 @@ func InitLogger(env string) {
 	log.Logger = log.Logger.With().
 		Str("go_version", getGoVersion()).
 		Logger()
+}
+
+func newBackendLogFileWriter() (io.Writer, error) {
+	logDir := os.Getenv("DIANA_LOG_DIR")
+	if logDir == "" {
+		return nil, nil
+	}
+
+	maxBytes := getPositiveInt64Env("DIANA_LOG_MAX_BYTES", applog.DefaultMaxBytes)
+	maxBackups := getPositiveIntEnv("DIANA_LOG_MAX_BACKUPS", applog.DefaultMaxBackups)
+	return applog.NewRotatingFileWriter(filepath.Join(logDir, "backend.log"), maxBytes, maxBackups)
+}
+
+func getPositiveInt64Env(key string, fallback int64) int64 {
+	raw := os.Getenv(key)
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil || value <= 0 {
+		return fallback
+	}
+	return value
+}
+
+func getPositiveIntEnv(key string, fallback int) int {
+	raw := os.Getenv(key)
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value <= 0 {
+		return fallback
+	}
+	return value
 }
 
 // Helper functions
