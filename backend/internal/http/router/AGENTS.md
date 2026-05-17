@@ -2,6 +2,7 @@
 
 **Directory**: `backend/internal/http/router`
 **Generated:** 2026-01-28
+**Updated:** 2026-05-17
 
 ## OVERVIEW
 Centralized route registration using Gin framework, organizing endpoints by domain and applying middleware consistently.
@@ -16,15 +17,17 @@ Centralized route registration using Gin framework, organizing endpoints by doma
 ## ROUTER STRUCTURE
 
 ```go
-func SetupRouter(cfg config.Config, st store.Store) *gin.Engine {
+func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *middleware.AuditLogger) {
     r := gin.New()
 
     // Global middleware
-    r.Use(gin.Recovery())
+    r.Use(sentry.RecoveryMiddleware())
+    r.Use(middleware.DistributedTracing("diana-api"))
     r.Use(middleware.RequestID())
     r.Use(middleware.Logger())
-    r.Use(middleware.SecurityHeaders())
+    r.Use(metrics.HTTPMiddleware())
     r.Use(cors.New(...))
+    r.Use(middleware.SecurityHeaders())
     r.Use(middleware.RateLimit(...))
     r.Use(middleware.MaxBodySize(...))
 
@@ -36,31 +39,34 @@ func SetupRouter(cfg config.Config, st store.Store) *gin.Engine {
 
     // Protected routes (require JWT)
     protected := api.Group("")
-    protected.Use(middleware.Auth(cfg.JWTSecret))
+    protected.Use(middleware.Auth(cfg.JWTSecret, st.Users()))
 
     // User routes
     usersGroup := protected.Group("/users/me")
     users.Register(usersGroup, usersHandler)
 
-    // Assessment routes
-    assessmentsGroup := protected.Group("/assessments")
+    // User-owned assessment routes
+    assessmentsGroup := userGroup.Group("/assessments")
     assessments.Register(assessmentsGroup, assessmentsHandler)
 
-    // Export routes
-    exportGroup := protected.Group("/export")
+    // User-owned PDF export routes
+    exportGroup := userGroup.Group("/export")
     export.Register(exportGroup, exportHandler)
 
     // Admin routes (require admin role)
     admin := protected.Group("/admin")
-    admin.Use(middleware.RoleRequired("admin"))
+    admin.Use(middleware.RoleRequired(models.RoleAdmin))
 
     adminDashboard.Register(admin.Group("/dashboard"), adminDashboardHandler)
     adminUsers.Register(admin.Group("/users"), adminUsersHandler)
     adminAudit.Register(admin.Group("/audit"), adminAuditHandler)
     adminModels.Register(admin.Group("/models"), adminModelsHandler)
 
-    // Public insights routes
+    // Admin/doctor insights routes
     insights.Register(protected.Group("/insights"), insightsHandler)
+
+    // Conditional ML proxy routes
+    if cfg.ModelURL != "" { mlProxy.Register(protected.Group("/ml")) }
 
     return r
 }
@@ -73,6 +79,7 @@ func SetupRouter(cfg config.Config, st store.Store) *gin.Engine {
 ├── /api/v1/
 │   ├── /auth (public)
 │   │   ├── POST   /login
+│   │   ├── POST   /register
 │   │   ├── POST   /refresh
 │   │   └── POST   /logout
 │   │
@@ -86,26 +93,49 @@ func SetupRouter(cfg config.Config, st store.Store) *gin.Engine {
 │   │   │   ├── GET    /trends
 │   │   │   ├── DELETE /account
 │   │   │
-│   │   ├── /assessments
+│   │   ├── /users/me/assessments
 │   │   │   ├── GET    /
 │   │   │   ├── POST   /
 │   │   │   ├── GET    /:id
 │   │   │   ├── PUT    /:id
 │   │   │   └── DELETE /:id
 │   │   │
-│   │   └── /export
-│   │       └── GET    /pdf
+│   │   ├── /users/me/export
+│   │   │   └── GET    /pdf
+│   │   │
+│   │   ├── /users/me/privacy
+│   │   │   ├── GET    /export/data
+│   │   │   ├── DELETE /delete
+│   │   │   ├── GET    /consent/history
+│   │   │   ├── POST   /consent/withdraw
+│   │   │   └── GET    /processing-info
+│   │   │
+│   │   ├── /analytics
+│   │   │   └── GET    /summary
+│   │   │
+│   │   ├── /ml [registered only when MODEL_URL is set]
+│   │   │   ├── GET    /health
+│   │   │   ├── GET    /insights/metrics
+│   │   │   ├── GET    /insights/information-gain
+│   │   │   ├── GET    /insights/clusters
+│   │   │   ├── GET    /insights/visualizations/:name
+│   │   │   └── POST   /predict/explain
 │   │
-│   ├── /clinics
-│   │   └── GET    /dashboard
+│   ├── /clinics [legacy; protected]
+│   │   ├── GET    /
+│   │   └── GET    /:id/dashboard
 │   │
-│   ├── /insights
+│   ├── /insights [admin or doctor]
 │   │   ├── GET    /cluster-distribution
-│   │   └── GET    /cluster
+│   │   ├── GET    /biomarker-trends
+│   │   └── GET    /cohort
 │   │
-│   └── /admin [protected by RoleRequired("admin")]
-│       ├── /dashboard
-│       │   └── GET /
+│   ├── /admin/events/stream [token query/cookie auth]
+│   │
+│   └── /admin [protected by admin role]
+│       ├── GET /dashboard
+│       ├── GET /clinics
+│       ├── GET /clinics/comparison
 │       │
 │       ├── /users
 │       │   ├── GET    /
@@ -113,14 +143,21 @@ func SetupRouter(cfg config.Config, st store.Store) *gin.Engine {
 │       │   ├── PUT    /:id
 │       │   └── DELETE /:id
 │       │
-│       ├── /audit
-│       │   └── GET /
+│       ├── GET /audit
+│       ├── GET /operations/health
+│       ├── GET /operations/logs
 │       │
 │       └── /models
-│           └── GET /
+│           ├── GET /
+│           ├── GET /active
+│           ├── GET /drift
+│           ├── GET /drift/alerts
+│           └── POST /sync
 │
-└── /health
-    └── GET /
+├── /api/v1/healthz
+├── /api/v1/livez
+├── /api/v1/metrics
+└── /swagger/*
 ```
 
 ## CONVENTIONS
@@ -159,7 +196,7 @@ func (h *HandlerName) Register(rg *gin.RouterGroup) {
 
 | Symbol | Type | Location | Refs | Role |
 |--------|------|----------|------|------|
-| SetupRouter | func | router.go | server | Main router constructor |
+| New | func | router.go | server | Main router constructor; returns `*gin.Engine` and `*middleware.AuditLogger` |
 | gin.Default | func | router.go | - | Create Gin engine |
 | RouterGroup | type | gin | router.go | Route grouping |
 | Use | method | RouterGroup | router.go | Apply middleware |
@@ -171,7 +208,7 @@ func (h *HandlerName) Register(rg *gin.RouterGroup) {
 r.Use(cors.New(cors.Config{
     AllowOrigins:     cfg.CORSOrigins,
     AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-    AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
+    AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With", "X-CSRF-Token"},
     ExposeHeaders:    []string{"Content-Length", "Content-Disposition"},
     AllowCredentials: true,
     MaxAge:          12 * time.Hour,
@@ -180,26 +217,26 @@ r.Use(cors.New(cors.Config{
 
 ### Rate Limiting
 ```go
-// 100 requests per minute per IP
-rateLimiter := middleware.NewRateLimiter(100, time.Minute)
+// Global limit comes from cfg.RateLimitPerMinute
+rateLimiter := middleware.NewRateLimiter(cfg.RateLimitPerMinute, time.Minute)
 r.Use(middleware.RateLimit(rateLimiter))
 
-// Stricter limit for auth: 10 requests/minute
-authGroup.Use(middleware.AuthRateLimit(10))
+// Auth routes use a separate 100 requests/minute limiter
+authGroup.Use(middleware.AuthRateLimit(100))
 ```
 
 ### Auth Middleware
 ```go
 // Applied to all protected routes
 protected := api.Group("")
-protected.Use(middleware.Auth(cfg.JWTSecret))
+protected.Use(middleware.Auth(cfg.JWTSecret, st.Users()))
 ```
 
 ### Admin RBAC
 ```go
 // Applied to admin routes
 admin := protected.Group("/admin")
-admin.Use(middleware.RoleRequired("admin"))
+admin.Use(middleware.RoleRequired(models.RoleAdmin))
 ```
 
 ## ML PREDICTOR SELECTION
@@ -220,14 +257,13 @@ if cfg.ModelURL != "" {
 ## ANTI-PATTERNS (THIS PROJECT)
 
 ### Issues
-- **Missing registration endpoint**: Router doesn't include `/auth/register` route
-- **Inconsistent grouping**: Some handlers mix public/protected in single Register()
-- **No health check**: Missing `/health` endpoint for load balancers (but handlers.RegisterHealth exists)
+- **Legacy clinic routes**: `/clinics` and admin clinic comparison routes still exist in code; do not present them as the active thesis workflow.
+- **Conditional ML routes**: `/api/v1/ml/*` is registered only when `MODEL_URL` is set.
+- **Public metrics/docs**: `/api/v1/metrics` and `/swagger/*` are public in router code; protect at ingress if production policy requires it.
 
 ### Technical Debt
-- **Hardcoded CORS**: Should be configurable via environment
+- **CORS is configurable**: `CORS_ORIGINS` drives the allowed origins.
 - **No API versioning strategy**: URL has `/api/v1` but no deprecation plan
-- **Missing metrics**: No Prometheus or OpenTelemetry endpoints
 
 ## NOTES
 
@@ -248,14 +284,15 @@ Routes follow REST conventions:
 6. Admin middleware checks `claims.Role === "admin"` → Allows or denies
 
 ### Health Check
-`handlers.RegisterHealth(api)` registers `/health` endpoint for Kubernetes/monitoring probes.
+`handlers.RegisterHealth(api)` registers `/api/v1/healthz` and `/api/v1/livez` for probes.
 
 ### Clinics Routes
-`/clinics/dashboard` endpoint exists for clinic member dashboard functionality.
+`/api/v1/clinics` and `/api/v1/clinics/:id/dashboard` still exist as legacy protected routes. They are not part of the active thesis workflow.
 
-### Missing Endpoints
-- **`/auth/register`** - User registration (frontend exists, no backend route)
-- **`/metrics`** - Prometheus metrics (optional, for observability)
+### Observability Endpoints
+- **`/api/v1/metrics`** - Prometheus-style metrics endpoint.
+- **`/swagger/*`** - Generated Swagger documentation.
+- **`/api/v1/debug/*`** - Registered but disabled in production mode by handler guard.
 
 ### Development Route Printing
 In non-production mode, router prints all registered routes to console for debugging via `printRoutes(r)`.

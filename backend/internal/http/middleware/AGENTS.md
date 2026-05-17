@@ -2,6 +2,7 @@
 
 **Directory**: `backend/internal/http/middleware`
 **Generated:** 2026-01-28
+**Updated:** 2026-05-17
 
 ## OVERVIEW
 Security, observability, and request validation layer using Gin middleware.
@@ -15,8 +16,10 @@ Security, observability, and request validation layer using Gin middleware.
 | Request ID | `logger.go` | Unique ID generation per request |
 | RBAC | `rbac.go` | Role-based access control (AdminOnly, etc.) |
 | Security | `security.go` | HSTS, CSP, and other security headers |
+| CSRF | `csrf.go` | CSRF token extraction/validation helpers |
+| Tracing | `tracing.go` | Distributed tracing middleware |
 
-| CORS | `cors.go` | Cross-origin resource sharing (github.com/gin-contrib/cors) |
+Note: CORS is configured in `backend/internal/http/router/router.go` using `github.com/gin-contrib/cors`; there is no local CORS middleware file.
 
 ## CONVENTIONS
 - **State Propagation**: Use `c.Set()` with standard keys:
@@ -29,7 +32,5 @@ Security, observability, and request validation layer using Gin middleware.
 
 ## ANTI-PATTERNS
 - **CRITICAL**: Fire-and-forget goroutines (`go func()`) in `audit.go` - errors are logged but don't block response.
-- **Drift**: `UserClaims` struct in `auth.go` is missing `Scope` field, causing compilation errors in `audit_test.go`.
-- **Legacy**: Use of `interface{}` instead of `any` (Go 1.18+).
-- **Inconsistency**: `cors.go` is referenced in root docs but implementation uses `github.com/gin-contrib/cors` directly in router.
-- **Refactoring**: `MaxBodySize` and `AuthRateLimit` in `ratelimit.go` may show as "undefined" due to internal build state drift.
+- **Audit reliability**: Async audit writes are logged on failure but do not block the user request.
+- **CORS location**: Keep CORS guidance in router docs, not as a separate middleware file.

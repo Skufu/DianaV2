@@ -7,13 +7,13 @@
 These E2E tests are **NOT in the CI pipeline** and are considered stale. They remain in the repository for reference purposes only.
 
 ### Why they were archived:
-1. **Not in CI**: The CI workflow (`ci.yml`) only runs `npm run build` and `npm run lint` for frontend - Playwright tests were never added to CI.
+1. **Not in CI**: The CI workflow (`ci.yml`) runs frontend build, lint, and `npm run test:coverage`; Playwright tests are still not part of CI.
 2. **Browser dependencies missing**: Playwright browsers are not installed by default, requiring `npx playwright install` to run locally.
 3. **Maintenance overhead**: Tests were becoming flaky due to UI changes and mock data drift.
 4. **Component tests preferred**: Vitest + React Testing Library component tests (`src/**/*.test.jsx`) are the primary frontend testing strategy.
 
 ### Current frontend testing strategy:
-- **Unit/Component tests**: Vitest with React Testing Library (run via `npm test`)
+- **Unit/Component/Coverage tests**: Vitest with React Testing Library (run via `npm run test:coverage`)
 - **Contract tests**: Backend-frontend API contract tests (`backend/internal/http/handlers/contract_test.go`)
 - **Load tests**: k6 load tests for performance validation
 

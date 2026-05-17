@@ -2,6 +2,7 @@
 
 **Directory**: `backend/internal/ml`
 **Generated:** 2026-01-28
+**Updated:** 2026-05-17
 
 ## OVERVIEW
 Integration layer for diabetes risk assessment, supporting external ML server calls and local mock prediction logic.
@@ -10,7 +11,7 @@ Integration layer for diabetes risk assessment, supporting external ML server ca
 | Task | Location | Notes |
 |------|----------|-------|
 | ML Interface | `internal/ml/mock.go` | `Predictor` interface definition |
-| HTTP Client | `internal/ml/http_predictor.go` | Calls Python/FastAPI ML server |
+| HTTP Client | `internal/ml/http_predictor.go` | Calls Python Flask ML server |
 | Mock Logic | `internal/ml/mock.go` | Rule-based local cluster assignment |
 | Data Validation | `internal/ml/validation.go` | Clinical biomarker range checks |
 | Model Config | `internal/config/config.go` | Env var loading (MODEL_URL, etc.) |
@@ -23,9 +24,9 @@ Integration layer for diabetes risk assessment, supporting external ML server ca
 - `MockPredictor`: Default fallback for local dev/test if `MODEL_URL` is unset.
 
 **Biomarker Validation:**
-- Always run `ValidateBiomarkers` before calling any predictor.
+- Always run `ValidateBiomarkers(input, cfg.ClinicalThresholds)` before calling any predictor.
 - Populates `validation_status` field with codes (e.g., `fbs_prediabetic_range`).
-- Reference ranges follow the SIDD/SIRD research methodology.
+- Reference ranges come from `config.ClinicalThresholds` defaults and environment overrides; glycemic thresholds follow ADA-style cutoffs and BMI uses Asia-Pacific cutoffs.
 
 **Configuration:**
 - `MODEL_URL`: ML server endpoint (empty triggers mock mode for local dev).
@@ -36,10 +37,10 @@ Integration layer for diabetes risk assessment, supporting external ML server ca
 ## UNIQUE STYLES
 
 **Prediction Flow:**
-1. Handlers call `ValidateBiomarkers(assessment)` to get clinical warnings.
-2. `Predictor.Predict()` is invoked:
-   - **HTTP**: POSTs JSON to `${MODEL_URL}?model_type=clinical`.
-   - **Mock**: Deterministic rules (e.g., `BMI > 30 && triglycerides >= 150` → `SIRD`).
+1. Handlers call `ValidateBiomarkers(assessment, thresholds)` to get clinical warnings.
+2. `Predictor.PredictWithModelType()` is invoked for assessment create/update:
+   - **HTTP**: POSTs JSON to `${MODEL_URL}?model_type=<model_type>`.
+   - **Mock**: Deterministic rules (e.g., `BMI >= 35` plus elevated lipids → `SIRD`).
 3. Returns `cluster` name, `risk_score`, and ML metadata for database persistence.
 
 **Header Requirements:**

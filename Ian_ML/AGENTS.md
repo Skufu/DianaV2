@@ -2,7 +2,8 @@
 
 **Directory:** `Ian_ML/`
 **Generated:** 2026-03-09
-**Commit:** c56c602
+**Updated:** 2026-05-17
+**Commit:** current workspace
 
 ## OVERVIEW
 Flask ML prediction server for diabetes risk assessment. Dual predictor pattern: DianaPredictor (ADA baseline) + ClinicalPredictor (metabolic models). Port 5001.
@@ -36,7 +37,7 @@ Ian_ML/
 |------|----------|-------|
 | Inference server | `service/server.py` | Flask app, port 5001 |
 | Predictors | `service/predict.py` | DianaPredictor, ClinicalPredictor |
-| Training (defensible) | `training/train_binary_v2_no_bp.py` | LOGO/nested-CV, AUC 0.72 |
+| Training (defensible) | `training/train_binary_v2_no_bp.py` | LOGO/nested-CV, current artifacts under `models/binary_v2_no_bp/results/` |
 | Training (with BP) | `training/train_binary_v2_with_bp.py` | Includes blood pressure |
 | Clustering | `training/clustering.py` | K-Means (K=4 Ahlqvist) |
 | SHAP explanations | `service/explainability.py` | Feature importance |
@@ -67,7 +68,7 @@ Ian_ML/
 ### ClinicalPredictor (screening)
 - **Features**: BMI, triglycerides, LDL, HDL, age, waist_circumference, smoking, activity, alcohol (9 features)
 - **Use case**: Screening WITHOUT diagnostic biomarkers (no circular reasoning)
-- **Performance**: AUC 0.72
+- **Performance**: current artifact metrics are stored in `models/binary_v2_no_bp/results/`; LOGO mean LR AUC is about 0.736
 
 ## CONVENTIONS
 
@@ -98,7 +99,7 @@ Ian_ML/
 | MOD | Mild Obesity-Related Diabetes | Moderate metabolic | MEDIUM |
 | MARD | Mild Age-Related Diabetes | Older, milder | LOW |
 
-**LIMITATION**: DIANA lacks HOMA2-B, HOMA2-IR, C-peptide. Labels are "Ahlqvist-inspired" per Tanabe et al. (2024).
+**LIMITATION**: DIANA lacks HOMA2-B, HOMA2-IR, C-peptide, and autoantibody measures used in the original Ahlqvist framework. Labels must be described as Ahlqvist-inspired heuristic proxy labels, not validated biological subtype diagnoses.
 
 ## SHAP EXPLAINABILITY
 

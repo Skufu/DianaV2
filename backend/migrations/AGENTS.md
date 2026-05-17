@@ -2,7 +2,8 @@
 
 **Directory**: `backend/migrations`
 **Generated:** 2026-01-28
-**Schema Version:** 0012
+**Updated:** 2026-05-17
+**Schema Version:** 0021
 
 ## OVERVIEW
 Sequential SQL migrations using Goose to evolve the schema from a clinician-centric model to a direct-to-consumer menopausal platform.
@@ -17,8 +18,16 @@ Sequential SQL migrations using Goose to evolve the schema from a clinician-cent
 | 0006-08 | `mock_data`, `clusters` | Data seeding and ML cluster naming alignment |
 | 0009 | `add_clinics` | Multi-tenant/clinic support structure |
 | 0010 | `admin_features` | Admin dashboard tracking (is_active, last_login) |
- | 0011 | `refactor_to_menopausal` | **Major Refactor**: Users become the primary health subjects; `patients` table dropped |
+| 0011 | `refactor_to_menopausal` | **Major Refactor**: Users become the primary health subjects; `patients` table dropped |
 | 0012 | `add_auth_events` | Auth events table for real-time admin monitoring (SSE streaming) |
+| 0013 | `add_auth_tokens` | Refresh-token/session table transition |
+| 0014 | `add_user_roles` | Explicit user role support alongside legacy admin state |
+| 0015 | `add_assessment_ml_metadata` | Model metadata and traceability fields on assessments |
+| 0016 | `add_user_lifestyle` | Lifestyle and clinical profile fields on users |
+| 0017 | `remove_mock_models` | Removes seeded mock model rows |
+| 0019 | `add_assessment_enrichment_fields` | Adds enrichment fields for assessment records |
+| 0020 | `drop_assessment_race_ethnicity` | Removes race/ethnicity from assessments |
+| 0021 | `remove_unused_token_tables` | Removes obsolete token tables after auth-token refactor |
 
 ## SCHEMA EVOLUTION
 ### Phase 1: Clinician Management (0001-0004)
@@ -41,6 +50,6 @@ The "Great Refactor" eliminated the `patients` table entirely. Every person in t
 ## NOTES
 - **The Great Shift (v0011)**: This migration marks the transition from clinicians managing patients to users managing their own health. The `patients` table was entirely removed, and health markers moved to the `users` table.
 - **Audit Logs**: The `audit_events` table (v0001) persists across refactors and tracks actions via JSONB details.
-- **SQLC Sync**: After running migrations, you MUST run `sqlc generate` in the backend root to update the Go database layer.
+- **SQLC Sync**: After running migrations, run `make sqlc` from the repository root or `sqlc generate` from the backend root to update the Go database layer.
 - **Mock Data**: `0006_add_mock_data.sql` contains substantial seeding; use `go run ./cmd/seed` for programmatic seeding instead of adding to migrations where possible.
 - **Data Loss Warning**: Rollback of v0011 will re-create a blank `patients` table; it does NOT currently restore deleted patient data from the transition.

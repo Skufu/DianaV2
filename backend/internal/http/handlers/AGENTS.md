@@ -15,15 +15,16 @@ HTTP request handlers implementing REST API endpoints for authentication, user m
 | Assessments | `assessments.go` | `/users/me/assessments/*` | Risk assessments with ML prediction |
 | Analytics | `analytics.go` | `/analytics/summary`, `/analytics/cluster-distribution` | Dashboard statistics and cluster data |
 | Insights | `insights.go` | `/insights/*` | Analytics, metrics, cluster distribution |
-| Auth Events | `auth_events.go` | `/auth/events` | SSE auth event streaming (admin only) |
-| Clinic Dashboard | `clinic_dashboard.go` `/clinic/dashboard` | Clinic member dashboard |
-| Cohort | `cohort.go` | `/cohort/:clinic_id` | Cohort analysis endpoints |
-| Export | `export.go` | `/export/patients.csv`, `/export/assessments.csv` | CSV export functionality |
+| Auth Events | `auth_events.go` | `/admin/events/stream` | SSE auth event streaming with token query/cookie validation |
+| Clinic Dashboard | `clinic_dashboard.go` | `/clinics`, `/clinics/:id/dashboard` | Legacy clinic member dashboard routes |
+| Cohort | `cohort.go` | `/insights/cohort` | Cohort analysis endpoint |
+| Export | `export.go` | `/users/me/export/pdf` | PDF health report export; CSV methods are deprecated/not registered |
 | Health | `health.go` | `/healthz`, `/livez` | Health check endpoints |
 | Admin Dashboard | `admin_dashboard.go` | `/admin/dashboard` | System stats |
 | Admin Users | `admin_users.go` | `/admin/users/*` | User CRUD, activation/deactivation |
 | Admin Audit | `admin_audit.go` | `/admin/audit` | Audit log viewer |
 | Admin Models | `admin_models.go` | `/admin/models` | ML model run tracking |
+| Admin Operations | `admin_operations.go` | `/admin/operations/*` | Operations health and log inspection |
 
 ## HANDLER STRUCTURE
 
@@ -140,24 +141,23 @@ func (h *HandlerName) MethodName(c *gin.Context) {
 
 ### Critical Issues
 - **Inconsistent error handling**: Some handlers use manual `gin.H{"error": ...}` instead of utils
-- **Manual JSON responses**: Avoid `c.JSON(status, gin.H{...})` - use APIError struct
+- **Manual error responses**: Avoid `c.JSON(status, gin.H{"error": ...})` - use the error helpers/APIError shape
 - **Missing validation**: Not all handlers validate request before processing
-- **No transaction support**: Multi-step operations (onboarding, user+consent updates) lack atomicity
-- **interface{} usage**: Should use `any` (Go 1.18+) - 5 occurrences
+- **Transaction coverage**: Store transaction primitives exist; verify multi-step handler flows use them when atomicity matters
+- **Legacy `interface{}` usage**: Prefer `any` in new handwritten Go code unless a generated or test-specific type requires otherwise
 
 ### Technical Debt
 - **Direct SQL in postgres_admin.go**: Some admin queries bypass SQLC with raw pgx
-- **Deprecated exports**: `PatientsCSV` and `AssessmentsCSV` in `export.go` are deprecated
+- **Deprecated exports**: `PatientsCSV`, `AssessmentsCSV`, and research CSV placeholder paths in `export.go` are not active user-facing routes
 - **Logic leaks**: Business logic (e.g., risk scoring in `assessments.go`) belongs in `internal/services`
 
 ## NOTES
 
-### Missing Endpoints
-- **`/auth/register`**: Frontend `Signup.jsx` exists but no backend handler implementation
-- **Research export**: `/admin/export/research` commented out in `export.go`
-
-### Path Mismatches
-- **Admin stats**: Frontend calls `/admin/stats` but backend route is `/admin/dashboard`
+### Route Truth
+- **`/auth/register`** exists and is implemented by `auth.go`.
+- **Admin dashboard** is `/api/v1/admin/dashboard`.
+- **Research export** is not registered; only user PDF export is active.
+- **Clinic routes** still exist as legacy code but should not be treated as the active thesis workflow.
 
 ### Assessment Flow
 1. User submits biomarkers → Handler validates (range checks)

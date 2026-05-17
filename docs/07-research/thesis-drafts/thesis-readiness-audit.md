@@ -1,14 +1,20 @@
 # DIANA Thesis Readiness Audit
 
-Date checked: 2026-05-14
+Date checked: 2026-05-17
 
 Scope: Chapter 3 and 4 thesis draft, supporting codebase claims, and current local verification status. This audit intentionally ignores stale AGENTS.md guidance and is based on direct codebase inspection and command results.
 
 ## Canonical Manuscript Status
 
-Canonical chapter file:
+Clean thesis-ready chapter file:
+
+- `docs/07-research/thesis-drafts/ch3+4-final-academic-draft.md`
+
+Detailed technical backup:
 
 - `docs/07-research/thesis-drafts/ch3+4.md`
+
+Rule: use `ch3+4-final-academic-draft.md` for thesis-ready Chapter 3+4 wording, citation placement, and final methodology/results prose. Use `ch3+4.md` as the expanded technical backup for implementation evidence and deeper verification details.
 
 Removed stale duplicate chapter variants:
 
@@ -20,9 +26,9 @@ Reason: the duplicate academic/integrated files contained stale claims such as "
 
 ## Verified Corrections
 
-The canonical `ch3+4.md` has been checked and corrected for the following high-risk claims:
+The Chapter 3+4 draft set has been checked and corrected for the following high-risk claims. Future edits should preserve `ch3+4-final-academic-draft.md` as the clean thesis-ready file and `ch3+4.md` as the detailed technical backup. Citations should remain APA-style author-date in the manuscript text, with full APA-style entries in the reference list.
 
-- NHANES 2021-2023 is described as a COVID-adapted three-year release, not a standard two-year cycle.
+- NHANES 2021-2023 is described as the August 2021-August 2023 post-pandemic release, not as a standard biennial release or a generic COVID-adapted cycle.
 - Reproductive health filtering uses RHQ031, not RHQ060.
 - The model comparison section states four candidate algorithms, including XGBoost.
 - Outlier handling reflects the active clinical-plausibility-range path, not an IQR-plus-clinical dual method.
@@ -31,6 +37,12 @@ The canonical `ch3+4.md` has been checked and corrected for the following high-r
 - SHAP explanations are described as transient explainability outputs, not persisted JSONB assessment fields.
 - API documentation is described as generated Swagger 2.0 under `backend/docs`, not a missing OpenAPI 3.0 `docs/api-spec.yaml`.
 - Clustering validation uses the at-risk subset size n=734.
+- Deployment is described as repository-supported topologies: Vercel/Caddy/managed PostgreSQL where configured, or Docker Compose production overlay with Nginx and internal PostgreSQL 16. The draft no longer claims only one absolute hosting stack.
+- Frontend visualization is described as Recharts-based. Plotly was removed from the manuscript because it is not present in the current frontend dependency set.
+- User export is described as the current PDF health report endpoint, not a CSV-export workflow.
+- ML proxy routes are described as available when `MODEL_URL` is configured.
+- Legacy clinic routes and data-layer code still exist in the repository, but clinics are not presented as an active thesis workflow in the final Chapter 3+4 draft.
+- Chapter 4 metrics tables were synchronized to the current `models/binary_v2_no_bp/results` artifacts, including threshold-arbitration counts, information-gain ranking, and model-comparison means.
 - UAT, expert review, accessibility contrast testing, and production performance claims are marked as pending where they are not yet supported by collected evidence.
 - Fill-in placeholders are retained only for user-supplied future evidence such as screenshots, UAT dates/results, expert reviewer details/quotes, and formal accessibility-test results.
 
@@ -38,42 +50,33 @@ The canonical `ch3+4.md` has been checked and corrected for the following high-r
 
 | Area | Command | Result |
 |------|---------|--------|
-| Thesis metrics consistency | `python3 scripts/thesis/check_metrics_consistency.py` | PASS: 42 checked claims match `models/binary_v2_no_bp/results` |
-| Duplicate chapter scan | `rg --files docs/07-research/thesis-drafts \| rg "ch3\\+4"` | PASS: only `ch3+4.md` remains |
-| Stale claim scan | `rg -n "Three candidate|Go 1\\.24|cached predictions|RHQ060|2021-2023 \\| 2-year|n=578" ch3+4.md` | PASS: no matches |
-| Intentional placeholder scan | `rg -n "PLACEHOLDER|TBD|QUOTE TBD" ch3+4.md` | Expected: only future evidence placeholders |
-| Backend tests | `cd backend && go test ./...` | PASS |
-| Backend server smoke | `go run ./cmd/server` plus `curl http://localhost:8080/api/v1/healthz` | PASS after freeing port 8080 |
+| Thesis metrics consistency | `python3 scripts/thesis/check_metrics_consistency.py docs/07-research/thesis-drafts/ch3+4-final-academic-draft.md docs/07-research/thesis-drafts/ch3+4.md` | PASS: 43 checked claims per document match `models/binary_v2_no_bp/results` |
+| Chapter 3+4 source-of-truth scan | `rg --files docs/07-research/thesis-drafts \| rg "ch3\\+4"` | Expected: `ch3+4-final-academic-draft.md` is the clean thesis-ready draft; `ch3+4.md` is the technical backup |
+| Stale claim scan | `rg -n "Three candidate|Go 1\\.24|cached predictions|RHQ060|COVID-adapted|n=578|Plotly|Download CSV|production VPS" ch3+4-final-academic-draft.md ch3+4.md` | Expected: no stale implementation, visualization, export, deployment, or data-release claims |
+| Intentional placeholder scan | `rg -n "PLACEHOLDER|TBD|QUOTE TBD" ch3+4-final-academic-draft.md ch3+4.md` | Expected: only future evidence placeholders |
+| Backend tests | `cd backend && GOCACHE=/private/tmp/diana-go-build go test ./...` | PASS; initial sandboxed run was blocked by local `httptest` listener permissions, then passed outside the sandbox |
 | ML tests | `cd Ian_ML && ./venv/bin/python -m pytest -q` | PASS: 270 passed |
-| Frontend unit/contract tests | `cd frontend && npm test` | PASS: 214 passed |
-| Frontend build | `cd frontend && npm run build` | PASS with one large chunk warning |
-| Frontend lint | `cd frontend && npm run lint` | PASS with warnings |
-| Frontend coverage | `cd frontend && npm run test:coverage` | FAIL: tests pass, coverage thresholds are not met |
+| Frontend coverage | `cd frontend && npm run test:coverage` | PASS: 15 files, 232 tests; 71.26% lines/statements, 60.58% branches, 44.24% functions |
 
 ## Remaining Blockers
 
-1. Frontend coverage is the main technical readiness blocker.
-   - Current coverage run passes all tests but fails configured thresholds.
-   - This must be fixed by adding meaningful tests, recalibrating thresholds, or explicitly documenting coverage as incomplete.
-
-2. UAT and expert review are not completed.
+1. UAT and expert review are not completed.
    - The thesis must not report SUS scores, expert ratings, or expert quotes until real data is collected.
    - Current manuscript status is acceptable only if these sections are framed as protocols or future work.
 
-3. Formal accessibility testing is not completed.
+2. Formal accessibility testing is not completed.
    - The manuscript should not claim WCAG conformance without automated contrast/a11y evidence.
 
-4. Frontend E2E coverage is stale.
+3. Frontend E2E coverage is stale.
    - Playwright tests are not currently a reliable submission-quality evidence source.
 
-5. Final UI figures should be captured from the running application.
+4. Final UI figures should be captured from the running application.
    - Do not use synthetic or placeholder figures for SHAP, result modal, dashboard, or UAT screenshots.
    - The manuscript contains figure placeholders only as insertion markers for real screenshots.
 
 ## Recommended Correction Order
 
-1. Fix or formally scope the frontend coverage failure.
-2. Capture real screenshots from the running app and insert only verified figures.
-3. Keep UAT/expert sections as protocols unless data is actually collected before submission.
-4. Run the final evidence bundle: backend tests, ML pytest, frontend tests, frontend build, metrics checker, and stale-claim scan.
-5. Clean generated local artifacts before submission or commit review.
+1. Capture real screenshots from the running app and insert only verified figures.
+2. Keep UAT/expert sections as protocols unless data is actually collected before submission.
+3. Run the final evidence bundle again immediately before submission: backend tests, ML pytest, frontend coverage, metrics checker, and stale-claim scan.
+4. Clean generated local artifacts before submission or commit review.
