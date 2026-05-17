@@ -81,7 +81,7 @@ func (h *AdminModelsHandler) getActiveModel(c *gin.Context) {
 	run, err := h.store.ModelRuns().GetActive(c.Request.Context())
 	if err != nil {
 		if isNotFoundError(err) {
-			ErrNotFound(c, "model runs")
+			c.Status(http.StatusNoContent)
 			return
 		}
 		log.Printf("[ERROR] Failed to fetch active model: %v", err)

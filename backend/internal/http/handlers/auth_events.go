@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/config"
@@ -29,21 +30,24 @@ func (h *AuthEventHandler) Register(rg *gin.RouterGroup) {
 	rg.GET("/events/stream", h.streamAuthEvents)
 }
 
-type streamParams struct {
-	Token string `form:"token" binding:"required"`
-}
-
 // StreamAuthEvents is the exported handler for the SSE endpoint
 func (h *AuthEventHandler) StreamAuthEvents(c *gin.Context) {
-	var params streamParams
-	if err := c.ShouldBindQuery(&params); err != nil {
-		ErrBadRequest(c, "invalid parameters")
-		return
-	}
-
-	token := params.Token
+	token := strings.TrimSpace(c.Query("token"))
 	if token == "" {
-		ErrBadRequest(c, "missing token")
+		if cookieToken, err := c.Cookie("diana_token"); err == nil {
+			token = strings.TrimSpace(cookieToken)
+		}
+	}
+	if token == "" {
+		authz := c.GetHeader("Authorization")
+		if strings.HasPrefix(authz, "Bearer ") {
+			token = strings.TrimSpace(strings.TrimPrefix(authz, "Bearer "))
+		}
+	}
+	if token == "" {
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.String(http.StatusUnauthorized, "event: error\ndata: "+`{"message":"Authentication required"}`+"\n\n")
 		return
 	}
 

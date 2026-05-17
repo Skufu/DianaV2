@@ -8,10 +8,10 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/skufu/DianaV2/backend/internal/models"
+	"github.com/skufu/DianaV2/backend/internal/security"
 	"github.com/skufu/DianaV2/backend/internal/store"
 )
 
@@ -152,7 +152,9 @@ func buildAuditDetails(c *gin.Context) map[string]any {
 	if len(c.Request.URL.Query()) > 0 {
 		queryMap := make(map[string]any, len(c.Request.URL.Query()))
 		for k, v := range c.Request.URL.Query() {
-			if len(v) == 1 {
+			if security.IsSensitiveField(k) {
+				queryMap[k] = "[REDACTED]"
+			} else if len(v) == 1 {
 				queryMap[k] = v[0]
 			} else {
 				queryMap[k] = v

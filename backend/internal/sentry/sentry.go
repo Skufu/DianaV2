@@ -10,6 +10,7 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+	"github.com/skufu/DianaV2/backend/internal/security"
 )
 
 // Config holds Sentry configuration
@@ -86,7 +87,7 @@ func Init(config Config) error {
 			event.Tags["go_version"] = runtime.Version()
 			event.Tags["go_os"] = runtime.GOOS
 			event.Tags["go_arch"] = runtime.GOARCH
-			
+
 			// Filter out common non-actionable errors
 			if len(event.Exception) > 0 {
 				for _, exc := range event.Exception {
@@ -95,7 +96,7 @@ func Init(config Config) error {
 					}
 				}
 			}
-			
+
 			return event
 		},
 	})
@@ -188,23 +189,23 @@ func Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Start a transaction for this request
 		ctx := sentry.SetHubOnContext(c.Request.Context(), sentry.CurrentHub().Clone())
-		
+
 		span := StartTransaction(ctx, "http.server", fmt.Sprintf("%s %s", c.Request.Method, c.FullPath()))
 		if span != nil {
 			span.SetTag("http.method", c.Request.Method)
 			span.SetTag("http.url", c.Request.URL.Path)
 			span.SetTag("http.host", c.Request.Host)
-			span.SetData("http.query", c.Request.URL.RawQuery)
+			span.SetData("http.query", security.SanitizeRawQuery(c.Request.URL.RawQuery))
 			defer Finish(span)
 		}
-		
+
 		// Add request context
 		if isConfigured() {
 			sentry.ConfigureScope(func(scope *sentry.Scope) {
 				scope.SetRequest(c.Request)
 				scope.SetTag("request_id", c.GetString("request_id"))
 				scope.SetTag("trace_id", c.GetString("trace_id"))
-				
+
 				if userID := c.GetString("user_id"); userID != "" {
 					scope.SetUser(sentry.User{
 						ID: userID,
@@ -212,10 +213,10 @@ func Middleware() gin.HandlerFunc {
 				}
 			})
 		}
-		
+
 		// Process the request
 		c.Next()
-		
+
 		// Capture errors from the context
 		if len(c.Errors) > 0 {
 			for _, ginErr := range c.Errors {
@@ -224,7 +225,7 @@ func Middleware() gin.HandlerFunc {
 				}
 			}
 		}
-		
+
 		// Set status code on span
 		if span != nil {
 			span.SetTag("http.status_code", fmt.Sprintf("%d", c.Writer.Status()))
@@ -249,13 +250,13 @@ func RecoveryMiddleware() gin.HandlerFunc {
 					sentry.CurrentHub().Recover(err)
 					sentry.Flush(2 * time.Second)
 				}
-				
+
 				log.Error().
 					Interface("panic", err).
 					Str("path", c.Request.URL.Path).
 					Str("method", c.Request.Method).
 					Msg("Panic recovered")
-				
+
 				c.AbortWithStatusJSON(500, gin.H{
 					"error":   "Internal Server Error",
 					"code":    "internal_error",
@@ -263,7 +264,7 @@ func RecoveryMiddleware() gin.HandlerFunc {
 				})
 			}
 		}()
-		
+
 		c.Next()
 	}
 }
@@ -286,13 +287,13 @@ func shouldIgnoreError(errorValue string) bool {
 		"request canceled",
 		"operation was canceled",
 	}
-	
+
 	for _, pattern := range ignoredPatterns {
 		if containsIgnoreCase(errorValue, pattern) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -304,7 +305,7 @@ func containsSubstringIgnoreCase(s, substr string) bool {
 	// Simple case-insensitive substring check
 	lowerS := toLower(s)
 	lowerSubstr := toLower(substr)
-	
+
 	for i := 0; i <= len(lowerS)-len(lowerSubstr); i++ {
 		if lowerS[i:i+len(lowerSubstr)] == lowerSubstr {
 			return true
@@ -331,12 +332,12 @@ func parseFloat(s string) (float64, error) {
 	var divisor float64 = 1
 	var decimal bool
 	var negative bool
-	
+
 	if len(s) > 0 && s[0] == '-' {
 		negative = true
 		s = s[1:]
 	}
-	
+
 	for i := 0; i < len(s); i++ {
 		c := s[i]
 		if c == '.' {
@@ -349,7 +350,7 @@ func parseFloat(s string) (float64, error) {
 		if c < '0' || c > '9' {
 			return 0, fmt.Errorf("invalid float")
 		}
-		
+
 		digit := float64(c - '0')
 		if decimal {
 			divisor *= 10
@@ -358,10 +359,10 @@ func parseFloat(s string) (float64, error) {
 			result = result*10 + digit
 		}
 	}
-	
+
 	if negative {
 		result = -result
 	}
-	
+
 	return result, nil
 }
