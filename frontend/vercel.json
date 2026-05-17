@@ -3,6 +3,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
+  "env": {
+    "VITE_API_BASE": "https://diana-v2.duckdns.org/api/v1"
+  },
   "rewrites": [
     {
       "source": "/(.*)",

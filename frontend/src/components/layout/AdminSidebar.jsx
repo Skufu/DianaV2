@@ -12,7 +12,6 @@ import {
   ChevronRight,
   Activity,
   BookOpen,
-  Brain,
   Stethoscope,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,6 +34,7 @@ const AdminSidebar = ({
     { id: 'audit', icon: FileText, label: 'Audit Logs' },
     { id: 'auth-events', icon: Wifi, label: 'Auth Events' },
     { id: 'models', icon: Cpu, label: 'Model Tracking' },
+    { id: 'operations', icon: Activity, label: 'Operations' },
   ];
 
   // Doctor clinical workflow items - focused on patient care tools

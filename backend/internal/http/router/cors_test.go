@@ -33,6 +33,23 @@ func TestNewCORSConfig_WildcardDisablesCredentials(t *testing.T) {
 	}
 }
 
+func TestNewCORSConfig_OriginPatternEnablesWildcardMatching(t *testing.T) {
+	cfg := newCORSConfig([]string{"https://diana-v2-*.vercel.app", "https://diana-v2.vercel.app"})
+
+	if cfg.AllowAllOrigins {
+		t.Fatal("AllowAllOrigins = true, want false for scoped origin patterns")
+	}
+	if !cfg.AllowWildcard {
+		t.Fatal("AllowWildcard = false, want true for configured origin pattern")
+	}
+	if !cfg.AllowCredentials {
+		t.Fatal("AllowCredentials = false, want true for scoped origin patterns")
+	}
+	if len(cfg.AllowOrigins) != 2 {
+		t.Fatalf("AllowOrigins len = %d, want 2", len(cfg.AllowOrigins))
+	}
+}
+
 func TestNewCORSConfig_DefaultsToLocalDevOrigins(t *testing.T) {
 	cfg := newCORSConfig(nil)
 

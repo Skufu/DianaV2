@@ -26,7 +26,7 @@ import {
   cardVariants,
   useReducedMotion,
 } from '../../utils/animations';
-import { API_BASE } from '../../api';
+import { API_BASE, getAuthTokens } from '../../api';
 
 const AuthEventLogViewer = () => {
   const isReduced = useReducedMotion();
@@ -61,7 +61,16 @@ const AuthEventLogViewer = () => {
       eventSourceRef.current.close();
     }
 
-    const url = new URL(`${API_BASE}/admin/events/stream`, window.location.origin);
+    const { accessToken } = getAuthTokens();
+    if (!accessToken) {
+      setConnected(false);
+      setLoading(false);
+      setError('Sign in again to open the live authentication event stream.');
+      return () => {};
+    }
+
+    const urlStr = `${API_BASE}/admin/events/stream?token=${encodeURIComponent(accessToken)}`;
+    const url = new URL(urlStr, window.location.origin);
 
     eventSourceRef.current = new EventSource(url, { withCredentials: true });
 
@@ -71,9 +80,10 @@ const AuthEventLogViewer = () => {
       setLoading(false);
     };
 
-    eventSourceRef.current.onerror = err => {
-      console.error('EventSource error:', err);
+    eventSourceRef.current.onerror = () => {
       setConnected(false);
+      setLoading(false);
+      setError('Live event stream disconnected. Retrying automatically...');
     };
 
     eventSourceRef.current.addEventListener('auth_event', e => {
@@ -88,8 +98,8 @@ const AuthEventLogViewer = () => {
           }
         }, 100);
         timeoutRef.current.push(timeoutId);
-      } catch (err) {
-        console.error('Failed to parse event:', err);
+      } catch {
+        setError('Received an unreadable auth event from the server.');
       }
     });
 
@@ -186,28 +196,40 @@ const AuthEventLogViewer = () => {
     setEvents([]);
   };
 
-  const exportEvents = () => {
-    const csvContent = [
-      ['Timestamp', 'Event Type', 'Email', 'IP Address', 'User Agent', 'Success'],
-      ...events.map(e => [
-        e.timestamp || new Date(e.created_at).toISOString(),
-        e.event_type,
-        e.email || e.user_email || 'N/A',
-        e.ip_address || e.remote_ip || 'N/A',
-        e.user_agent || 'N/A',
-        e.success !== false ? 'Yes' : 'No',
-      ]),
-    ]
-      .map(row => row.map(cell => `"${cell || ''}"`).join(','))
-      .join('\n');
+  const formatExportTimestamp = event => {
+    if (event.timestamp) return event.timestamp;
+    const date = new Date(event.created_at);
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+  };
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `auth_events_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+  const exportEvents = () => {
+    let url = null;
+    try {
+      const csvContent = [
+        ['Timestamp', 'Event Type', 'Email', 'IP Address', 'User Agent', 'Success'],
+        ...events.map(e => [
+          formatExportTimestamp(e),
+          e.event_type,
+          e.email || e.user_email || 'N/A',
+          e.ip_address || e.remote_ip || 'N/A',
+          e.user_agent || 'N/A',
+          e.success !== false ? 'Yes' : 'No',
+        ]),
+      ]
+        .map(row => row.map(cell => `"${String(cell || '').replaceAll('"', '""')}"`).join(','))
+        .join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `auth_events_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    } catch {
+      setError('Unable to export auth events CSV.');
+    } finally {
+      if (url) window.URL.revokeObjectURL(url);
+    }
   };
 
   const filteredEvents = events.filter(event => {

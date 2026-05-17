@@ -260,19 +260,28 @@ func newCORSConfig(origins []string) cors.Config {
 		MaxAge:        12 * time.Hour,
 	}
 
+	normalizedOrigins := make([]string, 0, len(origins))
 	for _, origin := range origins {
-		if strings.TrimSpace(origin) == "*" {
+		origin = strings.TrimSpace(origin)
+		if origin == "" {
+			continue
+		}
+		if origin == "*" {
 			corsConfig.AllowAllOrigins = true
 			// Browsers reject wildcard origins when credentials are included.
 			corsConfig.AllowCredentials = false
 			return corsConfig
 		}
+		if strings.Contains(origin, "*") {
+			corsConfig.AllowWildcard = true
+		}
+		normalizedOrigins = append(normalizedOrigins, origin)
 	}
 
-	if len(origins) == 0 {
+	if len(normalizedOrigins) == 0 {
 		corsConfig.AllowOrigins = []string{"http://localhost:4000", "http://localhost:3000", "http://localhost:3001"}
 	} else {
-		corsConfig.AllowOrigins = origins
+		corsConfig.AllowOrigins = normalizedOrigins
 	}
 	corsConfig.AllowCredentials = true
 	return corsConfig
