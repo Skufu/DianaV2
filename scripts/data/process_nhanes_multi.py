@@ -459,10 +459,21 @@ def main():
     df = df[df['RHQ031'] == 2]
     print(f"  After postmenopausal filter: {len(df)}")
     
-    # Complete FBS + HbA1c (core biomarkers)
-    if 'LBXGH' in df.columns and 'LBXGLU' in df.columns:
-        df = df.dropna(subset=['LBXGH', 'LBXGLU'])
-        print(f"  After complete FBS/HbA1c filter: {len(df)}")
+    # Complete HbA1c is required for reference-label construction. Complete FBS
+    # is used here as the fasting-lab availability gate because the active
+    # model depends on measured fasting-subsample lipid predictors (TG/LDL).
+    # FBS itself remains excluded from the non-circular model feature set.
+    if 'LBXGH' in df.columns:
+        before_hba1c = len(df)
+        df = df.dropna(subset=['LBXGH'])
+        dropped_hba1c = before_hba1c - len(df)
+        print(f"  After complete HbA1c filter: {len(df)}")
+        if 'LBXGLU' in df.columns:
+            before_fasting_lab = len(df)
+            df = df.dropna(subset=['LBXGLU'])
+            print(f"  After fasting-lab availability filter: {len(df)}")
+            print(f"  Dropped {before_fasting_lab - len(df)} records missing FBS/fasting-lab linkage")
+        print(f"  Dropped {dropped_hba1c} records missing HbA1c")
     
     # Derive lifestyle features
     print("\n[LIFESTYLE] Deriving lifestyle features...")

@@ -94,7 +94,10 @@ def compute_fold_summary(rows: list[dict[str, str]]) -> dict[str, dict[str, floa
 
 def compute_information_gain_rows() -> list[dict[str, Any]]:
     sys.path.insert(0, str(PROJECT_ROOT))
-    from Ian_ML.training.validate_no_leakage import rank_features_by_ig
+    from Ian_ML.training.validate_no_leakage import (
+        normalize_alcohol_category,
+        rank_features_by_ig,
+    )
 
     df = pd.read_csv(DATA_PATH)
     df["at_risk"] = (df["diabetes_label"] >= 1).astype(str)
@@ -120,12 +123,16 @@ def compute_information_gain_rows() -> list[dict[str, Any]]:
         )
     )
 
-    alcohol_map = {"None": 0, "Light": 1, "Moderate": 2, "Heavy": 3, "Unknown": 1}
+    alcohol_map = {
+        "Never": 0,
+        "None": 0,
+        "Light": 1,
+        "Moderate": 2,
+        "Heavy": 3,
+        "Unknown": 1,
+    }
     df["alcohol_encoded"] = df["alcohol_use"].fillna("Unknown").map(
-        lambda value: alcohol_map.get(
-            str(value).strip().title() if str(value).strip().lower() != "none" else "None",
-            1,
-        )
+        lambda value: alcohol_map.get(normalize_alcohol_category(value), 1)
     )
 
     met_criteria = pd.DataFrame(

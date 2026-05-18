@@ -46,7 +46,7 @@ For planned user acceptance testing, the target recruitment locale consists of o
 
 ### 3.3 Population of the Study
 
-The modeling population consisted of postmenopausal women represented in NHANES. The final analytic cohort contained 1,376 postmenopausal women who satisfied the study's demographic, reproductive-health, and data-availability criteria. The cohort was restricted to female respondents within the target menopausal age range, with postmenopausal status derived from reproductive-health questionnaire responses. Reproductive-health filtering used RHQ031, which identifies respondents who reported no menstrual period during the past 12 months (CDC/NCHS, 2024c).
+The modeling population consisted of postmenopausal women represented in NHANES. The final analytic cohort contained 1,376 postmenopausal women who satisfied the study's demographic, reproductive-health, and fasting-laboratory data-availability criteria. The cohort was restricted to female respondents within the target menopausal age range, with postmenopausal status derived from reproductive-health questionnaire responses. Reproductive-health filtering used RHQ031, which identifies respondents who reported no menstrual period during the past 12 months (CDC/NCHS, 2024c).
 
 The multiclass reference distribution consisted of 642 normal cases, 457 pre-diabetic cases, and 277 diabetic cases. For the deployed screening model, pre-diabetic and diabetic cases were combined into a single at-risk class. This binary reformulation produced 734 at-risk cases and 642 normal cases. The binary formulation reflects the intended use of DIANA as a screening and triage-support tool: the system is designed to identify individuals who may benefit from confirmatory testing or clinical review rather than to assign a definitive diagnosis.
 
@@ -112,13 +112,15 @@ Lifestyle variables were derived through rule-based classification. Smoking stat
 
 Reference labels were constructed using a dual-source hierarchy. The primary source was DIQ010, the NHANES diabetes questionnaire item that records whether a respondent had been told by a physician that she had diabetes or borderline diabetes. Respondents reporting physician-diagnosed diabetes were labeled diabetic, while respondents reporting borderline diabetes were labeled pre-diabetic.
 
-For respondents without self-reported diabetes or borderline diabetes, American Diabetes Association (ADA) HbA1c thresholds were applied. HbA1c values of 6.5 percent or higher were labeled diabetic, values from 5.7 to 6.4 percent were labeled pre-diabetic, and values below 5.7 percent were labeled normal. A hard override was applied so that any record with HbA1c of 6.5 percent or higher was labeled diabetic regardless of self-reported status. This rule reduced the chance that undiagnosed biochemical diabetes would be mislabeled as normal based only on self-report (American Diabetes Association Professional Practice Committee, 2026).
+For respondents without self-reported diabetes or borderline diabetes, American Diabetes Association (ADA) HbA1c thresholds were applied. HbA1c values of 6.5 percent or higher were labeled diabetic, values from 5.7 to 6.4 percent were labeled pre-diabetic, and values below 5.7 percent were labeled normal. A hard override was applied so that any record with HbA1c of 6.5 percent or higher was labeled diabetic regardless of self-reported status. This rule reduced the chance that undiagnosed biochemical diabetes would be mislabeled as normal based only on self-report (American Diabetes Association Professional Practice Committee for Diabetes, 2026).
 
 Agreement between DIQ010-derived labels and HbA1c-threshold labels was 94.1 percent, corresponding to 1,295 of 1,376 records. The remaining 5.9 percent reflected discordance between self-report and a single biochemical measurement. These discordant records may represent undiagnosed diabetes, recall error, treatment effects, timing differences, or biological and laboratory variability. The label used in this study should therefore be interpreted as an operational reference label rather than as a perfect diagnostic gold standard.
 
 ### 3.6 Data Preparation, Missing Data, and Outlier Handling
 
 NHANES records contain missing values because of non-response, subsample designs, examination skip patterns, and variable availability across cycles. The defensible training pipeline used leakage-safe median imputation within the cross-validation workflow. Imputation parameters were fitted only on training folds and then applied to held-out folds, ensuring that validation or test information did not influence preprocessing. K-nearest-neighbor imputation was restricted to exploratory analysis and was not used for defensible model training because global imputation before cross-validation would allow the imputation procedure to see held-out fold information (Vabalas et al., 2019).
+
+The final eligibility rule required complete HbA1c because HbA1c is used in reference-label construction. It also required fasting-laboratory availability, operationalized by the presence of fasting blood sugar in the NHANES fasting subsample, because the active DIANA model depends on measured fasting-subsample lipid predictors such as triglycerides and LDL cholesterol. FBS itself was not used as a model predictor and was not required as a second diagnostic label criterion; it functioned as the practical fasting-lab cohort gate. This choice favored a smaller but cleaner lipid-panel cohort over a larger HbA1c-only cohort with extensive imputation of active lipid predictors.
 
 At inference time, missing waist circumference is handled by a separate serving-layer guardrail. During face-validity review, median imputation was found to be problematic for low-BMI users because a training-cohort median waist value of approximately 97 cm could create an implausible visceral-adiposity signal. When waist circumference is unavailable but BMI is present, the ML service estimates waist circumference as BMI multiplied by 3.33. This rule is a pragmatic usability safeguard intended to reduce implausible individual-level substitution; it is not a validated clinical estimator and should be evaluated further through sensitivity analysis.
 
@@ -181,6 +183,8 @@ Three threshold strategies were evaluated using out-of-fold probabilities: Youde
 A composite clinical score was then used to select the fold-specific strategy:
 
 `Clinical Score = 0.35 x Sensitivity + 0.30 x Specificity + 0.25 x F1 + 0.10 x Accuracy`
+
+In these formulas, TP denotes true positives, TN denotes true negatives, FP denotes false positives, and FN denotes false negatives.
 
 Sensitivity, specificity, predictive values, and related diagnostic testing measures followed the standard confusion-matrix definitions used in diagnostic accuracy evaluation (Shreffler & Huecker, 2023). F1 was included as a harmonic-mean summary of precision and sensitivity (Powers, 2011).
 
@@ -477,10 +481,13 @@ At the threshold-policy level, Youden's J was selected in 5 of 6 LOGO folds, whi
 | Guardrail Nearest Feasible | 1/6 | Safety fallback selecting the nearest feasible threshold under temporal shift |
 | Guardrail Shift Floor | 0/6 | Hard minimum-threshold shift was not used by the selected Logistic Regression model |
 
-Medically, this means that the deployed threshold policy prioritized early identification without allowing the model to classify too many normal profiles as at risk in unstable folds. Youden's J was retained when the fold-level operating point produced an acceptable sensitivity-specificity balance. In the 2021-2023 fold, the guardrail selected the nearest feasible threshold to reduce specificity collapse under a high-sensitivity operating point. This adjustment changed the classification threshold, not the trained model coefficients.
+Medically, this means that the deployed threshold policy prioritized early identification without allowing the model to classify too many normal profiles as at risk in unstable folds. Youden's J was retained when the fold-level operating point produced an acceptable sensitivity-specificity balance. In the 2021-2023 fold, guardrail arbitration selected the nearest feasible threshold to limit specificity collapse under a high-sensitivity operating point. This adjustment changed the classification threshold, not the trained model coefficients.
 
 **Figure 4.1. ROC Curve for the Logistic Regression Screening Model**
-[Figure note: insert verified ROC figure from `models/binary_v2_no_bp/visualizations/roc_curve.png`.]
+
+![ROC curve for the Logistic Regression screening model](../../../models/binary_v2_no_bp/visualizations/roc_curve.png)
+
+Source file: `models/binary_v2_no_bp/visualizations/roc_curve.png`.
 
 ### 4.2 Feature Relevance and Feature-Selection Results
 
@@ -503,14 +510,14 @@ Information Gain analysis was used to examine feature relevance before final mod
 | 11 | LDL | Numeric | 0.044970 | 4.51% | Yes |
 | 12 | BMI Category | Numeric | 0.034278 | 3.44% | No |
 | 13 | Total Cholesterol | Numeric | 0.028459 | 2.86% | No |
-| 14 | Physical Activity (encoded) | Ordinal | 0.007360 | 0.74% | Yes |
-| 15 | Age | Numeric | 0.004261 | 0.43% | Yes |
-| 16 | Smoking Status (encoded) | Ordinal | 0.004023 | 0.40% | Yes |
-| 17 | Alcohol Use (encoded) | Ordinal | 0.000000 | 0.00% | Yes |
+| 14 | Alcohol Use (encoded) | Ordinal | 0.018244 | 1.83% | Yes |
+| 15 | Physical Activity (encoded) | Ordinal | 0.007360 | 0.74% | Yes |
+| 16 | Age | Numeric | 0.004261 | 0.43% | Yes |
+| 17 | Smoking Status (encoded) | Ordinal | 0.004023 | 0.40% | Yes |
 
 Derived variables such as TG/HDL ratio and metabolic syndrome score were excluded because they duplicate information already present in selected features. Including both composites and their component variables could distort interpretation and inflate apparent feature importance. Blood pressure variables were excluded to preserve the self-screening accessibility goal of the system. This feature-selection process prioritized non-circularity, interpretability, accessibility, and practical deployment.
 
-Alcohol use had zero univariate Information Gain in the discretized validation output but remains in the deployed feature contract because coefficient analysis and clinical covariate rationale treat lifestyle exposure as a controlled behavioral predictor rather than as a standalone selector. This should be interpreted cautiously and should not be used to infer a causal protective effect.
+Alcohol use had modest non-zero univariate Information Gain in the discretized validation output but remains in the deployed feature contract primarily because coefficient analysis and clinical covariate rationale treat lifestyle exposure as a controlled behavioral predictor rather than as a standalone selector. This should be interpreted cautiously and should not be used to infer a causal protective effect.
 
 ### 4.3 Model Comparison
 
@@ -521,9 +528,9 @@ The candidate algorithms were compared under the same nested LOGO validation fra
 | Algorithm | Mean Fold AUC-ROC | Pooled AUC 95% CI | Sensitivity | Sens 95% CI | Specificity | F1 | Mean Threshold |
 |---|---:|---|---:|---|---:|---:|---:|
 | Logistic Regression | 0.736 | 0.710-0.763 | 0.748 | 0.717-0.776 | 0.605 | 0.711 | 0.465 |
-| Random Forest | 0.716 | 0.686-0.742 | 0.732 | 0.701-0.762 | 0.600 | 0.702 | 0.485 |
-| LightGBM | 0.712 | 0.684-0.738 | 0.724 | 0.692-0.754 | 0.603 | 0.696 | 0.475 |
-| XGBoost | 0.713 | 0.681-0.737 | 0.730 | 0.698-0.763 | 0.589 | 0.699 | 0.655 |
+| Random Forest | 0.716 | -- | 0.732 | -- | 0.600 | 0.702 | 0.485 |
+| LightGBM | 0.712 | -- | 0.724 | -- | 0.603 | 0.696 | 0.475 |
+| XGBoost | 0.713 | -- | 0.730 | -- | 0.589 | 0.699 | 0.655 |
 
 Logistic Regression was selected because it provided the most appropriate balance of performance and interpretability for a screening-support system. Its coefficients can be interpreted more directly than those of ensemble models, and its probability outputs are suitable for threshold optimization and SHAP-based explanation. It also demonstrated efficient inference: LR inference averages **0.62 ms** in the benchmarked environment, compared with **13.09 ms** for RF and **0.25 ms** for LightGBM. These timing results should be interpreted as local inference benchmarks rather than production load-test results.
 
@@ -573,7 +580,12 @@ The cluster distribution demonstrates metabolic heterogeneity within the at-risk
 The Ahlqvist-inspired interpretation should therefore be read as subtype-context support rather than as biological subtype validation. DIANA does not assign SAID because autoimmune markers are unavailable, and the SIDD-like group is interpreted as lipid-driven or atherogenic rather than as confirmed insulin-deficient diabetes. The cluster results support the presence of heterogeneous metabolic patterns among at-risk users, but they do not establish treatment categories.
 
 **Figure 4.2. Cluster Distribution and Centroid Profiles**
-[Figure note: insert verified clustering figures from `models/binary_v2_no_bp/visualizations/cluster_distribution.png` and `models/binary_v2_no_bp/visualizations/cluster_heatmap.png`; `cluster_scatter.png` may be used as a supplemental clustering plot if space permits.]
+
+![At-risk cluster distribution](../../../models/binary_v2_no_bp/visualizations/cluster_distribution.png)
+
+![Weighted K-Means centroid heatmap](../../../models/binary_v2_no_bp/visualizations/cluster_heatmap.png)
+
+Source files: `models/binary_v2_no_bp/visualizations/cluster_distribution.png` and `models/binary_v2_no_bp/visualizations/cluster_heatmap.png`.
 
 ### 4.6 Leakage Validation Results
 
@@ -604,23 +616,35 @@ The remaining technical-readiness gaps therefore concern environment-dependent R
 
 ### 4.8 UI Workflow Integration
 
-The implemented DIANA workflow begins with user authentication and proceeds to dashboard review, biomarker data entry, prediction generation, result display, explainability review, trend visualization, and report export. The dashboard presents recent assessments and risk summaries. The assessment form collects demographics, biomarkers, anthropometric measures, lifestyle variables, and family-history context.
+The implemented DIANA workflow begins with user authentication and proceeds to dashboard review, biomarker data entry, prediction generation, result interpretation, trend visualization, and report export. The dashboard presents recent assessments and risk summaries. The default thesis workflow uses the locked `binary_v2_no_bp` model and collects age, height, weight-derived BMI, lipid biomarkers, optional waist circumference, lifestyle variables, and notes. Conditional fields for alternate model variants exist in the codebase, but they are not part of the default locked workflow.
 
-After form submission, the backend validates the request, sends the relevant assessment payload to the ML service, receives prediction and lineage metadata, persists the assessment, invalidates affected cache keys, and returns the result to the frontend. The result display presents risk probability, risk category, subtype context when available, model version, and dataset lineage. SHAP explanations are requested separately and displayed only when explanation outputs are available.
+After form submission, the backend validates the request, sends the relevant assessment payload to the ML service, receives prediction and lineage metadata, persists the assessment, invalidates affected cache keys, and returns the result to the frontend. The result display presents risk probability, risk category, subtype context when available, model version, dataset lineage, biomarker snapshot, clinical guardrails, and next-step guidance. SHAP explainability is supported through a separate frontend component and backend ML proxy route when explanation outputs are available; the user-facing result modal screenshot in this section does not display fabricated SHAP values.
 
-The result interface presents outputs in a layered hierarchy. The first layer shows binary screening classification through risk score, risk category, and threshold context. The second layer shows metabolic subtype context only for at-risk predictions. The third layer presents SHAP explanation when available. Normal predictions receive neutral subtype semantics so that disease-pattern labels are not assigned to users classified as normal.
+The result interface presents outputs in a layered hierarchy. The first layer shows binary screening classification through risk score, risk category, and threshold context. The second layer shows metabolic subtype context only when the backend capability contract supports subtype output. The third layer presents clinical guardrails and actionable follow-up text. Normal predictions receive neutral subtype semantics so that disease-pattern labels are not assigned to users classified as normal.
 
 **Figure 4.3. Main Dashboard Interface**
-[Figure note: insert verified screenshot captured from the running application.]
+
+![DIANA main dashboard interface](screenshots/figure-4-3-main-dashboard.png)
+
+Source file: `docs/07-research/thesis-drafts/screenshots/figure-4-3-main-dashboard.png`.
 
 **Figure 4.4. Assessment Form With Real-Time Validation**
-[Figure note: insert verified screenshot captured from the running application.]
 
-**Figure 4.5. ML Result Modal With SHAP Explanation**
-[Figure note: insert verified screenshot captured from the running application. Do not use synthetic SHAP values.]
+![DIANA assessment form with BMI calculation and biomarker inputs](screenshots/figure-4-4-assessment-form-validation.png)
+
+Source file: `docs/07-research/thesis-drafts/screenshots/figure-4-4-assessment-form-validation.png`.
+
+**Figure 4.5. Assessment Result Modal With Clinical Interpretation**
+
+![DIANA assessment-result modal](screenshots/figure-4-5-ml-result-modal.png)
+
+Source file: `docs/07-research/thesis-drafts/screenshots/figure-4-5-ml-result-modal.png`. The screenshot was captured from the running application using a completed assessment. It shows the current result modal and does not include synthetic SHAP values.
 
 **Figure 4.6. Personal Trends Visualization**
-[Figure note: insert verified screenshot captured from an account with sufficient historical assessments.]
+
+![DIANA personal trends visualization](screenshots/figure-4-6-personal-trends.png)
+
+Source file: `docs/07-research/thesis-drafts/screenshots/figure-4-6-personal-trends.png`. The screenshot shows the current trends view after assessment creation; multi-point trend lines require additional historical assessments.
 
 This workflow demonstrates that the model was not evaluated only as an isolated algorithm. It was integrated into a functioning screening-support application with authentication, persistence, visualization, explainability, trends, and report-generation capabilities.
 
@@ -746,7 +770,7 @@ Ahlqvist, E., Storm, P., Karajamaki, A., Martinell, M., Dorkhan, M., Carlsson, A
 
 Alberti, K. G. M. M., Eckel, R. H., Grundy, S. M., Zimmet, P. Z., Cleeman, J. I., Donato, K. A., ... & Smith, S. C. (2009). Harmonizing the metabolic syndrome. *Circulation*, 120(16), 1640-1645. https://doi.org/10.1161/CIRCULATIONAHA.109.192644
 
-American Diabetes Association Professional Practice Committee. (2026). 2. Diagnosis and classification of diabetes: Standards of Care in Diabetes--2026. *Diabetes Care*. https://pmc.ncbi.nlm.nih.gov/articles/PMC12690183/
+American Diabetes Association Professional Practice Committee for Diabetes. (2026). 2. Diagnosis and classification of diabetes: Standards of Care in Diabetes--2026. *Diabetes Care, 49*(Supplement 1), S27-S49. https://doi.org/10.2337/dc26-S002
 
 Bangor, A., Kortum, P. T., & Miller, J. T. (2008). An empirical evaluation of the System Usability Scale. *International Journal of Human-Computer Interaction*, 24(6), 574-594. https://doi.org/10.1080/10447310802205776
 
