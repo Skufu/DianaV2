@@ -311,7 +311,7 @@ def main():
     df = df.dropna(subset=['diabetes_status'])
     dropped = before - len(df)
     if dropped > 0:
-        print(f"   Dropped {dropped} rows with missing HbA1c")
+        print(f"   Dropped {dropped} rows with missing or invalid operational labels")
     
     # =========================================
     # STEP 6: Class Distribution

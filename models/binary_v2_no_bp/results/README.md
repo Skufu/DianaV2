@@ -36,12 +36,12 @@
 | `best_model` | Selected algorithm (Logistic Regression) |
 | `n_features` | Number of input features (9) |
 | `validation_method` | CV strategy used |
-| `decision_thresholds.at_risk` | Classification threshold (0.478) |
+| `decision_thresholds.at_risk` | Classification threshold (0.465) |
 | `metrics.mean_threshold` | Mean decision threshold across LOGO folds |
 | `metrics.std_threshold` | Standard deviation of per-fold thresholds |
-| `metrics.auc_roc` | Primary performance metric (0.727) |
-| `metrics.sensitivity` | True positive rate (71.1%) |
-| `metrics.npv` | Negative predictive value (65.6%) |
+| `metrics.auc_roc` | Primary performance metric (0.737) |
+| `metrics.sensitivity` | True positive rate (74.8%) |
+| `metrics.npv` | Negative predictive value (67.2%) |
 | `features[]` | List of 9 clinical features |
 
 **Why It Matters**: This is the source of truth for model performance claims in documentation and thesis.
@@ -54,20 +54,15 @@
 
 **Structure**: Array of fold-level records with anomalous metrics.
 
-**Example Warning**:
+**Current Result**:
 ```json
-{
-  "fold": 6,
-  "test_cycle": "2021-2023",
-  "model": "Logistic Regression",
-  "fpr": 0.7279,  // 72.8% false positive rate - concerning
-  "sensitivity": 0.9237  // Very high sensitivity, but at cost of specificity
-}
+[]
 ```
 
 **Interpretation**:
 - High FPR folds may indicate distribution shift (different population in that cycle)
-- Fold 6 (2021-2023) shows highest sensitivity but lowest specificity
+- The current artifact contains no fold-level blindspot warnings
+- Threshold-policy guardrail use is still tracked separately in `logo_fold_metrics.csv`
 - These warnings guide where the model may be less reliable
 
 **Use Case**: Review before deployment to understand temporal stability issues.
@@ -81,9 +76,9 @@
 **Key Metrics**:
 | Metric | Value | Interpretation |
 |--------|-------|----------------|
-| `brier_score` | 0.2082 | Lower is better (0 = perfect, 0.25 = random) |
-| `expected_calibration_error` | 0.0624 | Average deviation from perfect calibration |
-| `hosmer_lemeshow_statistic` | 21.40 | Chi-square measure (lower = better calibrated) |
+| `brier_score` | 0.2087 | Lower is better (0 = perfect, 0.25 = random) |
+| `expected_calibration_error` | 0.0563 | Average deviation from perfect calibration |
+| `hosmer_lemeshow_statistic` | 24.75 | Chi-square measure (lower = better calibrated) |
 
 **Calibration Curve**:
 - `prob_pred`: Predicted probabilities (binned)
@@ -99,12 +94,12 @@
 **Purpose**: K-Means clustering results with Ahlqvist diabetes subtype mapping.
 
 **Cluster Subtypes (K=4)**:
-| Cluster | Subtype | Risk Level | Key Characteristics | Diabetic Rate |
-|---------|---------|------------|---------------------|---------------|
-| SIRD | Severe Insulin-Resistant Diabetes | HIGH | High BMI, high TG, low HDL | 36.1% |
-| SIDD | Atherogenic/Lipid-Driven | HIGH | High LDL, dyslipidemia | 26.1% |
-| MOD | Mild Obesity-Related Diabetes | MODERATE | High BMI, moderate markers | ~20% |
-| MARD | Mild Age-Related Diabetes | LOW | Older, mild metabolic dysfunction | 8.1% |
+| Cluster | Subtype | Risk Level | Count | Key Characteristics |
+|---------|---------|------------|------:|---------------------|
+| SIRD | Severe Insulin-Resistant Diabetes | HIGH | 77 | High TG, low HDL, elevated waist |
+| SIDD | Atherogenic/Lipid-Driven | HIGH | 199 | High LDL, dyslipidemia |
+| MOD | Mild Obesity-Related Diabetes | MODERATE | 226 | Highest BMI and waist circumference |
+| MARD | Mild Age-Related Diabetes | LOW | 232 | Larger residual group with milder lipid-adiposity profile |
 
 **Feature Weights**:
 ```json
@@ -143,12 +138,12 @@
 **Results**:
 | Model | Mean (ms) | P95 (ms) | P99 (ms) |
 |-------|-----------|----------|----------|
-| Logistic Regression | 1.08 | 1.27 | 1.31 |
-| LightGBM | 1.40 | 2.24 | 3.94 |
-| Random Forest | 40.74 | 49.44 | 73.83 |
+| Logistic Regression | 0.62 | 0.74 | 0.79 |
+| LightGBM | 0.25 | 0.27 | 0.29 |
+| Random Forest | 13.09 | 13.58 | 13.88 |
 
 **Interpretation**:
-- Logistic Regression is ~38x faster than Random Forest
+- Logistic Regression is ~21x faster than Random Forest
 - LR and LightGBM are both suitable for real-time inference
 - Random Forest may be too slow for high-throughput production
 
@@ -185,14 +180,15 @@
 **Key Findings**:
 | Model | Mean AUC | Std AUC | Mean Sensitivity | Mean Specificity |
 |-------|----------|---------|------------------|------------------|
-| Logistic Regression | 0.7306 | 0.0248 | 0.7111 | 0.6421 |
-| Random Forest | 0.7138 | 0.0206 | 0.7376 | 0.5933 |
-| LightGBM | 0.7026 | 0.0163 | 0.7598 | 0.5374 |
+| Logistic Regression | 0.7360 | 0.0277 | 0.7475 | 0.6053 |
+| Random Forest | 0.7164 | 0.0186 | 0.7319 | 0.6004 |
+| LightGBM | 0.7118 | 0.0173 | 0.7242 | 0.6030 |
+| XGBoost | 0.7129 | 0.0132 | 0.7300 | 0.5889 |
 
 **Interpretation**:
-- Logistic Regression has highest mean AUC (0.7306)
-- LightGBM has lowest variance (most stable across folds)
-- All models have similar sensitivity; LR has best specificity
+- Logistic Regression has highest mean AUC (0.7360)
+- Logistic Regression has the highest mean sensitivity in the current comparison
+- Logistic Regression, Random Forest, and LightGBM have similar specificity, with LR selected for the best AUC and interpretability
 
 **Model Selection Rationale**: LR chosen for highest AUC, best calibration, and fastest inference.
 
@@ -215,9 +211,9 @@
 | `changed_assignments_percent_aligned` | % of samples that changed clusters |
 
 **Key Findings**:
-- Most perturbations result in >98% assignment stability
-- `waist_circumference_minus20` shows highest instability (3.1% changed)
-- `age` perturbations have minimal impact (0-0.17% changed)
+- Most perturbations preserve cluster assignments
+- `waist_circumference_minus20` shows the largest instability in the corrected run (31 changed assignments)
+- `age` perturbations have minimal impact
 - Clustering is robust to ±20% weight changes
 
 **Use Case**: Justifies feature weight choices in thesis methodology section.
