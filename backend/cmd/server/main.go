@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/joho/godotenv"
 	"github.com/pressly/goose/v3"
 	"github.com/skufu/DianaV2/backend/internal/cache"
@@ -110,7 +110,9 @@ func main() {
 		if err := goose.Up(migrationDB, "./migrations"); err != nil {
 			log.Fatalf("migration failed: %v", err)
 		}
-		migrationDB.Close()
+		if err := migrationDB.Close(); err != nil {
+			log.Printf("failed to close migration DB connection: %v", err)
+		}
 		log.Printf("database migrations completed successfully")
 	} else {
 		log.Printf("DB_DSN not set; running without database (handlers will error on DB access)")

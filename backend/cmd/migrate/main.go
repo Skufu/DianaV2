@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/joho/godotenv"
 	"github.com/pressly/goose/v3"
 	"github.com/skufu/DianaV2/backend/internal/config"
 )
@@ -33,7 +33,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("failed to close database connection: %v", err)
+		}
+	}()
 
 	if err := db.Ping(); err != nil {
 		log.Fatalf("failed to ping database: %v", err)

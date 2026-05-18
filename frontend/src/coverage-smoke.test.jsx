@@ -347,6 +347,7 @@ vi.mock('./api', () => {
       ],
     }),
     fetchMLMetricsApi: vi.fn().mockResolvedValue(mlMetrics),
+    fetchMLVisualizationApi: vi.fn().mockResolvedValue(new Blob(['image'], { type: 'image/png' })),
     fetchModelRunsApi: vi.fn().mockResolvedValue({
       data: [
         {
@@ -368,6 +369,12 @@ vi.mock('./api', () => {
     forgotPasswordApi: vi.fn().mockResolvedValue({ message: 'sent' }),
     getAssessmentsApi: vi.fn().mockResolvedValue(assessments),
     getConsentSettingsApi: vi.fn().mockResolvedValue({ consent_personal_data: true }),
+    getErrorMessage: (error, fallback) => error?.message || fallback,
+    getFieldErrors: error =>
+      error?.details && typeof error.details === 'object' && !Array.isArray(error.details)
+        ? error.details
+        : {},
+    getAuthTokens: vi.fn(() => ({ accessToken: 'token', refreshToken: 'refresh' })),
     getMLVisualizationUrl: vi.fn(name => `/api/v1/ml/insights/visualizations/${name}`),
     getTrendsApi: vi.fn().mockResolvedValue({}),
     getUserProfileApi: vi.fn().mockResolvedValue(profile),
@@ -440,6 +447,21 @@ vi.mock('./api', () => {
       isLoading: false,
       error: null,
     }),
+    useActiveModel: () => ({
+      data: {
+        id: 1,
+        model_name: 'binary_v2_no_bp',
+        model_type: 'clinical',
+        model_version: 'v2.0.0',
+        dataset_hash: 'abc123def4567890',
+        feature_set: ['bmi', 'triglycerides', 'ldl', 'hdl', 'age', 'waist_circumference'],
+        is_active: true,
+        created_at: '2026-05-01T08:00:00Z',
+        metrics: { auc_roc: 0.72, accuracy: 0.74 },
+      },
+      isLoading: false,
+      error: null,
+    }),
     useClinicComparison: () => ({
       data: [{ clinic: 'Default clinic', assessments: 10, avg_risk_score: 61 }],
     }),
@@ -475,6 +497,19 @@ vi.mock('./api', () => {
       isPending: false,
     }),
     useModelRuns: () => ({ data: { data: [], total: 0, total_pages: 1 }, isLoading: false }),
+    useOperationsHealth: () => ({
+      data: {
+        status: 'healthy',
+        services: [
+          { name: 'backend', status: 'healthy' },
+          { name: 'database', status: 'healthy' },
+          { name: 'ml', status: 'healthy' },
+        ],
+        log_sources: [{ name: 'backend', available: true }],
+      },
+      isLoading: false,
+      error: null,
+    }),
     useResendVerification: () => ({
       mutateAsync: vi.fn().mockResolvedValue({ message: 'resent' }),
       isPending: false,
@@ -803,7 +838,7 @@ describe('coverage smoke tests', () => {
 
   it('renders admin governance and model oversight surfaces', async () => {
     let unmount = renderOnce(<AdminDashboard userRole="admin" activeView="overview" />);
-    expect(screen.getByText(/Total Users/i)).toBeInTheDocument();
+    expect(screen.getByText(/User Accounts/i)).toBeInTheDocument();
     unmount();
 
     unmount = renderOnce(<AuditLogViewer />);

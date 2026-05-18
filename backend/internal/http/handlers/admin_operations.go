@@ -280,7 +280,7 @@ func (h *AdminOperationsHandler) mlHealth(ctx context.Context) operationsService
 			LatencyMS: time.Since(start).Milliseconds(),
 		}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -340,7 +340,7 @@ func readRecentLogRecords(path string) ([]string, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	info, err := file.Stat()
 	if err != nil {
