@@ -43,15 +43,16 @@ jobs:
         run: |
           # Get the current release version
           VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Check for existing issue
         id: check
         uses: actions/github-script@v7
         with:
           script: |
-            const errorId = context.payload.client_payload?.error_id || '${{ github.event.inputs.error_id }}';
+            const input = context.payload.inputs || {};
+            const errorId = context.payload.client_payload?.error_id || input.error_id || '';
             const { data: issues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -73,42 +74,44 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const errorId = context.payload.client_payload?.error_id || '${{ github.event.inputs.error_id }}';
-            const errorMessage = context.payload.client_payload?.error_message || '${{ github.event.inputs.error_message }}';
-            const errorType = context.payload.client_payload?.error_type || '${{ github.event.inputs.error_type }}';
-            const sentryUrl = context.payload.client_payload?.sentry_url || '${{ github.event.inputs.sentry_url }}';
+            const input = context.payload.inputs || {};
+            const errorId = context.payload.client_payload?.error_id || input.error_id || '';
+            const errorMessage = context.payload.client_payload?.error_message || input.error_message || '';
+            const errorType = context.payload.client_payload?.error_type || input.error_type || 'Error';
+            const sentryUrl = context.payload.client_payload?.sentry_url || input.sentry_url || '';
             const version = '${{ steps.release.outputs.version }}';
             const commit = '${{ steps.release.outputs.commit }}';
 
             const title = `[Sentry] ${errorType}: ${errorMessage.substring(0, 50)}${errorMessage.length > 50 ? '...' : ''}`;
-            
-            const body = `## Automated Error Report
-
-**Error ID:** ${errorId}
-**Error Type:** ${errorType}
-**Release:** ${version} (${commit.substring(0, 7)})
-
-### Error Message
-\`\`\`
-${errorMessage}
-\`\`\`
-
-### Links
-- [View in Sentry](${sentryUrl})
-- [Release ${{ steps.release.outputs.version }}](https://github.com/${{ github.repository }}/releases/tag/${{ steps.release.outputs.version }})
-
-### Context
-This issue was automatically created from a Sentry error report.
-
-### Next Steps
-- [ ] Review the error details in Sentry
-- [ ] Determine severity and priority
-- [ ] Assign to appropriate team member
-- [ ] Update this issue with findings and resolution
-
-<!-- sentry-error -->
-<!-- error-id: ${errorId} -->
-`;
+            const releaseUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/${version}`;
+            const body = [
+              '## Automated Error Report',
+              '',
+              `**Error ID:** ${errorId}`,
+              `**Error Type:** ${errorType}`,
+              `**Release:** ${version} (${commit.substring(0, 7)})`,
+              '',
+              '### Error Message',
+              '```',
+              errorMessage,
+              '```',
+              '',
+              '### Links',
+              `- [View in Sentry](${sentryUrl})`,
+              `- [Release ${version}](${releaseUrl})`,
+              '',
+              '### Context',
+              'This issue was automatically created from a Sentry error report.',
+              '',
+              '### Next Steps',
+              '- [ ] Review the error details in Sentry',
+              '- [ ] Determine severity and priority',
+              '- [ ] Assign to appropriate team member',
+              '- [ ] Update this issue with findings and resolution',
+              '',
+              '<!-- sentry-error -->',
+              `<!-- error-id: ${errorId} -->`,
+            ].join('\n');
 
             const { data: issue } = await github.rest.issues.create({
               owner: context.repo.owner,
@@ -140,28 +143,31 @@ This issue was automatically created from a Sentry error report.
         uses: actions/github-script@v7
         with:
           script: |
-            const errorMessage = context.payload.client_payload?.error_message || '${{ github.event.inputs.error_message }}';
-            const sentryUrl = context.payload.client_payload?.sentry_url || '${{ github.event.inputs.sentry_url }}';
+            const input = context.payload.inputs || {};
+            const errorMessage = context.payload.client_payload?.error_message || input.error_message || '';
+            const sentryUrl = context.payload.client_payload?.sentry_url || input.sentry_url || '';
             const version = '${{ steps.release.outputs.version }}';
+            const body = [
+              '## Recurring Error Report',
+              '',
+              `This error occurred again in release ${version}.`,
+              '',
+              '### Error Message',
+              '```',
+              errorMessage,
+              '```',
+              '',
+              `[Sentry Link](${sentryUrl})`,
+              '',
+              '---',
+              '*This is an automated comment.*',
+            ].join('\n');
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: ${{ steps.check.outputs.issue_number }},
-              body: `## Recurring Error Report
-
-This error occurred again in release ${version}.
-
-### Error Message
-\`\`\`
-${errorMessage}
-\`\`\`
-
-[Sentry Link](${sentryUrl})
-
----
-*This is an automated comment.*
-`
+              body
             });
 
   update-sentry:
