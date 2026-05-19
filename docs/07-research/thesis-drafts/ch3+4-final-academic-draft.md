@@ -18,7 +18,7 @@ flowchart TB
     D --> E["Nested temporal validation<br/>Leave-One-Group-Out by NHANES release"]
     E --> F["Candidate model comparison<br/>Logistic Regression, Random Forest, LightGBM, XGBoost"]
     F --> G["Selected binary screening model<br/>Logistic Regression"]
-    G --> H["Clinical threshold optimization<br/>mean threshold = 0.465"]
+    G --> H["Clinical threshold optimization<br/>validation-derived threshold"]
     H --> I["At-risk subtype context<br/>weighted K-Means, K = 4"]
     I --> J["Explainability workflow<br/>feature-attribution output when available"]
     J --> K["Integrated web application<br/>React, Go, Python ML service, PostgreSQL, optional cache support"]
@@ -114,7 +114,7 @@ Reference labels were constructed using a dual-source hierarchy. The primary sou
 
 For respondents without self-reported diabetes or borderline diabetes, American Diabetes Association (ADA) HbA1c thresholds were applied. HbA1c values of 6.5 percent or higher were labeled diabetic, values from 5.7 to 6.4 percent were labeled pre-diabetic, and values below 5.7 percent were labeled normal. A hard override was applied so that any record with HbA1c of 6.5 percent or higher was labeled diabetic regardless of self-reported status. This rule reduced the chance that undiagnosed biochemical diabetes would be mislabeled as normal based only on self-report (American Diabetes Association Professional Practice Committee for Diabetes, 2026).
 
-Agreement between DIQ010-derived labels and HbA1c-threshold labels was 94.1 percent, corresponding to 1,295 of 1,376 records. The remaining 5.9 percent reflected discordance between self-report and a single biochemical measurement. These discordant records may represent undiagnosed diabetes, recall error, treatment effects, timing differences, or biological and laboratory variability. The label used in this study should therefore be interpreted as an operational reference label rather than as a perfect diagnostic gold standard.
+Agreement between DIQ010-derived labels and HbA1c-threshold labels was assessed to evaluate consistency between self-report and biochemical classification. Discordant records were interpreted as potential effects of undiagnosed diabetes, recall error, treatment effects, timing differences, or biological and laboratory variability. The label used in this study should therefore be interpreted as an operational reference label rather than as a perfect diagnostic gold standard. The label-consistency findings are reported in Chapter 4.
 
 ### 3.6 Data Preparation, Missing Data, and Outlier Handling
 
@@ -124,13 +124,13 @@ The final eligibility rule required complete HbA1c because HbA1c is used in refe
 
 At inference time, missing waist circumference is handled by a separate serving-layer guardrail. During face-validity review, median imputation was found to be problematic for low-BMI users because a training-cohort median waist value of approximately 97 cm could create an implausible visceral-adiposity signal. When waist circumference is unavailable but BMI is present, the ML service estimates waist circumference as BMI multiplied by 3.33. This rule is a pragmatic usability safeguard intended to reduce implausible individual-level substitution; it is not a validated clinical estimator and should be evaluated further through sensitivity analysis.
 
-Outlier handling used clinical plausibility ranges rather than automatic row deletion. Values outside plausible clinical bounds were flagged through a binary outlier indicator, but records were retained. This decision preserved sample size and avoided excluding genuinely extreme metabolic profiles that may be clinically meaningful. In the final cohort, 35 of 1,376 records, or 2.5 percent, had at least one flagged outlier.
+Outlier handling used clinical plausibility ranges rather than automatic row deletion. Values outside plausible clinical bounds were flagged through a binary outlier indicator, but records were retained. This decision preserved sample size and avoided excluding genuinely extreme metabolic profiles that may be clinically meaningful. The number of flagged outlier records was documented after preprocessing.
 
 ### 3.7 Data Leakage Prevention
 
 A three-layer leakage-prevention architecture was implemented before model training. The first layer scanned model feature definitions to confirm that diagnostic markers such as HbA1c, fasting blood sugar, fasting glucose, and related aliases were absent from classifier and clustering feature sets. The second layer performed proxy-leakage detection by computing Pearson correlation between each non-diagnostic candidate feature and the HbA1c diagnostic threshold. Features with absolute correlation greater than 0.95 would be flagged as proxy leakage. The third layer computed Shannon entropy information gain to verify feature relevance while documenting why some high-ranked features were excluded.
 
-This validation was enforced programmatically as a pre-training gate. If diagnostic variables or proxy-leakage conditions were detected, the training sequence would terminate. This made leakage prevention an executable part of the methodology rather than a post-hoc assertion. In the verified final feature set, no diagnostic predictor leakage and no proxy leakage were detected.
+This validation was enforced programmatically as a pre-training gate. If diagnostic variables or proxy-leakage conditions were detected, the training sequence would terminate. This made leakage prevention an executable part of the methodology rather than a post-hoc assertion. The leakage-validation findings are reported in Chapter 4.
 
 ### 3.8 Predictive Model Development and Validation
 
@@ -154,7 +154,7 @@ Four candidate algorithms were evaluated under the same nested temporal-validati
 
 Hyperparameter optimization used grid search with AUC-ROC as the scoring metric. The inner loop used grouped cross-validation so that NHANES survey-cycle boundaries were respected during model selection. The outer loop used Leave-One-Group-Out (LOGO) validation, holding out one entire NHANES release at a time. This nested LOGO design estimated whether a model trained on prior survey groups could generalize to a distinct temporal cohort. It is more conservative than random k-fold validation because observations from the same survey period are not split across training and testing (Vabalas et al., 2019).
 
-The final model was selected based on mean fold AUC rather than pooled aggregate AUC alone. This selection rule favored models that performed consistently across temporal groups. Logistic Regression was selected for deployment because it achieved the strongest mean fold AUC while preserving interpretability, stable probability outputs, and efficient inference.
+The final model was selected based on mean fold AUC rather than pooled aggregate AUC alone. This selection rule was used to favor models that performed consistently across temporal groups while preserving interpretability, stable probability outputs, and efficient inference. The comparative model-selection results are reported in Chapter 4.
 
 NHANES survey weights were not incorporated into model training. Survey weights are essential for population-level prevalence estimation and nationally representative descriptive inference, but their role in prediction-model training depends on the target deployment population and modeling objective. In this study, unweighted training was treated as a design choice for learning risk patterns in the analytic cohort. Weighted sensitivity analysis remains an appropriate future extension (Lumley, 2010).
 
@@ -188,7 +188,7 @@ In these formulas, TP denotes true positives, TN denotes true negatives, FP deno
 
 Sensitivity, specificity, predictive values, and related diagnostic testing measures followed the standard confusion-matrix definitions used in diagnostic accuracy evaluation (Shreffler & Huecker, 2023). F1 was included as a harmonic-mean summary of precision and sensitivity (Powers, 2011).
 
-The final mean threshold was 0.465. This downward adjustment from 0.50 reflects the screening objective of detecting at-risk cases while preserving acceptable specificity. The threshold was not manually chosen after viewing test results; it was derived from out-of-fold predictions inside the validation procedure. A deterministic guardrail was also implemented to reduce specificity collapse under temporal prevalence shift. If a selected threshold produced very high sensitivity but inadequate specificity, the algorithm searched for a feasible threshold satisfying minimum operating constraints or reverted toward a safer operating point. In the final Logistic Regression model, guardrail arbitration was activated in 1 of 6 LOGO folds.
+The final screening threshold was derived from out-of-fold predictions inside the validation procedure rather than manually chosen after viewing test results. A deterministic guardrail was also implemented to reduce specificity collapse under temporal prevalence shift. If a selected threshold produced very high sensitivity but inadequate specificity, the algorithm searched for a feasible threshold satisfying minimum operating constraints or reverted toward a safer operating point. The final threshold value and fold-level guardrail behavior are reported in Chapter 4.
 
 **Table 3.6. Executable ML Safeguards and Medical Rationale**
 
@@ -235,7 +235,7 @@ The SIDD-like label requires particular caution. True SIDD classification requir
 flowchart TB
     A["Validated assessment input<br/>non-diagnostic predictors"] --> B["Logistic Regression<br/>binary screening probability"]
     B --> C["Serving guardrails<br/>waist estimate when missing and metabolic-risk floor when applicable"]
-    C --> D["Optimized screening threshold<br/>mean threshold = 0.465"]
+    C --> D["Validation-derived<br/>screening threshold"]
     D --> E{"Screening result"}
     E -->|"Normal"| F["Normal screening output<br/>no disease-pattern subtype assigned"]
     E -->|"At risk"| G["Weighted K-Means subtyping<br/>trained on 734 at-risk cases"]
@@ -255,7 +255,7 @@ Detailed SHAP outputs are generated through the explainability endpoint and disp
 
 The implementation includes graceful degradation when SHAP output is unavailable. In that case, the frontend displays an explanation-unavailable panel and states that no feature-level SHAP values are shown in fallback mode. This behavior preserves the screening result while avoiding fabricated feature attributions.
 
-In addition to the reported model metrics, DIANA implements several safety and traceability controls around the ML workflow. These controls make the methodology executable in the codebase rather than treating leakage prevention, explanation handling, drift awareness, and model lineage as documentation-only claims.
+In addition to model-performance evaluation, DIANA implements several safety and traceability controls around the ML workflow. These controls make the methodology executable in the codebase rather than treating leakage prevention, explanation handling, drift awareness, and model lineage as documentation-only claims.
 
 **Table 3.8. ML Safety and Traceability Controls**
 
@@ -587,7 +587,9 @@ The Ahlqvist-inspired interpretation should therefore be read as subtype-context
 
 Source files: `models/binary_v2_no_bp/visualizations/cluster_distribution.png` and `models/binary_v2_no_bp/visualizations/cluster_heatmap.png`.
 
-### 4.6 Leakage Validation Results
+### 4.6 Preprocessing and Leakage Validation Results
+
+Label-consistency checking showed 94.1 percent agreement between DIQ010-derived labels and HbA1c-threshold labels, corresponding to 1,295 of 1,376 records. The remaining 5.9 percent reflected discordance between self-report and a single biochemical measurement. Outlier flagging identified 35 of 1,376 records, or 2.5 percent, with at least one clinical plausibility flag; these records were retained rather than deleted.
 
 The leakage validation pipeline confirmed that diagnostic glycemic variables were absent from the classifier and clustering feature lists. It also confirmed that no retained non-diagnostic feature exceeded the proxy-leakage threshold of absolute r greater than 0.95 with the HbA1c diagnostic threshold. The highest observed proxy correlation was triglycerides at r = 0.3241, which remained far below the leakage threshold.
 
