@@ -11,6 +11,8 @@ ARG VITE_ML_BASE=http://localhost:5000
 ENV VITE_API_BASE=$VITE_API_BASE
 ENV VITE_ML_BASE=$VITE_ML_BASE
 
+RUN apk add --no-cache python3 make g++
+
 # Install the frontend workspace using the root lockfile.
 COPY package.json package-lock.json ./
 COPY frontend/package.json ./frontend/package.json
