@@ -83,6 +83,6 @@ describe('UserManagement pagination', () => {
     });
 
     expect(screen.queryByText(/Page \d+ of/)).not.toBeInTheDocument();
-    expect(screen.getByText('No users found')).toBeInTheDocument();
+    expect(await screen.findByText('No users found')).toBeInTheDocument();
   });
 });
