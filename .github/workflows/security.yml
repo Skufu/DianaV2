@@ -97,24 +97,23 @@ jobs:
           # Check if SARIF file exists and has content
           if [ ! -s semgrep-results.sarif ]; then
             # Create minimal valid SARIF with empty run (required by upload-sarif)
-            cat > semgrep-results.sarif << 'EOF'
-{
-  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-  "version": "2.1.0",
-  "runs": [
-    {
-      "tool": {
-        "driver": {
-          "name": "Semgrep",
-          "informationUri": "https://semgrep.dev",
-          "rules": []
-        }
-      },
-      "results": []
-    }
-  ]
-}
-EOF
+            printf '%s\n' \
+              '{' \
+              "  \"\$schema\": \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json\"," \
+              '  "version": "2.1.0",' \
+              '  "runs": [' \
+              '    {' \
+              '      "tool": {' \
+              '        "driver": {' \
+              '          "name": "Semgrep",' \
+              '          "informationUri": "https://semgrep.dev",' \
+              '          "rules": []' \
+              '        }' \
+              '      },' \
+              '      "results": []' \
+              '    }' \
+              '  ]' \
+              '}' > semgrep-results.sarif
           fi
 
       - name: Upload Semgrep results to GitHub Security
