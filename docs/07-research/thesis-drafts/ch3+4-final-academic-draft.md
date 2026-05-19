@@ -8,6 +8,14 @@ The methodological design was structured around two central requirements. First,
 
 DIANA is therefore not positioned as a diagnostic device. A screen-positive result indicates that a user's profile resembles metabolic patterns associated with prediabetes or diabetes risk in the NHANES-derived postmenopausal cohort. The result should prompt follow-up discussion, confirmatory laboratory testing, or preventive counseling where appropriate, but it does not establish a clinical diagnosis by itself.
 
+#### Methodological Phases
+
+The methodology was organized into eight sequential phases. Phase 1 covered data acquisition and biomarker preparation, including NHANES file acquisition, cohort filtering, variable mapping, reference-label construction, missing-data handling, and clinical plausibility checks. Phase 2 applied feature selection using Information Gain and entropy-based relevance analysis while enforcing diagnostic-leakage prevention. Phase 3 implemented cluster-based risk group identification through weighted K-Means clustering for at-risk profiles. Phase 4 covered predictive model development and training using candidate machine-learning algorithms under a nested temporal-validation framework. Phase 5 defined model testing, evaluation, and comparison procedures, including discrimination, threshold selection, calibration, and benchmark-comparison methods.
+
+Phase 6 covered web application integration and visualization development, including frontend assessment workflows, backend API orchestration, ML-service integration, explainability output handling, trend visualization, and report-generation support. Phase 7 covered system testing and technical validation across backend, ML, frontend, security, deployment-readiness, and accessibility-readiness components. Phase 8 covered the planned doctor's evaluation and expert-review procedure, in which licensed medical professionals would assess risk-output plausibility, SHAP explanation clarity, clinical workflow fit, and perceived usefulness. The methodological phases describe how the study was conducted; the corresponding empirical findings and validation evidence are reported in Chapter 4.
+
+The figures used in Chapter 3 are limited to methodological and system-design diagrams: the overall pipeline, two-stage screening and subtyping workflow, four-tier architecture, assessment sequence, and API access-control boundary. Quantitative model artifacts and application screenshots are presented in Chapter 4 so that visual evidence remains separated from procedural design.
+
 **Figure 3.1. Methodological Flow from NHANES Data to the Integrated DIANA System**
 
 ```mermaid
@@ -153,6 +161,8 @@ Four candidate algorithms were evaluated under the same nested temporal-validati
 | XGBoost | learning_rate | 0.05, 0.1 |
 
 Hyperparameter optimization used grid search with AUC-ROC as the scoring metric. The inner loop used grouped cross-validation so that NHANES survey-cycle boundaries were respected during model selection. The outer loop used Leave-One-Group-Out (LOGO) validation, holding out one entire NHANES release at a time. This nested LOGO design estimated whether a model trained on prior survey groups could generalize to a distinct temporal cohort. It is more conservative than random k-fold validation because observations from the same survey period are not split across training and testing (Vabalas et al., 2019).
+
+In this study, each NHANES survey release was treated as one validation group. Under LOGO validation, the model was trained on all but one survey release and then tested on the held-out release. This process was repeated until each release had served once as the held-out test group. The design was used because records from the same survey cycle may share collection-period, laboratory, sampling, or population characteristics.
 
 The final model was selected based on mean fold AUC rather than pooled aggregate AUC alone. This selection rule was used to favor models that performed consistently across temporal groups while preserving interpretability, stable probability outputs, and efficient inference. The comparative model-selection results are reported in Chapter 4.
 
@@ -425,6 +435,8 @@ The planned user evaluation follows an ISO/IEC 25010-informed usability framewor
 The planned user cohort consists of approximately 30 menopausal or postmenopausal Filipino women recruited from the target online community, subject to approval and consent procedures. The planned clinical expert cohort consists of two licensed medical professionals, preferably one endocrinologist and one obstetrics-gynecology specialist, with experience in menopausal and metabolic health. Expert review will evaluate risk-output plausibility, SHAP explanation clarity, clinical workflow fit, and perceived utility. Because formal UAT and expert review have not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations must remain placeholders until empirical evidence is collected.
 
 # Chapter 4: Results and Discussion
+
+Although Chapter 3 describes the work as eight methodological phases, Chapter 4 presents the findings by evidence domain. This organization separates model performance, feature relevance, clustering, leakage validation, functional testing, interface integration, deployment readiness, and pending user or expert evaluation evidence.
 
 ### 4.1 Binary Screening Model Performance
 
