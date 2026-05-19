@@ -11,22 +11,24 @@ ARG VITE_ML_BASE=http://localhost:5000
 ENV VITE_API_BASE=$VITE_API_BASE
 ENV VITE_ML_BASE=$VITE_ML_BASE
 
-# Install dependencies
-COPY package*.json ./
-RUN npm ci
+# Install the frontend workspace using the root lockfile.
+COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/package.json
+RUN npm ci --workspace=frontend --legacy-peer-deps
 
 # Copy source and build
-COPY . .
+COPY frontend ./frontend
+WORKDIR /app/frontend
 RUN npm run build
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine3.20
 
 # Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built assets
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/frontend/dist /usr/share/nginx/html
 
 EXPOSE 80
 
