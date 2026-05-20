@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DIANA Pipeline Animation</title>
+<script>
+p5 = { disableFriendlyErrors: true };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { overflow: hidden; background: #0a0e17; width: 100%; height: 100%; font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+canvas { display: block; }
+#info { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); font-size: 13px; color: rgba(255,255,255,0.6); text-align: center; pointer-events: none; z-index: 10; background: rgba(10,14,23,0.7); padding: 10px 22px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(16px); box-shadow: 0 8px 32px rgba(0,0,0,0.5); letter-spacing: 0.2px; }
+#info kbd { display: inline-block; padding: 4px 8px; background: rgba(255,255,255,0.12); border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; margin: 0 4px; color: #fff; font-weight: 600; letter-spacing: 0; }
+</style>
+</head>
+<body>
+<div id="info"><kbd>Space</kbd> pause &nbsp;·&nbsp; <kbd>→</kbd> <kbd>←</kbd> scenes &nbsp;·&nbsp; <kbd>R</kbd> restart</div>
+<script>
+// ══════════════════════════════════════════════════════
+// DIANA PIPELINE ANIMATION — p5.js Global Mode
+// ══════════════════════════════════════════════════════
+
+const W = 1000;
+const H = 700;
+
+// ── Colors ──
+const C = {
+  bg:[10,14,23], cardBg:[20,28,46], cardBorder:[40,60,90],
+  accent:[96,165,250], green:[74,222,128], amber:[251,191,54],
+  red:[239,68,68], purple:[167,139,250], teal:[45,212,191],
+  text:[210,220,235], dim:[130,145,165], grid:[25,35,55]
+};
+
+// ── Data ──
+const CYCLES = ["2009-2010","2011-2012","2013-2014","2015-2016","2017-2018","2021-2023"];
+const CYCLE_COUNTS = [222,190,236,229,234,265];
+const CYCLE_COLORS = [
+  [31,119,180],[255,127,14],[44,160,44],[148,103,189],[140,86,75],[227,119,194]
+];
+const FOLD_DATA = [
+  {cycle:"2009-2010",n:222,auc:0.711,sens:0.761,spec:0.581,thresh:0.47,strat:"youden"},
+  {cycle:"2011-2012",n:190,auc:0.713,sens:0.634,spec:0.718,thresh:0.49,strat:"youden"},
+  {cycle:"2013-2014",n:236,auc:0.736,sens:0.727,spec:0.567,thresh:0.47,strat:"youden"},
+  {cycle:"2015-2016",n:229,auc:0.788,sens:0.772,spec:0.679,thresh:0.48,strat:"youden"},
+  {cycle:"2017-2018",n:234,auc:0.738,sens:0.735,spec:0.637,thresh:0.47,strat:"youden"},
+  {cycle:"2021-2023",n:265,auc:0.731,sens:0.856,spec:0.449,thresh:0.41,strat:"guardrail"},
+];
+const STAGES = [
+  {label:"NHANES Download",  detail:"6 Years of Data · 13 Medical Surveys · CDC Certified", color:[37,99,235]},
+  {label:"Process & Merge",  detail:"Combine Records · Clean Terms · Prevent Data Cheating", color:[29,78,216]},
+  {label:"Inclusion Criteria", detail:"Female Only · Ages 45-60 · Postmenopausal", color:[30,64,175]},
+  {label:"Define Diabetes Risk", detail:"Patient Self-Report + Doctor HbA1c Override", color:[30,58,138]},
+  {label:"Feature Engineering",detail:"9 Safe Metrics: BMI, Lipids, Age, Waist, Lifestyle", color:[125,211,252]},
+  {label:"Machine Learning",detail:"4 Models Tested · Leave-One-Out Training · SHAP Explainability", color:[186,230,253]},
+];
+const STAGE_TITLES = [
+  "1. Data Download","2. Processing & Merge","3. Medical Filtering",
+  "4. Defining Diabetes Risk","5. Preparing Patient Features","6. Machine Learning Training"
+];
+const STAGE_STATS = [
+  ["Downloaded 6 rounds of CDC National Health Surveys (2009-2023)", "Extracted 13 unique medical and lifestyle files per round", "Ensured data authenticity using CDC-signed certificates"],
+  ["Merge 13 survey files into one record", "Standardize varying medical terms", "Remove 'Refused' codes (e.g. 7777 → Blank)", "Convert complex surveys to simple tags", "Rule: NO guessing blanks yet (stops 'cheating')"],
+  ["Filter 1: Female only (removes ~50% of raw data)", "Filter 2: Age 45-60 (focuses on perimenopausal window)", "Filter 3: Postmenopausal (key biological requirement)", "Filter 4: Must have complete blood sugar tests (quality gate)"],
+  ["Base Risk: Does the patient self-report having diabetes?", "Clinical Override: If HbA1c ≥ 6.5%, they are marked 'Diabetic'", "Categorized into 3 groups: Normal, Prediabetic, Diabetic", "Final ML Target: Healthy (0) vs At-Risk (1) [53.3% of data]"],
+  ["6 Body Metrics: BMI, Triglycerides, LDL, HDL, Age, Waist", "3 Lifestyle Habits: Smoking, Physical Activity, Alcohol Use", "Rule: Removed Blood Sugar (prevents circular ML logic)", "Rule: Applied Asian-Pacific BMI cutoffs (≥25 is obese)"],
+  ["Training Method: 'Leave-One-Year-Out' to prove robustness", "Tested 4 Algorithms: Logistic Regression, Random Forest, etc.", "Winner: Logistic Regression (Best balance of accuracy & safety)", "Threshold: Optimized to prioritize catching At-Risk patients"]
+];
+
+// ── State ──
+let currentScene = 0;
+let sceneTime = 0;
+let paused = false;
+const TOTAL_SCENES = 16;
+
+// ── Easing ──
+function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+function lerp(a,b,t) { return a + (b - a) * Math.max(0, Math.min(1, t)); }
+
+// ── Drawing helpers ──
+function drawGrid(alpha) {
+  stroke(C.grid[0], C.grid[1], C.grid[2], 60 * alpha);
+  strokeWeight(1);
+  let sz = 40;
+  let offsetX = (sceneTime * 0.15) % sz;
+  for(let x = offsetX; x < W; x += sz) line(x, 0, x, H);
+  for(let y = offsetX; y < H; y += sz) line(0, y, W, y);
+}
+
+function gbox(x,y,w,h,color,alpha,r=12){
+  drawingContext.shadowBlur = 30 * alpha;
+  drawingContext.shadowColor = `rgba(${color[0]},${color[1]},${color[2]},${0.4 * alpha})`;
+  fill(color[0],color[1],color[2], 15 * alpha);
+  noStroke();
+  rect(x, y, w, h, r);
+  drawingContext.shadowBlur = 0;
+}
+
+function bbox(x,y,w,h,color,alpha,r=12){
+  fill(color[0],color[1],color[2], 30 * alpha);
+  stroke(color[0],color[1],color[2], 160 * alpha);
+  strokeWeight(1.5);
+  rect(x,y,w,h,r);
+}
+
+function centered(str,x,y,size,color,alpha,bold){
+  noStroke();
+  if(Array.isArray(color)) fill(color[0],color[1],color[2],255*(alpha||1));
+  else fill(255,255,255,255*(alpha||1));
+  textSize(size||14);
+  textStyle(bold ? BOLD : NORMAL);
+  textAlign(CENTER,CENTER);
+  text(str,x,y);
+}
+
+function dot(x,y,r,color,alpha){
+  noStroke();
+  fill(color[0],color[1],color[2],255*(alpha||1));
+  circle(x,y,r);
+}
+
+function arrow(x1,y1,x2,y2,color,alpha){
+  let dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+  if(len<1) return;
+
+  // Outer glowing stroke
+  stroke(color[0],color[1],color[2],60*(alpha||1));
+  strokeWeight(4);
+  line(x1,y1,x2,y2);
+
+  // Inner core stroke
+  stroke(color[0],color[1],color[2],180*(alpha||1));
+  strokeWeight(1.5);
+  drawingContext.setLineDash([5, 4]);
+  drawingContext.lineDashOffset = -(sceneTime * 0.4); // Smooth, subtle flow animation
+  line(x1,y1,x2,y2);
+  drawingContext.setLineDash([]);
+  drawingContext.lineDashOffset = 0;
+
+  // Arrowhead
+  let a=Math.atan2(dy,dx);
+  let ax=x2-10*Math.cos(a), ay=y2-10*Math.sin(a);
+  noStroke();
+  fill(color[0],color[1],color[2],220*(alpha||1));
+  beginShape();
+  vertex(x2,y2);
+  vertex(ax+6*Math.sin(a),ay-6*Math.cos(a));
+  vertex(ax-6*Math.sin(a),ay+6*Math.cos(a));
+  endShape(CLOSE);
+}
+
+// ══════════════════════════════════════════════════════
+// SCENE 0: INTRO
+// ══════════════════════════════════════════════════════
+function scene0(){
+  let p=Math.min(1,sceneTime/90), a=easeOut(p);
+  let ty=lerp(H/2 - 20, H/2 - 70, p);
+
+  // Clean, ambient drifting dots
+  for(let i=0;i<40;i++){
+    let t = sceneTime*0.002 + i*1.7;
+    let px = (Math.sin(t)*0.45 + 0.5)*W;
+    let py = (Math.cos(sceneTime*0.0015 + i*2.3)*0.45 + 0.5)*H;
+    let sz = 2 + (i%3);
+    let dotAlpha = (20+20*Math.sin(sceneTime*0.01+i)) * a;
+
+    fill(C.accent[0], C.accent[1], C.accent[2], dotAlpha);
+    noStroke();
+    circle(px, py, sz);
+  }
+
+  // Typography
+  centered("DIANA Pipeline",W/2,ty,56,[255,255,255],a,true);
+  centered("Diabetes Risk Screening for Postmenopausal Women",W/2,ty+60,18,C.dim,a,false);
+
+  if(sceneTime>60){
+    let sa=easeOut(Math.min(1,(sceneTime-60)/30));
+    centered("6 NHANES Cycles  ·  1,376 Patients  ·  9 Leakage-Free Features  ·  Nested Cross-Validation",
+      W/2,H/2+45,14,C.accent,sa,false);
+    centered("2009-2023  ·  Logistic Regression (AUC 0.737)  ·  Clinical Diabetes Subtypes",
+      W/2,H/2+75,13,C.dim,sa,false);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// SCENES 1-6: PIPELINE STAGES
+// ══════════════════════════════════════════════════════
+function genScene1to6(){
+ for(let si=0;si<6;si++){
+  let idx=si;
+  window['scene'+(idx+1)]=function(){
+    let a=easeOut(Math.min(1,sceneTime/120));
+
+    // ── Mini pipeline overview ──
+    let mw = 830, gap = 16, sw = 125, sh = 50, oy = 40;
+    let startX = (W-mw)/2;
+    for(let i=0;i<6;i++){
+      let sx = startX + i * (sw + gap), active = i===idx, past = i<idx;
+      let fade = Math.min(1,sceneTime/30);
+      if(active){
+        gbox(sx,oy,sw,sh,STAGES[i].color,fade,8);
+        fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],80*fade);
+        stroke(C.accent[0],C.accent[1],C.accent[2],220*fade);
+        strokeWeight(2); rect(sx,oy,sw,sh,8);
+        centered(STAGES[i].label.replace('\n',' '),sx+sw/2,oy+sh/2,9.5,[255,255,255],fade,true);
+      }else if(past){
+        fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],50*fade);
+        stroke(C.green[0],C.green[1],C.green[2],100*fade);
+        strokeWeight(1); rect(sx,oy,sw,sh,8);
+        centered(STAGES[i].label.replace('\n',' '),sx+sw/2,oy+sh/2,9.5,[255,255,255],0.7*fade,false);
+      }else{
+        fill(15,20,30,50*fade);
+        stroke(C.cardBorder[0],C.cardBorder[1],C.cardBorder[2],60*fade);
+        strokeWeight(1); rect(sx,oy,sw,sh,8);
+        centered(STAGES[i].label.replace('\n',' '),sx+sw/2,oy+sh/2,9.5,C.dim,0.6*fade,false);
+      }
+
+      // Dashed Flow Arrow
+      if(i<5){
+        let aa = (past||(active&&i===idx))?1.0:0.2;
+        arrow(sx + sw + 1, oy + sh/2, sx + sw + gap - 1, oy + sh/2, C.accent, aa*fade);
+      }
+    }
+
+    // ── Main stage box (Static, clean layout) ──
+    let my=oy+sh+50, bw=340, bh=220;
+    // Shifted slightly left (bx = 270) to give bullets more room
+    let bx = 270, by = my+(H-my-100)/2-bh/2;
+
+    let sa=easeOut(Math.min(1,sceneTime/20));
+
+    gbox(bx,by,bw,bh,STAGES[idx].color,sa,16);
+    bbox(bx,by,bw,bh,STAGES[idx].color,sa,16);
+    centered(STAGES[idx].label,bx+bw/2,by+bh*0.35,22,[255,255,255],sa,true);
+    centered(STAGES[idx].detail,bx+bw/2,by+bh*0.65,14,C.text,sa,false);
+
+    // ── Stats bullets ──
+    if(sceneTime>40){
+      let ta=easeOut(Math.min(1,(sceneTime-40)/30));
+      let sx=bx+bw+40;
+      fill(C.text[0],C.text[1],C.text[2],220*ta);
+      textSize(14); textAlign(LEFT); textStyle(NORMAL); // Reduced to 14
+      let stats=STAGE_STATS[idx];
+      for(let i=0;i<stats.length;i++){
+        let ly = my+60+i*34;
+        text("•  "+stats[i],sx,ly);
+      }
+    }
+
+    // ── Custom ETL Visuals for Scene 2 (Process & Merge) ──
+    if (idx === 1 && sceneTime > 60) {
+      let eta = easeOut(Math.min(1, (sceneTime - 60) / 40));
+      let ex = 25, ey = my + 20, ew = 230; // Slightly wider for text
+
+      // Raw Data Box (Messy)
+      fill(C.cardBg[0],C.cardBg[1],C.cardBg[2], 120*eta);
+      stroke(C.red[0], C.red[1], C.red[2], 150*eta);
+      strokeWeight(1.5); rect(ex, ey, ew, 80, 8);
+      centered("Raw Blood Pressure Data", ex+ew/2, ey+20, 12, C.red, eta, true);
+      centered("Patient A: 120 mmHg (Valid)", ex+ew/2, ey+42, 11, [255,255,255], eta, false);
+      centered("Patient B: '7777' (Refused to answer)", ex+ew/2, ey+62, 10, C.dim, eta, false);
+
+      let cleanEy = ey + 110;
+
+      // Arrow down
+      arrow(ex+ew/2, ey+80, ex+ew/2, cleanEy, C.accent, eta);
+
+      // Clean Data Box
+      fill(C.cardBg[0],C.cardBg[1],C.cardBg[2], 120*eta);
+      stroke(C.green[0], C.green[1], C.green[2], 150*eta);
+      strokeWeight(1.5); rect(ex, cleanEy, ew, 80, 8);
+      centered("Cleaned Feature", ex+ew/2, cleanEy+20, 12, C.green, eta, true);
+      centered("Patient A: 120 mmHg (Kept)", ex+ew/2, cleanEy+42, 11, [255,255,255], eta, false);
+      centered("Patient B: Blank (Invalid code removed)", ex+ew/2, cleanEy+62, 10, C.dim, eta, false);
+
+      // Warning flag
+      let pulse = 1 + 0.3 * Math.sin(sceneTime * 0.1);
+      fill(C.amber[0],C.amber[1],C.amber[2], 200*eta*pulse);
+      noStroke(); circle(ex+ew/2, cleanEy+100, 7);
+      centered("Kept blank to stop data leakage", ex+ew/2, cleanEy+118, 10, C.amber, eta, true);
+    }
+
+    // ── Title ──
+    centered(STAGE_TITLES[idx],W/2,oy+sh+20,20,[255,255,255],sa,true);
+
+    // ── Cycle distribution ──
+    if(idx>=2&&sceneTime>60){
+      let ba=easeOut(Math.min(1,(sceneTime-60)/30));
+      let cy2=H-50;
+      centered("NHANES Cycle Distribution",W/2,cy2-25,13,C.dim,ba,false);
+      let cw=mw/6;
+      for(let i=0;i<6;i++){
+        let cx=startX+i*cw+cw/2;
+        dot(cx,cy2,8,CYCLE_COLORS[i],ba);
+        fill(C.dim[0],C.dim[1],C.dim[2],160*ba);
+        noStroke(); textAlign(CENTER); textSize(11);
+        text(CYCLE_COUNTS[i],cx,cy2+20);
+      }
+    }
+  };
+ }
+}
+genScene1to6();
+
+// ══════════════════════════════════════════════════════
+// SCENE 7: LOGO CV INTRO & ANIMATION
+// ══════════════════════════════════════════════════════
+function scene7(){
+  let a=easeOut(Math.min(1,sceneTime/90));
+  centered("Leave-One-Year-Out Validation",W/2,80,32,[255,255,255],a,true);
+  centered("Testing the Model on Unseen Time Periods",W/2,115,16,C.dim,a,false);
+
+  if(sceneTime>40){
+    let ea=easeOut(Math.min(1,(sceneTime-40)/30));
+    let x=W/2, y=170;
+
+    // Outer Loop explanation
+    gbox(x-300, y, 600, 80, C.accent, ea*0.5, 14);
+    fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],180*ea);
+    stroke(C.accent[0],C.accent[1],C.accent[2],180*ea);
+    strokeWeight(1.5); rect(x-300, y, 600, 80, 14);
+    noStroke();
+    fill(C.accent[0],C.accent[1],C.accent[2],255*ea);
+    textSize(16); textStyle(BOLD); textAlign(LEFT);
+    text("Outer Loop: Leave-One-Year-Out (Validation)",x-260,y+28);
+    fill(C.text[0],C.text[1],C.text[2],210*ea);
+    textSize(14); textStyle(NORMAL);
+    text("We train on 5 cycles, and test performance on 1 completely unseen cycle",x-260,y+54);
+
+    // Inner Loop explanation
+    let innerY = y + 100;
+    gbox(x-300, innerY, 600, 80, C.green, ea*0.5, 14);
+    fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],180*ea);
+    stroke(C.green[0],C.green[1],C.green[2],180*ea);
+    strokeWeight(1.5); rect(x-300, innerY, 600, 80, 14);
+    noStroke();
+    fill(C.green[0],C.green[1],C.green[2],255*ea);
+    textSize(16); textStyle(BOLD); textAlign(LEFT);
+    text("Inner Loop: Hyperparameter Tuning (Calibration)",x-260,innerY+28);
+    fill(C.text[0],C.text[1],C.text[2],210*ea);
+    textSize(14); textStyle(NORMAL);
+    text("The model runs internal practice trials to tune settings, preventing cheat leaks",x-260,innerY+54);
+
+    // ── Animation visual: 6 cycles splitting ──
+    if (sceneTime > 70) {
+      let animAlpha = easeOut(Math.min(1,(sceneTime-70)/30));
+      let cyY = innerY + 110;
+      let spacing = 45;
+      let startX = x - (5*spacing)/2;
+
+      // Draw 6 cycle nodes
+      for(let i=0; i<6; i++){
+        let isTest = (i === 5); // The last one is held out as an example
+        let cx = startX + i*spacing;
+
+        // Move the test node down to represent being held out
+        let nodeY = cyY;
+        let testAnim = easeOut(Math.min(1, Math.max(0, (sceneTime-100)/40)));
+        if(isTest) {
+           nodeY = cyY + 60 * testAnim;
+        }
+
+        // Draw connection arrows to the process boxes
+        if (sceneTime > 140) {
+            let arrAlpha = easeOut(Math.min(1,(sceneTime-140)/20));
+            if(isTest) {
+                arrow(cx, nodeY+20, x + 150, cyY + 110, C.red, arrAlpha);
+            } else {
+                arrow(cx, nodeY+20, x - 150, cyY + 110, C.green, arrAlpha);
+            }
+        }
+
+        // Draw the cycle node
+        fill(C.cardBg[0],C.cardBg[1],C.cardBg[2], 255*animAlpha);
+        stroke(isTest ? C.red[0] : C.green[0], isTest ? C.red[1] : C.green[1], isTest ? C.red[2] : C.green[2], 200*animAlpha);
+        strokeWeight(1.5);
+        circle(cx, nodeY, 34);
+        noStroke();
+        fill(255,255,255,255*animAlpha);
+        textSize(9.5); textAlign(CENTER, CENTER); textStyle(BOLD);
+        let lbl = CYCLES[i].split("-").map(y => "'" + y.slice(2)).join("-");
+        text(lbl, cx, nodeY);
+      }
+
+      // Process Boxes and flow
+      if (sceneTime > 140) {
+          let arrAlpha = easeOut(Math.min(1,(sceneTime-140)/20));
+
+          // Inner Loop Box
+          fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],180*arrAlpha);
+          stroke(C.green[0],C.green[1],C.green[2],180*arrAlpha);
+          rect(x - 220, cyY + 110, 140, 40, 8);
+          centered("Tuning (5 Cycles)", x - 150, cyY + 130, 12, C.green, arrAlpha, true);
+
+          // Outer Eval Box
+          fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],180*arrAlpha);
+          stroke(C.red[0],C.red[1],C.red[2],180*arrAlpha);
+          rect(x + 80, cyY + 110, 140, 40, 8);
+          centered("Testing (1 Cycle)", x + 150, cyY + 130, 12, C.red, arrAlpha, true);
+
+          // Final connection Arrow from Inner Model to Outer Eval
+          arrow(x - 80, cyY + 130, x + 80, cyY + 130, C.accent, arrAlpha);
+      }
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// SCENES 8-13: LOGO FOLDS
+// ══════════════════════════════════════════════════════
+function genFoldScenes(){
+ for(let fi=0;fi<6;fi++){
+  let fd=FOLD_DATA[fi];
+  window['scene'+(fi+8)]=function(){
+    let a=easeOut(Math.min(1,sceneTime/100));
+
+    centered("Testing on Unseen Cycle: "+fd.cycle,W/2,45,26,[255,255,255],a,true);
+    centered(fd.n+" test patients from "+fd.cycle+" cycle",W/2,72,14,C.dim,a,false);
+
+    // ── Layout constants ──
+    let cw=90,ch=70,sp=12;
+    let totW = 6*cw + 5*sp;
+    let gx=W/2 - totW/2, gy=100;
+
+    // ── 6 cycle boxes ──
+    for(let i=0;i<6;i++){
+      let cx=gx+i*(cw+sp),cy=gy;
+      let isTest=(i===fi);
+      let ad=10+i*6;
+      let ka=easeOut(Math.min(1,Math.max(0,(sceneTime-ad)/20)));
+      if(ka>0){
+        push();
+        translate(cx,cy);
+        if(isTest){
+          drawingContext.shadowBlur = 30 * ka;
+          drawingContext.shadowColor = `rgba(239,68,68,0.6)`;
+          fill(60,15,15,140*ka);
+          stroke(C.red[0],C.red[1],C.red[2],255*ka);
+          strokeWeight(2);
+        }else{
+          fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],120*ka);
+          stroke(C.green[0],C.green[1],C.green[2],160*ka);
+          strokeWeight(1.5);
+        }
+        rect(0,0,cw,ch,10);
+        drawingContext.shadowBlur=0;
+        noStroke();
+        fill(255,255,255,isTest?255*ka:210*ka);
+        textSize(12); textStyle(BOLD); textAlign(CENTER,CENTER);
+        text(CYCLES[i],cw/2,ch/2-10);
+        fill(isTest?C.red[0]:C.green[0],isTest?C.red[1]:C.green[1],isTest?C.red[2]:C.green[2],255*ka);
+        textSize(11); textStyle(BOLD);
+        text(isTest?"TEST":"TRAIN",cw/2,ch/2+10);
+        fill(C.dim[0],C.dim[1],C.dim[2],160*ka);
+        textSize(10); textStyle(NORMAL);
+        text("n="+CYCLE_COUNTS[i],cw/2,ch-8);
+        pop();
+      }
+    }
+
+    // ── Flow diagram (appears after boxes) ──
+    if(sceneTime>50){
+      let ta=easeOut(Math.min(1,(sceneTime-50)/25));
+
+      // ── Compute dynamic positions based on which fold is test ──
+      let trainXs = [];
+      let testCenterX = 0;
+      for(let i=0;i<6;i++){
+        let cx = gx + i*(cw+sp) + cw/2;
+        if(i===fi) testCenterX = cx;
+        else trainXs.push(cx);
+      }
+      let trainAvgX = trainXs.reduce((a,b)=>a+b,0) / trainXs.length;
+
+      // ── Row 2: Train Model (centered under train cycles) and Test Data (under test cycle) ──
+      let row2Y = gy + ch + 65;
+      let trainBoxW = 140, trainBoxH = 38;
+      let trainBoxX = trainAvgX - trainBoxW/2;
+      let testBoxW = 120, testBoxH = 38;
+      let testBoxX = testCenterX - testBoxW/2;
+
+      // Collision avoidance: push pills apart if they overlap (middle folds)
+      let pillGap = 20;
+      let trnC = trainBoxX + trainBoxW/2;
+      let tstC = testBoxX + testBoxW/2;
+      let neededDist = (trainBoxW + testBoxW)/2 + pillGap;
+      let actualDist = Math.abs(trnC - tstC);
+      if(actualDist < neededDist){
+        let mid = (trnC + tstC) / 2;
+        let sign = (trnC <= tstC) ? -1 : 1;
+        trainBoxX = mid + sign * neededDist/2 - trainBoxW/2;
+        testBoxX  = mid - sign * neededDist/2 - testBoxW/2;
+      }
+
+      // Clamp pills so they don't go off-canvas
+      trainBoxX = Math.max(40, Math.min(W - trainBoxW - 40, trainBoxX));
+      testBoxX = Math.max(40, Math.min(W - testBoxW - 40, testBoxX));
+
+      // Train Model pill
+      fill(C.cardBg[0],C.cardBg[1],C.cardBg[2], 200*ta);
+      stroke(C.green[0],C.green[1],C.green[2], 200*ta);
+      strokeWeight(1.5); rect(trainBoxX, row2Y, trainBoxW, trainBoxH, 19);
+      centered("Train Model", trainBoxX + trainBoxW/2, row2Y + trainBoxH/2, 13, C.green, ta, true);
+
+      // Test Data pill
+      fill(C.cardBg[0],C.cardBg[1],C.cardBg[2], 200*ta);
+      stroke(C.red[0],C.red[1],C.red[2], 200*ta);
+      strokeWeight(1.5); rect(testBoxX, row2Y, testBoxW, testBoxH, 19);
+      centered("Test Data", testBoxX + testBoxW/2, row2Y + testBoxH/2, 13, C.red, ta, true);
+
+      // ── Arrows: TRAIN cycles → Train Model (each goes straight down) ──
+      for(let i=0;i<6;i++){
+        if(i===fi) continue;
+        let fromX = gx + i*(cw+sp) + cw/2;
+        let fromY = gy + ch;
+        arrow(fromX, fromY+4, trainBoxX + trainBoxW/2, row2Y - 5, C.green, ta * 0.7);
+      }
+
+      // ── Arrow: TEST cycle → Test Data (straight down, no crossing) ──
+      arrow(testCenterX, gy+ch+4, testBoxX + testBoxW/2, row2Y - 5, C.red, ta * 0.7);
+
+      // ── Row 3: Evaluate node (centered) ──
+      let evalY = row2Y + trainBoxH + 50;
+      let evalW = 150, evalH = 38;
+      let evalX = W/2 - evalW/2;
+
+      fill(C.cardBg[0],C.cardBg[1],C.cardBg[2], 200*ta);
+      stroke(C.accent[0],C.accent[1],C.accent[2], 200*ta);
+      strokeWeight(1.5); rect(evalX, evalY, evalW, evalH, 19);
+      centered("Evaluate", evalX + evalW/2, evalY + evalH/2, 13, C.accent, ta, true);
+
+      // Arrows: Train Model → Evaluate (left input)
+      arrow(trainBoxX + trainBoxW/2, row2Y + trainBoxH + 4, evalX + evalW*0.35, evalY - 5, C.green, ta * 0.7);
+
+      // Arrows: Test Data → Evaluate (right input)
+      arrow(testBoxX + testBoxW/2, row2Y + testBoxH + 4, evalX + evalW*0.65, evalY - 5, C.red, ta * 0.7);
+
+      // ── Arrow: Evaluate → Results ──
+      let ry = evalY + evalH + 45;
+      arrow(evalX + evalW/2, evalY + evalH + 4, W/2, ry - 5, C.accent, ta * 0.7);
+
+      // ── Results box ──
+      if(sceneTime>70){
+        let ra=easeOut(Math.min(1,(sceneTime-70)/30));
+        let rx=W/2 - 340;
+        let rw=680, rh=100;
+
+        gbox(rx,ry,rw,rh,C.accent,ra*0.5,14);
+        fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],160*ra);
+        stroke(C.accent[0],C.accent[1],C.accent[2],160*ra);
+        strokeWeight(1.5); rect(rx,ry,rw,rh,14);
+        noStroke();
+
+        centered("Results",W/2,ry+18,14,C.accent,ra,true);
+        let metrics=[
+          {label:"Overall Accuracy (AUC)",val:nf(fd.auc,1,3),color:C.accent},
+          {label:"Catch Rate (Sensitivity)",val:nf(fd.sens,1,3),color:C.green},
+          {label:"Avoid False Alarms (Spec)",val:nf(fd.spec,1,3),color:C.amber},
+          {label:"Risk Cutoff (Threshold)",val:nf(fd.thresh,1,2),color:C.purple}
+        ];
+        let mw=rw/metrics.length;
+        for(let i=0;i<metrics.length;i++){
+          let mmx=rx+i*mw+mw/2;
+          fill(metrics[i].color[0],metrics[i].color[1],metrics[i].color[2],255*ra);
+          textSize(26); textStyle(BOLD); textAlign(CENTER);
+          text(metrics[i].val,mmx,ry+55);
+          fill(C.dim[0],C.dim[1],C.dim[2],210*ra);
+          textSize(12); textStyle(NORMAL);
+          text(metrics[i].label,mmx,ry+82);
+        }
+
+        // Strategy badge
+        let badgeY=ry+rh+15;
+        if(fd.strat==="guardrail"){
+          fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],240*ra);
+          stroke(C.amber[0],C.amber[1],C.amber[2],255*ra);
+          strokeWeight(1.5); rect(W/2-140,badgeY,280,30,15);
+          noStroke();
+          fill(C.amber[0],C.amber[1],C.amber[2],255*ra);
+          textSize(12); textStyle(BOLD); textAlign(CENTER);
+          text("⚠ Guardrail (Prevalence Shift)",W/2,badgeY+15);
+        }else{
+          centered("Strategy: Mathematical Optimum (Youden's J)",W/2,badgeY+15,12,C.dim,ra,false);
+        }
+      }
+    }
+  };
+ }
+}
+genFoldScenes();
+
+// ══════════════════════════════════════════════════════
+// SCENE 14: AGGREGATE RESULTS
+// ══════════════════════════════════════════════════════
+function scene14(){
+  let p2=Math.min(1,sceneTime/100);
+  centered("Leave-One-Year-Out Cross-Validation — Aggregate Results",W/2,60,30,[255,255,255],easeOut(p2),true);
+
+  // ── Bar chart ──
+  if(sceneTime>30){
+    let ca=easeOut(Math.min(1,(sceneTime-30)/30));
+    let cw=720, cx=(W-cw)/2, cht=220, cy=120;
+
+    // Axis
+    stroke(C.cardBorder[0],C.cardBorder[1],C.cardBorder[2],200*ca);
+    strokeWeight(2);
+    line(cx,cy+cht,cx+cw,cy+cht);
+    line(cx,cy,cx,cy+cht);
+
+    // Y labels & gridlines
+    for(let vi=0;vi<=4;vi++){
+      let v=0.6+vi*0.05;
+      let vy=cy+cht-(vi/4)*cht;
+      fill(C.dim[0],C.dim[1],C.dim[2],200*ca);
+      noStroke(); textSize(12); textAlign(RIGHT, CENTER);
+      text(v.toFixed(2),cx-12,vy);
+      stroke(C.cardBorder[0],C.cardBorder[1],C.cardBorder[2],80*ca);
+      strokeWeight(1);
+      line(cx,vy,cx+cw,vy);
+    }
+
+    // Bars
+    let bw=(cw-40)/6;
+    for(let i=0;i<6;i++){
+      let fd=FOLD_DATA[i];
+      let bx=cx+20+i*bw+bw*0.2,bbw=bw*0.6;
+      let bh=(fd.auc-0.6)/0.2*cht,by=cy+cht-bh;
+      let col=fd.strat==="guardrail"?C.amber:C.accent;
+
+      let bAnim = easeOut(Math.min(1, Math.max(0, (sceneTime-30-i*5)/25)));
+      let animBh = bh * bAnim;
+      let animBy = cy+cht-animBh;
+
+      if(bAnim > 0) {
+          // Clean solid bar
+          noStroke();
+          fill(col[0],col[1],col[2],180*ca);
+          rect(bx,animBy,bbw,animBh, 6, 6, 0, 0);
+
+          // Number Counter
+          let displayAuc = 0.600 + (fd.auc - 0.600) * bAnim;
+          fill(255,255,255,255*ca*bAnim);
+          textSize(13); textStyle(BOLD); textAlign(CENTER);
+          text(nf(displayAuc,1,3),bx+bbw/2,animBy-12);
+      }
+
+      // Label
+      fill(C.dim[0],C.dim[1],C.dim[2],220*ca);
+      textSize(12); textStyle(NORMAL); textAlign(CENTER);
+      text("Fold "+(i+1),bx+bbw/2,cy+cht+20);
+      fill(C.dim[0],C.dim[1],C.dim[2],160*ca);
+      text(fd.cycle,bx+bbw/2,cy+cht+38);
+    }
+
+    // Y axis label
+    push();
+    translate(cx-55,cy+cht/2); rotate(-HALF_PI);
+    fill(C.dim[0],C.dim[1],C.dim[2],220*ca);
+    noStroke(); textSize(14); textAlign(CENTER); textStyle(BOLD);
+    text("AUC-ROC",0,0);
+    pop();
+  }
+
+  // ── Winner card ──
+  if(sceneTime>70){
+    let ba=easeOut(Math.min(1,(sceneTime-70)/30));
+    let cy2=415;
+    gbox(W/2-360,cy2,720,130,C.accent,ba*0.5,16);
+    fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],180*ba);
+    stroke(C.accent[0],C.accent[1],C.accent[2],220*ba);
+    strokeWeight(1.5); rect(W/2-360,cy2,720,130,16);
+    noStroke();
+    centered("Winner: Logistic Regression  ★",W/2,cy2+28,18,C.accent,ba,true);
+    let mg=[
+      ["Overall Accuracy (AUC)","0.737","95% CI: [0.710, 0.763]"],
+      ["Catch Rate (Sensitivity)","0.748","95% CI: [0.717, 0.776]"],
+      ["Avoid False Alarms (Spec)","0.590","—"],
+      ["Prediction Confidence","67.6% / 67.2%","If Alert: 67.6% | If Clear: 67.2%"],
+    ];
+    let mgw=720/mg.length;
+    for(let i=0;i<mg.length;i++){
+      let mx=W/2-360+i*mgw+mgw/2;
+      fill(255,255,255,255*ba); textSize(20); textStyle(BOLD); textAlign(CENTER);
+      text(mg[i][1],mx,cy2+66);
+      fill(C.dim[0],C.dim[1],C.dim[2],220*ba); textSize(12); textStyle(NORMAL);
+      text(mg[i][0],mx,cy2+92);
+      fill(C.dim[0],C.dim[1],C.dim[2],150*ba); textSize(11);
+      text(mg[i][2],mx,cy2+114);
+    }
+  }
+
+  // ── Key takeaways ──
+  if(sceneTime>100){
+    let ta=easeOut(Math.min(1,(sceneTime-100)/20));
+    fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],160*ta);
+    stroke(C.green[0],C.green[1],C.green[2],180*ta);
+    strokeWeight(1.5); rect(W/2-340,590,680,80,14);
+    noStroke();
+    centered("✓ Pipeline Complete",W/2,620,16,C.green,ta,true);
+    centered("9 Leakage-Free Features  ·  6-Cycle Cross-Validation  ·  AUC >0.71 across all folds",W/2,650,14,C.text,ta,false);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// SCENE 15: THRESHOLD OPTIMIZATION (YOUDEN'S J & GUARDRAIL)
+// ══════════════════════════════════════════════════════
+function scene15(){
+  let a = easeOut(Math.min(1, sceneTime/90));
+  centered("Threshold Optimization & Guardrail", W/2, 60, 32, [255,255,255], a, true);
+
+  if (sceneTime > 30) {
+      let ea = easeOut(Math.min(1, (sceneTime-30)/30));
+      // Youden's J Box
+      let y1 = 120;
+      gbox(W/2 - 360, y1, 720, 190, C.accent, ea*0.4, 16);
+      fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],180*ea);
+      stroke(C.accent[0],C.accent[1],C.accent[2],220*ea);
+      strokeWeight(1.5); rect(W/2 - 360, y1, 720, 190, 16);
+
+      centered("Youden's J: Finding the Sweet Spot", W/2, y1 + 35, 20, C.accent, ea, true);
+
+      textSize(15); textStyle(NORMAL); textAlign(CENTER);
+      fill(C.text[0], C.text[1], C.text[2], 220*ea);
+      text("Finds the optimal risk cutoff to mathematically maximize:", W/2, y1 + 75);
+
+      // Math formula
+      textSize(15); textStyle(BOLD);
+      fill(255,255,255,255*ea);
+      text("J = \\text{Sensitivity (Catch Rate)} + \\text{Specificity (Avoided False Alarms)} - 1", W/2, y1 + 125);
+
+      textSize(14); textStyle(NORMAL);
+      fill(C.dim[0], C.dim[1], C.dim[2], 180*ea);
+      text("Balances catching actual risk with minimizing false alarms to find the best screening cutoff.", W/2, y1 + 165);
+  }
+
+  if (sceneTime > 90) {
+      let ga = easeOut(Math.min(1, (sceneTime-90)/30));
+      let y2 = 350;
+
+      gbox(W/2 - 360, y2, 720, 240, C.amber, ga*0.4, 16);
+      fill(C.cardBg[0],C.cardBg[1],C.cardBg[2],180*ga);
+      stroke(C.amber[0],C.amber[1],C.amber[2],220*ga);
+      strokeWeight(1.5); rect(W/2 - 360, y2, 720, 240, 16);
+
+      centered("⚠ The Prevalence Shift Guardrail", W/2, y2 + 35, 20, C.amber, ga, true);
+
+      // Explanations
+      textAlign(LEFT); textSize(15);
+      let textX = W/2 - 320;
+
+      fill(C.text[0], C.text[1], C.text[2], 240*ga); textStyle(BOLD);
+      text("Why it's needed:", textX, y2 + 80);
+      fill(C.dim[0], C.dim[1], C.dim[2], 220*ga); textStyle(NORMAL);
+      text("In the latest survey (2021-2023), the population demographics & conditions shifted.", textX + 130, y2 + 80);
+      text("Pure mathematical optimization would over-react, flagging 60%+ of healthy patients as high-risk.", textX + 130, y2 + 105);
+
+       fill(C.text[0], C.text[1], C.text[2], 240*ga); textStyle(BOLD);
+       text("How it works:", textX, y2 + 155);
+       fill(C.dim[0], C.dim[1], C.dim[2], 220*ga); textStyle(NORMAL);
+       text("If the mathematical threshold flags an unrealistic percentage of the population,", textX + 130, y2 + 155);
+       text("our clinical guardrail overrides it to enforce a safer, realistic screening rate.", textX + 130, y2 + 180);
+
+      // Pulse indicator
+      let pulse = 1 + 0.3 * Math.sin(sceneTime * 0.1);
+      fill(C.amber[0], C.amber[1], C.amber[2], 200*ga*pulse);
+      noStroke();
+      circle(W/2, y2 + 215, 8);
+      centered("Prevents over-screening healthy populations during demographic shifts", W/2 + 15, y2 + 215, 13, C.amber, ga, true);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// P5 SETUP / DRAW
+// ══════════════════════════════════════════════════════
+function setup(){
+  createCanvas(windowWidth,windowHeight);
+  pixelDensity(window.devicePixelRatio || 1);
+  textFont('Inter, system-ui, sans-serif');
+}
+
+function draw(){
+  background(C.bg);
+  if(!paused) sceneTime++;
+
+  push();
+  // Auto-scale to fit window perfectly
+  let sf = Math.min(windowWidth/W, windowHeight/H);
+  sf = Math.min(sf, 1.5); // Cap max scale
+  translate(windowWidth/2, windowHeight/2);
+  scale(sf);
+  translate(-W/2, -H/2);
+
+  // Ambient dynamic grid
+  drawGrid(1.0);
+
+  // Active Scene
+  let idx=Math.min(currentScene,TOTAL_SCENES-1);
+  let fn=window['scene'+idx];
+  if(fn) fn();
+  pop();
+
+  // HUD (drawn in window coordinates)
+  noStroke();
+  fill(C.dim[0],C.dim[1],C.dim[2],150);
+  textAlign(RIGHT,BOTTOM);
+  textSize(12); textStyle(BOLD);
+  let label="Scene "+(idx+1)+"/"+TOTAL_SCENES+"   |   "+Math.floor(sceneTime/60)+"s";
+  if(paused) label+="  ⏸";
+  text(label,windowWidth-28,windowHeight-24);
+
+  // Glowing Progress bar
+  noStroke();
+  fill(C.grid[0],C.grid[1],C.grid[2],100);
+  rect(0,windowHeight-6,windowWidth,6);
+
+  let pWidth = windowWidth * (idx+1) / TOTAL_SCENES;
+  fill(C.accent[0],C.accent[1],C.accent[2],40);
+  rect(0,windowHeight-10,pWidth,10); // Neon glow underlay
+  fill(C.accent[0],C.accent[1],C.accent[2],200);
+  rect(0,windowHeight-6,pWidth,6); // Active bar
+}
+
+function keyPressed(){
+  if(key===' '||keyCode===32){paused=!paused;return false}
+  if(keyCode===39){nextScene();return false}
+  if(keyCode===37){prevScene();return false}
+  if(key==='r'||key==='R'){currentScene=0;sceneTime=0;paused=false;return false}
+}
+function nextScene(){if(currentScene<TOTAL_SCENES-1){currentScene++;sceneTime=0}}
+function prevScene(){if(currentScene>0){currentScene--;sceneTime=0}}
+function mouseClicked(){
+  if(mouseY > windowHeight - 50) return; // Ignore HUD clicks
+  if(mouseX>windowWidth/2) nextScene(); else prevScene();
+}
+function touchEnded(){
+  if(mouseY > windowHeight - 50) return false;
+  if(mouseX>windowWidth/2) nextScene(); else prevScene();
+  return false;
+}
+function windowResized(){
+  resizeCanvas(windowWidth,windowHeight);
+}
+</script>
+</body>
+</html>

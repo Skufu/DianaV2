@@ -143,15 +143,15 @@ scripts/
 | `train_enhanced.py` | Superseded by `Ian_ML/training/train_binary_v2_no_bp.py` | `Ian_ML/training/train_binary_v2_no_bp.py` |
 | `remove_bg.py` | Unrelated to DIANA (image utility) | N/A |
 
-## Missing Scripts (Referenced But Not Implemented)
+## Removed Helper Scripts
 
-The following scripts are referenced in project documentation or Makefile but do not currently exist:
+The following legacy helper scripts do not exist and are no longer exposed as Makefile targets:
 
-| Script | Referenced In | Status |
-|--------|---------------|--------|
-| `scripts/run-dev.sh` | Makefile line 63, README | Not implemented |
-| `scripts/test-db.sh` | Makefile line 66, README | Not implemented |
-| `scripts/debug-neon.sh` | Makefile line 69 | Not implemented |
+| Script | Current Status | Replacement |
+|--------|----------------|-------------|
+| `scripts/run-dev.sh` | Not implemented; Makefile target removed | `make dev` or `bash scripts/dev/start-all.sh` |
+| `scripts/test-db.sh` | Not implemented; Makefile target removed | `make db_status` or `make seed` |
+| `scripts/debug-neon.sh` | Not implemented; Makefile target removed | Check database connection through `make db_status` and environment variables |
 
 **Alternatives**:
 - For `run-dev.sh`: Use `make dev` (starts backend only) or `bash scripts/dev/start-all.sh` (starts all services)

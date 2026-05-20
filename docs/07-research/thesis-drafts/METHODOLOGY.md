@@ -22,14 +22,14 @@ The selection of survey cycles was guided by two primary considerations: diagnos
 
 | Cycle | Years | File Suffix | Sample Design | Notes |
 |-------|-------|-------------|---------------|-------|
-| 2021-2023 | 2-year | `_L` | COVID-adapted | Most recent available; resumed August 2021 after pandemic suspension |
+| 2021-2023 | August 2021-August 2023 | `_L` | Post-pandemic release | Most recent available release after pandemic suspension |
 | 2017-2018 | 2-year | `_J` | Standard | Pre-pandemic baseline |
 | 2015-2016 | 2-year | `_I` | Standard | - |
 | 2013-2014 | 2-year | `_H` | Standard | - |
 | 2011-2012 | 2-year | `_G` | Standard | - |
 | 2009-2010 | 2-year | `_F` | Standard | First cycle post-ADA HbA1c guidelines (2010) |
 
-**Note on 2019-2020 Cycle Exclusion:** The 2019-2020 NHANES cycle was excluded due to significant data collection disruptions caused by the COVID-19 pandemic. Field operations were suspended in March 2020, resulting in incomplete data with potential selection bias. The subsequent 2021-2023 cycle resumed in August 2021 following the pandemic suspension, maintaining the standard 2-year cycle format.
+**Note on 2019-2020 Cycle Exclusion:** The 2019-2020 NHANES cycle was excluded due to significant data collection disruptions caused by the COVID-19 pandemic. Field operations were suspended in March 2020, resulting in incomplete data with potential selection bias. The subsequent 2021-2023 release is treated as the August 2021-August 2023 post-pandemic release rather than as a standard biennial NHANES cycle (CDC/NCHS, 2024b).
 
 **NHANES Data Files Downloaded:**
 
@@ -372,9 +372,9 @@ A sensitivity-biased decision threshold was selected using a three-strategy comp
 
 [[FIGURE PLACEHOLDER: Threshold optimization curves comparing three strategies | Thesis author to insert final threshold optimization visualization]]
 
-The winning strategy per fold was determined through a composite clinical score calculated as 0.35 × Sensitivity + 0.30 × Specificity + 0.25 × F1 + 0.10 × Accuracy. This composite scoring balances multiple clinical considerations while prioritizing sensitivity appropriate for a screening context. The mean threshold across folds was 0.478 with a range from 0.39 to 0.50, reflecting an intentional downward adjustment from the default 0.50 to prioritize sensitivity while preserving acceptable specificity under temporal prevalence shift.
+The winning strategy per fold was determined through a composite clinical score calculated as 0.35 × Sensitivity + 0.30 × Specificity + 0.25 × F1 + 0.10 × Accuracy. This composite scoring balances multiple clinical considerations while prioritizing sensitivity appropriate for a screening context. The mean threshold across folds was 0.465 with a range from 0.41 to 0.49, reflecting an intentional downward adjustment from the default 0.50 to prioritize sensitivity while preserving acceptable specificity under temporal prevalence shift.
 
-**Guardrail Safety Layer:** After initial strategy selection, a deterministic guardrail checks for specificity collapse under temporal prevalence shift. If the winning strategy yields specificity below an adaptive floor (0.40-0.45, raised to 0.45 when sensitivity ≥ 0.85) while sensitivity ≥ 0.85, the system cascades through: (1) selecting the next-best eligible strategy meeting both constraints, (2) finding the nearest feasible threshold on the ROC curve satisfying minimum sensitivity and specificity, or (3) falling back to the neutral 0.50 default. Additionally, folds exhibiting a severe prevalence-shift signature (sensitivity ≥ 0.85, specificity < 0.45, provisional threshold ≤ 0.38) receive a hard minimum threshold bump to 0.46 to prevent unstable low-threshold operating points. In the final Logistic Regression model, guardrail arbitration was activated in **2 of 6 LOGO folds**, with Youden's J as the dominant threshold mode.
+**Guardrail Safety Layer:** After initial strategy selection, a deterministic guardrail checks for specificity collapse under temporal prevalence shift. If the winning strategy yields specificity below an adaptive floor (0.40-0.45, raised to 0.45 when sensitivity ≥ 0.85) while sensitivity ≥ 0.85, the system cascades through: (1) selecting the next-best eligible strategy meeting both constraints, (2) finding the nearest feasible threshold on the ROC curve satisfying minimum sensitivity and specificity, or (3) falling back to the neutral 0.50 default. Additionally, folds exhibiting a severe prevalence-shift signature (sensitivity ≥ 0.85, specificity < 0.45, provisional threshold ≤ 0.38) can receive a hard minimum threshold bump to 0.46 to prevent unstable low-threshold operating points. In the final Logistic Regression model, Youden's J was selected in **5 of 6 LOGO folds**, while guardrail nearest-feasible arbitration was activated in **1 of 6 LOGO folds**.
 
 The selection of a sensitivity-biased threshold aligns with the epidemiological principle that screening tools must cast a wide net, prioritizing case detection over diagnostic precision. This reflects asymmetric clinical costs where false negatives result in delayed diagnosis and progression to complications, while false positives lead only to unnecessary confirmatory testing with minimal harm.
 
@@ -802,7 +802,7 @@ An additional integration safeguard is the backend ML proxy. Frontend requests f
 
 ### 6.7 Persistence, Traceability, and Reporting Strategy
 
-Persistent state management was implemented using PostgreSQL with SQLC-generated query code and repository interfaces, ensuring type-safe database access and maintaining consistency with the application domain model. At assessment creation, the system stores both the submitted biomarker values and the normalized ML outputs required for reproducible interpretation and longitudinal analysis. For the main methodology chapter, the database design is communicated through a simplified ERD centered on the entities that support the implemented assessment lifecycle and access model: users, assessments, refresh tokens, clinics, and user clinics.
+Persistent state management was implemented using PostgreSQL with SQLC-generated query code and repository interfaces, ensuring type-safe database access and maintaining consistency with the application domain model. At assessment creation, the system stores both the submitted biomarker values and the normalized ML outputs required for reproducible interpretation and longitudinal analysis. For the main methodology chapter, the database design is communicated through a simplified ERD centered on the entities that support the implemented assessment lifecycle and access model: users, assessments, refresh tokens, audit events, auth events, and model runs.
 
 [[FIGURE PLACEHOLDER: Core entity-relationship diagram showing main methodology entities | Thesis author to insert final ERD]]
 
@@ -1029,6 +1029,7 @@ The analysis would begin with familiarization through repeated reading of transc
 - Braun, V., & Clarke, V. (2006). Using thematic analysis in psychology. *Qualitative Research in Psychology*.
 - Cappelli, C., et al. (2024). Random Forest for diabetes prediction. *Journal of Diabetes Science and Technology*.
 - CDC/NCHS. (2023). *National Health and Nutrition Examination Survey*. Centers for Disease Control and Prevention.
+- CDC/NCHS. (2024b). *Brief overview of sample design, nonresponse bias assessment, and analytic guidelines for NHANES August 2021-August 2023*. Centers for Disease Control and Prevention, National Center for Health Statistics. https://wwwn.cdc.gov/nchs/nhanes/continuousnhanes/OverviewBrief.aspx?Cycle=2021-2023
 - Chiavegatto Filho, A. D. P., et al. (2021). Data leakage in health outcomes prediction with machine learning. *IEEE Journal of Biomedical and Health Informatics*, 25(10), 3848-3856.
 - Wang, Y., Wang, X., & Zeng, L. (2024). Lipid Accumulation Product as a Predictor of Prediabetes and Diabetes: Insights From NHANES Data (1999–2018). *Journal of Diabetes Research*, 2024, 2874122. https://doi.org/10.1155/2024/2874122
 - Hancock, J., & Khoshgoftaar, T. (2021). LightGBM for medical data. *Journal of Big Data*.

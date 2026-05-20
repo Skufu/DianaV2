@@ -64,12 +64,13 @@ vi.mock('../../api', () => ({
     error: null,
     refetch: mockRefetch,
   }),
-  deriveRiskLevelFromScore: (score) => {
+  deriveRiskLevelFromScore: score => {
     if (score < 30) return 'low';
     if (score < 70) return 'medium';
     return 'high';
   },
-  normalizeAssessmentContract: (assessment) => assessment,
+  getErrorMessage: (error, fallback) => error?.message || fallback,
+  normalizeAssessmentContract: assessment => assessment,
   useCreateAssessment: () => ({
     mutateAsync: vi.fn(),
   }),

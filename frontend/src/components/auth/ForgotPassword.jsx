@@ -10,7 +10,7 @@ import {
   getInputFocusVariants,
   useReducedMotion,
 } from '../../utils/animations';
-import { useForgotPassword } from '../../api';
+import { getErrorMessage, useForgotPassword } from '../../api';
 
 const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
   const isReduced = useReducedMotion();
@@ -69,7 +69,7 @@ const ForgotPassword = ({ onShowLogin, initialEmail = '' }) => {
       if (err.status === 429) {
         setError('Too many attempts. Please wait a moment and try again.');
       } else {
-        setError(err.message || 'Unable to send reset link. Please try again.');
+        setError(getErrorMessage(err, 'Unable to send reset link. Please try again.'));
       }
     }
   };

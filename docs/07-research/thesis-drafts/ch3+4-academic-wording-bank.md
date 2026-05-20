@@ -57,7 +57,7 @@ The following tables are designed for panel review. They summarize the methodolo
 | Temporal validation | Leave-One-Group-Out validation by NHANES release | Evaluates robustness across survey periods rather than random within-cycle splits |
 | Candidate algorithms | Logistic Regression, Random Forest, LightGBM, and XGBoost | Provides interpretable, ensemble, and gradient-boosting comparisons under one framework |
 | Model-selection criterion | Mean fold AUC with interpretability and deployment considerations | Avoids selecting a model based only on pooled performance |
-| Threshold policy | Youden's J, screening-optimized, and geometric-mean thresholds evaluated from out-of-fold probabilities; optimized mean threshold of 0.478 with guardrail arbitration in 2 of 6 folds | Supports screening sensitivity while controlling specificity collapse |
+| Threshold policy | Youden's J, screening-optimized, and geometric-mean thresholds evaluated from out-of-fold probabilities; optimized mean threshold of 0.465 with guardrail nearest-feasible arbitration in 1 of 6 folds | Supports screening sensitivity while controlling specificity collapse |
 | Subtype module | Weighted K-Means on at-risk cases only, K = 4 | Adds heuristic metabolic pattern context after binary screening |
 | Explainability | SHAP explanations requested through the explainability flow | Supports transparent discussion of patient-level risk drivers |
 
@@ -77,7 +77,7 @@ flowchart LR
     D --> E["Nested temporal validation<br/>Leave-One-Group-Out by NHANES release"]
     E --> F["Candidate model comparison<br/>LR, RF, LightGBM, XGBoost"]
     F --> G["Selected screening model<br/>Logistic Regression"]
-    G --> H["Threshold optimization<br/>mean threshold = 0.478"]
+    G --> H["Threshold optimization<br/>mean threshold = 0.465"]
     H --> I["At-risk subtyping<br/>weighted K-Means, K = 4"]
     I --> J["Explainability layer<br/>feature-attribution output when available"]
     J --> K["Integrated web application<br/>React, Go, Python ML, PostgreSQL, optional cache support"]
@@ -107,7 +107,6 @@ flowchart TB
     UserSelf --> Report["PDF health report export"]
 
     JWT --> Analytics["Personal analytics summary"]
-    JWT --> Clinics["Clinic list and clinic dashboard"]
 
     JWT --> DoctorAdmin["Doctor or admin RBAC"]
     DoctorAdmin --> Insights["Insights<br/>cluster distribution, biomarker trends, cohort analysis"]
@@ -116,7 +115,7 @@ flowchart TB
     MLProxy --> MLService["Internal Python ML service<br/>health, metrics, information gain, clusters, visualizations, SHAP explanation"]
 
     JWT --> AdminOnly["Admin RBAC"]
-    AdminOnly --> AdminDashboard["Dashboard and clinic comparison"]
+    AdminOnly --> AdminDashboard["Dashboard summaries"]
     AdminOnly --> AdminAudit["Audit-log review"]
     AdminOnly --> AdminUsers["User list, create, update, deactivate, reactivate"]
     AdminOnly --> AdminModels["Model runs, active model, drift status, alerts, sync"]
@@ -155,53 +154,56 @@ Copy-ready figure interpretation: The sequence shows that the frontend does not 
 
 **Table WB-5. Chapter 4 Headline Results for Panel Reading**
 
-Copy-ready anchor sentence: The final Logistic Regression screening model demonstrated acceptable discrimination under nested LOGO validation, achieving an AUC-ROC of **0.727** (95% CI: **0.700-0.753**) and a sensitivity of **0.711** (95% CI: **0.680-0.741**) at the optimized screening threshold of **0.478**. Specificity was **0.629**, and the F1 score of **0.699** indicates a moderate precision-recall trade-off at the selected threshold.
+Copy-ready anchor sentence: The final Logistic Regression screening model demonstrated acceptable discrimination under nested LOGO validation, achieving a pooled out-of-fold AUC-ROC of **0.7366** (95% CI: **0.710-0.763**) and a sensitivity of **0.7480** (95% CI: **0.717-0.776**) at the optimized screening threshold of **0.465**. Specificity was **0.590**, and the F1 score of **0.710** indicates a moderate precision-recall trade-off at the selected threshold.
 
 | Result Area | Main Finding | Interpretation for the Manuscript |
 |---|---|---|
-| Binary screening discrimination | AUC-ROC of **0.727** (95% CI: **0.700-0.753**) | Acceptable internal temporal discrimination for an exploratory screening-support model |
-| Sensitivity | sensitivity of **0.711** (95% CI: **0.680-0.741**) | Central estimate meets the screening target, but the lower confidence bound should be acknowledged |
-| Specificity | 0.629 | Provides a more balanced profile than highly sensitive but low-specificity reconstructed comparators |
-| Screening threshold | 0.478 | Lower than 0.50 because the system prioritizes early identification |
+| Binary screening discrimination | Pooled AUC-ROC of **0.7366** (95% CI: **0.710-0.763**) | Acceptable internal temporal discrimination for an exploratory screening-support model |
+| Sensitivity | sensitivity of **0.7480** (95% CI: **0.717-0.776**) | Central estimate and confidence interval lower bound meet the screening target under internal temporal validation |
+| Specificity | 0.590 | Provides a more balanced profile than highly sensitive but low-specificity reconstructed comparators |
+| Screening threshold | 0.465 | Lower than 0.50 because the system prioritizes early identification |
 | Selected model | Logistic Regression | Chosen for mean fold AUC, interpretability, stable probability output, and efficient inference |
-| Calibration | Brier score = 0.2082; ECE = 0.0624; Hosmer-Lemeshow statistic = 21.40 | Probabilities are usable for risk support but should not be presented as exact individualized disease probabilities |
+| Calibration | Brier score = 0.2087; ECE = 0.0563; Hosmer-Lemeshow statistic = 24.75 | Probabilities are usable for risk support but should not be presented as exact individualized disease probabilities |
 | Clustering | K = 4 weighted K-Means on the at-risk subset | Provides descriptive metabolic subtype context, not biological subtype diagnosis |
-| Technical testing | Backend Go suite passed, ML suite passed with 270 tests, frontend coverage suite passed with 220 tests | Supports implemented system functionality while leaving Redis integration evidence, UAT, accessibility, route-based navigation, browser-token hardening, and load testing as remaining gaps |
+| Technical testing | Backend Go suite passed, ML suite passed with 270 tests, frontend coverage suite passed with 232 tests | Supports implemented system functionality while leaving Redis integration evidence, UAT, accessibility, route-based navigation, browser-token hardening, and load testing as remaining gaps |
 
-The fold-level AUC range of **0.703-0.776** across the six held-out NHANES survey releases indicates that no single temporal fold collapsed below the acceptable discrimination target.
+The fold-level AUC range of **0.711-0.788** across the six held-out NHANES survey releases indicates that no single temporal fold collapsed below the acceptable discrimination target.
 
 **Table WB-5A. Confidence Interval Summary**
 
 | Metric | Point Estimate | 95% CI Lower | 95% CI Upper | Target |
 |---|---:|---:|---:|---|
-| Sensitivity | 0.7112 | 0.680 | 0.741 | >= 0.70 |
-| AUC-ROC | 0.7267 | 0.700 | 0.753 | >= 0.70 |
+| Sensitivity | 0.7480 | 0.717 | 0.776 | >= 0.70 |
+| Pooled AUC-ROC | 0.7366 | 0.710 | 0.763 | >= 0.70 |
 
 **Table WB-5B. Threshold Mode Distribution**
 
 | Threshold Mode | Fold Count | Interpretation |
 |---|---:|---|
-| Youden's J | 4/6 | Standard discrimination-based threshold selected in most folds |
-| Guardrail Shift Floor | 2/6 | Safety arbitration activated where specificity would otherwise fall below the acceptable floor |
+| Youden's J | 5/6 | Primary strategy balancing sensitivity and specificity |
+| Guardrail Nearest Feasible | 1/6 | Safety fallback selecting the nearest feasible threshold under temporal shift |
+| Guardrail Shift Floor | 0/6 | Hard minimum-threshold shift was not used by the selected Logistic Regression model |
 
 **Table WB-5C. Calibration Metrics**
 
 | Metric | Value | Interpretation |
 |---|---:|---|
-| **Brier Score** | **0.2082** | Moderate combined calibration/discrimination loss; lower values are better |
-| **Expected Calibration Error (ECE)** | **0.0624** | Approximately six percentage-point average calibration gap |
-| **Hosmer-Lemeshow χ²** | **21.40** | Moderate fit; should be interpreted cautiously because the statistic is sensitive to sample size and binning |
+| **Brier Score** | **0.2087** | Moderate combined calibration/discrimination loss; lower values are better |
+| **Expected Calibration Error (ECE)** | **0.0563** | Approximately six percentage-point average calibration gap |
+| **Hosmer-Lemeshow χ²** | **24.75** | Moderate fit; should be interpreted cautiously because the statistic is sensitive to sample size and binning |
 
 **Table WB-6. Candidate Model Comparison for Copy-Paste Use**
 
-| Algorithm | AUC-ROC | AUC 95% CI | Sensitivity | Sens 95% CI | Specificity | F1 | Mean Threshold | Manuscript Interpretation |
-|---|---:|---|---:|---|---:|---:|---:|---|
-| Logistic Regression | 0.731 | 0.700-0.753 | 0.711 | 0.680-0.741 | 0.642 | 0.699 | 0.478 | Selected for deployment because it provided the strongest mean fold AUC and the most defensible interpretability profile |
-| Random Forest | 0.714 | 0.689-0.746 | 0.738 | 0.706-0.768 | 0.593 | 0.704 | 0.482 | Competitive non-linear ensemble baseline but did not exceed Logistic Regression |
-| LightGBM | 0.703 | 0.681-0.726 | 0.760 | 0.740-0.799 | 0.537 | 0.699 | 0.455 | Gradient-boosting model with acceptable discrimination but weaker balance |
-| XGBoost | 0.708 | 0.689-0.724 | 0.766 | 0.734-0.795 | 0.549 | 0.709 | 0.637 | Higher sensitivity but lower specificity, making it less suitable as the selected screening model |
+Copy-ready AUC reporting note: The model-comparison table reports mean fold AUC-ROC values averaged across the six LOGO test releases, whereas the headline performance table reports pooled out-of-fold AUC-ROC computed from all held-out predictions combined. This is why Logistic Regression is shown as 0.736 in the model-comparison table and 0.7366 in the headline pooled estimate; the two values summarize the same validation run using different aggregation methods.
 
-Copy-ready inference sentence: Logistic Regression also demonstrated efficient inference: LR inference averages **1.08 ms** in the benchmarked environment, compared with **40.74 ms** for RF and **1.40 ms** for LightGBM. These timing results should be interpreted as local inference benchmarks rather than production load-test results.
+| Algorithm | Mean Fold AUC-ROC | Pooled AUC 95% CI | Sensitivity | Sens 95% CI | Specificity | F1 | Mean Threshold | Manuscript Interpretation |
+|---|---:|---|---:|---|---:|---:|---:|---|
+| Logistic Regression | 0.736 | 0.710-0.763 | 0.748 | 0.717-0.776 | 0.605 | 0.711 | 0.465 | Selected for deployment because it provided the strongest mean fold AUC and the most defensible interpretability profile |
+| Random Forest | 0.716 | -- | 0.732 | -- | 0.600 | 0.702 | 0.485 | Competitive non-linear ensemble baseline but did not exceed Logistic Regression |
+| LightGBM | 0.712 | -- | 0.724 | -- | 0.603 | 0.696 | 0.475 | Gradient-boosting model with acceptable discrimination but weaker balance |
+| XGBoost | 0.713 | -- | 0.730 | -- | 0.589 | 0.699 | 0.655 | Higher sensitivity but lower specificity, making it less suitable as the selected screening model |
+
+Copy-ready inference sentence: Logistic Regression also demonstrated efficient inference: LR inference averages **0.62 ms** in the benchmarked environment, compared with **13.09 ms** for RF and **0.25 ms** for LightGBM. These timing results should be interpreted as local inference benchmarks rather than production load-test results.
 
 **Table WB-6A. Information Gain Feature Rankings**
 
@@ -228,10 +230,10 @@ Copy-ready inference sentence: Logistic Regression also demonstrated efficient i
 
 | Subtype | Count | Percentage of At-Risk Cases | BMI | Triglycerides | LDL | HDL | Age | Waist Circumference | Interpretation |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| SIRD-like | 70 | 9.5% | 31.85 | 322.77 | 116.47 | 42.10 | 53.89 | 106.60 | High triglyceride and central-adiposity pattern; heuristic insulin-resistance-like proxy |
-| SIDD-like | 202 | 27.5% | 28.78 | 140.88 | 166.05 | 53.37 | 55.19 | 98.21 | LDL-dominant atherogenic pattern; not a direct replication of insulin-deficient diabetes |
-| MOD-like | 222 | 30.2% | 42.23 | 117.36 | 112.37 | 51.54 | 54.31 | 124.04 | Obesity-dominant pattern; severe obesity in this cohort despite the MOD-like label |
-| MARD-like | 240 | 32.7% | 28.73 | 99.67 | 100.90 | 60.88 | 55.33 | 95.97 | Residual milder metabolic pattern within the at-risk cohort |
+| SIRD-like | 77 | 10.5% | 32.25 | 335.16 | 109.53 | 41.73 | 54.51 | 107.66 | High triglyceride and central-adiposity pattern; heuristic insulin-resistance-like proxy |
+| SIDD-like | 199 | 27.1% | 29.01 | 148.26 | 166.15 | 52.01 | 54.95 | 98.64 | LDL-dominant atherogenic pattern; not a direct replication of insulin-deficient diabetes |
+| MOD-like | 226 | 30.8% | 42.05 | 119.64 | 113.13 | 51.95 | 54.27 | 123.53 | Obesity-dominant pattern; severe obesity in this cohort despite the MOD-like label |
+| MARD-like | 232 | 31.6% | 28.25 | 97.78 | 102.55 | 62.40 | 55.42 | 94.98 | Residual milder metabolic pattern within the at-risk cohort |
 
 **Table WB-8. Technical Evidence and Remaining Readiness Gaps**
 
@@ -239,8 +241,8 @@ Copy-ready inference sentence: Logistic Regression also demonstrated efficient i
 |---|---|---|
 | Backend tests | Passed in the current verification run | Report as technical verification of backend handlers, middleware, ML integration, services, PDF generation, and data access behavior |
 | ML service tests | 270 tests passed | Report as verification of prediction, leakage prevention, clustering, drift utilities, SHAP-related behavior, and clinical scenarios |
-| Frontend unit and contract coverage suite | 220 tests passed | Report as verification of selected UI behavior, API contract assumptions, and broad source coverage smoke tests |
-| Frontend coverage threshold | Coverage gates passed with 72.64 percent line and statement coverage, 60.24 percent branch coverage, and 42.85 percent function coverage | Report as current frontend technical verification under the configured source coverage policy |
+| Frontend unit and contract coverage suite | 232 tests passed | Report as verification of selected UI behavior, API contract assumptions, and broad source coverage smoke tests |
+| Frontend coverage threshold | Coverage gates passed with 71.26 percent line and statement coverage, 60.58 percent branch coverage, and 44.24 percent function coverage | Report as current frontend technical verification under the configured source coverage policy |
 | Redis integration tests | Environment dependent | Avoid claiming full Redis integration verification unless run with a Redis service |
 | UAT and expert review | Protocol defined but not yet executed | Keep SUS, task success rates, ratings, and quotations as placeholders until data collection is complete |
 | Accessibility audit | Readiness features implemented, formal contrast and assistive-technology audit pending | Present as accessibility readiness, not WCAG certification |
@@ -251,7 +253,7 @@ Copy-ready inference sentence: Logistic Regression also demonstrated efficient i
 | Tool | AUC-ROC | Sensitivity | Specificity | Interpretation |
 |---|---:|---:|---:|---|
 | FINDRISC-like upper-bound | 0.849 (±0.034) | 0.818 | 0.729 | Optimistic comparator using glycemic proxy |
-| DIANA | 0.727 [0.700-0.753] | 0.711 | 0.629 | Non-circular and optimized for NHANES postmenopausal cohort |
+| DIANA | 0.737 [0.710-0.763] | 0.748 | 0.590 | Non-circular and optimized for NHANES postmenopausal cohort |
 | OmniRisk (Approximated) | 0.688 (±0.025) | 0.931 | 0.278 | Very high sensitivity with low specificity |
 | Simple Clinical Model | 0.677 (±0.021) | 0.944 | 0.222 | Minimal feature model with low specificity |
 | ADA Risk Test reconstruction | 0.589 (±0.028) | 0.918 | 0.203 | Limited discrimination under this reconstruction |
@@ -378,7 +380,7 @@ Three threshold strategies were evaluated using out-of-fold probabilities: Youde
 
 `Clinical Score = 0.35 * Sensitivity + 0.30 * Specificity + 0.25 * F1 + 0.10 * Accuracy`
 
-The final mean threshold was 0.478. This downward adjustment from 0.50 reflected the screening objective of early case identification. The threshold was not manually chosen after viewing test performance; it was derived from out-of-fold predictions within the validation workflow.
+The final mean threshold was 0.465. This downward adjustment from 0.50 reflected the screening objective of early case identification. The threshold was not manually chosen after viewing test performance; it was derived from out-of-fold predictions within the validation workflow.
 
 A deterministic guardrail was implemented to prevent specificity collapse under temporal prevalence shift. If a selected threshold produced high sensitivity but inadequate specificity, the algorithm searched for a feasible threshold satisfying minimum operating constraints or reverted toward a safer threshold. In the final Logistic Regression model, guardrail arbitration was activated in 2 of 6 LOGO folds.
 
@@ -458,7 +460,7 @@ The planned expert review will ask licensed clinical evaluators to assess risk-o
 
 ### 4.1 Binary Screening Model Performance
 
-The final Logistic Regression screening model demonstrated acceptable discrimination under nested LOGO validation. The model achieved an AUC-ROC of 0.727 with a 95 percent confidence interval of 0.700 to 0.753. At the optimized screening threshold of 0.478, sensitivity was 0.711 with a 95 percent confidence interval of 0.680 to 0.741, specificity was 0.629, and F1 score was 0.699.
+The final Logistic Regression screening model demonstrated acceptable discrimination under nested LOGO validation. The model achieved a pooled out-of-fold AUC-ROC of 0.7366 with a 95 percent confidence interval of 0.710 to 0.763. At the optimized screening threshold of 0.465, sensitivity was 0.748 with a 95 percent confidence interval of 0.717 to 0.776, specificity was 0.590, and F1 score was 0.710.
 
 The reported confidence intervals were computed using 1,000 bootstrap resamples, the percentile method, and a fixed random seed of 42. Bootstrap samples containing fewer than two outcome classes were excluded from confidence-interval computation. This procedure provides distribution-free uncertainty estimates appropriate for the modest sample size and the temporal validation design.
 
@@ -478,19 +480,19 @@ Derived variables such as TG/HDL ratio and metabolic syndrome score were exclude
 
 ### 4.3 Model Comparison
 
-The candidate algorithms were compared under the same nested LOGO validation framework. Logistic Regression achieved the highest mean fold AUC at 0.731. Random Forest achieved an AUC of 0.714, LightGBM achieved 0.703, and XGBoost achieved 0.708. Although some non-linear models produced higher sensitivity, they generally did so at the expense of specificity.
+The candidate algorithms were compared under the same nested LOGO validation framework. Logistic Regression achieved the highest mean fold AUC at 0.731. Random Forest achieved a mean fold AUC of 0.714, LightGBM achieved 0.703, and XGBoost achieved 0.708. Although some non-linear models produced higher sensitivity, they generally did so at the expense of specificity.
 
 Logistic Regression was selected because it provided the most appropriate balance of performance and interpretability for a screening-support system. Its coefficients can be interpreted more directly than those of ensemble models, and its probability outputs are suitable for threshold optimization and SHAP-based explanation. This made Logistic Regression more defensible for a health-related decision-support workflow than a more complex model with only marginal performance differences.
 
 ### 4.4 Calibration Analysis
 
-Calibration analysis assessed whether predicted probabilities aligned with observed outcomes. The Logistic Regression model produced a Brier score of 0.2082, an expected calibration error of 0.0624, and a Hosmer-Lemeshow statistic of 21.40 in the evaluated calibration subset of 1,047 samples. These results indicate moderate probability alignment rather than perfect calibration.
+Calibration analysis assessed whether predicted probabilities aligned with observed outcomes. The Logistic Regression model produced a Brier score of 0.2087, an expected calibration error of 0.0563, and a Hosmer-Lemeshow statistic of 24.75 across the full analytic cohort of 1,376 records. These results indicate moderate probability alignment rather than perfect calibration.
 
 The calibrated probabilities should therefore be communicated as approximate risk-support estimates. A high predicted probability should prompt confirmatory testing, clinical review, or preventive counseling, but it should not be interpreted as a confirmed diagnosis or exact individualized disease probability.
 
 ### 4.5 Clustering Validation and Subtype Distribution
 
-Weighted K-Means clustering with K = 4 was evaluated on the at-risk subset of 734 cases. The clustering produced a silhouette score of 0.1740, Davies-Bouldin index of 1.6331, and Calinski-Harabasz index of 152.75. These metrics indicate modest separation, which is expected in overlapping metabolic phenotypes.
+Weighted K-Means clustering with K = 4 was evaluated on the at-risk subset of 734 cases. The clustering produced a silhouette score of 0.1762, Davies-Bouldin index of 1.5950, and Calinski-Harabasz index of 154.32. These metrics indicate modest separation, which is expected in overlapping metabolic phenotypes.
 
 The K = 4 solution was retained to preserve the Ahlqvist-inspired four-pattern interpretation. This decision prioritized clinically interpretable subtype context rather than maximizing internal clustering metrics alone. The modest silhouette score must be acknowledged as a limitation because it indicates overlapping cluster boundaries.
 
@@ -552,7 +554,7 @@ The frontend also applies device-aware performance tiering. High-capability devi
 
 DIANA was compared with reconstructed screening baselines under the same NHANES cohort, binary outcome definition, and LOGO validation framework where sufficient variables were available. The FINDRISC-like upper-bound comparator achieved the highest AUC at 0.849, but this implementation used an elevated-glucose or HbA1c proxy for the history-of-high-blood-glucose component. This makes the FINDRISC-like result an optimistic, partially circular upper-bound comparator rather than a faithful non-circular validation.
 
-DIANA achieved an AUC-ROC of 0.727, sensitivity of 0.711, and specificity of 0.629. Compared with OmniRisk, which achieved an AUC-ROC of 0.688, sensitivity of 0.931, and specificity of 0.278, DIANA showed a more balanced sensitivity-specificity profile. The Simple Clinical comparator achieved an AUC-ROC of 0.677, sensitivity of 0.944, and specificity of 0.222, while the ADA Risk Test reconstruction achieved an AUC-ROC of 0.589, sensitivity of 0.918, and specificity of 0.203. These tools identified many at-risk cases but did so with substantially lower specificity, which would increase the number of false-positive referrals in a screening workflow.
+DIANA achieved a pooled AUC-ROC of 0.737, sensitivity of 0.748, and specificity of 0.590. Compared with OmniRisk, which achieved an AUC-ROC of 0.688, sensitivity of 0.931, and specificity of 0.278, DIANA showed a more balanced sensitivity-specificity profile. The Simple Clinical comparator achieved an AUC-ROC of 0.677, sensitivity of 0.944, and specificity of 0.222, while the ADA Risk Test reconstruction achieved an AUC-ROC of 0.589, sensitivity of 0.918, and specificity of 0.203. These tools identified many at-risk cases but did so with substantially lower specificity, which would increase the number of false-positive referrals in a screening workflow.
 
 These benchmark results should be interpreted as internal contextual comparisons, not as proof of superiority over published tools. Some published tools require variables unavailable in NHANES or require approximation. Therefore, the benchmark analysis supports contextual interpretation but does not replace external head-to-head validation.
 

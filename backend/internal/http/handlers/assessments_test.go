@@ -1380,6 +1380,152 @@ func TestEnsureAssessmentLineage_DefaultBaselineIsHonest(t *testing.T) {
 	}
 }
 
+// TestAssessmentsHandler_Create_TableDriven is a consolidated table-driven test covering five
+// critical clinical guardrail paths in the assessment creation handler. Each sub-test validates
+// a distinct safety or correctness invariant documented in Table 4.4.1 of the thesis.
+//
+// Test cases:
+//   TC-AGE-LO:   Age 44 rejected (below canonical 45–60 range)
+//   TC-AGE-HI:   Age 61 rejected (above canonical 45–60 range)
+//   TC-WC-IMP:   Missing waist_circumference accepted (value=0 → ML imputation path)
+//   TC-HBA1C-OOR: HbA1c=20% triggers diabetic-range validation warning
+//   TC-SUCCESS:   Successful create → ML predictor called, assessment persisted
+func TestAssessmentsHandler_Create_TableDriven(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	type testCase struct {
+		name               string
+		payload            map[string]any
+		wantStatus         int
+		wantBodyContains   string            // substring check on response body
+		wantBodyExcludes   string            // must NOT appear in response body
+		wantPredictCalled  bool              // whether predictor should have been invoked
+		wantPersistedAge   int               // expected persisted age (0 = skip check)
+		wantValidationWarn string            // expected substring in persisted validation_status
+	}
+
+	tests := []testCase{
+		{
+			name: "TC-AGE-LO: age 44 rejected (below canonical minimum)",
+			payload: map[string]any{
+				"age": 44, "bmi": 25.0, "triglycerides": 150,
+				"ldl": 120, "hdl": 50, "systolic": 120, "diastolic": 80,
+			},
+			wantStatus:        http.StatusBadRequest,
+			wantBodyContains:  canonicalAssessmentAgeErr,
+			wantPredictCalled: false,
+		},
+		{
+			name: "TC-AGE-HI: age 61 rejected (above canonical maximum)",
+			payload: map[string]any{
+				"age": 61, "bmi": 25.0, "triglycerides": 150,
+				"ldl": 120, "hdl": 50, "systolic": 120, "diastolic": 80,
+			},
+			wantStatus:        http.StatusBadRequest,
+			wantBodyContains:  canonicalAssessmentAgeErr,
+			wantPredictCalled: false,
+		},
+		{
+			name: "TC-WC-IMP: missing waist_circumference accepted (imputation path)",
+			payload: map[string]any{
+				"age": 55, "bmi": 28.0, "triglycerides": 150,
+				"ldl": 120, "hdl": 50, "systolic": 120, "diastolic": 80,
+				// waist_circumference intentionally omitted → defaults to 0
+			},
+			wantStatus:        http.StatusCreated,
+			wantPredictCalled: true,
+			wantPersistedAge:  55,
+		},
+		{
+			name: "TC-HBA1C-OOR: HbA1c=20 triggers diabetic-range validation warning",
+			payload: map[string]any{
+				"age": 55, "bmi": 28.0, "hba1c": 20.0,
+				"triglycerides": 150, "ldl": 120, "hdl": 50,
+				"systolic": 120, "diastolic": 80,
+			},
+			wantStatus:         http.StatusCreated,
+			wantPredictCalled:  true,
+			wantPersistedAge:   55,
+			wantValidationWarn: "hba1c_diabetic",
+		},
+		{
+			name: "TC-SUCCESS: successful create invokes ML predictor and persists",
+			payload: map[string]any{
+				"age": 50, "bmi": 26.5, "triglycerides": 160,
+				"ldl": 130, "hdl": 48, "systolic": 130, "diastolic": 85,
+				"waist_circumference": 95.0, "hba1c": 5.5, "fbs": 98.0,
+			},
+			wantStatus:        http.StatusCreated,
+			wantPredictCalled: true,
+			wantPersistedAge:  50,
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			predictor := &fakePredictor{}
+			repo := &fakeAssessmentRepo{}
+			h := NewAssessmentsHandler(
+				&fakeStore{repo: repo, patientRepo: &fakePatientRepo{}, userRepo: &fakeUserRepo{}},
+				predictor,
+				nil,
+				"v1",
+				"hash123",
+				getDefaultTestThresholds(),
+			)
+
+			r := gin.New()
+			r.Use(mockAuthMiddleware())
+			r.POST("/:id/assessments", h.Create)
+
+			payload, _ := json.Marshal(tc.payload)
+			req, _ := http.NewRequest(http.MethodPost, "/1/assessments", bytes.NewReader(payload))
+			req.Header.Set("Content-Type", "application/json")
+
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			// 1. Status code
+			if w.Code != tc.wantStatus {
+				t.Fatalf("status: want %d, got %d (body: %s)", tc.wantStatus, w.Code, w.Body.String())
+			}
+
+			// 2. Response body substring checks
+			if tc.wantBodyContains != "" && !strings.Contains(w.Body.String(), tc.wantBodyContains) {
+				t.Fatalf("body should contain %q, got %s", tc.wantBodyContains, w.Body.String())
+			}
+			if tc.wantBodyExcludes != "" && strings.Contains(w.Body.String(), tc.wantBodyExcludes) {
+				t.Fatalf("body should NOT contain %q, got %s", tc.wantBodyExcludes, w.Body.String())
+			}
+
+			// 3. Predictor invocation
+			predictorCalled := predictor.lastModelType != ""
+			if tc.wantStatus == http.StatusCreated {
+				// For fakePredictor with empty model type in request, lastModelType will be ""
+				// but the predictor was still called. Check via repo persistence instead.
+				predictorCalled = repo.last.ID != 0
+			}
+			if tc.wantPredictCalled && !predictorCalled {
+				t.Fatalf("expected predictor to be called, but it was not")
+			}
+			if !tc.wantPredictCalled && repo.last.ID != 0 {
+				t.Fatalf("expected no assessment persisted on rejected request")
+			}
+
+			// 4. Persisted age
+			if tc.wantPersistedAge > 0 && repo.last.Age != tc.wantPersistedAge {
+				t.Fatalf("persisted age: want %d, got %d", tc.wantPersistedAge, repo.last.Age)
+			}
+
+			// 5. Validation warning check
+			if tc.wantValidationWarn != "" && !strings.Contains(repo.last.ValidationStatus, tc.wantValidationWarn) {
+				t.Fatalf("validation_status should contain %q, got %q", tc.wantValidationWarn, repo.last.ValidationStatus)
+			}
+		})
+	}
+}
+
 func TestApplyCanonicalPredictionResult_GatesClusterSemanticsByCapability(t *testing.T) {
 	t.Run("clears cluster semantics when capability unsupported", func(t *testing.T) {
 		assessment := &models.Assessment{}

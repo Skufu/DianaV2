@@ -6,6 +6,7 @@ import {
   updateAdminUserApi,
   deactivateAdminUserApi,
   activateAdminUserApi,
+  getErrorMessage,
 } from '../../api';
 import {
   Users,
@@ -85,8 +86,7 @@ const UserManagement = () => {
         setPage(1);
       }
     } catch (err) {
-      setError('Failed to load users');
-      console.error(err);
+      setError(getErrorMessage(err, 'Failed to load users'));
     } finally {
       setLoading(false);
     }
@@ -118,7 +118,7 @@ const UserManagement = () => {
       loadUsers();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setFormError(err.message || 'Failed to create user');
+      setFormError(getErrorMessage(err, 'Failed to create user'));
     } finally {
       setSubmitting(false);
     }
@@ -140,7 +140,7 @@ const UserManagement = () => {
       loadUsers();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setFormError(err.message || 'Failed to update user');
+      setFormError(getErrorMessage(err, 'Failed to update user'));
     } finally {
       setSubmitting(false);
     }
@@ -155,7 +155,7 @@ const UserManagement = () => {
       loadUsers();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err.message || 'Failed to deactivate user');
+      setError(getErrorMessage(err, 'Failed to deactivate user'));
     }
   };
 
@@ -166,7 +166,7 @@ const UserManagement = () => {
       loadUsers();
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err.message || 'Failed to activate user');
+      setError(getErrorMessage(err, 'Failed to activate user'));
     }
   };
 

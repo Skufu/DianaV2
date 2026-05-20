@@ -117,9 +117,12 @@ jobs:
       - name: Get version from tag
         id: version
         run: |
-          # Extract version from tag (e.g., v1.0.0 -> 1.0.0)
-          VERSION=${GITHUB_REF#refs/tags/}
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          # Extract the Docker image tag emitted by docker/metadata-action semver tags
+          # (e.g., v1.0.0 release tag -> 1.0.0 image tag).
+          RELEASE_TAG=${GITHUB_REF#refs/tags/}
+          IMAGE_TAG=${RELEASE_TAG#v}
+          echo "version=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Store previous image tags for rollback
@@ -165,9 +168,10 @@ jobs:
           BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
           FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
           ML_IMAGE: ${{ env.REGISTRY }}/${{ env.ML_IMAGE }}
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.version.outputs.image_tag }}
+          RELEASE_TAG: ${{ steps.version.outputs.version }}
         run: |
-          echo "🚀 Deploying DianaV2 ${{ env.VERSION }} to production..."
+          echo "🚀 Deploying DianaV2 ${{ env.RELEASE_TAG }} to production..."
           
           # Create deployment script
           cat > deploy.sh << 'DEPLOY_SCRIPT'
@@ -178,6 +182,15 @@ jobs:
           BACKEND_IMAGE="${BACKEND_IMAGE}"
           FRONTEND_IMAGE="${FRONTEND_IMAGE}"
           ML_IMAGE="${ML_IMAGE}"
+
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "Docker Compose v2 is required for the production security overlay"
+            exit 1
+          fi
+
+          compose_cmd() {
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml "$@"
+          }
           
           echo "=== Pulling new images ==="
           docker pull ${BACKEND_IMAGE}:${VERSION} || docker pull ${BACKEND_IMAGE}:latest
@@ -185,14 +198,14 @@ jobs:
           docker pull ${FRONTEND_IMAGE}:${VERSION} || docker pull ${FRONTEND_IMAGE}:latest
           
           echo "=== Stopping existing services ==="
-          docker-compose down --timeout 30 || true
+          compose_cmd down --timeout 30 || true
           
           echo "=== Starting services with new images ==="
           export DIANA_BACKEND_IMAGE=${BACKEND_IMAGE}:${VERSION}
           export DIANA_ML_IMAGE=${ML_IMAGE}:${VERSION}
           export DIANA_FRONTEND_IMAGE=${FRONTEND_IMAGE}:${VERSION}
           
-          docker-compose up -d --no-build
+          compose_cmd up -d --no-build
           
           echo "=== Waiting for services to be ready ==="
           sleep 10
@@ -200,7 +213,7 @@ jobs:
           echo "=== Running health checks ==="
           # Backend health check
           for i in {1..30}; do
-            if curl -sf http://localhost:8080/api/v1/healthz > /dev/null 2>&1; then
+            if compose_cmd exec -T backend curl -sf http://localhost:8080/api/v1/healthz > /dev/null 2>&1; then
               echo "✅ Backend healthy"
               break
             fi
@@ -213,7 +226,7 @@ jobs:
           
           # ML health check
           for i in {1..30}; do
-            if curl -sf http://localhost:5000/health > /dev/null 2>&1; then
+            if compose_cmd exec -T ml curl -sf http://localhost:5000/health > /dev/null 2>&1; then
               echo "✅ ML service healthy"
               break
             fi
@@ -226,7 +239,7 @@ jobs:
           
           # Frontend health check
           for i in {1..30}; do
-            if curl -sf http://localhost:80 > /dev/null 2>&1; then
+            if compose_cmd exec -T frontend curl -sf http://localhost:80 > /dev/null 2>&1; then
               echo "✅ Frontend healthy"
               break
             fi
@@ -238,18 +251,19 @@ jobs:
           done
           
           echo "=== Deployment complete ==="
-          docker-compose ps
+          compose_cmd ps
           DEPLOY_SCRIPT
           
           chmod +x deploy.sh
           
-          # Copy docker-compose.yml and deploy script to server
-          scp -o StrictHostKeyChecking=no docker-compose.yml deploy.sh ${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/
+          # Copy compose files and deploy script to server
+          scp -o StrictHostKeyChecking=no docker-compose.yml docker-compose.prod.yml deploy.sh ${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/
           
           # Execute deployment on server
           ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \
             "cd /opt/diana && \
              cp /tmp/docker-compose.yml . && \
+             cp /tmp/docker-compose.prod.yml . && \
              chmod +x /tmp/deploy.sh && \
              VERSION=${VERSION} \
              BACKEND_IMAGE=${BACKEND_IMAGE} \
@@ -267,7 +281,7 @@ jobs:
           sleep 15
           
           # Verify backend
-          BACKEND_STATUS=$(curl -sf https://${DEPLOY_HOST}/api/v1/healthz 2>/dev/null || curl -sf http://${DEPLOY_HOST}:8080/api/v1/healthz 2>/dev/null || echo "FAILED")
+          BACKEND_STATUS=$(curl -sf https://${DEPLOY_HOST}/api/v1/healthz 2>/dev/null || echo "FAILED")
           if [[ "$BACKEND_STATUS" == *"healthy"* ]] || [[ "$BACKEND_STATUS" == *"ok"* ]]; then
             echo "✅ Backend verification passed"
           else
@@ -275,7 +289,7 @@ jobs:
           fi
           
           # Verify frontend (check for HTML response)
-          FRONTEND_STATUS=$(curl -sf https://${DEPLOY_HOST} 2>/dev/null | head -5 || curl -sf http://${DEPLOY_HOST}:80 2>/dev/null | head -5 || echo "FAILED")
+          FRONTEND_STATUS=$(curl -sf https://${DEPLOY_HOST} 2>/dev/null | head -5 || echo "FAILED")
           if [[ "$FRONTEND_STATUS" == *"html"* ]] || [[ "$FRONTEND_STATUS" == *"<!doctype"* ]]; then
             echo "✅ Frontend verification passed"
           else
@@ -313,6 +327,15 @@ jobs:
           PREVIOUS_BACKEND="${PREVIOUS_BACKEND}"
           PREVIOUS_ML="${PREVIOUS_ML}"
           PREVIOUS_FRONTEND="${PREVIOUS_FRONTEND}"
+
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "Docker Compose v2 is required for the production security overlay"
+            exit 1
+          fi
+
+          compose_cmd() {
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml "$@"
+          }
           
           echo "=== Reading stored previous tags from server ==="
           cd /opt/diana
@@ -336,13 +359,13 @@ jobs:
           if [ -z "$PREVIOUS_BACKEND" ] && [ -z "$PREVIOUS_ML" ] && [ -z "$PREVIOUS_FRONTEND" ]; then
             echo "⚠️ No previous versions stored - cannot rollback"
             echo "Attempting restart with current images..."
-            docker-compose down --timeout 30 || true
-            docker-compose up -d --no-build
+            compose_cmd down --timeout 30 || true
+            compose_cmd up -d --no-build
             exit 1
           fi
           
           echo "=== Stopping failed deployment ==="
-          docker-compose down --timeout 30 || true
+          compose_cmd down --timeout 30 || true
           
           echo "=== Pulling previous image versions ==="
           if [ -n "$PREVIOUS_BACKEND" ] && [ "$PREVIOUS_BACKEND" != "none" ]; then
@@ -363,7 +386,7 @@ jobs:
           export DIANA_ML_IMAGE=${PREVIOUS_ML}
           export DIANA_FRONTEND_IMAGE=${PREVIOUS_FRONTEND}
           
-          docker-compose up -d --no-build
+          compose_cmd up -d --no-build
           
           echo "=== Waiting for rollback services to be ready ==="
           sleep 15
@@ -373,7 +396,7 @@ jobs:
           
           # Backend health check
           for i in {1..20}; do
-            if curl -sf http://localhost:8080/api/v1/healthz > /dev/null 2>&1; then
+            if compose_cmd exec -T backend curl -sf http://localhost:8080/api/v1/healthz > /dev/null 2>&1; then
               echo "✅ Backend rollback healthy"
               break
             fi
@@ -386,7 +409,7 @@ jobs:
           
           # ML health check
           for i in {1..20}; do
-            if curl -sf http://localhost:5000/health > /dev/null 2>&1; then
+            if compose_cmd exec -T ml curl -sf http://localhost:5000/health > /dev/null 2>&1; then
               echo "✅ ML rollback healthy"
               break
             fi
@@ -399,7 +422,7 @@ jobs:
           
           # Frontend health check
           for i in {1..20}; do
-            if curl -sf http://localhost:80 > /dev/null 2>&1; then
+            if compose_cmd exec -T frontend curl -sf http://localhost:80 > /dev/null 2>&1; then
               echo "✅ Frontend rollback healthy"
               break
             fi
@@ -411,7 +434,7 @@ jobs:
           done
           
           echo "=== Rollback status ==="
-          docker-compose ps
+          compose_cmd ps
           
           if [ "$ROLLBACK_SUCCESS" = true ]; then
             echo "✅ Rollback completed successfully"
@@ -419,7 +442,7 @@ jobs:
           else
             echo "❌ Rollback health checks failed"
             echo "ROLLED_BACK=false" >> /tmp/rollback_status.txt
-            docker-compose logs --tail=50
+            compose_cmd logs --tail=50
             exit 1
           fi
           ROLLBACK_SCRIPT

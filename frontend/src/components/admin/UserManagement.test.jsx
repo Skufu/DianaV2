@@ -10,6 +10,7 @@ vi.mock('../../api', () => ({
   updateAdminUserApi: vi.fn(),
   deactivateAdminUserApi: vi.fn(),
   activateAdminUserApi: vi.fn(),
+  getErrorMessage: (error, fallback) => error?.message || fallback,
 }));
 
 describe('UserManagement pagination', () => {

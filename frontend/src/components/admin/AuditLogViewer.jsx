@@ -1,6 +1,6 @@
 // AuditLogViewer: Paginated, searchable audit event log viewer
 import React, { useState, useMemo } from 'react';
-import { useAuditLogs } from '../../api';
+import { getErrorMessage, useAuditLogs } from '../../api';
 import {
   FileText,
   Search,
@@ -41,16 +41,12 @@ const AuditLogViewer = () => {
   }, [page, pageSize, actor, action, startDate, endDate]);
 
   // Use React Query hook for fetching audit logs
-  const {
-    data,
-    isLoading: loading,
-    error: queryError,
-  } = useAuditLogs(params);
+  const { data, isLoading: loading, error: queryError } = useAuditLogs(params);
 
   const events = data?.data || [];
   const total = data?.total || 0;
   const totalPages = data?.total_pages || 1;
-  const error = queryError?.message || null;
+  const error = queryError ? getErrorMessage(queryError, 'Failed to load audit logs') : null;
 
   const handleSearch = e => {
     e.preventDefault();

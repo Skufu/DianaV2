@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DIANA Pipeline — Full Presentation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #0a0e17;
+    color: #e0e0e0;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: #0a0e17; }
+  ::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 4px; }
+
+  .slide {
+    min-height: 100vh;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .slide:last-child { border-bottom: none; }
+
+  .slide-number {
+    position: fixed;
+    bottom: 24px;
+    right: 32px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.2);
+    font-family: 'JetBrains Mono', monospace;
+    z-index: 100;
+  }
+
+  h1 {
+    font-size: 42px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+    letter-spacing: -1px;
+  }
+  h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #f0f0f0;
+    margin-bottom: 24px;
+    letter-spacing: -0.5px;
+    border-left: 4px solid #3b82f6;
+    padding-left: 16px;
+  }
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #c0d0e0;
+    margin: 20px 0 10px;
+  }
+  p, li { font-size: 16px; color: #b0b8c8; margin-bottom: 10px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 6px; }
+
+  .grid {
+    display: grid;
+    gap: 24px;
+  }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .card {
+    background: linear-gradient(135deg, rgba(30, 58, 95, 0.3), rgba(15, 23, 42, 0.5));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 24px;
+    backdrop-filter: blur(12px);
+  }
+  .card h4 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #60a5fa;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .card .big { font-size: 36px; font-weight: 800; color: #f0f0f0; }
+  .card .label { font-size: 13px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .viz-container {
+    margin: 20px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.3);
+  }
+  .viz-container img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 2px;
+  }
+  .tag-high { background: rgba(239,68,68,0.2); color: #ef4444; }
+  .tag-mod { background: rgba(251,191,36,0.2); color: #fbbf24; }
+  .tag-low { background: rgba(96,165,250,0.2); color: #60a5fa; }
+  .tag-green { background: rgba(74,222,128,0.2); color: #4ade80; }
+
+  .code-block {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-x: auto;
+    color: #a0b0c0;
+  }
+  .code-block .kw { color: #c084fc; }
+  .code-block .str { color: #4ade80; }
+  .code-block .num { color: #fbbf24; }
+  .code-block .cm { color: #64748b; }
+
+  .key-insight {
+    border-left: 3px solid #60a5fa;
+    padding: 12px 16px;
+    margin: 16px 0;
+    background: rgba(96,165,250,0.08);
+    border-radius: 0 8px 8px 0;
+    font-size: 15px;
+  }
+  .key-insight strong { color: #f0f0f0; }
+
+  .hline {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    margin: 16px 0;
+  }
+
+  @media (max-width: 768px) {
+    .slide { padding: 40px 20px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    h1 { font-size: 28px; }
+    h2 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="slide-number" id="slideNum">1 / 13</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 1: TITLE -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <div style="text-align: center; margin-bottom: 40px;">
+    <div style="font-size: 14px; color: #60a5fa; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;">
+      Clinical Decision Support System
+    </div>
+    <h1 style="font-size: 52px; margin-bottom: 16px;">DIANA Pipeline</h1>
+    <p style="font-size: 18px; color: #8899aa; max-width: 700px; margin: 0 auto 24px;">
+      End-to-end diabetes risk screening model for postmenopausal women,<br>
+      trained on 6 NHANES cycles (2009-2023) with defensible nested LOGO CV.
+    </p>
+    <div class="card" style="max-width: 500px; margin: 0 auto;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div><div class="big">1,376</div><div class="label">Patients</div></div>
+        <div><div class="big">23</div><div class="label">Features</div></div>
+        <div><div class="big">6</div><div class="label">NHANES Cycles</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="text-align: center; margin-top: 60px;">
+    <p style="font-size: 13px; color: #556;">Generated May 2026 · Ahlqvist-inspired clustering · Logistic Regression</p>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 2: PIPELINE OVERVIEW -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>1. Pipeline Overview</h2>
+  <p>DIANA transforms raw NHANES survey data into a clinical risk screening model through 6 stages:</p>
+  <div class="viz-container">
+    <img src="01_pipeline_flowchart.png" alt="Pipeline Flowchart">
+  </div>
+  <div class="grid grid-3" style="margin-top: 16px;">
+    <div class="card">
+      <h4>Stage 1-2</h4>
+      <div class="big" style="font-size: 24px;">NHANES Download</div>
+      <p>6 cycles of SAS XPORT files downloaded from CDC for 13+ file types per cycle: demographics, biomarkers, lifestyle questionnaires.</p>
+    </div>
+    <div class="card">
+      <h4>Stage 3-4</h4>
+      <div class="big" style="font-size: 24px;">Label Assignment</div>
+      <p>Self-reported diabetes (DIQ010) + ADA HbA1c override. 3-class: Normal / Pre-diabetic / Diabetic. Binary target: Normal vs At-Risk.</p>
+    </div>
+    <div class="card">
+      <h4>Stage 5-6</h4>
+      <div class="big" style="font-size: 24px;">Nested LOGO CV</div>
+      <p>Leave-One-Group-Out by NHANES cycle. Inner GroupKFold CV. 4 classifiers compared. Threshold optimization with guardrails.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 3: DATA EXTRACTION -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>2. Data Extraction — NHANES Multi-Cycle Download</h2>
+  <div class="grid grid-2">
+    <div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h4>Source</h4>
+        <p><strong>NHANES</strong> (National Health and Nutrition Examination Survey) — CDC's nationally representative health survey.</p>
+      </div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h4>Cycles Downloaded</h4>
+        <p>6 cycles spanning <strong>2009-2023</strong> (post-ADA HbA1c guidelines era). 2021-2023 is a 3-year cycle due to COVID-19.</p>
+      </div>
+      <div class="card">
+        <h4>File Types Per Cycle</h4>
+        <ul>
+          <li><strong>DEMO</strong> — Demographics (age, gender, race)</li>
+          <li><strong>GHB</strong> — Glycohemoglobin (HbA1c)</li>
+          <li><strong>GLU</strong> — Fasting Glucose</li>
+          <li><strong>TCHOL / HDL / TRIGLY</strong> — Lipid panel</li>
+          <li><strong>BMX</strong> — Body Measures (BMI, waist circumference)</li>
+          <li><strong>RHQ</strong> — Reproductive Health (menopause status)</li>
+          <li><strong>SMQ / PAQ / ALQ</strong> — Lifestyle (smoking, activity, alcohol)</li>
+          <li><strong>DIQ / MCQ</strong> — Diabetes questionnaire, family history</li>
+          <li><strong>BPX / BPXO</strong> — Blood pressure (oscillometric from 2021+)</li>
+          <li><strong>INS</strong> (2013+) / <strong>HSCRP</strong> (2015+) — Enrichment</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="code-block">
+        <span class="cm"># Download script: scripts/data/download_nhanes_multi.py</span><br><br>
+        CYCLES = [<br>
+        &nbsp;&nbsp;("2021", <span class="str">"https://wwwn.cdc.gov/Nchs/Data/Nhanes/..."</span>, <span class="str">"L"</span>),<br>
+        &nbsp;&nbsp;("2017", ..., <span class="str">"J"</span>),<br>
+        &nbsp;&nbsp;("2015", ..., <span class="str">"I"</span>),<br>
+        &nbsp;&nbsp;("2013", ..., <span class="str">"H"</span>),<br>
+        &nbsp;&nbsp;("2011", ..., <span class="str">"G"</span>),<br>
+        &nbsp;&nbsp;("2009", ..., <span class="str">"F"</span>),<br>
+        ]<br><br>
+        COMMON_FILE_BASES = [<br>
+        &nbsp;&nbsp;<span class="str">"DEMO"</span>, <span class="str">"GHB"</span>, <span class="str">"GLU"</span>, <span class="str">"TCHOL"</span>,<br>
+        &nbsp;&nbsp;<span class="str">"HDL"</span>, <span class="str">"TRIGLY"</span>, <span class="str">"BMX"</span>, <span class="str">"RHQ"</span>,<br>
+        &nbsp;&nbsp;<span class="str">"SMQ"</span>, <span class="str">"PAQ"</span>, <span class="str">"ALQ"</span>, <span class="str">"DIQ"</span>, <span class="str">"MCQ"</span>,<br>
+        ]
+      </div>
+      <div class="key-insight">
+        <strong>Key Design:</strong> Each NHANES cycle uses a suffix letter (F, G, H, I, J, L). The downloader validates XPT files by checking for <strong>SAS XPORT headers</strong> and catching HTML responses (broken downloads). Per-cycle manifest accounts for changing NHANES variables (e.g., <code>BPXO</code> instead of <code>BPX</code> from 2021+).
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 4: DATA PROCESSING -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>3. Data Processing & Merging</h2>
+  <div class="grid grid-2">
+    <div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h4>Process: scripts/data/process_nhanes_multi.py</h4>
+        <p>Each cycle's <strong>13+ SAS XPT files</strong> are loaded via <code>pyreadstat</code>, merged on <code>SEQN</code> (respondent ID), then concatenated across cycles.</p>
+      </div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h4>Inclusion Criteria (Hard Filters)</h4>
+        <ul>
+          <li><span class="tag tag-green">Female</span> RIAGENDR == 2</li>
+          <li><span class="tag tag-green">Age 45-60</span> Perimenopausal window</li>
+          <li><span class="tag tag-green">Postmenopausal</span> RHQ031 == 2 (no period in 12 months)</li>
+          <li><span class="tag tag-green">Complete HbA1c + FBS</span> Core biomarkers required</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Lifestyle Feature Engineering</h4>
+        <ul>
+          <li><strong>Smoking</strong> — SMQ020 (ever 100+ cigs?) + SMQ040 (current?) → Never / Former / Current</li>
+          <li><strong>Physical Activity</strong> — PAQ605/PAQ650/PAQ665 (vigorous work/recreation) → Sedentary / Moderate / Active</li>
+          <li><strong>Alcohol</strong> — ALQ101 (ever drink?) + ALQ120Q/ALQ120U/ALQ130 (frequency × quantity) → Never / Light / Moderate / Heavy</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h4>Column Name Normalization</h4>
+        <p>NHANES uses different column names across cycles (e.g., <code>LBDHDD</code> vs <code>LBXHDD</code> for HDL). The processor handles this with a <code>first_existing_column()</code> pattern.</p>
+      </div>
+      <div class="card">
+        <h4>Enrichment Features</h4>
+        <p>Waist circumference (BMXWAIST), fasting insulin (LBXIN, 2013+), hs-CRP (LBXHSCRP, 2015+), and family history of diabetes (MCQ300C) are preserved when available.</p>
+        <table style="width:100%; font-size:13px; margin-top:8px; border-collapse:collapse;">
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.1);"><th style="text-align:left;padding:4px;">Feature</th><th style="text-align:right;padding:4px;">Availability</th></tr>
+          <tr><td style="padding:4px;">Waist circumference</td><td style="text-align:right;padding:4px;">98.0%</td></tr>
+          <tr><td style="padding:4px;">Fasting insulin</td><td style="text-align:right;padding:4px;">68.0%</td></tr>
+          <tr><td style="padding:4px;">hs-CRP</td><td style="text-align:right;padding:4px;">51.7%</td></tr>
+          <tr><td style="padding:4px;">Family history diabetes</td><td style="text-align:right;padding:4px;">80.7%</td></tr>
+        </table>
+      </div>
+      <div class="key-insight" style="margin-top:12px;">
+        <strong>Data Leakage Aware:</strong> Waist circumference and fasting insulin have significant missing rates. The training pipeline handles these inside cross-validation — never impute globally before CV.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 5: LABELING & CLEANING -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>4. Label Assignment & Data Cleaning</h2>
+  <div class="grid grid-2">
+    <div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h4>Process: Ian_ML/training/data_processing.py</h4>
+        <p>Diabetes status labels are assigned using a <strong>self-report first</strong> strategy with ADA HbA1c override:</p>
+        <div class="code-block" style="margin-top:8px;">
+          classify_diabetes_self_reported(<span class="str">"DIQ010"</span>, hba1c):<br>
+          &nbsp;&nbsp;<span class="kw">if</span> hba1c &gt;= 6.5: <span class="kw">return</span> <span class="str">"Diabetic"</span>  <span class="cm"># ADA override</span><br>
+          &nbsp;&nbsp;<span class="kw">if</span> DIQ010 == 1:  <span class="kw">return</span> <span class="str">"Diabetic"</span><br>
+          &nbsp;&nbsp;<span class="kw">if</span> DIQ010 == 3:  <span class="kw">return</span> <span class="str">"Pre-diabetic"</span><br>
+          &nbsp;&nbsp;<span class="kw">if</span> DIQ010 == 2:<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> 5.7 &lt;= hba1c &lt; 6.5: <span class="kw">return</span> <span class="str">"Pre-diabetic"</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="str">"Normal"</span>
+        </div>
+      </div>
+      <div class="card">
+        <h4>Data Cleaning</h4>
+        <ul>
+          <li><strong>Duplicate removal</strong> — SEQN-based deduplication</li>
+          <li><strong>Outlier flagging</strong> (not removal) — Clinical range + IQR detection</li>
+          <li><strong>Missing label drop</strong> — Only ~60 rows dropped post-filter</li>
+          <li><strong>Binary target</strong> — Normal (0) vs At-Risk (Pre-diabetic + Diabetic = 1)</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="viz-container">
+        <img src="02_dataset_composition.png" alt="Dataset Composition">
+      </div>
+    </div>
+  </div>
+  <div class="grid grid-3" style="margin-top:12px;">
+    <div class="card"><h4>Class Balance</h4>Normal: 642 (46.7%)<br>Pre-diabetic: 457 (33.2%)<br>Diabetic: 277 (20.1%)</div>
+    <div class="card"><h4>Age Range</h4>45-60 (perimenopausal window)<br>Mean: 54.6 ± 4.1 years</div>
+    <div class="card"><h4>Self-Report Agreement</h4>High agreement with HbA1c-based labels (validating label quality). Disagreement reflects subjective vs objective measurement.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 6: BIOMARKER DISTRIBUTIONS -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>5. Biomarker Profiles by Diabetes Status</h2>
+  <p>Distribution of key clinical biomarkers across Normal, Pre-diabetic, and Diabetic groups. These patterns drive the screening model.</p>
+  <div class="viz-container">
+    <img src="03_biomarker_distributions.png" alt="Biomarker Distributions">
+  </div>
+  <div class="grid grid-3" style="margin-top:12px;">
+    <div class="card">
+      <h4>HbA1c</h4>
+      <p>Clear separation: Normal (median ~5.3%), Pre-diabetic (~5.8%), Diabetic (~6.6%+). Strongest discriminator but NOT used in screening model to avoid circular reasoning.</p>
+    </div>
+    <div class="card">
+      <h4>BMI & Triglycerides</h4>
+      <p>Progressive increase across groups. Mean BMI: 28 (Normal) → 32 (Pre-diabetic) → 35 (Diabetic). Key features in the 9-feature screening model.</p>
+    </div>
+    <div class="card">
+      <h4>HDL</h4>
+      <p>Decreasing HDL with worsening glycemic status (protective effect). Median: 60 (Normal) → 54 (Pre-diabetic) → 49 (Diabetic).</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 7: FEATURE CORRELATIONS -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>6. Feature Correlations & Target Relationships</h2>
+  <div class="grid grid-2">
+    <div>
+      <p>Pearson correlation matrix reveals biomarker interdependence and each feature's relationship with the diabetes label (0=Normal, 2=Diabetic).</p>
+      <div class="card" style="margin: 16px 0;">
+        <h4>Key Correlations with Diabetes Label</h4>
+        <table style="width:100%; font-size:14px; border-collapse:collapse;">
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+            <th style="text-align:left;padding:6px;">Feature</th>
+            <th style="text-align:right;padding:6px;">r</th>
+            <th style="text-align:left;padding:6px;">Interpretation</th>
+          </tr>
+          <tr><td style="padding:6px;">HbA1c</td><td style="text-align:right;padding:6px;color:#ef4444;">+0.78</td><td style="padding:6px;">Strongest — diagnostic standard</td></tr>
+          <tr><td style="padding:6px;">Fasting glucose</td><td style="text-align:right;padding:6px;color:#ef4444;">+0.68</td><td style="padding:6px;">Strong — metabolic signal</td></tr>
+          <tr><td style="padding:6px;">Triglycerides</td><td style="text-align:right;padding:6px;color:#ef4444;">+0.28</td><td style="padding:6px;">Moderate — lipid dysfunction</td></tr>
+          <tr><td style="padding:6px;">BMI</td><td style="text-align:right;padding:6px;color:#ef4444;">+0.27</td><td style="padding:6px;">Moderate — obesity risk factor</td></tr>
+          <tr><td style="padding:6px;">HDL</td><td style="text-align:right;padding:6px;color:#4ade80;">−0.25</td><td style="padding:6px;">Negative — protective inverse</td></tr>
+          <tr><td style="padding:6px;">LDL</td><td style="text-align:right;padding:6px;color:#fbbf24;">+0.07</td><td style="padding:6px;">Weak — atherogenic cholesterol</td></tr>
+          <tr><td style="padding:6px;">Age</td><td style="text-align:right;padding:6px;color:#fbbf24;">+0.06</td><td style="padding:6px;">Weak — narrow range (45-60)</td></tr>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="viz-container">
+        <img src="04_feature_correlations.png" alt="Feature Correlations">
+      </div>
+    </div>
+  </div>
+  <div class="key-insight">
+    <strong>Clinical Insight:</strong> HbA1c and FBS dominate but are excluded from the screening model to avoid <strong>circular reasoning</strong> (you can't screen for diabetes using diabetes diagnostic tests). The model must detect risk using metabolic markers alone.
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 8: THE 9-FEATURE SCREENING MODEL -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>7. The Screening Model — 9 LR-Safe Features</h2>
+  <div class="grid grid-2">
+    <div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h4>No HbA1c. No FBS. No Derived Scores (circular reasoning avoidance).</h4>
+        <p>The model uses only <strong>continuous biomarkers + ordinal lifestyle factors</strong> that are safe for logistic regression (no ratios, no composite scores by default).</p>
+      </div>
+      <div class="card">
+        <h4>Continuous Biomarkers (6)</h4>
+        <ul>
+          <li><strong>BMI</strong> — Body mass index (kg/m²)</li>
+          <li><strong>Triglycerides</strong> — Fasting triglycerides (mg/dL)</li>
+          <li><strong>LDL</strong> — Low-density lipoprotein (mg/dL)</li>
+          <li><strong>HDL</strong> — High-density lipoprotein (mg/dL)</li>
+          <li><strong>Age</strong> — Years (45-60 range)</li>
+          <li><strong>Waist Circumference</strong> — Central obesity proxy (cm)</li>
+        </ul>
+      </div>
+      <div class="card" style="margin-top:12px;">
+        <h4>Ordinal Lifestyle Features (3)</h4>
+        <ul>
+          <li><strong>Smoking</strong> — Never(0) / Former(1) / Current(2)</li>
+          <li><strong>Activity</strong> — Sedentary(0) / Moderate(1) / Active(2)</li>
+          <li><strong>Alcohol</strong> — Never(0) / Light(1) / Moderate(2) / Heavy(3)</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h4>Feature Engineering (training-only)</h4>
+        <ul>
+          <li><strong>BMI category</strong> — Philippine Asia-Pacific WHO cutoffs (Underweight &lt;18.5, Normal 18.5-22.9, Overweight 23-24.9, Obese ≥25)</li>
+          <li><strong>TG/HDL Ratio</strong> — Lipid atherogenicity index</li>
+          <li><strong>Metabolic Syndrome Score</strong> — Count of: TG>150, HDL&lt;50, BMI≥25, Waist≥80cm</li>
+        </ul>
+      </div>
+      <div class="code-block" style="margin-bottom:12px;">
+        <span class="cm"># From Ian_ML/common/feature_constants.py</span><br><br>
+        CLINICAL_FEATURES_NO_BP = [<br>
+        &nbsp;&nbsp;<span class="str">'bmi'</span>, <span class="str">'triglycerides'</span>, <span class="str">'ldl'</span>, <span class="str">'hdl'</span>,<br>
+        &nbsp;&nbsp;<span class="str">'age'</span>, <span class="str">'waist_circumference'</span>,<br>
+        &nbsp;&nbsp;<span class="str">'smoking_encoded'</span>, <span class="str">'activity_encoded'</span>,<br>
+        &nbsp;&nbsp;<span class="str">'alcohol_encoded'</span>,<br>
+        ]
+      </div>
+      <div class="key-insight">
+        <strong>Why "LR-Safe"?</strong> Logistic Regression assumes linear relationships and no multicollinearity. All 9 features are either continuous (linear scale) or ordinal (monotonic). No ratios or interaction terms that would violate assumptions.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 9: TRAINING — NESTED LOGO CV -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>8. Training — Nested LOGO Cross-Validation</h2>
+  <div class="grid grid-2">
+    <div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h4>Validation Strategy</h4>
+        <p>Two-level cross-validation that prevents <strong>temporal data leakage</strong> and provides honest performance estimates:</p>
+        <ul>
+          <li><strong>Outer loop:</strong> Leave-One-Group-Out (LOGO) by NHANES cycle. Each fold trains on 5 cycles, tests on the 6th.</li>
+          <li><strong>Inner loop:</strong> GroupKFold (3 splits) within training cycles for hyperparameter tuning.</li>
+          <li><strong>Preprocessing inside CV:</strong> Imputation and scaling are fit on training folds only — no global leakage.</li>
+        </ul>
+      </div>
+      <div class="card" style="margin-bottom: 16px;">
+        <h4>Models Compared</h4>
+        <ul>
+          <li><strong>Logistic Regression</strong> — Linear, interpretable (BEST: AUC=0.737)</li>
+          <li><strong>Random Forest</strong> — Non-linear ensemble</li>
+          <li><strong>LightGBM</strong> — Gradient boosting</li>
+          <li><strong>XGBoost</strong> — Gradient boosting</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Threshold Optimization</h4>
+        <p>Youden's J statistic (maximizing sensitivity + specificity - 1), with <strong>guardrails</strong> to prevent unstable low-threshold selection under temporal prevalence shift.</p>
+      </div>
+    </div>
+    <div>
+      <div class="viz-container">
+        <img src="05_model_performance.png" alt="Model Performance">
+      </div>
+    </div>
+  </div>
+  <div class="grid grid-3" style="margin-top:8px;">
+    <div class="card"><h4>Winner</h4><div class="big" style="font-size:24px;">Logistic Regression</div><p>Voted best by mean fold AUC. Simpler, more stable across NHANES cycles.</p></div>
+    <div class="card"><h4>AUC-ROC</h4><div class="big" style="font-size:24px;">0.737</div><p>95% CI: [0.710, 0.763]</p></div>
+    <div class="card"><h4>Threshold</h4><div class="big" style="font-size:24px;">0.465</div><p>Youden-optimized. 1/6 folds hit guardrail (specificity collapse).</p></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 10: LOGO FOLD ANALYSIS -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>9. LOGO Fold Analysis — Cross-Cycle Generalization</h2>
+  <p>Each LOGO fold holds out one NHANES cycle as the test set, simulating real-world deployment to a <strong>new temporal population</strong>.</p>
+
+  <div class="card" style="margin-bottom:16px;">
+    <table style="width:100%; font-size:13px; border-collapse:collapse;">
+      <tr style="border-bottom:2px solid rgba(255,255,255,0.1);">
+        <th style="text-align:left;padding:8px;">Fold</th>
+        <th style="text-align:left;padding:8px;">Test Cycle</th>
+        <th style="text-align:right;padding:8px;">N Test</th>
+        <th style="text-align:right;padding:8px;">AUC</th>
+        <th style="text-align:right;padding:8px;">Sens</th>
+        <th style="text-align:right;padding:8px;">Spec</th>
+        <th style="text-align:right;padding:8px;">Thresh</th>
+        <th style="text-align:left;padding:8px;">Strategy</th>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+        <td style="padding:6px;">1</td><td style="padding:6px;">2009-2010</td>
+        <td style="text-align:right;padding:6px;">222</td>
+        <td style="text-align:right;padding:6px;color:#4ade80;">0.711</td>
+        <td style="text-align:right;padding:6px;">0.761</td>
+        <td style="text-align:right;padding:6px;">0.581</td>
+        <td style="text-align:right;padding:6px;">0.47</td><td style="padding:6px;">youden</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+        <td style="padding:6px;">2</td><td style="padding:6px;">2011-2012</td>
+        <td style="text-align:right;padding:6px;">190</td>
+        <td style="text-align:right;padding:6px;color:#4ade80;">0.713</td>
+        <td style="text-align:right;padding:6px;">0.634</td>
+        <td style="text-align:right;padding:6px;">0.718</td>
+        <td style="text-align:right;padding:6px;">0.49</td><td style="padding:6px;">youden</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+        <td style="padding:6px;">3</td><td style="padding:6px;">2013-2014</td>
+        <td style="text-align:right;padding:6px;">236</td>
+        <td style="text-align:right;padding:6px;color:#4ade80;">0.736</td>
+        <td style="text-align:right;padding:6px;">0.727</td>
+        <td style="text-align:right;padding:6px;">0.567</td>
+        <td style="text-align:right;padding:6px;">0.47</td><td style="padding:6px;">youden</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+        <td style="padding:6px;">4</td><td style="padding:6px;">2015-2016</td>
+        <td style="text-align:right;padding:6px;">229</td>
+        <td style="text-align:right;padding:6px;color:#4ade80;">0.788</td>
+        <td style="text-align:right;padding:6px;">0.772</td>
+        <td style="text-align:right;padding:6px;">0.679</td>
+        <td style="text-align:right;padding:6px;">0.48</td><td style="padding:6px;">youden</td>
+      </tr>
+      <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+        <td style="padding:6px;">5</td><td style="padding:6px;">2017-2018</td>
+        <td style="text-align:right;padding:6px;">234</td>
+        <td style="text-align:right;padding:6px;color:#4ade80;">0.738</td>
+        <td style="text-align:right;padding:6px;">0.735</td>
+        <td style="text-align:right;padding:6px;">0.637</td>
+        <td style="text-align:right;padding:6px;">0.47</td><td style="padding:6px;">youden</td>
+      </tr>
+      <tr>
+        <td style="padding:6px;">6</td><td style="padding:6px;">2021-2023</td>
+        <td style="text-align:right;padding:6px;">265</td>
+        <td style="text-align:right;padding:6px;color:#4ade80;">0.731</td>
+        <td style="text-align:right;padding:6px;">0.856</td>
+        <td style="text-align:right;padding:6px;">0.449</td>
+        <td style="text-align:right;padding:6px;">0.41</td><td style="padding:6px;color:#fbbf24;">guardrail</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h4>Fold 6 Observation (2021-2023)</h4>
+      <p>Guardrail triggered due to <strong>prevalence shift</strong> — COVID-era cycle has different risk distribution. The guardrail adjusts threshold to maintain specificity &gt;45%, preventing the model from default-predicting "At-Risk". AUC remains strong (0.731).</p>
+    </div>
+    <div class="card">
+      <h4>Generalization Quality</h4>
+      <p>AUC consistent across all cycles (0.71-0.79), demonstrating the model generalizes across different temporal populations. Slight sensitivity/specificity tradeoff reflects changing NHANES methodology (oscillometric BP, new questionnaire forms).</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 11: CLUSTER ANALYSIS -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>10. Ahlqvist-Inspired Diabetes Subtypes</h2>
+  <p>K-Means clustering (K=4) on at-risk patients only, approximating Ahlqvist et al. (2018) diabetes subtypes using available biomarkers.</p>
+  <div class="viz-container">
+    <img src="06_cluster_analysis.png" alt="Cluster Analysis">
+  </div>
+  <div class="key-insight">
+    <strong>Limitation Acknowledged:</strong> True Ahlqvist subtypes require HOMA2-B, HOMA2-IR, and C-peptide — not available in NHANES. DIANA uses proxy metrics per <strong>Tanabe et al. (2024)</strong> adaptation. SIDD is rebranded as "Atherogenic/Lipid-Driven" to reflect that it identifies high-LDL, not beta-cell dysfunction.
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 12: SHAP FEATURE IMPORTANCE -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>11. SHAP Feature Importance — What Drives Predictions?</h2>
+  <div class="grid grid-2">
+    <div>
+      <p>SHAP (SHapley Additive exPlanations) values decompose each prediction into feature contributions. Positive SHAP = pushes toward At-Risk.</p>
+      <div class="card" style="margin-bottom:16px;">
+        <h4>Top-3 Risk Drivers</h4>
+        <ol>
+          <li><strong>Triglycerides</strong> — Highest mean |SHAP|. High TG strongly pushes toward At-Risk.</li>
+          <li><strong>BMI</strong> — Second strongest. Every unit increase in BMI increases risk.</li>
+          <li><strong>Age</strong> — Older age within the 45-60 range contributes to higher risk.</li>
+        </ol>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <h4>Protective Factors</h4>
+        <ul>
+          <li><strong>HDL</strong> — Negative SHAP values: higher HDL reduces risk (inverse relationship).</li>
+          <li><strong>Physical Activity</strong> — Higher activity levels correlate with lower risk.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Color Interpretation (Beeswarm)</h4>
+        <p><strong>Red/Blue</strong> = high/low feature value. A red point on the right side means a high value of that feature pushes toward At-Risk. All features show the expected clinical direction.</p>
+      </div>
+    </div>
+    <div>
+      <div class="viz-container">
+        <img src="07_shap_importance.png" alt="SHAP Importance">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SLIDE 13: SUMMARY -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="slide">
+  <h2>12. Summary — What DIANA Does</h2>
+  <div class="grid grid-2" style="margin-bottom:24px;">
+    <div class="card">
+      <h4>Data Pipeline</h4>
+      <ul>
+        <li>6 NHANES cycles (2009-2023), 13+ file types each → merged on SEQN</li>
+        <li>Inclusion: female, 45-60, postmenopausal, complete HbA1c+FBS</li>
+        <li>Labels: DIQ010 self-report + ADA HbA1c override → 1,376 records</li>
+        <li>9 LR-safe features used for screening (no HbA1c/FBS)</li>
+        <li>Imputation handled inside CV (SimpleImputer, median strategy)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Model</h4>
+      <ul>
+        <li><strong>Best:</strong> Logistic Regression (selected via nested LOGO CV)</li>
+        <li><strong>AUC:</strong> 0.737 [95% CI: 0.710-0.763]</li>
+        <li><strong>Sensitivity:</strong> 0.748 [95% CI: 0.717-0.776]</li>
+        <li><strong>Specificity:</strong> 0.590</li>
+        <li><strong>Threshold:</strong> 0.465 (Youden-optimized + guardrails)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-bottom:24px;">
+    <div class="card">
+      <h4>Subtypes (K-Means K=4)</h4>
+      <ul>
+        <li><span class="tag tag-high">SIRD</span> Insulin-Resistant — High BMI, TG, Low HDL</li>
+        <li><span class="tag tag-high">SIDD</span> Atherogenic — High LDL (per Tanabe 2024)</li>
+        <li><span class="tag tag-mod">MOD</span> Obesity-Related — High BMI, moderate markers</li>
+        <li><span class="tag tag-low">MARD</span> Age-Related — Older, milder profile</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Key Design Constraints</h4>
+      <ul>
+        <li>No HbA1c/FBS in screening features (circular reasoning avoidance)</li>
+        <li>Nested CV prevents temporal data leakage</li>
+        <li>Threshold guardrails protect against prevalence shift</li>
+        <li>All constants in feature_constants.py — single source of truth</li>
+        <li>Philippine Asia-Pacific WHO BMI cutoffs (≥25 obese)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="viz-container" style="margin-bottom:16px;">
+    <img src="08_data_flow_quality.png" alt="Data Flow Quality">
+  </div>
+  <div style="text-align:center; margin-top: 20px;">
+    <p style="font-size: 14px; color: #556;">End of DIANA Pipeline Presentation · All generated from live model artifacts and dataset</p>
+  </div>
+</div>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('slideNum');
+  const updateCounter = () => {
+    const scrollPos = window.scrollY + window.innerHeight / 2;
+    let currentSlide = 0;
+    slides.forEach((s, i) => {
+      const rect = s.getBoundingClientRect();
+      const absTop = rect.top + window.scrollY;
+      const absBot = rect.bottom + window.scrollY;
+      if (scrollPos >= absTop && scrollPos <= absBot) currentSlide = i + 1;
+    });
+    counter.textContent = `${currentSlide} / ${slides.length}`;
+  };
+  window.addEventListener('scroll', updateCounter);
+  updateCounter();
+})();
+</script>
+
+</body>
+</html>

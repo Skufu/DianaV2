@@ -15,7 +15,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import { Brain, ChevronDown, ChevronUp, AlertCircle, Info, Users } from 'lucide-react';
-import { mlFetchJson } from '../../api';
+import { getErrorMessage, mlFetchJson } from '../../api';
 
 const FEATURE_LABELS = {
   bmi: 'BMI',
@@ -165,7 +165,9 @@ const SHAPExplanation = ({
           ? explanationPayload.error
           : null) ||
         data?.shap_metadata?.fallback_reason ||
-        (data?.shap_metadata?.explanation_available === false ? 'explainability_unavailable' : null);
+        (data?.shap_metadata?.explanation_available === false
+          ? 'explainability_unavailable'
+          : null);
 
       if (explanationPayload?.available === false || fallbackReason) {
         setExplanation({
@@ -188,13 +190,14 @@ const SHAPExplanation = ({
         metabolicSubtype: data?.metabolic_subtype || null,
       });
     } catch (err) {
-      if (err.name === 'AbortError') return;
-      if (isExplainabilityUnavailableMessage(err.message)) {
+      if (err.name === 'AbortError' || err.code === 'REQUEST_ABORTED') return;
+      const message = getErrorMessage(err, 'Unable to generate explanation.');
+      if (isExplainabilityUnavailableMessage(message)) {
         setExplanation(buildExplainabilityFallback('explainability_unavailable'));
         setError(null);
         return;
       }
-      setError(err.message);
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -435,11 +438,15 @@ const SHAPExplanation = ({
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold text-indigo-700">{riskCluster}</span>
                   {clusterInfo?.riskLevel && (
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      clusterInfo.riskLevel === 'HIGH' ? 'bg-rose-100 text-rose-700' :
-                      clusterInfo.riskLevel === 'MODERATE' ? 'bg-amber-100 text-amber-700' :
-                      'bg-emerald-100 text-emerald-700'
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        clusterInfo.riskLevel === 'HIGH'
+                          ? 'bg-rose-100 text-rose-700'
+                          : clusterInfo.riskLevel === 'MODERATE'
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-emerald-100 text-emerald-700'
+                      }`}
+                    >
                       {clusterInfo.riskLevel} RISK
                     </span>
                   )}

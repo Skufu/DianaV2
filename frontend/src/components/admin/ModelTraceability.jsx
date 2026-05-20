@@ -1,7 +1,12 @@
 // ModelTraceability: Admin oversight for ML model tracking
 // Displays active production model with lineage, sync status, and training history
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { fetchModelRunsApi, fetchActiveModelApi, syncModelRunsApi } from '../../api';
+import {
+  fetchModelRunsApi,
+  fetchActiveModelApi,
+  syncModelRunsApi,
+  getErrorMessage,
+} from '../../api';
 import {
   Cpu,
   Clock,
@@ -18,23 +23,18 @@ import {
   Info,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  staggerContainer,
-  fadeIn,
-  cardVariants,
-  useReducedMotion,
-} from '../../utils/animations';
+import { staggerContainer, fadeIn, cardVariants, useReducedMotion } from '../../utils/animations';
 
-const copyToClipboard = async (text, onSuccess) => {
+const copyToClipboard = async (text, onSuccess, onError) => {
   try {
     await navigator.clipboard.writeText(text);
     onSuccess?.();
   } catch (err) {
-    console.error('Failed to copy:', err);
+    onError?.(err);
   }
 };
 
-const formatRelativeTime = (dateString) => {
+const formatRelativeTime = dateString => {
   if (!dateString) return 'Never';
   const date = new Date(dateString);
   const now = new Date();
@@ -63,6 +63,7 @@ const ModelTraceability = () => {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
+  const [copyError, setCopyError] = useState(null);
   const [syncSuccess, setSyncSuccess] = useState(null);
   const [copiedHash, setCopiedHash] = useState(null);
   const [lastSyncTime, setLastSyncTime] = useState(null);
@@ -86,8 +87,7 @@ const ModelTraceability = () => {
       setTotal(runs.total || 0);
       setTotalPages(runs.total_pages || 1);
     } catch (err) {
-      setError('Failed to load model information');
-      console.error(err);
+      setError(getErrorMessage(err, 'Failed to load model information'));
     } finally {
       setLoading(false);
     }
@@ -116,18 +116,24 @@ const ModelTraceability = () => {
       setSyncSuccess('Model registry synced successfully');
       setTimeout(() => setSyncSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to sync model from ML Server');
-      console.error(err);
+      setError(getErrorMessage(err, 'Failed to sync model from ML Server'));
     } finally {
       setSyncing(false);
     }
   };
 
   const handleCopyHash = (hash, identifier) => {
-    copyToClipboard(hash, () => {
-      setCopiedHash(identifier);
-      setTimeout(() => setCopiedHash(null), 2000);
-    });
+    setCopyError(null);
+    copyToClipboard(
+      hash,
+      () => {
+        setCopiedHash(identifier);
+        setTimeout(() => setCopiedHash(null), 2000);
+      },
+      err => {
+        setCopyError(getErrorMessage(err, 'Unable to copy hash to clipboard.'));
+      }
+    );
   };
 
   const showingFrom = useMemo(() => {
@@ -242,6 +248,20 @@ const ModelTraceability = () => {
             >
               Retry
             </button>
+          </motion.div>
+        )}
+        {copyError && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-700"
+            role="alert"
+            aria-live="polite"
+          >
+            <AlertCircle size={18} />
+            <span>{copyError}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -410,9 +430,7 @@ const ModelTraceability = () => {
                   <Cpu size={32} className="text-slate-400" />
                 </div>
                 <p className="text-slate-500 mb-2">No model runs in registry</p>
-                <p className="text-slate-400 text-sm">
-                  Train and register models to see them here
-                </p>
+                <p className="text-slate-400 text-sm">Train and register models to see them here</p>
               </div>
             ) : (
               <table className="w-full">

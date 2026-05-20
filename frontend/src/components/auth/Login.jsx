@@ -3,6 +3,7 @@ import { AlertCircle, Lock, Mail, Eye, EyeOff, Activity, Database } from 'lucide
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/logo-icon.png';
 import Button from '../common/Button';
+import { getErrorMessage, getFieldErrors } from '../../api';
 import { fadeIn, getInputFocusVariants, useReducedMotion } from '../../utils/animations';
 import { LoginFormSkeleton } from '../common/Skeleton';
 
@@ -94,7 +95,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
     } catch (err) {
       // Parse structured backend errors
       if (err.code === 'VALIDATION_ERROR' && err.details) {
-        const details = typeof err.details === 'object' ? err.details : {};
+        const details = getFieldErrors(err);
         setFieldErrors({
           email: details.email || '',
           password: details.password || '',
@@ -108,7 +109,7 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
       } else if (err.status === 429) {
         setError('Too many login attempts. Please wait a moment and try again.');
       } else {
-        setError(err.message || 'Invalid credentials.');
+        setError(getErrorMessage(err, 'Invalid credentials.'));
       }
     } finally {
       setLoading(false);

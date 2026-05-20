@@ -10,7 +10,7 @@ import {
   getInputFocusVariants,
   useReducedMotion,
 } from '../../utils/animations';
-import { useVerifyEmail, useResendVerification } from '../../api';
+import { getErrorMessage, useVerifyEmail, useResendVerification } from '../../api';
 
 const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
   const isReduced = useReducedMotion();
@@ -87,7 +87,7 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
       if (err.status === 429) {
         setError('Too many attempts. Please wait a moment and try again.');
       } else {
-        setError(err.message || 'Verification failed. Please try again.');
+        setError(getErrorMessage(err, 'Verification failed. Please try again.'));
       }
     }
   };
@@ -113,7 +113,7 @@ const VerifyEmail = ({ onShowLogin, initialToken = '', initialEmail = '' }) => {
       if (err.status === 429) {
         setError('Too many attempts. Please wait a moment and try again.');
       } else {
-        setError(err.message || 'Unable to resend verification email.');
+        setError(getErrorMessage(err, 'Unable to resend verification email.'));
       }
     }
   };

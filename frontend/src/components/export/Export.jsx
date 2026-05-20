@@ -1,12 +1,13 @@
 // Export: provides PDF download for patient health reports
 import React, { useState } from 'react';
-import { exportPDFApi } from '../../api';
+import { exportPDFApi, getErrorMessage } from '../../api';
 import Button from '../common/Button';
-import { Download, FileText } from 'lucide-react';
+import { AlertCircle, Download, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Export = () => {
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [pdfError, setPdfError] = useState(null);
 
   return (
     <div className="space-y-6 animate-fade-in pb-8">
@@ -53,11 +54,13 @@ const Export = () => {
               variant="outline"
               onClick={async () => {
                 try {
+                  setPdfError(null);
                   setPdfGenerating(true);
                   await exportPDFApi();
                 } catch (error) {
-                  console.error('PDF generation failed:', error);
-                  alert('Failed to generate PDF report. Please try again.');
+                  setPdfError(
+                    getErrorMessage(error, 'Failed to generate PDF report. Please try again.')
+                  );
                 } finally {
                   setPdfGenerating(false);
                 }
@@ -78,6 +81,15 @@ const Export = () => {
               )}
             </Button>
           </div>
+          {pdfError && (
+            <div
+              className="mt-4 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+              role="alert"
+            >
+              <AlertCircle size={18} className="mt-0.5 shrink-0" />
+              <span className="font-medium">{pdfError}</span>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

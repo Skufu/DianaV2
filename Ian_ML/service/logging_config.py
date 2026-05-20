@@ -9,6 +9,7 @@ import os
 import re
 import sys
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
 from typing import Any, Dict, Optional
 
 
@@ -188,19 +189,51 @@ def setup_logging(service_name: str = 'diana-ml',
     console_handler.setFormatter(formatter)
     root_logger.addHandler(console_handler)
 
+    log_dir = os.getenv('DIANA_LOG_DIR')
+    file_handler = None
+    if log_dir:
+        try:
+            os.makedirs(log_dir, mode=0o750, exist_ok=True)
+            max_bytes = _get_positive_int_env('DIANA_LOG_MAX_BYTES', 5 * 1024 * 1024)
+            backup_count = _get_positive_int_env('DIANA_LOG_MAX_BACKUPS', 3)
+            file_handler = RotatingFileHandler(
+                os.path.join(log_dir, 'ml.log'),
+                maxBytes=max_bytes,
+                backupCount=backup_count,
+                encoding='utf-8'
+            )
+            file_handler.setFormatter(formatter)
+            root_logger.addHandler(file_handler)
+        except OSError as exc:
+            root_logger.warning("Failed to initialize ML file logger: %s", exc)
+
     # Add PII redaction filter
     pii_filter = PIIRedactionFilter()
     root_logger.addFilter(pii_filter)
+    console_handler.addFilter(pii_filter)
+    if file_handler:
+        file_handler.addFilter(pii_filter)
 
     # Add request context filter
     context_filter = RequestContextFilter()
     root_logger.addFilter(context_filter)
+    console_handler.addFilter(context_filter)
+    if file_handler:
+        file_handler.addFilter(context_filter)
 
     # Create service logger
     logger = logging.getLogger(service_name)
     logger.info(f"Logging initialized: level={level}, service={service_name}, version={version}")
 
     return logger
+
+
+def _get_positive_int_env(key: str, default: int) -> int:
+    try:
+        value = int(os.getenv(key, ''))
+    except ValueError:
+        return default
+    return value if value > 0 else default
 
 
 def get_logger(name: str = 'diana-ml') -> logging.Logger:
