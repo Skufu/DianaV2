@@ -12,7 +12,7 @@ import {
   AlertCircle,
   Info,
 } from 'lucide-react';
-import { useCompleteOnboarding } from '../../api';
+import { getErrorMessage, useCompleteOnboarding } from '../../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../common/Button';
 import {
@@ -85,7 +85,7 @@ const Onboarding = ({ onComplete }) => {
       await completeOnboardingMutation.mutateAsync(payload);
       onComplete();
     } catch (err) {
-      setError(err.message || 'Failed to complete onboarding. Please try again.');
+      setError(getErrorMessage(err, 'Failed to complete onboarding. Please try again.'));
     }
   };
 
@@ -214,7 +214,8 @@ const Onboarding = ({ onComplete }) => {
               <p className="text-slate-500">
                 {step === 0 && 'Get started in a few simple steps.'}
                 {step === 1 && 'We need a few basic details to personalize your risk assessment.'}
-                {step === 2 && 'Understanding where you are in your menopause journey helps us tailor recommendations.'}
+                {step === 2 &&
+                  'Understanding where you are in your menopause journey helps us tailor recommendations.'}
                 {step === 3 && 'Optional context for your risk profile and PDF reports.'}
                 {step === 4 && 'Please review how your data will be used and protected.'}
               </p>
@@ -255,30 +256,50 @@ const Onboarding = ({ onComplete }) => {
                   animate="visible"
                   className="space-y-6"
                 >
-                  <motion.div variants={fadeIn} className="bg-diana-forest-light/5 border border-diana-forest-light/20 rounded-xl p-6">
+                  <motion.div
+                    variants={fadeIn}
+                    className="bg-diana-forest-light/5 border border-diana-forest-light/20 rounded-xl p-6"
+                  >
                     <div className="flex items-center gap-2 mb-3">
                       <Heart className="text-diana-forest-light" size={20} />
-                      <h2 className="text-lg font-semibold text-diana-midnight">Diabetes risk screening for women aged 45–60</h2>
+                      <h2 className="text-lg font-semibold text-diana-midnight">
+                        Diabetes risk screening for women aged 45–60
+                      </h2>
                     </div>
                     <p className="text-slate-600 text-sm leading-relaxed">
-                      DIANA uses your clinical biomarkers to estimate Type 2 Diabetes risk during the menopausal transition.
+                      DIANA uses your clinical biomarkers to estimate Type 2 Diabetes risk during
+                      the menopausal transition.
                     </p>
                   </motion.div>
 
-                  <motion.div variants={fadeIn} className="bg-amber-50/60 border border-amber-200/80 rounded-xl px-5 py-3.5 flex items-start gap-3">
+                  <motion.div
+                    variants={fadeIn}
+                    className="bg-amber-50/60 border border-amber-200/80 rounded-xl px-5 py-3.5 flex items-start gap-3"
+                  >
                     <AlertTriangle className="text-amber-500 mt-0.5 shrink-0" size={16} />
                     <p className="text-amber-900 text-sm leading-relaxed">
-                      <strong>Screening only</strong> — not a diagnosis. Always review results with your doctor.
+                      <strong>Screening only</strong> — not a diagnosis. Always review results with
+                      your doctor.
                     </p>
                   </motion.div>
 
-                  <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-xl p-5">
+                  <motion.div
+                    variants={fadeIn}
+                    className="bg-slate-50 border border-slate-200 rounded-xl p-5"
+                  >
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
                       <Info className="text-slate-400" size={14} />
                       Have these ready from a recent checkup
                     </p>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-slate-600">
-                      {['BMI', 'Triglycerides', 'LDL Cholesterol', 'HDL Cholesterol', 'Waist Circumference', 'HbA1c or Fasting Glucose'].map(item => (
+                      {[
+                        'BMI',
+                        'Triglycerides',
+                        'LDL Cholesterol',
+                        'HDL Cholesterol',
+                        'Waist Circumference',
+                        'HbA1c or Fasting Glucose',
+                      ].map(item => (
                         <div key={item} className="flex items-center gap-1.5">
                           <CheckCircle2 size={13} className="text-diana-forest-light shrink-0" />
                           <span>{item}</span>
@@ -357,9 +378,13 @@ const Onboarding = ({ onComplete }) => {
                     </p>
                   </motion.div>
 
-                  <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                  <motion.div
+                    variants={fadeIn}
+                    className="bg-slate-50 border border-slate-200 rounded-lg p-4"
+                  >
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      <strong>Why age 45-60?</strong> Hormonal changes during this window increase the risk of Type 2 Diabetes.
+                      <strong>Why age 45-60?</strong> Hormonal changes during this window increase
+                      the risk of Type 2 Diabetes.
                     </p>
                   </motion.div>
                 </motion.div>
@@ -428,14 +453,20 @@ const Onboarding = ({ onComplete }) => {
                         placeholder="How many years?"
                       />
                       <p className="text-[10px] text-slate-400">
-                        Diabetes risk increases with time since menopause due to cumulative metabolic changes.
+                        Diabetes risk increases with time since menopause due to cumulative
+                        metabolic changes.
                       </p>
                     </motion.div>
                   )}
 
-                  <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                  <motion.div
+                    variants={fadeIn}
+                    className="bg-slate-50 border border-slate-200 rounded-lg p-4"
+                  >
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      <strong>Did you know?</strong> Lower estrogen levels after menopause can act as a catalyst for metabolic changes, raising the likelihood of developing Type 2 Diabetes.
+                      <strong>Did you know?</strong> Lower estrogen levels after menopause can act
+                      as a catalyst for metabolic changes, raising the likelihood of developing Type
+                      2 Diabetes.
                     </p>
                   </motion.div>
                 </motion.div>
@@ -528,7 +559,9 @@ const Onboarding = ({ onComplete }) => {
                             className="block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 focus:outline-none focus:border-diana-forest-light focus:ring-1 focus:ring-diana-forest-light transition-all shadow-sm appearance-none cursor-pointer"
                           >
                             {field.options.map(opt => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
                             ))}
                           </select>
                           <ChevronRight
@@ -540,9 +573,13 @@ const Onboarding = ({ onComplete }) => {
                     ))}
                   </div>
 
-                  <motion.div variants={fadeIn} className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                  <motion.div
+                    variants={fadeIn}
+                    className="bg-slate-50 border border-slate-200 rounded-lg p-4"
+                  >
                     <p className="text-xs text-slate-500 leading-relaxed">
-                      <strong>All fields are optional.</strong> This info helps contextualize your risk profile and is included in PDF reports.
+                      <strong>All fields are optional.</strong> This info helps contextualize your
+                      risk profile and is included in PDF reports.
                     </p>
                   </motion.div>
                 </motion.div>
@@ -596,20 +633,24 @@ const Onboarding = ({ onComplete }) => {
                         required={item.required}
                         className="sr-only"
                       />
-                      <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
-                        formData[item.name]
-                          ? 'bg-diana-forest-light border-diana-forest-light'
-                          : 'border-slate-300 bg-white'
-                      }`}>
+                      <div
+                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
+                          formData[item.name]
+                            ? 'bg-diana-forest-light border-diana-forest-light'
+                            : 'border-slate-300 bg-white'
+                        }`}
+                      >
                         {formData[item.name] && (
                           <CheckCircle2 size={12} className="text-white" strokeWidth={3} />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={`text-sm font-medium transition-colors ${
-                            formData[item.name] ? 'text-diana-forest-light' : 'text-slate-700'
-                          }`}>
+                          <span
+                            className={`text-sm font-medium transition-colors ${
+                              formData[item.name] ? 'text-diana-forest-light' : 'text-slate-700'
+                            }`}
+                          >
                             {item.label}
                           </span>
                           {item.required && (
@@ -623,10 +664,14 @@ const Onboarding = ({ onComplete }) => {
                     </motion.label>
                   ))}
 
-                  <motion.div variants={fadeIn} className="mt-2 bg-amber-50/60 border border-amber-200/80 rounded-lg px-4 py-3 flex items-start gap-2.5">
+                  <motion.div
+                    variants={fadeIn}
+                    className="mt-2 bg-amber-50/60 border border-amber-200/80 rounded-lg px-4 py-3 flex items-start gap-2.5"
+                  >
                     <AlertTriangle className="text-amber-500 mt-0.5 shrink-0" size={14} />
                     <p className="text-xs text-amber-800 leading-relaxed">
-                      <strong>Screening only</strong> — results should be discussed with a qualified healthcare provider.
+                      <strong>Screening only</strong> — results should be discussed with a qualified
+                      healthcare provider.
                     </p>
                   </motion.div>
                 </motion.div>

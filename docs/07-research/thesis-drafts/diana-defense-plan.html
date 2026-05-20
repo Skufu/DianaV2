@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DianaV2 Two-Week Defense Study Plan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+:root {
+    --primary: #1e3a8a;
+    --primary-light: #eff6ff;
+    --secondary: #0f172a;
+    --accent: #2563eb;
+    --danger: #dc2626;
+    --text-main: #334155;
+    --text-muted: #64748b;
+    --bg-page: #f8fafc;
+    --bg-paper: #ffffff;
+    --border-color: #e2e8f0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.7;
+    color: var(--text-main);
+    background: var(--bg-page);
+    font-size: 11pt;
+}
+.doc {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 50px;
+    background: var(--bg-paper);
+}
+@media print {
+    @page { margin: 0.55in; }
+    body {
+        background: #fff;
+        font-size: 10pt;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .doc { padding: 0; max-width: 100%; }
+    h1, h2, h3, h4 { break-after: avoid; page-break-after: avoid; }
+    h2 { break-before: auto; page-break-before: auto; margin-top: 24px; }
+    blockquote, pre, table { break-inside: avoid; page-break-inside: avoid; }
+    ul, ol { break-inside: avoid-page; }
+}
+h1 {
+    font-family: 'Lora', serif;
+    font-size: 24pt;
+    color: var(--primary);
+    text-align: center;
+    padding: 30px 0 10px;
+    border-bottom: 3px solid var(--primary);
+    margin-bottom: 30px;
+}
+h2 {
+    font-family: 'Lora', serif;
+    font-size: 16pt;
+    color: var(--primary);
+    margin-top: 40px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border-color);
+}
+h3 {
+    font-size: 12pt;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-top: 24px;
+    margin-bottom: 10px;
+}
+h4 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 20px;
+    margin-bottom: 8px;
+}
+p {
+    margin-bottom: 12px;
+    text-align: justify;
+    hyphens: auto;
+}
+blockquote {
+    border-left: 4px solid var(--accent);
+    background: var(--primary-light);
+    padding: 14px 20px;
+    margin: 16px 0;
+    border-radius: 0 6px 6px 0;
+    font-style: italic;
+    color: var(--secondary);
+}
+blockquote p { margin-bottom: 0; }
+ul, ol { margin: 10px 0 16px 24px; }
+li { margin-bottom: 6px; }
+code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10pt;
+    color: var(--danger);
+}
+pre {
+    background: #f1f5f9;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font-size: 9.5pt;
+    line-height: 1.5;
+}
+pre code { background: none; padding: 0; color: var(--text-main); }
+strong { font-weight: 600; color: var(--secondary); }
+hr { border: none; border-top: 1px solid var(--border-color); margin: 30px 0; }
+</style>
+</head>
+<body>
+    <div class="doc">
+        <h1>DianaV2 Two-Week Defense Course</h1>
+<h2>What This Course Is For</h2>
+<p>This is a targeted two-week reading and practice course for defending DianaV2. It is written to make you ready to explain the project under pressure, not just remember isolated facts.</p>
+<p>The goal is that after fourteen days you can:</p>
+<ul>
+<li>Explain the full DianaV2 research pipeline without notes.</li>
+<li>Defend the target label and HbA1c/FBS circularity issue clearly.</li>
+<li>Recite the main model numbers and interpret them honestly.</li>
+<li>Explain why the current model is a screening classifier, not a diagnostic or future-onset predictor.</li>
+<li>Explain clustering and SHAP without overclaiming.</li>
+<li>Draw the frontend/backend/ML architecture from memory.</li>
+<li>State limitations before the panel asks.</li>
+<li>Answer hard questions in short, controlled, examiner-safe language.</li>
+</ul>
+<h2>The Defense Position To Memorize</h2>
+<p>DianaV2 is a full-stack, clinically cautious screening and explainability system for Type 2 Diabetes risk classification in postmenopausal women. It uses a non-circular 9-feature model that excludes HbA1c and fasting blood sugar from prediction because those biomarkers are used to define the ground-truth label. The selected model is Logistic Regression, validated using nested Leave-One-NHANES-Cycle-Out cross-validation, with AUC about 0.737 and sensitivity about 0.748. SHAP is used to explain model behavior, and K-Means clustering is used to describe heuristic metabolic subgroups among at-risk users. The system is not a diagnosis, not causal proof, and not ready for clinical deployment without external and prospective validation.</p>
+<p>That paragraph is the center of your defense. Everything else is detail.</p>
+<h2>The Project In One Sentence</h2>
+<p>DianaV2 classifies current biomarker-defined diabetes risk in postmenopausal women using non-circular metabolic and lifestyle features, explains the model output with SHAP, enriches at-risk cases with heuristic metabolic subtypes, and delivers the result through a React, Go, and Python full-stack application.</p>
+<h2>The Project In Two Minutes</h2>
+<p>My thesis focuses on diabetes-risk screening in postmenopausal women, a population where metabolic changes after menopause can increase insulin resistance, adiposity, and cardiometabolic risk. The project uses NHANES data, filtered to postmenopausal women aged 45 to 60, and builds a current-state screening classifier rather than a future disease forecast.</p>
+<p>The label is based on ADA-style glycemic criteria using HbA1c and fasting blood sugar, where normal is separated from at-risk status by collapsing prediabetic and diabetic categories into one binary at-risk class. Because HbA1c and fasting blood sugar define the label, the final screening model excludes them from the predictor set. That is the core leakage and circularity defense.</p>
+<p>The selected model is Logistic Regression using nine features: BMI, triglycerides, LDL, HDL, age, waist circumference, smoking, physical activity, and alcohol use. It is validated using nested Leave-One-NHANES-Cycle-Out cross-validation with GroupKFold inside the training folds. The main result is AUC about 0.737, with 95% CI about 0.710 to 0.763, sensitivity about 0.748, specificity about 0.590, accuracy about 0.674, and F1 about 0.710.</p>
+<p>The system also includes SHAP explanations for feature attribution and K-Means clustering for heuristic metabolic subtype enrichment. These are support tools: SHAP explains model behavior, not causality, and clustering describes data patterns, not validated disease subtypes.</p>
+<p>Finally, DianaV2 is implemented as a full-stack application with a React frontend, Go backend, and Python ML service. The backend normalizes assessment results, manages risk score and risk level semantics, and treats the ML service response as part of a controlled application contract. The main limitation is that the model still needs external, prospective, and clinical validation before real-world use.</p>
+<h2>Numbers You Must Know</h2>
+<p>Memorize these exactly enough to say them confidently:</p>
+<ul>
+<li>Population: postmenopausal women, age 45-60, NHANES.</li>
+<li>Task: binary classification, Normal vs At-Risk.</li>
+<li>Positive class: Pre-diabetic + Diabetic collapsed into At-Risk.</li>
+<li>Label source: HbA1c and fasting blood sugar criteria.</li>
+<li>Screening features: 9 non-circular features.</li>
+<li>Excluded from final predictors: HbA1c and fasting blood sugar.</li>
+<li>Selected model: Logistic Regression.</li>
+<li>Validation: Nested LOGO CV, outer Leave-One-NHANES-Cycle-Out, inner GroupKFold.</li>
+<li>Decision threshold: about 0.465.</li>
+<li>AUC: 0.737.</li>
+<li>AUC 95% CI: 0.710 to 0.763.</li>
+<li>Accuracy: 0.674.</li>
+<li>Sensitivity: 0.748.</li>
+<li>Sensitivity 95% CI: 0.717 to 0.776.</li>
+<li>Specificity: 0.590.</li>
+<li>PPV: 0.676.</li>
+<li>NPV: 0.672.</li>
+<li>F1: 0.710.</li>
+<li>Brier score: 0.2087.</li>
+<li>Expected calibration error: 0.0563.</li>
+<li>Clustering: weighted K-Means, K=4 selected for Ahlqvist-style mapping.</li>
+<li>Silhouette result: K=2 was optimal by silhouette, so K=4 must be defended as literature-aligned and heuristic.</li>
+<li>Silhouette score at K=4: 0.1762 (on 734 at-risk samples).</li>
+<li>Samples clustered: 734 (at-risk subset only).</li>
+<li>Metabolic syndrome boost: 3+ ATP III criteria → floor probability to 0.65; 2 criteria → +0.15.</li>
+<li>Confidence threshold: probability &lt; 0.60 → &quot;Indeterminate&quot; (Tanabe et al. 2024).</li>
+<li>FINDRISC benchmark AUC: 0.849 (higher than DIANA — know this and be ready to explain why).</li>
+<li>ADA Risk Test benchmark AUC: 0.589 (lower than DIANA).</li>
+<li>PSI drift thresholds: &lt;0.1 none, 0.1-0.2 low, 0.2-0.25 medium, &gt;0.25 high.</li>
+</ul>
+<h2>The Nine Features</h2>
+<p>The active <code>binary_v2_no_bp</code> model uses:</p>
+<ul>
+<li><code>bmi</code></li>
+<li><code>triglycerides</code></li>
+<li><code>ldl</code></li>
+<li><code>hdl</code></li>
+<li><code>age</code></li>
+<li><code>waist_circumference</code></li>
+<li><code>smoking_encoded</code></li>
+<li><code>activity_encoded</code></li>
+<li><code>alcohol_encoded</code></li>
+</ul>
+<p>Say this when challenged:</p>
+<blockquote><p>The final screening model deliberately excludes HbA1c and fasting blood sugar because those define the label. The remaining features are metabolic, anthropometric, age, and lifestyle variables that are plausible screening predictors without directly encoding the diagnostic threshold.</p></blockquote>
+<h2>What Not To Say</h2>
+<p>Avoid these claims:</p>
+<ul>
+<li>Do not say the model diagnoses diabetes.</li>
+<li>Do not say the model predicts future diabetes onset.</li>
+<li>Do not say SHAP proves biological causation.</li>
+<li>Do not say clusters are validated clinical subtypes.</li>
+<li>Do not say AUC 0.737 is clinically sufficient by itself.</li>
+<li>Do not say the app is deployment-ready for clinical care.</li>
+<li>Do not say the model is leak-proof in a casual way; say the pipeline includes explicit leakage safeguards.</li>
+</ul>
+<h2>How To Study Each Day</h2>
+<p>Each day has the same rhythm:</p>
+<ol>
+<li>Read the lesson section slowly.</li>
+<li>Close the document and write the answer from memory.</li>
+<li>Say the answer aloud in under two minutes.</li>
+<li>Answer the defense questions without notes.</li>
+<li>Mark one weak point to fix the next day.</li>
+</ol>
+<p>If time is short, do not reread passively. Speak the answers aloud. Defense readiness is a speaking skill.</p>
+<h2>Day 1: Research Story And Thesis Identity</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn the story of the project. The panel needs to understand what problem you solved, why the population matters, what the system does, and what you are claiming.</p>
+<h3>Read This</h3>
+<p>DianaV2 stands for Diabetes Intelligent Analysis for Menopausal Women. The project is about Type 2 Diabetes risk classification in postmenopausal women. The word &quot;predictive&quot; must be used carefully. In this thesis, predictive means the model classifies current diabetes-risk status based on available screening features. It does not mean the model forecasts future onset over time.</p>
+<p>The target population is postmenopausal women aged 45 to 60. Postmenopause is clinically defined as at least 12 consecutive months without menstruation. This is a useful population because postmenopause creates a more stable hormonal state than perimenopause, where hormone levels fluctuate. The population is also clinically meaningful because estrogen decline is associated with changes in body fat distribution, insulin resistance, lipid metabolism, and cardiometabolic risk.</p>
+<p>The core thesis contribution is not only an ML model. It is an end-to-end system that connects data processing, leakage defense, supervised classification, validation, explainability, clustering, backend integration, and frontend presentation. That matters because a thesis defense panel will not only ask &quot;What was your AUC?&quot; They will ask whether the model was constructed fairly, whether the label makes sense, whether the output can be interpreted, whether the system can be used responsibly, and what its limits are.</p>
+<p>The safest framing is:</p>
+<blockquote><p>DianaV2 is a screening-oriented decision-support system. It helps classify current at-risk status and explain the model output. It does not diagnose diabetes, replace a clinician, or prove future disease onset.</p></blockquote>
+<h3>The &quot;Why Not Just a Doctor?&quot; Defense</h3>
+<p>You may be asked: <em>&quot;If a doctor can just look at BMI, waist, and age to know risk, why build this ML model?&quot;</em></p>
+<p>Your defense: DianaV2 is a scalable <strong>triage tool</strong>, not a replacement for clinicians. It is designed to flag individuals who might not realize they need an HbA1c test yet. Furthermore, the heuristic clustering (SIRD-like/MOD-like) provides immediate personalized context that a standard BMI chart does not, making the screening actionable.</p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must explain why the work matters:</p>
+<ul>
+<li>Diabetes and prediabetes are clinically important because early identification can support lifestyle and medical follow-up.</li>
+<li>Postmenopausal women are a focused population with meaningful metabolic changes.</li>
+<li>A screening classifier can help prioritize attention, but it must be interpreted carefully.</li>
+<li>Explainability matters because users and clinicians need to understand why a model produced a risk output.</li>
+<li>A full-stack system matters because it shows how research output can be translated into an application workflow.</li>
+</ul>
+<h3>Memory Script</h3>
+<blockquote><p>My thesis is about DianaV2, a diabetes-risk screening and explainability system for postmenopausal women. It uses NHANES data from women aged 45 to 60 and classifies current at-risk status, where prediabetic and diabetic labels are collapsed into one at-risk class. The final model avoids circularity by excluding HbA1c and fasting blood sugar from the predictors because those biomarkers define the ground truth. Beyond the model, the project includes validation, SHAP explanations, heuristic metabolic clustering, and a full-stack application with React, Go, and Python services. The system is decision support for screening, not diagnosis.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Write from memory:</p>
+<ul>
+<li>The population.</li>
+<li>The task.</li>
+<li>The label.</li>
+<li>The model type.</li>
+<li>The system layers.</li>
+<li>The limitation.</li>
+</ul>
+<p>Then say the whole thesis in 30 seconds, 2 minutes, and 5 minutes.</p>
+<h3>Defense Questions</h3>
+<ul>
+<li>What is your thesis about?</li>
+<li>Why menopausal women?</li>
+<li>Why postmenopausal only?</li>
+<li>Is this a diagnostic system?</li>
+<li>What is your main contribution?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 2 when you can explain the project in two minutes without notes and without saying &quot;diagnosis&quot; as the main claim.</p>
+<h2>Day 2: Dataset, Cohort, And Full Pipeline</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn how raw data becomes a model and then becomes a user-facing prediction.</p>
+<h3>Read This</h3>
+<p>The data source is NHANES, the National Health and Nutrition Examination Survey. The cohort is filtered to postmenopausal women aged 45 to 60. Premenopausal and perimenopausal women are excluded because the thesis is focused on a clearer postmenopausal state.</p>
+<h4>How Raw NHANES Data Becomes Your Dataset</h4>
+<p>The data processing script (<code>process_nhanes_multi.py</code>) pulls from <strong>6 NHANES cycles</strong>: 2021-2023 (L), 2017-2018 (J), 2015-2016 (I), 2013-2014 (H), 2011-2012 (G), and 2009-2010 (F). For each cycle, it merges 13+ SAS Transport (XPT) files: demographics (DEMO), glycohemoglobin (GHB), fasting glucose (GLU), total cholesterol (TCHOL), HDL (HDL), triglycerides (TRIGLY), body measures (BMX), blood pressure (BPX), reproductive health (RHQ), smoking (SMQ), physical activity (PAQ), alcohol (ALQ), and medical conditions (MCQ).</p>
+<p>The inclusion filter chain applies four sequential filters:</p>
+<ol>
+<li><strong>Female</strong>: <code>RIAGENDR == 2</code></li>
+<li><strong>Age 45-60</strong>: <code>45 ≤ RIDAGEYR ≤ 60</code></li>
+<li><strong>Postmenopausal</strong>: <code>RHQ031 == 2</code> (Reproductive Health Questionnaire: &quot;Have you had a period in the past 12 months?&quot; — answer No)</li>
+<li><strong>Complete glycemic data</strong>: <code>dropna(subset=[&#x27;LBXGH&#x27;, &#x27;LBXGLU&#x27;])</code> (requires both HbA1c and fasting glucose)</li>
+</ol>
+<p>Lifestyle features are derived from raw NHANES questionnaire codes:</p>
+<ul>
+<li><strong>Smoking</strong>: SMQ020 (ever smoked 100 cigarettes?) + SMQ040 (do you now smoke?) → Never/Former/Current</li>
+<li><strong>Physical Activity</strong>: PAQ605/PAQ620/PAQ635/PAQ650/PAQ665 (vigorous/moderate work/recreation) → Sedentary/Moderate/Active</li>
+<li><strong>Alcohol</strong>: ALQ101 (ever had 12+ drinks?) + ALQ120Q/ALQ120U (frequency) + ALQ130 (average drinks) → None/Light/Moderate/Heavy</li>
+</ul>
+<p>If a panelist asks &quot;How did you identify postmenopausal women?&quot;, say: <strong>RHQ031 — the NHANES Reproductive Health Questionnaire item asking whether the participant had a menstrual period in the past 12 months. Answer code 2 means No.</strong></p>
+<p>The pipeline has six major steps:</p>
+<ol>
+<li>Data processing merges NHANES cycles and derives features.</li>
+<li>Label construction creates the diabetes-risk target using HbA1c and fasting blood sugar criteria.</li>
+<li>Leakage validation checks that diagnostic markers and proxy leakage are not entering the model.</li>
+<li>Classifier training trains the binary <code>binary_v2_no_bp</code> model.</li>
+<li>Clustering assigns heuristic metabolic subtype patterns for at-risk users.</li>
+<li>Artifact validation checks that the trained model, metrics, thresholds, calibration, and clustering outputs are consistent.</li>
+</ol>
+<p>The most important idea is separation. The label can use HbA1c and fasting blood sugar because those define glycemic status. The screening model cannot use them as predictors because that would make the model circular. The preprocessing pipeline also needs to avoid leakage by fitting imputation and scaling inside cross-validation, not on the full dataset before splitting.</p>
+<p>The user-facing pipeline is:</p>
+<p>Raw NHANES data -&gt; cohort filtering -&gt; feature engineering -&gt; label construction -&gt; leakage validation -&gt; nested cross-validation -&gt; trained model artifact -&gt; Python ML service -&gt; Go backend normalization -&gt; React frontend result.</p>
+<h3>The Missing Data &amp; Imputation Trap</h3>
+<p>You must be ready to defend how missing data was handled, specifically for waist circumference. During training, imputation is kept inside the cross-validation pipeline to avoid leakage. During serving, DianaV2 adds a <strong>BMI-concordant waist guardrail</strong> when waist circumference is missing, because blindly inserting a population median waist can make a lean patient look artificially centrally obese. This preserves clinical face validity while keeping the training evaluation leakage-safe.</p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must be able to draw the pipeline and explain the purpose of each step. The examiner should hear that you understand not only what script ran, but why each stage exists.</p>
+<p>Data processing exists to create a consistent modeling table. Label construction exists to create the outcome. Leakage validation exists to prevent circular or contaminated evaluation. Nested validation exists to estimate generalization across NHANES cycles. The ML service exists to serve the trained artifact. The backend exists to enforce application contracts, persistence, and normalized output. The frontend exists to make the result understandable.</p>
+<h3>Memory Script</h3>
+<blockquote><p>The pipeline starts with NHANES data filtered to postmenopausal women aged 45 to 60. The data-processing step derives clinical and lifestyle features, then the label is created using ADA-style HbA1c and fasting blood sugar criteria. Before training, the leakage validation step checks that diagnostic markers and strong proxies are not in the feature set. The model is trained with nested Leave-One-NHANES-Cycle-Out cross-validation, and the selected artifact is served by the Python ML service. The Go backend normalizes the prediction into the canonical assessment result, and the React frontend displays the risk score, risk level, explanation, and subtype information where appropriate.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Draw the pipeline three times from memory:</p>
+<ul>
+<li>Research pipeline.</li>
+<li>Model training pipeline.</li>
+<li>Application request pipeline.</li>
+</ul>
+<h3>Defense Questions</h3>
+<ul>
+<li>Where did your data come from?</li>
+<li>What population did you include and exclude?</li>
+<li>What are the pipeline stages?</li>
+<li>Where can leakage happen?</li>
+<li>How does the model reach the frontend?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 3 when you can draw the pipeline without looking and explain every arrow.</p>
+<h2>Day 3: Labeling And Current-State Screening</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn how to explain the outcome label. This must be exact because vague label language creates the biggest defense risk.</p>
+<h3>Read This</h3>
+<p>The target is binary:</p>
+<ul>
+<li>0 = Normal</li>
+<li>1 = At-Risk</li>
+</ul>
+<p>The At-Risk class collapses prediabetic and diabetic cases into one positive class. The original glycemic categories come from HbA1c and fasting blood sugar criteria:</p>
+<ul>
+<li>Normal: HbA1c below 5.7% and fasting blood sugar below 100 mg/dL.</li>
+<li>Prediabetic: HbA1c 5.7-6.4% or fasting blood sugar 100-125 mg/dL.</li>
+<li>Diabetic: HbA1c at least 6.5% or fasting blood sugar at least 126 mg/dL.</li>
+</ul>
+<p>The defense-safe phrase is &quot;current-state screening classification.&quot; Do not call it future prediction unless you have longitudinal follow-up and time-to-event design. NHANES is cross-sectional for this purpose, so the system classifies current biomarker-defined status.</p>
+<p>The label is clinically meaningful because HbA1c and fasting blood sugar are accepted glycemic markers. The limitation is that the model is tied to that operational definition. It is not a physician diagnosis, not a prospective endpoint, and not a causal disease model.</p>
+<h3>The &quot;Why Not Just a Doctor?&quot; Defense</h3>
+<p>You may be asked: <em>&quot;If a doctor can just look at BMI, waist, and age to know risk, why build this ML model?&quot;</em></p>
+<p>Your defense: DianaV2 is a scalable <strong>triage tool</strong>, not a replacement for clinicians. It is designed to flag individuals who might not realize they need an HbA1c test yet. Furthermore, the heuristic clustering (SIRD-like/MOD-like) provides immediate personalized context that a standard BMI chart does not, making the screening actionable.</p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must explain why collapsing prediabetes and diabetes into At-Risk is acceptable. The screening goal is to identify people who may need follow-up, not to perfectly separate prediabetes from diabetes. For a screening tool, identifying the broader at-risk group can be more useful than a three-class system if the downstream action is clinical review.</p>
+<h3>Memory Script</h3>
+<blockquote><p>The outcome is a binary current-state screening label. Normal is coded as 0, while prediabetic and diabetic categories are collapsed into At-Risk coded as 1. The glycemic status is defined using HbA1c and fasting blood sugar thresholds. This is clinically reasonable because those are standard screening biomarkers, but it also means the model&#x27;s claim is limited to classifying a biomarker-defined state. I do not present it as a future-onset predictor or standalone diagnosis.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Write three versions of the label explanation:</p>
+<ul>
+<li>One sentence.</li>
+<li>One paragraph.</li>
+<li>One technical answer.</li>
+</ul>
+<h3>Defense Questions</h3>
+<ul>
+<li>What exactly is your target variable?</li>
+<li>Why did you collapse prediabetes and diabetes?</li>
+<li>Are you predicting future disease?</li>
+<li>Is this a clinical diagnosis?</li>
+<li>What is the weakness of this label?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 4 when you can say &quot;current-state screening classification&quot; naturally and explain why future prediction would require longitudinal data.</p>
+<h2>Day 4: HbA1c, FBS, Circularity, And Leakage</h2>
+<h3>What You Are Learning</h3>
+<p>Today is the most important methodology day. If you answer this poorly, the whole thesis can sound circular. If you answer it well, it becomes a strength.</p>
+<h3>Read This</h3>
+<p>HbA1c and fasting blood sugar are used to define the ground-truth label. Therefore, the final screening model excludes HbA1c and fasting blood sugar from its predictor features.</p>
+<p>This is the key defense:</p>
+<blockquote><p>The model is not allowed to use the same diagnostic biomarkers that define the label. That is why the active screening feature set uses BMI, triglycerides, LDL, HDL, age, waist circumference, smoking, activity, and alcohol use instead.</p></blockquote>
+<p>Circularity and leakage are related but not identical.</p>
+<p>Circularity means the predictor and label overlap conceptually or mathematically. Example: using HbA1c to predict an HbA1c-defined diabetes label.</p>
+<p>Leakage means information that should not be available during prediction or evaluation enters the model. Example: fitting preprocessing on the full dataset before cross-validation, using test data for feature selection, or allowing diagnostic markers into a screening feature set.</p>
+<p>DianaV2&#x27;s leakage defense has three layers:</p>
+<ol>
+<li>Static feature verification checks that diagnostic markers such as HbA1c and fasting blood sugar are absent from feature constants.</li>
+<li>Proxy leakage detection checks correlations against the HbA1c threshold and flags features with extremely high correlation.</li>
+<li>Information-gain validation checks whether selected features behave suspiciously compared with excluded features.</li>
+</ol>
+<p>The validation gate exits with failure if a rule is violated. That is stronger than saying &quot;we tried to avoid leakage&quot;; it means leakage prevention is implemented as a pre-training control.</p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must be able to say:</p>
+<ul>
+<li>The concern is valid.</li>
+<li>HbA1c and FBS define the label.</li>
+<li>The final model excludes them.</li>
+<li>The model therefore learns from non-diagnostic screening features.</li>
+<li>It is still limited because the label is biomarker-defined.</li>
+<li>The pipeline includes automated checks, not just manual intent.</li>
+</ul>
+<h3>Memory Script</h3>
+<blockquote><p>The circularity concern is valid. If HbA1c or fasting blood sugar define the label and also appear as predictors, the model could simply learn the diagnostic rule. In DianaV2, the final screening model excludes HbA1c and fasting blood sugar from the predictor set. The active model uses nine non-circular features: BMI, triglycerides, LDL, HDL, age, waist circumference, smoking, activity, and alcohol. The pipeline also includes static feature checks, proxy leakage checks, and information-gain validation before training. So the model is best described as a non-circular current-state screening classifier, not a diagnostic shortcut.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Answer this in writing:</p>
+<blockquote><p>If HbA1c defines diabetes, why is your model not just detecting HbA1c?</p></blockquote>
+<p>Then answer it aloud in 60 seconds.</p>
+<h3>Defense Questions</h3>
+<ul>
+<li>Is HbA1c in your feature set?</li>
+<li>Is fasting blood sugar in your feature set?</li>
+<li>What is circularity?</li>
+<li>What is leakage?</li>
+<li>How does your pipeline prevent leakage?</li>
+<li>What would happen if HbA1c stayed in the predictors?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 5 when you can answer the circularity challenge directly without sounding defensive.</p>
+<h2>Day 5: Model Choice And Feature Rationale</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn why the selected model and selected features are reasonable.</p>
+<h3>Read This</h3>
+<p>The final model is Logistic Regression. That is not a weakness. For a clinical screening system, interpretability, stable probabilities, fast inference, and clear validation can matter more than using a more complex model.</p>
+<p>The nine features have clinical rationale:</p>
+<ul>
+<li>BMI captures general adiposity.</li>
+<li>Waist circumference captures central obesity and metabolic syndrome risk.</li>
+<li>Triglycerides reflect lipid metabolism and insulin-resistance patterns.</li>
+<li>LDL reflects atherogenic cardiovascular risk.</li>
+<li>HDL reflects protective lipid profile; lower HDL often tracks metabolic risk.</li>
+<li>Age captures risk changes within the 45-60 postmenopausal window.</li>
+<li>Smoking captures behavioral cardiometabolic risk.</li>
+<li>Physical activity captures protective insulin-sensitivity behavior.</li>
+<li>Alcohol use captures lifestyle exposure, including heavy-use risk.</li>
+</ul>
+<p>The model excludes race to reduce demographic leakage and simplify the screening model. It excludes family history because of severe missingness in recent NHANES cycles. It excludes blood pressure in the no-BP model, which reduces dependency on clinical measurements that may be unavailable or inconsistent.</p>
+<h4>How Class Imbalance Is Handled (No SMOTE)</h4>
+<p>The training pipeline does <strong>not</strong> use SMOTE or any synthetic resampling. Instead, every model in the training registry uses <code>class_weight=&quot;balanced&quot;</code> (or equivalent). This tells scikit-learn to upweight the minority class in the loss function without creating synthetic biomarker profiles. This is important because SMOTE can distort clinical distributions and can require additional post-hoc calibration before probabilities are interpretable. With <code>class_weight=&quot;balanced&quot;</code>, calibration still has to be measured, but the pipeline avoids synthetic samples.</p>
+<p>If asked &quot;Why not SMOTE?&quot;, say: <strong><code>class_weight=&#x27;balanced&#x27;</code> improves class balance in the loss function without generating synthetic patients. SMOTE can be useful in some ML tasks, but for clinical probabilities it can distort prevalence and would require careful post-hoc calibration.</strong></p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must defend simplicity:</p>
+<blockquote><p>Logistic Regression is appropriate because the thesis prioritizes defensibility, interpretability, and deployability. More complex models may improve performance in some settings, but they can also make explanation, calibration, and clinical trust harder.</p></blockquote>
+<h3>Memory Script</h3>
+<blockquote><p>Logistic Regression was selected because it performed competitively under the nested LOGO validation design while remaining interpretable and fast for deployment. The feature set is clinically plausible and deliberately non-circular. It includes metabolic, anthropometric, age, and lifestyle variables but excludes HbA1c and fasting blood sugar because they define the label. Class imbalance is handled via class_weight=&#x27;balanced&#x27;, not SMOTE, while calibration is evaluated separately.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Create a feature rationale card for each of the nine features:</p>
+<ul>
+<li>Feature name.</li>
+<li>What it measures.</li>
+<li>Why it may relate to diabetes risk.</li>
+<li>What limitation it has.</li>
+</ul>
+<h3>Defense Questions</h3>
+<ul>
+<li>Why Logistic Regression?</li>
+<li>Why not a more complex model?</li>
+<li>Why these features?</li>
+<li>Why remove HbA1c and FBS?</li>
+<li>Why remove race or family history?</li>
+<li>How did you handle class imbalance? Why not SMOTE?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 6 when you can defend Logistic Regression as a deliberate clinical engineering choice, not a fallback.</p>
+<h2>Day 6: Metrics, Thresholds, And Clinical Interpretation</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn the main numbers and what they mean.</p>
+<h3>Read This</h3>
+<p>The selected model performance:</p>
+<ul>
+<li>AUC: 0.7366, about 0.737.</li>
+<li>AUC 95% CI: 0.710 to 0.763.</li>
+<li>Accuracy: 0.674.</li>
+<li>Sensitivity: 0.748.</li>
+<li>Sensitivity 95% CI: 0.717 to 0.776.</li>
+<li>Specificity: 0.590.</li>
+<li>PPV: 0.676.</li>
+<li>NPV: 0.672.</li>
+<li>F1: 0.710.</li>
+<li>Decision threshold: 0.465.</li>
+</ul>
+<p>AUC measures discrimination: how well the model ranks at-risk cases above normal cases across thresholds. An AUC around 0.737 means moderate discrimination, not excellent clinical certainty.</p>
+<p>Sensitivity measures how many actual at-risk cases are caught. DianaV2 has sensitivity around 74.8%, which fits a screening orientation because missing at-risk users is costly.</p>
+<p>Specificity measures how many normal cases are correctly identified. DianaV2 has specificity around 59.0%, meaning false positives remain a concern.</p>
+<p>Accuracy is not enough because the class distribution and clinical costs matter. A model can have decent accuracy while missing too many at-risk users or generating too many false positives.</p>
+<p>F1 balances precision and recall. PPV tells how many predicted at-risk cases are actually at risk. NPV tells how many predicted normal cases are actually normal.</p>
+<h4>How The Decision Threshold Is Selected (Not 0.50)</h4>
+<p>The threshold of 0.465 is <strong>not the default 0.50</strong>. It is selected through a multi-strategy optimization system with guardrail arbitration:</p>
+<ol>
+<li><strong>Youden&#x27;s J</strong>: Maximizes (sensitivity + specificity - 1). Finds the best tradeoff point.</li>
+<li><strong>Screening</strong>: Maximizes 0.60×sensitivity + 0.40×F1, requiring specificity ≥ 0.40 and sensitivity ≥ 0.80.</li>
+<li><strong>G-Mean</strong>: Maximizes √(sensitivity × specificity). Geometric balance.</li>
+</ol>
+<p>After all three strategies compute their thresholds, a <strong>composite scoring function</strong> (0.35×sens + 0.30×spec + 0.25×F1 + 0.10×accuracy) ranks them. The system then applies <strong>guardrail arbitration</strong>: if the best strategy has specificity below 0.45 while sensitivity is above 0.85, it detects &quot;specificity collapse&quot; and falls back to the next-best strategy that meets both floors. This prevents the optimizer from selecting unstable low thresholds under temporal prevalence shift between NHANES cycles.</p>
+<p>The production model selected the <strong>Youden</strong> strategy with threshold 0.465. The guardrail nearest-feasible arbitration triggered in 1 out of 6 folds.</p>
+<p>If asked &quot;Why not just use 0.50?&quot;, say: <strong>0.50 is arbitrary. In screening, we want to optimize the sensitivity-specificity tradeoff, not use a mathematical convenience. Our threshold is empirically selected per fold and averaged, with safety guardrails to prevent specificity collapse.</strong></p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You need to interpret numbers as evidence with limits:</p>
+<blockquote><p>The model shows moderate discrimination suitable for research-level screening exploration, but not enough to justify standalone clinical decisions. The confidence interval and calibration results are important because they show uncertainty and probability reliability.</p></blockquote>
+<h3>Memory Script</h3>
+<blockquote><p>The selected Logistic Regression model achieved AUC about 0.737 with a 95% confidence interval from about 0.710 to 0.763. Accuracy was about 0.674, sensitivity about 0.748, specificity about 0.590, and F1 about 0.710. I interpret this as moderate screening performance. It is not strong enough for standalone clinical diagnosis, but it is meaningful because the model deliberately excludes HbA1c and fasting blood sugar to avoid circularity.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Say each metric in this format:</p>
+<blockquote><p>Metric, value, plain meaning, clinical caveat.</p></blockquote>
+<p>Example:</p>
+<blockquote><p>Sensitivity, 0.748. The model catches about 75% of at-risk cases. That supports screening, but it still misses some at-risk users, so it cannot be used alone.</p></blockquote>
+<h3>Defense Questions</h3>
+<ul>
+<li>What was your AUC?</li>
+<li>What does AUC mean?</li>
+<li>Why is accuracy insufficient?</li>
+<li>Which matters more, sensitivity or specificity?</li>
+<li>What does the threshold mean?</li>
+<li>Are these results clinically strong?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 7 when you can recite the main numbers and interpret them without exaggeration.</p>
+<h2>Day 7: Validation Design And Confidence Intervals</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn why the validation design is defensible and what uncertainty means.</p>
+<h3>Read This</h3>
+<p>DianaV2 uses nested validation:</p>
+<ul>
+<li>Outer validation: Leave-One-NHANES-Cycle-Out.</li>
+<li>Inner validation: GroupKFold inside the training cycles.</li>
+</ul>
+<p>The purpose of outer LOGO validation is to test whether the model generalizes across NHANES cycles. Each fold holds out one cycle as a test group. This is stronger than a random split because random splitting can mix very similar survey-cycle distributions into both train and test sets.</p>
+<p>The purpose of inner GroupKFold is model selection and tuning without touching the held-out outer test cycle. This prevents test-cycle information from influencing model selection.</p>
+<p>Confidence intervals matter because a single point estimate hides uncertainty. The AUC is about 0.737, but the interval is about 0.710 to 0.763. That means the true performance estimate is uncertain within that range. The lower bound is still near the acceptable screening range, but it also shows this is moderate rather than high performance.</p>
+<p>Calibration matters because risk scores should match observed frequencies. DianaV2 reports Brier score 0.2087 and expected calibration error 0.0563. Lower is better. These values suggest calibration is part of the evaluation, but calibration should still be strengthened before clinical use.</p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must explain validation as a protection against fooling yourself:</p>
+<blockquote><p>Nested LOGO validation keeps model selection separate from final evaluation and tests generalization across NHANES cycles.</p></blockquote>
+<h3>Memory Script</h3>
+<blockquote><p>The validation strategy uses Leave-One-NHANES-Cycle-Out cross-validation as the outer loop, with GroupKFold inside the training data for model selection. This is important because it tests whether the model generalizes across survey cycles rather than only across random rows. The confidence interval around AUC, about 0.710 to 0.763, shows moderate performance with uncertainty. It supports screening research, but it does not prove clinical deployment readiness.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Draw nested validation:</p>
+<p>Outer fold: one NHANES cycle held out -&gt; inner folds tune model on remaining cycles -&gt; evaluate once on held-out cycle.</p>
+<p>Explain why the held-out cycle must not influence feature selection, preprocessing, threshold selection, or hyperparameter tuning.</p>
+<h3>Defense Questions</h3>
+<ul>
+<li>Why use Leave-One-Group-Out?</li>
+<li>What is nested cross-validation?</li>
+<li>What happens in the inner loop?</li>
+<li>What happens in the outer loop?</li>
+<li>What does the AUC confidence interval mean?</li>
+<li>Why does calibration matter?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 8 when you can explain nested validation to a non-ML examiner.</p>
+<h2>Day 8: Benchmarks And Defending Moderate Performance</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn how to defend the model when benchmark results are stronger or simpler tools look competitive.</p>
+<h3>Read This</h3>
+<p>DianaV2&#x27;s AUC is about 0.737. Some benchmark tools or comparator models may show higher AUC depending on inputs, thresholding, or included diagnostic information. You should not try to hide this.</p>
+<p>The strongest defense is:</p>
+<blockquote><p>DianaV2&#x27;s screening model intentionally excludes HbA1c and fasting blood sugar. That makes the task harder but more defensible. A model that includes label-defining biomarkers may achieve much higher performance, but that does not mean it is a better screening model if the goal is to avoid circularity.</p></blockquote>
+<p>Moderate performance can still be meaningful if the model is honest, interpretable, and non-circular. However, you must not argue that moderate AUC is enough for clinical deployment. The right conclusion is that the system is a research prototype and decision-support framework that needs external validation.</p>
+<p>You should also be ready to say that if a simpler benchmark performs similarly, that is important. Clinical ML should prefer simpler models when they perform similarly because they are easier to validate, explain, and maintain.</p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must distinguish performance from defensibility:</p>
+<ul>
+<li>A circular model may perform better but be scientifically weaker.</li>
+<li>A non-circular model may perform lower but be more honest.</li>
+<li>A screening system needs sensitivity, calibration, workflow integration, and explainability, not AUC alone.</li>
+</ul>
+<h3>Memory Script</h3>
+<blockquote><p>The AUC is moderate, not exceptional. I do not present it as a finished clinical-grade model. The important point is that the final model is non-circular because it excludes HbA1c and fasting blood sugar. Higher benchmark performance may be possible when diagnostic markers or simpler rules are included, but the thesis prioritizes a defensible screening setup. The contribution is the combination of leakage-aware modeling, validation, explainability, clustering, and full-stack delivery.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Answer this:</p>
+<blockquote><p>If another model has higher AUC, why is your work still valuable?</p></blockquote>
+<p>Use three points:</p>
+<ul>
+<li>Non-circular design.</li>
+<li>Full-stack explainability.</li>
+<li>Honest limitations and validation.</li>
+</ul>
+<h3>Defense Questions</h3>
+<ul>
+<li>Did your model beat all baselines?</li>
+<li>Is 0.737 AUC good enough?</li>
+<li>Why not use a simple clinical tool?</li>
+<li>Why not include HbA1c to improve performance?</li>
+<li>What is the real contribution if performance is moderate?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 9 when you can defend moderate performance without making excuses.</p>
+<h2>Day 9: Clustering And Metabolic Subtypes</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn how to explain clustering as useful but heuristic.</p>
+<h3>Read This</h3>
+<p>DianaV2 uses <strong>custom Weighted K-Means</strong> clustering (not sklearn&#x27;s KMeans) with six features:</p>
+<ul>
+<li>BMI (weight 1.5)</li>
+<li>Triglycerides (weight 2.0)</li>
+<li>LDL (weight <strong>2.5</strong> — highest, because atherogenic dyslipidemia is the strongest differentiator)</li>
+<li>HDL (weight 1.2)</li>
+<li>Age (weight 1.0 — lowest, because age alone does not distinguish metabolic subtypes)</li>
+<li>Waist circumference (weight 2.0)</li>
+</ul>
+<p>The custom <code>WeightedKMeans</code> class (282 lines in <code>common/weighted_kmeans.py</code>) uses <strong>weighted Euclidean distance</strong>: <code>sum(weight_i × (x_i - center_i)²)</code> instead of standard Euclidean distance. This ensures that clinically important features (like LDL and triglycerides) have more influence on cluster assignment than less discriminative features (like age). The weights are described as &quot;expert-elicited&quot; — domain-informed rather than algorithmically tuned.</p>
+<p>K=4 is selected to align with Ahlqvist-style subtype mapping. The <strong>subtype label assignment</strong> uses a deterministic waterfall applied to inverse-transformed cluster centroids (real clinical units, not Z-scores):</p>
+<ol>
+<li><strong>SIRD</strong> (Severe Insulin-Resistant): Assigned to the cluster with the <strong>highest LAP score</strong> = <code>(waist_circumference - 58) × triglycerides</code>. LAP (Lipid Accumulation Product) is a proxy for insulin resistance when HOMA-IR is unavailable.</li>
+<li><strong>SIDD</strong> (Atherogenic/Lipid-Driven): Among remaining clusters, assigned to the one with the <strong>highest LDL</strong>. This is an adaptation from Ahlqvist — since HOMA2 is unavailable in NHANES, LDL serves as a proxy for atherogenic dyslipidemia (per Tanabe et al. 2024).</li>
+<li><strong>MOD</strong> (Mild Obesity-Related): Among remaining clusters, assigned to the one with the <strong>highest BMI</strong> (≥25 using Asia-Pacific WHO cutoff).</li>
+<li><strong>MARD</strong> (Mild Age-Related): Whatever cluster is left. By elimination, this cluster has the mildest metabolic profile.</li>
+</ol>
+<p>The output labels use the <strong>&quot;-like&quot; suffix</strong> (SIRD-like, SIDD-like, etc.) to communicate that these are proxy subtypes, not validated clinical diagnoses.</p>
+<p>The clustering results themselves show why you must be careful. K=4 was chosen for literature alignment, but silhouette analysis suggested K=2. The K=4 silhouette score is <strong>0.1762</strong> (on 734 at-risk samples), which is quantitatively poor. That means the clusters should be interpreted as exploratory patterns, not firm biological groups. Defend this by saying: <strong>&quot;A silhouette of 0.1762 is expected for high-dimensional clinical data with overlapping metabolic profiles. We chose K=4 for clinical interpretability via Ahlqvist mapping, not for maximal statistical separation.&quot;</strong></p>
+<h4>The Metabolic Syndrome Boost (Post-Prediction Clinical Guard)</h4>
+<p>After the model produces its raw probability, the <code>ClinicalPredictor</code> applies a <strong>metabolic syndrome probability boost</strong> based on ATP III criteria:</p>
+<ul>
+<li>Criteria: TG ≥ 150 mg/dL, HDL &lt; 50 mg/dL, BMI ≥ 25, Waist ≥ 80 cm</li>
+<li><strong>3+ criteria met</strong>: Probability is <strong>floored to 0.65</strong> (overrides any lower model output)</li>
+<li><strong>2 criteria met</strong>: Probability is <strong>boosted by +0.15</strong> (capped at 0.95)</li>
+<li><strong>0-1 criteria</strong>: No boost applied</li>
+</ul>
+<p>This is a deliberate architectural decision: the ML model may underestimate risk for patients with clear metabolic syndrome because the model only sees individual features, not the clinical syndrome pattern. The boost acts as a clinical safety net. It can flip a &quot;Normal&quot; prediction to &quot;At-Risk&quot; — and that is intentional for a screening tool.</p>
+<h4>The Confidence Threshold (&quot;Indeterminate&quot; Predictions)</h4>
+<p>If the model&#x27;s maximum class probability is <strong>below 0.60</strong>, the prediction is flagged as <strong>&quot;Indeterminate&quot;</strong> with a note: &quot;Low confidence prediction. Consider clinical follow-up.&quot; This is inspired by <strong>Tanabe et al. (2024) Diabetologia</strong> — the concept of an &quot;undecidable cluster&quot; where the model honestly reports it cannot make a confident assignment. This is a safety feature: rather than forcing a binary answer, the system admits uncertainty.</p>
+<p>The backend/frontend contract also treats subtypes carefully. Clustering enrichment only applies to At-Risk predictions. Normal predictions should not carry subtype meanings.</p>
+<h3>The &quot;Why Not Just a Doctor?&quot; Defense</h3>
+<p>You may be asked: <em>&quot;If a doctor can just look at BMI, waist, and age to know risk, why build this ML model?&quot;</em></p>
+<p>Your defense: DianaV2 is a scalable <strong>triage tool</strong>, not a replacement for clinicians. It is designed to flag individuals who might not realize they need an HbA1c test yet. Furthermore, the heuristic clustering (SIRD-like/MOD-like) provides immediate personalized context that a standard BMI chart does not, making the screening actionable.</p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must explain why clustering exists:</p>
+<ul>
+<li>It does not improve binary prediction performance.</li>
+<li>It adds interpretability and personalization after prediction.</li>
+<li>It helps describe dominant metabolic patterns.</li>
+<li>It is not causal and not externally validated.</li>
+</ul>
+<h3>Memory Script</h3>
+<blockquote><p>The clustering stage is a post-prediction enrichment step for at-risk users. It uses weighted K-Means over metabolic features such as BMI, triglycerides, LDL, HDL, age, and waist circumference. K=4 was chosen to align with Ahlqvist-style subtype categories, but the clusters are reported as SIRD-like, SIDD-like, MOD-like, and MARD-like because they are heuristic patterns, not validated clinical subtypes. The silhouette result suggests limited separation, so I interpret clustering as exploratory support for explanation, not as diagnostic evidence.</p></blockquote>
+<h3>Active Recall</h3>
+<p>For each subtype, say:</p>
+<ul>
+<li>Name.</li>
+<li>Main pattern.</li>
+<li>Possible treatment focus.</li>
+<li>Limitation.</li>
+</ul>
+<h3>Defense Questions</h3>
+<ul>
+<li>Why did you use clustering?</li>
+<li>Why K=4?</li>
+<li>Why did silhouette suggest K=2?</li>
+<li>Are these real diabetes subtypes?</li>
+<li>Does clustering affect prediction performance?</li>
+<li>Why only cluster at-risk users?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 10 when you can say &quot;heuristic subtype enrichment&quot; clearly and defend its limits.</p>
+<h2>Day 10: SHAP And Explainability</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn how to explain SHAP without turning it into causal biology.</p>
+<h3>Read This</h3>
+<p>SHAP explains how the trained model used input features to produce a prediction. A SHAP value estimates how much a feature pushed the model output upward or downward relative to a baseline. This can be shown globally, across the dataset, or locally, for one user.</p>
+<p>Global explanation answers:</p>
+<blockquote><p>Which features generally influence the model most?</p></blockquote>
+<p>Local explanation answers:</p>
+<blockquote><p>For this specific prediction, which features pushed risk up or down?</p></blockquote>
+<p>SHAP does not answer:</p>
+<blockquote><p>What biologically caused this person&#x27;s diabetes risk?</p></blockquote>
+<p>That distinction is critical. SHAP explains model behavior. It does not prove that changing a feature would causally change disease risk. It also depends on the training data, model structure, feature correlations, and background distribution.</p>
+<p>The value of SHAP in DianaV2 is transparency. It lets the frontend show why the model produced a risk output, which can support clinician review, user education, and model auditing. But the explanation must be framed as model attribution.</p>
+<h4>How SHAP Is Computed (LinearExplainer, Not KernelExplainer)</h4>
+<p>The explainability module uses a <strong>3-tier cascade</strong> to select the right SHAP algorithm:</p>
+<ol>
+<li><strong>Auto-detect the model type</strong> by unwrapping any Pipeline wrapper to find the inner estimator.</li>
+<li>If the estimator is <strong>LogisticRegression</strong> → use <code>shap.LinearExplainer</code> (exact, fast).</li>
+<li>If it&#x27;s a tree model → use <code>shap.TreeExplainer</code>.</li>
+<li>Fallback → use <code>shap.KernelExplainer</code> (approximate, slow).</li>
+</ol>
+<p>Since the production model is Logistic Regression, DianaV2 uses <strong>LinearExplainer</strong>, which computes <strong>mathematically exact</strong> SHAP values — not an approximation. This is a strong defense point: the SHAP explanations are provably correct for the model architecture, not sampled estimates.</p>
+<p>If asked &quot;How reliable are your SHAP values?&quot;, say: <strong>&quot;They are exact. LinearExplainer decomposes the linear model coefficients into per-feature contributions. Unlike KernelExplainer, which approximates via sampling, LinearExplainer has zero approximation error for linear models.&quot;</strong></p>
+<h3>Explainability vs. Actionability</h3>
+<p>While SHAP doesn&#x27;t prove causal biology, it <em>is</em> highly useful for actionability. By highlighting modifiable lifestyle factors (like physical activity, smoking, or alcohol use), SHAP makes the tool actionable for the user. It gives them specific topics to discuss with their clinician, rather than just delivering a black-box percentage.</p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must be able to give both a technical answer and a patient-safe answer.</p>
+<p>Technical:</p>
+<blockquote><p>SHAP decomposes the model prediction into feature contributions relative to a baseline expectation.</p></blockquote>
+<p>Patient-safe:</p>
+<blockquote><p>These features influenced the model&#x27;s risk estimate. They are not a diagnosis and do not prove causation.</p></blockquote>
+<h3>Memory Script</h3>
+<blockquote><p>SHAP is used to explain the model&#x27;s prediction by estimating how each feature contributed to the output. In DianaV2, it supports transparency by showing which factors pushed the risk estimate higher or lower. But SHAP explains the trained model, not the biological cause of diabetes. So I treat SHAP as an interpretability layer for model behavior, not as causal evidence.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Explain one hypothetical user:</p>
+<ul>
+<li>High BMI pushes risk up.</li>
+<li>High triglycerides push risk up.</li>
+<li>Higher HDL may push risk down.</li>
+<li>Activity may push risk down.</li>
+<li>The explanation is about the model, not causality.</li>
+</ul>
+<h3>Defense Questions</h3>
+<ul>
+<li>What is SHAP?</li>
+<li>What is the difference between global and local SHAP?</li>
+<li>Why use SHAP?</li>
+<li>Does SHAP prove causality?</li>
+<li>How could SHAP mislead users?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 11 when you can explain SHAP to both a clinician and a software engineer.</p>
+<h2>Day 11: Backend, Frontend, And ML Service Architecture</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn the full application architecture.</p>
+<h3>Read This</h3>
+<p>DianaV2 has three main runtime layers:</p>
+<ul>
+<li>React frontend.</li>
+<li>Go backend.</li>
+<li>Python ML service.</li>
+</ul>
+<p>The React frontend collects assessment data and displays risk results, explanations, warnings, and subtype information. It should use centralized API functions rather than raw fetch calls.</p>
+<p>The Go backend is the application authority. It handles authentication, authorization, request validation, persistence, audit behavior, and response normalization. It also owns the canonical frontend-facing assessment result shape.</p>
+<p>The Python ML service owns model loading, inference, model-specific preprocessing, SHAP explanation outputs, and metabolic subtype assignment.</p>
+<p>The key architectural principle is that the backend normalizes the ML response before the frontend uses it. The frontend should treat the backend result as the source of truth, not reconstruct clinical meanings by itself.</p>
+<p>Canonical fields include:</p>
+<ul>
+<li><code>risk_score</code>: integer 0-100.</li>
+<li><code>risk_level</code>: low, medium, high, or unknown.</li>
+<li><code>predicted_status</code>: Normal or At-Risk.</li>
+<li><code>at_risk_probability</code>: probability from 0.0 to 1.0.</li>
+<li><code>cluster</code>: subtype code or blank for normal.</li>
+<li><code>cluster_description</code>: narrative subtype explanation.</li>
+<li><code>treatment_focus</code>: suggested clinical focus.</li>
+<li><code>model_version</code>: deployed artifact identifier.</li>
+<li><code>validation_status</code>: warning status.</li>
+</ul>
+<p>Risk level thresholds:</p>
+<ul>
+<li>Less than 30: low.</li>
+<li>30 to 69: medium.</li>
+<li>70 or higher: high.</li>
+</ul>
+<h4>Safety Guards Built Into The Backend</h4>
+<p>Two critical safety mechanisms are enforced at the <strong>API level</strong> (not just the frontend):</p>
+<ol>
+<li><strong>Doctor Model-Type Locking</strong>: Doctors are restricted to only the <code>binary_v2_no_bp</code> model. If a doctor account attempts to use any other model type, the backend returns <strong>HTTP 403 Forbidden</strong>. This prevents clinicians from accidentally using an untested or experimental model variant. The constant <code>doctorLockedModelType = &quot;binary_v2_no_bp&quot;</code> is synchronized across backend and frontend.</li>
+</ol>
+<ol>
+<li><strong>Age Restriction Guard (45-60 Hard Lock)</strong>: The backend enforces <code>canonicalAssessmentMinAge = 45</code> and <code>canonicalAssessmentMaxAge = 60</code>. Any assessment request with a patient outside this range is <strong>rejected at the API level</strong> with an error: &quot;Age must be between 45-60 years for postmenopausal women.&quot; This prevents the model from being applied to populations it was not trained on — a common clinical ML deployment failure.</li>
+</ol>
+<p>If asked &quot;What stops someone from misusing the model on a 30-year-old?&quot;, say: <strong>&quot;The Go backend hard-rejects any assessment outside the 45-60 age range at the API level. It&#x27;s not just a frontend warning — the request is rejected before it ever reaches the ML service.&quot;</strong></p>
+<h3>The &quot;Why Full-Stack?&quot; Engineering Defense</h3>
+<p>A computer science panel may ask: <em>&quot;This is a data science problem. Why did you build a Go backend and a React frontend instead of keeping it as a notebook prototype?&quot;</em></p>
+<p>Your defense: A model is incomplete if it cannot be delivered through a controlled workflow. The Go backend enforces validation, authentication, persistence, API contracts, and canonical result normalization. The frontend consumes the normalized backend contract and presents risk, warnings, explanations, and subtype information in a user-facing format. By building a full-stack system, you demonstrate how the model can move from offline training into a safer decision-support workflow.</p>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must explain the request flow:</p>
+<ol>
+<li>User enters assessment data in React.</li>
+<li>Frontend submits request to Go backend.</li>
+<li>Backend validates user, age, and clinical input.</li>
+<li>Backend calls Python ML service.</li>
+<li>ML service returns prediction, probability, explanation, and subtype if at risk.</li>
+<li>Backend normalizes response into canonical fields.</li>
+<li>Backend persists and returns result.</li>
+<li>Frontend displays risk and explanation cautiously.</li>
+</ol>
+<h3>Memory Script</h3>
+<blockquote><p>The architecture separates product concerns from model-serving concerns. The React frontend handles user interaction and visualization. The Go backend handles authentication, validation, persistence, and canonical result normalization. The Python ML service handles model inference, SHAP explanations, and clustering. This separation allows the model artifact to evolve without forcing the frontend to understand raw ML-service details.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Draw this from memory:</p>
+<p>React frontend -&gt; Go backend -&gt; Python ML service -&gt; model artifact -&gt; ML response -&gt; backend normalized contract -&gt; frontend result.</p>
+<p>Add failure points:</p>
+<ul>
+<li>Invalid age or missing field.</li>
+<li>Unauthorized user.</li>
+<li>Out-of-range biomarker warning.</li>
+<li>ML service unavailable.</li>
+<li>Unknown cluster.</li>
+<li>Model artifact mismatch.</li>
+</ul>
+<h3>Defense Questions</h3>
+<ul>
+<li>Why three layers?</li>
+<li>Why not put the model directly in the frontend?</li>
+<li>What does the backend normalize?</li>
+<li>What happens if ML returns <code>N/A</code> for cluster?</li>
+<li>Where are risk levels computed?</li>
+<li>What happens if the ML service fails?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 12 when you can draw the architecture from memory and explain the boundary between backend and ML service.</p>
+<h2>Day 12: Limitations, Risks, And What Would Break</h2>
+<h3>What You Are Learning</h3>
+<p>Today you learn to state weaknesses before the panel uses them against you.</p>
+<h3>Read This</h3>
+<p>Your limitations are not small details. They are part of the scientific honesty of the thesis.</p>
+<p>Main limitations:</p>
+<ul>
+<li>The model classifies current biomarker-defined status, not future diabetes onset.</li>
+<li>The label depends on HbA1c and fasting blood sugar thresholds.</li>
+<li>The final model excludes those biomarkers, which makes the task harder but more defensible.</li>
+<li>The data is NHANES-based and may not represent all postmenopausal women.</li>
+<li>The system needs external validation outside NHANES.</li>
+<li>It needs prospective validation before clinical claims.</li>
+<li>Calibration needs further clinical evaluation.</li>
+<li>SHAP explains model behavior, not causality.</li>
+<li>Clusters are heuristic and not validated subtypes.</li>
+<li>The frontend must avoid making risk scores look like diagnoses.</li>
+<li>Workflow safety, clinician acceptance, privacy, governance, and monitoring are future work.</li>
+</ul>
+<p>You should also be ready to say what would likely break:</p>
+<ul>
+<li>A different population may shift feature distributions.</li>
+<li>Missing lifestyle variables may reduce reliability.</li>
+<li>NHANES cycle differences can affect performance.</li>
+<li>Overconfident UI wording can cause misuse.</li>
+<li>Misinterpreting clusters as diagnosis can mislead users.</li>
+<li>Updating the model without version tracking can break traceability.</li>
+</ul>
+<h3>What You Must Be Able To Explain</h3>
+<p>You must sound calm when stating limitations. Limitations do not destroy the thesis. They show you know the boundary of your evidence.</p>
+<h3>Memory Script</h3>
+<blockquote><p>The biggest limitation is that DianaV2 is a current-state screening classifier, not a prospective diabetes prediction model. The labels are derived from HbA1c and fasting blood sugar, so the model&#x27;s claim is tied to that operational definition. The final feature set excludes those biomarkers to avoid circularity, but the system still needs external validation, prospective evaluation, calibration assessment, and clinical workflow testing before deployment. SHAP and clustering improve interpretability, but they do not prove causality or validated subtypes.</p></blockquote>
+<h3>Active Recall</h3>
+<p>Write your top five limitations from memory. Then say them without apologizing.</p>
+<p>Use this format:</p>
+<blockquote><p>Limitation, why it matters, how future work would address it.</p></blockquote>
+<h3>Defense Questions</h3>
+<ul>
+<li>What is the biggest weakness?</li>
+<li>What would you improve first?</li>
+<li>Can this be used clinically now?</li>
+<li>What evidence is missing?</li>
+<li>What would invalidate your findings?</li>
+<li>How could users misunderstand the app?</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 13 when you can state limitations directly and still defend the value of the work.</p>
+<h2>Day 13: Mock Defense Round 1</h2>
+<h3>What You Are Learning</h3>
+<p>Today you stop studying and start performing.</p>
+<h3>Setup</h3>
+<p>Do a 45-minute mock defense. Use no notes. Record yourself if possible. After every answer, score it:</p>
+<ul>
+<li>2 = clear, concise, accurate.</li>
+<li>1 = mostly right but too long or missing caveat.</li>
+<li>0 = unclear, wrong, or overclaimed.</li>
+</ul>
+<h3>Question Set</h3>
+<p>Answer all of these:</p>
+<ul>
+<li>Give me a two-minute overview of your thesis.</li>
+<li>What problem are you solving?</li>
+<li>Why postmenopausal women?</li>
+<li>Why age 45 to 60?</li>
+<li>What is NHANES?</li>
+<li>What exactly is your target label?</li>
+<li>Are you predicting future diabetes?</li>
+<li>Why did you collapse prediabetes and diabetes?</li>
+<li>Is this a diagnostic tool?</li>
+<li>What are your nine features?</li>
+<li>Why did you exclude HbA1c and fasting blood sugar?</li>
+<li>What is circularity?</li>
+<li>What is leakage?</li>
+<li>What does your leakage gate check?</li>
+<li>Why Logistic Regression?</li>
+<li>What was your AUC?</li>
+<li>What was your sensitivity?</li>
+<li>What was your specificity?</li>
+<li>What does the AUC confidence interval mean?</li>
+<li>Why is accuracy insufficient?</li>
+<li>What does calibration mean?</li>
+<li>Why use clustering?</li>
+<li>Are your clusters clinically validated?</li>
+<li>Why K=4 if silhouette suggested K=2?</li>
+<li>What is SHAP?</li>
+<li>Does SHAP prove causality?</li>
+<li>Walk me through the architecture.</li>
+<li>What does the backend do?</li>
+<li>What does the ML service do?</li>
+<li>What does the frontend display?</li>
+<li>What are your top three limitations?</li>
+<li>What would you do next?</li>
+</ul>
+<h3>Required Output</h3>
+<p>After the mock defense, create:</p>
+<ul>
+<li>Five weakest questions.</li>
+<li>One sentence explaining why each was weak.</li>
+<li>A corrected 60-second answer for each.</li>
+</ul>
+<h3>Passing Standard</h3>
+<p>You are ready for Day 14 when no answer scores 0 and your two-minute overview is stable.</p>
+<h2>Day 14: Mock Defense Round 2</h2>
+<h3>What You Are Learning</h3>
+<p>Today you make your answers shorter and stronger.</p>
+<h3>Rules</h3>
+<p>Use strict timing:</p>
+<ul>
+<li>Thesis overview: 2 minutes.</li>
+<li>Label and leakage answers: 90 seconds.</li>
+<li>Metrics answers: 60 seconds.</li>
+<li>Architecture answer: 2 minutes.</li>
+<li>Limitation answer: 60 seconds.</li>
+</ul>
+<h4>Hostile &quot;Curveball&quot; Questions</h4>
+<p>Be prepared for these direct attacks:</p>
+<ul>
+<li><strong>&quot;Your accuracy is 67%. A coin flip is 50%. Did you really spend months building a system that&#x27;s only 17% better than guessing?&quot;</strong></li>
+</ul>
+<p>  <em>Defense:</em> Accuracy is the wrong metric here due to class imbalance and clinical costs. Missing an at-risk patient (false negative) is worse than a false positive in screening. That is why we optimize for Sensitivity (74.8%) and use AUC (0.737) to measure discrimination.</p>
+<ul>
+<li><strong>&quot;You excluded Race and Family History. Doesn&#x27;t that make the model worse for minorities or those with genetic predispositions?&quot;</strong></li>
+</ul>
+<p>  <em>Defense:</em> Family history suffered from severe missingness in recent NHANES cycles, making it technically unviable. Race was excluded to reduce demographic leakage and algorithmic bias, ensuring the model focuses purely on metabolic and lifestyle screening factors rather than penalizing demographic groups.</p>
+<h3>High-Risk Questions</h3>
+<p>Repeat these until they are automatic:</p>
+<ul>
+<li>Is your model just detecting HbA1c indirectly?</li>
+<li>Why should we trust AUC 0.737?</li>
+<li>Why not include HbA1c and get better performance?</li>
+<li>Is this a medical diagnosis?</li>
+<li>Does SHAP show what causes diabetes?</li>
+<li>Are the clusters real clinical subtypes?</li>
+<li>If K=2 was better by silhouette, why use K=4?</li>
+<li>What is the strongest argument against your thesis?</li>
+<li>What is the strongest contribution?</li>
+</ul>
+<h3>Final Answer Templates</h3>
+<h4>HbA1c Circularity</h4>
+<blockquote><p>The concern is valid. If HbA1c or fasting blood sugar define the label and also appear as inputs, the model can become circular. The final DianaV2 screening model excludes both from the predictors and uses nine non-circular metabolic and lifestyle features instead. I still describe the output as current-state screening classification, not diagnosis or future prediction.</p></blockquote>
+<h4>Moderate AUC</h4>
+<blockquote><p>The AUC is about 0.737, so I interpret it as moderate discrimination. It is not enough for standalone clinical deployment. Its value is that it is achieved under a non-circular screening design with nested cycle-based validation, and it is paired with explainability and a full-stack implementation.</p></blockquote>
+<h4>SHAP</h4>
+<blockquote><p>SHAP explains how the trained model used features to produce a prediction. It helps transparency, but it does not prove that a feature causes diabetes risk. In my thesis, SHAP is model explanation, not causal biology.</p></blockquote>
+<h4>Clustering</h4>
+<blockquote><p>Clustering is post-prediction enrichment. It gives at-risk users a heuristic metabolic pattern, such as SIRD-like or MOD-like. These are not validated clinical subtype diagnoses. K=4 was chosen for literature alignment, while the silhouette result suggests the grouping should be interpreted cautiously.</p></blockquote>
+<h4>Clinical Use</h4>
+<blockquote><p>DianaV2 is not ready to replace clinical judgment. It is a screening-oriented decision-support prototype. Before clinical deployment, it needs external validation, prospective validation, calibration review, usability testing, and governance around model updates.</p></blockquote>
+<h4>Contribution</h4>
+<blockquote><p>The contribution is not only model performance. It is a defensible end-to-end system that combines non-circular diabetes-risk screening, cycle-based validation, SHAP explanations, heuristic subtype enrichment, and full-stack delivery with explicit clinical limitations.</p></blockquote>
+<h3>Required Output</h3>
+<p>At the end of Day 14, you must have:</p>
+<ul>
+<li>A memorized two-minute thesis overview.</li>
+<li>A pipeline diagram from memory.</li>
+<li>An architecture diagram from memory.</li>
+<li>A metric interpretation script.</li>
+<li>A circularity answer.</li>
+<li>A limitations answer.</li>
+<li>A contribution answer.</li>
+</ul>
+<h2>Advanced Defense Traps (Master-Level)</h2>
+<p>If you get these questions, the panel is testing your engineering maturity.</p>
+<h3>1. The &quot;Why Go AND Python?&quot; Question</h3>
+<ul>
+<li><strong>The Question:</strong> <em>&quot;You have a Python ML service, a Go backend, and a React frontend. Why not use one Python API for everything?&quot;</em></li>
+<li><strong>The Defense:</strong> <em>&quot;The separation follows the system boundary. Python is the natural environment for model artifacts, SHAP, and ML libraries. Go owns the application backend: authentication, authorization, persistence, request validation, audit behavior, and canonical API contracts. This lets the ML model evolve behind a service boundary without forcing the frontend or database layer to depend on model-specific implementation details.&quot;</em></li>
+</ul>
+<h3>2. The &quot;Where Is Blood Pressure?&quot; Question</h3>
+<ul>
+<li><strong>The Question:</strong> <em>&quot;Metabolic syndrome is tied to hypertension. Your active model is called <code>binary_v2_no_bp</code>. Why did you drop blood pressure?&quot;</em></li>
+<li><strong>The Defense:</strong> <em>&quot;It was a deliberate model variant. Excluding blood pressure reduces dependence on a measurement that may be missing, inconsistently captured, or affected by context. The trade-off is that the no-BP model may lose some signal, but it improves accessibility and keeps the final screening feature set simpler and easier to reproduce.&quot;</em></li>
+</ul>
+<h3>3. The &quot;Data Drift&quot; Question</h3>
+<ul>
+<li><strong>The Question:</strong> <em>&quot;You trained this on past NHANES cycles. How do you know the model remains relevant if population health changes?&quot;</em></li>
+<li><strong>The Defense:</strong> <em>&quot;The validation design already tests generalization across NHANES cycles, and the service layer includes drift-monitoring infrastructure. The drift monitor can compare incoming feature distributions against reference data using PSI and KS-style checks. That does not prove the model will stay valid forever, but it creates an operational signal for when retraining or review may be needed.&quot;</em></li>
+</ul>
+<h3>4. The Privacy And Data Ownership Question</h3>
+<ul>
+<li><strong>The Question:</strong> <em>&quot;If a patient uses this and gets a high risk score, who owns that data and how is it protected?&quot;</em></li>
+<li><strong>The Defense:</strong> <em>&quot;The current architecture moved away from a clinician-owned patient table toward user-owned health records. That is an important privacy posture, but it is not a complete legal or deployment answer by itself. A real clinical deployment would still need consent flows, access controls, retention policies, audit logging, and compliance review.&quot;</em></li>
+</ul>
+<h3>5. The Frontend Performance Question</h3>
+<ul>
+<li><strong>The Question:</strong> <em>&quot;Do the SHAP visualizations and animations make the application too heavy for lower-end devices?&quot;</em></li>
+<li><strong>The Defense:</strong> <em>&quot;The frontend includes device capability detection and can reduce expensive visual effects on lower-tier hardware. The goal is to preserve the core clinical information first: risk result, warnings, and explanation. Animation is secondary and should degrade gracefully.&quot;</em></li>
+</ul>
+<h2>Final Cheat Sheet</h2>
+<h3>The Safest Thesis Claim</h3>
+<p>DianaV2 is a current-state screening and explainability system for diabetes-risk classification in postmenopausal women.</p>
+<h3>The Most Dangerous Overclaim</h3>
+<p>The model predicts future diabetes or diagnoses diabetes.</p>
+<h3>The Strongest Methodology Defense</h3>
+<p>The final model excludes HbA1c and fasting blood sugar because they define the label, and the pipeline includes automated leakage checks before training.</p>
+<h3>The Main Model Result</h3>
+<p>Logistic Regression, 9 features, nested LOGO validation, AUC about 0.737, sensitivity about 0.748, specificity about 0.590.</p>
+<h3>The Main Limitation</h3>
+<p>The system needs external and prospective clinical validation before real-world deployment.</p>
+<h3>The Main Contribution</h3>
+<p>An end-to-end, leakage-aware, explainable screening system that connects ML validation with deployable software architecture.</p>
+<h2>Final Readiness Checklist</h2>
+<p>You are ready when you can do all of this without notes:</p>
+<ul>
+<li>Explain DianaV2 in one sentence.</li>
+<li>Explain DianaV2 in two minutes.</li>
+<li>Draw the research pipeline.</li>
+<li>Draw the application architecture.</li>
+<li>List the nine features.</li>
+<li>State which features were excluded and why.</li>
+<li>Explain Normal vs At-Risk.</li>
+<li>Explain HbA1c/FBS circularity.</li>
+<li>Recite AUC, sensitivity, specificity, accuracy, F1, and threshold.</li>
+<li>Interpret the AUC confidence interval.</li>
+<li>Explain nested LOGO validation.</li>
+<li>Explain SHAP without causality — and know it uses LinearExplainer (exact, not approximate).</li>
+<li>Explain clustering without subtype overclaiming.</li>
+<li>Explain the Weighted K-Means distance formula and the six feature weights.</li>
+<li>Explain the Ahlqvist waterfall: LAP→SIRD, LDL→SIDD, BMI→MOD, remainder→MARD.</li>
+<li>Explain the metabolic syndrome boost (3+ criteria → 0.65 floor, 2 → +0.15).</li>
+<li>Explain the confidence threshold (&lt; 0.60 → &quot;Indeterminate&quot;).</li>
+<li>Explain the threshold optimization (3 strategies + guardrail arbitration).</li>
+<li>Explain how class imbalance is handled (class_weight=&#x27;balanced&#x27;, not SMOTE).</li>
+<li>Explain the NHANES pipeline (6 cycles, RHQ031==2, 4 inclusion filters).</li>
+<li>Explain the safety guards (doctor model lock, age 45-60 hard rejection).</li>
+<li>Explain drift detection (PSI thresholds, KS-test).</li>
+<li>Know that FINDRISC beats DIANA on AUC (0.849 vs 0.737) and explain why.</li>
+<li>State five limitations.</li>
+<li>Answer whether the system is clinically deployable today.</li>
+</ul>
+<h2>Daily Recitation Page</h2>
+<p>Read this page every morning during the two weeks:</p>
+<blockquote><p>DianaV2 is a current-state diabetes-risk screening and explainability system for postmenopausal women aged 45 to 60. It uses NHANES data and classifies Normal versus At-Risk, where At-Risk collapses prediabetic and diabetic glycemic categories. HbA1c and fasting blood sugar define the label, so the final screening model excludes them from the feature set. The selected model is Logistic Regression using nine non-circular features: BMI, triglycerides, LDL, HDL, age, waist circumference, smoking, activity, and alcohol. It is validated using nested Leave-One-NHANES-Cycle-Out cross-validation, with AUC about 0.737, sensitivity about 0.748, specificity about 0.590, and accuracy about 0.674. SHAP explains model behavior, not causality. K-Means clustering provides heuristic subtype enrichment for at-risk users, not validated clinical subtype diagnosis. The React frontend, Go backend, and Python ML service form a full-stack decision-support prototype. The system is not a diagnosis and requires external, prospective, and clinical validation before deployment.</p></blockquote>
+    </div>
+</body>
+</html>

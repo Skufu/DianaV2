@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Image } from 'lucide-react';
-import { getMLVisualizationUrl } from '../../api';
+import { fetchMLVisualizationApi, getErrorMessage } from '../../api';
 import { motion } from 'framer-motion';
 import { cardVariants } from '../../utils/animations';
 
@@ -11,28 +11,20 @@ const LoadingSkeleton = ({ className = '' }) => (
 const VisualizationCard = React.memo(({ title, visualizationName }) => {
   const [status, setStatus] = useState('loading');
   const [imgSrc, setImgSrc] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     let objectUrl = null;
     let isMounted = true;
+    const controller = new AbortController();
 
     const fetchImage = async () => {
       setStatus('loading');
+      setErrorMessage('');
       try {
-        const url = getMLVisualizationUrl(visualizationName);
-        const apiKey = import.meta.env.VITE_ML_API_KEY || 'dev-ml-api-key';
-
-        const response = await fetch(url, {
-          headers: {
-            'X-API-Key': apiKey,
-          },
+        const blob = await fetchMLVisualizationApi(visualizationName, {
+          signal: controller.signal,
         });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${response.status}`);
-        }
-
-        const blob = await response.blob();
         objectUrl = URL.createObjectURL(blob);
 
         if (isMounted) {
@@ -40,8 +32,10 @@ const VisualizationCard = React.memo(({ title, visualizationName }) => {
           setStatus('loaded');
         }
       } catch (error) {
-        if (isMounted) {
-          console.error('Error loading visualization:', error);
+        if (isMounted && error?.code !== 'REQUEST_ABORTED') {
+          setErrorMessage(
+            getErrorMessage(error, 'The visualization could not be loaded right now.')
+          );
           setStatus('error');
         }
       }
@@ -51,6 +45,7 @@ const VisualizationCard = React.memo(({ title, visualizationName }) => {
 
     return () => {
       isMounted = false;
+      controller.abort();
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
@@ -81,7 +76,7 @@ const VisualizationCard = React.memo(({ title, visualizationName }) => {
         <div className="w-full h-64 flex flex-col items-center justify-center bg-rose-50 rounded-xl text-rose-400 border border-rose-100">
           <Image size={48} className="mb-3 opacity-50" />
           <p className="font-bold">Visualization Unavailable</p>
-          <p className="text-sm mt-1 text-rose-300">ML server may be offline</p>
+          <p className="text-sm mt-1 text-rose-300">{errorMessage}</p>
         </div>
       )}
     </motion.div>

@@ -1,6 +1,6 @@
 # Chapter 3+4 Citation Audit
 
-**Date checked:** 2026-05-17
+**Date checked:** 2026-05-18
 **Primary draft checked:** `docs/07-research/thesis-drafts/ch3+4-final-academic-draft.md`
 **Technical backup checked:** `docs/07-research/thesis-drafts/ch3+4.md`
 **Companion wording file checked:** `docs/07-research/thesis-drafts/ch3+4-academic-wording-bank.md`
@@ -20,7 +20,7 @@ The final Chapter 3+4 academic draft is now citation-ready for the methodology c
 | Table 3.1 | Included NHANES releases and file suffixes | CDC/NCHS continuous NHANES documentation | Covered by adjacent section citation |
 | 3.3 Population | RHQ031-based menstrual-period filter | CDC/NCHS RHQ_L codebook | Added |
 | 3.4 Data Gathering | SEQN merge key and NHANES variable documentation | CDC/NCHS NHANES documentation and codebooks | Added |
-| 3.5 Reference Labels | HbA1c >=6.5% diabetes and 5.7-6.4% prediabetes thresholds | ADA Professional Practice Committee (2026) | Added |
+| 3.5 Reference Labels | HbA1c >=6.5% diabetes and 5.7-6.4% prediabetes thresholds | American Diabetes Association Professional Practice Committee for Diabetes (2026) | Added |
 | 3.6 Missing Data | Median imputation inside cross-validation and caution against leakage | Vabalas et al. (2019) | Added |
 | 3.7 Leakage Prevention | Separation of model selection and evaluation; avoiding optimistic bias | Vabalas et al. (2019) | Added |
 | 3.8 Candidate Models | Random Forest, LightGBM, and XGBoost algorithm foundations | Breiman (2001); Ke et al. (2017); Chen and Guestrin (2016) | Added |
@@ -56,7 +56,7 @@ The final Chapter 3+4 academic draft is now citation-ready for the methodology c
 These citation groups have been inserted into the updated Chapter 3+4 drafts using APA-style author-date thesis citations:
 
 - NHANES source and cycles: `(Centers for Disease Control and Prevention, National Center for Health Statistics [CDC/NCHS], 2024a, 2024b)`
-- ADA reference labels: `(American Diabetes Association Professional Practice Committee, 2026)`
+- ADA reference labels: `(American Diabetes Association Professional Practice Committee for Diabetes, 2026)`
 - RHQ031 menopausal filter: `(CDC/NCHS, 2024c)`
 - Nested temporal validation: `(Vabalas et al., 2019)`
 - Candidate models: `(Breiman, 2001; Ke et al., 2017; Chen & Guestrin, 2016)`
@@ -73,7 +73,7 @@ These citation groups have been inserted into the updated Chapter 3+4 drafts usi
 
 ## Citation-Ready Reference Shortlist
 
-American Diabetes Association Professional Practice Committee. (2026). 2. Diagnosis and classification of diabetes: Standards of Care in Diabetes--2026. *Diabetes Care*. https://pmc.ncbi.nlm.nih.gov/articles/PMC12690183/
+American Diabetes Association Professional Practice Committee for Diabetes. (2026). 2. Diagnosis and classification of diabetes: Standards of Care in Diabetes--2026. *Diabetes Care, 49*(Supplement 1), S27-S49. https://doi.org/10.2337/dc26-S002
 
 Ahlqvist, E., Storm, P., Karajamaki, A., et al. (2018). Novel subgroups of adult-onset diabetes and their association with outcomes: A data-driven cluster analysis of six variables. *The Lancet Diabetes & Endocrinology, 6*(5), 361-369. https://doi.org/10.1016/S2213-8587(18)30051-2
 

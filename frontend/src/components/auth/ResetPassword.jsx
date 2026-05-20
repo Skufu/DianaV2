@@ -10,7 +10,7 @@ import {
   getInputFocusVariants,
   useReducedMotion,
 } from '../../utils/animations';
-import { useResetPassword } from '../../api';
+import { getErrorMessage, useResetPassword } from '../../api';
 
 const getPasswordRequirements = password => [
   { key: 'length', label: 'At least 8 characters', met: password.length >= 8 },
@@ -129,7 +129,7 @@ const ResetPassword = ({ onShowLogin, initialToken = '' }) => {
       if (err.status === 429) {
         setError('Too many attempts. Please wait a moment and try again.');
       } else {
-        setError(err.message || 'Unable to reset password. Please try again.');
+        setError(getErrorMessage(err, 'Unable to reset password. Please try again.'));
       }
     }
   };

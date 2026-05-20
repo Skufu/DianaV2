@@ -19,7 +19,7 @@ include $(ENV_FILE)
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE))
 endif
 
-.PHONY: dev air seed build lint test db_up db_down db_status sqlc tidy setup setup-admin run-dev test-db debug-neon
+.PHONY: dev air seed build lint test db_up db_down db_status sqlc tidy setup setup-admin
 
 dev:
 	cd $(BACKEND_DIR) && $(GO) run ./cmd/server
@@ -91,15 +91,6 @@ setup:
 
 setup-admin:
 	./scripts/dev/setup-admin.sh
-
-run-dev:
-	./scripts/run-dev.sh
-
-test-db:
-	./scripts/test-db.sh
-
-debug-neon:
-	./scripts/debug-neon.sh
 
 # ML targets
 ml:

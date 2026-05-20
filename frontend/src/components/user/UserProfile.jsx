@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
-import { User, Calendar, Shield, Save, AlertTriangle, ArrowLeft, Activity, Type } from 'lucide-react';
-import { useUserProfile, useUpdateProfile, useDeleteAccount } from '../../api';
+import {
+  User,
+  Calendar,
+  Shield,
+  Save,
+  AlertTriangle,
+  ArrowLeft,
+  Activity,
+  Type,
+} from 'lucide-react';
+import { getErrorMessage, useUserProfile, useUpdateProfile, useDeleteAccount } from '../../api';
 import { FONT_SCALE_OPTIONS } from '../../utils/accessibilityPreferences';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../common/Button';
-import {
-  staggerContainer,
-  fadeIn,
-  slideUp,
-  useInputFocusVariants,
-} from '../../utils/animations';
+import { staggerContainer, fadeIn, slideUp, useInputFocusVariants } from '../../utils/animations';
 
 const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleChange }) => {
   const inputFocusVariants = useInputFocusVariants();
@@ -20,6 +24,7 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formData, setFormData] = useState({});
   const [formError, setFormError] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
 
   useEffect(() => {
     if (profileData && Object.keys(profileData).length > 0) {
@@ -63,16 +68,17 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
       await updateProfileMutation.mutateAsync(payload);
       setFormData(payload);
     } catch (err) {
-      setFormError(err.message || 'Failed to update profile');
+      setFormError(getErrorMessage(err, 'Failed to update profile'));
     }
   };
 
   const handleDeleteAccount = async () => {
+    setDeleteError(null);
     try {
       await deleteAccountMutation.mutateAsync();
       window.location.href = '/login';
     } catch (err) {
-      alert('Failed to delete account. Please try again.');
+      setDeleteError(getErrorMessage(err, 'Failed to delete account. Please try again.'));
     }
   };
 
@@ -96,7 +102,7 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
         </div>
         <h3 className="text-xl font-serif font-bold text-slate-900 mb-2">Profile Error</h3>
         <p className="text-slate-600 mb-8 font-medium">
-          Failed to load your profile data. Please try again.
+          {getErrorMessage(error, 'Failed to load your profile data. Please try again.')}
         </p>
         <Button
           onClick={() => refetch()}
@@ -157,10 +163,7 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
         )}
       </AnimatePresence>
 
-      <motion.div
-        variants={slideUp}
-        className="glass-card p-5 sm:p-6 md:p-8 bg-white"
-      >
+      <motion.div variants={slideUp} className="glass-card p-5 sm:p-6 md:p-8 bg-white">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-2xl">
             <h2 className="text-xl font-serif font-bold text-diana-text-primary mb-2 flex items-center gap-3 border-b border-diana-sand pb-4">
@@ -521,7 +524,10 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
             </p>
             <Button
               variant="danger"
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={() => {
+                setDeleteError(null);
+                setShowDeleteConfirm(true);
+              }}
               className="!px-6 !py-3 shadow-lg shadow-rose-600/20"
             >
               Delete My Account
@@ -549,10 +555,22 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
                 Are you absolutely sure? This will permanently erase your health records and cannot
                 be undone.
               </p>
+              {deleteError && (
+                <div
+                  className="mb-6 flex items-start gap-2 rounded-2xl border border-rose-100 bg-rose-50 p-4 text-sm font-medium text-rose-700"
+                  role="alert"
+                >
+                  <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+                  <span>{deleteError}</span>
+                </div>
+              )}
               <div className="flex gap-4">
                 <Button
                   variant="ghost"
-                  onClick={() => setShowDeleteConfirm(false)}
+                  onClick={() => {
+                    setDeleteError(null);
+                    setShowDeleteConfirm(false);
+                  }}
                   className="flex-1 !bg-slate-100 hover:!bg-slate-200 !text-slate-600"
                 >
                   Cancel
@@ -560,9 +578,10 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
                 <Button
                   variant="danger"
                   onClick={handleDeleteAccount}
+                  isLoading={deleteAccountMutation.isPending}
                   className="flex-1 shadow-lg shadow-rose-600/20"
                 >
-                  Delete Account
+                  {deleteAccountMutation.isPending ? 'Deleting...' : 'Delete Account'}
                 </Button>
               </div>
             </motion.div>

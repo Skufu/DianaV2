@@ -11,12 +11,77 @@ vi.mock('../../assets/logo-icon.png', () => ({
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <div {...props}>{children}</div>,
-    input: ({ whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <input {...props} />,
-    button: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <button {...props}>{children}</button>,
-    span: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <span {...props}>{children}</span>,
-    p: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <p {...props}>{children}</p>,
-    h1: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <h1 {...props}>{children}</h1>,
+    div: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <div {...props}>{children}</div>,
+    input: ({
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <input {...props} />,
+    button: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <button {...props}>{children}</button>,
+    span: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <span {...props}>{children}</span>,
+    p: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <p {...props}>{children}</p>,
+    h1: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <h1 {...props}>{children}</h1>,
   },
   AnimatePresence: ({ children }) => <>{children}</>,
 }));
@@ -54,6 +119,11 @@ vi.mock('../common/Button', () => ({
 // Mock the API import
 vi.mock('../../api', () => ({
   signupApi: vi.fn(),
+  getErrorMessage: (error, fallback) => error?.message || fallback,
+  getFieldErrors: error =>
+    error?.details && typeof error.details === 'object' && !Array.isArray(error.details)
+      ? error.details
+      : {},
 }));
 
 describe('Signup', () => {
@@ -163,7 +233,9 @@ describe('Signup', () => {
 
     await waitFor(() => {
       // All requirements should show checkmarks (met)
-      const requirements = screen.getAllByText(/at least 8 characters|contains uppercase|contains lowercase|contains a number/i);
+      const requirements = screen.getAllByText(
+        /at least 8 characters|contains uppercase|contains lowercase|contains a number/i
+      );
       // Check that requirements are displayed
       expect(requirements.length).toBeGreaterThan(0);
     });
@@ -265,6 +337,32 @@ describe('Signup', () => {
     await waitFor(() => {
       expect(screen.getByText(/email already exists/i)).toBeInTheDocument();
     });
+  });
+
+  it('displays backend validation details next to the matching field', async () => {
+    const user = userEvent.setup();
+    const { signupApi } = await import('../../api');
+    const error = new Error('This email is already registered');
+    error.status = 400;
+    error.code = 'VALIDATION_ERROR';
+    error.details = { email: 'This email is already registered' };
+    signupApi.mockRejectedValueOnce(error);
+
+    renderSignup();
+
+    const emailInput = screen.getByLabelText(/email address/i);
+    const passwordInput = screen.getByLabelText(/^password/i);
+    const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+    await user.type(emailInput, 'test@example.com');
+    await user.type(passwordInput, 'Password123');
+    await user.type(confirmPasswordInput, 'Password123');
+    await user.click(screen.getByRole('button', { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/this email is already registered/i)).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText(/email address/i)).toHaveAttribute('aria-invalid', 'true');
   });
 
   it('handles successful signup', async () => {

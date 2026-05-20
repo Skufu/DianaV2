@@ -3,6 +3,7 @@ import { AlertCircle, Lock, Mail, Eye, EyeOff, Check, X, CheckCircle2 } from 'lu
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/logo-icon.png';
 import Button from '../common/Button';
+import { getErrorMessage, getFieldErrors } from '../../api';
 import {
   cardVariants,
   slideUp,
@@ -138,7 +139,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
     } catch (err) {
       // Parse structured backend errors
       if (err.code === 'VALIDATION_ERROR' && err.details) {
-        const details = typeof err.details === 'object' ? err.details : {};
+        const details = getFieldErrors(err);
         setFieldErrors(prev => ({
           ...prev,
           email: details.email || prev.email,
@@ -149,7 +150,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
       } else if (err.status === 429) {
         setError('Too many attempts. Please wait a moment and try again.');
       } else {
-        setError(err.message || 'Failed to create account.');
+        setError(getErrorMessage(err, 'Failed to create account.'));
       }
     } finally {
       setLoading(false);

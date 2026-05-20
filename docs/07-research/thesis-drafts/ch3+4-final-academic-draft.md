@@ -14,26 +14,48 @@ The methodology was organized into eight sequential phases. Phase 1 covered data
 
 Phase 6 covered web application integration and visualization development, including frontend assessment workflows, backend API orchestration, ML-service integration, explainability output handling, trend visualization, and report-generation support. Phase 7 covered system testing and technical validation across backend, ML, frontend, security, deployment-readiness, and accessibility-readiness components. Phase 8 covered the planned doctor's evaluation and expert-review procedure, in which licensed medical professionals would assess risk-output plausibility, SHAP explanation clarity, clinical workflow fit, and perceived usefulness. The methodological phases describe how the study was conducted; the corresponding empirical findings and validation evidence are reported in Chapter 4.
 
-The figures used in Chapter 3 are limited to methodological and system-design diagrams: the overall pipeline, two-stage screening and subtyping workflow, four-tier architecture, assessment sequence, and API access-control boundary. Quantitative model artifacts and application screenshots are presented in Chapter 4 so that visual evidence remains separated from procedural design.
+**Eight-Phase Methodological Framework**
+
+```mermaid
+flowchart TB
+    P1["Phase 1<br/>Data acquisition and<br/>biomarker preparation"]
+    P2["Phase 2<br/>Information Gain,<br/>entropy, and leakage checks"]
+    P3["Phase 3<br/>Cluster-based risk<br/>group identification"]
+    P4["Phase 4<br/>Predictive model<br/>development and training"]
+    P5["Phase 5<br/>Model testing, evaluation,<br/>calibration, and comparison"]
+    P6["Phase 6<br/>Web application integration<br/>and visualization development"]
+    P7["Phase 7<br/>System testing and<br/>technical validation"]
+    P8["Phase 8<br/>Doctor's evaluation<br/>and expert review"]
+
+    P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
+```
+
+The phase alignment across the manuscript is summarized as follows.
+
+| Phase | Primary Methodology Section | Corresponding Results or Evidence Section |
+|---|---|---|
+| Phase 1: Data acquisition and biomarker preparation | 3.2-3.6 | 4.6 |
+| Phase 2: Feature selection using Information Gain and entropy | 3.7-3.8 | 4.2 and 4.6 |
+| Phase 3: Cluster-based risk group identification | 3.10 | 4.5 |
+| Phase 4: Predictive model development and training | 3.8 | 4.1 and 4.3 |
+| Phase 5: Model testing, evaluation, and comparison | 3.8-3.9 | 4.1, 4.3, 4.4, and 4.12 |
+| Phase 6: Web application integration and visualization development | 3.11-3.12 | 4.8 |
+| Phase 7: System testing and technical validation | 3.13 | 4.7, 4.9, and 4.11 |
+| Phase 8: Doctor's evaluation | 3.14 | 4.10 |
+
+The figures used in Chapter 3 are limited to methodological and system-design diagrams: the eight-phase framework, overall pipeline, two-stage screening and subtyping workflow, four-tier architecture, assessment sequence, and API access-control boundary. Quantitative model artifacts and application screenshots are presented in Chapter 4 so that visual evidence remains separated from procedural design.
 
 **Figure 3.1. Methodological Flow from NHANES Data to the Integrated DIANA System**
 
 ```mermaid
 flowchart TB
-    A["NHANES secondary data<br/>2009-2018 and 2021-2023 releases"] --> B["Postmenopausal cohort filtering<br/>final analytic n = 1,376"]
-    B --> C["Reference-label construction<br/>DIQ010 plus HbA1c thresholds"]
-    C --> D["Leakage-safe preprocessing<br/>diagnostic predictors excluded"]
-    D --> E["Nested temporal validation<br/>Leave-One-Group-Out by NHANES release"]
-    E --> F["Candidate model comparison<br/>Logistic Regression, Random Forest, LightGBM, XGBoost"]
-    F --> G["Selected binary screening model<br/>Logistic Regression"]
-    G --> H["Clinical threshold optimization<br/>validation-derived threshold"]
-    H --> I["At-risk subtype context<br/>weighted K-Means, K = 4"]
-    I --> J["Explainability workflow<br/>feature-attribution output when available"]
-    J --> K["Integrated web application<br/>React, Go, Python ML service, PostgreSQL, optional cache support"]
-    K --> L["Technical verification and planned evaluation<br/>tests, user acceptance testing, expert review, accessibility, load testing"]
+    A["NHANES data<br/>six survey releases"] --> B["Eligible postmenopausal cohort<br/>n = 1,376"]
+    B --> C["Reference labels and<br/>leakage-safe predictors"]
+    C --> D["Model development<br/>nested LOGO validation"]
+    D --> E["DIANA system integration<br/>risk, subtype, and explanation outputs"]
 ```
 
-Figure 3.1 summarizes the methodological sequence used in the study. The flow emphasizes that diagnostic glycemic markers were used for reference-label construction and clinical interpretation, while the predictive model itself was trained on non-diagnostic metabolic, anthropometric, demographic, and lifestyle variables.
+Figure 3.1 summarizes the main methodological pathway used in the study. Detailed procedures for feature selection, model comparison, threshold optimization, subtype assignment, explainability, and system testing are discussed in the succeeding sections.
 
 ### 3.2 Research Locale
 

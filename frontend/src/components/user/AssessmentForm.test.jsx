@@ -6,10 +6,53 @@ import AssessmentForm from './AssessmentForm';
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <div {...props}>{children}</div>,
-    input: ({ whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <input {...props} />,
-    button: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <button {...props}>{children}</button>,
-    tr: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <tr {...props}>{children}</tr>,
+    div: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <div {...props}>{children}</div>,
+    input: ({
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <input {...props} />,
+    button: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <button {...props}>{children}</button>,
+    tr: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <tr {...props}>{children}</tr>,
   },
   AnimatePresence: ({ children }) => <>{children}</>,
 }));
@@ -22,6 +65,7 @@ vi.mock('../../utils/animations', () => ({
 
 // Mock react-query hooks
 vi.mock('../../api', () => ({
+  getErrorMessage: (error, fallback) => error?.message || fallback,
   useCreateAssessment: () => ({
     mutateAsync: vi.fn().mockResolvedValue({
       id: 1,
@@ -54,13 +98,7 @@ describe('AssessmentForm', () => {
   });
 
   const renderAssessmentForm = (props = {}) => {
-    return render(
-      <AssessmentForm
-        onSubmit={mockOnSubmit}
-        onCancel={mockOnCancel}
-        {...props}
-      />
-    );
+    return render(<AssessmentForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} {...props} />);
   };
 
   it('renders form with body metrics fields', () => {
@@ -133,7 +171,9 @@ describe('AssessmentForm', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/please complete all required fields for the clinical assessment/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/please complete all required fields for the clinical assessment/i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -153,7 +193,9 @@ describe('AssessmentForm', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/age must be between 45-60 years for postmenopausal women/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/age must be between 45-60 years for postmenopausal women/i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -247,9 +289,12 @@ describe('AssessmentForm', () => {
     await user.click(submitButton);
 
     // Wait for the async mutation to complete and modal to appear
-    await waitFor(() => {
-      expect(screen.getByTestId('ml-result-modal')).toBeInTheDocument();
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('ml-result-modal')).toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
   });
 
   it('shows model type selector when showModelSelector is true', () => {
@@ -292,5 +337,4 @@ describe('AssessmentForm', () => {
     expect(screen.getByLabelText(/physical activity/i)).toHaveValue('Moderate');
     expect(screen.getByLabelText(/alcohol use/i)).toHaveValue('Light');
   });
-
 });

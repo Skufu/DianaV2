@@ -1,9 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  clearAuthTokens,
   createAssessmentApi,
+  exportPDFApi,
+  fetchMLVisualizationApi,
+  getErrorMessage,
+  getFieldErrors,
+  loginApi,
   mapTrendsToContract,
   mlFetchJson,
   normalizeAssessmentContract,
+  setAuthTokens,
+  signupApi,
 } from './api';
 
 describe('createAssessmentApi', () => {
@@ -153,11 +161,317 @@ describe('mlFetchJson', () => {
       })
     );
 
-    await expect(mlFetchJson('/predict/explain', { method: 'POST', body: {} })).rejects.toMatchObject(
-      {
-        message: 'SHAP explainer unavailable',
-        status: 503,
-      }
+    await expect(
+      mlFetchJson('/predict/explain', { method: 'POST', body: {} })
+    ).rejects.toMatchObject({
+      message: 'SHAP explainer unavailable',
+      status: 503,
+    });
+  });
+});
+
+describe('API error handling', () => {
+  afterEach(() => {
+    clearAuthTokens();
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  it('extracts field detail messages and field errors from structured API errors', () => {
+    const error = {
+      message: 'Invalid request payload',
+      details: { email: 'This email is already registered' },
+    };
+
+    expect(getErrorMessage(error, 'Fallback message')).toBe('This email is already registered');
+    expect(getFieldErrors(error)).toEqual({ email: 'This email is already registered' });
+  });
+
+  it('preserves structured validation details for signup field errors', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request payload',
+          details: { email: 'This email is already registered' },
+        }),
+        {
+          status: 400,
+          statusText: 'Bad Request',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
     );
+
+    await expect(signupApi('test1@test.com', 'Password123')).rejects.toMatchObject({
+      message: 'This email is already registered',
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      details: { email: 'This email is already registered' },
+    });
+  });
+
+  it('does not run token refresh for auth endpoint failures', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid email or password',
+        }),
+        {
+          status: 401,
+          statusText: 'Unauthorized',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    );
+
+    await expect(loginApi('test1@test.com', 'wrongpassword')).rejects.toMatchObject({
+      message: 'Invalid email or password',
+      status: 401,
+      code: 'INVALID_CREDENTIALS',
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('normalizes network failures into user-facing API errors', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+
+    await expect(mlFetchJson('/health')).rejects.toMatchObject({
+      message: 'Unable to reach the DIANA server. Please check your connection and try again.',
+      status: 0,
+      code: 'NETWORK_ERROR',
+    });
+  });
+
+  it('returns null for empty successful JSON responses', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    await expect(mlFetchJson('/health')).resolves.toBeNull();
+  });
+
+  it('wraps invalid successful JSON responses in an APIRequestError', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('not-json', {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    await expect(mlFetchJson('/health')).rejects.toMatchObject({
+      message: 'Received an invalid response from the DIANA server.',
+      status: 200,
+      code: 'INVALID_RESPONSE',
+    });
+  });
+
+  it('sends bearer auth and structured errors through PDF blob downloads', async () => {
+    setAuthTokens('access-token', 'refresh-token');
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          code: 'EXPORT_UNAVAILABLE',
+          message: 'PDF export is unavailable for this account',
+        }),
+        {
+          status: 403,
+          statusText: 'Forbidden',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    );
+
+    await expect(exportPDFApi()).rejects.toMatchObject({
+      message: 'PDF export is unavailable for this account',
+      status: 403,
+      code: 'EXPORT_UNAVAILABLE',
+    });
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe('Bearer access-token');
+  });
+
+  it('refreshes expired bearer tokens for PDF blob downloads', async () => {
+    setAuthTokens('expired-token', 'refresh-token');
+    const mockClick = vi.fn();
+    vi.spyOn(document, 'createElement').mockImplementation(() => ({
+      href: '',
+      download: '',
+      click: mockClick,
+    }));
+    vi.spyOn(window.URL, 'createObjectURL').mockReturnValue('blob:pdf');
+    vi.spyOn(window.URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    const pdfBlob = new Blob(['PDF content'], { type: 'application/pdf' });
+    let pdfRequestCount = 0;
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(url => {
+      if (String(url).endsWith('/auth/refresh')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ access_token: 'fresh-token', refresh_token: 'fresh-refresh' }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          )
+        );
+      }
+
+      if (String(url).endsWith('/users/me/export/pdf')) {
+        pdfRequestCount += 1;
+      }
+      if (pdfRequestCount === 1) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ code: 'UNAUTHORIZED', message: 'Token expired' }), {
+            status: 401,
+            statusText: 'Unauthorized',
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+      }
+
+      return Promise.resolve(
+        new Response(pdfBlob, {
+          status: 200,
+          headers: { 'Content-Type': 'application/pdf' },
+        })
+      );
+    });
+
+    await exportPDFApi();
+
+    const pdfRequests = fetchMock.mock.calls.filter(([url]) =>
+      String(url).endsWith('/users/me/export/pdf')
+    );
+    expect(pdfRequests).toHaveLength(2);
+    expect(pdfRequests[0][1].headers.Authorization).toBe('Bearer expired-token');
+    expect(pdfRequests[1][1].headers.Authorization).toBe('Bearer fresh-token');
+    expect(mockClick).toHaveBeenCalled();
+    expect(window.URL.revokeObjectURL).toHaveBeenCalledWith('blob:pdf');
+  });
+
+  it('loads ML visualizations through the API layer with auth and ML API headers', async () => {
+    setAuthTokens('access-token', 'refresh-token');
+    const imageBlob = new Blob(['image'], { type: 'image/png' });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(imageBlob, {
+        status: 200,
+        headers: { 'Content-Type': 'image/png' },
+      })
+    );
+
+    const result = await fetchMLVisualizationApi('roc_curve');
+
+    expect(result).toBeInstanceOf(Blob);
+    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe('Bearer access-token');
+    expect(fetchMock.mock.calls[0][1].headers['X-API-Key']).toBe(
+      import.meta.env.VITE_ML_API_KEY || 'dev-ml-api-key'
+    );
+  });
+
+  it('refreshes expired bearer tokens for ML visualization blobs', async () => {
+    setAuthTokens('expired-token', 'refresh-token');
+    const imageBlob = new Blob(['image'], { type: 'image/png' });
+    let visualizationRequestCount = 0;
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(url => {
+      if (String(url).endsWith('/auth/refresh')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ access_token: 'fresh-token', refresh_token: 'fresh-refresh' }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          )
+        );
+      }
+
+      if (String(url).includes('/ml/insights/visualizations/roc_curve')) {
+        visualizationRequestCount += 1;
+      }
+      if (visualizationRequestCount === 1) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ code: 'UNAUTHORIZED', message: 'Token expired' }), {
+            status: 401,
+            statusText: 'Unauthorized',
+            headers: { 'Content-Type': 'application/json' },
+          })
+        );
+      }
+
+      return Promise.resolve(
+        new Response(imageBlob, {
+          status: 200,
+          headers: { 'Content-Type': 'image/png' },
+        })
+      );
+    });
+
+    const result = await fetchMLVisualizationApi('roc_curve');
+
+    const visualizationRequests = fetchMock.mock.calls.filter(([url]) =>
+      String(url).includes('/ml/insights/visualizations/roc_curve')
+    );
+    expect(result).toBeInstanceOf(Blob);
+    expect(visualizationRequests).toHaveLength(2);
+    expect(visualizationRequests[0][1].headers.Authorization).toBe('Bearer expired-token');
+    expect(visualizationRequests[1][1].headers.Authorization).toBe('Bearer fresh-token');
+  });
+
+  it('rejects requests queued behind a failed token refresh', async () => {
+    setAuthTokens('expired-token', 'expired-refresh');
+    let markRefreshStarted;
+    let resolveRefresh;
+    const refreshStarted = new Promise(resolve => {
+      markRefreshStarted = resolve;
+    });
+
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(url => {
+      if (String(url).endsWith('/auth/refresh')) {
+        markRefreshStarted();
+        return new Promise(resolve => {
+          resolveRefresh = resolve;
+        });
+      }
+
+      return Promise.resolve(
+        new Response(JSON.stringify({ code: 'UNAUTHORIZED', message: 'Token expired' }), {
+          status: 401,
+          statusText: 'Unauthorized',
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+    });
+
+    const firstRequest = mlFetchJson('/insights/metrics');
+    await refreshStarted;
+    const secondRequest = mlFetchJson('/insights/clusters');
+    await Promise.resolve();
+
+    resolveRefresh(
+      new Response(JSON.stringify({ code: 'UNAUTHORIZED', message: 'Refresh token expired' }), {
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    const results = await Promise.allSettled([firstRequest, secondRequest]);
+
+    expect(results).toHaveLength(2);
+    expect(results[0]).toMatchObject({
+      status: 'rejected',
+      reason: { message: 'Session expired. Please log in again.', code: 'SESSION_EXPIRED' },
+    });
+    expect(results[1]).toMatchObject({
+      status: 'rejected',
+      reason: { message: 'Session expired. Please log in again.', code: 'SESSION_EXPIRED' },
+    });
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/auth/refresh'))
+    ).toHaveLength(1);
   });
 });

@@ -1,6 +1,6 @@
 // CohortAnalysis: Compare risk factors across patient groups
 import React, { useEffect, useState, useMemo } from 'react';
-import { fetchCohortAnalysisApi } from '../../api';
+import { fetchCohortAnalysisApi, getErrorMessage } from '../../api';
 import {
   BarChart,
   Bar,
@@ -43,8 +43,7 @@ const CohortAnalysis = ({ token }) => {
         const result = await fetchCohortAnalysisApi(token, groupBy);
         setData(result);
       } catch (err) {
-        setError('Failed to load cohort analysis');
-        console.error(err);
+        setError(getErrorMessage(err, 'Failed to load cohort analysis'));
       } finally {
         setLoading(false);
       }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { exportPDFApi } from '../../api';
+import { exportPDFApi, getErrorMessage } from '../../api';
 
 const PDFExport = () => {
   const [isExporting, setIsExporting] = useState(false);
@@ -12,7 +12,7 @@ const PDFExport = () => {
     try {
       await exportPDFApi();
     } catch (err) {
-      setError(err.message || 'Failed to export PDF. Please try again.');
+      setError(getErrorMessage(err, 'Failed to export PDF. Please try again.'));
     } finally {
       setIsExporting(false);
     }

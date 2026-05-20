@@ -14,7 +14,12 @@ import {
 import RiskIndicator from '../common/RiskIndicator';
 import MLResultModal from '../common/MLResultModal';
 import StatusSummaryCard from '../common/StatusSummaryCard';
-import { deriveRiskLevelFromScore, normalizeAssessmentContract, useAssessments } from '../../api';
+import {
+  deriveRiskLevelFromScore,
+  getErrorMessage,
+  normalizeAssessmentContract,
+  useAssessments,
+} from '../../api';
 import { motion } from 'framer-motion';
 import { staggerContainer, slideUp, cardVariants, useReducedMotion } from '../../utils/animations';
 
@@ -199,7 +204,7 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
             <div>
               <div className="font-bold text-lg">Failed to load assessments</div>
               <div className="text-sm text-rose-500/80">
-                {error.message || 'Please check your connection and try again'}
+                {getErrorMessage(error, 'Please check your connection and try again')}
               </div>
             </div>
           </div>
@@ -228,7 +233,9 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-sm">
                   <Activity size={22} />
                 </div>
-                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">Total Assessments</span>
+                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">
+                  Total Assessments
+                </span>
               </div>
               <div className="text-5xl font-light tracking-tight text-slate-800 relative z-10">
                 {assessments.length}
@@ -248,7 +255,9 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                 <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center shadow-sm">
                   <TrendingUp size={22} />
                 </div>
-                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">Risk Level</span>
+                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">
+                  Risk Level
+                </span>
               </div>
               <div className="relative z-10 mt-2">
                 {latestAssessment ? (
@@ -276,7 +285,9 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                 <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center shadow-sm">
                   <Layers size={22} />
                 </div>
-                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">Metabolic Profile</span>
+                <span className="text-slate-600 font-semibold tracking-wide uppercase text-sm">
+                  Metabolic Profile
+                </span>
               </div>
               <div className="relative z-10 mt-2">
                 {!latestAssessment ? (
@@ -293,13 +304,13 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                     <div className="text-2xl font-semibold tracking-tight text-emerald-600">
                       Normal
                     </div>
-                    <div className="text-sm text-slate-500 mt-2">
-                      No metabolic subtype assigned
-                    </div>
+                    <div className="text-sm text-slate-500 mt-2">No metabolic subtype assigned</div>
                   </>
                 ) : (
                   <>
-                    <div className={`text-2xl font-semibold tracking-tight ${CLUSTER_DISPLAY_MAP[latestCluster]?.color || 'text-slate-800'}`}>
+                    <div
+                      className={`text-2xl font-semibold tracking-tight ${CLUSTER_DISPLAY_MAP[latestCluster]?.color || 'text-slate-800'}`}
+                    >
                       {CLUSTER_DISPLAY_MAP[latestCluster]?.label || latestCluster}
                     </div>
                     <div className="text-sm text-slate-500 mt-2">
@@ -328,11 +339,12 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                   <h3 className="text-lg font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors">
                     Log New Assessment
                   </h3>
-                  <p className="text-slate-500 text-sm">
-                    Record your latest health measurements
-                  </p>
+                  <p className="text-slate-500 text-sm">Record your latest health measurements</p>
                 </div>
-                <ChevronRight size={20} className="text-slate-300 group-hover:text-indigo-400 ml-auto" />
+                <ChevronRight
+                  size={20}
+                  className="text-slate-300 group-hover:text-indigo-400 ml-auto"
+                />
               </div>
             </motion.button>
 
@@ -352,11 +364,12 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                   <h3 className="text-lg font-semibold text-slate-800 group-hover:text-teal-600 transition-colors">
                     View Trends
                   </h3>
-                  <p className="text-slate-500 text-sm">
-                    Visualize your progress over time
-                  </p>
+                  <p className="text-slate-500 text-sm">Visualize your progress over time</p>
                 </div>
-                <ChevronRight size={20} className="text-slate-300 group-hover:text-teal-400 ml-auto" />
+                <ChevronRight
+                  size={20}
+                  className="text-slate-300 group-hover:text-teal-400 ml-auto"
+                />
               </div>
             </motion.button>
 
@@ -376,11 +389,12 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                   <h3 className="text-lg font-semibold text-slate-800 group-hover:text-amber-600 transition-colors">
                     Health Report
                   </h3>
-                  <p className="text-slate-500 text-sm">
-                    Download PDF for your clinician
-                  </p>
+                  <p className="text-slate-500 text-sm">Download PDF for your clinician</p>
                 </div>
-                <ChevronRight size={20} className="text-slate-300 group-hover:text-amber-400 ml-auto" />
+                <ChevronRight
+                  size={20}
+                  className="text-slate-300 group-hover:text-amber-400 ml-auto"
+                />
               </div>
             </motion.button>
 
@@ -400,11 +414,12 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                   <h3 className="text-lg font-semibold text-slate-800 transition-colors">
                     My Profile
                   </h3>
-                  <p className="text-slate-500 text-sm">
-                    Manage your personal information
-                  </p>
+                  <p className="text-slate-500 text-sm">Manage your personal information</p>
                 </div>
-                <ChevronRight size={20} className="text-slate-300 group-hover:text-slate-400 ml-auto" />
+                <ChevronRight
+                  size={20}
+                  className="text-slate-300 group-hover:text-slate-400 ml-auto"
+                />
               </div>
             </motion.button>
           </motion.div>

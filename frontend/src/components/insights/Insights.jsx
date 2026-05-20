@@ -5,6 +5,7 @@ import {
   fetchMLMetricsApi,
   fetchMLInformationGainApi,
   fetchMLClustersApi,
+  getErrorMessage,
 } from '../../api';
 import { AlertCircle } from 'lucide-react';
 import InsightsHeader from './InsightsHeader';
@@ -60,13 +61,11 @@ const Insights = () => {
 
         let sawRateLimit = false;
         if (cResult.status === 'rejected') {
-          console.error('Cluster distribution failed:', cResult.reason);
           sawRateLimit =
             cResult.reason?.status === 429 ||
             String(cResult.reason?.message || cResult.reason || '').includes('rate limit');
         }
         if (tResult.status === 'rejected') {
-          console.error('Biomarker trends failed:', tResult.reason);
           sawRateLimit =
             sawRateLimit ||
             tResult.reason?.status === 429 ||
@@ -74,10 +73,11 @@ const Insights = () => {
         }
 
         if (cResult.status === 'rejected' && tResult.status === 'rejected') {
+          const primaryError = cResult.reason || tResult.reason;
           setError(
             sawRateLimit
               ? 'Rate limited — please retry in a moment.'
-              : 'Failed to load insights data'
+              : getErrorMessage(primaryError, 'Failed to load insights data')
           );
         }
         setRateLimited(sawRateLimit);
@@ -101,8 +101,7 @@ const Insights = () => {
           if (reloadKey !== 0) setReloadKey(0);
         }
       } catch (err) {
-        console.error('Unexpected error loading insights:', err);
-        setError('Failed to load insights');
+        setError(getErrorMessage(err, 'Failed to load insights'));
       } finally {
         inFlightRef.current = false;
         setLoading(false);
@@ -129,8 +128,7 @@ const Insights = () => {
           setMlError('ML server is unavailable. Some insights may be limited.');
         }
       } catch (err) {
-        console.error('Failed to load ML data:', err);
-        setMlError('Failed to connect to ML server');
+        setMlError(getErrorMessage(err, 'Failed to connect to ML server'));
       } finally {
         setMlLoading(false);
       }
