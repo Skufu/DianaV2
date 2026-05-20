@@ -283,27 +283,27 @@ Figure 3.2 clarifies the separation between binary screening and subtype assignm
 
 Although Logistic Regression provides coefficient-level interpretability, DIANA also uses SHapley Additive exPlanations (SHAP) to provide patient-level feature attribution (Lundberg & Lee, 2017). SHAP values indicate how each feature pushes a prediction toward or away from the at-risk class. The explainability workflow supports both cohort-level interpretation, through summary visualizations, and patient-level interpretation, through waterfall-style feature-contribution displays.
 
-Detailed SHAP outputs are generated through the explainability endpoint and displayed in the frontend when available. They are not persisted as JSONB fields in the assessment table. The database stores prediction metadata such as risk score, predicted status, model version, dataset hash, and subtype context, while detailed SHAP values remain transient explanation artifacts.
+Detailed SHAP outputs are generated during explanation requests and displayed in the user interface when available. They are not stored as detailed assessment fields. The database stores prediction metadata such as risk score, predicted status, model version, dataset hash, and subtype context, while detailed SHAP values remain transient explanation artifacts.
 
-The implementation includes graceful degradation when SHAP output is unavailable. In that case, the frontend displays an explanation-unavailable panel and states that no feature-level SHAP values are shown in fallback mode. This behavior preserves the screening result while avoiding fabricated feature attributions.
+When SHAP output is unavailable, the interface displays an explanation-unavailable state and states that no feature-level SHAP values are shown. This behavior preserves the screening result while avoiding fabricated feature attributions.
 
-In addition to model-performance evaluation, DIANA implements several safety and traceability controls around the ML workflow. These controls make the methodology executable in the codebase rather than treating leakage prevention, explanation handling, drift awareness, and model lineage as documentation-only claims.
+In addition to model-performance evaluation, DIANA includes safety and traceability controls around the ML workflow. These controls make leakage prevention, explanation handling, drift awareness, and model lineage verifiable within the implemented system rather than leaving them as documentation-only claims.
 
 **Table 3.8. ML Safety and Traceability Controls**
 
 | Control | Implemented Behavior | Methodological Value |
 |---|---|---|
 | Leakage validation gate | Blocks diagnostic features before training | Reduces circular prediction risk |
-| Feature-contract management | Documents active clinical and clustering feature sets | Reduces training-serving mismatch |
-| SHAP fallback behavior | Shows an explanation-unavailable state when SHAP is unavailable | Avoids fabricated explanations |
-| Drift monitoring hooks | Queues non-blocking drift checks and exposes admin drift routes | Supports post-deployment monitoring |
+| Feature-set documentation | Documents active clinical and clustering feature sets | Reduces training-serving mismatch |
+| SHAP unavailability handling | Shows an explanation-unavailable state when SHAP is unavailable | Avoids fabricated explanations |
+| Drift-monitoring support | Records drift-check status for administrative review | Supports post-deployment monitoring |
 | Model lineage metadata | Stores model version, dataset hash, risk score, status, and subtype metadata | Supports result traceability |
 
 ### 3.12 System Architecture and Implementation
 
 DIANA was implemented as a layered web application with a frontend interface, backend API, ML inference service, and persistence layer. The separation of these layers allowed the user interface, authentication and validation logic, prediction workflow, and stored assessment records to be developed and evaluated independently. Optional caching was used for repeated read-heavy views such as trends and aggregate analytics when the runtime environment supported it.
 
-The deployment design follows a reverse-proxy pattern in which public browser traffic reaches the application through a secured gateway before backend services are invoked. The backend API, ML service, and database are separated so that prediction, persistence, authentication, and explanation tasks are not exposed as a single public service. This design supports either managed-service or containerized deployment while preserving the same logical system boundaries. Rate limiting is implemented separately through backend rate-limiting middleware.
+The deployment design follows a reverse-proxy pattern in which public browser traffic reaches the application through a secured gateway before backend services are invoked. The backend API, ML service, and database are separated so that prediction, persistence, authentication, and explanation tasks are not exposed as a single public service. This design supports either managed-service or containerized deployment while preserving the same logical system boundaries. Rate limiting is implemented separately through request-throttling controls.
 
 **Table 3.9. Technology Stack**
 
@@ -312,9 +312,9 @@ The deployment design follows a reverse-proxy pattern in which public browser tr
 | Frontend | React 18 + Vite | Component-based UI, efficient rendering, and fast development workflow |
 | Backend | Go 1.25 + Gin | Concurrent request handling, static typing, and compiled deployment |
 | ML Service | Python 3.12 + Flask | Access to scikit-learn, SHAP, and ML tooling |
-| Database | PostgreSQL 16-compatible persistence | ACID-compliant persistence for user, assessment, model, auth-event, and audit records |
-| Cache support | Optional Redis-compatible cache layer | TTL-based caching and targeted invalidation for repeated read queries when configured |
-| Authentication | JWT (HS256) | Stateless authentication with access and refresh token support |
+| Database | PostgreSQL-compatible persistence | ACID-compliant persistence for user, assessment, model, authentication-event, and audit records |
+| Cache support | Optional cache layer | Time-limited caching and targeted refresh for repeated read queries when configured |
+| Authentication | Signed web-token authentication | Stateless authentication with access and refresh token support |
 | Deployment | Managed or containerized deployment | Reverse-proxy ingress, separated services, and PostgreSQL-backed persistence |
 | Charts | Recharts | Interactive biomarker trends and explainability visualizations |
 
@@ -323,11 +323,11 @@ The deployment design follows a reverse-proxy pattern in which public browser tr
 ```mermaid
 flowchart TB
     subgraph Client["Frontend Layer"]
-        A["React frontend<br/>dashboard, assessment form, SHAP and trend views"]
+        A["User interface<br/>dashboard, assessment form, SHAP and trend views"]
     end
 
     subgraph API["Backend API Layer"]
-        B["Backend API<br/>authentication, RBAC, validation, audit, caching orchestration"]
+        B["Backend service<br/>authentication, role checks, validation, audit, caching orchestration"]
     end
 
     subgraph ML["ML Inference Layer"]
@@ -348,15 +348,15 @@ flowchart TB
 
 In both supported deployment variants, public traffic enters through a reverse proxy rather than direct backend, ML, or database ports. The backend communicates with the ML layer through an internal service boundary and with the database through a controlled persistence connection. This organization supports service isolation and helps keep inference and data-storage components out of the public browser-facing surface.
 
-The backend and ML service were decoupled so routine API operations remain separate from model inference and explanation generation. During assessment creation, the backend authenticates the user, validates submitted biomarkers, sends the model-relevant payload to the ML service, receives prediction and lineage metadata, stores the assessment, invalidates affected cached data when applicable, and returns the result to the frontend. Prediction failures are returned as structured errors rather than silently hidden by fallback behavior.
+The backend and ML service were decoupled so routine API operations remain separate from model inference and explanation generation. During assessment creation, the backend authenticates the user, validates submitted biomarkers, sends the model-relevant payload to the ML service, receives prediction and lineage metadata, stores the assessment, refreshes affected cached data when applicable, and returns the result to the interface. Prediction failures are returned as structured errors rather than silently hidden by fallback behavior.
 
 **Figure 3.4. Assessment Prediction and Optional Explanation Sequence**
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant FE as React frontend
-    participant API as Go API
+    participant FE as User interface
+    participant API as Backend service
     participant ML as Python ML service
     participant DB as PostgreSQL
     participant Cache as Optional cache
@@ -367,57 +367,57 @@ sequenceDiagram
     API->>ML: Request risk prediction
     ML-->>API: Return risk score, status, subtype, and lineage metadata
     API->>DB: Save assessment and prediction metadata
-    API->>Cache: Invalidate user assessment and trend caches
+    API->>Cache: Refresh affected cached views
     API-->>FE: Return created assessment with prediction
     FE-->>User: Display risk result
 
     opt SHAP explanation requested and available
         FE->>API: Request SHAP explanation
-        API->>ML: Proxy explanation request
+        API->>ML: Forward explanation request
         ML-->>API: Return SHAP values or fallback status
         API-->>FE: Return explanation payload
         FE-->>User: Display explanation or unavailable state
     end
 ```
 
-Figure 3.4 separates the required assessment-creation path from the optional explanation path. The assessment is first validated, predicted, persisted, and returned to the frontend. SHAP explanation is requested separately through the backend ML proxy only when the interface needs feature-attribution output.
+Figure 3.4 separates the required assessment-creation path from the optional explanation path. The assessment is first validated, predicted, persisted, and returned to the interface. SHAP explanation is requested separately through the explanation workflow only when the interface needs feature-attribution output.
 
-The API surface was organized around access-control boundaries rather than a single public route tree. Public endpoints were limited to authentication and health or observability functions. Authenticated users accessed profile, assessment, privacy, trends, analytics, and report-export workflows. Doctor and administrator roles provided controlled access to cohort insights, audit review, user management, model traceability, and drift-related monitoring. Table 3.10 summarizes these access levels without listing every endpoint.
+The API design was organized around access-control boundaries rather than a single public service surface. Public access was limited to authentication and basic system-status functions. Authenticated users accessed profile, assessment, privacy, trends, analytics, and report-export workflows. Doctor and administrator roles provided controlled access to cohort insights, audit review, user management, model traceability, and drift-related monitoring. Table 3.10 summarizes these access levels without enumerating implementation-level routes.
 
 **Table 3.10. API Access-Control Summary**
 
-| Access Level | Main Functions | Example Route Group |
+| Access Level | Main Functions | Representative Boundary |
 |---|---|---|
-| Public | Authentication, health checks, and API documentation | `/auth`, `/healthz`, `/swagger` |
-| Authenticated user | Profile, assessments, privacy tools, trends, and PDF export | `/users/me/*` |
-| User analytics | Personal summaries and biomarker trends | `/analytics`, `/insights` |
-| ML proxy | Model insights and SHAP explanation requests | `/ml/*` |
-| Doctor or admin | Cohort insights and validation workflows | `/insights/*` |
-| Admin only | User management, audit logs, model traceability, and drift status | `/admin/*` |
+| Public | Authentication and basic system-status checks | Public access boundary |
+| Authenticated user | Profile, assessments, privacy tools, trends, and PDF export | User-owned data boundary |
+| User analytics | Personal summaries and biomarker trends | Personal analytics boundary |
+| ML explanation access | Model insights and SHAP explanation requests | Controlled ML-service boundary |
+| Doctor or admin | Cohort insights and validation workflows | Role-restricted clinical-review boundary |
+| Admin only | User management, audit logs, model traceability, and drift status | Administrative boundary |
 
 The database schema links assessments directly to authenticated users, supporting user-owned health records and controlled deletion behavior. Stored prediction metadata includes risk score, risk label, predicted status, model lineage, dataset lineage, and subtype context where available. This design supports traceability between a displayed result and the model artifact used to generate it without requiring detailed explanation artifacts to be persisted with every assessment.
 
 ### 3.13 Security, Authorization, and Quality Evaluation
 
-DIANA implements JWT-based authentication, role-based access control, request-size limiting, rate limiting, security headers, CORS filtering, and password hashing with bcrypt (Jones et al., 2015; Provos & Mazieres, 1999). Three main roles are recognized: user, doctor, and admin. Users can create assessments, view their own predictions, export reports, and review personal trends. Doctors are treated as a testing and validation role with model-locked assessment creation. Administrators can access system administration functions such as user management, audit logs, model traceability, and dashboard summaries.
+DIANA implements signed-token authentication, role-based access control, request-size limiting, rate limiting, security headers, cross-origin request filtering, and password hashing with bcrypt (Jones et al., 2015; Provos & Mazieres, 1999). Three main roles are recognized: user, doctor, and admin. Users can create assessments, view their own predictions, export reports, and review personal trends. Doctors are treated as a testing and validation role with model-locked assessment creation. Administrators can access system administration functions such as user management, audit logs, model traceability, and dashboard summaries.
 
 **Table 3.11. Security Controls**
 
 | Control | Implementation | Purpose |
 |---|---|---|
-| Token signing | HMAC-SHA256 JWT | Preserve token integrity |
-| Password hashing | bcrypt cost 10 | Protect credentials at rest |
-| RBAC | Middleware enforcement | Apply least-privilege access |
-| Rate limiting | Go native token bucket | Reduce brute-force and denial-of-service risk |
-| CORS | Whitelist enforcement | Restrict cross-origin access |
+| Token signing | Signed web tokens using HMAC-SHA256 | Preserve token integrity |
+| Password hashing | bcrypt password hashing | Protect credentials at rest |
+| Role-based access control | Access-control enforcement | Apply least-privilege access |
+| Rate limiting | Token-bucket rate limiting | Reduce brute-force and denial-of-service risk |
+| Cross-origin filtering | Cross-origin request allow-list | Restrict cross-origin access |
 | TLS | Reverse-proxy TLS configuration | Protect transport confidentiality |
 | Public ingress control | Reverse proxy handles public HTTP/HTTPS ingress | Reduce direct service exposure |
 | Internal ML access | Internal service-to-service communication | Prevent direct public ML invocation |
-| Secret management | Runtime environment variables or locked environment files | Reduce accidental credential disclosure |
+| Secret management | Runtime secret configuration | Reduce accidental credential disclosure |
 
-Software quality evaluation followed ISO/IEC 25010-informed characteristics (International Organization for Standardization, 2011). Functional suitability was evaluated through endpoint tests, model-serving tests, and frontend unit tests. Performance efficiency was evaluated through inference benchmarks and planned load-testing methodology. Security was evaluated through authentication, RBAC, rate-limiting, and middleware tests. Maintainability was supported through modular architecture, generated database access, and separated frontend/backend/ML services. Formal usability, accessibility, expert face-validity, and reliability results require separate UAT and expert-review execution.
+Software quality evaluation followed ISO/IEC 25010-informed characteristics (International Organization for Standardization, 2011). Functional suitability was evaluated through API tests, model-serving tests, and frontend unit tests. Performance efficiency was evaluated through inference benchmarks and planned load-testing methodology. Security was evaluated through authentication, role-based access, rate-limiting, and request-handling tests. Maintainability was supported through modular architecture, structured database access, and separated frontend, backend, and ML services. Formal usability, accessibility, expert face-validity, and reliability results require separate UAT and expert-review execution.
 
-The frontend implementation should be interpreted as a research prototype rather than a finalized clinical product shell. Navigation is implemented through application state and tab selection rather than URL-addressable React Router routes, so deep linking and browser back-button workflows are limited. Authentication uses Bearer tokens stored through guarded browser `localStorage` to support the cross-origin API flow. This is acceptable for prototype demonstration and testing, but a production clinical deployment should harden this design through route-based navigation, stronger browser-token protections, formal XSS review, and a deployment-compatible HttpOnly cookie or session strategy where feasible.
+Because DIANA was evaluated as a research prototype, its current navigation and browser-token handling should not be interpreted as production clinical security hardening. Before clinical deployment, the system would require stronger session-management design, formal cross-site-scripting review, route-based navigation refinement, and deployment-compatible protections such as HttpOnly cookies or server-side sessions where feasible.
 
 ### 3.14 User Acceptance Testing and Expert Review Methodology
 
@@ -596,32 +596,32 @@ This result supports the central methodological claim of the study. DIANA's disc
 
 ### 4.7 Functional Testing Results
 
-Functional testing verified the implemented system across backend, ML service, and frontend layers. The backend Go test suite passed in the current verification run and covered configuration, caching, HTTP handlers, middleware, ML integration, models, services, PDF generation, and store behavior. Assessment handler tests verified critical clinical guardrails, including target age-boundary enforcement, missing waist-circumference acceptance for ML imputation, out-of-range HbA1c warning behavior, and successful assessment creation.
+Functional testing verified the implemented system across backend, ML service, and frontend layers. The backend test suite passed in the current verification run and covered configuration, caching behavior, API request handling, access-control checks, ML integration, service logic, PDF generation, and data persistence. Assessment tests verified critical clinical guardrails, including target age-boundary enforcement, missing waist-circumference handling for ML imputation, out-of-range HbA1c warning behavior, and successful assessment creation.
 
-The Python ML service test suite passed with 270 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, server endpoints, API authentication, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured source coverage gates, with 71.26 percent line and statement coverage, 60.58 percent branch coverage, and 44.24 percent function coverage.
+The ML service test suite passed with 270 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, service access, authentication checks, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured coverage gates, with 71.26 percent line and statement coverage, 60.58 percent branch coverage, and 44.24 percent function coverage.
 
 **Table 4.8. Functional Test Summary**
 
 | Layer | Test Evidence | Current Status |
 |---|---|---|
-| Backend Go suite | Configuration, cache, handlers, middleware, ML integration, services, store | PASS |
-| Assessment handler guardrails | Age boundaries, missing waist handling, HbA1c warning propagation, successful create | PASS |
-| Python ML suite | 270 tests covering prediction, leakage, clustering, SHAP, drift, clinical scenarios | PASS |
-| Frontend unit and contract coverage suite | 232 tests across API contracts, auth flows, forms, UI components, and broad source coverage smoke tests | PASS |
+| Backend suite | Configuration, cache behavior, request handling, access control, ML integration, services, persistence | PASS |
+| Assessment guardrails | Age boundaries, missing waist handling, HbA1c warning propagation, successful assessment creation | PASS |
+| ML service suite | 270 tests covering prediction, leakage, clustering, SHAP, drift, clinical scenarios | PASS |
+| Frontend unit and contract coverage suite | 232 tests across service contracts, authentication flows, forms, UI components, and broad coverage checks | PASS |
 | Frontend coverage threshold | Gates: 70% statements/lines, 60% branches, 40% functions | PASS: 71.26% lines/statements, 60.58% branches, 44.24% functions |
-| Redis integration tests | Require running Redis service | Environment dependent |
+| Cache integration tests | Require the external cache service to be available | Environment dependent |
 
-The function-coverage gate is lower than the statement and line gates because several frontend files are callback-heavy UI modules whose rendering paths are already exercised through broader component and contract tests. The 44.24 percent function result should therefore be reported as a passed repository coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
+The function-coverage gate is lower than the statement and line gates because several interface modules contain many event-driven functions whose rendering paths are already exercised through broader component and contract tests. The 44.24 percent function result should therefore be reported as a passed coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
 
-The remaining technical-readiness gaps therefore concern environment-dependent Redis integration evidence, formal UAT, expert review, accessibility audit, and production load testing rather than the frontend coverage gate.
+The remaining technical-readiness gaps therefore concern environment-dependent cache integration evidence, formal UAT, expert review, accessibility audit, and production load testing rather than the frontend coverage gate.
 
 ### 4.8 UI Workflow Integration
 
 The implemented DIANA workflow begins with user authentication and proceeds to dashboard review, biomarker data entry, prediction generation, result interpretation, trend visualization, and report export. The dashboard presents recent assessments and risk summaries. The default thesis workflow uses the locked screening model and collects age, height, weight-derived BMI, lipid biomarkers, optional waist circumference, lifestyle variables, and notes. Alternate model variants are outside the default evaluation workflow.
 
-After form submission, the backend validates the request, sends the relevant assessment payload to the ML service, receives prediction and lineage metadata, persists the assessment, invalidates affected cache keys, and returns the result to the frontend. The result display presents risk probability, risk category, subtype context when available, model version, dataset lineage, biomarker snapshot, clinical guardrails, and next-step guidance. SHAP explainability is supported through a separate frontend component and backend ML proxy route when explanation outputs are available; the user-facing result modal screenshot in this section does not display fabricated SHAP values.
+After form submission, the backend validates the request, sends the relevant assessment payload to the ML service, receives prediction and lineage metadata, stores the assessment, refreshes affected cached views when applicable, and returns the result to the interface. The result display presents risk probability, risk category, subtype context when available, model version, dataset lineage, biomarker snapshot, clinical guardrails, and next-step guidance. SHAP explainability is supported through a separate explanation workflow when outputs are available; the user-facing result modal screenshot in this section does not display fabricated SHAP values.
 
-The result interface presents outputs in a layered hierarchy. The first layer shows binary screening classification through risk score, risk category, and threshold context. The second layer shows metabolic subtype context only when the backend capability contract supports subtype output. The third layer presents clinical guardrails and actionable follow-up text. Normal predictions receive neutral subtype semantics so that disease-pattern labels are not assigned to users classified as normal.
+The result interface presents outputs in a layered hierarchy. The first layer shows binary screening classification through risk score, risk category, and threshold context. The second layer shows metabolic subtype context only when subtype output is available. The third layer presents clinical guardrails and actionable follow-up text. Normal predictions receive neutral subtype wording so that disease-pattern labels are not assigned to users classified as normal.
 
 **Figure 4.3. Main Dashboard Interface**
 
@@ -647,23 +647,23 @@ This workflow demonstrates that the model was not evaluated only as an isolated 
 
 ### 4.9 System Performance and Deployment Readiness
 
-The system architecture separates routine API operations from ML inference and explanation generation. The Go backend manages authentication, validation, persistence, caching, and response orchestration, while the Python ML service performs prediction, clustering, explainability, and monitoring-related functions. This separation reduces the risk that computationally heavier ML operations will degrade ordinary application interactions.
+The system architecture separates routine application operations from ML inference and explanation generation. The backend manages authentication, validation, persistence, caching, and response orchestration, while the ML service performs prediction, clustering, explainability, and monitoring-related functions. This separation reduces the risk that computationally heavier ML operations will degrade ordinary application interactions.
 
-Pure model inference benchmarks indicate that Logistic Regression averages approximately 0.62 ms per prediction in the benchmarked environment, while Random Forest averages approximately 13.09 ms and LightGBM averages approximately 0.25 ms. The current source measurements also document approximate service interaction and explanation-related overhead of 205 ms in the measured environment. These measurements support interactive feasibility, but they do not replace production load testing.
+Pure model inference benchmarks indicate that Logistic Regression averages approximately 0.62 ms per prediction in the benchmarked environment, while Random Forest averages approximately 13.09 ms and LightGBM averages approximately 0.25 ms. The available benchmark measurements also document approximate service interaction and explanation-related overhead of 205 ms in the measured environment. These measurements support interactive feasibility, but they do not replace production load testing.
 
-Production performance claims should therefore remain qualified. Concurrent load testing with authenticated users, database writes, cache invalidation, ML requests, and frontend rendering has not yet been completed. The final manuscript should avoid claiming production-scale readiness until load-test evidence is collected.
+Production performance claims should therefore remain qualified. Concurrent load testing with authenticated users, database writes, cache refreshes, ML requests, and frontend rendering has not yet been completed. The final manuscript should avoid claiming production-scale readiness until load-test evidence is collected.
 
-Deployment readiness was assessed at the configuration level rather than as a full production certification. The review checked whether the system design supports reverse-proxy ingress, backend health checks, service isolation, protected database exposure, and runtime secret injection. Sensitive operational details such as server addresses, usernames, private paths, and connection strings were excluded from the manuscript.
+Deployment readiness was assessed at the configuration level rather than as a full production certification. The review checked whether the system design supports reverse-proxy ingress, backend health checks, service isolation, protected database exposure, and runtime secret management. Sensitive operational details such as server addresses, usernames, private paths, and connection strings were excluded from the manuscript.
 
 **Configuration-Level Deployment Readiness Summary**
 
 | Verification Item | Configuration Evidence | Status |
 |---|---|---|
 | Public ingress | Reverse-proxy ingress is defined for HTTP/HTTPS | Evidence present |
-| Backend routing | Health-check routing is registered and used by deployment checks | Evidence present |
+| Backend health check | Health-check behavior is available for deployment monitoring | Evidence present |
 | ML isolation | ML service is isolated from browser-facing traffic | Evidence present |
 | Database exposure | Production configuration avoids public PostgreSQL application exposure | Evidence present |
-| Secret handling | Runtime configuration uses environment variables for sensitive values | Evidence present |
+| Secret handling | Sensitive values are supplied through runtime secret configuration | Evidence present |
 
 The configuration review supports deployment-readiness claims at the architectural level. It does not replace production load testing or an infrastructure security audit.
 
@@ -671,7 +671,7 @@ The configuration review supports deployment-readiness claims at the architectur
 
 The UAT protocol and expert review framework were defined but had not yet been executed at the time of manuscript preparation. The planned user evaluation follows ISO/IEC 25010 usability characteristics, including appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence (International Organization for Standardization, 2011).
 
-Planned user tasks include login and dashboard navigation, assessment submission, and interpretation of ML results and SHAP explanation. The planned System Usability Scale measure uses Brooke's 10-item instrument and interprets the `> 70` target using empirical SUS benchmarking literature (Brooke, 1996; Bangor et al., 2008). Planned expert review will evaluate risk-output plausibility, explanation clarity, workflow fit, and perceived utility. Since formal data collection has not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations should remain marked as pending rather than reported as completed findings.
+Planned user tasks include login and dashboard navigation, assessment submission, and interpretation of ML results and SHAP explanation. The planned System Usability Scale measure uses Brooke's 10-item instrument and interprets the greater-than-70 target using empirical SUS benchmarking literature (Brooke, 1996; Bangor et al., 2008). Planned expert review will evaluate risk-output plausibility, explanation clarity, workflow fit, and perceived utility. Since formal data collection has not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations should remain marked as pending rather than reported as completed findings.
 
 **Table 4.9. Planned UAT and Expert Review Metrics**
 
@@ -692,19 +692,19 @@ Planned user tasks include login and dashboard navigation, assessment submission
 | Test ID | Test Case | Expected Result | Status |
 |---|---|---|---|
 | UAT-01 | User registration | Account created and user redirected to login | Protocol defined; not executed |
-| UAT-02 | User login | JWT issued and user redirected to dashboard | Protocol defined; not executed |
+| UAT-02 | User login | User session created and user redirected to dashboard | Protocol defined; not executed |
 | UAT-03 | Dashboard rendering | Risk summary, trend chart, and quick actions rendered | Protocol defined; not executed |
 | UAT-04 | Submit full assessment | Assessment created, risk result displayed, SHAP available when supported | Protocol defined; not executed |
 | UAT-05 | Submit minimal assessment | Assessment created with waist imputation and risk result displayed | Protocol defined; not executed |
-| UAT-06 | Submit below age range | HTTP 400 age policy error displayed | Protocol defined; not executed |
+| UAT-06 | Submit below age range | Age-policy validation message displayed | Protocol defined; not executed |
 | UAT-07 | View historical trends | Biomarker trends and risk-score history displayed | Protocol defined; not executed |
 | UAT-08 | SHAP explanation interaction | Waterfall plot or clinician-friendly fallback displayed | Protocol defined; not executed |
 | UAT-09 | Profile update | Profile updated and confirmation shown | Protocol defined; not executed |
 | UAT-10 | Admin user management | User list displayed and status action applied | Protocol defined; not executed |
 | UAT-11 | Assessment export | PDF health report generated with expected content | Protocol defined; not executed |
-| UAT-12 | Rate-limit enforcement | HTTP 429 returned after configured threshold | Protocol defined; not executed |
+| UAT-12 | Rate-limit enforcement | Rate-limit message displayed after configured threshold | Protocol defined; not executed |
 
-Internal walkthroughs identified several areas for improvement, including visibility of medical-history fields, SHAP legend clarity, mobile assessment-form usability, and explanation of Ahlqvist-inspired proxy subtype labels. These findings reflect development review rather than formal UAT results.
+Internal walkthroughs identified several areas for improvement, including visibility of medical-history fields, SHAP legend clarity, mobile assessment-form usability, and explanation of Ahlqvist-inspired proxy subtype labels. These findings reflect internal review rather than formal UAT results.
 
 **Table 4.11. Expert Feedback Summary Template**
 
@@ -717,7 +717,7 @@ Internal walkthroughs identified several areas for improvement, including visibi
 
 The interface applies visual organization principles to support comprehension of clinical information. Related fields are grouped together, risk categories use consistent visual styling, and charts present longitudinal patterns through continuous visual trends. Risk status is communicated through both color and text labels to reduce dependence on color alone.
 
-The application includes accessibility-oriented features such as ARIA labels, keyboard-accessible controls, responsive layouts, visible status text, and device-aware performance tiering, aligned with WCAG 2.2 accessibility guidance where applicable (World Wide Web Consortium, 2023). High-capability devices receive full animations and richer chart behavior, while lower-capability devices receive reduced visual complexity. However, formal automated contrast testing and assistive-technology testing have not yet been completed. Therefore, this section should be framed as accessibility readiness rather than WCAG conformance certification.
+The application includes accessibility-oriented features such as accessibility labels, keyboard-accessible controls, responsive layouts, visible status text, and device-aware rendering, aligned with WCAG 2.2 accessibility guidance where applicable (World Wide Web Consortium, 2023). Higher-capability devices receive full animations and richer chart behavior, while lower-capability devices receive reduced visual complexity. However, formal automated contrast testing and assistive-technology testing have not yet been completed. Therefore, this section should be framed as accessibility readiness rather than WCAG conformance certification.
 
 **Table 4.12. Accessibility and UI Readiness Items**
 
@@ -725,9 +725,9 @@ The application includes accessibility-oriented features such as ARIA labels, ke
 |---|---|---|
 | Color and text risk labels | Risk states use both visual color and text labels | Implemented |
 | Keyboard-accessible controls | Core interactive controls support keyboard interaction | Implemented; formal audit pending |
-| ARIA labels and status text | Alerts, dialogs, and navigation controls include accessibility-oriented labels | Implemented; formal audit pending |
-| Responsive layout | Tailwind breakpoints support mobile, tablet, laptop, and desktop layouts | Implemented |
-| Device-aware tiering | Lower-capability devices receive reduced visual complexity | Implemented |
+| Accessibility labels and status text | Alerts, dialogs, and navigation controls include accessibility-oriented labels | Implemented; formal audit pending |
+| Responsive layout | Responsive design rules support mobile, tablet, laptop, and desktop layouts | Implemented |
+| Device-aware rendering | Lower-capability devices receive reduced visual complexity | Implemented |
 | Contrast ratios | Automated contrast-test result not yet collected | [TBD after accessibility testing] |
 | Assistive-technology testing | Screen-reader and assistive workflow testing not yet completed | [TBD after accessibility testing] |
 
@@ -753,7 +753,7 @@ Several limitations constrain interpretation of the study. First, all model deve
 
 Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired labels as heuristic descriptions rather than validated biological subtypes. True biological subtype validation would require autoimmune markers, beta-cell function markers, insulin-resistance estimates, longitudinal outcomes, and independent clinical datasets. Fourth, deployment guardrails such as waist-circumference imputation and metabolic syndrome risk floors are engineered safeguards requiring ablation, calibration, and clinical review before being treated as validated clinical rules.
 
-Fifth, formal UAT, expert face-validity review, accessibility testing, and production load testing remain incomplete. Sixth, the frontend uses state-driven tab navigation rather than URL-addressable routing, and browser-token storage remains a prototype security tradeoff that should be hardened before clinical production use. These sections should remain framed as protocol, readiness, or pending evidence until data collection is completed. For these reasons, DIANA should be presented as a screening-support prototype with promising internal validation, not as a clinically validated diagnostic system.
+Fifth, formal UAT, expert face-validity review, accessibility testing, and production load testing remain incomplete. Sixth, the interface navigation and browser-token handling reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. These sections should remain framed as protocol, readiness, or pending evidence until data collection is completed. For these reasons, DIANA should be presented as a screening-support prototype with promising internal validation, not as a clinically validated diagnostic system.
 
 ### 4.14 Chapter Synthesis
 
