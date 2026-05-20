@@ -222,17 +222,17 @@ Sensitivity, specificity, predictive values, and related diagnostic testing meas
 
 The final screening threshold was derived from out-of-fold predictions inside the validation procedure rather than manually chosen after viewing test results. A deterministic guardrail was also implemented to reduce specificity collapse under temporal prevalence shift. If a selected threshold produced very high sensitivity but inadequate specificity, the algorithm searched for a feasible threshold satisfying minimum operating constraints or reverted toward a safer operating point. The final threshold value and fold-level guardrail behavior are reported in Chapter 4.
 
-**Table 3.6. Executable ML Safeguards and Medical Rationale**
+**Table 3.6. Executable ML Safeguards and Rationale**
 
-| Safeguard | Implementation | Medical or Methodological Rationale |
+| Safeguard | Implementation Summary | Rationale |
 |---|---|---|
-| Diagnostic leakage gate | Training is blocked if HbA1c, fasting blood sugar, fasting glucose, or related diagnostic aliases appear in classifier or clustering feature lists | Prevents the model from learning the same glycemic criteria used to construct the reference label |
-| Nested temporal validation | Inner grouped cross-validation performs model selection; outer LOGO validation holds out one NHANES release at a time | Reduces optimistic bias and tests whether performance remains stable across survey periods |
-| Youden's J candidate threshold | Evaluates the threshold that maximizes sensitivity plus specificity minus one | Provides a standard diagnostic-threshold baseline for comparison |
-| Screening-optimized candidate threshold | Prioritizes sensitivity while enforcing a minimum specificity floor | Reflects the clinical screening priority of reducing missed at-risk cases without allowing excessive false-positive inflation |
-| Geometric-mean threshold | Balances sensitivity and specificity through their geometric mean | Provides an alternative when class operating characteristics are uneven across folds |
-| Guardrail arbitration | Raises or replaces unstable low thresholds when specificity collapses under high-sensitivity selections | Protects against fold-specific prevalence shift producing a threshold that over-flags normal profiles |
-| Metabolic-syndrome serving guardrail | Raises low model probability when triglycerides, HDL, BMI, and waist circumference show concordant metabolic risk | Prevents implausibly low risk outputs for metabolically concordant high-risk profiles; requires further ablation and clinical review |
+| Diagnostic leakage gate | Blocks HbA1c, fasting blood sugar, and related diagnostic aliases from model features | Prevents circular prediction |
+| Nested temporal validation | Uses grouped inner validation and outer LOGO by NHANES release | Reduces optimistic validation bias |
+| Youden's J threshold | Tests the sensitivity-specificity balance point | Provides a standard threshold baseline |
+| Screening-optimized threshold | Prioritizes sensitivity with a specificity floor | Reduces missed at-risk cases |
+| Geometric-mean threshold | Balances sensitivity and specificity | Handles uneven fold behavior |
+| Guardrail arbitration | Replaces unstable low thresholds when specificity collapses | Limits excessive false positives |
+| Metabolic-syndrome guardrail | Raises low risk estimates for concordant metabolic-risk profiles | Reduces implausibly low risk outputs |
 
 The serving layer also includes a rule-based Metabolic Syndrome risk guardrail. This rule evaluates triglycerides of at least 150 mg/dL, HDL cholesterol below 50 mg/dL, BMI of at least 25, and waist circumference of at least 80 cm, reflecting commonly used metabolic-syndrome risk criteria (International Diabetes Federation, 2006; Alberti et al., 2009). When three or more criteria are met, the at-risk probability is raised to at least 0.65. When two criteria are met, the at-risk probability is increased by 0.15 and capped at 0.95. This rule should be interpreted as an engineered safety heuristic for reducing implausibly low risk estimates in metabolically concordant high-risk profiles, not as an independently validated clinical rule.
 
@@ -293,11 +293,11 @@ In addition to model-performance evaluation, DIANA implements several safety and
 
 | Control | Implemented Behavior | Methodological Value |
 |---|---|---|
-| Leakage validation gate | Diagnostic features such as HbA1c and fasting blood sugar are blocked from classifier and clustering feature sets before training | Reduces circular prediction risk |
-| Feature-contract management | Shared feature constants and model artifact feature files document the active clinical and clustering feature contracts | Reduces training-serving mismatch risk after earlier feature-count drift |
-| SHAP fallback behavior | If detailed SHAP output is unavailable, the frontend shows an explanation-unavailable state instead of fabricated feature attributions | Preserves transparency without inventing explanations |
-| Drift monitoring hooks | Prediction workflows can queue non-blocking drift checks, and administrative routes expose drift status and alerts | Supports post-deployment monitoring without changing the immediate risk result |
-| Model lineage metadata | Assessments store prediction metadata such as model version, dataset hash, status, risk score, subtype context, and drift-baseline information where available | Supports traceability between a displayed result and the model artifact that generated it |
+| Leakage validation gate | Blocks diagnostic features before training | Reduces circular prediction risk |
+| Feature-contract management | Documents active clinical and clustering feature sets | Reduces training-serving mismatch |
+| SHAP fallback behavior | Shows an explanation-unavailable state when SHAP is unavailable | Avoids fabricated explanations |
+| Drift monitoring hooks | Queues non-blocking drift checks and exposes admin drift routes | Supports post-deployment monitoring |
+| Model lineage metadata | Stores model version, dataset hash, risk score, status, and subtype metadata | Supports result traceability |
 
 ### 3.12 System Architecture and Implementation
 
@@ -315,7 +315,7 @@ The repository contains deployment support for more than one environment. One do
 | Database | PostgreSQL 16-compatible persistence | ACID-compliant persistence for user, assessment, model, auth-event, and audit records |
 | Cache support | Optional Redis-compatible cache layer | TTL-based caching and targeted invalidation for repeated read queries when configured |
 | Authentication | JWT (HS256) | Stateless authentication with access and refresh token support |
-| Deployment | Vercel/Caddy path and Docker Compose/Nginx path | Static frontend hosting or frontend container, TLS reverse proxy, containerized backend/ML services, and PostgreSQL persistence |
+| Deployment | Vercel/Caddy path and Docker Compose/Nginx path | Frontend hosting, reverse proxy, backend/ML services, and PostgreSQL persistence |
 | Charts | Recharts | Interactive biomarker trends and explainability visualizations |
 
 **Figure 3.3. DIANA Four-Tier System Architecture**
@@ -382,14 +382,14 @@ The implemented API surface supports authenticated user workflows, assessment ma
 | Route Group | Selected Routes | Purpose |
 |---|---|---|
 | Authentication | `/api/v1/auth/{login,register,refresh,logout}` | User authentication and token lifecycle |
-| Health and observability | `/api/v1/{healthz,livez,metrics}`, `/swagger/*any` | Runtime health checks, metrics exposure, and generated API documentation |
+| Health and observability | `/api/v1/{healthz,livez,metrics}`, `/swagger/*any` | Health checks, metrics, and API documentation |
 | User profile | `/api/v1/users/me/{profile,onboarding,consent,trends,account}` | User profile, consent, trends, and account deletion |
-| Privacy self-service | `/api/v1/users/me/privacy/{export/data,delete,consent/history,consent/withdraw,processing-info}` | User data export, deletion workflow, consent history, withdrawal, and processing information |
+| Privacy self-service | `/api/v1/users/me/privacy/*` | Data export, deletion, consent, and processing information |
 | Assessments | `/api/v1/users/me/assessments`, `/api/v1/users/me/assessments/:assessmentID` | Create, list, retrieve, update, and delete assessments |
 | Export | `/api/v1/users/me/export/pdf` | Generate user health report |
-| Insights and analytics | `/api/v1/insights/{cluster-distribution,biomarker-trends,cohort}`, `/api/v1/analytics/summary` | Aggregate cohort, biomarker, subtype, and summary analytics |
-| ML proxy, when `MODEL_URL` is configured | `/api/v1/ml/{health,insights/metrics,insights/information-gain,insights/clusters,insights/visualizations/:name,predict/explain}` | ML health, model insights, visualizations, and SHAP explanation |
-| Admin dashboard and audit | `/api/v1/admin/{dashboard,audit}`, `/api/v1/admin/events/stream` | Administrative summaries, audit-log review, and authentication-event monitoring |
+| Insights and analytics | `/api/v1/insights/*`, `/api/v1/analytics/summary` | Cohort, biomarker, subtype, and summary analytics |
+| ML proxy, when `MODEL_URL` is configured | `/api/v1/ml/*` | ML health, insights, visualizations, and SHAP explanation |
+| Admin dashboard and audit | `/api/v1/admin/{dashboard,audit}`, `/api/v1/admin/events/stream` | Admin summaries, audit logs, and auth-event monitoring |
 | Admin users | `/api/v1/admin/users`, `/api/v1/admin/users/:id`, `/api/v1/admin/users/:id/activate` | Administrative user management |
 | Admin models | `/api/v1/admin/models`, `/api/v1/admin/models/{active,drift,drift/alerts,sync}` | Model traceability and drift-related administration |
 
@@ -443,8 +443,8 @@ DIANA implements JWT-based authentication, role-based access control, request-si
 | CORS | Whitelist enforcement | Restrict cross-origin access |
 | TLS | Caddy or Nginx reverse-proxy TLS configuration, depending on deployment path | Protect transport confidentiality |
 | Public ingress control | Reverse proxy handles public HTTP/HTTPS ingress | Reduce direct service exposure |
-| Internal ML access | Backend communicates with ML over the private container network in containerized deployments | Prevent direct public invocation of the inference service |
-| Secret management | Runtime secrets are supplied through environment variables or locked environment files rather than committed literal secret values | Reduce accidental credential disclosure |
+| Internal ML access | Private container-network communication | Prevent direct public ML invocation |
+| Secret management | Runtime environment variables or locked environment files | Reduce accidental credential disclosure |
 
 Software quality evaluation followed ISO/IEC 25010-informed characteristics (International Organization for Standardization, 2011). Functional suitability was evaluated through endpoint tests, model-serving tests, and frontend unit tests. Performance efficiency was evaluated through inference benchmarks and planned load-testing methodology. Security was evaluated through authentication, RBAC, rate-limiting, and middleware tests. Maintainability was supported through modular architecture, generated database access, and separated frontend/backend/ML services. Formal usability, accessibility, expert face-validity, and reliability results require separate UAT and expert-review execution.
 
@@ -643,7 +643,7 @@ The Python ML service test suite passed with 270 tests. These tests covered clus
 | Assessment handler guardrails | Age boundaries, missing waist handling, HbA1c warning propagation, successful create | PASS |
 | Python ML suite | 270 tests covering prediction, leakage, clustering, SHAP, drift, clinical scenarios | PASS |
 | Frontend unit and contract coverage suite | 232 tests across API contracts, auth flows, forms, UI components, and broad source coverage smoke tests | PASS |
-| Frontend coverage threshold | Source coverage gates: 70% statements, 70% lines, 60% branches, and 40% functions | PASS: 71.26% lines/statements, 60.58% branches, and 44.24% functions |
+| Frontend coverage threshold | Gates: 70% statements/lines, 60% branches, 40% functions | PASS: 71.26% lines/statements, 60.58% branches, 44.24% functions |
 | Redis integration tests | Require running Redis service | Environment dependent |
 
 The function-coverage gate is lower than the statement and line gates because several frontend files are callback-heavy UI modules whose rendering paths are already exercised through broader component and contract tests. The 44.24 percent function result should therefore be reported as a passed repository coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
@@ -696,13 +696,13 @@ As part of the final codebase-truth pass, deployment-readiness evidence was chec
 
 **Repository Deployment-Readiness Summary**
 
-| Verification Item | Expected Result | Observed Result | Status |
-|---|---|---|---|
-| Public ingress | Public traffic enters through reverse proxy | Caddyfile and Docker Compose production overlay both define reverse-proxy ingress on HTTP/HTTPS | Repository evidence present |
-| Backend routing | Backend health endpoint exists for routing checks | `/api/v1/healthz` is registered in the Go router and used by container health checks | Repository evidence present |
-| ML isolation | ML service is not intended as a public browser-facing service | Production compose resets external ML ports and exposes the ML service only to the container network; Caddy routing forwards public traffic to the backend | Repository evidence present |
-| Database exposure | PostgreSQL should not be exposed as a public application port in production configuration | Production compose resets external PostgreSQL ports; the alternate managed-database path uses an external PostgreSQL service instead of a VPS database listener | Repository evidence present |
-| Secret handling | Secrets are injected at runtime rather than committed as literal secret values | Compose and service configuration use environment variables for passwords, JWT secrets, API keys, and database connection settings | Repository evidence present |
+| Verification Item | Repository Evidence | Status |
+|---|---|---|
+| Public ingress | Reverse-proxy ingress is defined for HTTP/HTTPS | Evidence present |
+| Backend routing | `/api/v1/healthz` is registered and used by health checks | Evidence present |
+| ML isolation | ML runs on the container network rather than as a public browser-facing service | Evidence present |
+| Database exposure | Production configuration avoids public PostgreSQL application exposure | Evidence present |
+| Secret handling | Runtime configuration uses environment variables for sensitive values | Evidence present |
 
 The repository-level review confirms that deployment artifacts exist for reverse-proxy routing, health checks, service isolation, and runtime secret injection. It does not replace a fresh production load test or an infrastructure security audit against the currently running host.
 
