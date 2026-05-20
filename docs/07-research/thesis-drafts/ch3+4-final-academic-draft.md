@@ -43,7 +43,7 @@ The phase alignment across the manuscript is summarized as follows.
 | Phase 7: System testing and technical validation | 3.13 | 4.7, 4.9, and 4.11 |
 | Phase 8: Doctor's evaluation | 3.14 | 4.10 |
 
-The figures used in Chapter 3 are limited to methodological and system-design diagrams: the eight-phase framework, overall pipeline, two-stage screening and subtyping workflow, four-tier architecture, assessment sequence, and API access-control boundary. Quantitative model artifacts and application screenshots are presented in Chapter 4 so that visual evidence remains separated from procedural design.
+The figures used in Chapter 3 are limited to methodological and system-design diagrams: the eight-phase framework, overall pipeline, two-stage screening and subtyping workflow, four-tier architecture, and assessment sequence. Quantitative model artifacts and application screenshots are presented in Chapter 4 so that visual evidence remains separated from procedural design.
 
 **Figure 3.1. Methodological Flow from NHANES Data to the Integrated DIANA System**
 
@@ -301,9 +301,9 @@ In addition to model-performance evaluation, DIANA implements several safety and
 
 ### 3.12 System Architecture and Implementation
 
-DIANA was implemented as a four-tier application architecture consisting of a React frontend, a Go backend API, a Python ML inference service, and a PostgreSQL persistence layer with optional cache support. The frontend uses React 18 and Vite. The backend uses Go 1.25 with Gin. The ML service uses Python 3.12 with Flask. The persistence layer is PostgreSQL 16-compatible, with repository artifacts supporting either an external managed PostgreSQL deployment or a containerized PostgreSQL service depending on environment. The backend contains Redis-compatible cache handlers for trends, analytics, and cluster-distribution responses, but Redis-dependent integration evidence is reported separately because those tests require a running Redis service.
+DIANA was implemented as a layered web application with a frontend interface, backend API, ML inference service, and persistence layer. The separation of these layers allowed the user interface, authentication and validation logic, prediction workflow, and stored assessment records to be developed and evaluated independently. Optional caching was used for repeated read-heavy views such as trends and aggregate analytics when the runtime environment supported it.
 
-The repository contains deployment support for more than one environment. One documented deployment path uses Vercel for the React frontend, a Caddy-backed VPS for the Go backend and Python ML service, and an external managed PostgreSQL database. The Docker Compose production overlay provides a second path with an Nginx reverse proxy, frontend/backend/ML containers, and an internal PostgreSQL 16 container. For this reason, the thesis treats deployment evidence as configuration and readiness evidence rather than as a claim that only one production topology exists. Rate limiting is implemented separately through Go token-bucket middleware.
+The deployment design follows a reverse-proxy pattern in which public browser traffic reaches the application through a secured gateway before backend services are invoked. The backend API, ML service, and database are separated so that prediction, persistence, authentication, and explanation tasks are not exposed as a single public service. This design supports either managed-service or containerized deployment while preserving the same logical system boundaries. Rate limiting is implemented separately through backend rate-limiting middleware.
 
 **Table 3.9. Technology Stack**
 
@@ -315,7 +315,7 @@ The repository contains deployment support for more than one environment. One do
 | Database | PostgreSQL 16-compatible persistence | ACID-compliant persistence for user, assessment, model, auth-event, and audit records |
 | Cache support | Optional Redis-compatible cache layer | TTL-based caching and targeted invalidation for repeated read queries when configured |
 | Authentication | JWT (HS256) | Stateless authentication with access and refresh token support |
-| Deployment | Vercel/Caddy path and Docker Compose/Nginx path | Frontend hosting, reverse proxy, backend/ML services, and PostgreSQL persistence |
+| Deployment | Managed or containerized deployment | Reverse-proxy ingress, separated services, and PostgreSQL-backed persistence |
 | Charts | Recharts | Interactive biomarker trends and explainability visualizations |
 
 **Figure 3.3. DIANA Four-Tier System Architecture**
@@ -323,34 +323,34 @@ The repository contains deployment support for more than one environment. One do
 ```mermaid
 flowchart TB
     subgraph Client["Frontend Layer"]
-        A["React 18 + Vite<br/>dashboard, assessment form, SHAP and trend views"]
+        A["React frontend<br/>dashboard, assessment form, SHAP and trend views"]
     end
 
     subgraph API["Backend API Layer"]
-        B["Go 1.25 + Gin<br/>JWT, RBAC, validation, audit, caching orchestration"]
+        B["Backend API<br/>authentication, RBAC, validation, audit, caching orchestration"]
     end
 
     subgraph ML["ML Inference Layer"]
-        C["Python 3.12 + Flask<br/>Logistic Regression, K-Means, SHAP, drift utilities"]
+        C["ML inference service<br/>Logistic Regression, K-Means, SHAP, drift utilities"]
     end
 
     subgraph Data["Persistence and Optional Cache Layer"]
-        D["PostgreSQL 16-compatible persistence<br/>users, assessments, model metadata, audit records"]
-        E["Redis-compatible cache support<br/>trend, analytics, and cluster-distribution responses when configured"]
+        D["PostgreSQL persistence<br/>users, assessments, model metadata, audit records"]
+        E["Optional cache layer<br/>trend, analytics, and cluster-distribution responses when configured"]
     end
 
     A -->|"authenticated HTTPS requests"| B
     B -->|"prediction and explanation requests"| C
     C -->|"risk, subtype, explanation, lineage metadata"| B
-    B -->|"SQLC-generated queries"| D
-    B -->|"optional TTL cache reads and targeted invalidation"| E
+    B -->|"database operations"| D
+    B -->|"optional cache reads and invalidation"| E
 ```
 
-In the externally managed deployment variant, browser requests first load the frontend from Vercel. API calls are then sent over HTTPS to the VPS reverse proxy, where Caddy terminates TLS and forwards `/api/v1` traffic to the Go backend container. The backend communicates with the ML container over the private Docker network and with the managed PostgreSQL database over an external database connection. In the Docker Compose production overlay, Nginx provides TLS reverse-proxy routing and the frontend, backend, ML service, and PostgreSQL run as internal containerized services. In both variants, the implementation is organized so that public traffic enters through the reverse proxy rather than through direct public backend or ML service ports.
+In both supported deployment variants, public traffic enters through a reverse proxy rather than direct backend, ML, or database ports. The backend communicates with the ML layer through an internal service boundary and with the database through a controlled persistence connection. This organization supports service isolation and helps keep inference and data-storage components out of the public browser-facing surface.
 
-The Go backend and Python ML service were decoupled to isolate ML inference and explanation tasks from routine API operations. The backend validates assessment input, forwards the model-relevant payload to the ML service, receives prediction and lineage metadata, persists the assessment, invalidates affected cache keys when caching is configured, and returns the result to the frontend. If `MODEL_URL` is unset during local development, the router can select a mock predictor. In production-oriented flows, prediction failures are propagated as structured errors rather than hidden behind undocumented fallback behavior.
+The backend and ML service were decoupled so routine API operations remain separate from model inference and explanation generation. During assessment creation, the backend authenticates the user, validates submitted biomarkers, sends the model-relevant payload to the ML service, receives prediction and lineage metadata, stores the assessment, invalidates affected cached data when applicable, and returns the result to the frontend. Prediction failures are returned as structured errors rather than silently hidden by fallback behavior.
 
-**Figure 3.4. Assessment Creation and Explanation Sequence**
+**Figure 3.4. Assessment Prediction and Optional Explanation Sequence**
 
 ```mermaid
 sequenceDiagram
@@ -361,76 +361,45 @@ sequenceDiagram
     participant DB as PostgreSQL
     participant Cache as Optional cache
 
-    User->>FE: Completes assessment form
-    FE->>API: POST /api/v1/users/me/assessments
-    API->>API: Authenticate JWT and validate biomarkers
-    API->>ML: Send model-relevant assessment payload
+    User->>FE: Submits assessment form
+    FE->>API: Submit assessment request
+    API->>API: Authenticate user and validate input
+    API->>ML: Request risk prediction
     ML-->>API: Return risk score, status, subtype, and lineage metadata
-    API->>DB: Persist assessment and prediction metadata
-    API->>Cache: Invalidate affected trend and analytics keys when configured
-    API-->>FE: Return prediction response
-    FE->>API: POST /api/v1/ml/predict/explain when explanation is requested
-    API->>ML: Proxy SHAP explanation request
-    ML-->>API: Return feature-attribution output
-    API-->>FE: Return explanation for display
+    API->>DB: Save assessment and prediction metadata
+    API->>Cache: Invalidate user assessment and trend caches
+    API-->>FE: Return created assessment with prediction
+    FE-->>User: Display risk result
+
+    opt SHAP explanation requested and available
+        FE->>API: Request SHAP explanation
+        API->>ML: Proxy explanation request
+        ML-->>API: Return SHAP values or fallback status
+        API-->>FE: Return explanation payload
+        FE-->>User: Display explanation or unavailable state
+    end
 ```
 
-The implemented API surface supports authenticated user workflows, assessment management, exports, privacy-oriented self-service operations, model explanations, administrative user management, audit review, model traceability, and analytics. Core user routes include profile retrieval and update, onboarding, consent settings, trend retrieval, account deletion, assessment creation, assessment retrieval, assessment update, and assessment deletion under `/api/v1/users/me`. Additional self-service privacy routes support data export, deletion requests, consent history, consent withdrawal, and processing-information retrieval. Administrative routes support dashboard summaries, audit-log review, user-management actions, model traceability, drift-status review, and authentication-event streaming. When `MODEL_URL` is configured, the ML proxy exposes health, information-gain, clustering, visualization, and explainability routes, with detailed SHAP explanation requested through `/api/v1/ml/predict/explain`. Table 3.10 lists the selected endpoint groups, while Figure 3.5 summarizes their access-control boundaries.
+Figure 3.4 separates the required assessment-creation path from the optional explanation path. The assessment is first validated, predicted, persisted, and returned to the frontend. SHAP explanation is requested separately through the backend ML proxy only when the interface needs feature-attribution output.
 
-**Table 3.10. Selected API Surface**
+The API surface was organized around access-control boundaries rather than a single public route tree. Public endpoints were limited to authentication and health or observability functions. Authenticated users accessed profile, assessment, privacy, trends, analytics, and report-export workflows. Doctor and administrator roles provided controlled access to cohort insights, audit review, user management, model traceability, and drift-related monitoring. Table 3.10 summarizes these access levels without listing every endpoint.
 
-| Route Group | Selected Routes | Purpose |
+**Table 3.10. API Access-Control Summary**
+
+| Access Level | Main Functions | Example Route Group |
 |---|---|---|
-| Authentication | `/api/v1/auth/{login,register,refresh,logout}` | User authentication and token lifecycle |
-| Health and observability | `/api/v1/{healthz,livez,metrics}`, `/swagger/*any` | Health checks, metrics, and API documentation |
-| User profile | `/api/v1/users/me/{profile,onboarding,consent,trends,account}` | User profile, consent, trends, and account deletion |
-| Privacy self-service | `/api/v1/users/me/privacy/*` | Data export, deletion, consent, and processing information |
-| Assessments | `/api/v1/users/me/assessments`, `/api/v1/users/me/assessments/:assessmentID` | Create, list, retrieve, update, and delete assessments |
-| Export | `/api/v1/users/me/export/pdf` | Generate user health report |
-| Insights and analytics | `/api/v1/insights/*`, `/api/v1/analytics/summary` | Cohort, biomarker, subtype, and summary analytics |
-| ML proxy, when `MODEL_URL` is configured | `/api/v1/ml/*` | ML health, insights, visualizations, and SHAP explanation |
-| Admin dashboard and audit | `/api/v1/admin/{dashboard,audit}`, `/api/v1/admin/events/stream` | Admin summaries, audit logs, and auth-event monitoring |
-| Admin users | `/api/v1/admin/users`, `/api/v1/admin/users/:id`, `/api/v1/admin/users/:id/activate` | Administrative user management |
-| Admin models | `/api/v1/admin/models`, `/api/v1/admin/models/{active,drift,drift/alerts,sync}` | Model traceability and drift-related administration |
+| Public | Authentication, health checks, and API documentation | `/auth`, `/healthz`, `/swagger` |
+| Authenticated user | Profile, assessments, privacy tools, trends, and PDF export | `/users/me/*` |
+| User analytics | Personal summaries and biomarker trends | `/analytics`, `/insights` |
+| ML proxy | Model insights and SHAP explanation requests | `/ml/*` |
+| Doctor or admin | Cohort insights and validation workflows | `/insights/*` |
+| Admin only | User management, audit logs, model traceability, and drift status | `/admin/*` |
 
-**Figure 3.5. API Surface and Access-Control Boundaries**
-
-```mermaid
-flowchart TB
-    Browser["React frontend"] --> Gateway["Go API gateway<br/>/api/v1"]
-
-    Gateway --> Public["Public endpoints"]
-    Public --> Health["Health, metrics, Swagger, and non-production debug routes"]
-    Public --> Auth["Authentication<br/>login, register, refresh, logout"]
-    Public --> EventStream["Auth-event stream<br/>token-query validation"]
-
-    Gateway --> JWT["JWT-protected endpoints"]
-    JWT --> UserSelf["User self-service<br/>/users/me"]
-    UserSelf --> Profile["Profile, onboarding, consent, trends, account deletion"]
-    UserSelf --> Assessments["Assessment CRUD"]
-    UserSelf --> Privacy["Privacy export, deletion, consent history, withdrawal, processing info"]
-    UserSelf --> Report["PDF health report export"]
-
-    JWT --> Analytics["Personal analytics summary"]
-
-    JWT --> DoctorAdmin["Doctor or admin RBAC"]
-    DoctorAdmin --> Insights["Insights<br/>cluster distribution, biomarker trends, cohort analysis"]
-
-    JWT --> MLProxy["ML proxy<br/>enabled when MODEL_URL is configured"]
-    MLProxy --> MLService["Internal Python ML service<br/>health, metrics, information gain, clusters, visualizations, SHAP explanation"]
-
-    JWT --> AdminOnly["Admin RBAC"]
-    AdminOnly --> AdminDashboard["Dashboard summaries"]
-    AdminOnly --> AdminAudit["Audit-log review"]
-    AdminOnly --> AdminUsers["User list, create, update, deactivate, reactivate"]
-    AdminOnly --> AdminModels["Model runs, active model, drift status, alerts, sync"]
-```
-
-The database schema links assessments directly to authenticated users. This design supports user-owned health records and allows cascade behavior when user records are removed. SQLC-generated queries provide type-safe data access and reduce the risk of runtime query mismatch. Prediction metadata stored with assessments includes risk score, risk label, predicted status, model version, dataset hash, and subtype fields where applicable. The deployed screening model is identified as `binary_v2_no_bp`, and lineage metadata is surfaced through the active-model and drift-status administration routes.
+The database schema links assessments directly to authenticated users, supporting user-owned health records and controlled deletion behavior. Stored prediction metadata includes risk score, risk label, predicted status, model lineage, dataset lineage, and subtype context where available. This design supports traceability between a displayed result and the model artifact used to generate it without requiring detailed explanation artifacts to be persisted with every assessment.
 
 ### 3.13 Security, Authorization, and Quality Evaluation
 
-DIANA implements JWT-based authentication, role-based access control, request-size limiting, rate limiting, security headers, CORS filtering, and password hashing with bcrypt (Jones et al., 2015; Provos & Mazieres, 1999). Three main roles are recognized: user, doctor, and admin. Users can create assessments, view their own predictions, export reports, and review personal trends. Doctors are treated as a testing and validation role with model-locked assessment creation using `binary_v2_no_bp`. Administrators can access system administration functions such as user management, audit logs, model traceability, and dashboard summaries.
+DIANA implements JWT-based authentication, role-based access control, request-size limiting, rate limiting, security headers, CORS filtering, and password hashing with bcrypt (Jones et al., 2015; Provos & Mazieres, 1999). Three main roles are recognized: user, doctor, and admin. Users can create assessments, view their own predictions, export reports, and review personal trends. Doctors are treated as a testing and validation role with model-locked assessment creation. Administrators can access system administration functions such as user management, audit logs, model traceability, and dashboard summaries.
 
 **Table 3.11. Security Controls**
 
@@ -441,9 +410,9 @@ DIANA implements JWT-based authentication, role-based access control, request-si
 | RBAC | Middleware enforcement | Apply least-privilege access |
 | Rate limiting | Go native token bucket | Reduce brute-force and denial-of-service risk |
 | CORS | Whitelist enforcement | Restrict cross-origin access |
-| TLS | Caddy or Nginx reverse-proxy TLS configuration, depending on deployment path | Protect transport confidentiality |
+| TLS | Reverse-proxy TLS configuration | Protect transport confidentiality |
 | Public ingress control | Reverse proxy handles public HTTP/HTTPS ingress | Reduce direct service exposure |
-| Internal ML access | Private container-network communication | Prevent direct public ML invocation |
+| Internal ML access | Internal service-to-service communication | Prevent direct public ML invocation |
 | Secret management | Runtime environment variables or locked environment files | Reduce accidental credential disclosure |
 
 Software quality evaluation followed ISO/IEC 25010-informed characteristics (International Organization for Standardization, 2011). Functional suitability was evaluated through endpoint tests, model-serving tests, and frontend unit tests. Performance efficiency was evaluated through inference benchmarks and planned load-testing methodology. Security was evaluated through authentication, RBAC, rate-limiting, and middleware tests. Maintainability was supported through modular architecture, generated database access, and separated frontend/backend/ML services. Formal usability, accessibility, expert face-validity, and reliability results require separate UAT and expert-review execution.
@@ -520,8 +489,6 @@ Medically, this means that the deployed threshold policy prioritized early ident
 **Figure 4.1. ROC Curve for the Logistic Regression Screening Model**
 
 ![ROC curve for the Logistic Regression screening model](../../../models/binary_v2_no_bp/visualizations/roc_curve.png)
-
-Source file: `models/binary_v2_no_bp/visualizations/roc_curve.png`.
 
 ### 4.2 Feature Relevance and Feature-Selection Results
 
@@ -619,8 +586,6 @@ The Ahlqvist-inspired interpretation should therefore be read as subtype-context
 
 ![Weighted K-Means centroid heatmap](../../../models/binary_v2_no_bp/visualizations/cluster_heatmap.png)
 
-Source files: `models/binary_v2_no_bp/visualizations/cluster_distribution.png` and `models/binary_v2_no_bp/visualizations/cluster_heatmap.png`.
-
 ### 4.6 Preprocessing and Leakage Validation Results
 
 Label-consistency checking showed 94.1 percent agreement between DIQ010-derived labels and HbA1c-threshold labels, corresponding to 1,295 of 1,376 records. The remaining 5.9 percent reflected discordance between self-report and a single biochemical measurement. Outlier flagging identified 35 of 1,376 records, or 2.5 percent, with at least one clinical plausibility flag; these records were retained rather than deleted.
@@ -652,7 +617,7 @@ The remaining technical-readiness gaps therefore concern environment-dependent R
 
 ### 4.8 UI Workflow Integration
 
-The implemented DIANA workflow begins with user authentication and proceeds to dashboard review, biomarker data entry, prediction generation, result interpretation, trend visualization, and report export. The dashboard presents recent assessments and risk summaries. The default thesis workflow uses the locked `binary_v2_no_bp` model and collects age, height, weight-derived BMI, lipid biomarkers, optional waist circumference, lifestyle variables, and notes. Conditional fields for alternate model variants exist in the codebase, but they are not part of the default locked workflow.
+The implemented DIANA workflow begins with user authentication and proceeds to dashboard review, biomarker data entry, prediction generation, result interpretation, trend visualization, and report export. The dashboard presents recent assessments and risk summaries. The default thesis workflow uses the locked screening model and collects age, height, weight-derived BMI, lipid biomarkers, optional waist circumference, lifestyle variables, and notes. Alternate model variants are outside the default evaluation workflow.
 
 After form submission, the backend validates the request, sends the relevant assessment payload to the ML service, receives prediction and lineage metadata, persists the assessment, invalidates affected cache keys, and returns the result to the frontend. The result display presents risk probability, risk category, subtype context when available, model version, dataset lineage, biomarker snapshot, clinical guardrails, and next-step guidance. SHAP explainability is supported through a separate frontend component and backend ML proxy route when explanation outputs are available; the user-facing result modal screenshot in this section does not display fabricated SHAP values.
 
@@ -662,25 +627,21 @@ The result interface presents outputs in a layered hierarchy. The first layer sh
 
 ![DIANA main dashboard interface](screenshots/figure-4-3-main-dashboard.png)
 
-Source file: `docs/07-research/thesis-drafts/screenshots/figure-4-3-main-dashboard.png`.
-
 **Figure 4.4. Assessment Form With Real-Time Validation**
 
 ![DIANA assessment form with BMI calculation and biomarker inputs](screenshots/figure-4-4-assessment-form-validation.png)
-
-Source file: `docs/07-research/thesis-drafts/screenshots/figure-4-4-assessment-form-validation.png`.
 
 **Figure 4.5. Assessment Result Modal With Clinical Interpretation**
 
 ![DIANA assessment-result modal](screenshots/figure-4-5-ml-result-modal.png)
 
-Source file: `docs/07-research/thesis-drafts/screenshots/figure-4-5-ml-result-modal.png`. The screenshot was captured from the running application using a completed assessment. It shows the current result modal and does not include synthetic SHAP values.
+The screenshot was captured from the running application using a completed assessment. It shows the current result modal and does not include synthetic SHAP values.
 
 **Figure 4.6. Personal Trends Visualization**
 
 ![DIANA personal trends visualization](screenshots/figure-4-6-personal-trends.png)
 
-Source file: `docs/07-research/thesis-drafts/screenshots/figure-4-6-personal-trends.png`. The screenshot shows the current trends view after assessment creation; multi-point trend lines require additional historical assessments.
+The screenshot shows the current trends view after assessment creation; multi-point trend lines require additional historical assessments.
 
 This workflow demonstrates that the model was not evaluated only as an isolated algorithm. It was integrated into a functioning screening-support application with authentication, persistence, visualization, explainability, trends, and report-generation capabilities.
 
@@ -692,19 +653,19 @@ Pure model inference benchmarks indicate that Logistic Regression averages appro
 
 Production performance claims should therefore remain qualified. Concurrent load testing with authenticated users, database writes, cache invalidation, ML requests, and frontend rendering has not yet been completed. The final manuscript should avoid claiming production-scale readiness until load-test evidence is collected.
 
-As part of the final codebase-truth pass, deployment-readiness evidence was checked against the repository's deployment artifacts rather than treated as a single live-infrastructure certification. Sensitive operational details such as server addresses, usernames, private file paths, and connection strings are excluded from the manuscript.
+Deployment readiness was assessed at the configuration level rather than as a full production certification. The review checked whether the system design supports reverse-proxy ingress, backend health checks, service isolation, protected database exposure, and runtime secret injection. Sensitive operational details such as server addresses, usernames, private paths, and connection strings were excluded from the manuscript.
 
-**Repository Deployment-Readiness Summary**
+**Configuration-Level Deployment Readiness Summary**
 
-| Verification Item | Repository Evidence | Status |
+| Verification Item | Configuration Evidence | Status |
 |---|---|---|
 | Public ingress | Reverse-proxy ingress is defined for HTTP/HTTPS | Evidence present |
-| Backend routing | `/api/v1/healthz` is registered and used by health checks | Evidence present |
-| ML isolation | ML runs on the container network rather than as a public browser-facing service | Evidence present |
+| Backend routing | Health-check routing is registered and used by deployment checks | Evidence present |
+| ML isolation | ML service is isolated from browser-facing traffic | Evidence present |
 | Database exposure | Production configuration avoids public PostgreSQL application exposure | Evidence present |
 | Secret handling | Runtime configuration uses environment variables for sensitive values | Evidence present |
 
-The repository-level review confirms that deployment artifacts exist for reverse-proxy routing, health checks, service isolation, and runtime secret injection. It does not replace a fresh production load test or an infrastructure security audit against the currently running host.
+The configuration review supports deployment-readiness claims at the architectural level. It does not replace production load testing or an infrastructure security audit.
 
 ### 4.10 User Acceptance Testing and Expert Feedback
 
