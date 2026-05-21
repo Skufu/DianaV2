@@ -134,10 +134,10 @@ def assign_ahlqvist_labels(
     is extremely difficult without HOMA2. Therefore, this is framed as an "Ahlqvist-inspired" 
     pragmatic adaptation.
 
-    Assignment strategy (per Slieker et al. 2021 validation):
+    DIANA assignment strategy:
     1. SIRD (Severe Insulin-Resistant): Highest LAP score
        LAP = (WC - 58) * TG — validated insulin resistance proxy per
-       Wang et al. (2024) BMC Endocrine Disorders.
+       Wang et al. (2024) Journal of Diabetes Research.
     2. SIDD → Rebranded as "Atherogenic/Lipid-Driven" phenotype:
        Highest LDL cholesterol among remaining (atherogenic dyslipidemia marker).
        This identifies the lipid-driven diabetes subtype without requiring
@@ -152,7 +152,7 @@ def assign_ahlqvist_labels(
     # 1. Identify SIRD: Highest LAP score (validated insulin resistance proxy)
     # LAP = (WC - 58) * TG for women — validated in 2024 NHANES study
     # Reference: Wang et al. (2024) "Lipid Accumulation Product as a Predictor of
-    # Prediabetes and Diabetes: Insights From NHANES Data" BMC Endocrine Disorders
+    # Prediabetes and Diabetes: Insights From NHANES Data" Journal of Diabetes Research
     ir_scores: dict[int, float] = {}
     for cid in available_clusters:
         c = centers_df.iloc[cid]
