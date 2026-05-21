@@ -30,8 +30,6 @@ services:
       - /etc/nginx/ssl:/etc/nginx/ssl:ro
       # Production nginx configuration with TLS
       - ./frontend/nginx-ssl.conf:/etc/nginx/conf.d/default.conf:ro
-      # Static files from frontend (optional - can proxy to frontend container)
-      - frontend_static:/usr/share/nginx/html:ro
     depends_on:
       - backend
       - ml
@@ -106,8 +104,9 @@ services:
     ports: !reset []
     expose:
       - "5000"
-    volumes:
-      - ./models:/app/models:ro
+    # Use model artifacts baked into the ML image during CD. Mounting the host
+    # models directory in production can accidentally shadow the promoted image.
+    volumes: !override
       - diana_logs:/var/log/diana
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
@@ -132,9 +131,6 @@ services:
     ports: !reset []
     expose:
       - "80"
-    volumes:
-      # Share static files with nginx proxy
-      - frontend_static:/usr/share/nginx/html
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80"]
@@ -185,8 +181,6 @@ services:
 # Named volumes for data persistence
 volumes:
   postgres_data:
-    driver: local
-  frontend_static:
     driver: local
   diana_logs:
     driver: local

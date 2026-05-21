@@ -12,7 +12,7 @@
   - **frontend** (React/Vite via Nginx, port 80)
   - **postgres** (PostgreSQL 16)
 - Network: Docker bridge network (`172.28.0.0/16`), internal-only ports
-- Deployed via GitHub Actions CD: tag push (v*) → build Docker images → push to Docker Hub → SSH into VPS → `docker-compose up -d --no-build`
+- Deployed via GitHub Actions CD: tag push (v*) → build Docker images → push to GHCR → SSH into VPS → `docker compose up -d --no-build`
 
 **Local Dev (Mac)**
 - Same codebase, but runs natively (not in Docker for dev):
@@ -102,7 +102,7 @@ There is NO in-app log viewer for system/application logs.
 **Should we even sync?** Or treat local as pure dev/sandbox and VPS as production with its own data lifecycle?
 
 **If yes (sync)**: What's the right approach? Options considered:
-- GitHub as the single source of truth, VPS pulls from Docker Hub on deploy
+- GitHub as the single source of truth, VPS pulls from GHCR on deploy
 - Database: is there value in syncing prod data down to local for debugging?
 - ML models: should the VPS serve models trained on the VPS, or should models be trained locally and pushed?
 - Feature flags / env-specific config: how to keep these in sync without drift?
