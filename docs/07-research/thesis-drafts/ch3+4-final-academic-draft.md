@@ -72,7 +72,7 @@ The primary data locale for model development was the NHANES public data reposit
 | 2017-2018 | `_J` | Standard 2-year release | Pre-pandemic temporal validation group |
 | 2021-2023 | `_L` | August 2021-August 2023 post-pandemic release | Most recent available release after pandemic suspension |
 
-For planned user acceptance testing, the target recruitment locale consists of online communities of Filipino women discussing perimenopause and menopause-related health concerns. The source protocol identifies the "Usapang Perimenopause at Menopause" Facebook interest group as the intended recruitment setting. Formal recruitment should proceed only after permission from group administrators, informed consent, privacy safeguards, and the final testing protocol are completed.
+For planned user acceptance testing, the target recruitment locale consists of online communities of Filipino women discussing perimenopause and menopause-related health concerns. The source protocol identifies the "Usapang Perimenopause at Menopause" Facebook interest group as the intended recruitment setting. Formal recruitment will proceed only after permission from group administrators, informed consent, privacy safeguards, and the final testing protocol are completed.
 
 ### 3.3 Population of the Study
 
@@ -152,7 +152,7 @@ NHANES records contain missing values because of non-response, subsample designs
 
 The final eligibility rule required complete HbA1c because HbA1c is used in reference-label construction. It also required fasting-laboratory availability, operationalized by the presence of fasting blood sugar in the NHANES fasting subsample, because the active DIANA model depends on measured fasting-subsample lipid predictors such as triglycerides and LDL cholesterol. FBS itself was not used as a model predictor and was not required as a second diagnostic label criterion; it functioned as the practical fasting-lab cohort gate. This choice favored a smaller but cleaner lipid-panel cohort over a larger HbA1c-only cohort with extensive imputation of active lipid predictors.
 
-At inference time, missing waist circumference is handled by a separate serving-layer guardrail. During face-validity review, median imputation was found to be problematic for low-BMI users because a training-cohort median waist value of approximately 97 cm could create an implausible visceral-adiposity signal. When waist circumference is unavailable but BMI is present, the ML service estimates waist circumference as BMI multiplied by 3.33. This rule is a pragmatic usability safeguard intended to reduce implausible individual-level substitution; it is not a validated clinical estimator and should be evaluated further through sensitivity analysis.
+At inference time, missing waist circumference is handled by a separate serving-layer guardrail. During face-validity review, median imputation was found to be problematic for low-BMI users because a training-cohort median waist value of approximately 97 cm could create an implausible visceral-adiposity signal. When waist circumference is unavailable but BMI is present, the ML service estimates waist circumference as BMI multiplied by 3.33. This rule is a pragmatic usability safeguard intended to reduce implausible individual-level substitution; it is not a validated clinical estimator and requires further sensitivity analysis.
 
 Outlier handling used clinical plausibility ranges rather than automatic row deletion. Values outside plausible clinical bounds were flagged through a binary outlier indicator, but records were retained. This decision preserved sample size and avoided excluding genuinely extreme metabolic profiles that may be clinically meaningful. The number of flagged outlier records was documented after preprocessing.
 
@@ -257,7 +257,9 @@ where w_j is the feature-specific weight, z_j is the standardized patient value 
 | HDL cholesterol | 1.2 | Inverse lipid-risk marker |
 | Age | 1.0 | Baseline demographic variable |
 
-Cluster centroids were inverse-transformed from standardized space into raw clinical units before interpretation. The resulting labels were Ahlqvist-inspired proxy labels: SIRD-like, SIDD-like, MOD-like, and MARD-like. The term "Ahlqvist-inspired" is deliberate. The original adult-onset diabetes subgroup framework used variables that are not available in DIANA's accessible screening feature set, including GAD antibody status and HOMA2 estimates of beta-cell function and insulin resistance (Ahlqvist et al., 2018). DIANA also excludes HbA1c and fasting blood sugar from model inputs to avoid circular prediction. Therefore, the cluster labels describe phenotypic similarity to known metabolic patterns rather than validated biological subtype membership; this caution is also consistent with work comparing data-driven diabetes subgroups against simpler clinical-feature models (Dennis et al., 2019).
+Cluster centroids were inverse-transformed from standardized space into raw clinical units before interpretation. The resulting labels were Ahlqvist-inspired proxy labels: SIRD-like, SIDD-like, MOD-like, and MARD-like. Label assignment followed a deterministic centroid-ranking rule. First, the SIRD-like label was assigned to the centroid with the highest Lipid Accumulation Product (LAP)-style score, computed for this women-only cohort as `(waist circumference - 58) x triglycerides`. LAP was introduced as a waist-triglyceride index of lipid overaccumulation (Kahn, 2005) and has been associated with prediabetes and diabetes risk in NHANES-based work (Wang et al., 2024). In DIANA, LAP is not a classifier input and is not stored as a user feature; it is used only to rank inverse-transformed cluster centroids. Because it is used for within-dataset ranking, the triglyceride unit scale does not change which centroid has the highest LAP-style score.
+
+After the SIRD-like centroid was removed from consideration, the SIDD-like label was assigned to the remaining centroid with the highest LDL cholesterol. This is a lipid-driven proxy rather than true insulin-deficiency classification. The MOD-like label was then assigned to the remaining centroid with the highest BMI, and the final residual centroid was labeled MARD-like. The term "Ahlqvist-inspired" is deliberate. The original adult-onset diabetes subgroup framework used variables that are not available in DIANA's accessible screening feature set, including GAD antibody status and HOMA2 estimates of beta-cell function and insulin resistance (Ahlqvist et al., 2018). DIANA also excludes HbA1c and fasting blood sugar from model inputs to avoid circular prediction. Therefore, the cluster labels describe phenotypic similarity to known metabolic patterns rather than validated biological subtype membership; this caution is also consistent with work comparing data-driven diabetes subgroups against simpler clinical-feature models (Dennis et al., 2019).
 
 The SIDD-like label requires particular caution. True SIDD classification requires beta-cell function markers such as HOMA2-B or C-peptide, which were unavailable in the NHANES feature set used by DIANA. In this study, SIDD-like is therefore interpreted as an atherogenic or lipid-driven proxy label based primarily on elevated LDL patterns rather than as a true insulin-deficiency subtype diagnosis. The SAID category was not assigned because autoimmune markers were unavailable. These labels are heuristic descriptions, not validated biological subtype diagnoses, not treatment directives, and not replacements for clinical judgment.
 
@@ -423,7 +425,7 @@ Because DIANA was evaluated as a research prototype, its current navigation and 
 
 The planned user evaluation follows an ISO/IEC 25010-informed usability framework (International Organization for Standardization, 2011). The protocol evaluates appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence. Planned user participants will complete core tasks such as logging in, navigating the dashboard, submitting an assessment, and interpreting prediction results.
 
-The planned user cohort consists of approximately 30 menopausal or postmenopausal Filipino women recruited from the target online community, subject to approval and consent procedures. The planned clinical expert cohort consists of two licensed medical professionals, preferably one endocrinologist and one obstetrics-gynecology specialist, with experience in menopausal and metabolic health. Expert review will evaluate risk-output plausibility, SHAP explanation clarity, clinical workflow fit, and perceived utility. Because formal UAT and expert review have not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations must remain placeholders until empirical evidence is collected.
+The planned user cohort consists of approximately 30 menopausal or postmenopausal Filipino women recruited from the target online community, subject to approval and consent procedures. The planned clinical expert cohort consists of two licensed medical professionals, preferably one endocrinologist and one obstetrics-gynecology specialist, with experience in menopausal and metabolic health. Expert review will evaluate risk-output plausibility, SHAP explanation clarity, clinical workflow fit, and perceived utility. Because formal UAT and expert review have not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations are not reported as completed results.
 
 # Chapter 4: Results and Discussion
 
@@ -449,7 +451,7 @@ The reported confidence intervals were computed using 1,000 bootstrap resamples,
 | Negative predictive value | 0.672 |
 | F1 score | 0.710 |
 
-**Table 4.1.1. Confidence Interval Summary**
+**Table 4.1a. Confidence Interval Summary**
 
 | Metric | Point Estimate | 95% CI Lower | 95% CI Upper | Target |
 |---|---:|---:|---:|---|
@@ -472,17 +474,17 @@ The fold-level AUC range of **0.711-0.788** across the six held-out NHANES surve
 
 The AUC values in Tables 4.2 and 4.4 are mean fold AUC-ROC values averaged across the six held-out LOGO test releases. By contrast, Table 4.1 reports the pooled out-of-fold AUC-ROC computed from all held-out predictions combined, with bootstrap confidence intervals. This distinction explains why the headline pooled estimate is 0.7366 while the Logistic Regression mean fold AUC is 0.736.
 
-The sensitivity point estimate exceeded the pre-specified screening target of 0.70, and the lower bound of the 95 percent confidence interval was 0.717. This should be reported transparently as evidence that the refreshed model met the target under internal temporal validation, while still requiring external or prospective validation before clinical deployment claims.
+The sensitivity point estimate exceeded the pre-specified screening target of 0.70, and the lower bound of the 95 percent confidence interval was 0.717. This provides evidence that the refreshed model met the target under internal temporal validation, while still requiring external or prospective validation before clinical deployment claims.
 
-At the threshold-policy level, Youden's J was selected in 5 of 6 LOGO folds, while guardrail nearest-feasible arbitration was activated in 1 of 6 folds. This distribution indicates that the final threshold policy was not a simple default cutoff. It combined conventional discrimination-based selection with a safety mechanism for folds vulnerable to specificity collapse.
+At the threshold-policy level, Youden's J was selected in 5 of 6 LOGO folds, while guardrail arbitration was activated in 1 of 6 LOGO folds through nearest-feasible threshold selection. This distribution indicates that the final threshold policy was not a simple default cutoff. It combined conventional discrimination-based selection with a safety mechanism for folds vulnerable to specificity collapse.
 
-**Table 4.2.1. Threshold Mode Distribution**
+**Table 4.2a. Threshold Mode Distribution**
 
 | Threshold Mode | Occurrence (6 folds) | Interpretation |
 |---|---:|---|
-| Youden's J | 5/6 | Primary strategy balancing sensitivity and specificity |
-| Guardrail Nearest Feasible | 1/6 | Safety fallback selecting the nearest feasible threshold under temporal shift |
-| Guardrail Shift Floor | 0/6 | Hard minimum-threshold shift was not used by the selected Logistic Regression model |
+| Youden's J | 5/6 | Primary strategy for balanced sensitivity-specificity optimization |
+| Guardrail Nearest Feasible | 1/6 | Fallback strategy used to reduce specificity collapse under temporal shift |
+| Guardrail Shift Floor | 0/6 | Hard minimum-threshold shifting was not used by the selected Logistic Regression model |
 
 Medically, this means that the deployed threshold policy prioritized early identification without allowing the model to classify too many normal profiles as at risk in unstable folds. Youden's J was retained when the fold-level operating point produced an acceptable sensitivity-specificity balance. In the 2021-2023 fold, guardrail arbitration selected the nearest feasible threshold to limit specificity collapse under a high-sensitivity operating point. This adjustment changed the classification threshold, not the trained model coefficients.
 
@@ -565,7 +567,7 @@ Weighted K-Means clustering with K = 4 was evaluated on the at-risk subset of 73
 | K selected | 4 | Retained for Ahlqvist-inspired four-pattern interpretation |
 | K optimal by silhouette | 2 | Indicates that K = 4 sacrifices separation for interpretive granularity |
 
-The K = 4 solution was retained to preserve the Ahlqvist-inspired four-pattern interpretation. This decision prioritized clinically interpretable subtype context rather than maximizing internal clustering metrics alone. The modest silhouette score must be acknowledged as a limitation because it indicates overlapping cluster boundaries.
+The K = 4 solution was retained to preserve the Ahlqvist-inspired four-pattern interpretation. This decision prioritized clinically interpretable subtype context rather than maximizing internal clustering metrics alone. The silhouette-optimal K = 2 result should be interpreted as a coarser two-pattern partition, not as a replacement for the four-label subtype module. The modest silhouette score for K = 4 must be acknowledged as a limitation because it indicates overlapping cluster boundaries.
 
 **Table 4.7. At-Risk Cluster Distribution and Centroids**
 
@@ -576,7 +578,7 @@ The K = 4 solution was retained to preserve the Ahlqvist-inspired four-pattern i
 | MOD-like | 226 | 30.8% | 42.05 | 119.64 | 113.13 | 51.95 | 54.27 | 123.53 |
 | MARD-like | 232 | 31.6% | 28.25 | 97.78 | 102.55 | 62.40 | 55.42 | 94.98 |
 
-The cluster distribution demonstrates metabolic heterogeneity within the at-risk class. MARD-like was the largest cluster, followed by MOD-like, SIDD-like, and SIRD-like. The MOD-like centroid had a BMI of approximately 42.05, indicating severe obesity in this cohort rather than moderate obesity. The SIRD-like centroid was characterized by high triglycerides, low HDL cholesterol, and elevated waist circumference, while the SIDD-like centroid was distinguished by elevated LDL cholesterol. Because assignments are based on weighted distance to centroids, subtype outputs should be understood as geometric pattern assignments rather than rule-based clinical diagnoses.
+The cluster distribution demonstrates metabolic heterogeneity within the at-risk class. MARD-like was the largest cluster, followed by MOD-like, SIDD-like, and SIRD-like. The MOD-like centroid had a BMI of approximately 42.05, indicating severe obesity in this cohort rather than moderate obesity. The SIRD-like centroid was characterized by high triglycerides, low HDL cholesterol, and elevated waist circumference and had the highest LAP-style centroid score. The SIDD-like centroid was assigned by highest LDL cholesterol among the remaining centroids and should therefore be interpreted as a lipid-driven proxy rather than true insulin deficiency. Because assignments are based on weighted distance to centroids plus deterministic post hoc centroid labeling, subtype outputs should be understood as geometric pattern assignments rather than rule-based clinical diagnoses.
 
 The Ahlqvist-inspired interpretation should therefore be read as subtype-context support rather than as biological subtype validation. DIANA does not assign SAID because autoimmune markers are unavailable, and the SIDD-like group is interpreted as lipid-driven or atherogenic rather than as confirmed insulin-deficient diabetes. The cluster results support the presence of heterogeneous metabolic patterns among at-risk users, but they do not establish treatment categories.
 
@@ -598,20 +600,20 @@ This result supports the central methodological claim of the study. DIANA's disc
 
 Functional testing verified the implemented system across backend, ML service, and frontend layers. The backend test suite passed in the current verification run and covered configuration, caching behavior, API request handling, access-control checks, ML integration, service logic, PDF generation, and data persistence. Assessment tests verified critical clinical guardrails, including target age-boundary enforcement, missing waist-circumference handling for ML imputation, out-of-range HbA1c warning behavior, and successful assessment creation.
 
-The ML service test suite passed with 270 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, service access, authentication checks, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured coverage gates, with 71.26 percent line and statement coverage, 60.58 percent branch coverage, and 44.24 percent function coverage.
+The ML service test suite passed with 274 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, service access, authentication checks, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured coverage gates, with 71.26 percent line and statement coverage, 60.58 percent branch coverage, and 44.24 percent function coverage.
 
-**Table 4.8. Functional Test Summary**
+**Table 4.8. Functional Validation Summary**
 
-| Layer | Test Evidence | Current Status |
+| Validation Area | Evidence Reviewed | Status |
 |---|---|---|
-| Backend suite | Configuration, cache behavior, request handling, access control, ML integration, services, persistence | PASS |
-| Assessment guardrails | Age boundaries, missing waist handling, HbA1c warning propagation, successful assessment creation | PASS |
-| ML service suite | 270 tests covering prediction, leakage, clustering, SHAP, drift, clinical scenarios | PASS |
-| Frontend unit and contract coverage suite | 232 tests across service contracts, authentication flows, forms, UI components, and broad coverage checks | PASS |
-| Frontend coverage threshold | Gates: 70% statements/lines, 60% branches, 40% functions | PASS: 71.26% lines/statements, 60.58% branches, 44.24% functions |
+| Backend services | Authentication, access control, assessment creation, clinical guardrails, persistence, and PDF report generation | Passed |
+| Assessment guardrails | Age-boundary enforcement, missing waist handling, HbA1c warning propagation, and successful assessment creation | Passed |
+| ML service | 274 tests covering prediction, leakage prevention, clustering, SHAP, drift monitoring, threshold optimization, and clinical scenarios | Passed |
+| Frontend workflow | 232 unit and contract tests covering authentication, forms, result display, service contracts, and UI components | Passed |
+| Frontend coverage | Coverage met the configured project policy: 71.26% lines/statements, 60.58% branches, and 44.24% functions | Passed |
 | Cache integration tests | Require the external cache service to be available | Environment dependent |
 
-The function-coverage gate is lower than the statement and line gates because several interface modules contain many event-driven functions whose rendering paths are already exercised through broader component and contract tests. The 44.24 percent function result should therefore be reported as a passed coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
+The function-coverage gate is lower than the statement and line gates because several interface modules contain many event-driven functions whose rendering paths are already exercised through broader component and contract tests. The 44.24 percent function result is therefore reported as a passed coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
 
 The remaining technical-readiness gaps therefore concern environment-dependent cache integration evidence, formal UAT, expert review, accessibility audit, and production load testing rather than the frontend coverage gate.
 
@@ -651,7 +653,7 @@ The system architecture separates routine application operations from ML inferen
 
 Pure model inference benchmarks indicate that Logistic Regression averages approximately 0.62 ms per prediction in the benchmarked environment, while Random Forest averages approximately 13.09 ms and LightGBM averages approximately 0.25 ms. The available benchmark measurements also document approximate service interaction and explanation-related overhead of 205 ms in the measured environment. These measurements support interactive feasibility, but they do not replace production load testing.
 
-Production performance claims should therefore remain qualified. Concurrent load testing with authenticated users, database writes, cache refreshes, ML requests, and frontend rendering has not yet been completed. The final manuscript should avoid claiming production-scale readiness until load-test evidence is collected.
+Production performance claims therefore remain qualified. Concurrent load testing with authenticated users, database writes, cache refreshes, ML requests, and frontend rendering has not yet been completed; for this reason, production-scale readiness is not claimed.
 
 Deployment readiness was assessed at the configuration level rather than as a full production certification. The review checked whether the system design supports reverse-proxy ingress, backend health checks, service isolation, protected database exposure, and runtime secret management. Sensitive operational details such as server addresses, usernames, private paths, and connection strings were excluded from the manuscript.
 
@@ -667,59 +669,19 @@ Deployment readiness was assessed at the configuration level rather than as a fu
 
 The configuration review supports deployment-readiness claims at the architectural level. It does not replace production load testing or an infrastructure security audit.
 
-### 4.10 User Acceptance Testing and Expert Feedback
+### 4.10 Pending User Acceptance Testing and Expert Review
 
-The UAT protocol and expert review framework were defined but had not yet been executed at the time of manuscript preparation. The planned user evaluation follows ISO/IEC 25010 usability characteristics, including appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence (International Organization for Standardization, 2011).
+The UAT protocol and expert review framework were defined but had not yet been executed at the time of manuscript preparation. As a result, Chapter 4 does not report SUS scores, task-success rates, completion times, expert ratings, or expert quotations. These measures are part of the planned evaluation protocol described in Chapter 3 and will require formal participant recruitment, consent, and data collection before they can be interpreted as empirical findings.
 
-Planned user tasks include login and dashboard navigation, assessment submission, and interpretation of ML results and SHAP explanation. The planned System Usability Scale measure uses Brooke's 10-item instrument and interprets the greater-than-70 target using empirical SUS benchmarking literature (Brooke, 1996; Bangor et al., 2008). Planned expert review will evaluate risk-output plausibility, explanation clarity, workflow fit, and perceived utility. Since formal data collection has not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations should remain marked as pending rather than reported as completed findings.
-
-**Table 4.9. Planned UAT and Expert Review Metrics**
-
-| Metric | Target | Measurement Status |
-|---|---:|---|
-| System Usability Scale score | > 70 | [TBD after UAT data collection] |
-| Task 1 success rate: login/navigation | > 90% | [TBD after UAT data collection] |
-| Task 2 success rate: submit assessment | > 90% | [TBD after UAT data collection] |
-| Task 3 success rate: interpret results | > 85% | [TBD after UAT data collection] |
-| Average time to submit assessment | < 2 minutes | [TBD after UAT data collection] |
-| Clinical face-validity: risk-output plausibility | >= 4.0/5.0 | [TBD after expert review] |
-| Clinical face-validity: SHAP clarity | >= 4.0/5.0 | [TBD after expert review] |
-| Error rate | < 5% | [TBD after UAT data collection] |
-| User confidence score | >= 3.5/5.0 | [TBD after UAT data collection] |
-
-**Table 4.10. UAT Test Case Specifications**
-
-| Test ID | Test Case | Expected Result | Status |
-|---|---|---|---|
-| UAT-01 | User registration | Account created and user redirected to login | Protocol defined; not executed |
-| UAT-02 | User login | User session created and user redirected to dashboard | Protocol defined; not executed |
-| UAT-03 | Dashboard rendering | Risk summary, trend chart, and quick actions rendered | Protocol defined; not executed |
-| UAT-04 | Submit full assessment | Assessment created, risk result displayed, SHAP available when supported | Protocol defined; not executed |
-| UAT-05 | Submit minimal assessment | Assessment created with waist imputation and risk result displayed | Protocol defined; not executed |
-| UAT-06 | Submit below age range | Age-policy validation message displayed | Protocol defined; not executed |
-| UAT-07 | View historical trends | Biomarker trends and risk-score history displayed | Protocol defined; not executed |
-| UAT-08 | SHAP explanation interaction | Waterfall plot or clinician-friendly fallback displayed | Protocol defined; not executed |
-| UAT-09 | Profile update | Profile updated and confirmation shown | Protocol defined; not executed |
-| UAT-10 | Admin user management | User list displayed and status action applied | Protocol defined; not executed |
-| UAT-11 | Assessment export | PDF health report generated with expected content | Protocol defined; not executed |
-| UAT-12 | Rate-limit enforcement | Rate-limit message displayed after configured threshold | Protocol defined; not executed |
-
-Internal walkthroughs identified several areas for improvement, including visibility of medical-history fields, SHAP legend clarity, mobile assessment-form usability, and explanation of Ahlqvist-inspired proxy subtype labels. These findings reflect internal review rather than formal UAT results.
-
-**Table 4.11. Expert Feedback Summary Template**
-
-| Expert | Specialty | Clinical Experience | Risk Accuracy Rating | SHAP Clarity Rating | Workflow Integration | Overall Utility | Key Observations |
-|---|---|---:|---:|---:|---:|---:|---|
-| Expert A | [TBD] | [TBD years] | [TBD]/5.0 | [TBD]/5.0 | [TBD]/5.0 | [TBD]/5.0 | [QUOTE TBD after signed review] |
-| Expert B | [TBD] | [TBD years] | [TBD]/5.0 | [TBD]/5.0 | [TBD]/5.0 | [TBD]/5.0 | [QUOTE TBD after signed review] |
+Internal walkthroughs identified several areas for improvement, including visibility of medical-history fields, SHAP legend clarity, mobile assessment-form usability, and explanation of Ahlqvist-inspired proxy subtype labels. These observations are treated as internal review notes rather than formal UAT or expert-review results.
 
 ### 4.11 UI/UX Design and Accessibility Readiness
 
 The interface applies visual organization principles to support comprehension of clinical information. Related fields are grouped together, risk categories use consistent visual styling, and charts present longitudinal patterns through continuous visual trends. Risk status is communicated through both color and text labels to reduce dependence on color alone.
 
-The application includes accessibility-oriented features such as accessibility labels, keyboard-accessible controls, responsive layouts, visible status text, and device-aware rendering, aligned with WCAG 2.2 accessibility guidance where applicable (World Wide Web Consortium, 2023). Higher-capability devices receive full animations and richer chart behavior, while lower-capability devices receive reduced visual complexity. However, formal automated contrast testing and assistive-technology testing have not yet been completed. Therefore, this section should be framed as accessibility readiness rather than WCAG conformance certification.
+The application includes accessibility-oriented features such as accessibility labels, keyboard-accessible controls, responsive layouts, visible status text, and device-aware rendering, aligned with WCAG 2.2 accessibility guidance where applicable (World Wide Web Consortium, 2023). Higher-capability devices receive full animations and richer chart behavior, while lower-capability devices receive reduced visual complexity. However, formal automated contrast testing and assistive-technology testing have not yet been completed. Therefore, this section is framed as accessibility readiness rather than WCAG conformance certification.
 
-**Table 4.12. Accessibility and UI Readiness Items**
+**Table 4.9. Accessibility and UI Readiness Items**
 
 | Area | Current Evidence | Status |
 |---|---|---|
@@ -728,14 +690,14 @@ The application includes accessibility-oriented features such as accessibility l
 | Accessibility labels and status text | Alerts, dialogs, and navigation controls include accessibility-oriented labels | Implemented; formal audit pending |
 | Responsive layout | Responsive design rules support mobile, tablet, laptop, and desktop layouts | Implemented |
 | Device-aware rendering | Lower-capability devices receive reduced visual complexity | Implemented |
-| Contrast ratios | Automated contrast-test result not yet collected | [TBD after accessibility testing] |
-| Assistive-technology testing | Screen-reader and assistive workflow testing not yet completed | [TBD after accessibility testing] |
+| Contrast ratios | Automated contrast-test result not yet collected | Pending formal accessibility testing |
+| Assistive-technology testing | Screen-reader and assistive workflow testing not yet completed | Pending formal accessibility testing |
 
 ### 4.12 External Benchmark Comparison
 
 DIANA was compared with reconstructed screening baselines under the same NHANES cohort, binary outcome definition, and LOGO validation framework where sufficient variables were available. The FINDRISC-like upper-bound comparator achieved the highest AUC at 0.849, but this implementation used an elevated-glucose or HbA1c proxy for the history-of-high-blood-glucose component. This makes the FINDRISC-like result an optimistic, partially circular upper-bound comparator rather than a faithful non-circular validation.
 
-**Table 4.13. Internal Benchmark Reconstruction Results**
+**Table 4.10. Internal Benchmark Reconstruction Results**
 
 | Tool | AUC-ROC | Sensitivity | Specificity | Interpretation |
 |---|---:|---:|---:|---|
@@ -753,7 +715,7 @@ Several limitations constrain interpretation of the study. First, all model deve
 
 Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired labels as heuristic descriptions rather than validated biological subtypes. True biological subtype validation would require autoimmune markers, beta-cell function markers, insulin-resistance estimates, longitudinal outcomes, and independent clinical datasets. Fourth, deployment guardrails such as waist-circumference imputation and metabolic syndrome risk floors are engineered safeguards requiring ablation, calibration, and clinical review before being treated as validated clinical rules.
 
-Fifth, formal UAT, expert face-validity review, accessibility testing, and production load testing remain incomplete. Sixth, the interface navigation and browser-token handling reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. These sections should remain framed as protocol, readiness, or pending evidence until data collection is completed. For these reasons, DIANA should be presented as a screening-support prototype with promising internal validation, not as a clinically validated diagnostic system.
+Fifth, formal UAT, expert face-validity review, accessibility testing, and production load testing remain incomplete. Sixth, the interface navigation and browser-token handling reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. These sections are therefore framed as protocol, readiness, or pending evidence until data collection is completed. For these reasons, DIANA is presented as a screening-support prototype with promising internal validation, not as a clinically validated diagnostic system.
 
 ### 4.14 Chapter Synthesis
 
@@ -801,6 +763,8 @@ International Organization for Standardization. (2011). *ISO/IEC 25010:2011 Syst
 
 Jones, M., Bradley, J., & Sakimura, N. (2015). *JSON Web Token (JWT)* (RFC 7519). Internet Engineering Task Force. https://www.rfc-editor.org/rfc/rfc7519
 
+Kahn, H. S. (2005). The "lipid accumulation product" performs better than the body mass index for recognizing cardiovascular risk: A population-based comparison. *BMC Cardiovascular Disorders, 5*, 26. https://doi.org/10.1186/1471-2261-5-26
+
 Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., & Liu, T.-Y. (2017). LightGBM: A highly efficient gradient boosting decision tree. *Advances in Neural Information Processing Systems*, 30. https://papers.nips.cc/paper/6907-lightgbm-a-highly-efficient-gradient-boosting-decision-tree
 
 Lumley, T. (2010). *Complex Surveys: A Guide to Analysis Using R*. John Wiley & Sons.
@@ -822,6 +786,8 @@ Shreffler, J., & Huecker, M. R. (2023). Diagnostic testing accuracy: Sensitivity
 Vabalas, A., Gowen, E., Poliakoff, E., & Casson, A. J. (2019). Machine learning algorithm validation with a limited sample size. *PLOS ONE*, 14(11), e0224365. https://doi.org/10.1371/journal.pone.0224365
 
 Van Calster, B., McLernon, D. J., van Smeden, M., Wynants, L., Steyerberg, E. W., Bossuyt, P., Collins, G. S., Macaskill, P., Moons, K. G. M., & Vickers, A. J. (2019). Calibration: The Achilles heel of predictive analytics. *BMC Medicine*, 17, 230. https://doi.org/10.1186/s12916-019-1466-7
+
+Wang, Y., Wang, X., & Zeng, L. (2024). Lipid Accumulation Product as a Predictor of Prediabetes and Diabetes: Insights From NHANES Data (1999-2018). *Journal of Diabetes Research, 2024*, Article 2874122. https://doi.org/10.1155/2024/2874122
 
 World Health Organization. (2021). *Ethics and governance of artificial intelligence for health: WHO guidance*. https://www.who.int/publications/i/item/9789240029200
 
