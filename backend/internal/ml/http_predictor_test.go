@@ -404,20 +404,33 @@ func TestHTTPPredictor_Predict_Timeout(t *testing.T) {
 }
 
 func TestHTTPPredictor_Predict_MarshaledInput(t *testing.T) {
-	var receivedJSON []byte
+	receivedJSON := make(chan []byte, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedJSON, _ = io.ReadAll(r.Body)
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]any{
-			"risk_cluster": "MARD",
-			"risk_score":   30,
-			"cluster_capability": map[string]any{
-				"supported": true,
-			},
-			"output_capabilities": map[string]any{
-				"metabolic_subtype": true,
-			},
-		})
+		switch r.URL.Path {
+		case "/predict":
+			body, _ := io.ReadAll(r.Body)
+			select {
+			case receivedJSON <- body:
+			default:
+			}
+
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]any{
+				"risk_cluster": "MARD",
+				"risk_score":   30,
+				"cluster_capability": map[string]any{
+					"supported": true,
+				},
+				"output_capabilities": map[string]any{
+					"metabolic_subtype": true,
+				},
+			})
+		case "/monitoring/drift/check":
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{"has_drift": false})
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 	}))
 	defer server.Close()
 
@@ -447,12 +460,19 @@ func TestHTTPPredictor_Predict_MarshaledInput(t *testing.T) {
 		t.Errorf("Predict() score = %d, want 30", prediction.RiskScore)
 	}
 
-	if len(receivedJSON) == 0 {
-		t.Error("Expected request body to be sent")
+	var body []byte
+	select {
+	case body = <-receivedJSON:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for prediction request body")
+	}
+
+	if len(body) == 0 {
+		t.Fatal("Expected request body to be sent")
 	}
 
 	var decoded models.Assessment
-	if err := json.Unmarshal(receivedJSON, &decoded); err != nil {
+	if err := json.Unmarshal(body, &decoded); err != nil {
 		t.Errorf("Failed to unmarshal sent JSON: %v", err)
 	}
 	if decoded.BMI != input.BMI {
@@ -891,26 +911,42 @@ func TestHTTPPredictor_Predict_AtRiskCanonicalSubtypeAliasesRemainStable(t *test
 }
 
 func TestHTTPPredictor_Predict_RequestConstruction(t *testing.T) {
-	var receivedURL string
-	var receivedMethod string
-	var receivedContentType string
+	type capturedRequest struct {
+		url         string
+		method      string
+		contentType string
+	}
+	receivedRequest := make(chan capturedRequest, 1)
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedURL = r.URL.String()
-		receivedMethod = r.Method
-		receivedContentType = r.Header.Get("Content-Type")
+		switch r.URL.Path {
+		case "/predict":
+			select {
+			case receivedRequest <- capturedRequest{
+				url:         r.URL.String(),
+				method:      r.Method,
+				contentType: r.Header.Get("Content-Type"),
+			}:
+			default:
+			}
 
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]any{
-			"risk_cluster": "SIRD",
-			"risk_score":   65,
-			"cluster_capability": map[string]any{
-				"supported": true,
-			},
-			"output_capabilities": map[string]any{
-				"metabolic_subtype": true,
-			},
-		})
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(map[string]any{
+				"risk_cluster": "SIRD",
+				"risk_score":   65,
+				"cluster_capability": map[string]any{
+					"supported": true,
+				},
+				"output_capabilities": map[string]any{
+					"metabolic_subtype": true,
+				},
+			})
+		case "/monitoring/drift/check":
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{"has_drift": false})
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
 	}))
 	defer server.Close()
 
@@ -923,15 +959,22 @@ func TestHTTPPredictor_Predict_RequestConstruction(t *testing.T) {
 		t.Errorf("Predict() returned unexpected error: %v", err)
 	}
 
-	if receivedMethod != http.MethodPost {
-		t.Errorf("Expected method POST, got %s", receivedMethod)
+	var request capturedRequest
+	select {
+	case request = <-receivedRequest:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for prediction request")
 	}
-	if receivedContentType != "application/json" {
-		t.Errorf("Expected Content-Type application/json, got %s", receivedContentType)
+
+	if request.method != http.MethodPost {
+		t.Errorf("Expected method POST, got %s", request.method)
+	}
+	if request.contentType != "application/json" {
+		t.Errorf("Expected Content-Type application/json, got %s", request.contentType)
 	}
 	expectedURL := "/predict?model_type=v1.5.0"
-	if receivedURL != expectedURL {
-		t.Errorf("Expected URL with query param %s, got %s", expectedURL, receivedURL)
+	if request.url != expectedURL {
+		t.Errorf("Expected URL with query param %s, got %s", expectedURL, request.url)
 	}
 }
 
