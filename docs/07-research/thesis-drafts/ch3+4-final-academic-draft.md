@@ -337,7 +337,7 @@ In addition to model-performance evaluation, DIANA includes safety and traceabil
 
 DIANA was implemented as a layered web application with a frontend interface, backend API, ML inference service, and persistence layer. The separation of these layers allowed the user interface, authentication and validation logic, prediction workflow, and stored assessment records to be developed and evaluated independently. Optional caching was used for repeated read-heavy views such as trends and aggregate analytics when the runtime environment supported it.
 
-The deployment design follows a reverse-proxy pattern in which public browser traffic reaches the application through a secured gateway before backend services are invoked. The backend API, ML service, and database are separated so that prediction, persistence, authentication, and explanation tasks are not exposed as a single public service. This design supports either managed-service or containerized deployment while preserving the same logical system boundaries. Rate limiting is implemented separately through request-throttling controls.
+The deployment design follows a reverse-proxy pattern in which public browser traffic reaches the application through a secured gateway before application services are invoked. The backend API, ML service, and database are separated so that prediction, persistence, authentication, and explanation tasks are not exposed as a single process or direct service-port surface. This design supports either managed-service or containerized deployment while preserving the same logical system boundaries. Rate limiting is implemented separately through request-throttling controls.
 
 **Table 3.9. Technology Stack**
 
@@ -380,7 +380,7 @@ flowchart TB
     B -->|"optional cache reads and invalidation"| E
 ```
 
-In both supported deployment variants, public traffic enters through a reverse proxy rather than direct backend, ML, or database ports. The backend communicates with the ML layer through an internal service boundary and with the database through a controlled persistence connection. This organization supports service isolation and helps keep inference and data-storage components out of the public browser-facing surface.
+In both supported deployment variants, public traffic enters through a reverse proxy rather than direct backend, ML, or database ports. The default thesis workflow sends ML prediction and explanation traffic through the backend, which communicates with the ML layer through a service boundary and with the database through a controlled persistence connection. The Docker Nginx configuration also contains an optional `/ml/` reverse-proxy location for deployments configured to use it; therefore, the security claim is limited to direct service-port isolation and backend-mediated thesis workflow routing rather than a claim that every possible deployment exposes no public ML HTTP route.
 
 The backend and ML service were decoupled so routine API operations remain separate from model inference and explanation generation. During assessment creation, the backend authenticates the user, validates submitted biomarkers, sends the model-relevant payload to the ML service, receives prediction and lineage metadata, stores the assessment, refreshes affected cached data when applicable, and returns the result to the interface. Prediction failures are returned as structured errors rather than silently hidden by fallback behavior.
 
@@ -444,9 +444,9 @@ DIANA implements signed-token authentication, role-based access control, request
 | Role-based access control | Access-control enforcement | Apply least-privilege access |
 | Rate limiting | Token-bucket rate limiting | Reduce brute-force and denial-of-service risk |
 | Cross-origin filtering | Cross-origin request allow-list | Restrict cross-origin access |
-| TLS | Reverse-proxy TLS configuration | Protect transport confidentiality |
+| TLS | TLS-capable reverse-proxy configuration | Support transport confidentiality when valid certificates are configured |
 | Public ingress control | Reverse proxy handles public HTTP/HTTPS ingress | Reduce direct service exposure |
-| Internal ML access | Internal service-to-service communication | Prevent direct public ML invocation |
+| ML service exposure control | Backend-mediated thesis workflow and no external ML container port in the production overlay | Reduce direct ML service exposure; optional `/ml/` proxy deployments require API-key and CORS controls |
 | Secret management | Runtime secret configuration | Reduce accidental credential disclosure |
 
 Software quality evaluation followed ISO/IEC 25010-informed characteristics (International Organization for Standardization, 2011). Functional suitability was evaluated through API tests, model-serving tests, and frontend unit tests. Performance efficiency was evaluated through inference benchmarks and planned load-testing methodology. Security was evaluated through authentication, role-based access, rate-limiting, and request-handling tests. Maintainability was supported through modular architecture, structured database access, and separated frontend, backend, and ML services. Formal community usability, accessibility, and reliability results require separate UAT and operational testing. The completed doctor review is reported separately as qualitative expert face-validity feedback rather than as formal clinical validation.
@@ -763,7 +763,7 @@ This result supports the central methodological claim of the study. DIANA's disc
 
 Functional testing verified the implemented system across backend, ML service, and frontend layers. The backend test suite passed in the current verification run and covered configuration, caching behavior, API request handling, access-control checks, ML integration, service logic, PDF generation, and data persistence. Assessment tests verified critical clinical guardrails, including target age-boundary enforcement, missing waist-circumference handling for ML imputation, out-of-range HbA1c warning behavior, and successful assessment creation.
 
-The ML service test suite passed with 274 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, service access, authentication checks, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured coverage gates, with 71.26 percent line and statement coverage, 60.58 percent branch coverage, and 44.24 percent function coverage.
+The ML service test suite passed with 274 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, service access, authentication checks, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured coverage gates, with 71.26 percent line and statement coverage, 60.55 percent branch coverage, and 44.24 percent function coverage.
 
 **Table 4.8. Functional Validation Summary**
 
@@ -773,7 +773,7 @@ The ML service test suite passed with 274 tests. These tests covered clustering 
 | Assessment guardrails | Age-boundary enforcement, missing waist handling, HbA1c warning propagation, and successful assessment creation | Passed |
 | ML service | 274 tests covering prediction, leakage prevention, clustering, SHAP, drift monitoring, threshold optimization, and clinical scenarios | Passed |
 | Frontend workflow | 232 unit and contract tests covering authentication, forms, result display, service contracts, and UI components | Passed |
-| Frontend coverage | Coverage met the configured project policy: 71.26% lines/statements, 60.58% branches, and 44.24% functions | Passed |
+| Frontend coverage | Coverage met the configured project policy: 71.26% lines/statements, 60.55% branches, and 44.24% functions | Passed |
 | Cache integration tests | Require the external cache service to be available | Environment dependent |
 
 The function-coverage gate is lower than the statement and line gates because several interface modules contain many event-driven functions whose rendering paths are already exercised through broader component and contract tests. The 44.24 percent function result is therefore reported as a passed coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
@@ -787,6 +787,8 @@ The implemented DIANA workflow begins with user authentication and proceeds to d
 After form submission, the backend validates the request, sends the relevant assessment payload to the ML service, receives prediction and lineage metadata, stores the assessment, refreshes affected cached views when applicable, and returns the result to the interface. The result display presents risk probability, risk category, subtype context when available, model version, dataset lineage, biomarker snapshot, clinical guardrails, and next-step guidance. SHAP explainability is supported through a separate explanation workflow when outputs are available; the user-facing result modal screenshot in this section does not display fabricated SHAP values.
 
 The result interface presents outputs in a layered hierarchy. The first layer shows binary screening classification through risk score, risk category, and threshold context. The second layer shows metabolic subtype context only when subtype output is available. The third layer presents clinical guardrails and actionable follow-up text. Normal predictions receive neutral subtype wording so that disease-pattern labels are not assigned to users classified as normal.
+
+The interface screenshots in Figures 4.3 through 4.6 are local evidence captures documented in `docs/07-research/thesis-drafts/screenshots/README.md`. The manifest records the capture date, local frontend and backend endpoints, 1440 x 1000 PNG dimensions, source views, and SHA-256 hashes. They are used only as interface-evidence figures; no synthetic SHAP screenshot is included in the clean draft.
 
 **Figure 4.3. Main Dashboard Interface**
 
@@ -818,7 +820,7 @@ Pure model inference benchmarks indicate that Logistic Regression averages appro
 
 Production performance claims therefore remain qualified. Concurrent load testing with authenticated users, database writes, cache refreshes, ML requests, and frontend rendering has not yet been completed; for this reason, production-scale readiness is not claimed.
 
-Deployment readiness was assessed at the configuration level rather than as a full production certification. The review checked whether the system design supports reverse-proxy ingress, backend health checks, service isolation, protected database exposure, and runtime secret management. Sensitive operational details such as server addresses, usernames, private paths, and connection strings were excluded from the manuscript.
+Deployment readiness was assessed at the configuration level rather than as a full production certification. The review checked whether the system design supports reverse-proxy ingress, backend health checks, service-port isolation, protected database exposure, and runtime secret management. It did not verify a live host firewall, live TLS certificate chain, database TLS mode, production CORS values, or ML API-key enforcement on a deployed endpoint. Sensitive operational details such as server addresses, usernames, private paths, and connection strings were excluded from the manuscript.
 
 **Table 4.8a. Configuration-Level Deployment Readiness Summary**
 
@@ -826,11 +828,11 @@ Deployment readiness was assessed at the configuration level rather than as a fu
 |---|---|---|
 | Public ingress | Reverse-proxy ingress is defined for HTTP/HTTPS | Evidence present |
 | Backend health check | Health-check behavior is available for deployment monitoring | Evidence present |
-| ML isolation | ML service is isolated from browser-facing traffic | Evidence present |
+| ML exposure control | Production overlay removes external ML container ports; optional reverse-proxy ML routing must be protected when enabled | Evidence present with deployment-time qualification |
 | Database exposure | Production configuration avoids public PostgreSQL application exposure | Evidence present |
 | Secret handling | Sensitive values are supplied through runtime secret configuration | Evidence present |
 
-The configuration review supports deployment-readiness claims at the architectural level. It does not replace production load testing or an infrastructure security audit.
+The configuration review supports deployment-readiness claims at the architectural level. It does not replace production load testing, live endpoint testing, or an infrastructure security audit.
 
 ### 4.10 User Acceptance Testing Status and Doctor Expert Review
 
