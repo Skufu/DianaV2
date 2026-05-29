@@ -824,19 +824,21 @@ Pure model inference benchmarks indicate that Logistic Regression averages appro
 
 Production performance claims therefore remain qualified. Concurrent load testing with authenticated users, database writes, cache refreshes, ML requests, and frontend rendering has not yet been completed; for this reason, production-scale readiness is not claimed.
 
-Deployment readiness was assessed at the configuration level rather than as a full production certification. The review checked whether the system design supports reverse-proxy ingress, backend health checks, service-port isolation, protected database exposure, and runtime secret management. It did not verify a live host firewall, live TLS certificate chain, database TLS mode, production CORS values, or ML API-key enforcement on a deployed endpoint. Sensitive operational details such as server addresses, usernames, private paths, and connection strings were excluded from the manuscript.
+Deployment readiness was first assessed at the configuration level and then checked against the live deployment on 2026-05-30. The live external audit used the backend host `diana-v2.duckdns.org` and the configured frontend origin `https://diana-v2.vercel.app`. It verified effective public port exposure from the audit machine, HTTPS certificate behavior, CORS allow-list behavior, authenticated backend-to-ML proxy behavior, and operational health responses. Sensitive operational details such as usernames, private paths, tokens, and connection strings are intentionally excluded from the manuscript evidence.
 
-**Table 4.8a. Configuration-Level Deployment Readiness Summary**
+**Table 4.9. Live and Configuration-Level Deployment Readiness Summary**
 
-| Verification Item | Configuration Evidence | Status |
+| Verification Item | Evidence Reviewed | Status |
 |---|---|---|
-| Public ingress | Reverse-proxy ingress is defined for HTTP/HTTPS | Evidence present |
-| Backend health check | Health-check behavior is available for deployment monitoring | Evidence present |
-| ML exposure control | Production overlay removes external ML container ports; optional reverse-proxy ML routing must be protected when enabled | Evidence present with deployment-time qualification |
-| Database exposure | Production configuration avoids public PostgreSQL application exposure | Evidence present |
-| Secret handling | Sensitive values are supplied through runtime secret configuration | Evidence present |
+| Public ingress and host exposure | DNS resolved to `143.198.222.21`; ports 80 and 443 accepted connections, while 22, 8080, 5000, 5001, and 5432 timed out from the external audit machine | Live external exposure check passed |
+| TLS certificate and HTTPS behavior | HTTP returned a redirect to HTTPS; HTTPS presented a Let's Encrypt certificate for `diana-v2.duckdns.org` valid from 2026-05-09 to 2026-08-07, with certificate verification returning OK | Live TLS check passed |
+| Security headers | Live HTTPS responses included HSTS, content-type protection, frame protection, referrer policy, permissions policy, and content security policy headers | Live header check passed |
+| Production CORS behavior | Preflight from `https://diana-v2.vercel.app` returned 204 with the expected allow-origin and credential headers; lookalike or unrelated origins returned 403 | Live CORS check passed |
+| Backend and database health | Authenticated operations health returned healthy backend, database ping, and ML health statuses; public PostgreSQL port 5432 was not reachable externally | Live health check passed; database TLS mode requires operator-level confirmation |
+| ML exposure control | Public `/ml` and `/predict` paths returned 404; unauthenticated `/api/v1/ml/health` returned 401; authenticated `/api/v1/ml/insights/metrics` succeeded through the backend proxy without a browser-supplied ML API key | Live proxy-boundary check passed |
+| Runtime secret handling | Repository configuration injects database credentials, JWT secret, and ML API key through runtime environment variables rather than committed literals | Configuration evidence present |
 
-The configuration review supports deployment-readiness claims at the architectural level. It does not replace production load testing, live endpoint testing, or an infrastructure security audit.
+This audit upgrades the earlier configuration-only deployment review for public exposure, TLS, production CORS, and ML proxy behavior. It does not by itself prove the database session's runtime TLS mode because the live database connection string and session settings are not exposed through the public application; that item requires operator-level verification on the host or managed database console. The audit also does not replace production load testing.
 
 ### 4.10 User Acceptance Testing Status and Doctor Expert Review
 
@@ -844,7 +846,7 @@ The community UAT protocol was defined but had not yet been executed at the time
 
 The completed doctor expert review was conducted as a hands-on prototype evaluation. The physician reviewer used DIANA, inspected the assessment workflow, reviewed the displayed features and risk-output presentation, and discussed the basis for the subtype module. Because the review was documented qualitatively and the available evidence identifies the reviewer only as a licensed physician, the findings are treated as face-validity feedback rather than as a scored expert evaluation. Overall qualitative feedback was positive: the features were considered useful for a screening-support prototype, and no major objection was raised to the assessment workflow or risk-output presentation. The main clinical question concerned the weighted K-Means subtype module, specifically why particular features were assigned higher weights and how those weights were used during cluster assignment.
 
-**Table 4.8b. Doctor Expert-Review Summary**
+**Table 4.10. Doctor Expert-Review Summary**
 
 | Review Area | Expert Feedback | Manuscript Response |
 |---|---|---|
@@ -861,7 +863,7 @@ The interface applies visual organization principles to support comprehension of
 
 The application includes accessibility-oriented features such as accessibility labels, keyboard-accessible controls, responsive layouts, visible status text, and device-aware rendering, aligned with WCAG 2.2 accessibility guidance where applicable (World Wide Web Consortium, 2023). Higher-capability devices receive full animations and richer chart behavior, while lower-capability devices receive reduced visual complexity. However, formal automated contrast testing and assistive-technology testing have not yet been completed. Therefore, this section is framed as accessibility readiness rather than WCAG conformance certification.
 
-**Table 4.9. Accessibility and UI Readiness Items**
+**Table 4.11. Accessibility and UI Readiness Items**
 
 | Area | Current Evidence | Status |
 |---|---|---|
@@ -877,7 +879,7 @@ The application includes accessibility-oriented features such as accessibility l
 
 DIANA was compared with reconstructed screening baselines under the same NHANES cohort, binary outcome definition, and LOGO validation framework where sufficient variables were available. The FINDRISC-like upper-bound comparator achieved the highest AUC at 0.849, but this implementation used an elevated-glucose or HbA1c proxy for the history-of-high-blood-glucose component. This makes the FINDRISC-like result an optimistic, partially circular upper-bound comparator rather than a faithful non-circular validation.
 
-**Table 4.10. Internal Benchmark Reconstruction Results**
+**Table 4.12. Internal Benchmark Reconstruction Results**
 
 | Tool | AUC-ROC | Sensitivity | Specificity | Interpretation |
 |---|---:|---:|---:|---|
@@ -895,7 +897,7 @@ Several limitations constrain interpretation of the study. First, all model deve
 
 Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired labels as heuristic descriptions rather than validated biological subtypes. True biological subtype validation would require autoimmune markers, beta-cell function markers, insulin-resistance estimates, longitudinal outcomes, and independent clinical datasets. Fourth, deployment guardrails such as waist-circumference imputation and metabolic syndrome risk floors are engineered safeguards requiring ablation, calibration, and clinical review before being treated as validated clinical rules.
 
-Fifth, formal community UAT, accessibility testing, and production load testing remain incomplete. The completed doctor review provides initial qualitative expert face-validity support, but it did not collect formal scored ratings and does not replace external clinical validation. Sixth, the interface navigation and browser-token handling reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. For these reasons, DIANA is presented as a screening-support prototype with promising internal validation and initial expert feedback, not as a clinically validated diagnostic system.
+Fifth, formal community UAT, accessibility testing, and production load testing remain incomplete. The completed doctor review provides initial qualitative expert face-validity support, but it did not collect formal scored ratings and does not replace external clinical validation. Sixth, the live deployment audit verified public exposure, TLS, CORS, and ML proxy-boundary behavior from an external client, but database TLS mode still requires operator-level verification against the runtime database connection or database session settings. The interface navigation and browser-token handling also reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. For these reasons, DIANA is presented as a screening-support prototype with promising internal validation and initial expert feedback, not as a clinically validated diagnostic system.
 
 ### 4.14 Chapter Synthesis
 

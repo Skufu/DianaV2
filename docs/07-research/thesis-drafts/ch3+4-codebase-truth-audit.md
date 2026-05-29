@@ -22,6 +22,7 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 - ML proxy routes are described as conditional on `MODEL_URL`.
 - Chapter metrics match `models/binary_v2_no_bp/results`, including information gain, threshold arbitration, and model-comparison values.
 - UI screenshot provenance is documented in `screenshots/README.md` with capture date, local capture endpoints, 1440 x 1000 PNG dimensions, source views, and SHA-256 hashes.
+- Live deployment security evidence now exists for public port exposure, HTTPS redirect, TLS certificate identity, security headers, production CORS allow-list behavior, backend health, database ping, and backend-mediated ML proxy behavior. Runtime database TLS mode remains unproven without operator-level access to the active database connection or session settings.
 
 ## Verified Current Features
 
@@ -43,6 +44,7 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 | `cd frontend && npm run test:coverage` | PASS: 15 files, 232 tests; 71.26% lines/statements, 60.55% branches, 44.24% functions |
 | `shasum -a 256 docs/07-research/thesis-drafts/screenshots/*.png` | PASS: cited UI screenshots have recorded hashes in the screenshot manifest |
 | `rg -n "ports:|expose:|/ml/|ML_API_KEY|CORS_ORIGINS" docker-compose.prod.yml deployment/Caddyfile frontend/nginx-ssl.conf Ian_ML/service/server.py` | REVIEWED: direct container ports are reset in production compose; optional Nginx `/ml/` route is now qualified in manuscript wording |
+| Live deployment external audit against `diana-v2.duckdns.org` and `https://diana-v2.vercel.app` | PASS/PARTIAL: 80/443 open, 22/8080/5000/5001/5432 timed out externally, HTTPS certificate verified, CORS allow-list verified, authenticated operations health reported backend/database/ML healthy, and authenticated backend ML proxy succeeded |
 
 ## Still Pending Evidence
 
@@ -50,7 +52,7 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 - Clinical expert ratings and quotes.
 - Formal accessibility audit evidence.
 - Production load/performance test evidence.
-- Live deployment security evidence, including host firewall rules, live TLS certificate chain, database TLS mode, production CORS values, and ML API-key enforcement on any deployed `/ml/` route.
+- Operator-level runtime database TLS evidence. The live audit verified external exposure, TLS, CORS, backend/database/ML health, and ML proxy-boundary behavior, but public endpoints do not expose the active database connection mode.
 - Future replacement screenshots, if any, should be captured from the running application and added to the screenshot manifest with hashes.
 
 Do not convert these pending items into completed findings unless the corresponding evidence is collected.

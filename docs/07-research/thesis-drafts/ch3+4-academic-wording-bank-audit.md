@@ -21,13 +21,13 @@ The file is strong for copy-paste academic phrasing because it uses a formal met
 
 ## Present And Code-Backed
 
-- Correct NHANES wording: six releases from 2009-2010 through 2021-2023, excluding disrupted 2019-2020 and treating 2021-2023 as a COVID-adapted three-year release.
+- Correct NHANES wording: six releases from 2009-2010 through 2021-2023, excluding disrupted 2019-2020 and treating 2021-2023 as the August 2021-August 2023 post-pandemic release.
 - Correct postmenopausal filtering language using RHQ031 rather than stale RHQ060 wording.
 - Correct binary cohort size: 1,376 total, 734 at-risk, and 642 normal.
 - Correct final feature set: BMI, triglycerides, LDL, HDL, age, waist circumference, smoking, physical activity, and alcohol use.
 - Correct four candidate algorithms: Logistic Regression, Random Forest, LightGBM, and XGBoost.
 - Correct deployed model rationale: Logistic Regression selected for discrimination, interpretability, thresholding, and deployment simplicity.
-- Correct threshold and performance language: threshold 0.478, AUC-ROC 0.727, sensitivity 0.711, specificity 0.629, F1 0.699.
+- Correct threshold and performance language: threshold 0.465, pooled AUC-ROC 0.7366, sensitivity 0.748, specificity 0.590, F1 0.710.
 - Correct clustering language: at-risk-only weighted K-Means, K = 4, 734 cases, heuristic SIRD-like/SIDD-like/MOD-like/MARD-like labels.
 - Correct SHAP persistence claim: SHAP outputs are transient explanation artifacts and are not stored as JSONB assessment fields.
 - Correct implementation framing: React frontend, Go/Gin backend, Python/Flask ML service, PostgreSQL persistence, Redis-backed caching, and Go middleware rate limiting.
