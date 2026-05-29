@@ -161,4 +161,4 @@ jobs:
 
           echo "=== Internal service health ==="
           compose_cmd ps
-REMOTE_AUDIT
+          REMOTE_AUDIT
