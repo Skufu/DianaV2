@@ -478,24 +478,107 @@ System-evaluation evidence was analyzed separately from model-validation evidenc
 | Benchmark comparison | Reconstruct available screening baselines under the same cohort and outcome definition | Contextual comparator performance |
 | System evidence | Summarize technical tests, implementation status, and planned evaluation gaps | Functional, security, deployment, and readiness findings |
 
-For clarity, the principal formulas used in the methodology are summarized below in LaTeX notation. The table serves as a formula index; the surrounding methodology sections explain how each formula was applied and interpreted.
+For clarity, the principal formulas used in the methodology are summarized below. Table 3.13 serves as a formula index, while the equations are displayed outside the table to preserve reliable LaTeX rendering in Markdown and thesis export workflows.
 
-**Table 3.13. LaTeX-Formatted Formula Summary**
+**Table 3.13. Formula Index**
 
-| Formula Area | LaTeX Formula | Applied In |
-|---|---|---|
-| HbA1c reference thresholds | $\text{Diabetic}:\mathrm{HbA1c}\ge 6.5\%;\ \text{Pre-diabetic}:5.7\%\le \mathrm{HbA1c}<6.5\%;\ \text{Normal}:\mathrm{HbA1c}<5.7\%$ | 3.5 |
-| Waist-circumference fallback | $\widehat{WC}=3.33\times BMI$ | 3.6 |
-| Proxy-leakage flag | $\lvert r_{x,\mathrm{HbA1c}}\rvert>0.95$ | 3.7 |
-| Entropy and Information Gain | $H(Y)=-\sum_i p_i\log_2(p_i);\ IG(Y,X)=H(Y)-H(Y\mid X)$ | 3.7 |
-| Logistic screening probability | $\hat{p}=\frac{1}{1+e^{-(\beta_0+\sum_{j=1}^{p}\beta_jx_j)}}$ | 3.8 |
-| Sensitivity and specificity | $\mathrm{Sensitivity}=\frac{TP}{TP+FN};\ \mathrm{Specificity}=\frac{TN}{TN+FP}$ | 3.9 |
-| Predictive values, accuracy, and F1 | $\mathrm{PPV}=\frac{TP}{TP+FP};\ \mathrm{NPV}=\frac{TN}{TN+FN};\ \mathrm{Accuracy}=\frac{TP+TN}{TP+TN+FP+FN};\ F_1=\frac{2(\mathrm{PPV})(\mathrm{Sensitivity})}{\mathrm{PPV}+\mathrm{Sensitivity}}$ | 3.9 |
-| Threshold strategies | $\mathcal{T}=\{0.10,0.11,\ldots,0.89\};\ t_J=\arg\max_{t\in\mathcal{T}}J(t);\ t_G=\arg\max_{t\in\mathcal{T}}\sqrt{\mathrm{Sensitivity}(t)\mathrm{Specificity}(t)}$ | 3.9 |
-| Composite threshold scores | $t_S=\arg\max_{t\in\mathcal{T}:\mathrm{Sens}(t)\ge0.80,\mathrm{Spec}(t)\ge0.40}\{0.60\mathrm{Sens}(t)+0.40F_1(t)\};\ \mathrm{Clinical\ Score}(t)=0.35\mathrm{Sens}(t)+0.30\mathrm{Spec}(t)+0.25F_1(t)+0.10\mathrm{Accuracy}(t)$ | 3.9 |
-| Weighted K-Means distance | $d_w(\mathbf{z}_i,\boldsymbol{\mu}_k)=\sqrt{\sum_{j=1}^{p}w_j(z_{ij}-\mu_{kj})^2}$ | 3.10 |
-| LAP-style centroid score | $\mathrm{LAP}=(WC-58)\times TG$ | 3.10 |
-| Brier score and ECE | $\mathrm{Brier}=\frac{1}{n}\sum_{i=1}^{n}(\hat{p}_i-y_i)^2;\ \mathrm{ECE}=\sum_{m=1}^{M}\frac{\lvert B_m\rvert}{n}\lvert \overline{y}_{B_m}-\overline{\hat{p}}_{B_m}\rvert$ | 3.15 and 4.4 |
+| Formula Area | Applied In |
+|---|---|
+| HbA1c reference thresholds | 3.5 |
+| Waist-circumference fallback | 3.6 |
+| Proxy-leakage flag | 3.7 |
+| Entropy and Information Gain | 3.7 |
+| Logistic screening probability | 3.8 |
+| Confusion-matrix metrics | 3.9 |
+| Threshold strategy selection | 3.9 |
+| Weighted K-Means distance | 3.10 |
+| LAP-style centroid score | 3.10 |
+| Brier score and ECE | 3.15 and 4.4 |
+
+HbA1c reference thresholds:
+
+$$
+\text{Reference status} =
+\begin{cases}
+\text{Diabetic}, & \mathrm{HbA1c}\ge 6.5\% \\
+\text{Pre-diabetic}, & 5.7\%\le \mathrm{HbA1c}<6.5\% \\
+\text{Normal}, & \mathrm{HbA1c}<5.7\%
+\end{cases}
+$$
+
+Waist-circumference fallback:
+
+$$
+\widehat{WC}=3.33\times BMI
+$$
+
+Proxy-leakage flag:
+
+$$
+\left|r_{x,\mathrm{HbA1c}}\right|>0.95
+$$
+
+Entropy and Information Gain:
+
+$$
+\begin{aligned}
+H(Y) &= -\sum_i p_i\log_2(p_i) \\
+IG(Y,X) &= H(Y)-H(Y\mid X)
+\end{aligned}
+$$
+
+Logistic screening probability:
+
+$$
+\hat{p}=\frac{1}{1+e^{-(\beta_0+\sum_{j=1}^{p}\beta_jx_j)}}
+$$
+
+Confusion-matrix metrics:
+
+$$
+\begin{aligned}
+\mathrm{Sensitivity} &= \frac{TP}{TP+FN} \\
+\mathrm{Specificity} &= \frac{TN}{TN+FP} \\
+\mathrm{PPV} &= \frac{TP}{TP+FP} \\
+\mathrm{NPV} &= \frac{TN}{TN+FN} \\
+\mathrm{Accuracy} &= \frac{TP+TN}{TP+TN+FP+FN} \\
+F_1 &= \frac{2(\mathrm{PPV})(\mathrm{Sensitivity})}{\mathrm{PPV}+\mathrm{Sensitivity}}
+\end{aligned}
+$$
+
+Threshold strategy selection:
+
+$$
+\begin{aligned}
+\mathcal{T} &= \{0.10,0.11,\ldots,0.89\} \\
+t_J &= \arg\max_{t\in\mathcal{T}} J(t) \\
+t_S &= \arg\max_{t\in\mathcal{T}:\ \mathrm{Sensitivity}(t)\ge 0.80,\ \mathrm{Specificity}(t)\ge 0.40}
+\left[0.60\,\mathrm{Sensitivity}(t)+0.40\,F_1(t)\right] \\
+t_G &= \arg\max_{t\in\mathcal{T}} \sqrt{\mathrm{Sensitivity}(t)\times\mathrm{Specificity}(t)} \\
+\mathrm{Clinical\ Score}(t) &= 0.35\,\mathrm{Sensitivity}(t)+0.30\,\mathrm{Specificity}(t)+0.25\,F_1(t)+0.10\,\mathrm{Accuracy}(t)
+\end{aligned}
+$$
+
+Weighted K-Means distance:
+
+$$
+d_w(\mathbf{z}_i,\boldsymbol{\mu}_k)=\sqrt{\sum_{j=1}^{p}w_j(z_{ij}-\mu_{kj})^2}
+$$
+
+LAP-style centroid score:
+
+$$
+\mathrm{LAP}=(WC-58)\times TG
+$$
+
+Brier score and Expected Calibration Error:
+
+$$
+\begin{aligned}
+\mathrm{Brier} &= \frac{1}{n}\sum_{i=1}^{n}(\hat{p}_i-y_i)^2 \\
+\mathrm{ECE} &= \sum_{m=1}^{M}\frac{\left|B_m\right|}{n}\left|\overline{y}_{B_m}-\overline{\hat{p}}_{B_m}\right|
+\end{aligned}
+$$
 
 # Chapter 4: Results and Discussion
 
