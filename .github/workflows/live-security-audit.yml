@@ -77,6 +77,12 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [ -z "${DEPLOY_HOST}" ] || [ -z "${DEPLOY_USER}" ] || [ -z "${DEPLOY_SSH_KEY}" ]; then
+            echo "REMOTE_AUDIT=skipped_missing_deploy_ssh_secrets"
+            echo "REMOTE_AUDIT_DETAIL=DEPLOY_HOST, DEPLOY_USER, or DEPLOY_SSH_KEY is not available to this workflow"
+            exit 0
+          fi
+
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           printf '%s\n' "${DEPLOY_SSH_KEY}" > ~/.ssh/live_audit_key

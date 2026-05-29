@@ -6,14 +6,14 @@ Scope: external live deployment checks for the Chapter 3+4 deployment and securi
 
 ## Summary Verdict
 
-The live deployment supports the manuscript's bounded security claims for public ingress, TLS availability, CORS allow-list behavior, external service-port exposure, and backend-mediated ML access. The audit does not prove runtime database TLS mode because the active database connection string and database session settings are not exposed through public endpoints.
+The live deployment supports the manuscript's bounded security claims for public ingress, TLS availability, CORS allow-list behavior, external service-port exposure, and backend-mediated ML access. The audit does not prove runtime database TLS mode because the active database connection string and database session settings are not exposed through public endpoints. It also found that direct ML service exposure is controlled, but ML-service API-key enforcement is not active in the current runtime because live ML logs report `ML_API_KEY` as not configured.
 
 ## Live Checks
 
 | Area | Evidence | Result |
 |---|---|---|
 | DNS | `diana-v2.duckdns.org` resolved to `143.198.222.21`; no AAAA record was returned | Verified target host |
-| Public ports | Ports 80 and 443 accepted TCP connections; ports 22, 8080, 5000, 5001, and 5432 timed out from the external audit machine | Effective external exposure limited to HTTP/HTTPS from this vantage point |
+| Public ports | Ports 80 and 443 accepted TCP connections; ports 22, 8080, 5000, 5001, and 5432 timed out from local and GitHub Actions external audit machines | Effective external exposure limited to HTTP/HTTPS from these vantage points; host firewall rules were not directly inspected |
 | HTTP to HTTPS | `http://diana-v2.duckdns.org/` returned `308 Permanent Redirect` to HTTPS | Redirect verified |
 | TLS certificate | HTTPS presented a Let's Encrypt E8 certificate with subject/SAN `diana-v2.duckdns.org`, valid from 2026-05-09 to 2026-08-07; OpenSSL certificate verification returned OK | TLS certificate verified |
 | TLS protocols | TLS 1.2 and TLS 1.3 handshakes succeeded; local OpenSSL did not offer TLS 1.0/1.1 because those protocols are disabled client-side | Modern TLS support verified; legacy-protocol rejection should be rechecked with a dedicated scanner if required |
@@ -23,6 +23,7 @@ The live deployment supports the manuscript's bounded security claims for public
 | Authenticated operations health | Admin operations health returned healthy backend, database ping, and ML health statuses | Backend, database, and ML health verified through application-level health endpoint |
 | ML public exposure | Public `/ml/health`, `/ml/predict`, and `/predict` paths returned 404; direct ports 5000 and 5001 timed out | Direct public ML exposure was not observed |
 | Backend-mediated ML access | Unauthenticated `/api/v1/ml/health` returned 401; authenticated `/api/v1/ml/insights/metrics` returned 200 through the backend proxy without a browser-supplied `X-API-Key` | Browser access is mediated by backend authentication; backend proxy can reach ML |
+| ML API-key runtime state | Authenticated admin log search returned live ML log entries stating `ML_API_KEY not configured - running in development mode (no auth)` | Current live ML-service API-key enforcement is not active; configure `ML_API_KEY` and retest no-key/fake-key calls before claiming enforcement |
 | Database public exposure | Port 5432 timed out externally; authenticated operations health reported database ping succeeded | Public DB listener not observed; DB connectivity verified |
 | Database TLS mode | Public endpoints do not expose `DB_DSN` or database session settings | Not externally verifiable; requires host or managed-database console check |
 
@@ -31,14 +32,17 @@ The live deployment supports the manuscript's bounded security claims for public
 | Manuscript Claim Type | Current Evidence | Review Outcome |
 |---|---|---|
 | Implemented workflow | Frontend screenshots, route/component code, backend/ML health, authenticated ML metrics proxy, and test evidence in `thesis-readiness-audit.md` | Supported as implemented prototype workflow |
-| Secured ingress | Live HTTP/HTTPS behavior, TLS certificate, security headers, external port checks, CORS checks, and repository reverse-proxy configs | Supported for bounded prototype deployment claims |
+| Secured ingress | Live HTTP/HTTPS behavior, TLS certificate, security headers, external port checks, CORS checks, and repository reverse-proxy configs | Supported for bounded prototype deployment claims; direct host firewall rules were not inspectable from public endpoints |
 | Validated model | Metrics checker, model artifacts, nested LOGO tables, leakage results, and calibration/cluster artifacts | Supported as internal NHANES validation, not external clinical validation |
 | Evaluated system | Backend/ML/frontend test counts, screenshot provenance, doctor qualitative review, and deployment audit | Supported for technical evaluation and qualitative face-validity review; UAT, accessibility audit, and production load testing remain pending |
 | Database TLS | Production configuration examples use `sslmode=require`, but live runtime DSN/session state was not visible externally | Do not claim live DB TLS verification until operator-level evidence is collected |
+| ML API-key enforcement | Code enforces `X-API-Key` when `ML_API_KEY` is set, but live ML logs show the runtime key is currently unset | Do not claim live ML API-key enforcement until the runtime key is configured and missing/fake-key requests return 401 |
 
 ## Remaining Security Evidence Needed
 
 - Operator-level confirmation of runtime database TLS mode, such as a redacted `DB_DSN` showing `sslmode=require` or a database-session query proving SSL is in use.
+- Operator-level host firewall evidence, such as redacted `ufw`, `iptables`, cloud firewall, or equivalent rule output. External port checks show effective exposure but not the actual firewall rule inventory.
+- Runtime ML API-key configuration and enforcement proof, such as `ML_API_KEY` configured in backend and ML containers plus direct no-key/fake-key internal ML endpoint checks returning 401.
 - Dedicated TLS scan if the defense committee requires explicit proof that TLS 1.0 and TLS 1.1 are refused by the server rather than unavailable from the local OpenSSL client.
 - Production load testing with authenticated users, database writes, and ML calls.
 - Formal security review for clinical deployment, especially browser-token storage, XSS hardening, session strategy, and route-level navigation behavior.
