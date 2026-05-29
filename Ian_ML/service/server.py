@@ -79,6 +79,19 @@ MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 MB max request size
 MAX_BATCH_SIZE = 1000  # Maximum patients per batch request
 API_KEY = os.environ.get('ML_API_KEY')  # API key for authentication (required in production)
 
+
+def is_production_env():
+    return os.environ.get('ENV', '').strip().lower() in ('production', 'prod')
+
+
+def validate_runtime_security_config():
+    """Fail fast when production security-critical configuration is absent."""
+    if is_production_env() and not (API_KEY or '').strip():
+        raise RuntimeError("ML_API_KEY is required when ENV=production")
+
+
+validate_runtime_security_config()
+
 # Import new ML infrastructure modules
 try:
     from Ian_ML.service.explainability import SHAPExplainer, format_for_clinician, generate_waterfall_plot

@@ -6,6 +6,8 @@ import pytest
 import sys
 import os
 import json
+import subprocess
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -247,6 +249,26 @@ class TestAPIKeyAuthentication:
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data['status'] == 'healthy'
+
+    def test_production_import_fails_without_ml_api_key(self):
+        repo_root = Path(__file__).resolve().parents[2]
+        env = os.environ.copy()
+        env['ENV'] = 'production'
+        env.pop('ML_API_KEY', None)
+        env['PYTHONPATH'] = str(repo_root)
+
+        result = subprocess.run(
+            [sys.executable, '-c', 'import Ian_ML.service.server'],
+            cwd=repo_root,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+
+        assert result.returncode != 0
+        assert 'ML_API_KEY is required when ENV=production' in result.stderr
 
 
 class TestDriftLineageMetadata:

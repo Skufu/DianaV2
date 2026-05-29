@@ -627,7 +627,7 @@ go tool cover -html=coverage.out
 | `CORS_ORIGINS` | No | Allowed origins |
 | `REDIS_ADDR` | No | Redis address (e.g. localhost:6379) |
 | `REDIS_PASSWORD` | No | Redis password |
-| `ML_API_KEY` | No | API Key for ML Service |
+| `ML_API_KEY` | Yes in production | API key for backend-to-ML service authentication |
 | `MODEL_DATASET_HASH`| No | Hash of dataset used for training |
 | `CLINICAL_*` | No | Overrides for clinical thresholds |
 

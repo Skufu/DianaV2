@@ -59,7 +59,7 @@ services:
       # CORS origins should include HTTPS domain
       CORS_ORIGINS: ${CORS_ORIGINS:-https://localhost,https://${DOMAIN:-localhost}}
       MODEL_URL: http://ml:5000
-      ML_API_KEY: ${ML_API_KEY:-}
+      ML_API_KEY: ${ML_API_KEY:?ML API key required when ENV=production}
       # Production-specific settings
       RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
       RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-60}
@@ -94,7 +94,7 @@ services:
     environment:
       ML_PORT: 5000
       PYTHONUNBUFFERED: 1
-      ML_API_KEY: ${ML_API_KEY:-}
+      ML_API_KEY: ${ML_API_KEY:?ML API key required when ENV=production}
       ENV: production
       CORS_ORIGINS: ${CORS_ORIGINS:-https://localhost,https://${DOMAIN:-localhost}}
       DIANA_LOG_DIR: /var/log/diana

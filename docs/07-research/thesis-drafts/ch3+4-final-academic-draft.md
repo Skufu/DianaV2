@@ -767,7 +767,7 @@ This result supports the central methodological claim of the study. DIANA's disc
 
 Functional testing verified the implemented system across backend, ML service, and frontend layers. The backend test suite passed in the current verification run and covered configuration, caching behavior, API request handling, access-control checks, ML integration, service logic, PDF generation, and data persistence. Assessment tests verified critical clinical guardrails, including target age-boundary enforcement, missing waist-circumference handling for ML imputation, out-of-range HbA1c warning behavior, and successful assessment creation.
 
-The ML service test suite passed with 274 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, service access, authentication checks, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured coverage gates, with 71.26 percent line and statement coverage, 60.55 percent branch coverage, and 44.24 percent function coverage.
+The ML service test suite passed with 275 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, service access, authentication checks, drift scheduling, SHAP background behavior, threshold optimization, production API-key configuration failure behavior, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured coverage gates, with 71.26 percent line and statement coverage, 60.55 percent branch coverage, and 44.24 percent function coverage.
 
 **Table 4.10. Functional Validation Summary**
 
@@ -775,7 +775,7 @@ The ML service test suite passed with 274 tests. These tests covered clustering 
 |---|---|---|
 | Backend services | Authentication, access control, assessment creation, clinical guardrails, persistence, and PDF report generation | Passed |
 | Assessment guardrails | Age-boundary enforcement, missing waist handling, HbA1c warning propagation, and successful assessment creation | Passed |
-| ML service | 274 tests covering prediction, leakage prevention, clustering, SHAP, drift monitoring, threshold optimization, and clinical scenarios | Passed |
+| ML service | 275 tests covering prediction, leakage prevention, clustering, SHAP, drift monitoring, threshold optimization, production API-key configuration failure behavior, and clinical scenarios | Passed |
 | Frontend workflow | 232 unit and contract tests covering authentication, forms, result display, service contracts, and UI components | Passed |
 | Frontend coverage | Coverage met the configured project policy: 71.26% lines/statements, 60.55% branches, and 44.24% functions | Passed |
 | Cache integration tests | Require the external cache service to be available | Environment dependent |
@@ -838,7 +838,7 @@ Deployment readiness was first assessed at the configuration level and then chec
 | ML exposure and API-key enforcement | Public `/ml` and `/predict` paths returned 404; unauthenticated `/api/v1/ml/health` returned 401; authenticated `/api/v1/ml/insights/metrics` succeeded through the backend proxy; live ML logs showed `ML_API_KEY` was not configured | Network and backend-auth boundary passed; live ML-service API-key enforcement was not active |
 | Runtime secret handling | Repository configuration injects database credentials, JWT secret, and ML API key through runtime environment variables rather than committed literals | Configuration evidence present |
 
-This audit upgrades the earlier configuration-only deployment review for public exposure, TLS, production CORS, and ML proxy behavior. It does not by itself prove the database session's runtime TLS mode because the live database connection string and session settings are not exposed through the public application; that item requires operator-level verification on the host or managed database console. Similarly, the codebase supports ML API-key enforcement when `ML_API_KEY` is set, but the live ML service must be configured with that key and retested before API-key enforcement is claimed for the current deployment. The audit also does not replace production load testing.
+This audit upgrades the earlier configuration-only deployment review for public exposure, TLS, production CORS, and ML proxy behavior. It does not by itself prove the database session's runtime TLS mode because the live database connection string and session settings are not exposed through the public application; that item requires operator-level verification on the host or managed database console. Similarly, the codebase supports ML API-key enforcement when `ML_API_KEY` is set, and the post-audit source configuration now fails production ML startup or Compose rendering when the key is absent. However, the live ML service must still be redeployed with that key and retested before API-key enforcement is claimed for the current deployment. The audit also does not replace production load testing.
 
 ### 4.10 User Acceptance Testing Status and Doctor Expert Review
 
