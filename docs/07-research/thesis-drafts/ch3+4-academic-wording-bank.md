@@ -165,7 +165,7 @@ Copy-ready anchor sentence: The final Logistic Regression screening model demons
 | Selected model | Logistic Regression | Chosen for mean fold AUC, interpretability, stable probability output, and efficient inference |
 | Calibration | Brier score = 0.2087; ECE = 0.0563; Hosmer-Lemeshow statistic = 24.75 | Probabilities are usable for risk support but should not be presented as exact individualized disease probabilities |
 | Clustering | K = 4 weighted K-Means on the at-risk subset | Provides descriptive metabolic subtype context, not biological subtype diagnosis |
-| Technical testing | Backend Go suite passed, ML suite passed with 274 tests, frontend coverage suite passed with 232 tests | Supports implemented system functionality while leaving Redis integration evidence, UAT, accessibility, route-based navigation, browser-token hardening, and load testing as remaining gaps |
+| Technical testing | Backend Go suite passed, ML suite passed with 275 tests, frontend coverage suite passed with 232 tests | Supports implemented system functionality while leaving Redis integration evidence, UAT, accessibility, route-based navigation, browser-token hardening, and load testing as remaining gaps |
 
 The fold-level AUC range of **0.711-0.788** across the six held-out NHANES survey releases indicates that no single temporal fold collapsed below the acceptable discrimination target.
 
@@ -241,7 +241,7 @@ Copy-ready inference sentence: Logistic Regression also demonstrated efficient i
 | Evidence Area | Current Status | How to Report It |
 |---|---|---|
 | Backend tests | Passed in the current verification run | Report as technical verification of backend handlers, middleware, ML integration, services, PDF generation, and data access behavior |
-| ML service tests | 274 tests passed | Report as verification of prediction, leakage prevention, clustering, drift utilities, SHAP-related behavior, and clinical scenarios |
+| ML service tests | 275 tests passed | Report as verification of prediction, leakage prevention, clustering, drift utilities, SHAP-related behavior, production API-key configuration failure behavior, and clinical scenarios |
 | Frontend unit and contract coverage suite | 232 tests passed | Report as verification of selected UI behavior, API contract assumptions, and broad source coverage smoke tests |
 | Frontend coverage threshold | Coverage gates passed with 71.26 percent line and statement coverage, 60.55 percent branch coverage, and 44.24 percent function coverage | Report as current frontend technical verification under the configured source coverage policy |
 | Redis integration tests | Environment dependent | Avoid claiming full Redis integration verification unless run with a Redis service |
@@ -447,7 +447,7 @@ The frontend should be described as a functional research prototype rather than 
 
 This phase verified the system across backend, ML service, and frontend layers. Backend tests covered configuration, caching, HTTP handlers, middleware, ML integration, data models, services, PDF generation, and data access behavior. Table-driven assessment handler tests validated age-boundary enforcement, missing-waist handling for ML imputation, advisory warnings for out-of-range HbA1c, and successful end-to-end assessment creation.
 
-The ML service test suite covered clustering behavior, leakage prevention, prediction endpoints, API authentication, drift utilities, SHAP-related functionality, threshold optimization, and clinical scenario checks. The frontend Vitest coverage suite covered API contracts, assessment form behavior, authentication flows, selected UI components, and broad source coverage smoke tests. The test results support the claim that the implemented system performs the core screening workflow, while Redis integration evidence, route-based navigation, browser-token hardening, formal UAT, scored expert-panel review, accessibility audit, production load testing, runtime database TLS evidence, host-firewall rule evidence, and live ML-service API-key enforcement remain readiness gaps.
+The ML service test suite covered clustering behavior, leakage prevention, prediction endpoints, API authentication, production API-key configuration failure behavior, drift utilities, SHAP-related functionality, threshold optimization, and clinical scenario checks. The frontend Vitest coverage suite covered API contracts, assessment form behavior, authentication flows, selected UI components, and broad source coverage smoke tests. The test results support the claim that the implemented system performs the core screening workflow, while Redis integration evidence, route-based navigation, browser-token hardening, formal UAT, scored expert-panel review, accessibility audit, production load testing, runtime database TLS evidence, host-firewall rule evidence, and live ML-service API-key enforcement remain readiness gaps.
 
 ### 3.15 User Evaluation and Expert Review Methodology
 
@@ -513,7 +513,7 @@ This result supports the central methodological claim of the study. DIANA's disc
 
 Functional testing verified the implemented system across backend, frontend, and ML service layers. The backend Go test suite passed in the current verification run and covered configuration, caching, HTTP handlers, middleware, ML integration, models, services, PDF generation, and store behavior. Assessment handler tests verified critical clinical guardrails, including target age-boundary enforcement, missing waist-circumference acceptance for ML imputation, out-of-range HbA1c warning behavior, and successful assessment creation.
 
-The Python ML service test suite passed with 274 tests. These tests covered clustering, leakage prevention, feature parity, prediction behavior, server endpoints, API authentication, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests.
+The Python ML service test suite passed with 275 tests. These tests covered clustering, leakage prevention, feature parity, prediction behavior, server endpoints, API authentication, production API-key configuration failure behavior, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests.
 
 The current frontend coverage run met the configured source coverage gates, with 71.26 percent line and statement coverage, 60.55 percent branch coverage, and 44.24 percent function coverage. Remaining technical-readiness gaps should therefore be reported as Redis integration evidence, formal UAT, scored expert-panel review, accessibility audit, and production load testing rather than as an unresolved frontend coverage gate.
 

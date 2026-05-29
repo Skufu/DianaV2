@@ -37,13 +37,13 @@ The live deployment supports the manuscript's bounded security claims for public
 | Validated model | Metrics checker, model artifacts, nested LOGO tables, leakage results, and calibration/cluster artifacts | Supported as internal NHANES validation, not external clinical validation |
 | Evaluated system | Backend/ML/frontend test counts, screenshot provenance, doctor qualitative review, and deployment audit | Supported for technical evaluation and qualitative face-validity review; UAT, accessibility audit, and production load testing remain pending |
 | Database TLS | Production configuration examples use `sslmode=require`, but live runtime DSN/session state was not visible externally | Do not claim live DB TLS verification until operator-level evidence is collected |
-| ML API-key enforcement | Code enforces `X-API-Key` when `ML_API_KEY` is set, but live ML logs show the runtime key is currently unset | Do not claim live ML API-key enforcement until the runtime key is configured and missing/fake-key requests return 401 |
+| ML API-key enforcement | Code enforces `X-API-Key` when `ML_API_KEY` is set, and the post-audit source now fails production ML startup or Compose rendering when the key is absent; live ML logs still show the currently deployed runtime key is unset | Do not claim live ML API-key enforcement until the current source is redeployed with the runtime key configured and missing/fake-key requests return 401 |
 
 ## Remaining Security Evidence Needed
 
 - Operator-level confirmation of runtime database TLS mode, such as a redacted `DB_DSN` showing `sslmode=require` or a database-session query proving SSL is in use.
 - Operator-level host firewall evidence, such as redacted `ufw`, `iptables`, cloud firewall, or equivalent rule output. External port checks show effective exposure but not the actual firewall rule inventory.
-- Runtime ML API-key configuration and enforcement proof, such as `ML_API_KEY` configured in backend and ML containers plus direct no-key/fake-key internal ML endpoint checks returning 401.
+- Runtime ML API-key configuration and enforcement proof, such as redeploying the post-audit fail-fast source with `ML_API_KEY` configured in backend and ML containers plus direct no-key/fake-key internal ML endpoint checks returning 401.
 - Dedicated TLS scan if the defense committee requires explicit proof that TLS 1.0 and TLS 1.1 are refused by the server rather than unavailable from the local OpenSSL client.
 - Production load testing with authenticated users, database writes, and ML calls.
 - Formal security review for clinical deployment, especially browser-token storage, XSS hardening, session strategy, and route-level navigation behavior.

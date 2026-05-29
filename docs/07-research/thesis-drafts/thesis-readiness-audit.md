@@ -58,7 +58,8 @@ The Chapter 3+4 draft set has been checked and corrected for the following high-
 | Stale claim scan | `rg -n "Three candidate|Go 1\\.24|cached predictions|RHQ060|COVID-adapted|n=578|Plotly|Download CSV|production VPS" ch3+4-final-academic-draft.md ch3+4.md` | Expected: no stale implementation, visualization, export, deployment, or data-release claims |
 | Intentional placeholder scan | `rg -n "PLACEHOLDER|TBD|QUOTE TBD" ch3+4-final-academic-draft.md ch3+4.md` | Expected: only future evidence placeholders |
 | Backend tests | `cd backend && GOCACHE=/private/tmp/diana-go-build go test ./...` | PASS; initial sandboxed run was blocked by local `httptest` listener permissions, then passed outside the sandbox |
-| ML tests | `cd Ian_ML && ./venv/bin/python -m pytest -q` | PASS: 274 passed |
+| ML tests | `cd Ian_ML && ./venv/bin/python -m pytest -q` | PASS: 275 passed |
+| Production ML API-key guard | `ENV=production PYTHONPATH=. Ian_ML/venv/bin/python -c 'import Ian_ML.service.server'` without `ML_API_KEY`, plus `docker compose --env-file <empty> -f docker-compose.yml -f docker-compose.prod.yml config` without `ML_API_KEY` | PASS: ML service import fails with `ML_API_KEY is required when ENV=production`; Compose rendering exits non-zero when `ML_API_KEY` is missing |
 | Frontend coverage | `cd frontend && npm run test:coverage` | PASS: 15 files, 232 tests; 71.26% lines/statements, 60.55% branches, 44.24% functions |
 | Screenshot provenance | `file docs/07-research/thesis-drafts/screenshots/*.png` and `shasum -a 256 docs/07-research/thesis-drafts/screenshots/*.png` | PASS: cited UI screenshots are 1440 x 1000 PNG files and hashes are recorded in `screenshots/README.md` |
 | Figure path scan | Markdown image-link scan over `ch3+4-final-academic-draft.md` and `ch3+4.md` | PASS: final draft has 7 image links and technical backup has 9 image links; no missing local image targets |
@@ -88,7 +89,7 @@ The Chapter 3+4 draft set has been checked and corrected for the following high-
    - The live deployment audit verified effective public exposure, HTTPS, CORS, backend health, database ping, and backend-mediated ML proxy behavior from external clients. The remaining deployment-security evidence gaps are operator-level confirmation that the active database connection uses TLS, such as a redacted runtime `DB_DSN` or database-session SSL evidence, and direct host/cloud firewall rule evidence.
 
 6. Live ML-service API-key enforcement is not active.
-   - Code enforces `X-API-Key` when `ML_API_KEY` is configured, and the public ML service is not directly exposed. However, live ML logs report `ML_API_KEY not configured - running in development mode (no auth)`. Configure `ML_API_KEY` in the deployed backend and ML service, then retest direct internal ML no-key/fake-key calls before claiming runtime ML API-key enforcement.
+   - Code enforces `X-API-Key` when `ML_API_KEY` is configured, and the public ML service is not directly exposed. The source now also fails production ML startup and production Compose rendering when `ML_API_KEY` is absent. However, live ML logs report `ML_API_KEY not configured - running in development mode (no auth)`. Configure `ML_API_KEY` in the deployed backend and ML service, redeploy the current source, then retest direct internal ML no-key/fake-key calls before claiming runtime ML API-key enforcement.
 
 ## Recommended Correction Order
 

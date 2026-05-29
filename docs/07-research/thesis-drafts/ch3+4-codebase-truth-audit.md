@@ -22,7 +22,7 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 - ML proxy routes are described as conditional on `MODEL_URL`.
 - Chapter metrics match `models/binary_v2_no_bp/results`, including information gain, threshold arbitration, and model-comparison values.
 - UI screenshot provenance is documented in `screenshots/README.md` with capture date, local capture endpoints, 1440 x 1000 PNG dimensions, source views, and SHA-256 hashes.
-- Live deployment security evidence now exists for public port exposure, HTTPS redirect, TLS certificate identity, security headers, production CORS allow-list behavior, backend health, database ping, and backend-mediated ML proxy behavior. Runtime database TLS mode and actual host firewall rules remain unproven without operator-level access to the active database connection, database session settings, or firewall rule inventory. Live ML logs show `ML_API_KEY` is not configured, so current ML-service API-key enforcement must not be claimed.
+- Live deployment security evidence now exists for public port exposure, HTTPS redirect, TLS certificate identity, security headers, production CORS allow-list behavior, backend health, database ping, and backend-mediated ML proxy behavior. Runtime database TLS mode and actual host firewall rules remain unproven without operator-level access to the active database connection, database session settings, or firewall rule inventory. Live ML logs show `ML_API_KEY` is not configured, so current ML-service API-key enforcement must not be claimed. The source now includes a production fail-fast guard for missing `ML_API_KEY`, but live enforcement still requires redeployment and retesting.
 
 ## Verified Current Features
 
@@ -40,7 +40,8 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 |---|---|
 | `python3 scripts/thesis/check_metrics_consistency.py docs/07-research/thesis-drafts/ch3+4-final-academic-draft.md docs/07-research/thesis-drafts/ch3+4.md` | PASS: 43 checked claims per document |
 | `cd backend && GOCACHE=/private/tmp/diana-go-build go test ./...` | PASS |
-| `cd Ian_ML && ./venv/bin/python -m pytest -q` | PASS: 274 tests |
+| `cd Ian_ML && ./venv/bin/python -m pytest -q` | PASS: 275 tests |
+| `ENV=production PYTHONPATH=. Ian_ML/venv/bin/python -c 'import Ian_ML.service.server'` without `ML_API_KEY`; `docker compose --env-file <empty> -f docker-compose.yml -f docker-compose.prod.yml config` without `ML_API_KEY` | PASS: production ML import and production Compose rendering fail when `ML_API_KEY` is missing |
 | `cd frontend && npm run test:coverage` | PASS: 15 files, 232 tests; 71.26% lines/statements, 60.55% branches, 44.24% functions |
 | `shasum -a 256 docs/07-research/thesis-drafts/screenshots/*.png` | PASS: cited UI screenshots have recorded hashes in the screenshot manifest |
 | `rg -n "ports:|expose:|/ml/|ML_API_KEY|CORS_ORIGINS" docker-compose.prod.yml deployment/Caddyfile frontend/nginx-ssl.conf Ian_ML/service/server.py` | REVIEWED: direct container ports are reset in production compose; optional Nginx `/ml/` route is now qualified in manuscript wording |
