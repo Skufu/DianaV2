@@ -12,7 +12,7 @@ DIANA is therefore not positioned as a diagnostic device. A screen-positive resu
 
 The methodology was organized into eight sequential phases. Phase 1 covered data acquisition and biomarker preparation, including NHANES file acquisition, cohort filtering, variable mapping, reference-label construction, missing-data handling, and clinical plausibility checks. Phase 2 applied feature selection using Information Gain and entropy-based relevance analysis while enforcing diagnostic-leakage prevention. Phase 3 implemented cluster-based risk group identification through weighted K-Means clustering for at-risk profiles. Phase 4 covered predictive model development and training using candidate machine-learning algorithms under a nested temporal-validation framework. Phase 5 defined model testing, evaluation, and comparison procedures, including discrimination, threshold selection, calibration, and benchmark-comparison methods.
 
-Phase 6 covered web application integration and visualization development, including frontend assessment workflows, backend API orchestration, ML-service integration, explainability output handling, trend visualization, and report-generation support. Phase 7 covered system testing and technical validation across backend, ML, frontend, security, deployment-readiness, and accessibility-readiness components. Phase 8 covered the planned doctor's evaluation and expert-review procedure, in which licensed medical professionals would assess risk-output plausibility, SHAP explanation clarity, clinical workflow fit, and perceived usefulness. The methodological phases describe how the study was conducted; the corresponding empirical findings and validation evidence are reported in Chapter 4.
+Phase 6 covered web application integration and visualization development, including frontend assessment workflows, backend API orchestration, ML-service integration, explainability output handling, trend visualization, and report-generation support. Phase 7 covered system testing and technical validation across backend, ML, frontend, security, deployment-readiness, and accessibility-readiness components. Phase 8 covered the doctor's evaluation and expert-review procedure, in which a licensed physician reviewer used the prototype and assessed risk-output plausibility, feature usefulness, clinical workflow fit, and the clarity of explanation and subtype-weighting logic. The methodological phases describe how the study was conducted; the corresponding empirical findings and validation evidence are reported in Chapter 4.
 
 **Eight-Phase Methodological Framework**
 
@@ -42,6 +42,8 @@ The phase alignment across the manuscript is summarized as follows.
 | Phase 6: Web application integration and visualization development | 3.11-3.12 | 4.8 |
 | Phase 7: System testing and technical validation | 3.13 | 4.7, 4.9, and 4.11 |
 | Phase 8: Doctor's evaluation | 3.14 | 4.10 |
+
+Section 3.15 provides the cross-cutting data analysis procedure used to summarize the quantitative model evidence, cluster evidence, benchmark evidence, and system-evaluation evidence reported in Chapter 4.
 
 The figures used in Chapter 3 are limited to methodological and system-design diagrams: the eight-phase framework, overall pipeline, two-stage screening and subtyping workflow, four-tier architecture, and assessment sequence. Quantitative model artifacts and application screenshots are presented in Chapter 4 so that visual evidence remains separated from procedural design.
 
@@ -90,7 +92,7 @@ The multiclass reference distribution consisted of 642 normal cases, 457 pre-dia
 | Total | 1,376 | 100.0% |
 | Binary at-risk class (Pre-diabetic + Diabetic) | 734 | 53.3% |
 
-The planned user-evaluation population consists of menopausal or postmenopausal women who can interact with the DIANA application and provide structured usability feedback. The planned clinical-evaluation population consists of licensed medical professionals, particularly from endocrinology and obstetrics-gynecology, who can review risk-output plausibility, SHAP explanation clarity, and clinical workflow fit. Because formal user acceptance testing and expert review have not yet been completed, these groups are described as planned evaluation populations rather than completed study samples.
+The planned user-evaluation population consists of menopausal or postmenopausal women who can interact with the DIANA application and provide structured usability feedback. The clinical expert-review population consists of licensed medical professionals who can review risk-output plausibility, feature usefulness, SHAP explanation clarity, and clinical workflow fit. Formal community user acceptance testing has not yet been completed; however, an initial hands-on doctor expert review was completed and is reported as qualitative face-validity evidence rather than as external clinical validation.
 
 ### 3.4 Data Gathering Tools and Procedures
 
@@ -152,19 +154,25 @@ NHANES records contain missing values because of non-response, subsample designs
 
 The final eligibility rule required complete HbA1c because HbA1c is used in reference-label construction. It also required fasting-laboratory availability, operationalized by the presence of fasting blood sugar in the NHANES fasting subsample, because the active DIANA model depends on measured fasting-subsample lipid predictors such as triglycerides and LDL cholesterol. FBS itself was not used as a model predictor and was not required as a second diagnostic label criterion; it functioned as the practical fasting-lab cohort gate. This choice favored a smaller but cleaner lipid-panel cohort over a larger HbA1c-only cohort with extensive imputation of active lipid predictors.
 
-At inference time, missing waist circumference is handled by a separate serving-layer guardrail. During face-validity review, median imputation was found to be problematic for low-BMI users because a training-cohort median waist value of approximately 97 cm could create an implausible visceral-adiposity signal. When waist circumference is unavailable but BMI is present, the ML service estimates waist circumference as BMI multiplied by 3.33. This rule is a pragmatic usability safeguard intended to reduce implausible individual-level substitution; it is not a validated clinical estimator and requires further sensitivity analysis.
+At inference time, missing waist circumference is handled by a separate serving-layer guardrail. During face-validity review, median imputation was found to be problematic for low-BMI users because a training-cohort median waist value of approximately 97 cm could create an implausible visceral-adiposity signal. When waist circumference is unavailable but BMI is present, the ML service estimates waist circumference as $\widehat{WC}=3.33 \times BMI$. This rule is a pragmatic usability safeguard intended to reduce implausible individual-level substitution; it is not a validated clinical estimator and requires further sensitivity analysis.
 
 Outlier handling used clinical plausibility ranges rather than automatic row deletion. Values outside plausible clinical bounds were flagged through a binary outlier indicator, but records were retained. This decision preserved sample size and avoided excluding genuinely extreme metabolic profiles that may be clinically meaningful. The number of flagged outlier records was documented after preprocessing.
 
 ### 3.7 Data Leakage Prevention
 
-A three-layer leakage-prevention architecture was implemented before model training. The first layer scanned model feature definitions to confirm that diagnostic markers such as HbA1c, fasting blood sugar, fasting glucose, and related aliases were absent from classifier and clustering feature sets. The second layer performed proxy-leakage detection by computing Pearson correlation between each non-diagnostic candidate feature and the HbA1c diagnostic threshold. Features with absolute correlation greater than 0.95 would be flagged as proxy leakage. The third layer computed Shannon entropy information gain to verify feature relevance while documenting why some high-ranked features were excluded.
+A three-layer leakage-prevention architecture was implemented before model training. The first layer scanned model feature definitions to confirm that diagnostic markers such as HbA1c, fasting blood sugar, fasting glucose, and related aliases were absent from classifier and clustering feature sets. The second layer performed proxy-leakage detection by computing Pearson correlation between each non-diagnostic candidate feature and the HbA1c diagnostic threshold. Features satisfying $\lvert r_{x,\mathrm{HbA1c}}\rvert>0.95$ would be flagged as proxy leakage. The third layer computed Shannon entropy information gain, expressed as $IG(Y,X)=H(Y)-H(Y\mid X)$, to verify feature relevance while documenting why some high-ranked features were excluded.
 
 This validation was enforced programmatically as a pre-training gate. If diagnostic variables or proxy-leakage conditions were detected, the training sequence would terminate. This made leakage prevention an executable part of the methodology rather than a post-hoc assertion. The leakage-validation findings are reported in Chapter 4.
 
 ### 3.8 Predictive Model Development and Validation
 
 Four candidate algorithms were evaluated under the same nested temporal-validation framework: Logistic Regression, Random Forest, LightGBM, and XGBoost. Logistic Regression served as the interpretable linear baseline. Random Forest provided a non-linear ensemble baseline, while LightGBM and XGBoost provided gradient-boosting benchmarks for structured tabular prediction (Breiman, 2001; Ke et al., 2017; Chen & Guestrin, 2016).
+
+For Logistic Regression, the predicted at-risk probability was modeled as:
+
+$$
+\hat{p}=\frac{1}{1+e^{-(\beta_0+\sum_{j=1}^{p}\beta_jx_j)}}
+$$
 
 **Table 3.5. Hyperparameter Search Space**
 
@@ -196,25 +204,30 @@ The final classifier outputs a probability that must be converted into a binary 
 
 Three threshold strategies were evaluated using out-of-fold probabilities: Youden's J, a screening-optimized rule, and the geometric mean of sensitivity and specificity. The screening-optimized rule explicitly prioritized sensitivity while preserving a minimum specificity constraint. The geometric-mean rule provided a balance-oriented alternative for folds where sensitivity and specificity moved in opposite directions, which is useful when class imbalance and uneven operating characteristics are present (Luque et al., 2019). The formulas used for threshold selection were:
 
-`Sensitivity = TP / (TP + FN)`
+$$
+\begin{aligned}
+\mathrm{Sensitivity} &= \frac{TP}{TP+FN} \\
+\mathrm{Specificity} &= \frac{TN}{TN+FP} \\
+\mathrm{PPV} &= \frac{TP}{TP+FP} \\
+\mathrm{Accuracy} &= \frac{TP+TN}{TP+TN+FP+FN} \\
+F_1 &= \frac{2(\mathrm{PPV})(\mathrm{Sensitivity})}{\mathrm{PPV}+\mathrm{Sensitivity}} \\
+J &= \mathrm{Sensitivity}+\mathrm{Specificity}-1 \\
+G\text{-}\mathrm{Mean} &= \sqrt{\mathrm{Sensitivity}\times\mathrm{Specificity}}
+\end{aligned}
+$$
 
-`Specificity = TN / (TN + FP)`
+The screening-optimized score was computed as follows:
 
-`Precision or PPV = TP / (TP + FP)`
-
-`Accuracy = (TP + TN) / (TP + TN + FP + FN)`
-
-`F1 Score = 2 x (Precision x Sensitivity) / (Precision + Sensitivity)`
-
-`Youden's J = Sensitivity + Specificity - 1`
-
-`G-Mean = sqrt(Sensitivity x Specificity)`
-
-`Screening Score = 0.60 x Sensitivity + 0.40 x F1, subject to Sensitivity >= 0.80 and Specificity >= 0.40`
+$$
+\mathrm{Screening\ Score}=0.60(\mathrm{Sensitivity})+0.40(F_1),
+\quad \mathrm{subject\ to}\quad \mathrm{Sensitivity}\ge 0.80,\ \mathrm{Specificity}\ge 0.40
+$$
 
 A composite clinical score was then used to select the fold-specific strategy:
 
-`Clinical Score = 0.35 x Sensitivity + 0.30 x Specificity + 0.25 x F1 + 0.10 x Accuracy`
+$$
+\mathrm{Clinical\ Score}=0.35(\mathrm{Sensitivity})+0.30(\mathrm{Specificity})+0.25(F_1)+0.10(\mathrm{Accuracy})
+$$
 
 In these formulas, TP denotes true positives, TN denotes true negatives, FP denotes false positives, and FN denotes false negatives.
 
@@ -240,11 +253,15 @@ The serving layer also includes a rule-based Metabolic Syndrome risk guardrail. 
 
 DIANA uses a two-stage inference structure. The first stage classifies a user as normal or at risk using the Logistic Regression screening model. Only users classified as at risk proceed to the weighted K-Means subtyping stage. This gating mechanism prevents the system from assigning disease-pattern subtype labels to users classified as normal.
 
-Weighted K-Means clustering was trained exclusively on the at-risk subset of 734 cases. K-Means was selected as a centroid-based method for grouping similar metabolic profiles (MacQueen, 1967). The clustering features were BMI, triglycerides, LDL cholesterol, HDL cholesterol, age, and waist circumference. Feature weights were applied before Euclidean distance computation to emphasize clinically relevant dimensions. For a standardized patient vector z and centroid c_k, the weighted distance used for assignment was:
+Weighted K-Means clustering was trained exclusively on the at-risk subset of 734 cases. K-Means was selected as a centroid-based method for grouping similar metabolic profiles (MacQueen, 1967). The clustering features were BMI, triglycerides, LDL cholesterol, HDL cholesterol, age, and waist circumference. Feature weights were applied before Euclidean distance computation to emphasize clinically relevant dimensions. For a standardized patient vector $\mathbf{z}_i$ and centroid $\boldsymbol{\mu}_k$, the weighted distance used for assignment was:
 
-`Weighted Euclidean Distance = sqrt( sum_j w_j x (z_j - c_kj)^2 )`
+$$
+d_w(\mathbf{z}_i,\boldsymbol{\mu}_k)=\sqrt{\sum_{j=1}^{p}w_j(z_{ij}-\mu_{kj})^2}
+$$
 
-where w_j is the feature-specific weight, z_j is the standardized patient value for feature j, and c_kj is the corresponding standardized centroid value for cluster k. LDL received the highest weight as an atherogenic lipid differentiator. Triglycerides and waist circumference were strongly weighted because of their relationship to lipid dysregulation, central adiposity, and insulin-resistance patterns. BMI served as an obesity-pattern anchor, HDL as an inverse lipid marker, and age as a baseline variable.
+where $w_j$ is the feature-specific weight, $z_{ij}$ is the standardized patient value for feature $j$, and $\mu_{kj}$ is the corresponding standardized centroid value for cluster $k$. LDL received the highest weight as an atherogenic lipid differentiator. Triglycerides and waist circumference were strongly weighted because of their relationship to lipid dysregulation, central adiposity, and insulin-resistance patterns. BMI served as an obesity-pattern anchor, HDL as an inverse lipid marker, and age as a baseline variable.
+
+The feature weights should be interpreted as literature-informed heuristic design parameters, not as clinically validated medical weights, causal effect sizes, treatment priorities, or regression coefficients. They were used only to shape geometric distance in standardized clustering space. This distinction was emphasized after the doctor expert review, where the main clinical clarification concerned why particular features were weighted more heavily and how those weights affected subtype assignment. The rationale draws on published metabolic-syndrome, lipid-accumulation, and data-driven diabetes-subgroup literature (Alberti et al., 2009; Ahlqvist et al., 2018; Kahn, 2005; Wang et al., 2024), but the weights themselves require sensitivity analysis and broader clinical validation before being treated as medically established.
 
 **Table 3.7. Weighted K-Means Feature Weights**
 
@@ -257,7 +274,7 @@ where w_j is the feature-specific weight, z_j is the standardized patient value 
 | HDL cholesterol | 1.2 | Inverse lipid-risk marker |
 | Age | 1.0 | Baseline demographic variable |
 
-Cluster centroids were inverse-transformed from standardized space into raw clinical units before interpretation. The resulting labels were Ahlqvist-inspired proxy labels: SIRD-like, SIDD-like, MOD-like, and MARD-like. Label assignment followed a deterministic centroid-ranking rule. First, the SIRD-like label was assigned to the centroid with the highest Lipid Accumulation Product (LAP)-style score, computed for this women-only cohort as `(waist circumference - 58) x triglycerides`. LAP was introduced as a waist-triglyceride index of lipid overaccumulation (Kahn, 2005) and has been associated with prediabetes and diabetes risk in NHANES-based work (Wang et al., 2024). In DIANA, LAP is not a classifier input and is not stored as a user feature; it is used only to rank inverse-transformed cluster centroids. Because it is used for within-dataset ranking, the triglyceride unit scale does not change which centroid has the highest LAP-style score.
+Cluster centroids were inverse-transformed from standardized space into raw clinical units before interpretation. The resulting labels were Ahlqvist-inspired proxy labels: SIRD-like, SIDD-like, MOD-like, and MARD-like. Label assignment followed a deterministic centroid-ranking rule. First, the SIRD-like label was assigned to the centroid with the highest Lipid Accumulation Product (LAP)-style score, computed for this women-only cohort as $\mathrm{LAP}=(WC-58)\times TG$. LAP was introduced as a waist-triglyceride index of lipid overaccumulation (Kahn, 2005) and has been associated with prediabetes and diabetes risk in NHANES-based work (Wang et al., 2024). In DIANA, LAP is not a classifier input and is not stored as a user feature; it is used only to rank inverse-transformed cluster centroids. Because it is used for within-dataset ranking, the triglyceride unit scale does not change which centroid has the highest LAP-style score.
 
 After the SIRD-like centroid was removed from consideration, the SIDD-like label was assigned to the remaining centroid with the highest LDL cholesterol. This is a lipid-driven proxy rather than true insulin-deficiency classification. The MOD-like label was then assigned to the remaining centroid with the highest BMI, and the final residual centroid was labeled MARD-like. The term "Ahlqvist-inspired" is deliberate. The original adult-onset diabetes subgroup framework used variables that are not available in DIANA's accessible screening feature set, including GAD antibody status and HOMA2 estimates of beta-cell function and insulin resistance (Ahlqvist et al., 2018). DIANA also excludes HbA1c and fasting blood sugar from model inputs to avoid circular prediction. Therefore, the cluster labels describe phenotypic similarity to known metabolic patterns rather than validated biological subtype membership; this caution is also consistent with work comparing data-driven diabetes subgroups against simpler clinical-feature models (Dennis et al., 2019).
 
@@ -417,19 +434,65 @@ DIANA implements signed-token authentication, role-based access control, request
 | Internal ML access | Internal service-to-service communication | Prevent direct public ML invocation |
 | Secret management | Runtime secret configuration | Reduce accidental credential disclosure |
 
-Software quality evaluation followed ISO/IEC 25010-informed characteristics (International Organization for Standardization, 2011). Functional suitability was evaluated through API tests, model-serving tests, and frontend unit tests. Performance efficiency was evaluated through inference benchmarks and planned load-testing methodology. Security was evaluated through authentication, role-based access, rate-limiting, and request-handling tests. Maintainability was supported through modular architecture, structured database access, and separated frontend, backend, and ML services. Formal usability, accessibility, expert face-validity, and reliability results require separate UAT and expert-review execution.
+Software quality evaluation followed ISO/IEC 25010-informed characteristics (International Organization for Standardization, 2011). Functional suitability was evaluated through API tests, model-serving tests, and frontend unit tests. Performance efficiency was evaluated through inference benchmarks and planned load-testing methodology. Security was evaluated through authentication, role-based access, rate-limiting, and request-handling tests. Maintainability was supported through modular architecture, structured database access, and separated frontend, backend, and ML services. Formal community usability, accessibility, and reliability results require separate UAT and operational testing. The completed doctor review is reported separately as qualitative expert face-validity feedback rather than as formal clinical validation.
 
 Because DIANA was evaluated as a research prototype, its current navigation and browser-token handling should not be interpreted as production clinical security hardening. Before clinical deployment, the system would require stronger session-management design, formal cross-site-scripting review, route-based navigation refinement, and deployment-compatible protections such as HttpOnly cookies or server-side sessions where feasible.
 
 ### 3.14 User Acceptance Testing and Expert Review Methodology
 
-The planned user evaluation follows an ISO/IEC 25010-informed usability framework (International Organization for Standardization, 2011). The protocol evaluates appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence. Planned user participants will complete core tasks such as logging in, navigating the dashboard, submitting an assessment, and interpreting prediction results.
+The planned community user evaluation follows an ISO/IEC 25010-informed usability framework (International Organization for Standardization, 2011). The protocol evaluates appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence. Planned user participants will complete core tasks such as logging in, navigating the dashboard, submitting an assessment, and interpreting prediction results.
 
-The planned user cohort consists of approximately 30 menopausal or postmenopausal Filipino women recruited from the target online community, subject to approval and consent procedures. The planned clinical expert cohort consists of two licensed medical professionals, preferably one endocrinologist and one obstetrics-gynecology specialist, with experience in menopausal and metabolic health. Expert review will evaluate risk-output plausibility, SHAP explanation clarity, clinical workflow fit, and perceived utility. Because formal UAT and expert review have not yet been completed, SUS scores, task success rates, expert ratings, and expert quotations are not reported as completed results.
+The planned user cohort consists of approximately 30 menopausal or postmenopausal Filipino women recruited from the target online community, subject to approval and consent procedures. Separately, a hands-on doctor expert review was completed with a licensed physician reviewer. The expert review evaluated the prototype's feature set, assessment workflow, risk-output presentation, explanation approach, and subtype-weighting rationale. Feedback was collected qualitatively rather than through a completed Likert scoring instrument; therefore, this study reports expert comments and interpretation themes, but not formal expert mean scores. Formal UAT with the target user cohort remains pending, so SUS scores, task success rates, completion times, and user quotations are not reported as completed results.
+
+### 3.15 Data Analysis Procedure
+
+Data analysis was conducted at three levels: cohort and feature analysis, predictive-model validation, and system-evaluation evidence. The NHANES analytic cohort was summarized using record counts, class distributions, survey-cycle membership, feature availability, and reference-label composition. These summaries were used to describe the analytic dataset and to verify that the final cohort matched the intended postmenopausal, fasting-laboratory population. Because the modeling objective was prediction within the analytic cohort rather than national prevalence estimation, descriptive counts were not interpreted as weighted population estimates.
+
+Reference-label analysis compared the DIQ010-derived physician-diagnosis or borderline-diabetes labels with HbA1c-threshold labels. Agreement and discordance were interpreted descriptively to assess label consistency and uncertainty. Discordant records were not treated as errors automatically because they may reflect undiagnosed diabetes, treatment effects, recall differences, timing differences between questionnaire and laboratory data, or single-measurement biological variability.
+
+Feature analysis used Information Gain and entropy-based relevance ranking to identify candidate predictors while excluding diagnostic glycemic variables and proxy-leakage features. Final feature interpretation considered both quantitative relevance and clinical plausibility. Missing-data handling, feature scaling, and threshold selection were evaluated inside validation workflows to avoid information leakage from held-out folds (Vabalas et al., 2019).
+
+Predictive-model analysis used nested Leave-One-Group-Out validation by NHANES survey release. For each outer validation fold, one survey release served as the held-out temporal test group while the remaining releases were used for model selection and fitting. Model performance was evaluated using AUC-ROC, sensitivity, specificity, positive predictive value, negative predictive value, F1 score, and confusion-matrix counts. Confidence intervals for headline metrics were estimated through bootstrap resampling using a fixed random seed. Screening-threshold selection was based on out-of-fold predictions and operating-point constraints rather than manual selection after viewing final test performance. Calibration was assessed using the Brier score, expected calibration error, and Hosmer-Lemeshow statistic (Brier, 1950; Hosmer & Lemeshow, 1980; Van Calster et al., 2019).
+
+Cluster analysis was performed on the at-risk subset using weighted K-Means. Cluster validity was assessed using silhouette score, Davies-Bouldin index, and Calinski-Harabasz index, while centroid interpretation was performed after inverse-transforming cluster centers into raw clinical units (Rousseeuw, 1987; Davies & Bouldin, 1979; Calinski & Harabasz, 1974). Benchmark analysis compared DIANA with reconstructed screening baselines under the same NHANES cohort, outcome definition, and validation framework where sufficient variables were available.
+
+System-evaluation evidence was analyzed separately from model-validation evidence. Backend, ML-service, frontend, security, deployment-readiness, and accessibility-readiness results were summarized by test domain, evidence source, and implementation status. Community user acceptance testing was handled as a planned evaluation procedure because it had not yet been completed. The doctor expert review was analyzed qualitatively as face-validity feedback, with attention to feature usefulness, risk-output plausibility, and the requested clarification that clustering feature weights are literature-informed heuristics rather than clinically validated medical weights.
+
+**Table 3.12. Summary of Data Analysis Procedures**
+
+| Analysis Domain | Procedure | Primary Output |
+|---|---|---|
+| Cohort description | Count records, class labels, survey cycles, and feature availability | Final analytic cohort profile |
+| Label consistency | Compare DIQ010-derived labels with HbA1c-threshold labels | Agreement and discordance interpretation |
+| Feature relevance | Rank predictors using Information Gain and leakage screening | Final predictor set and excluded-feature rationale |
+| Model validation | Apply nested LOGO validation by NHANES release | Fold-level and pooled discrimination metrics |
+| Threshold and calibration | Optimize threshold from out-of-fold predictions and assess calibration | Screening threshold, operating metrics, and calibration statistics |
+| Cluster validation | Evaluate weighted K-Means on at-risk records | Cluster validity metrics and subtype-context interpretation |
+| Benchmark comparison | Reconstruct available screening baselines under the same cohort and outcome definition | Contextual comparator performance |
+| System evidence | Summarize technical tests, implementation status, and planned evaluation gaps | Functional, security, deployment, and readiness findings |
+
+For clarity, the principal formulas used in the methodology are summarized below in LaTeX notation. The table serves as a formula index; the surrounding methodology sections explain how each formula was applied and interpreted.
+
+**Table 3.13. LaTeX-Formatted Formula Summary**
+
+| Formula Area | LaTeX Formula | Applied In |
+|---|---|---|
+| HbA1c reference thresholds | $\text{Diabetic}:\mathrm{HbA1c}\ge 6.5\%;\ \text{Pre-diabetic}:5.7\%\le \mathrm{HbA1c}<6.5\%;\ \text{Normal}:\mathrm{HbA1c}<5.7\%$ | 3.5 |
+| Waist-circumference fallback | $\widehat{WC}=3.33\times BMI$ | 3.6 |
+| Proxy-leakage flag | $\lvert r_{x,\mathrm{HbA1c}}\rvert>0.95$ | 3.7 |
+| Entropy and Information Gain | $H(Y)=-\sum_i p_i\log_2(p_i);\ IG(Y,X)=H(Y)-H(Y\mid X)$ | 3.7 |
+| Logistic screening probability | $\hat{p}=\frac{1}{1+e^{-(\beta_0+\sum_{j=1}^{p}\beta_jx_j)}}$ | 3.8 |
+| Sensitivity and specificity | $\mathrm{Sensitivity}=\frac{TP}{TP+FN};\ \mathrm{Specificity}=\frac{TN}{TN+FP}$ | 3.9 |
+| Precision, accuracy, and F1 | $\mathrm{PPV}=\frac{TP}{TP+FP};\ \mathrm{Accuracy}=\frac{TP+TN}{TP+TN+FP+FN};\ F_1=\frac{2(\mathrm{PPV})(\mathrm{Sensitivity})}{\mathrm{PPV}+\mathrm{Sensitivity}}$ | 3.9 |
+| Threshold strategies | $J=\mathrm{Sensitivity}+\mathrm{Specificity}-1;\ G\text{-}\mathrm{Mean}=\sqrt{\mathrm{Sensitivity}\times\mathrm{Specificity}}$ | 3.9 |
+| Composite threshold scores | $\mathrm{Screening\ Score}=0.60(\mathrm{Sensitivity})+0.40(F_1);\ \mathrm{Clinical\ Score}=0.35(\mathrm{Sensitivity})+0.30(\mathrm{Specificity})+0.25(F_1)+0.10(\mathrm{Accuracy})$ | 3.9 |
+| Weighted K-Means distance | $d_w(\mathbf{z}_i,\boldsymbol{\mu}_k)=\sqrt{\sum_{j=1}^{p}w_j(z_{ij}-\mu_{kj})^2}$ | 3.10 |
+| LAP-style centroid score | $\mathrm{LAP}=(WC-58)\times TG$ | 3.10 |
+| Brier score and ECE | $\mathrm{Brier}=\frac{1}{n}\sum_{i=1}^{n}(\hat{p}_i-y_i)^2;\ \mathrm{ECE}=\sum_{m=1}^{M}\frac{\lvert B_m\rvert}{n}\lvert \mathrm{acc}(B_m)-\mathrm{conf}(B_m)\rvert$ | 3.15 and 4.4 |
 
 # Chapter 4: Results and Discussion
 
-Although Chapter 3 describes the work as eight methodological phases, Chapter 4 presents the findings by evidence domain. This organization separates model performance, feature relevance, clustering, leakage validation, functional testing, interface integration, deployment readiness, and pending user or expert evaluation evidence.
+Although Chapter 3 describes the work as eight methodological phases, Chapter 4 presents the findings by evidence domain. This organization separates model performance, feature relevance, clustering, leakage validation, functional testing, interface integration, deployment readiness, pending community UAT evidence, and completed qualitative doctor expert-review evidence.
 
 ### 4.1 Binary Screening Model Performance
 
@@ -669,11 +732,20 @@ Deployment readiness was assessed at the configuration level rather than as a fu
 
 The configuration review supports deployment-readiness claims at the architectural level. It does not replace production load testing or an infrastructure security audit.
 
-### 4.10 Pending User Acceptance Testing and Expert Review
+### 4.10 User Acceptance Testing Status and Doctor Expert Review
 
-The UAT protocol and expert review framework were defined but had not yet been executed at the time of manuscript preparation. As a result, Chapter 4 does not report SUS scores, task-success rates, completion times, expert ratings, or expert quotations. These measures are part of the planned evaluation protocol described in Chapter 3 and will require formal participant recruitment, consent, and data collection before they can be interpreted as empirical findings.
+The community UAT protocol was defined but had not yet been executed at the time of manuscript preparation. As a result, Chapter 4 does not report SUS scores, task-success rates, completion times, or community-user quotations. These measures remain part of the planned evaluation protocol described in Chapter 3 and will require formal participant recruitment, consent, and data collection before they can be interpreted as empirical findings.
 
-Internal walkthroughs identified several areas for improvement, including visibility of medical-history fields, SHAP legend clarity, mobile assessment-form usability, and explanation of Ahlqvist-inspired proxy subtype labels. These observations are treated as internal review notes rather than formal UAT or expert-review results.
+The completed doctor expert review was conducted as a hands-on prototype evaluation. The physician reviewer used DIANA, inspected the assessment workflow, reviewed the displayed features and risk-output presentation, and discussed the basis for the subtype module. Overall qualitative feedback was positive: the features were considered useful for a screening-support prototype, and no major objection was raised to the assessment workflow or risk-output presentation. The main clinical question concerned the weighted K-Means subtype module, specifically why particular features were assigned higher weights and how those weights were used during cluster assignment.
+
+| Review Area | Expert Feedback | Manuscript Response |
+|---|---|---|
+| Feature set and workflow | The implemented features and assessment flow were considered acceptable and useful for screening-support use. | Core workflow retained and described as screening support rather than diagnosis. |
+| Feature weighting | The main clarification concerned why features such as LDL, triglycerides, waist circumference, BMI, HDL, and age were weighted differently in clustering. | Section 3.10 now clarifies that weights are literature-informed heuristic design parameters used for standardized geometric distance, not medically validated clinical weights. |
+| Citation support | Additional support was requested for the rationale behind weighted features. | The manuscript strengthens the link to metabolic-syndrome, lipid-accumulation, and data-driven diabetes-subgroup literature. |
+| Clinical validity boundary | The review supported face validity and perceived usefulness but did not constitute external clinical validation. | The limitations and synthesis sections explicitly state that broader clinical validation, sensitivity analysis, and prospective evaluation remain required. |
+
+Internal walkthroughs also identified areas for improvement, including visibility of medical-history fields, SHAP legend clarity, mobile assessment-form usability, and explanation of Ahlqvist-inspired proxy subtype labels. These observations are treated as internal review notes rather than formal community UAT results.
 
 ### 4.11 UI/UX Design and Accessibility Readiness
 
@@ -715,13 +787,13 @@ Several limitations constrain interpretation of the study. First, all model deve
 
 Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired labels as heuristic descriptions rather than validated biological subtypes. True biological subtype validation would require autoimmune markers, beta-cell function markers, insulin-resistance estimates, longitudinal outcomes, and independent clinical datasets. Fourth, deployment guardrails such as waist-circumference imputation and metabolic syndrome risk floors are engineered safeguards requiring ablation, calibration, and clinical review before being treated as validated clinical rules.
 
-Fifth, formal UAT, expert face-validity review, accessibility testing, and production load testing remain incomplete. Sixth, the interface navigation and browser-token handling reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. These sections are therefore framed as protocol, readiness, or pending evidence until data collection is completed. For these reasons, DIANA is presented as a screening-support prototype with promising internal validation, not as a clinically validated diagnostic system.
+Fifth, formal community UAT, accessibility testing, and production load testing remain incomplete. The completed doctor review provides initial qualitative expert face-validity support, but it did not collect formal scored ratings and does not replace external clinical validation. Sixth, the interface navigation and browser-token handling reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. For these reasons, DIANA is presented as a screening-support prototype with promising internal validation and initial expert feedback, not as a clinically validated diagnostic system.
 
 ### 4.14 Chapter Synthesis
 
 The results demonstrate that DIANA provides a technically implemented and methodologically conservative screening-support workflow for diabetes risk stratification among postmenopausal women. Its strongest methodological contribution is the separation of diagnostic label construction from predictor inputs, supported by an automated leakage validation pipeline. The final Logistic Regression model achieved acceptable discrimination under conservative temporal validation while preserving interpretability and deployment simplicity.
 
-The weighted clustering module and SHAP explainability layer add clinical context to the binary risk output, but both require careful interpretation. The subtype labels are heuristic and hypothesis-generating, and SHAP values support transparency rather than causal explanation. Overall, DIANA should be understood as a triage-support system that can help identify users who may benefit from confirmatory testing and clinical review. Future work should prioritize external validation, prospective evaluation, formal UAT, expert clinical review, accessibility assessment, production load testing, and calibration in the intended deployment population.
+The weighted clustering module and SHAP explainability layer add clinical context to the binary risk output, but both require careful interpretation. The subtype labels are heuristic and hypothesis-generating, and SHAP values support transparency rather than causal explanation. The completed doctor review supported the perceived usefulness of the feature set and workflow while identifying the need to state the theoretical and literature-informed basis of the clustering weights more clearly. Overall, DIANA should be understood as a triage-support system that can help identify users who may benefit from confirmatory testing and clinical review. Future work should prioritize external validation, prospective evaluation, formal UAT, broader expert clinical review, accessibility assessment, production load testing, and calibration in the intended deployment population.
 
 ## References
 
