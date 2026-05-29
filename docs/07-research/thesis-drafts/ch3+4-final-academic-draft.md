@@ -202,7 +202,7 @@ NHANES survey weights were not incorporated into model training. Survey weights 
 
 The final classifier outputs a probability that must be converted into a binary screening classification. Because DIANA is intended for early risk identification, thresholding was optimized for a screening context rather than defaulting to 0.50. Youden's J was included because it is a conventional operating-point criterion that balances sensitivity and specificity by maximizing sensitivity plus specificity minus one (Youden, 1950). However, it was treated as one candidate strategy rather than as an automatic final rule because DIANA is a screening-support system. In this context, a false negative may delay confirmatory testing or preventive counseling, while a false positive generally leads to follow-up review rather than immediate treatment.
 
-Three threshold strategies were evaluated using out-of-fold probabilities from the training portion of each outer LOGO fold: Youden's J, a screening-optimized rule, and the geometric mean of sensitivity and specificity. The screening-optimized rule explicitly prioritized sensitivity while preserving a minimum specificity constraint. The geometric-mean rule provided a balance-oriented alternative for folds where sensitivity and specificity moved in opposite directions, which is useful when class imbalance and uneven operating characteristics are present (Luque et al., 2019). Let $\mathcal{T}=\{0.10,0.11,\ldots,0.89\}$ denote the candidate threshold grid. For each threshold $t\in\mathcal{T}$, predicted labels were assigned as $\hat{y}_i(t)=1$ when $\hat{p}_i\ge t$ and $\hat{y}_i(t)=0$ otherwise. The classification-performance quantities were:
+Three threshold strategies were evaluated using out-of-fold probabilities from the training portion of each outer LOGO fold: Youden's J, a screening-optimized rule, and the geometric mean of sensitivity and specificity. The screening-optimized rule explicitly prioritized sensitivity while preserving a minimum specificity constraint. The geometric-mean rule provided a balance-oriented alternative for folds where sensitivity and specificity moved in opposite directions, which is useful when class imbalance and uneven operating characteristics are present (Luque et al., 2019). The candidate threshold grid ranged from 0.10 to 0.89 in increments of 0.01. For each threshold $t$ in that grid, predicted labels were assigned as $\hat{y}_i(t)=1$ when $\hat{p}_i\ge t$ and $\hat{y}_i(t)=0$ otherwise. The classification-performance quantities were:
 
 $$
 \begin{aligned}
@@ -221,17 +221,25 @@ The three candidate thresholds were selected from the same grid as follows:
 
 $$
 \begin{aligned}
-t_J &= \arg\max_{t\in\mathcal{T}} J(t) \\
-t_S &= \arg\max_{t\in\mathcal{T}:\ \mathrm{Sensitivity}(t)\ge 0.80,\ \mathrm{Specificity}(t)\ge 0.40}
-\left[0.60\,\mathrm{Sensitivity}(t)+0.40\,F_1(t)\right] \\
-t_G &= \arg\max_{t\in\mathcal{T}} G\text{-}\mathrm{Mean}(t)
+\mathcal{T} &= \{0.10,0.11,\ldots,0.89\} \\
+\mathcal{F} &= \{t\in\mathcal{T}\mid \mathrm{Sensitivity}(t)\ge 0.80
+\land \mathrm{Specificity}(t)\ge 0.40\} \\
+S(t) &= 0.60\cdot\mathrm{Sensitivity}(t)+0.40\cdot F_1(t) \\
+G(t) &= \sqrt{\mathrm{Sensitivity}(t)\times\mathrm{Specificity}(t)} \\
+t_J &= \underset{t\in\mathcal{T}}{\operatorname{argmax}}\ J(t) \\
+t_S &= \underset{t\in\mathcal{F}}{\operatorname{argmax}}\ S(t) \\
+t_G &= \underset{t\in\mathcal{T}}{\operatorname{argmax}}\ G(t)
 \end{aligned}
 $$
 
-A composite clinical score was then used to select the fold-specific strategy from the candidate thresholds $t_J$, $t_S$, and $t_G$:
+A composite clinical score was then used to select the fold-specific base strategy from the candidate thresholds $t_J$, $t_S$, and $t_G$:
 
 $$
-\mathrm{Clinical\ Score}(t)=0.35\,\mathrm{Sensitivity}(t)+0.30\,\mathrm{Specificity}(t)+0.25\,F_1(t)+0.10\,\mathrm{Accuracy}(t)
+\begin{aligned}
+C(t) &= 0.35\cdot\mathrm{Sensitivity}(t)+0.30\cdot\mathrm{Specificity}(t) \\
+&\quad +0.25\cdot F_1(t)+0.10\cdot\mathrm{Accuracy}(t) \\
+t_{\mathrm{base}} &= \underset{t\in\{t_J,t_S,t_G\}}{\operatorname{argmax}}\ C(t)
+\end{aligned}
 $$
 
 In these formulas, TP denotes true positives, TN denotes true negatives, FP denotes false positives, and FN denotes false negatives.
@@ -497,14 +505,11 @@ For clarity, the principal formulas used in the methodology are summarized below
 
 HbA1c reference thresholds:
 
-$$
-\text{Reference status} =
-\begin{cases}
-\text{Diabetic}, & \mathrm{HbA1c}\ge 6.5\% \\
-\text{Pre-diabetic}, & 5.7\%\le \mathrm{HbA1c}<6.5\% \\
-\text{Normal}, & \mathrm{HbA1c}<5.7\%
-\end{cases}
-$$
+| Reference status | HbA1c criterion |
+|---|---|
+| Diabetic | HbA1c >= 6.5% |
+| Pre-diabetic | 5.7% <= HbA1c < 6.5% |
+| Normal | HbA1c < 5.7% |
 
 Waist-circumference fallback:
 
@@ -551,11 +556,16 @@ Threshold strategy selection:
 $$
 \begin{aligned}
 \mathcal{T} &= \{0.10,0.11,\ldots,0.89\} \\
-t_J &= \arg\max_{t\in\mathcal{T}} J(t) \\
-t_S &= \arg\max_{t\in\mathcal{T}:\ \mathrm{Sensitivity}(t)\ge 0.80,\ \mathrm{Specificity}(t)\ge 0.40}
-\left[0.60\,\mathrm{Sensitivity}(t)+0.40\,F_1(t)\right] \\
-t_G &= \arg\max_{t\in\mathcal{T}} \sqrt{\mathrm{Sensitivity}(t)\times\mathrm{Specificity}(t)} \\
-\mathrm{Clinical\ Score}(t) &= 0.35\,\mathrm{Sensitivity}(t)+0.30\,\mathrm{Specificity}(t)+0.25\,F_1(t)+0.10\,\mathrm{Accuracy}(t)
+\mathcal{F} &= \{t\in\mathcal{T}\mid \mathrm{Sensitivity}(t)\ge 0.80
+\land \mathrm{Specificity}(t)\ge 0.40\} \\
+S(t) &= 0.60\cdot\mathrm{Sensitivity}(t)+0.40\cdot F_1(t) \\
+G(t) &= \sqrt{\mathrm{Sensitivity}(t)\times\mathrm{Specificity}(t)} \\
+C(t) &= 0.35\cdot\mathrm{Sensitivity}(t)+0.30\cdot\mathrm{Specificity}(t) \\
+&\quad +0.25\cdot F_1(t)+0.10\cdot\mathrm{Accuracy}(t) \\
+t_J &= \underset{t\in\mathcal{T}}{\operatorname{argmax}}\ J(t) \\
+t_S &= \underset{t\in\mathcal{F}}{\operatorname{argmax}}\ S(t) \\
+t_G &= \underset{t\in\mathcal{T}}{\operatorname{argmax}}\ G(t) \\
+t_{\mathrm{base}} &= \underset{t\in\{t_J,t_S,t_G\}}{\operatorname{argmax}}\ C(t)
 \end{aligned}
 $$
 
