@@ -45,7 +45,7 @@ jobs:
           done
 
           echo "=== HTTP redirect ==="
-          curl -sS -o /dev/null -D - "http://${BACKEND_HOST}/" | awk 'BEGIN{IGNORECASE=1} /^HTTP\\// || /^location:/ {print}'
+          curl -sS -o /dev/null -D - "http://${BACKEND_HOST}/" | awk 'BEGIN{IGNORECASE=1} /^HTTP\// || /^location:/ {print}'
 
           echo "=== TLS certificate ==="
           echo | openssl s_client -connect "${BACKEND_HOST}:443" -servername "${BACKEND_HOST}" -verify_return_error 2>/dev/null \
@@ -60,14 +60,14 @@ jobs:
             -H "Origin: ${FRONTEND_ORIGIN}" \
             -H "Access-Control-Request-Method: POST" \
             -H "Access-Control-Request-Headers: content-type,authorization" \
-            | awk 'BEGIN{IGNORECASE=1} /^HTTP\\// || /^access-control-allow-origin:/ || /^access-control-allow-credentials:/ || /^access-control-allow-methods:/ || /^access-control-allow-headers:/ {print}'
+            | awk 'BEGIN{IGNORECASE=1} /^HTTP\// || /^access-control-allow-origin:/ || /^access-control-allow-credentials:/ || /^access-control-allow-methods:/ || /^access-control-allow-headers:/ {print}'
 
           echo "=== CORS rejected origin ==="
           curl -sS -o /dev/null -D - -X OPTIONS "https://${BACKEND_HOST}/api/v1/auth/login" \
             -H "Origin: https://evil.example" \
             -H "Access-Control-Request-Method: POST" \
             -H "Access-Control-Request-Headers: content-type,authorization" \
-            | awk 'BEGIN{IGNORECASE=1} /^HTTP\\// || /^access-control-allow-origin:/ {print}'
+            | awk 'BEGIN{IGNORECASE=1} /^HTTP\// || /^access-control-allow-origin:/ {print}'
 
       - name: Remote host, DB TLS, and ML auth checks
         env:
