@@ -47,7 +47,7 @@ The Chapter 3+4 draft set has been checked and corrected for the following high-
 - Community UAT, formal scored expert review, accessibility contrast testing, and production performance claims are marked as pending where they are not yet supported by collected evidence.
 - Fill-in placeholders are retained only for user-supplied future evidence such as UAT dates/results, expert reviewer details/quotes, and formal accessibility-test results.
 - Current UI screenshots have a provenance manifest with capture date, local capture endpoints, source views, dimensions, and SHA-256 hashes.
-- Live deployment security was externally audited for the currently identified backend host and frontend origin. Public exposure, HTTPS redirect, TLS certificate, security headers, production CORS behavior, backend health, authenticated operations health, and backend-mediated ML proxy behavior were checked. Runtime database TLS mode and actual host firewall rules remain operator-level verification items because the active database connection string, database session settings, and firewall rule inventory are not exposed through public endpoints. Live ML logs also show `ML_API_KEY` is not configured, so current ML-service API-key enforcement must not be claimed.
+- Live deployment security was externally and operator-audited for the currently identified backend host, frontend origin, and deployed VPS configuration. Public exposure, HTTPS redirect, TLS certificate, security headers, production CORS behavior, backend health, authenticated operations health, backend-mediated ML proxy behavior, host firewall posture, database TLS behavior, and ML API-key enforcement were checked. The initial audit found `ML_API_KEY` missing from the live ML service; the VPS runtime configuration was corrected, backend and ML containers were recreated, and direct internal no-key/fake-key ML requests now return 401.
 
 ## Command Evidence
 
@@ -66,7 +66,7 @@ The Chapter 3+4 draft set has been checked and corrected for the following high-
 | Render/export check | `pandoc ... --standalone --mathjax --embed-resources --resource-path=docs/07-research/thesis-drafts:.` for both Chapter 3+4 files | PASS: self-contained HTML files generated under `tmp/thesis-review-render/`; all image tags are embedded resources |
 | Bibliography scan | Reference-list scan over `ch3+4-final-academic-draft.md` | PASS: 35 reference entries; no duplicate first-author/year keys; no bare `DOI:` or `PMC####` markers in the clean final bibliography |
 | Deployment/security scan | `rg` review of `docker-compose.prod.yml`, `deployment/Caddyfile`, `frontend/nginx-ssl.conf`, and ML/backend security configuration | REVIEWED: manuscript now distinguishes direct service-port isolation from optional reverse-proxy ML routing |
-| Live deployment external audit | DNS, `nc`, `curl`, `openssl s_client`, CORS preflight, authenticated operations health, authenticated ML proxy checks, admin log search, and GitHub Actions external audit run `26663133943` against `diana-v2.duckdns.org` and `https://diana-v2.vercel.app` | PASS/PARTIAL: public exposure, TLS certificate, headers, CORS, backend health, DB ping, and ML proxy boundary verified; runtime DB TLS mode and actual host firewall rules require operator-level evidence; live ML-service API-key enforcement is not active because `ML_API_KEY` is unset; Actions remote host step skipped because deploy SSH secrets were unavailable to the workflow |
+| Live deployment external and operator audit | DNS, `nc`, `curl`, `openssl s_client`, CORS preflight, authenticated operations health, authenticated ML proxy checks, admin log search, GitHub Actions external audit run `26663133943`, Tailscale SSH operator audit, UFW status, Docker port inventory, redacted backend DSN classification, redacted `psql \conninfo`, and internal ML no-key/fake-key checks | PASS: public exposure, TLS certificate, headers, CORS, backend health, DB ping, host firewall posture, DB TLS over TLSv1.3, ML proxy boundary, and ML API-key enforcement verified; Actions remote host step skipped because deploy SSH secrets were unavailable to that workflow, but direct operator audit completed over Tailscale SSH |
 
 ## Remaining Blockers
 
@@ -85,11 +85,8 @@ The Chapter 3+4 draft set has been checked and corrected for the following high-
    - Current Chapter 3+4 image links resolve and render in the self-contained HTML export.
    - Do not add synthetic or placeholder figures for SHAP, result modal, dashboard, or UAT screenshots.
 
-5. Runtime database TLS mode and actual host firewall rules are not yet proven.
-   - The live deployment audit verified effective public exposure, HTTPS, CORS, backend health, database ping, and backend-mediated ML proxy behavior from external clients. The remaining deployment-security evidence gaps are operator-level confirmation that the active database connection uses TLS, such as a redacted runtime `DB_DSN` or database-session SSL evidence, and direct host/cloud firewall rule evidence.
-
-6. Live ML-service API-key enforcement is not active.
-   - Code enforces `X-API-Key` when `ML_API_KEY` is configured, and the public ML service is not directly exposed. The source now also fails production ML startup and production Compose rendering when `ML_API_KEY` is absent. However, live ML logs report `ML_API_KEY not configured - running in development mode (no auth)`. Configure `ML_API_KEY` in the deployed backend and ML service, redeploy the current source, then retest direct internal ML no-key/fake-key calls before claiming runtime ML API-key enforcement.
+5. Production load and formal clinical security testing are not completed.
+   - The live deployment audit verifies bounded deployment-security claims for exposure, TLS, CORS, host firewall posture, DB TLS, and ML API-key enforcement. It does not replace production load testing, penetration testing, browser-token/XSS review, or a formal clinical security assessment.
 
 ## Recommended Correction Order
 
