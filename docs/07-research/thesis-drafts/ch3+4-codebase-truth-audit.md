@@ -1,6 +1,6 @@
 # Chapter 3+4 Codebase Truth Audit
 
-Date checked: 2026-05-17
+Date checked: 2026-05-30
 
 Primary thesis file: `ch3+4-final-academic-draft.md`
 
@@ -15,11 +15,13 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 - Citations are APA-style author-date in text, with APA-style reference-list entries.
 - The active thesis workflow is direct user assessment, not a clinic workflow. Legacy clinic routes and repository code still exist, but clinics are not described as an active Chapter 3+4 feature.
 - Deployment wording now matches the repository: Vercel/Caddy/managed PostgreSQL is one supported path, while Docker Compose production overlay with Nginx and internal PostgreSQL 16 is also present.
+- Deployment/security wording is limited to configuration-level readiness and direct service-port isolation. The Nginx overlay contains an optional `/ml/` reverse-proxy route, so the manuscript no longer claims that every topology has no public ML HTTP route.
 - The database is described as PostgreSQL 16-compatible persistence, not only NeonDB.
 - Frontend charts are described as Recharts-based. Plotly is not listed in the current frontend dependency set.
 - User export is described as PDF health report export through `/api/v1/users/me/export/pdf`, not CSV export.
 - ML proxy routes are described as conditional on `MODEL_URL`.
 - Chapter metrics match `models/binary_v2_no_bp/results`, including information gain, threshold arbitration, and model-comparison values.
+- UI screenshot provenance is documented in `screenshots/README.md` with capture date, local capture endpoints, 1440 x 1000 PNG dimensions, source views, and SHA-256 hashes.
 
 ## Verified Current Features
 
@@ -38,7 +40,9 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 | `python3 scripts/thesis/check_metrics_consistency.py docs/07-research/thesis-drafts/ch3+4-final-academic-draft.md docs/07-research/thesis-drafts/ch3+4.md` | PASS: 43 checked claims per document |
 | `cd backend && GOCACHE=/private/tmp/diana-go-build go test ./...` | PASS |
 | `cd Ian_ML && ./venv/bin/python -m pytest -q` | PASS: 274 tests |
-| `cd frontend && npm run test:coverage` | PASS: 15 files, 232 tests; 71.26% lines/statements, 60.58% branches, 44.24% functions |
+| `cd frontend && npm run test:coverage` | PASS: 15 files, 232 tests; 71.26% lines/statements, 60.55% branches, 44.24% functions |
+| `shasum -a 256 docs/07-research/thesis-drafts/screenshots/*.png` | PASS: cited UI screenshots have recorded hashes in the screenshot manifest |
+| `rg -n "ports:|expose:|/ml/|ML_API_KEY|CORS_ORIGINS" docker-compose.prod.yml deployment/Caddyfile frontend/nginx-ssl.conf Ian_ML/service/server.py` | REVIEWED: direct container ports are reset in production compose; optional Nginx `/ml/` route is now qualified in manuscript wording |
 
 ## Still Pending Evidence
 
@@ -46,6 +50,7 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 - Clinical expert ratings and quotes.
 - Formal accessibility audit evidence.
 - Production load/performance test evidence.
-- Final screenshots captured from the running application.
+- Live deployment security evidence, including host firewall rules, live TLS certificate chain, database TLS mode, production CORS values, and ML API-key enforcement on any deployed `/ml/` route.
+- Future replacement screenshots, if any, should be captured from the running application and added to the screenshot manifest with hashes.
 
 Do not convert these pending items into completed findings unless the corresponding evidence is collected.

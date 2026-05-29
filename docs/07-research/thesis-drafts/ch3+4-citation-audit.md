@@ -1,6 +1,6 @@
 # Chapter 3+4 Citation Audit
 
-**Date checked:** 2026-05-18
+**Date checked:** 2026-05-30
 **Primary draft checked:** `docs/07-research/thesis-drafts/ch3+4-final-academic-draft.md`
 **Technical backup checked:** `docs/07-research/thesis-drafts/ch3+4.md`
 **Companion wording file checked:** `docs/07-research/thesis-drafts/ch3+4-academic-wording-bank.md`
@@ -9,7 +9,7 @@
 
 The final Chapter 3+4 academic draft is now citation-ready for the methodology claims checked in this audit. In-text citations and reference-list entries have been added for NHANES data handling, ADA diagnostic thresholds, postmenopausal cohort filtering, leakage-safe validation, model algorithms, threshold formulas, clustering/subtype terminology, SHAP explainability, calibration metrics, software quality evaluation, security/authentication mechanisms, SUS usability measurement, health-AI governance, and WCAG accessibility guidance.
 
-**Advisor risk rating:** Low for missing methodology citations after the 2026-05-17 update. Residual risk remains for empirical placeholders that are not citation problems, such as pending UAT scores, expert-review ratings, accessibility audit results, screenshots, and production load-test results.
+**Advisor risk rating:** Low for missing methodology citations after the 2026-05-30 review. The clean final draft scan found no missing or unused citation pairs. The final bibliography contains 35 reference entries with no duplicate first-author/year keys and no bare `DOI:` or `PMC####` markers. The technical backup retains a broader reference list for appendix-style support, so the final draft should remain the submission source. Residual risk remains for empirical placeholders that are not citation problems, such as pending UAT scores, expert-review ratings, accessibility audit results, and production load-test results.
 
 ## Verified Citation Coverage Map
 
@@ -49,7 +49,8 @@ The final Chapter 3+4 academic draft is now citation-ready for the methodology c
 | Dennis diabetes-subgroup citation | The earlier audit suggested a different Dennis diabetes-subgroup paper, but the verified citation used for treatment-response caution is Dennis et al. (2019). | Corrected in both drafts and this audit. |
 | ISO/IEC 25010 version | The draft uses the ISO/IEC 25010 quality-model framing commonly cited as ISO/IEC 25010:2011. | Resolved by citing ISO/IEC 25010:2011. If the manuscript switches to a newer ISO edition later, the quality-characteristic wording should be reviewed. |
 | Technology stack citations | React, Gin, Flask, Redis, PostgreSQL, and Recharts are implementation choices. They do not need scholarly citations unless the school requires tool references. | Cite official docs only in an implementation appendix if needed. |
-| Placeholder results | UAT, expert review, screenshots, accessibility audit, and load testing remain placeholders. | Do not attach citations to placeholders as if the studies were completed. |
+| Screenshot evidence | UI screenshots are not citation problems but need provenance. The current screenshots have a local manifest with capture date, source views, dimensions, and SHA-256 hashes. | Keep `screenshots/README.md` synchronized whenever figures are replaced. |
+| Placeholder results | UAT, formal scored expert review, accessibility audit, and load testing remain placeholders. | Do not attach citations to placeholders as if the studies were completed. |
 
 ## Suggested In-Text Citation Insertions
 
@@ -129,4 +130,4 @@ World Wide Web Consortium. (2023). *Web Content Accessibility Guidelines (WCAG) 
 
 ## Bottom Line
 
-The highest-priority citation gaps have been closed in `ch3+4.md` and `ch3+4-final-academic-draft.md`. Remaining manuscript gaps are evidence gaps rather than citation gaps: UAT, expert review, accessibility testing, screenshots, and load testing should remain marked as pending until actually executed.
+The highest-priority citation gaps have been closed in `ch3+4.md` and `ch3+4-final-academic-draft.md`. Remaining manuscript gaps are evidence gaps rather than citation gaps: UAT, formal scored expert review, accessibility testing, and load testing should remain marked as pending until actually executed. Screenshot provenance is now documented separately in the screenshot manifest.
