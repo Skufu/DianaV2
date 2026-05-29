@@ -1,0 +1,164 @@
+name: Live Security Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_host:
+        description: "Public backend host to audit"
+        required: true
+        default: "diana-v2.duckdns.org"
+      frontend_origin:
+        description: "Expected production browser origin"
+        required: true
+        default: "https://diana-v2.vercel.app"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - name: External TLS and CORS checks
+        env:
+          BACKEND_HOST: ${{ inputs.backend_host }}
+          FRONTEND_ORIGIN: ${{ inputs.frontend_origin }}
+        run: |
+          set -euo pipefail
+
+          echo "=== External target ==="
+          echo "BACKEND_HOST=${BACKEND_HOST}"
+          echo "FRONTEND_ORIGIN=${FRONTEND_ORIGIN}"
+
+          echo "=== DNS ==="
+          getent ahosts "${BACKEND_HOST}" | awk '{print $1, $2}' | sort -u
+
+          echo "=== Public TCP ports ==="
+          for port in 22 80 443 8080 5000 5001 5432; do
+            if timeout 5 bash -c "cat < /dev/null > /dev/tcp/${BACKEND_HOST}/${port}" 2>/dev/null; then
+              echo "PORT_${port}=open"
+            else
+              echo "PORT_${port}=closed_or_filtered"
+            fi
+          done
+
+          echo "=== HTTP redirect ==="
+          curl -sS -o /dev/null -D - "http://${BACKEND_HOST}/" | awk 'BEGIN{IGNORECASE=1} /^HTTP\\// || /^location:/ {print}'
+
+          echo "=== TLS certificate ==="
+          echo | openssl s_client -connect "${BACKEND_HOST}:443" -servername "${BACKEND_HOST}" -verify_return_error 2>/dev/null \
+            | openssl x509 -noout -subject -issuer -dates -ext subjectAltName
+
+          echo "=== Security headers ==="
+          curl -sS -o /dev/null -D - "https://${BACKEND_HOST}/api/v1/healthz" \
+            | awk 'BEGIN{IGNORECASE=1} /^strict-transport-security:/ || /^content-security-policy:/ || /^x-content-type-options:/ || /^x-frame-options:/ || /^referrer-policy:/ || /^permissions-policy:/ {print}'
+
+          echo "=== CORS expected origin ==="
+          curl -sS -o /dev/null -D - -X OPTIONS "https://${BACKEND_HOST}/api/v1/auth/login" \
+            -H "Origin: ${FRONTEND_ORIGIN}" \
+            -H "Access-Control-Request-Method: POST" \
+            -H "Access-Control-Request-Headers: content-type,authorization" \
+            | awk 'BEGIN{IGNORECASE=1} /^HTTP\\// || /^access-control-allow-origin:/ || /^access-control-allow-credentials:/ || /^access-control-allow-methods:/ || /^access-control-allow-headers:/ {print}'
+
+          echo "=== CORS rejected origin ==="
+          curl -sS -o /dev/null -D - -X OPTIONS "https://${BACKEND_HOST}/api/v1/auth/login" \
+            -H "Origin: https://evil.example" \
+            -H "Access-Control-Request-Method: POST" \
+            -H "Access-Control-Request-Headers: content-type,authorization" \
+            | awk 'BEGIN{IGNORECASE=1} /^HTTP\\// || /^access-control-allow-origin:/ {print}'
+
+      - name: Remote host, DB TLS, and ML auth checks
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${DEPLOY_SSH_KEY}" > ~/.ssh/live_audit_key
+          chmod 600 ~/.ssh/live_audit_key
+          ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts 2>/dev/null
+
+          ssh -i ~/.ssh/live_audit_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" 'bash -s' <<'REMOTE_AUDIT'
+          set -euo pipefail
+
+          cd /opt/diana 2>/dev/null || {
+            echo "REMOTE_APP_DIR=/opt/diana unavailable"
+            exit 1
+          }
+
+          compose_cmd() {
+            if docker compose version >/dev/null 2>&1; then
+              docker compose -f docker-compose.yml -f docker-compose.prod.yml "$@"
+            else
+              docker-compose -f docker-compose.yml -f docker-compose.prod.yml "$@"
+            fi
+          }
+
+          echo "=== Remote host identity ==="
+          hostname
+          date -u +"AUDIT_UTC=%Y-%m-%dT%H:%M:%SZ"
+
+          echo "=== Host firewall status ==="
+          if command -v ufw >/dev/null 2>&1; then
+            sudo -n ufw status verbose 2>/dev/null || ufw status verbose 2>/dev/null || echo "UFW_STATUS=unavailable"
+          else
+            echo "UFW_STATUS=not_installed"
+          fi
+          if command -v firewall-cmd >/dev/null 2>&1; then
+            sudo -n firewall-cmd --list-all 2>/dev/null || firewall-cmd --list-all 2>/dev/null || echo "FIREWALLD_STATUS=unavailable"
+          else
+            echo "FIREWALLD_STATUS=not_installed"
+          fi
+
+          echo "=== Listening TCP sockets ==="
+          (sudo -n ss -tlnp 2>/dev/null || ss -tlnp 2>/dev/null || true) \
+            | sed -E 's/users:\(\([^)]*\)\)//g' \
+            | awk 'NR == 1 || /:22 |:80 |:443 |:8080 |:5000 |:5001 |:5432 /'
+
+          echo "=== Docker published ports ==="
+          docker ps --format 'CONTAINER={{.Names}} PORTS={{.Ports}}'
+
+          echo "=== Backend DB_DSN sslmode ==="
+          DB_DSN="$(docker exec diana-backend sh -lc 'printf "%s" "${DB_DSN:-}"' 2>/dev/null || true)"
+          case "${DB_DSN}" in
+            *"sslmode=verify-full"*) echo "DB_DSN_SSLMODE=verify-full" ;;
+            *"sslmode=verify-ca"*) echo "DB_DSN_SSLMODE=verify-ca" ;;
+            *"sslmode=require"*) echo "DB_DSN_SSLMODE=require" ;;
+            *"sslmode=prefer"*) echo "DB_DSN_SSLMODE=prefer" ;;
+            *"sslmode=disable"*) echo "DB_DSN_SSLMODE=disable" ;;
+            "") echo "DB_DSN_SSLMODE=missing_dsn" ;;
+            *) echo "DB_DSN_SSLMODE=missing_or_unrecognized" ;;
+          esac
+
+          echo "=== DB session SSL check with active backend DSN ==="
+          SQL_CURRENT="select 'DB_SESSION_SSL=' || ssl::text || ' version=' || coalesce(version,'unknown') || ' cipher=' || coalesce(cipher,'unknown') || ' bits=' || coalesce(bits::text,'unknown') from pg_stat_ssl where pid=pg_backend_pid();"
+          SQL_ACTIVITY="select 'DB_ACTIVE_SESSIONS_TOTAL=' || count(*)::text || ' DB_ACTIVE_SESSIONS_SSL_TRUE=' || coalesce(count(*) filter (where coalesce(s.ssl,false)),0)::text from pg_stat_activity a left join pg_stat_ssl s on s.pid=a.pid where a.pid <> pg_backend_pid() and a.datname=current_database();"
+          if [ -n "${DB_DSN}" ] && docker ps --format '{{.Names}}' | grep -qx 'diana-postgres'; then
+            docker exec -e DB_DSN="${DB_DSN}" -e SQL_CURRENT="${SQL_CURRENT}" diana-postgres sh -lc 'psql "$DB_DSN" -AtX -v ON_ERROR_STOP=1 -c "$SQL_CURRENT"' \
+              || echo "DB_SESSION_SSL_CHECK=failed"
+            docker exec -e DB_DSN="${DB_DSN}" -e SQL_ACTIVITY="${SQL_ACTIVITY}" diana-postgres sh -lc 'psql "$DB_DSN" -AtX -v ON_ERROR_STOP=1 -c "$SQL_ACTIVITY"' \
+              || echo "DB_ACTIVE_SESSION_SSL_CHECK=failed"
+          else
+            echo "DB_SESSION_SSL_CHECK=not_run"
+          fi
+
+          echo "=== ML API key runtime configuration ==="
+          docker exec diana-backend sh -lc 'if [ -n "${ML_API_KEY:-}" ]; then echo "BACKEND_ML_API_KEY_CONFIGURED=true"; else echo "BACKEND_ML_API_KEY_CONFIGURED=false"; fi' \
+            || echo "BACKEND_ML_API_KEY_CONFIGURED=unknown"
+          docker exec diana-ml sh -lc 'if [ -n "${ML_API_KEY:-}" ]; then echo "ML_SERVICE_API_KEY_CONFIGURED=true"; else echo "ML_SERVICE_API_KEY_CONFIGURED=false"; fi' \
+            || echo "ML_SERVICE_API_KEY_CONFIGURED=unknown"
+
+          echo "=== ML no-key/fake-key endpoint checks from inside ML container ==="
+          NO_KEY_CODE="$(docker exec diana-ml sh -lc 'curl -sS -o /tmp/diana-audit-no-key.out -w "%{http_code}" http://localhost:5000/insights/metrics || true' 2>/dev/null || true)"
+          FAKE_KEY_CODE="$(docker exec diana-ml sh -lc 'curl -sS -H "X-API-Key: definitely-wrong-audit-key" -o /tmp/diana-audit-fake-key.out -w "%{http_code}" http://localhost:5000/insights/metrics || true' 2>/dev/null || true)"
+          echo "ML_NO_KEY_METRICS_STATUS=${NO_KEY_CODE:-unavailable}"
+          echo "ML_FAKE_KEY_METRICS_STATUS=${FAKE_KEY_CODE:-unavailable}"
+
+          echo "=== Internal service health ==="
+          compose_cmd ps
+REMOTE_AUDIT
