@@ -618,7 +618,7 @@ The reported confidence intervals were computed using 1,000 bootstrap resamples,
 | Negative predictive value | 0.672 |
 | F1 score | 0.710 |
 
-**Table 4.1a. Confidence Interval Summary**
+**Table 4.2. Confidence Interval Summary**
 
 | Metric | Point Estimate | 95% CI Lower | 95% CI Upper | Target |
 |---|---:|---:|---:|---|
@@ -627,7 +627,7 @@ The reported confidence intervals were computed using 1,000 bootstrap resamples,
 
 The fold-level AUC range of **0.711-0.788** across the six held-out NHANES survey releases indicates that no single temporal fold collapsed below the acceptable discrimination target. The result supports the interpretation that the classifier learned repeatable metabolic risk patterns across NHANES releases. However, because the evaluation remains internal to NHANES, the result should be interpreted as temporal validation rather than external clinical validation.
 
-**Table 4.2. Per-Fold LOGO Validation Results for Logistic Regression**
+**Table 4.3. Per-Fold LOGO Validation Results for Logistic Regression**
 
 | Fold | Test Release | Fold AUC-ROC | Sensitivity | Specificity | Threshold | Strategy |
 |---:|---|---:|---:|---:|---:|---|
@@ -639,13 +639,13 @@ The fold-level AUC range of **0.711-0.788** across the six held-out NHANES surve
 | 6 | 2021-2023 | 0.731 | 0.856 | 0.449 | 0.41 | Guardrail nearest feasible |
 | Mean | - | 0.736 | 0.748 | 0.605 | 0.465 | - |
 
-The AUC values in Tables 4.2 and 4.4 are mean fold AUC-ROC values averaged across the six held-out LOGO test releases. By contrast, Table 4.1 reports the pooled out-of-fold AUC-ROC computed from all held-out predictions combined, with bootstrap confidence intervals. This distinction explains why the headline pooled estimate is 0.7366 while the Logistic Regression mean fold AUC is 0.736.
+The AUC values in Tables 4.3 and 4.6 are mean fold AUC-ROC values averaged across the six held-out LOGO test releases. By contrast, Table 4.1 reports the pooled out-of-fold AUC-ROC computed from all held-out predictions combined, with bootstrap confidence intervals. This distinction explains why the headline pooled estimate is 0.7366 while the Logistic Regression mean fold AUC is 0.736.
 
 The sensitivity point estimate exceeded the pre-specified screening target of 0.70, and the lower bound of the 95 percent confidence interval was 0.717. This provides evidence that the refreshed model met the target under internal temporal validation, while still requiring external or prospective validation before clinical deployment claims.
 
 At the threshold-policy level, Youden's J was selected in 5 of 6 LOGO folds, while guardrail arbitration was activated in 1 of 6 LOGO folds through nearest-feasible threshold selection. This distribution indicates that the final threshold policy was not a simple default cutoff. It combined conventional discrimination-based selection with a safety mechanism for folds vulnerable to specificity collapse.
 
-**Table 4.2a. Threshold Mode Distribution**
+**Table 4.4. Threshold Mode Distribution**
 
 | Threshold Mode | Occurrence (6 folds) | Interpretation |
 |---|---:|---|
@@ -663,7 +663,7 @@ Medically, this means that the deployed threshold policy prioritized early ident
 
 Information Gain analysis was used to examine feature relevance before final model interpretation. The final model retained triglycerides, HDL cholesterol, LDL cholesterol, BMI, waist circumference, age, smoking status, physical activity, and alcohol use. Several excluded variables had high information gain, including CRP, fasting insulin, TG/HDL ratio, blood pressure variables, and metabolic syndrome score. These variables were reviewed but excluded for methodological reasons.
 
-**Table 4.3. Information Gain Feature Rankings**
+**Table 4.5. Information Gain Feature Rankings**
 
 | Rank | Feature | Type | IG | IG% | In Model? |
 |---:|---|---|---:|---:|---|
@@ -693,7 +693,7 @@ Alcohol use had modest non-zero univariate Information Gain in the discretized v
 
 The candidate algorithms were compared under the same nested LOGO validation framework. Logistic Regression achieved the highest pooled AUC and the highest mean fold AUC at approximately 0.736. Random Forest achieved a mean fold AUC of 0.716, LightGBM achieved 0.712, and XGBoost achieved 0.713. Although the non-linear models produced competitive sensitivity, Logistic Regression provided the strongest discrimination with the clearest interpretability profile.
 
-**Table 4.4. Model Comparison Under LOGO Validation**
+**Table 4.6. Model Comparison Under LOGO Validation**
 
 | Algorithm | Mean Fold AUC-ROC | Pooled AUC 95% CI | Sensitivity | Sens 95% CI | Specificity | F1 | Mean Threshold |
 |---|---:|---|---:|---|---:|---:|---:|
@@ -708,7 +708,7 @@ Logistic Regression was selected because it provided the most appropriate balanc
 
 Calibration analysis assessed whether predicted probabilities aligned with observed outcomes. The Logistic Regression model produced a Brier score of 0.2087, an expected calibration error of 0.0563, and a Hosmer-Lemeshow statistic of 24.75 across the full analytic cohort of 1,376 records. These results provide moderate internal calibration evidence rather than proof of externally calibrated individualized probabilities (Brier, 1950; Hosmer & Lemeshow, 1980; Van Calster et al., 2019).
 
-**Table 4.5. Calibration Metrics**
+**Table 4.7. Calibration Metrics**
 
 | Metric | Value | Interpretation |
 |---|---:|---|
@@ -724,7 +724,7 @@ The predicted probabilities should therefore be communicated as approximate risk
 
 Weighted K-Means clustering with K = 4 was evaluated on the at-risk subset of 734 cases. The clustering produced a silhouette score of 0.1762, Davies-Bouldin index of 1.5950, and Calinski-Harabasz index of 154.32. These metrics indicate modest separation, which is expected in overlapping metabolic phenotypes (Rousseeuw, 1987; Davies & Bouldin, 1979; Calinski & Harabasz, 1974).
 
-**Table 4.6. Internal Clustering Validation Metrics**
+**Table 4.8. Internal Clustering Validation Metrics**
 
 | Metric | Value | Interpretation |
 |---|---:|---|
@@ -736,7 +736,7 @@ Weighted K-Means clustering with K = 4 was evaluated on the at-risk subset of 73
 
 The K = 4 solution was retained to preserve the Ahlqvist-inspired four-pattern interpretation. This decision prioritized clinically interpretable subtype context rather than maximizing internal clustering metrics alone. The silhouette-optimal K = 2 result should be interpreted as a coarser two-pattern partition, not as a replacement for the four-label subtype module. The modest silhouette score for K = 4 must be acknowledged as a limitation because it indicates overlapping cluster boundaries.
 
-**Table 4.7. At-Risk Cluster Distribution and Centroids**
+**Table 4.9. At-Risk Cluster Distribution and Centroids**
 
 | Subtype | Count | Percentage | BMI | TG | LDL | HDL | Age | Waist |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
@@ -769,7 +769,7 @@ Functional testing verified the implemented system across backend, ML service, a
 
 The ML service test suite passed with 274 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, service access, authentication checks, drift scheduling, SHAP background behavior, threshold optimization, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured coverage gates, with 71.26 percent line and statement coverage, 60.55 percent branch coverage, and 44.24 percent function coverage.
 
-**Table 4.8. Functional Validation Summary**
+**Table 4.10. Functional Validation Summary**
 
 | Validation Area | Evidence Reviewed | Status |
 |---|---|---|
@@ -824,21 +824,21 @@ Pure model inference benchmarks indicate that Logistic Regression averages appro
 
 Production performance claims therefore remain qualified. Concurrent load testing with authenticated users, database writes, cache refreshes, ML requests, and frontend rendering has not yet been completed; for this reason, production-scale readiness is not claimed.
 
-Deployment readiness was first assessed at the configuration level and then checked against the live deployment on 2026-05-30. The live external audit used the backend host `diana-v2.duckdns.org` and the configured frontend origin `https://diana-v2.vercel.app`. It verified effective public port exposure from the audit machine, HTTPS certificate behavior, CORS allow-list behavior, authenticated backend-to-ML proxy behavior, and operational health responses. Sensitive operational details such as usernames, private paths, tokens, and connection strings are intentionally excluded from the manuscript evidence.
+Deployment readiness was first assessed at the configuration level and then checked against the live deployment on 2026-05-30. The live external audit used the backend host `diana-v2.duckdns.org` and the configured frontend origin `https://diana-v2.vercel.app`. It verified effective public port exposure from external audit machines, HTTPS certificate behavior, CORS allow-list behavior, authenticated backend-to-ML proxy behavior, and operational health responses. It also identified a deployment configuration gap: the direct ML service was not publicly exposed, but live ML logs indicated that `ML_API_KEY` was not configured, so ML-service API-key enforcement was not active at runtime. Sensitive operational details such as usernames, private paths, tokens, and connection strings are intentionally excluded from the manuscript evidence.
 
-**Table 4.9. Live and Configuration-Level Deployment Readiness Summary**
+**Table 4.11. Live and Configuration-Level Deployment Readiness Summary**
 
 | Verification Item | Evidence Reviewed | Status |
 |---|---|---|
-| Public ingress and host exposure | DNS resolved to `143.198.222.21`; ports 80 and 443 accepted connections, while 22, 8080, 5000, 5001, and 5432 timed out from the external audit machine | Live external exposure check passed |
+| Public ingress and host exposure | DNS resolved to `143.198.222.21`; ports 80 and 443 accepted connections, while 22, 8080, 5000, 5001, and 5432 timed out from external audit machines | Live external exposure check passed; host firewall rule inventory still requires operator access |
 | TLS certificate and HTTPS behavior | HTTP returned a redirect to HTTPS; HTTPS presented a Let's Encrypt certificate for `diana-v2.duckdns.org` valid from 2026-05-09 to 2026-08-07, with certificate verification returning OK | Live TLS check passed |
 | Security headers | Live HTTPS responses included HSTS, content-type protection, frame protection, referrer policy, permissions policy, and content security policy headers | Live header check passed |
 | Production CORS behavior | Preflight from `https://diana-v2.vercel.app` returned 204 with the expected allow-origin and credential headers; lookalike or unrelated origins returned 403 | Live CORS check passed |
 | Backend and database health | Authenticated operations health returned healthy backend, database ping, and ML health statuses; public PostgreSQL port 5432 was not reachable externally | Live health check passed; database TLS mode requires operator-level confirmation |
-| ML exposure control | Public `/ml` and `/predict` paths returned 404; unauthenticated `/api/v1/ml/health` returned 401; authenticated `/api/v1/ml/insights/metrics` succeeded through the backend proxy without a browser-supplied ML API key | Live proxy-boundary check passed |
+| ML exposure and API-key enforcement | Public `/ml` and `/predict` paths returned 404; unauthenticated `/api/v1/ml/health` returned 401; authenticated `/api/v1/ml/insights/metrics` succeeded through the backend proxy; live ML logs showed `ML_API_KEY` was not configured | Network and backend-auth boundary passed; live ML-service API-key enforcement was not active |
 | Runtime secret handling | Repository configuration injects database credentials, JWT secret, and ML API key through runtime environment variables rather than committed literals | Configuration evidence present |
 
-This audit upgrades the earlier configuration-only deployment review for public exposure, TLS, production CORS, and ML proxy behavior. It does not by itself prove the database session's runtime TLS mode because the live database connection string and session settings are not exposed through the public application; that item requires operator-level verification on the host or managed database console. The audit also does not replace production load testing.
+This audit upgrades the earlier configuration-only deployment review for public exposure, TLS, production CORS, and ML proxy behavior. It does not by itself prove the database session's runtime TLS mode because the live database connection string and session settings are not exposed through the public application; that item requires operator-level verification on the host or managed database console. Similarly, the codebase supports ML API-key enforcement when `ML_API_KEY` is set, but the live ML service must be configured with that key and retested before API-key enforcement is claimed for the current deployment. The audit also does not replace production load testing.
 
 ### 4.10 User Acceptance Testing Status and Doctor Expert Review
 
@@ -846,7 +846,7 @@ The community UAT protocol was defined but had not yet been executed at the time
 
 The completed doctor expert review was conducted as a hands-on prototype evaluation. The physician reviewer used DIANA, inspected the assessment workflow, reviewed the displayed features and risk-output presentation, and discussed the basis for the subtype module. Because the review was documented qualitatively and the available evidence identifies the reviewer only as a licensed physician, the findings are treated as face-validity feedback rather than as a scored expert evaluation. Overall qualitative feedback was positive: the features were considered useful for a screening-support prototype, and no major objection was raised to the assessment workflow or risk-output presentation. The main clinical question concerned the weighted K-Means subtype module, specifically why particular features were assigned higher weights and how those weights were used during cluster assignment.
 
-**Table 4.10. Doctor Expert-Review Summary**
+**Table 4.12. Doctor Expert-Review Summary**
 
 | Review Area | Expert Feedback | Manuscript Response |
 |---|---|---|
@@ -863,7 +863,7 @@ The interface applies visual organization principles to support comprehension of
 
 The application includes accessibility-oriented features such as accessibility labels, keyboard-accessible controls, responsive layouts, visible status text, and device-aware rendering, aligned with WCAG 2.2 accessibility guidance where applicable (World Wide Web Consortium, 2023). Higher-capability devices receive full animations and richer chart behavior, while lower-capability devices receive reduced visual complexity. However, formal automated contrast testing and assistive-technology testing have not yet been completed. Therefore, this section is framed as accessibility readiness rather than WCAG conformance certification.
 
-**Table 4.11. Accessibility and UI Readiness Items**
+**Table 4.13. Accessibility and UI Readiness Items**
 
 | Area | Current Evidence | Status |
 |---|---|---|
@@ -879,7 +879,7 @@ The application includes accessibility-oriented features such as accessibility l
 
 DIANA was compared with reconstructed screening baselines under the same NHANES cohort, binary outcome definition, and LOGO validation framework where sufficient variables were available. The FINDRISC-like upper-bound comparator achieved the highest AUC at 0.849, but this implementation used an elevated-glucose or HbA1c proxy for the history-of-high-blood-glucose component. This makes the FINDRISC-like result an optimistic, partially circular upper-bound comparator rather than a faithful non-circular validation.
 
-**Table 4.12. Internal Benchmark Reconstruction Results**
+**Table 4.14. Internal Benchmark Reconstruction Results**
 
 | Tool | AUC-ROC | Sensitivity | Specificity | Interpretation |
 |---|---:|---:|---:|---|
@@ -897,7 +897,7 @@ Several limitations constrain interpretation of the study. First, all model deve
 
 Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired labels as heuristic descriptions rather than validated biological subtypes. True biological subtype validation would require autoimmune markers, beta-cell function markers, insulin-resistance estimates, longitudinal outcomes, and independent clinical datasets. Fourth, deployment guardrails such as waist-circumference imputation and metabolic syndrome risk floors are engineered safeguards requiring ablation, calibration, and clinical review before being treated as validated clinical rules.
 
-Fifth, formal community UAT, accessibility testing, and production load testing remain incomplete. The completed doctor review provides initial qualitative expert face-validity support, but it did not collect formal scored ratings and does not replace external clinical validation. Sixth, the live deployment audit verified public exposure, TLS, CORS, and ML proxy-boundary behavior from an external client, but database TLS mode still requires operator-level verification against the runtime database connection or database session settings. The interface navigation and browser-token handling also reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. For these reasons, DIANA is presented as a screening-support prototype with promising internal validation and initial expert feedback, not as a clinically validated diagnostic system.
+Fifth, formal community UAT, accessibility testing, and production load testing remain incomplete. The completed doctor review provides initial qualitative expert face-validity support, but it did not collect formal scored ratings and does not replace external clinical validation. Sixth, the live deployment audit verified public exposure, TLS, CORS, and ML proxy-boundary behavior from an external client, but database TLS mode still requires operator-level verification against the runtime database connection or database session settings, and live ML-service API-key enforcement requires runtime key configuration and retesting. The interface navigation and browser-token handling also reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. For these reasons, DIANA is presented as a screening-support prototype with promising internal validation and initial expert feedback, not as a clinically validated diagnostic system.
 
 ### 4.14 Chapter Synthesis
 
