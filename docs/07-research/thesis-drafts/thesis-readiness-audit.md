@@ -43,7 +43,7 @@ The Chapter 3+4 draft set has been checked and corrected for the following high-
 - ML proxy routes are described as available when `MODEL_URL` is configured.
 - Legacy clinic routes and data-layer code still exist in the repository, but clinics are not presented as an active thesis workflow in the final Chapter 3+4 draft.
 - Chapter 4 metrics tables were synchronized to the current `models/binary_v2_no_bp/results` artifacts, including threshold-arbitration counts, information-gain ranking, and model-comparison means.
-- UAT, expert review, accessibility contrast testing, and production performance claims are marked as pending where they are not yet supported by collected evidence.
+- Community UAT, formal scored expert review, accessibility contrast testing, and production performance claims are marked as pending where they are not yet supported by collected evidence.
 - Fill-in placeholders are retained only for user-supplied future evidence such as screenshots, UAT dates/results, expert reviewer details/quotes, and formal accessibility-test results.
 
 ## Command Evidence
@@ -55,14 +55,15 @@ The Chapter 3+4 draft set has been checked and corrected for the following high-
 | Stale claim scan | `rg -n "Three candidate|Go 1\\.24|cached predictions|RHQ060|COVID-adapted|n=578|Plotly|Download CSV|production VPS" ch3+4-final-academic-draft.md ch3+4.md` | Expected: no stale implementation, visualization, export, deployment, or data-release claims |
 | Intentional placeholder scan | `rg -n "PLACEHOLDER|TBD|QUOTE TBD" ch3+4-final-academic-draft.md ch3+4.md` | Expected: only future evidence placeholders |
 | Backend tests | `cd backend && GOCACHE=/private/tmp/diana-go-build go test ./...` | PASS; initial sandboxed run was blocked by local `httptest` listener permissions, then passed outside the sandbox |
-| ML tests | `cd Ian_ML && ./venv/bin/python -m pytest -q` | PASS: 270 passed |
+| ML tests | `cd Ian_ML && ./venv/bin/python -m pytest -q` | PASS: 274 passed |
 | Frontend coverage | `cd frontend && npm run test:coverage` | PASS: 15 files, 232 tests; 71.26% lines/statements, 60.58% branches, 44.24% functions |
 
 ## Remaining Blockers
 
-1. UAT and expert review are not completed.
+1. Community UAT and formal scored expert review are not completed.
    - The thesis must not report SUS scores, expert ratings, or expert quotes until real data is collected.
-   - Current manuscript status is acceptable only if these sections are framed as protocols or future work.
+   - The completed doctor walkthrough may be reported only as qualitative face-validity feedback unless formal scoring evidence is added.
+   - Current manuscript status is acceptable only if these sections are framed as protocols, qualitative face-validity notes, or future work.
 
 2. Formal accessibility testing is not completed.
    - The manuscript should not claim WCAG conformance without automated contrast/a11y evidence.

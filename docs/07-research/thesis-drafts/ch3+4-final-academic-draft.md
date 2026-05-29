@@ -202,13 +202,14 @@ NHANES survey weights were not incorporated into model training. Survey weights 
 
 The final classifier outputs a probability that must be converted into a binary screening classification. Because DIANA is intended for early risk identification, thresholding was optimized for a screening context rather than defaulting to 0.50. Youden's J was included because it is a conventional operating-point criterion that balances sensitivity and specificity by maximizing sensitivity plus specificity minus one (Youden, 1950). However, it was treated as one candidate strategy rather than as an automatic final rule because DIANA is a screening-support system. In this context, a false negative may delay confirmatory testing or preventive counseling, while a false positive generally leads to follow-up review rather than immediate treatment.
 
-Three threshold strategies were evaluated using out-of-fold probabilities: Youden's J, a screening-optimized rule, and the geometric mean of sensitivity and specificity. The screening-optimized rule explicitly prioritized sensitivity while preserving a minimum specificity constraint. The geometric-mean rule provided a balance-oriented alternative for folds where sensitivity and specificity moved in opposite directions, which is useful when class imbalance and uneven operating characteristics are present (Luque et al., 2019). The formulas used for threshold selection were:
+Three threshold strategies were evaluated using out-of-fold probabilities from the training portion of each outer LOGO fold: Youden's J, a screening-optimized rule, and the geometric mean of sensitivity and specificity. The screening-optimized rule explicitly prioritized sensitivity while preserving a minimum specificity constraint. The geometric-mean rule provided a balance-oriented alternative for folds where sensitivity and specificity moved in opposite directions, which is useful when class imbalance and uneven operating characteristics are present (Luque et al., 2019). Let $\mathcal{T}=\{0.10,0.11,\ldots,0.89\}$ denote the candidate threshold grid. For each threshold $t\in\mathcal{T}$, predicted labels were assigned as $\hat{y}_i(t)=1$ when $\hat{p}_i\ge t$ and $\hat{y}_i(t)=0$ otherwise. The classification-performance quantities were:
 
 $$
 \begin{aligned}
 \mathrm{Sensitivity} &= \frac{TP}{TP+FN} \\
 \mathrm{Specificity} &= \frac{TN}{TN+FP} \\
 \mathrm{PPV} &= \frac{TP}{TP+FP} \\
+\mathrm{NPV} &= \frac{TN}{TN+FN} \\
 \mathrm{Accuracy} &= \frac{TP+TN}{TP+TN+FP+FN} \\
 F_1 &= \frac{2(\mathrm{PPV})(\mathrm{Sensitivity})}{\mathrm{PPV}+\mathrm{Sensitivity}} \\
 J &= \mathrm{Sensitivity}+\mathrm{Specificity}-1 \\
@@ -216,24 +217,28 @@ G\text{-}\mathrm{Mean} &= \sqrt{\mathrm{Sensitivity}\times\mathrm{Specificity}}
 \end{aligned}
 $$
 
-The screening-optimized score was computed as follows:
+The three candidate thresholds were selected from the same grid as follows:
 
 $$
-\mathrm{Screening\ Score}=0.60(\mathrm{Sensitivity})+0.40(F_1),
-\quad \mathrm{subject\ to}\quad \mathrm{Sensitivity}\ge 0.80,\ \mathrm{Specificity}\ge 0.40
+\begin{aligned}
+t_J &= \arg\max_{t\in\mathcal{T}} J(t) \\
+t_S &= \arg\max_{t\in\mathcal{T}:\ \mathrm{Sensitivity}(t)\ge 0.80,\ \mathrm{Specificity}(t)\ge 0.40}
+\left[0.60\,\mathrm{Sensitivity}(t)+0.40\,F_1(t)\right] \\
+t_G &= \arg\max_{t\in\mathcal{T}} G\text{-}\mathrm{Mean}(t)
+\end{aligned}
 $$
 
-A composite clinical score was then used to select the fold-specific strategy:
+A composite clinical score was then used to select the fold-specific strategy from the candidate thresholds $t_J$, $t_S$, and $t_G$:
 
 $$
-\mathrm{Clinical\ Score}=0.35(\mathrm{Sensitivity})+0.30(\mathrm{Specificity})+0.25(F_1)+0.10(\mathrm{Accuracy})
+\mathrm{Clinical\ Score}(t)=0.35\,\mathrm{Sensitivity}(t)+0.30\,\mathrm{Specificity}(t)+0.25\,F_1(t)+0.10\,\mathrm{Accuracy}(t)
 $$
 
 In these formulas, TP denotes true positives, TN denotes true negatives, FP denotes false positives, and FN denotes false negatives.
 
 Sensitivity, specificity, predictive values, and related diagnostic testing measures followed the standard confusion-matrix definitions used in diagnostic accuracy evaluation (Shreffler & Huecker, 2023). F1 was included as a harmonic-mean summary of precision and sensitivity (Powers, 2011).
 
-The final screening threshold was derived from out-of-fold predictions inside the validation procedure rather than manually chosen after viewing test results. A deterministic guardrail was also implemented to reduce specificity collapse under temporal prevalence shift. If a selected threshold produced very high sensitivity but inadequate specificity, the algorithm searched for a feasible threshold satisfying minimum operating constraints or reverted toward a safer operating point. The final threshold value and fold-level guardrail behavior are reported in Chapter 4.
+The fold-specific screening threshold was therefore derived from training-fold out-of-fold predictions rather than manually chosen after viewing held-out test results. A deterministic guardrail was also implemented to reduce specificity collapse under temporal prevalence shift. If a selected threshold produced very high sensitivity but inadequate specificity, the algorithm searched for a feasible threshold satisfying minimum operating constraints or reverted toward a safer operating point. The final deployment threshold and fold-level guardrail behavior are reported in Chapter 4.
 
 **Table 3.6. Executable ML Safeguards and Rationale**
 
@@ -248,6 +253,8 @@ The final screening threshold was derived from out-of-fold predictions inside th
 | Metabolic-syndrome guardrail | Raises low risk estimates for concordant metabolic-risk profiles | Reduces implausibly low risk outputs |
 
 The serving layer also includes a rule-based Metabolic Syndrome risk guardrail. This rule evaluates triglycerides of at least 150 mg/dL, HDL cholesterol below 50 mg/dL, BMI of at least 25, and waist circumference of at least 80 cm, reflecting commonly used metabolic-syndrome risk criteria (International Diabetes Federation, 2006; Alberti et al., 2009). When three or more criteria are met, the at-risk probability is raised to at least 0.65. When two criteria are met, the at-risk probability is increased by 0.15 and capped at 0.95. This rule should be interpreted as an engineered safety heuristic for reducing implausibly low risk estimates in metabolically concordant high-risk profiles, not as an independently validated clinical rule.
+
+The model-performance and calibration results reported in Chapter 4 refer to the cross-validated Logistic Regression classifier and its threshold policy before serving-layer Metabolic Syndrome probability boosts are applied. The guardrail can change individual runtime responses, so it is documented as an inference safeguard rather than as part of the reported cross-validation estimate. Its effect should be evaluated separately through ablation, calibration review, and clinical sensitivity analysis.
 
 ### 3.10 Cluster-Based Risk Group Identification
 
@@ -440,19 +447,19 @@ Because DIANA was evaluated as a research prototype, its current navigation and 
 
 ### 3.14 User Acceptance Testing and Expert Review Methodology
 
-The planned community user evaluation follows an ISO/IEC 25010-informed usability framework (International Organization for Standardization, 2011). The protocol evaluates appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence. Planned user participants will complete core tasks such as logging in, navigating the dashboard, submitting an assessment, and interpreting prediction results.
+The planned community user evaluation follows an ISO/IEC 25010-informed usability framework (International Organization for Standardization, 2011). The protocol evaluates appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence. Planned user participants will complete core tasks such as logging in, navigating the dashboard, submitting an assessment, and interpreting prediction results. If the System Usability Scale is administered during the community UAT phase, scoring and interpretation will follow established SUS guidance (Brooke, 1996; Bangor et al., 2008).
 
-The planned user cohort consists of approximately 30 menopausal or postmenopausal Filipino women recruited from the target online community, subject to approval and consent procedures. Separately, a hands-on doctor expert review was completed with a licensed physician reviewer. The expert review evaluated the prototype's feature set, assessment workflow, risk-output presentation, explanation approach, and subtype-weighting rationale. Feedback was collected qualitatively rather than through a completed Likert scoring instrument; therefore, this study reports expert comments and interpretation themes, but not formal expert mean scores. Formal UAT with the target user cohort remains pending, so SUS scores, task success rates, completion times, and user quotations are not reported as completed results.
+The planned user cohort consists of approximately 30 menopausal or postmenopausal Filipino women recruited from the target online community, subject to approval and consent procedures. Separately, a hands-on doctor expert review was completed with a licensed physician reviewer. The expert review evaluated the prototype's feature set, assessment workflow, risk-output presentation, explanation approach, and subtype-weighting rationale. The available review record identifies the reviewer at the licensed-physician role level only; specialty, years of practice, review date, and formal scoring results are not reported in the manuscript evidence set. Feedback was collected qualitatively rather than through a completed Likert scoring instrument; therefore, this study reports expert comments and interpretation themes, but not formal expert mean scores. Formal UAT with the target user cohort remains pending, so SUS scores, task success rates, completion times, and user quotations are not reported as completed results.
 
 ### 3.15 Data Analysis Procedure
 
-Data analysis was conducted at three levels: cohort and feature analysis, predictive-model validation, and system-evaluation evidence. The NHANES analytic cohort was summarized using record counts, class distributions, survey-cycle membership, feature availability, and reference-label composition. These summaries were used to describe the analytic dataset and to verify that the final cohort matched the intended postmenopausal, fasting-laboratory population. Because the modeling objective was prediction within the analytic cohort rather than national prevalence estimation, descriptive counts were not interpreted as weighted population estimates.
+Data analysis was conducted across three broad evidence groups: cohort and feature analysis, model-related validation, and system-evaluation evidence. Model-related validation included predictive-model performance, threshold behavior, calibration, clustering, and benchmark comparison. The NHANES analytic cohort was summarized using record counts, class distributions, survey-cycle membership, feature availability, and reference-label composition. These summaries were used to describe the analytic dataset and to verify that the final cohort matched the intended postmenopausal, fasting-laboratory population. Because the modeling objective was prediction within the analytic cohort rather than national prevalence estimation, descriptive counts were not interpreted as weighted population estimates.
 
 Reference-label analysis compared the DIQ010-derived physician-diagnosis or borderline-diabetes labels with HbA1c-threshold labels. Agreement and discordance were interpreted descriptively to assess label consistency and uncertainty. Discordant records were not treated as errors automatically because they may reflect undiagnosed diabetes, treatment effects, recall differences, timing differences between questionnaire and laboratory data, or single-measurement biological variability.
 
-Feature analysis used Information Gain and entropy-based relevance ranking to identify candidate predictors while excluding diagnostic glycemic variables and proxy-leakage features. Final feature interpretation considered both quantitative relevance and clinical plausibility. Missing-data handling, feature scaling, and threshold selection were evaluated inside validation workflows to avoid information leakage from held-out folds (Vabalas et al., 2019).
+Feature analysis used Information Gain and entropy-based relevance ranking to identify candidate predictors while excluding diagnostic glycemic variables and proxy-leakage features. Numeric predictors were discretized before Information Gain calculation, so the ranking should be interpreted as a descriptive relevance audit rather than as a direct coefficient estimate or a standalone feature-selection model. Final feature interpretation considered both quantitative relevance and clinical plausibility. During predictive validation, missing-data handling and feature scaling were fitted inside each training workflow before being applied to held-out folds, which reduced preprocessing leakage from validation or test data (Vabalas et al., 2019).
 
-Predictive-model analysis used nested Leave-One-Group-Out validation by NHANES survey release. For each outer validation fold, one survey release served as the held-out temporal test group while the remaining releases were used for model selection and fitting. Model performance was evaluated using AUC-ROC, sensitivity, specificity, positive predictive value, negative predictive value, F1 score, and confusion-matrix counts. Confidence intervals for headline metrics were estimated through bootstrap resampling using a fixed random seed. Screening-threshold selection was based on out-of-fold predictions and operating-point constraints rather than manual selection after viewing final test performance. Calibration was assessed using the Brier score, expected calibration error, and Hosmer-Lemeshow statistic (Brier, 1950; Hosmer & Lemeshow, 1980; Van Calster et al., 2019).
+Predictive-model analysis used nested Leave-One-Group-Out validation by NHANES survey release. For each outer validation fold, one survey release served as the held-out temporal test group while the remaining releases were used for model selection and fitting. Model performance was evaluated using AUC-ROC, sensitivity, specificity, positive predictive value, negative predictive value, F1 score, and confusion-matrix counts. Bootstrap confidence intervals were reported for the headline AUC-ROC and sensitivity estimates using a fixed random seed. Screening-threshold selection was performed on training-partition out-of-fold probabilities with operating-point constraints, and the selected fold threshold was then applied to the held-out survey release. The deployment threshold artifact stores the mean selected threshold across LOGO folds rather than a manually chosen post-test cutoff. Calibration was assessed using the Brier score, expected calibration error, and Hosmer-Lemeshow statistic (Brier, 1950; Hosmer & Lemeshow, 1980; Van Calster et al., 2019).
 
 Cluster analysis was performed on the at-risk subset using weighted K-Means. Cluster validity was assessed using silhouette score, Davies-Bouldin index, and Calinski-Harabasz index, while centroid interpretation was performed after inverse-transforming cluster centers into raw clinical units (Rousseeuw, 1987; Davies & Bouldin, 1979; Calinski & Harabasz, 1974). Benchmark analysis compared DIANA with reconstructed screening baselines under the same NHANES cohort, outcome definition, and validation framework where sufficient variables were available.
 
@@ -464,9 +471,9 @@ System-evaluation evidence was analyzed separately from model-validation evidenc
 |---|---|---|
 | Cohort description | Count records, class labels, survey cycles, and feature availability | Final analytic cohort profile |
 | Label consistency | Compare DIQ010-derived labels with HbA1c-threshold labels | Agreement and discordance interpretation |
-| Feature relevance | Rank predictors using Information Gain and leakage screening | Final predictor set and excluded-feature rationale |
+| Feature relevance | Rank predictors using discretized Information Gain and leakage screening | Final predictor set and excluded-feature rationale |
 | Model validation | Apply nested LOGO validation by NHANES release | Fold-level and pooled discrimination metrics |
-| Threshold and calibration | Optimize threshold from out-of-fold predictions and assess calibration | Screening threshold, operating metrics, and calibration statistics |
+| Threshold and calibration | Optimize threshold from training out-of-fold predictions and assess internal calibration | Screening threshold, operating metrics, and calibration statistics |
 | Cluster validation | Evaluate weighted K-Means on at-risk records | Cluster validity metrics and subtype-context interpretation |
 | Benchmark comparison | Reconstruct available screening baselines under the same cohort and outcome definition | Contextual comparator performance |
 | System evidence | Summarize technical tests, implementation status, and planned evaluation gaps | Functional, security, deployment, and readiness findings |
@@ -483,12 +490,12 @@ For clarity, the principal formulas used in the methodology are summarized below
 | Entropy and Information Gain | $H(Y)=-\sum_i p_i\log_2(p_i);\ IG(Y,X)=H(Y)-H(Y\mid X)$ | 3.7 |
 | Logistic screening probability | $\hat{p}=\frac{1}{1+e^{-(\beta_0+\sum_{j=1}^{p}\beta_jx_j)}}$ | 3.8 |
 | Sensitivity and specificity | $\mathrm{Sensitivity}=\frac{TP}{TP+FN};\ \mathrm{Specificity}=\frac{TN}{TN+FP}$ | 3.9 |
-| Precision, accuracy, and F1 | $\mathrm{PPV}=\frac{TP}{TP+FP};\ \mathrm{Accuracy}=\frac{TP+TN}{TP+TN+FP+FN};\ F_1=\frac{2(\mathrm{PPV})(\mathrm{Sensitivity})}{\mathrm{PPV}+\mathrm{Sensitivity}}$ | 3.9 |
-| Threshold strategies | $J=\mathrm{Sensitivity}+\mathrm{Specificity}-1;\ G\text{-}\mathrm{Mean}=\sqrt{\mathrm{Sensitivity}\times\mathrm{Specificity}}$ | 3.9 |
-| Composite threshold scores | $\mathrm{Screening\ Score}=0.60(\mathrm{Sensitivity})+0.40(F_1);\ \mathrm{Clinical\ Score}=0.35(\mathrm{Sensitivity})+0.30(\mathrm{Specificity})+0.25(F_1)+0.10(\mathrm{Accuracy})$ | 3.9 |
+| Predictive values, accuracy, and F1 | $\mathrm{PPV}=\frac{TP}{TP+FP};\ \mathrm{NPV}=\frac{TN}{TN+FN};\ \mathrm{Accuracy}=\frac{TP+TN}{TP+TN+FP+FN};\ F_1=\frac{2(\mathrm{PPV})(\mathrm{Sensitivity})}{\mathrm{PPV}+\mathrm{Sensitivity}}$ | 3.9 |
+| Threshold strategies | $\mathcal{T}=\{0.10,0.11,\ldots,0.89\};\ t_J=\arg\max_{t\in\mathcal{T}}J(t);\ t_G=\arg\max_{t\in\mathcal{T}}\sqrt{\mathrm{Sensitivity}(t)\mathrm{Specificity}(t)}$ | 3.9 |
+| Composite threshold scores | $t_S=\arg\max_{t\in\mathcal{T}:\mathrm{Sens}(t)\ge0.80,\mathrm{Spec}(t)\ge0.40}\{0.60\mathrm{Sens}(t)+0.40F_1(t)\};\ \mathrm{Clinical\ Score}(t)=0.35\mathrm{Sens}(t)+0.30\mathrm{Spec}(t)+0.25F_1(t)+0.10\mathrm{Accuracy}(t)$ | 3.9 |
 | Weighted K-Means distance | $d_w(\mathbf{z}_i,\boldsymbol{\mu}_k)=\sqrt{\sum_{j=1}^{p}w_j(z_{ij}-\mu_{kj})^2}$ | 3.10 |
 | LAP-style centroid score | $\mathrm{LAP}=(WC-58)\times TG$ | 3.10 |
-| Brier score and ECE | $\mathrm{Brier}=\frac{1}{n}\sum_{i=1}^{n}(\hat{p}_i-y_i)^2;\ \mathrm{ECE}=\sum_{m=1}^{M}\frac{\lvert B_m\rvert}{n}\lvert \mathrm{acc}(B_m)-\mathrm{conf}(B_m)\rvert$ | 3.15 and 4.4 |
+| Brier score and ECE | $\mathrm{Brier}=\frac{1}{n}\sum_{i=1}^{n}(\hat{p}_i-y_i)^2;\ \mathrm{ECE}=\sum_{m=1}^{M}\frac{\lvert B_m\rvert}{n}\lvert \overline{y}_{B_m}-\overline{\hat{p}}_{B_m}\rvert$ | 3.15 and 4.4 |
 
 # Chapter 4: Results and Discussion
 
@@ -602,19 +609,19 @@ Logistic Regression was selected because it provided the most appropriate balanc
 
 ### 4.4 Calibration Analysis
 
-Calibration analysis assessed whether predicted probabilities aligned with observed outcomes. The Logistic Regression model produced a Brier score of 0.2087, an expected calibration error of 0.0563, and a Hosmer-Lemeshow statistic of 24.75 across the full analytic cohort of 1,376 records. These results indicate acceptable probability alignment rather than perfect calibration (Brier, 1950; Hosmer & Lemeshow, 1980; Van Calster et al., 2019).
+Calibration analysis assessed whether predicted probabilities aligned with observed outcomes. The Logistic Regression model produced a Brier score of 0.2087, an expected calibration error of 0.0563, and a Hosmer-Lemeshow statistic of 24.75 across the full analytic cohort of 1,376 records. These results provide moderate internal calibration evidence rather than proof of externally calibrated individualized probabilities (Brier, 1950; Hosmer & Lemeshow, 1980; Van Calster et al., 2019).
 
 **Table 4.5. Calibration Metrics**
 
 | Metric | Value | Interpretation |
 |---|---:|---|
-| Brier Score | 0.2087 | Acceptable combined calibration/discrimination loss |
+| Brier Score | 0.2087 | Moderate combined calibration/discrimination loss in the internal cohort |
 | Expected Calibration Error (ECE) | 0.0563 | Approximately six percentage-point average calibration gap |
 | Hosmer-Lemeshow χ² | 24.75 | Moderate calibration fit, sensitive to binning and sample size |
 | Calibration sample size | 1,376 | Number of records used in calibration analysis |
 | Calibration positives | 734 | Positive class count in calibration analysis |
 
-The calibrated probabilities should therefore be communicated as approximate risk-support estimates. A high predicted probability should prompt confirmatory testing, clinical review, or preventive counseling, but it should not be interpreted as a confirmed diagnosis or exact individualized disease probability.
+The predicted probabilities should therefore be communicated as approximate risk-support estimates. A high predicted probability should prompt confirmatory testing, clinical review, or preventive counseling, but it should not be interpreted as a confirmed diagnosis or exact individualized disease probability.
 
 ### 4.5 Clustering Validation and Subtype Distribution
 
@@ -678,7 +685,7 @@ The ML service test suite passed with 274 tests. These tests covered clustering 
 
 The function-coverage gate is lower than the statement and line gates because several interface modules contain many event-driven functions whose rendering paths are already exercised through broader component and contract tests. The 44.24 percent function result is therefore reported as a passed coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
 
-The remaining technical-readiness gaps therefore concern environment-dependent cache integration evidence, formal UAT, expert review, accessibility audit, and production load testing rather than the frontend coverage gate.
+The remaining technical-readiness gaps therefore concern environment-dependent cache integration evidence, formal UAT, broader scored expert-panel review, accessibility audit, and production load testing rather than the frontend coverage gate.
 
 ### 4.8 UI Workflow Integration
 
@@ -720,7 +727,7 @@ Production performance claims therefore remain qualified. Concurrent load testin
 
 Deployment readiness was assessed at the configuration level rather than as a full production certification. The review checked whether the system design supports reverse-proxy ingress, backend health checks, service isolation, protected database exposure, and runtime secret management. Sensitive operational details such as server addresses, usernames, private paths, and connection strings were excluded from the manuscript.
 
-**Configuration-Level Deployment Readiness Summary**
+**Table 4.8a. Configuration-Level Deployment Readiness Summary**
 
 | Verification Item | Configuration Evidence | Status |
 |---|---|---|
@@ -736,7 +743,9 @@ The configuration review supports deployment-readiness claims at the architectur
 
 The community UAT protocol was defined but had not yet been executed at the time of manuscript preparation. As a result, Chapter 4 does not report SUS scores, task-success rates, completion times, or community-user quotations. These measures remain part of the planned evaluation protocol described in Chapter 3 and will require formal participant recruitment, consent, and data collection before they can be interpreted as empirical findings.
 
-The completed doctor expert review was conducted as a hands-on prototype evaluation. The physician reviewer used DIANA, inspected the assessment workflow, reviewed the displayed features and risk-output presentation, and discussed the basis for the subtype module. Overall qualitative feedback was positive: the features were considered useful for a screening-support prototype, and no major objection was raised to the assessment workflow or risk-output presentation. The main clinical question concerned the weighted K-Means subtype module, specifically why particular features were assigned higher weights and how those weights were used during cluster assignment.
+The completed doctor expert review was conducted as a hands-on prototype evaluation. The physician reviewer used DIANA, inspected the assessment workflow, reviewed the displayed features and risk-output presentation, and discussed the basis for the subtype module. Because the review was documented qualitatively and the available evidence identifies the reviewer only as a licensed physician, the findings are treated as face-validity feedback rather than as a scored expert evaluation. Overall qualitative feedback was positive: the features were considered useful for a screening-support prototype, and no major objection was raised to the assessment workflow or risk-output presentation. The main clinical question concerned the weighted K-Means subtype module, specifically why particular features were assigned higher weights and how those weights were used during cluster assignment.
+
+**Table 4.8b. Doctor Expert-Review Summary**
 
 | Review Area | Expert Feedback | Manuscript Response |
 |---|---|---|
@@ -783,7 +792,7 @@ Compared with OmniRisk, the Simple Clinical model, and the ADA Risk Test reconst
 
 ### 4.13 Study Limitations
 
-Several limitations constrain interpretation of the study. First, all model development and validation were conducted within NHANES. Although LOGO validation provides evidence of temporal robustness across survey cycles, it does not replace validation in an independent clinical cohort or prospective deployment setting. Second, the reference label is operational rather than a definitive diagnostic gold standard because it combines self-reported physician diagnosis with single-measurement glycemic thresholds.
+Several limitations constrain interpretation of the study. First, all model development and validation were conducted within NHANES. Although LOGO validation provides evidence of temporal robustness across survey cycles, it does not replace validation in an independent clinical cohort or prospective deployment setting. A related transferability limitation is that the planned community users are Filipino menopausal or postmenopausal women, while the model was trained on a U.S. NHANES analytic cohort. Ethnicity-related differences in diabetes risk, body composition, care access, laboratory context, and cardiometabolic prevalence may affect calibration and decision thresholds in the intended user population. Second, the reference label is operational rather than a definitive diagnostic gold standard because it combines self-reported physician diagnosis with single-measurement glycemic thresholds.
 
 Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired labels as heuristic descriptions rather than validated biological subtypes. True biological subtype validation would require autoimmune markers, beta-cell function markers, insulin-resistance estimates, longitudinal outcomes, and independent clinical datasets. Fourth, deployment guardrails such as waist-circumference imputation and metabolic syndrome risk floors are engineered safeguards requiring ablation, calibration, and clinical review before being treated as validated clinical rules.
 
@@ -793,7 +802,7 @@ Fifth, formal community UAT, accessibility testing, and production load testing 
 
 The results demonstrate that DIANA provides a technically implemented and methodologically conservative screening-support workflow for diabetes risk stratification among postmenopausal women. Its strongest methodological contribution is the separation of diagnostic label construction from predictor inputs, supported by an automated leakage validation pipeline. The final Logistic Regression model achieved acceptable discrimination under conservative temporal validation while preserving interpretability and deployment simplicity.
 
-The weighted clustering module and SHAP explainability layer add clinical context to the binary risk output, but both require careful interpretation. The subtype labels are heuristic and hypothesis-generating, and SHAP values support transparency rather than causal explanation. The completed doctor review supported the perceived usefulness of the feature set and workflow while identifying the need to state the theoretical and literature-informed basis of the clustering weights more clearly. Overall, DIANA should be understood as a triage-support system that can help identify users who may benefit from confirmatory testing and clinical review. Future work should prioritize external validation, prospective evaluation, formal UAT, broader expert clinical review, accessibility assessment, production load testing, and calibration in the intended deployment population.
+The weighted clustering module and SHAP explainability layer add clinical context to the binary risk output, but both require careful interpretation. The subtype labels are heuristic and hypothesis-generating, and SHAP values support transparency rather than causal explanation. The completed doctor review supported the perceived usefulness of the feature set and workflow while identifying the need to state the theoretical and literature-informed basis of the clustering weights more clearly. Overall, DIANA should be understood as a triage-support system that can help identify users who may benefit from confirmatory testing and clinical review. Future work should prioritize external validation, prospective evaluation, formal UAT, broader expert clinical review, accessibility assessment, production load testing, and recalibration in the intended Filipino deployment population.
 
 ## References
 
