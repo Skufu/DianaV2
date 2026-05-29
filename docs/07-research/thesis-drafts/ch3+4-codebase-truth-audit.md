@@ -22,7 +22,7 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 - ML proxy routes are described as conditional on `MODEL_URL`.
 - Chapter metrics match `models/binary_v2_no_bp/results`, including information gain, threshold arbitration, and model-comparison values.
 - UI screenshot provenance is documented in `screenshots/README.md` with capture date, local capture endpoints, 1440 x 1000 PNG dimensions, source views, and SHA-256 hashes.
-- Live deployment security evidence now exists for public port exposure, HTTPS redirect, TLS certificate identity, security headers, production CORS allow-list behavior, backend health, database ping, and backend-mediated ML proxy behavior. Runtime database TLS mode and actual host firewall rules remain unproven without operator-level access to the active database connection, database session settings, or firewall rule inventory. Live ML logs show `ML_API_KEY` is not configured, so current ML-service API-key enforcement must not be claimed. The source now includes a production fail-fast guard for missing `ML_API_KEY`, but live enforcement still requires redeployment and retesting.
+- Live deployment security evidence now exists for public port exposure, HTTPS redirect, TLS certificate identity, security headers, production CORS allow-list behavior, backend health, database ping, backend-mediated ML proxy behavior, host firewall posture, database TLS, and ML API-key enforcement. The initial audit found `ML_API_KEY` unset in the live ML service; the VPS runtime configuration was corrected, backend and ML containers were recreated, and direct internal no-key/fake-key ML checks now return 401.
 
 ## Verified Current Features
 
@@ -45,7 +45,7 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 | `cd frontend && npm run test:coverage` | PASS: 15 files, 232 tests; 71.26% lines/statements, 60.55% branches, 44.24% functions |
 | `shasum -a 256 docs/07-research/thesis-drafts/screenshots/*.png` | PASS: cited UI screenshots have recorded hashes in the screenshot manifest |
 | `rg -n "ports:|expose:|/ml/|ML_API_KEY|CORS_ORIGINS" docker-compose.prod.yml deployment/Caddyfile frontend/nginx-ssl.conf Ian_ML/service/server.py` | REVIEWED: direct container ports are reset in production compose; optional Nginx `/ml/` route is now qualified in manuscript wording |
-| Live deployment external audit against `diana-v2.duckdns.org` and `https://diana-v2.vercel.app` | PASS/PARTIAL: 80/443 open, 22/8080/5000/5001/5432 timed out externally, HTTPS certificate verified, CORS allow-list verified, authenticated operations health reported backend/database/ML healthy, authenticated backend ML proxy succeeded, and live ML logs showed `ML_API_KEY` unset |
+| Live deployment external/operator audit against `diana-v2.duckdns.org`, `https://diana-v2.vercel.app`, and deployed VPS runtime | PASS: 80/443 open, 22/8080/5000/5001/5432 timed out externally, HTTPS certificate verified, CORS allow-list verified, authenticated operations health reported backend/database/ML healthy, authenticated backend ML proxy succeeded, UFW active with default incoming deny, backend DSN used `sslmode=require`, redacted `psql \conninfo` reported TLSv1.3, and direct internal ML no-key/fake-key checks returned 401 |
 
 ## Still Pending Evidence
 
@@ -53,9 +53,6 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 - Clinical expert ratings and quotes.
 - Formal accessibility audit evidence.
 - Production load/performance test evidence.
-- Operator-level runtime database TLS evidence. The live audit verified external exposure, TLS, CORS, backend/database/ML health, and ML proxy-boundary behavior, but public endpoints do not expose the active database connection mode.
-- Operator-level host/cloud firewall rule evidence. External port checks verify effective public exposure only.
-- Runtime ML API-key enforcement evidence after `ML_API_KEY` is configured in both backend and ML service; current live logs show it is unset.
 - Future replacement screenshots, if any, should be captured from the running application and added to the screenshot manifest with hashes.
 
 Do not convert these pending items into completed findings unless the corresponding evidence is collected.
