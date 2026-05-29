@@ -26,6 +26,7 @@ The live deployment supports the manuscript's bounded security claims for public
 | ML API-key runtime state | Authenticated admin log search returned live ML log entries stating `ML_API_KEY not configured - running in development mode (no auth)` | Current live ML-service API-key enforcement is not active; configure `ML_API_KEY` and retest no-key/fake-key calls before claiming enforcement |
 | Database public exposure | Port 5432 timed out externally; authenticated operations health reported database ping succeeded | Public DB listener not observed; DB connectivity verified |
 | Database TLS mode | Public endpoints do not expose `DB_DSN` or database session settings | Not externally verifiable; requires host or managed-database console check |
+| Remote operator audit attempt | Manual GitHub Actions run `26663133943` repeated the external checks successfully; its remote host step returned `REMOTE_AUDIT=skipped_missing_deploy_ssh_secrets` | No direct host firewall, container environment, or database-session evidence was collected through Actions |
 
 ## Claim-To-Evidence Review
 
