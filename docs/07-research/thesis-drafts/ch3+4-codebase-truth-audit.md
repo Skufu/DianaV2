@@ -37,7 +37,7 @@ The final Chapter 3+4 draft now matches the current codebase for the system feat
 |---|---|
 | `python3 scripts/thesis/check_metrics_consistency.py docs/07-research/thesis-drafts/ch3+4-final-academic-draft.md docs/07-research/thesis-drafts/ch3+4.md` | PASS: 43 checked claims per document |
 | `cd backend && GOCACHE=/private/tmp/diana-go-build go test ./...` | PASS |
-| `cd Ian_ML && ./venv/bin/python -m pytest -q` | PASS: 270 tests |
+| `cd Ian_ML && ./venv/bin/python -m pytest -q` | PASS: 274 tests |
 | `cd frontend && npm run test:coverage` | PASS: 15 files, 232 tests; 71.26% lines/statements, 60.58% branches, 44.24% functions |
 
 ## Still Pending Evidence
