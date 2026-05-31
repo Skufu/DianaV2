@@ -226,9 +226,9 @@ $$
 \land \mathrm{Specificity}(t)\ge 0.40\} \\
 S(t) &= 0.60\cdot\mathrm{Sensitivity}(t)+0.40\cdot F_1(t) \\
 G(t) &= \sqrt{\mathrm{Sensitivity}(t)\times\mathrm{Specificity}(t)} \\
-t_J &= \underset{t\in\mathcal{T}}{\operatorname{argmax}}\ J(t) \\
-t_S &= \underset{t\in\mathcal{F}}{\operatorname{argmax}}\ S(t) \\
-t_G &= \underset{t\in\mathcal{T}}{\operatorname{argmax}}\ G(t)
+t_J &= \underset{t\in\mathcal{T}}{\mathrm{argmax}}\ J(t) \\
+t_S &= \underset{t\in\mathcal{F}}{\mathrm{argmax}}\ S(t) \\
+t_G &= \underset{t\in\mathcal{T}}{\mathrm{argmax}}\ G(t)
 \end{aligned}
 $$
 
@@ -238,7 +238,7 @@ $$
 \begin{aligned}
 C(t) &= 0.35\cdot\mathrm{Sensitivity}(t)+0.30\cdot\mathrm{Specificity}(t) \\
 &\quad +0.25\cdot F_1(t)+0.10\cdot\mathrm{Accuracy}(t) \\
-t_{\mathrm{base}} &= \underset{t\in\{t_J,t_S,t_G\}}{\operatorname{argmax}}\ C(t)
+t_{\mathrm{base}} &= \underset{t\in\{t_J,t_S,t_G\}}{\mathrm{argmax}}\ C(t)
 \end{aligned}
 $$
 
@@ -496,16 +496,16 @@ For clarity, the principal formulas used in the methodology are summarized below
 
 | Formula Area | Applied In |
 |---|---|
-| HbA1c reference thresholds | 3.5 |
-| Waist-circumference fallback | 3.6 |
-| Proxy-leakage flag | 3.7 |
-| Entropy and Information Gain | 3.7 |
-| Logistic screening probability | 3.8 |
-| Confusion-matrix metrics | 3.9 |
-| Threshold strategy selection | 3.9 |
-| Weighted K-Means distance | 3.10 |
-| LAP-style centroid score | 3.10 |
-| Brier score and ECE | 3.15 and 4.4 |
+| HbA1c reference thresholds | Reference-Label Construction |
+| Waist-circumference fallback | Data Preparation, Missing Data, and Outlier Handling |
+| Proxy-leakage flag | Data Leakage Prevention |
+| Entropy and Information Gain | Data Leakage Prevention |
+| Logistic screening probability | Predictive Model Development and Validation |
+| Confusion-matrix metrics | Clinical Threshold Optimization and Serving Guardrails |
+| Threshold strategy selection | Clinical Threshold Optimization and Serving Guardrails |
+| Weighted K-Means distance | Cluster-Based Risk Group Identification |
+| LAP-style centroid score | Cluster-Based Risk Group Identification |
+| Brier score and ECE | Data Analysis Procedure and Calibration Analysis |
 
 HbA1c reference thresholds:
 
@@ -551,7 +551,9 @@ $$
 \mathrm{PPV} &= \frac{TP}{TP+FP} \\
 \mathrm{NPV} &= \frac{TN}{TN+FN} \\
 \mathrm{Accuracy} &= \frac{TP+TN}{TP+TN+FP+FN} \\
-F_1 &= \frac{2(\mathrm{PPV})(\mathrm{Sensitivity})}{\mathrm{PPV}+\mathrm{Sensitivity}}
+F_1 &= \frac{2(\mathrm{PPV})(\mathrm{Sensitivity})}{\mathrm{PPV}+\mathrm{Sensitivity}} \\
+J &= \mathrm{Sensitivity}+\mathrm{Specificity}-1 \\
+G\text{-}\mathrm{Mean} &= \sqrt{\mathrm{Sensitivity}\times\mathrm{Specificity}}
 \end{aligned}
 $$
 
@@ -566,10 +568,10 @@ S(t) &= 0.60\cdot\mathrm{Sensitivity}(t)+0.40\cdot F_1(t) \\
 G(t) &= \sqrt{\mathrm{Sensitivity}(t)\times\mathrm{Specificity}(t)} \\
 C(t) &= 0.35\cdot\mathrm{Sensitivity}(t)+0.30\cdot\mathrm{Specificity}(t) \\
 &\quad +0.25\cdot F_1(t)+0.10\cdot\mathrm{Accuracy}(t) \\
-t_J &= \underset{t\in\mathcal{T}}{\operatorname{argmax}}\ J(t) \\
-t_S &= \underset{t\in\mathcal{F}}{\operatorname{argmax}}\ S(t) \\
-t_G &= \underset{t\in\mathcal{T}}{\operatorname{argmax}}\ G(t) \\
-t_{\mathrm{base}} &= \underset{t\in\{t_J,t_S,t_G\}}{\operatorname{argmax}}\ C(t)
+t_J &= \underset{t\in\mathcal{T}}{\mathrm{argmax}}\ J(t) \\
+t_S &= \underset{t\in\mathcal{F}}{\mathrm{argmax}}\ S(t) \\
+t_G &= \underset{t\in\mathcal{T}}{\mathrm{argmax}}\ G(t) \\
+t_{\mathrm{base}} &= \underset{t\in\{t_J,t_S,t_G\}}{\mathrm{argmax}}\ C(t)
 \end{aligned}
 $$
 
