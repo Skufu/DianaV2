@@ -258,11 +258,24 @@ The fold-specific screening threshold was therefore derived from training-fold o
 | Screening-optimized threshold | Prioritizes sensitivity with a specificity floor | Reduces missed at-risk cases |
 | Geometric-mean threshold | Balances sensitivity and specificity | Handles uneven fold behavior |
 | Guardrail arbitration | Replaces unstable low thresholds when specificity collapses | Limits excessive false positives |
-| Metabolic-syndrome guardrail | Raises low risk estimates for concordant metabolic-risk profiles | Reduces implausibly low risk outputs |
+| Post-model metabolic-syndrome guardrail | Raises low served risk estimates for concordant metabolic-risk profiles | Reduces implausibly low runtime screening outputs |
 
 The serving layer also includes a rule-based Metabolic Syndrome risk guardrail. This rule evaluates triglycerides of at least 150 mg/dL, HDL cholesterol below 50 mg/dL, BMI of at least 25, and waist circumference of at least 80 cm, reflecting commonly used metabolic-syndrome risk criteria (International Diabetes Federation, 2006; Alberti et al., 2009). When three or more criteria are met, the at-risk probability is raised to at least 0.65. When two criteria are met, the at-risk probability is increased by 0.15 and capped at 0.95. This rule should be interpreted as an engineered safety heuristic for reducing implausibly low risk estimates in metabolically concordant high-risk profiles, not as an independently validated clinical rule.
 
-The model-performance and calibration results reported in Chapter 4 refer to the cross-validated Logistic Regression classifier and its threshold policy before serving-layer Metabolic Syndrome probability boosts are applied. The guardrail can change individual runtime responses, so it is documented as an inference safeguard rather than as part of the reported cross-validation estimate. Its effect should be evaluated separately through ablation, calibration review, and clinical sensitivity analysis.
+Operationally, the guardrail is applied after the Logistic Regression model produces its base probability. Let $\hat{p}_{model}$ represent the classifier probability and let $c$ represent the number of metabolic-syndrome criteria satisfied by the user profile. The served probability is interpreted as:
+
+$$
+\hat{p}_{served}=
+\begin{cases}
+\max(\hat{p}_{model},0.65), & c\ge3 \\
+\min(\hat{p}_{model}+0.15,0.95), & c=2 \\
+\hat{p}_{model}, & c<2
+\end{cases}
+$$
+
+This means the guardrail may increase the displayed screening probability for metabolically concordant profiles, but it does not retrain the classifier, change the reference labels, alter feature coefficients, or contribute to the cross-validation metrics. Runtime classification uses the served probability, while the validated performance estimates remain based on the base model and threshold policy.
+
+The model-performance and calibration results reported in Chapter 4 refer to the cross-validated Logistic Regression classifier and its threshold policy before serving-layer Metabolic Syndrome probability boosts are applied. This separation prevents a post-model heuristic from inflating reported AUC, sensitivity, specificity, or calibration statistics. The guardrail can change individual runtime responses, so it is documented as an inference safeguard rather than as part of the reported cross-validation estimate. Its effect should be evaluated separately through ablation, calibration review, and clinical sensitivity analysis.
 
 ### 3.10 Cluster-Based Risk Group Identification
 
@@ -506,6 +519,7 @@ For clarity, the principal formulas used in the methodology are summarized below
 | Phase 3 | Logistic screening probability | Predictive Model Development and Validation |
 | Phase 4 | Confusion-matrix metrics | Clinical Threshold Optimization and Serving Guardrails |
 | Phase 4 | Threshold strategy selection | Clinical Threshold Optimization and Serving Guardrails |
+| Phase 4 | Post-model metabolic-syndrome guardrail | Clinical Threshold Optimization and Serving Guardrails |
 | Phase 4 | Brier score and ECE | Data Analysis Procedure and Calibration Analysis |
 | Phase 5 | Weighted K-Means distance | Cluster-Based Risk Group Identification |
 | Phase 5 | LAP-style centroid score | Cluster-Based Risk Group Identification |
@@ -576,6 +590,17 @@ t_S &= \underset{t\in\mathcal{F}}{\mathrm{argmax}}\ S(t) \\
 t_G &= \underset{t\in\mathcal{T}}{\mathrm{argmax}}\ G(t) \\
 t_{\mathrm{base}} &= \underset{t\in\{t_J,t_S,t_G\}}{\mathrm{argmax}}\ C(t)
 \end{aligned}
+$$
+
+Post-model metabolic-syndrome guardrail:
+
+$$
+\hat{p}_{served}=
+\begin{cases}
+\max(\hat{p}_{model},0.65), & c\ge3 \\
+\min(\hat{p}_{model}+0.15,0.95), & c=2 \\
+\hat{p}_{model}, & c<2
+\end{cases}
 $$
 
 Brier score and Expected Calibration Error:
@@ -724,6 +749,8 @@ Calibration analysis assessed whether predicted probabilities aligned with obser
 | Calibration positives | 734 | Positive class count in calibration analysis |
 
 The predicted probabilities should therefore be communicated as approximate risk-support estimates. A high predicted probability should prompt confirmatory testing, clinical review, or preventive counseling, but it should not be interpreted as a confirmed diagnosis or exact individualized disease probability.
+
+The calibration metrics in Table 4.7 evaluate the base Logistic Regression probability before the post-model metabolic-syndrome guardrail is applied. In the deployed application, the served probability may be higher than the base model probability for profiles with concordant metabolic-syndrome indicators. Therefore, a guardrail-raised score should be interpreted as a conservative screening alert rather than as a recalibrated individualized probability. This distinction is important because the guardrail is designed to reduce implausibly low runtime outputs, while the calibration statistics describe the validated classifier alone.
 
 ### 4.5 Clustering Validation and Subtype Distribution
 
@@ -900,7 +927,7 @@ Compared with OmniRisk, the Simple Clinical model, and the ADA Risk Test reconst
 
 Several limitations constrain interpretation of the study. First, all model development and validation were conducted within NHANES. Although LOGO validation provides evidence of temporal robustness across survey cycles, it does not replace validation in an independent clinical cohort or prospective deployment setting. A related transferability limitation is that the planned community users are Filipino menopausal or postmenopausal women, while the model was trained on a U.S. NHANES analytic cohort. Ethnicity-related differences in diabetes risk, body composition, care access, laboratory context, and cardiometabolic prevalence may affect calibration and decision thresholds in the intended user population. Second, the reference label is operational rather than a definitive diagnostic gold standard because it combines self-reported physician diagnosis with single-measurement glycemic thresholds.
 
-Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired labels as heuristic descriptions rather than validated biological subtypes. True biological subtype validation would require autoimmune markers, beta-cell function markers, insulin-resistance estimates, longitudinal outcomes, and independent clinical datasets. Fourth, deployment guardrails such as waist-circumference imputation and metabolic syndrome risk floors are engineered safeguards requiring ablation, calibration, and clinical review before being treated as validated clinical rules.
+Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired labels as heuristic descriptions rather than validated biological subtypes. True biological subtype validation would require autoimmune markers, beta-cell function markers, insulin-resistance estimates, longitudinal outcomes, and independent clinical datasets. Fourth, deployment guardrails such as waist-circumference imputation and metabolic syndrome risk floors are engineered safeguards rather than validated clinical rules. The metabolic-syndrome guardrail should be evaluated through ablation by reporting how many profiles are changed, how often classifications shift from normal to at risk, how sensitivity, specificity, and calibration change with and without the guardrail, and whether clinician reviewers consider the affected cases clinically plausible.
 
 Fifth, formal community UAT, accessibility testing, and production load testing remain incomplete. The completed doctor review provides initial qualitative expert face-validity support, but it did not collect formal scored ratings and does not replace external clinical validation. Sixth, although the live deployment audit verified public exposure limits, TLS, CORS, host firewall posture, database TLS behavior, and ML API-key enforcement, the interface navigation and browser-token handling still reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. For these reasons, DIANA is presented as a screening-support prototype with promising internal validation and initial expert feedback, not as a clinically validated diagnostic system.
 
