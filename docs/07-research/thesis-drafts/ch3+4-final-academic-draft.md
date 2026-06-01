@@ -35,13 +35,13 @@ The detailed methodology sections below include the phase label in the section t
 | Phase | Primary Methodology Section | Corresponding Results or Evidence Section |
 |---|---|---|
 | Phase 1: Data acquisition and biomarker preparation | 3.2-3.6 | 4.6 |
-| Phase 2: Feature selection using Information Gain and entropy | 3.7 | 4.2 and 4.6 |
+| Phase 2: Information Gain, entropy, and leakage checks | 3.7 | 4.2 and 4.6 |
 | Phase 3: Predictive model development and training | 3.8 | 4.1 and 4.3 |
-| Phase 4: Model testing, evaluation, thresholding, calibration, and comparison | 3.8-3.9 | 4.1, 4.3, 4.4, and 4.12 |
+| Phase 4: Model testing, evaluation, thresholding, and calibration | 3.8-3.9 | 4.1, 4.3, 4.4, and 4.12 |
 | Phase 5: Cluster-based risk group identification | 3.10 | 4.5 |
 | Phase 6: Web application integration and visualization development | 3.11-3.12 | 4.8 |
 | Phase 7: System testing and technical validation | 3.13 | 4.7, 4.9, and 4.11 |
-| Phase 8: UAT protocol and doctor's evaluation | 3.14 | 4.10 |
+| Phase 8: Doctor's evaluation and expert review | 3.14 | 4.10 |
 
 Section 3.15 provides the cross-cutting data analysis procedure used to summarize the quantitative model evidence, cluster evidence, benchmark evidence, and system-evaluation evidence reported in Chapter 4.
 
@@ -58,6 +58,8 @@ flowchart TB
 ```
 
 Figure 3.1 summarizes the main methodological pathway used in the study. Detailed procedures for feature selection, model comparison, threshold optimization, subtype assignment, explainability, and system testing are discussed in the succeeding sections.
+
+**Phase 1 Start: Data Acquisition and Biomarker Preparation.** Phase 1 begins with the study locale and NHANES data source, then proceeds through population definition, data-gathering procedures, reference-label construction, missing-data handling, and clinical plausibility review.
 
 ### 3.2 Phase 1: Research Locale and Data Source
 
@@ -160,15 +162,25 @@ At inference time, missing waist circumference is handled by a separate serving-
 
 Outlier handling used clinical plausibility ranges rather than automatic row deletion. Values outside plausible clinical bounds were flagged through a binary outlier indicator, but records were retained. This decision preserved sample size and avoided excluding genuinely extreme metabolic profiles that may be clinically meaningful. The number of flagged outlier records was documented after preprocessing.
 
-### 3.7 Phase 2: Data Leakage Prevention and Feature Relevance
+**Phase 2 Start: Information Gain, Entropy, and Leakage Checks.** Phase 2 begins after the analytic cohort, reference labels, and candidate non-diagnostic predictors have been prepared in Phase 1. Its purpose is to verify that candidate predictors are relevant to the target label while preventing diagnostic or proxy leakage before model training begins.
 
-A three-layer leakage-prevention architecture was implemented before model training. The first layer scanned model feature definitions to confirm that diagnostic markers such as HbA1c, fasting blood sugar, fasting glucose, and related aliases were absent from classifier and clustering feature sets. The second layer performed proxy-leakage detection by computing Pearson correlation between each non-diagnostic candidate feature and the HbA1c diagnostic threshold. Features satisfying $\lvert r_{x,\mathrm{HbA1c}}\rvert>0.95$ would be flagged as proxy leakage. The third layer computed Shannon entropy information gain, expressed as $IG(Y,X)=H(Y)-H(Y\mid X)$, to verify feature relevance while documenting why some high-ranked features were excluded.
+### 3.7 Phase 2: Information Gain, Entropy, and Leakage Checks
+
+Phase 2 used entropy and Information Gain as a transparent feature-relevance audit before supervised model training. After the binary reference label $Y$ was prepared, each candidate non-diagnostic predictor $X_j$ was evaluated against the target class. The target entropy $H(Y)$ was computed first to quantify the uncertainty in the normal versus at-risk label distribution. For each candidate predictor, the conditional entropy $H(Y\mid X_j)$ was then computed to estimate how much uncertainty remained after the predictor was considered. The Information Gain score, expressed as $IG(Y,X_j)=H(Y)-H(Y\mid X_j)$, measured the reduction in target-label uncertainty contributed by that predictor.
+
+Continuous predictors were discretized before entropy-based Information Gain computation so that class uncertainty could be compared across predictor bins. In the executable leakage-validation pipeline, numeric features were discretized into five bins before IG ranking. The resulting IG ranking was used to document feature relevance and to support the rationale for retained and excluded predictors. However, IG was not treated as the only selection criterion. A feature also had to satisfy diagnostic-leakage checks, avoid proxy leakage, remain available in the deployed assessment workflow, and fit the final model contract.
+
+A three-layer leakage-prevention architecture was implemented before model training. The first layer scanned model feature definitions to confirm that diagnostic markers such as HbA1c, fasting blood sugar, fasting glucose, and related aliases were absent from classifier and clustering feature sets. The second layer performed proxy-leakage detection by computing Pearson correlation between each non-diagnostic candidate feature and the HbA1c diagnostic threshold. Features satisfying $\lvert r_{x,\mathrm{HbA1c}}\rvert>0.95$ would be flagged as proxy leakage. The third layer used the entropy-based Information Gain ranking to verify feature relevance while documenting why some high-ranked features were excluded from the deployed predictor set.
 
 This validation was enforced programmatically as a pre-training gate. If diagnostic variables or proxy-leakage conditions were detected, the training sequence would terminate. This made leakage prevention an executable part of the methodology rather than a post-hoc assertion. The leakage-validation findings are reported in Chapter 4.
+
+**Phase 3 Start: Predictive Model Development and Training.** Phase 3 begins after the leakage-safe predictor set has been reviewed. This phase covers candidate algorithm selection, model specification, hyperparameter search, preprocessing within the training workflow, and training of the candidate screening classifiers.
 
 ### 3.8 Phase 3: Predictive Model Development and Training
 
 Four candidate algorithms were evaluated under the same nested temporal-validation framework: Logistic Regression, Random Forest, LightGBM, and XGBoost. Logistic Regression served as the interpretable linear baseline. Random Forest provided a non-linear ensemble baseline, while LightGBM and XGBoost provided gradient-boosting benchmarks for structured tabular prediction (Breiman, 2001; Ke et al., 2017; Chen & Guestrin, 2016).
+
+All candidate models used the same leakage-safe screening objective: distinguishing normal profiles from the combined at-risk class without using HbA1c, fasting blood sugar, or related diagnostic glycemic markers as predictors. Median imputation, scaling, model fitting, and hyperparameter selection were handled inside the validation workflow so that preprocessing choices were learned from training partitions before being applied to held-out partitions. This kept Phase 3 model development aligned with the leakage-control rules established in Phase 2.
 
 For Logistic Regression, the predicted at-risk probability was modeled as:
 
@@ -192,9 +204,11 @@ $$
 | XGBoost | max_depth | 3, 5 |
 | XGBoost | learning_rate | 0.05, 0.1 |
 
-Hyperparameter optimization used grid search with AUC-ROC as the scoring metric. The inner loop used grouped cross-validation so that NHANES survey-cycle boundaries were respected during model selection. The outer loop used Leave-One-Group-Out (LOGO) validation, holding out one entire NHANES release at a time. This nested LOGO design estimated whether a model trained on prior survey groups could generalize to a distinct temporal cohort. It is more conservative than random k-fold validation because observations from the same survey period are not split across training and testing (Vabalas et al., 2019).
+Hyperparameter optimization used grid search with AUC-ROC as the scoring metric. Candidate models were compared under the same input-feature contract and search procedure so that model selection reflected algorithm behavior rather than inconsistent feature access.
 
-The model-development procedures up to the candidate algorithms and hyperparameter search space represent Phase 3. Phase 4 begins with the nested validation, model-evaluation, and threshold-selection procedures described from this point forward and continues through Section 3.9.
+**Phase 4 Start: Model Testing, Evaluation, Thresholding, and Calibration.** Phase 4 begins once candidate models and hyperparameter grids have been defined. This phase covers nested LOGO validation, fold-level model evaluation, final model selection, threshold optimization, calibration analysis, and benchmark comparison.
+
+The inner loop used grouped cross-validation so that NHANES survey-cycle boundaries were respected during model selection. The outer loop used Leave-One-Group-Out (LOGO) validation, holding out one entire NHANES release at a time. This nested LOGO design estimated whether a model trained on prior survey groups could generalize to a distinct temporal cohort. It is more conservative than random k-fold validation because observations from the same survey period are not split across training and testing (Vabalas et al., 2019).
 
 In this study, each NHANES survey release was treated as one validation group. Under LOGO validation, the model was trained on all but one survey release and then tested on the held-out release. This process was repeated until each release had served once as the held-out test group. The design was used because records from the same survey cycle may share collection-period, laboratory, sampling, or population characteristics.
 
@@ -283,6 +297,8 @@ This means the guardrail may increase the displayed screening probability for me
 
 The model-performance and calibration results reported in Chapter 4 refer to the cross-validated Logistic Regression classifier and its threshold policy before serving-layer Metabolic Syndrome probability boosts are applied. This separation prevents a post-model heuristic from inflating reported AUC, sensitivity, specificity, or calibration statistics. The guardrail can change individual runtime responses, so it is documented as an inference safeguard rather than as part of the reported cross-validation estimate. Its effect should be evaluated separately through ablation, calibration review, and clinical sensitivity analysis.
 
+**Phase 5 Start: Cluster-Based Risk Group Identification.** Phase 5 begins after the binary at-risk class and screening workflow have been defined. This phase uses weighted K-Means to group at-risk profiles into interpretable metabolic-pattern clusters while keeping subtype labels separate from diagnostic claims.
+
 ### 3.10 Phase 5: Cluster-Based Risk Group Identification
 
 DIANA uses a two-stage inference structure. The first stage classifies a user as normal or at risk using the Logistic Regression screening model. Only users classified as at risk proceed to the weighted K-Means subtyping stage. This gating mechanism prevents the system from assigning disease-pattern subtype labels to users classified as normal.
@@ -336,7 +352,9 @@ flowchart TB
 
 Figure 3.2 clarifies the separation between binary screening and subtype assignment. DIANA first determines whether the profile is normal or at risk. Only at-risk outputs proceed to weighted K-Means subtyping, which prevents the system from assigning disease-pattern labels to users classified as normal.
 
-### 3.11 Phase 6: Model Explainability and Clinical Decision Support
+**Phase 6 Start: Web Application Integration and Visualization Development.** Phase 6 begins after the screening and clustering workflows have been defined. This phase integrates the trained model behavior into the web application, including assessment submission, risk-result presentation, subtype context, SHAP-based explanation handling, biomarker trend visualization, and report-support workflows.
+
+### 3.11 Phase 6: Visualization, Explainability, and Clinical Decision Support
 
 Although Logistic Regression provides coefficient-level interpretability, DIANA also uses SHapley Additive exPlanations (SHAP) to provide patient-level feature attribution (Lundberg & Lee, 2017). SHAP values indicate how each feature pushes a prediction toward or away from the at-risk class. The explainability workflow supports both cohort-level interpretation, through summary visualizations, and patient-level interpretation, through waterfall-style feature-contribution displays.
 
@@ -454,7 +472,9 @@ The API design was organized around access-control boundaries rather than a sing
 
 The database schema links assessments directly to authenticated users, supporting user-owned health records and controlled deletion behavior. Stored prediction metadata includes risk score, risk label, predicted status, model lineage, dataset lineage, and subtype context where available. This design supports traceability between a displayed result and the model artifact used to generate it without requiring detailed explanation artifacts to be persisted with every assessment.
 
-### 3.13 Phase 7: Security, Authorization, and Quality Evaluation
+**Phase 7 Start: System Testing and Technical Validation.** Phase 7 begins after the application architecture and integration workflow have been specified. This phase evaluates the implemented system through functional testing, ML-service testing, frontend coverage, security-control review, deployment-readiness checks, and accessibility-readiness assessment.
+
+### 3.13 Phase 7: System Testing, Security, and Technical Validation
 
 DIANA implements signed-token authentication, role-based access control, request-size limiting, rate limiting, security headers, cross-origin request filtering, and password hashing with bcrypt (Jones et al., 2015; Provos & Mazieres, 1999). Three main roles are recognized: user, doctor, and admin. Users can create assessments, view their own predictions, export reports, and review personal trends. Doctors are treated as a testing and validation role with model-locked assessment creation. Administrators can access system administration functions such as user management, audit logs, model traceability, and dashboard summaries.
 
@@ -476,7 +496,9 @@ Software quality evaluation followed ISO/IEC 25010-informed characteristics (Int
 
 Because DIANA was evaluated as a research prototype, its current navigation and browser-token handling should not be interpreted as production clinical security hardening. Before clinical deployment, the system would require stronger session-management design, formal cross-site-scripting review, route-based navigation refinement, and deployment-compatible protections such as HttpOnly cookies or server-side sessions where feasible.
 
-### 3.14 Phase 8: User Acceptance Testing and Expert Review Methodology
+**Phase 8 Start: Doctor's Evaluation and Expert Review.** Phase 8 begins after the prototype has been implemented and technically reviewed. This phase documents the completed qualitative doctor expert review and separates it from the planned community UAT protocol, which remains pending until participant recruitment, consent, and testing are completed.
+
+### 3.14 Phase 8: Doctor's Evaluation and Expert Review Methodology
 
 The planned community user evaluation follows an ISO/IEC 25010-informed usability framework (International Organization for Standardization, 2011). The protocol evaluates appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence. Planned user participants will complete core tasks such as logging in, navigating the dashboard, submitting an assessment, and interpreting prediction results. If the System Usability Scale is administered during the community UAT phase, scoring and interpretation will follow established SUS guidance (Brooke, 1996; Bangor et al., 2008).
 
@@ -510,7 +532,7 @@ System-evaluation evidence was analyzed separately from model-validation evidenc
 | Phase 5 | Cluster validation | Evaluate weighted K-Means on at-risk records and interpret centroids in raw clinical units | Cluster validity metrics and subtype-context interpretation |
 | Phase 6 | System-integration evidence | Summarize assessment workflow, visualization, explainability, trend, and export integration | Implemented workflow and presentation evidence |
 | Phase 7 | Technical validation evidence | Summarize backend, ML-service, frontend, security, deployment-readiness, and accessibility-readiness results | Functional, security, deployment, and readiness findings |
-| Phase 8 | UAT and expert-review evidence | Treat community UAT as pending and analyze completed doctor expert review qualitatively | Evaluation status and expert face-validity themes |
+| Phase 8 | Doctor expert-review evidence and pending UAT protocol | Treat community UAT as pending and analyze completed doctor expert review qualitatively | Evaluation status and expert face-validity themes |
 
 For clarity, the principal formulas used in the methodology are summarized below in chronological phase order. Table 3.13 serves as a phase-labeled formula index, while the equations are displayed outside the table to preserve reliable LaTeX rendering in Markdown and thesis export workflows.
 
