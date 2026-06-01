@@ -12,7 +12,7 @@ DIANA is therefore not positioned as a diagnostic device. A screen-positive resu
 
 The methodology was organized into eight sequential phases. Phase 1 covered data acquisition and biomarker preparation, including NHANES file acquisition, cohort filtering, variable mapping, reference-label construction, missing-data handling, and clinical plausibility checks. Phase 2 applied feature selection using Information Gain and entropy-based relevance analysis while enforcing diagnostic-leakage prevention. Phase 3 covered predictive model development and training using candidate machine-learning algorithms under a nested temporal-validation framework. Phase 4 defined model testing, evaluation, threshold optimization, calibration, and benchmark-comparison procedures. Phase 5 implemented cluster-based risk group identification through weighted K-Means clustering for profiles classified as at risk.
 
-Phase 6 covered web application integration and visualization development, including frontend assessment workflows, backend API orchestration, ML-service integration, explainability output handling, trend visualization, and report-generation support. Phase 7 covered system testing and technical validation across backend, ML, frontend, security, deployment-readiness, and accessibility-readiness components. Phase 8 covered the doctor's evaluation and expert-review procedure, in which a licensed physician reviewer used the prototype and assessed risk-output plausibility, feature usefulness, clinical workflow fit, and the clarity of explanation and subtype-weighting logic. The methodological phases describe how the study was conducted; the corresponding empirical findings and validation evidence are reported in Chapter 4.
+Phase 6 covered web application integration and visualization development, including frontend assessment workflows, backend API orchestration, ML-service integration, explainability output handling, trend visualization, and report-generation support. Phase 7 covered system testing and technical validation across backend, ML, frontend, security, deployment-readiness, and accessibility-readiness components. Phase 8 covered the completed qualitative doctor's evaluation and expert-review procedure together with the planned community UAT protocol, separating expert face-validity feedback from formal user-acceptance results that remain pending. The methodological phases describe how the study was conducted; the corresponding empirical findings and validation evidence are reported in Chapter 4.
 
 **Eight-Phase Methodological Framework**
 
@@ -535,124 +535,6 @@ System-evaluation evidence was analyzed separately from model-validation evidenc
 | Phase 6 | System-integration evidence | Summarize assessment workflow, visualization, explainability, trend, and export integration | Implemented workflow and presentation evidence |
 | Phase 7 | Technical validation evidence | Summarize backend, ML-service, frontend, security, deployment-readiness, and accessibility-readiness results | Functional, security, deployment, and readiness findings |
 | Phase 8 | Doctor expert-review evidence and pending UAT protocol | Treat community UAT as pending and analyze completed doctor expert review qualitatively | Evaluation status and expert face-validity themes |
-
-For clarity, the principal formulas used in the methodology are summarized below in chronological phase order. Table 3.13 serves as a phase-labeled formula index, while the equations are displayed outside the table to preserve reliable LaTeX rendering in Markdown and thesis export workflows.
-
-**Table 3.13. Formula Index**
-
-| Phase | Formula Area | Applied In |
-|---|---|---|
-| Phase 1 | HbA1c reference thresholds | Reference-Label Construction |
-| Phase 1 | Waist-circumference fallback | Data Preparation, Missing Data, and Outlier Handling |
-| Phase 2 | Proxy-leakage flag | Data Leakage Prevention |
-| Phase 2 | Entropy and Information Gain | Data Leakage Prevention |
-| Phase 3 | Logistic screening probability | Predictive Model Development and Validation |
-| Phase 4 | Confusion-matrix metrics | Clinical Threshold Optimization and Serving Guardrails |
-| Phase 4 | Threshold strategy selection | Clinical Threshold Optimization and Serving Guardrails |
-| Phase 4 | Post-model metabolic-syndrome guardrail | Clinical Threshold Optimization and Serving Guardrails |
-| Phase 4 | Brier score and ECE | Data Analysis Procedure and Calibration Analysis |
-| Phase 5 | Weighted K-Means distance | Cluster-Based Risk Group Identification |
-| Phase 5 | LAP-style centroid score | Cluster-Based Risk Group Identification |
-
-HbA1c reference thresholds:
-
-| Reference status | HbA1c criterion |
-|---|---|
-| Diabetic | HbA1c >= 6.5% |
-| Pre-diabetic | 5.7% <= HbA1c < 6.5% |
-| Normal | HbA1c < 5.7% |
-
-Waist-circumference fallback:
-
-$$
-\widehat{WC}=3.33\times BMI
-$$
-
-Proxy-leakage flag:
-
-$$
-\left|r_{x,\mathrm{HbA1c}}\right|>0.95
-$$
-
-Entropy and Information Gain:
-
-$$
-\begin{aligned}
-H(Y) &= -\sum_i p_i\log_2(p_i) \\
-IG(Y,X) &= H(Y)-H(Y\mid X)
-\end{aligned}
-$$
-
-Logistic screening probability:
-
-$$
-\hat{p}=\frac{1}{1+e^{-(\beta_0+\sum_{j=1}^{p}\beta_jx_j)}}
-$$
-
-Confusion-matrix metrics:
-
-$$
-\begin{aligned}
-\mathrm{Sensitivity} &= \frac{TP}{TP+FN} \\
-\mathrm{Specificity} &= \frac{TN}{TN+FP} \\
-\mathrm{PPV} &= \frac{TP}{TP+FP} \\
-\mathrm{NPV} &= \frac{TN}{TN+FN} \\
-\mathrm{Accuracy} &= \frac{TP+TN}{TP+TN+FP+FN} \\
-F_1 &= \frac{2(\mathrm{PPV})(\mathrm{Sensitivity})}{\mathrm{PPV}+\mathrm{Sensitivity}} \\
-J &= \mathrm{Sensitivity}+\mathrm{Specificity}-1 \\
-G\text{-}\mathrm{Mean} &= \sqrt{\mathrm{Sensitivity}\times\mathrm{Specificity}}
-\end{aligned}
-$$
-
-Threshold strategy selection:
-
-$$
-\begin{aligned}
-\mathcal{T} &= \{0.10,0.11,\ldots,0.89\} \\
-\mathcal{F} &= \{t\in\mathcal{T}\mid \mathrm{Sensitivity}(t)\ge 0.80
-\land \mathrm{Specificity}(t)\ge 0.40\} \\
-S(t) &= 0.60\cdot\mathrm{Sensitivity}(t)+0.40\cdot F_1(t) \\
-G(t) &= \sqrt{\mathrm{Sensitivity}(t)\times\mathrm{Specificity}(t)} \\
-C(t) &= 0.35\cdot\mathrm{Sensitivity}(t)+0.30\cdot\mathrm{Specificity}(t) \\
-&\quad +0.25\cdot F_1(t)+0.10\cdot\mathrm{Accuracy}(t) \\
-t_J &= \underset{t\in\mathcal{T}}{\mathrm{argmax}}\ J(t) \\
-t_S &= \underset{t\in\mathcal{F}}{\mathrm{argmax}}\ S(t) \\
-t_G &= \underset{t\in\mathcal{T}}{\mathrm{argmax}}\ G(t) \\
-t_{\mathrm{base}} &= \underset{t\in\{t_J,t_S,t_G\}}{\mathrm{argmax}}\ C(t)
-\end{aligned}
-$$
-
-Post-model metabolic-syndrome guardrail:
-
-$$
-\hat{p}_{served}=
-\begin{cases}
-\max(\hat{p}_{model},0.65), & c\ge3 \\
-\min(\hat{p}_{model}+0.15,0.95), & c=2 \\
-\hat{p}_{model}, & c<2
-\end{cases}
-$$
-
-Brier score and Expected Calibration Error:
-
-$$
-\begin{aligned}
-\mathrm{Brier} &= \frac{1}{n}\sum_{i=1}^{n}(\hat{p}_i-y_i)^2 \\
-\mathrm{ECE} &= \sum_{m=1}^{M}\frac{\left|B_m\right|}{n}\left|\overline{y}_{B_m}-\overline{\hat{p}}_{B_m}\right|
-\end{aligned}
-$$
-
-Weighted K-Means distance:
-
-$$
-d_w(\mathbf{z}_i,\boldsymbol{\mu}_k)=\sqrt{\sum_{j=1}^{p}w_j(z_{ij}-\mu_{kj})^2}
-$$
-
-LAP-style centroid score:
-
-$$
-\mathrm{LAP}=(WC-58)\times TG
-$$
 
 # Chapter 4: Results and Discussion
 
