@@ -30,7 +30,7 @@ flowchart TB
     P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
 ```
 
-The phase alignment across the manuscript is summarized as follows.
+The detailed methodology sections below include the phase label in the section title where each phase is discussed. Phase 1 begins at Section 3.2; Phase 2 begins at Section 3.7; Phase 3 begins at Section 3.8; Phase 4 is introduced in the validation part of Section 3.8 and continues through Section 3.9; Phase 5 begins at Section 3.10; Phase 6 begins at Section 3.11; Phase 7 begins at Section 3.13; and Phase 8 begins at Section 3.14. The phase alignment across the manuscript is summarized as follows.
 
 | Phase | Primary Methodology Section | Corresponding Results or Evidence Section |
 |---|---|---|
@@ -41,7 +41,7 @@ The phase alignment across the manuscript is summarized as follows.
 | Phase 5: Cluster-based risk group identification | 3.10 | 4.5 |
 | Phase 6: Web application integration and visualization development | 3.11-3.12 | 4.8 |
 | Phase 7: System testing and technical validation | 3.13 | 4.7, 4.9, and 4.11 |
-| Phase 8: Doctor's evaluation | 3.14 | 4.10 |
+| Phase 8: UAT protocol and doctor's evaluation | 3.14 | 4.10 |
 
 Section 3.15 provides the cross-cutting data analysis procedure used to summarize the quantitative model evidence, cluster evidence, benchmark evidence, and system-evaluation evidence reported in Chapter 4.
 
@@ -59,7 +59,7 @@ flowchart TB
 
 Figure 3.1 summarizes the main methodological pathway used in the study. Detailed procedures for feature selection, model comparison, threshold optimization, subtype assignment, explainability, and system testing are discussed in the succeeding sections.
 
-### 3.2 Research Locale
+### 3.2 Phase 1: Research Locale and Data Source
 
 The primary data locale for model development was the NHANES public data repository maintained by the Centers for Disease Control and Prevention. NHANES was selected because it provides standardized demographic, laboratory, examination, and questionnaire data across repeated survey releases (Centers for Disease Control and Prevention, National Center for Health Statistics [CDC/NCHS], 2024a). The modeling dataset used six NHANES releases: 2009-2010, 2011-2012, 2013-2014, 2015-2016, 2017-2018, and 2021-2023. The 2019-2020 cycle was excluded because NHANES field operations were disrupted by the COVID-19 pandemic. The 2021-2023 files were treated as the August 2021-August 2023 post-pandemic release rather than as a standard biennial NHANES release (CDC/NCHS, 2024b).
 
@@ -76,7 +76,7 @@ The primary data locale for model development was the NHANES public data reposit
 
 For planned user acceptance testing, the target recruitment locale consists of online communities of Filipino women discussing perimenopause and menopause-related health concerns. The source protocol identifies the "Usapang Perimenopause at Menopause" Facebook interest group as the intended recruitment setting. Formal recruitment will proceed only after permission from group administrators, informed consent, privacy safeguards, and the final testing protocol are completed.
 
-### 3.3 Population of the Study
+### 3.3 Phase 1: Population of the Study
 
 The modeling population consisted of postmenopausal women represented in NHANES. The final analytic cohort contained 1,376 postmenopausal women who satisfied the study's demographic, reproductive-health, and fasting-laboratory data-availability criteria. The cohort was restricted to female respondents within the target menopausal age range, with postmenopausal status derived from reproductive-health questionnaire responses. Reproductive-health filtering used RHQ031, which identifies respondents who reported no menstrual period during the past 12 months (CDC/NCHS, 2024c).
 
@@ -94,7 +94,7 @@ The multiclass reference distribution consisted of 642 normal cases, 457 pre-dia
 
 The planned user-evaluation population consists of menopausal or postmenopausal women who can interact with the DIANA application and provide structured usability feedback. The clinical expert-review population consists of licensed medical professionals who can review risk-output plausibility, feature usefulness, SHAP explanation clarity, and clinical workflow fit. Formal community user acceptance testing has not yet been completed; however, an initial hands-on doctor expert review was completed and is reported as qualitative face-validity evidence rather than as external clinical validation.
 
-### 3.4 Data Gathering Tools and Procedures
+### 3.4 Phase 1: Data Gathering Tools and Procedures
 
 This study used secondary data from NHANES. Raw XPT files were acquired from the CDC public repository and processed through an automated Python data pipeline using public NHANES documentation and codebooks as the source of file and variable definitions (CDC/NCHS, 2024a). The collected files included demographic records, glycohemoglobin records, fasting glucose records, total cholesterol records, HDL cholesterol records, triglyceride and LDL records, body-measurement records, blood-pressure records, reproductive-health questionnaire responses, diabetes questionnaire responses, smoking variables, physical-activity variables, alcohol-use variables, family-history variables, insulin records where available, and high-sensitivity CRP records where available.
 
@@ -140,7 +140,7 @@ Lifestyle variables were derived through rule-based classification. Smoking stat
 | BPXSY1 / BPXOSY1 | systolic_bp | Systolic blood pressure (mmHg), when used in secondary descriptions |
 | BPXDI1 / BPXODI1 | diastolic_bp | Diastolic blood pressure (mmHg), when used in secondary descriptions |
 
-### 3.5 Reference-Label Construction
+### 3.5 Phase 1: Reference-Label Construction
 
 Reference labels were constructed using a dual-source hierarchy. The primary source was DIQ010, the NHANES diabetes questionnaire item that records whether a respondent had been told by a physician that she had diabetes or borderline diabetes. Respondents reporting physician-diagnosed diabetes were labeled diabetic, while respondents reporting borderline diabetes were labeled pre-diabetic.
 
@@ -148,7 +148,7 @@ For respondents without self-reported diabetes or borderline diabetes, American 
 
 Agreement between DIQ010-derived labels and HbA1c-threshold labels was assessed to evaluate consistency between self-report and biochemical classification. Discordant records were interpreted as potential effects of undiagnosed diabetes, recall error, treatment effects, timing differences, or biological and laboratory variability. The label used in this study should therefore be interpreted as an operational reference label rather than as a perfect diagnostic gold standard. The label-consistency findings are reported in Chapter 4.
 
-### 3.6 Data Preparation, Missing Data, and Outlier Handling
+### 3.6 Phase 1: Data Preparation, Missing Data, and Outlier Handling
 
 NHANES records contain missing values because of non-response, subsample designs, examination skip patterns, and variable availability across cycles. The defensible training pipeline used leakage-safe median imputation within the cross-validation workflow. Imputation parameters were fitted only on training folds and then applied to held-out folds, ensuring that validation or test information did not influence preprocessing. K-nearest-neighbor imputation was restricted to exploratory analysis and was not used for defensible model training because global imputation before cross-validation would allow the imputation procedure to see held-out fold information (Vabalas et al., 2019).
 
@@ -158,13 +158,13 @@ At inference time, missing waist circumference is handled by a separate serving-
 
 Outlier handling used clinical plausibility ranges rather than automatic row deletion. Values outside plausible clinical bounds were flagged through a binary outlier indicator, but records were retained. This decision preserved sample size and avoided excluding genuinely extreme metabolic profiles that may be clinically meaningful. The number of flagged outlier records was documented after preprocessing.
 
-### 3.7 Data Leakage Prevention
+### 3.7 Phase 2: Data Leakage Prevention and Feature Relevance
 
 A three-layer leakage-prevention architecture was implemented before model training. The first layer scanned model feature definitions to confirm that diagnostic markers such as HbA1c, fasting blood sugar, fasting glucose, and related aliases were absent from classifier and clustering feature sets. The second layer performed proxy-leakage detection by computing Pearson correlation between each non-diagnostic candidate feature and the HbA1c diagnostic threshold. Features satisfying $\lvert r_{x,\mathrm{HbA1c}}\rvert>0.95$ would be flagged as proxy leakage. The third layer computed Shannon entropy information gain, expressed as $IG(Y,X)=H(Y)-H(Y\mid X)$, to verify feature relevance while documenting why some high-ranked features were excluded.
 
 This validation was enforced programmatically as a pre-training gate. If diagnostic variables or proxy-leakage conditions were detected, the training sequence would terminate. This made leakage prevention an executable part of the methodology rather than a post-hoc assertion. The leakage-validation findings are reported in Chapter 4.
 
-### 3.8 Predictive Model Development and Validation
+### 3.8 Phase 3: Predictive Model Development and Training
 
 Four candidate algorithms were evaluated under the same nested temporal-validation framework: Logistic Regression, Random Forest, LightGBM, and XGBoost. Logistic Regression served as the interpretable linear baseline. Random Forest provided a non-linear ensemble baseline, while LightGBM and XGBoost provided gradient-boosting benchmarks for structured tabular prediction (Breiman, 2001; Ke et al., 2017; Chen & Guestrin, 2016).
 
@@ -192,13 +192,15 @@ $$
 
 Hyperparameter optimization used grid search with AUC-ROC as the scoring metric. The inner loop used grouped cross-validation so that NHANES survey-cycle boundaries were respected during model selection. The outer loop used Leave-One-Group-Out (LOGO) validation, holding out one entire NHANES release at a time. This nested LOGO design estimated whether a model trained on prior survey groups could generalize to a distinct temporal cohort. It is more conservative than random k-fold validation because observations from the same survey period are not split across training and testing (Vabalas et al., 2019).
 
+The model-development procedures up to the candidate algorithms and hyperparameter search space represent Phase 3. Phase 4 begins with the nested validation, model-evaluation, and threshold-selection procedures described from this point forward and continues through Section 3.9.
+
 In this study, each NHANES survey release was treated as one validation group. Under LOGO validation, the model was trained on all but one survey release and then tested on the held-out release. This process was repeated until each release had served once as the held-out test group. The design was used because records from the same survey cycle may share collection-period, laboratory, sampling, or population characteristics.
 
 The final model was selected based on mean fold AUC rather than pooled aggregate AUC alone. This selection rule was used to favor models that performed consistently across temporal groups while preserving interpretability, stable probability outputs, and efficient inference. The comparative model-selection results are reported in Chapter 4.
 
 NHANES survey weights were not incorporated into model training. Survey weights are essential for population-level prevalence estimation and nationally representative descriptive inference, but their role in prediction-model training depends on the target deployment population and modeling objective. In this study, unweighted training was treated as a design choice for learning risk patterns in the analytic cohort. Weighted sensitivity analysis remains an appropriate future extension (Lumley, 2010).
 
-### 3.9 Clinical Threshold Optimization and Serving Guardrails
+### 3.9 Phase 4: Clinical Threshold Optimization and Serving Guardrails
 
 The final classifier outputs a probability that must be converted into a binary screening classification. Because DIANA is intended for early risk identification, thresholding was optimized for a screening context rather than defaulting to 0.50. Youden's J was included because it is a conventional operating-point criterion that balances sensitivity and specificity by maximizing sensitivity plus specificity minus one (Youden, 1950). However, it was treated as one candidate strategy rather than as an automatic final rule because DIANA is a screening-support system. In this context, a false negative may delay confirmatory testing or preventive counseling, while a false positive generally leads to follow-up review rather than immediate treatment.
 
@@ -277,7 +279,7 @@ This means the guardrail may increase the displayed screening probability for me
 
 The model-performance and calibration results reported in Chapter 4 refer to the cross-validated Logistic Regression classifier and its threshold policy before serving-layer Metabolic Syndrome probability boosts are applied. This separation prevents a post-model heuristic from inflating reported AUC, sensitivity, specificity, or calibration statistics. The guardrail can change individual runtime responses, so it is documented as an inference safeguard rather than as part of the reported cross-validation estimate. Its effect should be evaluated separately through ablation, calibration review, and clinical sensitivity analysis.
 
-### 3.10 Cluster-Based Risk Group Identification
+### 3.10 Phase 5: Cluster-Based Risk Group Identification
 
 DIANA uses a two-stage inference structure. The first stage classifies a user as normal or at risk using the Logistic Regression screening model. Only users classified as at risk proceed to the weighted K-Means subtyping stage. This gating mechanism prevents the system from assigning disease-pattern subtype labels to users classified as normal.
 
@@ -330,7 +332,7 @@ flowchart TB
 
 Figure 3.2 clarifies the separation between binary screening and subtype assignment. DIANA first determines whether the profile is normal or at risk. Only at-risk outputs proceed to weighted K-Means subtyping, which prevents the system from assigning disease-pattern labels to users classified as normal.
 
-### 3.11 Model Explainability and Clinical Decision Support
+### 3.11 Phase 6: Model Explainability and Clinical Decision Support
 
 Although Logistic Regression provides coefficient-level interpretability, DIANA also uses SHapley Additive exPlanations (SHAP) to provide patient-level feature attribution (Lundberg & Lee, 2017). SHAP values indicate how each feature pushes a prediction toward or away from the at-risk class. The explainability workflow supports both cohort-level interpretation, through summary visualizations, and patient-level interpretation, through waterfall-style feature-contribution displays.
 
@@ -350,7 +352,7 @@ In addition to model-performance evaluation, DIANA includes safety and traceabil
 | Drift-monitoring support | Records drift-check status for administrative review | Supports post-deployment monitoring |
 | Model lineage metadata | Stores model version, dataset hash, risk score, status, and subtype metadata | Supports result traceability |
 
-### 3.12 System Architecture and Implementation
+### 3.12 Phase 6: System Architecture and Implementation
 
 DIANA was implemented as a layered web application with a frontend interface, backend API, ML inference service, and persistence layer. The separation of these layers allowed the user interface, authentication and validation logic, prediction workflow, and stored assessment records to be developed and evaluated independently. Optional caching was used for repeated read-heavy views such as trends and aggregate analytics when the runtime environment supported it.
 
@@ -448,7 +450,7 @@ The API design was organized around access-control boundaries rather than a sing
 
 The database schema links assessments directly to authenticated users, supporting user-owned health records and controlled deletion behavior. Stored prediction metadata includes risk score, risk label, predicted status, model lineage, dataset lineage, and subtype context where available. This design supports traceability between a displayed result and the model artifact used to generate it without requiring detailed explanation artifacts to be persisted with every assessment.
 
-### 3.13 Security, Authorization, and Quality Evaluation
+### 3.13 Phase 7: Security, Authorization, and Quality Evaluation
 
 DIANA implements signed-token authentication, role-based access control, request-size limiting, rate limiting, security headers, cross-origin request filtering, and password hashing with bcrypt (Jones et al., 2015; Provos & Mazieres, 1999). Three main roles are recognized: user, doctor, and admin. Users can create assessments, view their own predictions, export reports, and review personal trends. Doctors are treated as a testing and validation role with model-locked assessment creation. Administrators can access system administration functions such as user management, audit logs, model traceability, and dashboard summaries.
 
@@ -470,13 +472,13 @@ Software quality evaluation followed ISO/IEC 25010-informed characteristics (Int
 
 Because DIANA was evaluated as a research prototype, its current navigation and browser-token handling should not be interpreted as production clinical security hardening. Before clinical deployment, the system would require stronger session-management design, formal cross-site-scripting review, route-based navigation refinement, and deployment-compatible protections such as HttpOnly cookies or server-side sessions where feasible.
 
-### 3.14 User Acceptance Testing and Expert Review Methodology
+### 3.14 Phase 8: User Acceptance Testing and Expert Review Methodology
 
 The planned community user evaluation follows an ISO/IEC 25010-informed usability framework (International Organization for Standardization, 2011). The protocol evaluates appropriateness recognizability, learnability, operability, user error protection, interface aesthetics, accessibility, and user confidence. Planned user participants will complete core tasks such as logging in, navigating the dashboard, submitting an assessment, and interpreting prediction results. If the System Usability Scale is administered during the community UAT phase, scoring and interpretation will follow established SUS guidance (Brooke, 1996; Bangor et al., 2008).
 
 The planned user cohort consists of approximately 30 menopausal or postmenopausal Filipino women recruited from the target online community, subject to approval and consent procedures. Separately, a hands-on doctor expert review was completed with a licensed physician reviewer. The expert review evaluated the prototype's feature set, assessment workflow, risk-output presentation, explanation approach, and subtype-weighting rationale. The available review record identifies the reviewer at the licensed-physician role level only; specialty, years of practice, review date, and formal scoring results are not reported in the manuscript evidence set. Feedback was collected qualitatively rather than through a completed Likert scoring instrument; therefore, this study reports expert comments and interpretation themes, but not formal expert mean scores. Formal UAT with the target user cohort remains pending, so SUS scores, task success rates, completion times, and user quotations are not reported as completed results.
 
-### 3.15 Data Analysis Procedure
+### 3.15 Cross-Phase Data Analysis Procedure
 
 Data analysis was conducted in the same chronological phase order used by the methodology: cohort preparation, feature and leakage review, predictive-model development, model testing and calibration, cluster-based risk group interpretation, system-integration evidence, technical validation, and expert-review evidence. For reporting clarity, these analyses were also grouped into cohort and feature analysis, model-related validation, cluster interpretation, and system-evaluation evidence. Model-related validation included predictive-model performance, threshold behavior, calibration, and benchmark comparison. The NHANES analytic cohort was summarized using record counts, class distributions, survey-cycle membership, feature availability, and reference-label composition. These summaries were used to describe the analytic dataset and to verify that the final cohort matched the intended postmenopausal, fasting-laboratory population. Because the modeling objective was prediction within the analytic cohort rather than national prevalence estimation, descriptive counts were not interpreted as weighted population estimates.
 
