@@ -10,7 +10,7 @@ DIANA is therefore not positioned as a diagnostic device. A screen-positive resu
 
 #### Methodological Phases
 
-The methodology was organized into eight sequential phases. Phase 1 covered data acquisition and biomarker preparation, including NHANES file acquisition, cohort filtering, variable mapping, reference-label construction, missing-data handling, and clinical plausibility checks. Phase 2 applied feature selection using Information Gain and entropy-based relevance analysis while enforcing diagnostic-leakage prevention. Phase 3 implemented cluster-based risk group identification through weighted K-Means clustering for at-risk profiles. Phase 4 covered predictive model development and training using candidate machine-learning algorithms under a nested temporal-validation framework. Phase 5 defined model testing, evaluation, and comparison procedures, including discrimination, threshold selection, calibration, and benchmark-comparison methods.
+The methodology was organized into eight sequential phases. Phase 1 covered data acquisition and biomarker preparation, including NHANES file acquisition, cohort filtering, variable mapping, reference-label construction, missing-data handling, and clinical plausibility checks. Phase 2 applied feature selection using Information Gain and entropy-based relevance analysis while enforcing diagnostic-leakage prevention. Phase 3 covered predictive model development and training using candidate machine-learning algorithms under a nested temporal-validation framework. Phase 4 defined model testing, evaluation, threshold optimization, calibration, and benchmark-comparison procedures. Phase 5 implemented cluster-based risk group identification through weighted K-Means clustering for profiles classified as at risk.
 
 Phase 6 covered web application integration and visualization development, including frontend assessment workflows, backend API orchestration, ML-service integration, explainability output handling, trend visualization, and report-generation support. Phase 7 covered system testing and technical validation across backend, ML, frontend, security, deployment-readiness, and accessibility-readiness components. Phase 8 covered the doctor's evaluation and expert-review procedure, in which a licensed physician reviewer used the prototype and assessed risk-output plausibility, feature usefulness, clinical workflow fit, and the clarity of explanation and subtype-weighting logic. The methodological phases describe how the study was conducted; the corresponding empirical findings and validation evidence are reported in Chapter 4.
 
@@ -20,9 +20,9 @@ Phase 6 covered web application integration and visualization development, inclu
 flowchart TB
     P1["Phase 1<br/>Data acquisition and<br/>biomarker preparation"]
     P2["Phase 2<br/>Information Gain,<br/>entropy, and leakage checks"]
-    P3["Phase 3<br/>Cluster-based risk<br/>group identification"]
-    P4["Phase 4<br/>Predictive model<br/>development and training"]
-    P5["Phase 5<br/>Model testing, evaluation,<br/>calibration, and comparison"]
+    P3["Phase 3<br/>Predictive model<br/>development and training"]
+    P4["Phase 4<br/>Model testing, evaluation,<br/>thresholding, and calibration"]
+    P5["Phase 5<br/>Cluster-based risk<br/>group identification"]
     P6["Phase 6<br/>Web application integration<br/>and visualization development"]
     P7["Phase 7<br/>System testing and<br/>technical validation"]
     P8["Phase 8<br/>Doctor's evaluation<br/>and expert review"]
@@ -35,10 +35,10 @@ The phase alignment across the manuscript is summarized as follows.
 | Phase | Primary Methodology Section | Corresponding Results or Evidence Section |
 |---|---|---|
 | Phase 1: Data acquisition and biomarker preparation | 3.2-3.6 | 4.6 |
-| Phase 2: Feature selection using Information Gain and entropy | 3.7-3.8 | 4.2 and 4.6 |
-| Phase 3: Cluster-based risk group identification | 3.10 | 4.5 |
-| Phase 4: Predictive model development and training | 3.8 | 4.1 and 4.3 |
-| Phase 5: Model testing, evaluation, and comparison | 3.8-3.9 | 4.1, 4.3, 4.4, and 4.12 |
+| Phase 2: Feature selection using Information Gain and entropy | 3.7 | 4.2 and 4.6 |
+| Phase 3: Predictive model development and training | 3.8 | 4.1 and 4.3 |
+| Phase 4: Model testing, evaluation, thresholding, calibration, and comparison | 3.8-3.9 | 4.1, 4.3, 4.4, and 4.12 |
+| Phase 5: Cluster-based risk group identification | 3.10 | 4.5 |
 | Phase 6: Web application integration and visualization development | 3.11-3.12 | 4.8 |
 | Phase 7: System testing and technical validation | 3.13 | 4.7, 4.9, and 4.11 |
 | Phase 8: Doctor's evaluation | 3.14 | 4.10 |
@@ -465,7 +465,7 @@ The planned user cohort consists of approximately 30 menopausal or postmenopausa
 
 ### 3.15 Data Analysis Procedure
 
-Data analysis was conducted across three broad evidence groups: cohort and feature analysis, model-related validation, and system-evaluation evidence. Model-related validation included predictive-model performance, threshold behavior, calibration, clustering, and benchmark comparison. The NHANES analytic cohort was summarized using record counts, class distributions, survey-cycle membership, feature availability, and reference-label composition. These summaries were used to describe the analytic dataset and to verify that the final cohort matched the intended postmenopausal, fasting-laboratory population. Because the modeling objective was prediction within the analytic cohort rather than national prevalence estimation, descriptive counts were not interpreted as weighted population estimates.
+Data analysis was conducted in the same chronological phase order used by the methodology: cohort preparation, feature and leakage review, predictive-model development, model testing and calibration, cluster-based risk group interpretation, system-integration evidence, technical validation, and expert-review evidence. For reporting clarity, these analyses were also grouped into cohort and feature analysis, model-related validation, cluster interpretation, and system-evaluation evidence. Model-related validation included predictive-model performance, threshold behavior, calibration, and benchmark comparison. The NHANES analytic cohort was summarized using record counts, class distributions, survey-cycle membership, feature availability, and reference-label composition. These summaries were used to describe the analytic dataset and to verify that the final cohort matched the intended postmenopausal, fasting-laboratory population. Because the modeling objective was prediction within the analytic cohort rather than national prevalence estimation, descriptive counts were not interpreted as weighted population estimates.
 
 Reference-label analysis compared the DIQ010-derived physician-diagnosis or borderline-diabetes labels with HbA1c-threshold labels. Agreement and discordance were interpreted descriptively to assess label consistency and uncertainty. Discordant records were not treated as errors automatically because they may reflect undiagnosed diabetes, treatment effects, recall differences, timing differences between questionnaire and laboratory data, or single-measurement biological variability.
 
@@ -479,33 +479,36 @@ System-evaluation evidence was analyzed separately from model-validation evidenc
 
 **Table 3.12. Summary of Data Analysis Procedures**
 
-| Analysis Domain | Procedure | Primary Output |
-|---|---|---|
-| Cohort description | Count records, class labels, survey cycles, and feature availability | Final analytic cohort profile |
-| Label consistency | Compare DIQ010-derived labels with HbA1c-threshold labels | Agreement and discordance interpretation |
-| Feature relevance | Rank predictors using discretized Information Gain and leakage screening | Final predictor set and excluded-feature rationale |
-| Model validation | Apply nested LOGO validation by NHANES release | Fold-level and pooled discrimination metrics |
-| Threshold and calibration | Optimize threshold from training out-of-fold predictions and assess internal calibration | Screening threshold, operating metrics, and calibration statistics |
-| Cluster validation | Evaluate weighted K-Means on at-risk records | Cluster validity metrics and subtype-context interpretation |
-| Benchmark comparison | Reconstruct available screening baselines under the same cohort and outcome definition | Contextual comparator performance |
-| System evidence | Summarize technical tests, implementation status, and planned evaluation gaps | Functional, security, deployment, and readiness findings |
+| Phase | Analysis Domain | Procedure | Primary Output |
+|---|---|---|---|
+| Phase 1 | Cohort description | Count records, class labels, survey cycles, and feature availability | Final analytic cohort profile |
+| Phase 1 | Label consistency | Compare DIQ010-derived labels with HbA1c-threshold labels | Agreement and discordance interpretation |
+| Phase 2 | Feature relevance and leakage review | Rank predictors using discretized Information Gain, entropy, and leakage screening | Final predictor set and excluded-feature rationale |
+| Phase 3 | Model development and comparison | Train candidate algorithms under nested grouped validation and compare candidate models | Selected Logistic Regression model and comparative model results |
+| Phase 4 | Model validation | Apply nested LOGO validation by NHANES release | Fold-level and pooled discrimination metrics |
+| Phase 4 | Threshold and calibration | Optimize threshold from training out-of-fold predictions and assess internal calibration | Screening threshold, operating metrics, and calibration statistics |
+| Phase 4 | Benchmark comparison | Reconstruct available screening baselines under the same cohort and outcome definition | Contextual comparator performance |
+| Phase 5 | Cluster validation | Evaluate weighted K-Means on at-risk records and interpret centroids in raw clinical units | Cluster validity metrics and subtype-context interpretation |
+| Phase 6 | System-integration evidence | Summarize assessment workflow, visualization, explainability, trend, and export integration | Implemented workflow and presentation evidence |
+| Phase 7 | Technical validation evidence | Summarize backend, ML-service, frontend, security, deployment-readiness, and accessibility-readiness results | Functional, security, deployment, and readiness findings |
+| Phase 8 | UAT and expert-review evidence | Treat community UAT as pending and analyze completed doctor expert review qualitatively | Evaluation status and expert face-validity themes |
 
-For clarity, the principal formulas used in the methodology are summarized below. Table 3.13 serves as a formula index, while the equations are displayed outside the table to preserve reliable LaTeX rendering in Markdown and thesis export workflows.
+For clarity, the principal formulas used in the methodology are summarized below in chronological phase order. Table 3.13 serves as a phase-labeled formula index, while the equations are displayed outside the table to preserve reliable LaTeX rendering in Markdown and thesis export workflows.
 
 **Table 3.13. Formula Index**
 
-| Formula Area | Applied In |
-|---|---|
-| HbA1c reference thresholds | Reference-Label Construction |
-| Waist-circumference fallback | Data Preparation, Missing Data, and Outlier Handling |
-| Proxy-leakage flag | Data Leakage Prevention |
-| Entropy and Information Gain | Data Leakage Prevention |
-| Logistic screening probability | Predictive Model Development and Validation |
-| Confusion-matrix metrics | Clinical Threshold Optimization and Serving Guardrails |
-| Threshold strategy selection | Clinical Threshold Optimization and Serving Guardrails |
-| Weighted K-Means distance | Cluster-Based Risk Group Identification |
-| LAP-style centroid score | Cluster-Based Risk Group Identification |
-| Brier score and ECE | Data Analysis Procedure and Calibration Analysis |
+| Phase | Formula Area | Applied In |
+|---|---|---|
+| Phase 1 | HbA1c reference thresholds | Reference-Label Construction |
+| Phase 1 | Waist-circumference fallback | Data Preparation, Missing Data, and Outlier Handling |
+| Phase 2 | Proxy-leakage flag | Data Leakage Prevention |
+| Phase 2 | Entropy and Information Gain | Data Leakage Prevention |
+| Phase 3 | Logistic screening probability | Predictive Model Development and Validation |
+| Phase 4 | Confusion-matrix metrics | Clinical Threshold Optimization and Serving Guardrails |
+| Phase 4 | Threshold strategy selection | Clinical Threshold Optimization and Serving Guardrails |
+| Phase 4 | Brier score and ECE | Data Analysis Procedure and Calibration Analysis |
+| Phase 5 | Weighted K-Means distance | Cluster-Based Risk Group Identification |
+| Phase 5 | LAP-style centroid score | Cluster-Based Risk Group Identification |
 
 HbA1c reference thresholds:
 
@@ -575,6 +578,15 @@ t_{\mathrm{base}} &= \underset{t\in\{t_J,t_S,t_G\}}{\mathrm{argmax}}\ C(t)
 \end{aligned}
 $$
 
+Brier score and Expected Calibration Error:
+
+$$
+\begin{aligned}
+\mathrm{Brier} &= \frac{1}{n}\sum_{i=1}^{n}(\hat{p}_i-y_i)^2 \\
+\mathrm{ECE} &= \sum_{m=1}^{M}\frac{\left|B_m\right|}{n}\left|\overline{y}_{B_m}-\overline{\hat{p}}_{B_m}\right|
+\end{aligned}
+$$
+
 Weighted K-Means distance:
 
 $$
@@ -585,15 +597,6 @@ LAP-style centroid score:
 
 $$
 \mathrm{LAP}=(WC-58)\times TG
-$$
-
-Brier score and Expected Calibration Error:
-
-$$
-\begin{aligned}
-\mathrm{Brier} &= \frac{1}{n}\sum_{i=1}^{n}(\hat{p}_i-y_i)^2 \\
-\mathrm{ECE} &= \sum_{m=1}^{M}\frac{\left|B_m\right|}{n}\left|\overline{y}_{B_m}-\overline{\hat{p}}_{B_m}\right|
-\end{aligned}
 $$
 
 # Chapter 4: Results and Discussion
