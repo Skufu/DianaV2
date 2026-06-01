@@ -236,7 +236,7 @@ t_G &= \underset{t\in\mathcal{T}}{\mathrm{argmax}}\ G(t)
 \end{aligned}
 $$
 
-A composite clinical score was then used to select the fold-specific base strategy from the candidate thresholds $t_J$, $t_S$, and $t_G$:
+A screening-oriented composite score was then used to select the fold-specific base strategy from the candidate thresholds $t_J$, $t_S$, and $t_G$:
 
 $$
 \begin{aligned}
@@ -245,6 +245,8 @@ C(t) &= 0.35\cdot\mathrm{Sensitivity}(t)+0.30\cdot\mathrm{Specificity}(t) \\
 t_{\mathrm{base}} &= \underset{t\in\{t_J,t_S,t_G\}}{\mathrm{argmax}}\ C(t)
 \end{aligned}
 $$
+
+In these equations, $\mathcal{T}$ represents the full set of candidate thresholds tested from 0.10 to 0.89, while $\mathcal{F}$ represents the subset of thresholds that satisfied the minimum screening constraints for sensitivity and specificity. The functions $S(t)$, $G(t)$, and $C(t)$ were scoring rules used to compare candidate thresholds under different priorities. $S(t)$ emphasized sensitivity for screening, $G(t)$ balanced sensitivity and specificity through the geometric mean, and $C(t)$ combined sensitivity, specificity, F1 score, and accuracy to select the final fold-specific base threshold. The selected threshold $t_{\mathrm{base}}$ was therefore not chosen manually, but selected from the candidate thresholds $t_J$, $t_S$, and $t_G$ based on the highest composite score. This score should be interpreted as a threshold-selection rule for screening support rather than as a clinically validated diagnostic score.
 
 In these formulas, TP denotes true positives, TN denotes true negatives, FP denotes false positives, and FN denotes false negatives.
 
