@@ -162,7 +162,6 @@ REFACTORING_README.md
 !docs/**/*.pdf
 *.XPT
 catboost_info/
-.sisyphus
 data/nhanes_raw_data.tar.gz
 demo-video/DianaV2_Demo_Final.mp4
 docs/07-research/thesis-drafts/*.docx
