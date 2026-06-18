@@ -17,10 +17,11 @@ WORKDIR /app/backend
 RUN go build -o /app/server ./cmd/server
 
 #### Runtime stage: minimal image with certs
-FROM alpine:3.20
+FROM alpine:3.22
 WORKDIR /app
 
-RUN apk add --no-cache ca-certificates curl
+RUN apk upgrade --no-cache \
+    && apk add --no-cache ca-certificates curl
 
 # Create non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

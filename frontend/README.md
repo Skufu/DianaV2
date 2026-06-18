@@ -218,15 +218,13 @@ The following directories contain legacy components from the previous B2B (clini
 
 ## ML Integration
 
-The Analytics component fetches directly from ML server:
+The frontend fetches ML data through the authenticated Go backend proxy:
 
 ```javascript
-const ML_BASE = import.meta.env.VITE_ML_BASE || 'http://localhost:5000';
-
 // Endpoints called:
-// GET /analytics/metrics        → Model performance
-// GET /analytics/clusters       → Cluster distribution
-// GET /analytics/visualizations/roc_curve → Images
+// GET /api/v1/ml/insights/metrics
+// GET /api/v1/ml/insights/clusters
+// GET /api/v1/ml/insights/visualizations/roc_curve
 ```
 
 ---
@@ -237,9 +235,6 @@ Create `frontend/.env.local`:
 
 ```bash
 VITE_API_BASE=http://localhost:8080/api/v1   # Go backend URL
-VITE_ML_BASE=http://localhost:5001    # Flask ML server URL
-VITE_ML_PORT=5001                     # ML Server Port
-VITE_ML_API_KEY=your-secure-ml-api-key # ML API Key
 ```
 
 ---

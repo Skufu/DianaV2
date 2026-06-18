@@ -17,6 +17,8 @@ permissions:
 jobs:
   generate-release-notes:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,19 +27,24 @@ jobs:
 
       - name: Get version
         id: get_version
+        env:
+          RELEASE_VERSION_INPUT: ${{ inputs.version }}
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$RELEASE_VERSION_INPUT"
           else
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Version: $VERSION"
 
       - name: Generate changelog
         id: changelog
+        env:
+          RELEASE_VERSION: ${{ steps.get_version.outputs.version }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
         run: |
-          VERSION="${{ steps.get_version.outputs.version }}"
+          VERSION="$RELEASE_VERSION"
 
           # Get the previous tag
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
@@ -116,7 +123,7 @@ jobs:
           echo "" >> CHANGELOG.md
 
           # Full changelog link
-          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...${VERSION}" >> CHANGELOG.md
+          echo "**Full Changelog**: https://github.com/$RELEASE_REPOSITORY/compare/${PREVIOUS_TAG}...${VERSION}" >> CHANGELOG.md
 
           cat CHANGELOG.md
 
@@ -138,8 +145,10 @@ jobs:
           fetch-depth: 0
 
       - name: Update CHANGELOG.md file
+        env:
+          RELEASE_VERSION: ${{ needs.generate-release-notes.outputs.version }}
         run: |
-          VERSION="${{ github.ref_name }}"
+          VERSION="$RELEASE_VERSION"
           DATE=$(date +%Y-%m-%d)
 
           # Create new changelog entry
@@ -202,11 +211,13 @@ jobs:
           cat CHANGELOG.md
 
       - name: Commit updated CHANGELOG
+        env:
+          RELEASE_VERSION: ${{ needs.generate-release-notes.outputs.version }}
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add CHANGELOG.md
-          git diff --staged --quiet || git commit -m "docs: update CHANGELOG for ${{ github.ref_name }}"
+          git diff --staged --quiet || git commit -m "docs: update CHANGELOG for $RELEASE_VERSION"
 
       - name: Push changes
         uses: ad-m/github-push-action@master
