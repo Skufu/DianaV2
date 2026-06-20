@@ -67,6 +67,20 @@ TRUSTED_PROXIES=172.16.0.0/12
 
 The host must have Docker Compose v2 and Caddy data volumes should be left intact.
 
+The ML service also depends on model artifacts stored on the VPS, not baked into the application image:
+
+```text
+/opt/dianav2/models/binary_v2_no_bp/
+```
+
+That directory must include `model_hashes.json` because production ML startup enforces SHA256 integrity checks before loading `.joblib` artifacts. Generate it after placing or updating model files. From a DianaV2 repo checkout with the same `models/binary_v2_no_bp/` layout:
+
+```bash
+python3 scripts/dev/generate-model-hashes.py
+```
+
+Then copy the generated `model_hashes.json` alongside the production model files. If the helper script is not present where the VPS model files live, generate the same JSON from the current files before deploying. `deploy-images.sh` checks for the directory and hash file before restarting containers so a missing model mount does not take production down.
+
 ## Deploy Flow
 
 On a matching push to `main`, or on a `v*` tag:
