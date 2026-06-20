@@ -122,14 +122,14 @@ if echo "$CERT_INFO" | grep -q "issuer"; then
     CURRENT_SECONDS=$(date +%s)
     DAYS_UNTIL_EXPIRY=$(( ($EXPIRY_SECONDS - $CURRENT_SECONDS) / 86400 ))
     
-    if [[ $DAYS_UNTIL_EXPIPY -lt 0 ]]; then
+    if [[ $DAYS_UNTIL_EXPIRY -lt 0 ]]; then
         log_result "FAIL" "Certificate has EXPIRED"
-    elif [[ $DAYS_UNTIL_EXPIPY -lt 7 ]]; then
-        log_result "WARN" "Certificate expires in less than 7 days ($DAYS_UNTIL_EXPIPY days)"
-    elif [[ $DAYS_UNTIL_EXPIPY -lt 30 ]]; then
-        log_result "WARN" "Certificate expires in less than 30 days ($DAYS_UNTIL_EXPIPY days)"
+    elif [[ $DAYS_UNTIL_EXPIRY -lt 7 ]]; then
+        log_result "WARN" "Certificate expires in less than 7 days ($DAYS_UNTIL_EXPIRY days)"
+    elif [[ $DAYS_UNTIL_EXPIRY -lt 30 ]]; then
+        log_result "WARN" "Certificate expires in less than 30 days ($DAYS_UNTIL_EXPIRY days)"
     else
-        log_result "PASS" "Certificate valid for $DAYS_UNTIL_EXPIPY days"
+        log_result "PASS" "Certificate valid for $DAYS_UNTIL_EXPIRY days"
     fi
 else
     log_result "FAIL" "Could not retrieve certificate information"

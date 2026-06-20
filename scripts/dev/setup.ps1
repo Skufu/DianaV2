@@ -482,8 +482,6 @@ Write-Success "Frontend dependencies installed"
 if (-not (Test-Path ".env")) {
     @"
 VITE_API_BASE=http://localhost:8080
-VITE_ML_BASE=http://localhost:5001
-VITE_ML_API_KEY=dev-ml-api-key-12345
 "@ | Out-File -FilePath ".env" -Encoding UTF8
     Write-Success "Created frontend/.env"
 }

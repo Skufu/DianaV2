@@ -129,7 +129,8 @@ DOMAIN=api.diana.example.com
 POSTGRES_USER=diana
 POSTGRES_PASSWORD=changeme
 POSTGRES_DB=diana
-# DB_DSN: Set in production from POSTGRES_* variables with sslmode=require
+# DB_DSN: Optional override. Internal Compose Postgres defaults to sslmode=disable;
+# use sslmode=require only for a TLS-enabled managed database.
 
 # Authentication
 JWT_SECRET=changeme
@@ -143,7 +144,6 @@ MODEL_URL=http://ml:5000
 
 # Frontend Build
 VITE_API_BASE=https://api.diana.example.com/api/v1
-VITE_ML_BASE=https://api.diana.example.com/ml
 ```
 
 ### Step 3: Deploy with TLS

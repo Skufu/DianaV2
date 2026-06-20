@@ -370,7 +370,7 @@ describe('API error handling', () => {
     expect(window.URL.revokeObjectURL).toHaveBeenCalledWith('blob:pdf');
   });
 
-  it('loads ML visualizations through the API layer with auth and ML API headers', async () => {
+  it('loads ML visualizations through the API layer with auth only', async () => {
     setAuthTokens('access-token', 'refresh-token');
     const imageBlob = new Blob(['image'], { type: 'image/png' });
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -384,9 +384,7 @@ describe('API error handling', () => {
 
     expect(result).toBeInstanceOf(Blob);
     expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe('Bearer access-token');
-    expect(fetchMock.mock.calls[0][1].headers['X-API-Key']).toBe(
-      import.meta.env.VITE_ML_API_KEY || 'dev-ml-api-key'
-    );
+    expect(fetchMock.mock.calls[0][1].headers['X-API-Key']).toBeUndefined();
   });
 
   it('refreshes expired bearer tokens for ML visualization blobs', async () => {

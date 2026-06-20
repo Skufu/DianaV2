@@ -14,6 +14,9 @@ func TestLoad_Defaults(t *testing.T) {
 	os.Unsetenv("CORS_ORIGINS")
 	os.Unsetenv("EXPORT_MAX_ROWS")
 	os.Unsetenv("MODEL_TIMEOUT_MS")
+	os.Unsetenv("TRUSTED_PROXIES")
+	os.Unsetenv("METRICS_TOKEN")
+	os.Unsetenv("ENABLE_SWAGGER")
 
 	cfg := Load()
 
@@ -37,12 +40,15 @@ func TestLoad_Defaults(t *testing.T) {
 func TestLoad_CustomValues(t *testing.T) {
 	os.Setenv("PORT", "3000")
 	os.Setenv("ENV", "staging")
-	os.Setenv("JWT_SECRET", "my-secret")
+	os.Setenv("JWT_SECRET", "my-secret-with-at-least-32-characters")
 	os.Setenv("CORS_ORIGINS", "https://app.example.com, https://admin.example.com")
 	os.Setenv("EXPORT_MAX_ROWS", "1000")
 	os.Setenv("MODEL_TIMEOUT_MS", "5000")
 	os.Setenv("MODEL_URL", "http://ml:8001/predict")
 	os.Setenv("MODEL_VERSION", "v2.0")
+	os.Setenv("TRUSTED_PROXIES", "172.28.0.0/16, 127.0.0.1")
+	os.Setenv("METRICS_TOKEN", "metrics-secret")
+	os.Setenv("ENABLE_SWAGGER", "true")
 	defer func() {
 		os.Unsetenv("PORT")
 		os.Unsetenv("ENV")
@@ -52,6 +58,9 @@ func TestLoad_CustomValues(t *testing.T) {
 		os.Unsetenv("MODEL_TIMEOUT_MS")
 		os.Unsetenv("MODEL_URL")
 		os.Unsetenv("MODEL_VERSION")
+		os.Unsetenv("TRUSTED_PROXIES")
+		os.Unsetenv("METRICS_TOKEN")
+		os.Unsetenv("ENABLE_SWAGGER")
 	}()
 
 	cfg := Load()
@@ -62,8 +71,8 @@ func TestLoad_CustomValues(t *testing.T) {
 	if cfg.Env != "staging" {
 		t.Errorf("Env = %q, want %q", cfg.Env, "staging")
 	}
-	if cfg.JWTSecret != "my-secret" {
-		t.Errorf("JWTSecret = %q, want %q", cfg.JWTSecret, "my-secret")
+	if cfg.JWTSecret != "my-secret-with-at-least-32-characters" {
+		t.Errorf("JWTSecret = %q, want %q", cfg.JWTSecret, "my-secret-with-at-least-32-characters")
 	}
 	if cfg.ExportMaxRows != 1000 {
 		t.Errorf("ExportMaxRows = %d, want 1000", cfg.ExportMaxRows)
@@ -82,6 +91,15 @@ func TestLoad_CustomValues(t *testing.T) {
 	}
 	if cfg.CORSOrigins[0] != "https://app.example.com" {
 		t.Errorf("CORSOrigins[0] = %q, want %q", cfg.CORSOrigins[0], "https://app.example.com")
+	}
+	if len(cfg.TrustedProxies) != 2 || cfg.TrustedProxies[0] != "172.28.0.0/16" {
+		t.Errorf("TrustedProxies = %#v, want production proxy CIDRs", cfg.TrustedProxies)
+	}
+	if cfg.MetricsToken != "metrics-secret" {
+		t.Errorf("MetricsToken = %q, want metrics-secret", cfg.MetricsToken)
+	}
+	if !cfg.EnableSwagger {
+		t.Error("EnableSwagger = false, want true")
 	}
 }
 
@@ -202,8 +220,8 @@ func TestConfigLoad_ClinicalThresholdsDefaults(t *testing.T) {
 	if cfg.ClinicalThresholds.FBSPrediabetic != 100 {
 		t.Errorf("FBSPrediabetic = %v, want 100", cfg.ClinicalThresholds.FBSPrediabetic)
 	}
-if cfg.ClinicalThresholds.FBSDiabetic != 126 {
-t.Errorf("FBSDiabetic = %v, want 126", cfg.ClinicalThresholds.FBSDiabetic)
+	if cfg.ClinicalThresholds.FBSDiabetic != 126 {
+		t.Errorf("FBSDiabetic = %v, want 126", cfg.ClinicalThresholds.FBSDiabetic)
 	}
 	if cfg.ClinicalThresholds.BPSysNormal != 120 {
 		t.Errorf("BPSysNormal = %d, want 120", cfg.ClinicalThresholds.BPSysNormal)

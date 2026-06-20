@@ -488,9 +488,7 @@ export const fetchMLClustersApi = () => apiFetch('/ml/insights/clusters');
 export const getMLVisualizationUrl = name => `${API_BASE}/ml/insights/visualizations/${name}`;
 export const fetchMLVisualizationApi = async (name, options = {}, isRetry = false) => {
   const endpoint = `/ml/insights/visualizations/${name}`;
-  const headers = {
-    'X-API-Key': import.meta.env.VITE_ML_API_KEY || 'dev-ml-api-key',
-  };
+  const headers = {};
 
   if (_accessToken) {
     headers['Authorization'] = `Bearer ${_accessToken}`;

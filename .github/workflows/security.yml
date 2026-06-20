@@ -79,9 +79,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Semgrep
-        continue-on-error: true
         run: |
-          semgrep --config=auto \
+          semgrep --config=p/ci \
+                  --error \
                   --sarif \
                   --output=semgrep-results.sarif \
                   --metrics=off \
@@ -90,7 +90,7 @@ jobs:
                   --exclude=node_modules \
                   --exclude=venv \
                   --exclude=__pycache__ \
-                  . || true
+                  .
 
       - name: Ensure valid SARIF output
         run: |
@@ -167,7 +167,6 @@ jobs:
       - name: Snyk Go scan
         if: env.SNYK_TOKEN != ''
         uses: snyk/actions/golang@master
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -183,7 +182,6 @@ jobs:
       - name: Snyk Node.js scan
         if: env.SNYK_TOKEN != ''
         uses: snyk/actions/node@master
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -199,7 +197,6 @@ jobs:
       - name: Snyk Python scan
         if: env.SNYK_TOKEN != ''
         uses: snyk/actions/python@master
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -330,58 +327,64 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build backend image for scanning
-        continue-on-error: true
         run: |
-          if [ -f build/Dockerfile ]; then
-            docker build -f build/Dockerfile -t diana-backend:scan .
-          else
-            echo "⚠️ Skipping backend image build - build/Dockerfile not found"
+          if [ ! -f build/Dockerfile ]; then
+            echo "::error::build/Dockerfile not found"
+            exit 1
           fi
+          docker buildx build --load -f build/Dockerfile -t diana-backend:scan .
 
       - name: Build ML image for scanning
-        continue-on-error: true
         run: |
-          if [ -f Ian_ML/Dockerfile ]; then
-            docker build -f Ian_ML/Dockerfile -t diana-ml:scan .
-          else
-            echo "⚠️ Skipping ML image build - Ian_ML/Dockerfile not found"
+          if [ ! -f Ian_ML/Dockerfile ]; then
+            echo "::error::Ian_ML/Dockerfile not found"
+            exit 1
           fi
+          docker buildx build --load -f Ian_ML/Dockerfile -t diana-ml:scan .
 
       - name: Build frontend image for scanning
-        continue-on-error: true
         run: |
-          if [ -f frontend/Dockerfile ]; then
-            docker build -f frontend/Dockerfile -t diana-frontend:scan ./frontend
-          else
-            echo "⚠️ Skipping frontend image build - frontend/Dockerfile not found"
+          if [ ! -f frontend/Dockerfile ]; then
+            echo "::error::frontend/Dockerfile not found"
+            exit 1
           fi
+          docker buildx build --load -f frontend/Dockerfile -t diana-frontend:scan .
 
       - name: Run Trivy vulnerability scanner (Backend)
         if: always()
-        continue-on-error: true
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'diana-backend:scan'
           format: 'sarif'
           output: 'trivy-backend-results.sarif'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+          limit-severities-for-sarif: true
+          exit-code: '1'
 
       - name: Run Trivy vulnerability scanner (ML)
         if: always()
-        continue-on-error: true
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'diana-ml:scan'
           format: 'sarif'
           output: 'trivy-ml-results.sarif'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+          limit-severities-for-sarif: true
+          exit-code: '1'
 
       - name: Run Trivy vulnerability scanner (Frontend)
         if: always()
-        continue-on-error: true
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'diana-frontend:scan'
           format: 'sarif'
           output: 'trivy-frontend-results.sarif'
+          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: true
+          limit-severities-for-sarif: true
+          exit-code: '1'
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
@@ -389,6 +392,20 @@ jobs:
         with:
           sarif_file: trivy-backend-results.sarif
           category: trivy-backend
+
+      - name: Upload Trivy ML results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: trivy-ml-results.sarif
+          category: trivy-ml
+
+      - name: Upload Trivy frontend results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: trivy-frontend-results.sarif
+          category: trivy-frontend
 
       - name: Upload Trivy results artifact
         uses: actions/upload-artifact@v4

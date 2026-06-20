@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -35,6 +36,9 @@ func ValidateToken(tokenStr, jwtSecret string) (map[string]any, error) {
 	if !ok || !token.Valid {
 		return nil, jwt.ErrSignatureInvalid
 	}
+	if !claimsHaveValidExpiry(claims) {
+		return nil, jwt.ErrSignatureInvalid
+	}
 
 	// Validate required claims
 	sub, ok := claims["sub"].(string)
@@ -61,18 +65,15 @@ type UserFinder interface {
 
 func Auth(jwtSecret string, users UserFinder) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var tokenStr string
-
-		cookieToken, err := c.Cookie("diana_token")
-		if err == nil && cookieToken != "" {
-			tokenStr = cookieToken
-		} else {
-			authz := c.GetHeader("Authorization")
-			if authz == "" || !strings.HasPrefix(authz, "Bearer ") {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "missing bearer token"})
-				return
-			}
-			tokenStr = strings.TrimPrefix(authz, "Bearer ")
+		authz := strings.TrimSpace(c.GetHeader("Authorization"))
+		if authz == "" || !strings.HasPrefix(authz, "Bearer ") {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "missing bearer token"})
+			return
+		}
+		tokenStr := strings.TrimSpace(strings.TrimPrefix(authz, "Bearer "))
+		if tokenStr == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "missing bearer token"})
+			return
 		}
 
 		// Parse token with claims validation
@@ -95,6 +96,10 @@ func Auth(jwtSecret string, users UserFinder) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "invalid token claims"})
 			return
 		}
+		if !claimsHaveValidExpiry(claims) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "invalid token claims"})
+			return
+		}
 
 		// Validate required claims
 		sub, ok := claims["sub"].(string)
@@ -103,8 +108,8 @@ func Auth(jwtSecret string, users UserFinder) gin.HandlerFunc {
 			return
 		}
 
-		role, ok := claims["role"].(string)
-		if !ok || role == "" {
+		tokenRole, ok := claims["role"].(string)
+		if !ok || tokenRole == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]string{"error": "missing role claim"})
 			return
 		}
@@ -136,14 +141,27 @@ func Auth(jwtSecret string, users UserFinder) gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusForbidden, map[string]string{"error": "account inactive"})
 			return
 		}
+		currentRole := strings.TrimSpace(user.Role)
+		if currentRole == "" {
+			c.AbortWithStatusJSON(http.StatusForbidden, map[string]string{"error": "account role unavailable"})
+			return
+		}
 
 		// Store user claims in context for handlers to use
 		c.Set("user", UserClaims{
 			UserID: userIDInt,
 			Email:  sub,
-			Role:   role,
+			Role:   currentRole,
 		})
 
 		c.Next()
 	}
+}
+
+func claimsHaveValidExpiry(claims jwt.MapClaims) bool {
+	exp, err := claims.GetExpirationTime()
+	if err != nil || exp == nil {
+		return false
+	}
+	return time.Now().Before(exp.Time)
 }

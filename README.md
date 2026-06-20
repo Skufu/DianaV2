@@ -562,7 +562,7 @@ make build      # Build backend
 |----------|----------|---------------|-------------------|
 | `PORT` | ⚠️ Optional | None | `8080` |
 | `ENV` | ⚠️ Optional | Set to `production` for prod | `dev` |
-| `DB_DSN` | ✅ **Required** | **⚠️ Include `sslmode=require` for production** | `postgres://user:pass@host:5432/diana?sslmode=disable` |
+| `DB_DSN` | ✅ **Required** | **⚠️ Use `sslmode=require` only for TLS-enabled managed databases; internal Compose Postgres defaults to `disable`** | `postgres://user:pass@host:5432/diana?sslmode=disable` |
 | `JWT_SECRET` | ✅ **Required** | **⚠️ SECURITY WARNING: Min 32 characters, cryptographically random. Use `openssl rand -base64 32`. NEVER use simple passwords, dictionary words, or short strings.** | Generate with `openssl rand -base64 32` |
 | `CORS_ORIGINS` | ✅ **Required** | Only trusted HTTPS domains in prod | `http://localhost:4000` (dev) |
 | `MODEL_URL` | ⚠️ Optional | Empty triggers mock mode for dev | `http://localhost:5001/predict` |
@@ -592,8 +592,8 @@ make build      # Build backend
 | Variable | Required | Security Note | Default / Example |
 |----------|----------|---------------|-------------------|
 | `VITE_API_BASE` | ⚠️ Optional | Backend API URL | `http://localhost:8080` |
-| `VITE_ML_BASE` | ⚠️ Optional | ML server URL | `http://localhost:5001` |
-| `VITE_ML_API_KEY` | ⚠️ Optional | Must match `ML_API_KEY` when ML auth is enabled end-to-end | Same as backend |
+
+Frontend ML requests go through the authenticated backend proxy at `/api/v1/ml`; do not expose `ML_API_KEY` or direct ML URLs to the browser.
 
 ### Database Environment Variables (docker-compose.yml)
 
@@ -623,8 +623,6 @@ ML_API_KEY=  # Optional unless ML auth is enabled
 **Frontend `frontend/.env.local`:**
 ```bash
 VITE_API_BASE=http://localhost:8080
-VITE_ML_BASE=http://localhost:5001
-VITE_ML_API_KEY=  # Must match ML_API_KEY when set
 ```
 
 ---
@@ -817,7 +815,7 @@ cd Ian_ML && pytest tests/test_predict.py -v -k "test_prediction_endpoint"
 | CORS errors | Add frontend URL to CORS_ORIGINS |
 | ML timeout | Check ML server running at MODEL_URL |
 | Port 5000 error | Change ML_PORT to 5001 or disable AirPlay Receiver in macOS System Settings |
-| ML API 401 errors | Verify ML_API_KEY in backend/.env and VITE_ML_API_KEY in frontend/.env.local match |
+| ML API 401 errors | Verify backend `ML_API_KEY` matches the ML service `ML_API_KEY`; never put it in frontend env |
 
 ---
 

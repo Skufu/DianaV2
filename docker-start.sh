@@ -24,6 +24,22 @@ print_info() { echo -e "${CYAN}ℹ${NC} $1"; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+compose() {
+    if docker compose version &> /dev/null; then
+        docker compose "$@"
+    else
+        docker-compose "$@"
+    fi
+}
+
+compose_dev() {
+    compose -f docker-compose.yml -f docker-compose.override.yml "$@"
+}
+
+compose_prod() {
+    compose -f docker-compose.yml -f docker-compose.prod.yml "$@"
+}
+
 show_help() {
     echo "Diana V2 Docker Startup Script"
     echo ""
@@ -107,14 +123,14 @@ start_dev() {
     echo ""
     
     # Check if already running
-    if docker-compose ps | grep -q "Up"; then
+    if compose ps | grep -q "Up"; then
         print_warning "Services are already running!"
         echo "Use '$0 stop' to stop them first, or '$0 logs' to view logs."
         exit 1
     fi
     
     print_step "Building and starting services..."
-    docker-compose -f docker-compose.yml -f docker-compose.override.yml up --build -d
+    compose_dev up --build -d
     
     echo ""
     print_success "Services started!"
@@ -134,7 +150,7 @@ start_dev() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     # Show logs
-    docker-compose logs -f
+    compose_dev logs -f
 }
 
 start_prod() {
@@ -145,7 +161,7 @@ start_prod() {
     echo ""
     
     print_step "Building and starting services..."
-    docker-compose up --build -d
+    compose_prod up --build -d
     
     echo ""
     print_success "Services started!"
@@ -154,9 +170,10 @@ start_prod() {
     echo "  🚀 Diana V2 Production Server"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "  Frontend:   http://localhost"
-    echo "  Backend:    http://localhost:8080/api/v1/healthz"
-    echo "  ML Server:  http://localhost:5001/health"
+    echo "  Frontend:   https://localhost"
+    echo "  Health:     https://localhost/health"
+    echo "  API:        https://localhost/api/v1/healthz"
+    echo "  ML Server:  internal only, via /api/v1/ml"
     echo ""
     echo "  Logs: $0 logs"
     echo "  Stop: $0 stop"
@@ -166,14 +183,15 @@ start_prod() {
 
 stop_services() {
     print_step "Stopping Diana V2 services..."
-    docker-compose down
-    docker-compose -f docker-compose.yml -f docker-compose.override.yml down 2>/dev/null || true
+    compose down
+    compose_dev down 2>/dev/null || true
+    compose_prod down 2>/dev/null || true
     print_success "Services stopped"
 }
 
 view_logs() {
     echo "Showing logs (Ctrl+C to exit)..."
-    docker-compose logs -f
+    compose logs -f
 }
 
 clean_all() {
@@ -182,8 +200,9 @@ clean_all() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         print_step "Cleaning up..."
-        docker-compose down -v --rmi all
-        docker-compose -f docker-compose.yml -f docker-compose.override.yml down -v --rmi all 2>/dev/null || true
+        compose down -v --rmi all
+        compose_dev down -v --rmi all 2>/dev/null || true
+        compose_prod down -v --rmi all 2>/dev/null || true
         print_success "Cleanup complete"
     else
         print_info "Cleanup cancelled"
@@ -194,8 +213,8 @@ rebuild() {
     check_env
     check_docker
     print_step "Rebuilding all containers..."
-    docker-compose down
-    docker-compose up --build -d
+    compose down
+    compose up --build -d
     print_success "Rebuild complete"
 }
 
@@ -204,7 +223,7 @@ show_status() {
     echo "  Diana V2 Service Status"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    docker-compose ps
+    compose ps
     echo ""
     
     # Check health endpoints
@@ -231,22 +250,22 @@ show_status() {
 
 open_shell() {
     print_step "Opening shell in backend container..."
-    docker-compose exec backend sh
+    compose exec backend sh
 }
 
 open_db() {
     print_step "Opening PostgreSQL console..."
-    docker-compose exec postgres psql -U diana -d diana
+    compose exec postgres psql -U diana -d diana
 }
 
 run_migrations() {
     print_step "Running database migrations..."
-    docker-compose exec backend go run ./cmd/migrate up
+    compose exec backend go run ./cmd/migrate up
 }
 
 seed_data() {
     print_step "Seeding demo data..."
-    docker-compose exec backend go run ./cmd/seed
+    compose exec backend go run ./cmd/seed
 }
 
 # Main command handler

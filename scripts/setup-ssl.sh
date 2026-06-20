@@ -146,8 +146,10 @@ fi
 echo ""
 echo "Setting up automatic certificate renewal..."
 
-# Create renewal cron job
-CRON_JOB="0 0 * * * certbot renew --quiet --post-hook 'cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem $SSL_DIR/fullchain.pem && cp /etc/letsencrypt/live/$DOMAIN/privkey.pem $SSL_DIR/privkey.pem && nginx -s reload'"
+# Create renewal cron job. Production runs Nginx in the diana-nginx-proxy
+# container, so prefer a container HUP and fall back to host nginx if present.
+RENEWAL_HOOK="cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem $SSL_DIR/fullchain.pem && cp /etc/letsencrypt/live/$DOMAIN/privkey.pem $SSL_DIR/privkey.pem && chmod 644 $SSL_DIR/fullchain.pem && chmod 600 $SSL_DIR/privkey.pem && (docker kill -s HUP diana-nginx-proxy 2>/dev/null || nginx -s reload 2>/dev/null || true)"
+CRON_JOB="0 0 * * * certbot renew --quiet --post-hook '$RENEWAL_HOOK'"
 
 # Check if cron job already exists
 if crontab -l 2>/dev/null | grep -q "certbot renew"; then
@@ -200,7 +202,7 @@ echo "=========================================="
 echo ""
 echo "Next steps:"
 echo "  1. Configure nginx to use certificates: $SSL_DIR/fullchain.pem, $SSL_DIR/privkey.pem"
-echo "  2. Restart nginx: nginx -s reload or docker-compose restart frontend"
+echo "  2. Reload nginx: docker kill -s HUP diana-nginx-proxy"
 echo "  3. Run TLS verification: ./scripts/verify-tls.sh --domain $DOMAIN"
 echo "  4. Test SSL Labs: https://www.ssllabs.com/ssltest/analyze.html?d=$DOMAIN"
 echo ""

@@ -45,6 +45,9 @@ type Config struct {
 	RedisPassword      string
 	RedisDB            int
 	RateLimitPerMinute int
+	TrustedProxies     []string
+	MetricsToken       string
+	EnableSwagger      bool
 	ClinicalThresholds ClinicalThresholds
 }
 
@@ -61,6 +64,9 @@ func Load() Config {
 			log.Fatalf("FATAL: JWT_SECRET environment variable is required. Cannot start without it. Set JWT_SECRET to a secure random string (min 32 characters).")
 		}
 	}
+	if isStrictEnvironment(env) && len(jwtSecret) < 32 {
+		log.Fatalf("FATAL: JWT_SECRET must be at least 32 characters in %s.", env)
+	}
 
 	cfg := Config{
 		Port:           getEnv("PORT", "8080"),
@@ -75,6 +81,9 @@ func Load() Config {
 		RedisAddr:      getEnv("REDIS_ADDR", ""),
 		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
 		RedisDB:        0,
+		TrustedProxies: splitAndTrim(getEnv("TRUSTED_PROXIES", "")),
+		MetricsToken:   getEnv("METRICS_TOKEN", ""),
+		EnableSwagger:  getEnvBool("ENABLE_SWAGGER", !isStrictEnvironment(env)),
 	}
 
 	// Rate limiting: stricter in production, relaxed for dev/testing
@@ -106,7 +115,7 @@ func Load() Config {
 		HbA1cDiabetic:           getEnvFloat("CLINICAL_HBA1C_DIABETIC", 6.5),
 		FBSNormal:               getEnvFloat("CLINICAL_FBS_NORMAL", 100),
 		FBSPrediabetic:          getEnvFloat("CLINICAL_FBS_PREDIABETIC", 100),
-FBSDiabetic:             getEnvFloat("CLINICAL_FBS_DIABETIC", 126),
+		FBSDiabetic:             getEnvFloat("CLINICAL_FBS_DIABETIC", 126),
 		BPSysNormal:             getEnvInt("CLINICAL_BP_SYS_NORMAL", 120),
 		BPSysElevated:           getEnvInt("CLINICAL_BP_SYS_ELEVATED", 140),
 		BPDiaNormal:             getEnvInt("CLINICAL_BP_DIA_NORMAL", 80),
@@ -130,6 +139,26 @@ func getEnv(key, def string) string {
 		return def
 	}
 	return val
+}
+
+func getEnvBool(key string, def bool) bool {
+	if v := os.Getenv(key); v != "" {
+		parsed, err := strconv.ParseBool(v)
+		if err == nil {
+			return parsed
+		}
+		log.Printf("[CONFIG] Failed to parse %s=%s, using default %v", key, v, def)
+	}
+	return def
+}
+
+func isStrictEnvironment(env string) bool {
+	switch strings.ToLower(strings.TrimSpace(env)) {
+	case "production", "prod", "staging":
+		return true
+	default:
+		return false
+	}
 }
 
 func splitAndTrim(v string) []string {

@@ -126,16 +126,23 @@ jobs:
 
       - name: Link to Sentry release
         if: steps.check.outputs.exists == 'false'
+        env:
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          ISSUE_URL: ${{ github.server_url }}/${{ github.repository }}/issues/${{ steps.create.outputs.issue_number || steps.check.outputs.issue_number }}
         run: |
           if [ -n "$SENTRY_AUTH_TOKEN" ]; then
-            curl -X POST "https://sentry.io/api/0/organizations/$SENTRY_ORG/releases/${{ steps.release.outputs.version }}/deploys/" \
+            payload="$(
+              jq -n \
+                --arg environment "production" \
+                --arg name "$WORKFLOW_NAME" \
+                --arg url "$ISSUE_URL" \
+                '{environment: $environment, name: $name, url: $url}'
+            )"
+            curl -X POST "https://sentry.io/api/0/organizations/$SENTRY_ORG/releases/$RELEASE_VERSION/deploys/" \
               -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
               -H "Content-Type: application/json" \
-              -d '{
-                "environment": "production",
-                "name": "${{ github.workflow }}",
-                "url": "${{ github.server_url }}/${{ github.repository }}/issues/${{ steps.create.outputs.issue_number || steps.check.outputs.issue_number }}"
-              }' || echo "Failed to link to Sentry (optional)"
+              -d "$payload" || echo "Failed to link to Sentry (optional)"
           fi
 
       - name: Add comment to existing issue

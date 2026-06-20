@@ -53,16 +53,19 @@ services:
     environment:
       PORT: 8080
       ENV: production
-      # PostgreSQL with SSL required (sslmode=require for production)
-      DB_DSN: postgres://${POSTGRES_USER:-diana}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-diana}?sslmode=require
+      # Internal Compose Postgres does not serve TLS by default. Override DB_DSN
+      # or POSTGRES_SSLMODE=require when pointing at a TLS-enabled managed DB.
+      DB_DSN: ${DB_DSN:-postgres://${POSTGRES_USER:-diana}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-diana}?sslmode=${POSTGRES_SSLMODE:-disable}}
       JWT_SECRET: ${JWT_SECRET:?JWT secret required (min 32 chars)}
       # CORS origins should include HTTPS domain
       CORS_ORIGINS: ${CORS_ORIGINS:-https://localhost,https://${DOMAIN:-localhost}}
       MODEL_URL: http://ml:5000
       ML_API_KEY: ${ML_API_KEY:?ML API key required when ENV=production}
       # Production-specific settings
-      RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
-      RATE_LIMIT_WINDOW: ${RATE_LIMIT_WINDOW:-60}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-600}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.28.0.0/16}
+      ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
       DIANA_LOG_DIR: /var/log/diana
       DIANA_LOG_MAX_BYTES: ${DIANA_LOG_MAX_BYTES:-5242880}
       DIANA_LOG_MAX_BACKUPS: ${DIANA_LOG_MAX_BACKUPS:-3}
@@ -125,7 +128,6 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE: ${VITE_API_BASE:-https://${DOMAIN:-localhost}/api/v1}
-        VITE_ML_BASE: ${VITE_ML_BASE:-https://${DOMAIN:-localhost}/ml}
     container_name: diana-frontend
     # No external port exposure - nginx proxy serves static files
     ports: !reset []
@@ -163,11 +165,13 @@ services:
     networks:
       - diana-production
 
-  # Certbot for Certificate Renewal (optional)
-  # Runs periodic certificate renewal checks
+  # Certbot for manual/ops-triggered renewal. The host setup script owns the
+  # cron job that copies renewed certs and reloads the Docker nginx proxy.
   certbot:
     image: certbot/certbot:latest
     container_name: diana-certbot
+    profiles:
+      - certbot
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
       - /var/lib/letsencrypt:/var/lib/letsencrypt
