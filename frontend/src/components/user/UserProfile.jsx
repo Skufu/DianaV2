@@ -15,6 +15,119 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../common/Button';
 import { staggerContainer, fadeIn, slideUp, useInputFocusVariants } from '../../utils/animations';
 
+const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+
+const normalizeActivityValue = value => {
+  const values = {
+    Active: 'active',
+    Moderate: 'moderate',
+    Sedentary: 'sedentary',
+  };
+
+  return values[value] || value || '';
+};
+
+const normalizeAlcoholValue = value => {
+  const values = {
+    None: 'never',
+    Light: 'occasional',
+    Moderate: 'moderate',
+    Heavy: 'heavy',
+  };
+
+  return values[value] || value || '';
+};
+
+const numberOrDefault = (value, fallback) => {
+  const parsed = parseInt(value, 10);
+  return Number.isNaN(parsed) ? fallback : parsed;
+};
+
+const normalizeDateOfBirthForUpdate = value => {
+  if (!value) {
+    return undefined;
+  }
+
+  if (dateOnlyPattern.test(value)) {
+    return `${value}T00:00:00Z`;
+  }
+
+  return value;
+};
+
+export const getAgeFromDateOfBirth = (dateOfBirth, referenceDate = new Date()) => {
+  if (!dateOfBirth) {
+    return null;
+  }
+
+  const birthDate = new Date(dateOfBirth);
+  if (Number.isNaN(birthDate.getTime())) {
+    return null;
+  }
+
+  return referenceDate.getFullYear() - birthDate.getFullYear();
+};
+
+export const getDateOfBirthForAge = (age, referenceDate = new Date()) => {
+  const ageNum = parseInt(age, 10);
+  if (Number.isNaN(ageNum) || ageNum <= 0 || ageNum >= 150) {
+    return undefined;
+  }
+
+  const birthYear = referenceDate.getFullYear() - ageNum;
+  return `${birthYear}-06-15T00:00:00Z`;
+};
+
+export const toProfileFormData = (profileData, referenceDate = new Date()) => {
+  const displayData = { ...profileData };
+  const age = getAgeFromDateOfBirth(profileData.date_of_birth, referenceDate);
+
+  if (age !== null) {
+    displayData.age = age;
+  }
+
+  displayData.physical_activity = normalizeActivityValue(profileData.physical_activity);
+  displayData.alcohol = normalizeAlcoholValue(profileData.alcohol);
+
+  return displayData;
+};
+
+export const buildProfileUpdatePayload = (formData, referenceDate = new Date()) => {
+  const payload = {
+    first_name: formData.first_name || '',
+    last_name: formData.last_name || '',
+    phone: formData.phone || '',
+    address: formData.address || '',
+    menopause_status: formData.menopause_status || '',
+    menopause_type: formData.menopause_type || '',
+    years_menopause: numberOrDefault(formData.years_menopause, 0),
+    hypertension: formData.hypertension || '',
+    heart_disease: formData.heart_disease || '',
+    smoking_status: formData.smoking_status || '',
+    physical_activity: normalizeActivityValue(formData.physical_activity),
+    alcohol: normalizeAlcoholValue(formData.alcohol),
+    assessment_frequency_months: numberOrDefault(formData.assessment_frequency_months, 3),
+    reminder_email: Boolean(formData.reminder_email),
+  };
+
+  if (formData.age) {
+    const ageNum = parseInt(formData.age, 10);
+    const existingAge = getAgeFromDateOfBirth(formData.date_of_birth, referenceDate);
+    payload.date_of_birth =
+      existingAge === ageNum
+        ? normalizeDateOfBirthForUpdate(formData.date_of_birth)
+        : getDateOfBirthForAge(ageNum, referenceDate);
+  } else {
+    payload.date_of_birth = normalizeDateOfBirthForUpdate(formData.date_of_birth);
+  }
+
+  if (!payload.date_of_birth) {
+    delete payload.date_of_birth;
+  }
+
+  return payload;
+};
+
 const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleChange }) => {
   const inputFocusVariants = useInputFocusVariants();
   const { data: profileData = {}, isLoading, error, refetch } = useUserProfile();
@@ -28,15 +141,7 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
 
   useEffect(() => {
     if (profileData && Object.keys(profileData).length > 0) {
-      const displayData = { ...profileData };
-      if (profileData.date_of_birth) {
-        const birthDate = new Date(profileData.date_of_birth);
-        if (!isNaN(birthDate.getTime())) {
-          const currentYear = new Date().getFullYear();
-          displayData.age = currentYear - birthDate.getFullYear();
-        }
-      }
-      setFormData(displayData);
+      setFormData(toProfileFormData(profileData));
     }
   }, [profileData]);
 
@@ -52,21 +157,9 @@ const UserProfile = ({ setActiveTab, onStartAssessment, fontScale, onFontScaleCh
     e.preventDefault();
     setFormError(null);
     try {
-      const payload = {
-        ...formData,
-        years_menopause: formData.years_menopause ? parseInt(formData.years_menopause, 10) : 0,
-      };
-
-      if (formData.age) {
-        const ageNum = parseInt(formData.age, 10);
-        if (!isNaN(ageNum) && ageNum > 0 && ageNum < 150) {
-          const birthYear = new Date().getFullYear() - ageNum;
-          payload.date_of_birth = `${birthYear}-06-15`;
-        }
-      }
-
-      await updateProfileMutation.mutateAsync(payload);
-      setFormData(payload);
+      const payload = buildProfileUpdatePayload(formData);
+      const updatedProfile = await updateProfileMutation.mutateAsync(payload);
+      setFormData(toProfileFormData(updatedProfile));
     } catch (err) {
       setFormError(getErrorMessage(err, 'Failed to update profile'));
     }
