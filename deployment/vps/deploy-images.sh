@@ -22,6 +22,21 @@ login_registry() {
   fi
 }
 
+verify_model_artifacts() {
+  local model_dir="${DIANA_MODEL_DIR:-models/binary_v2_no_bp}"
+
+  if [ ! -d "${model_dir}" ]; then
+    echo "Missing production model directory: ${model_dir}" >&2
+    return 1
+  fi
+
+  if [ ! -f "${model_dir}/model_hashes.json" ]; then
+    echo "Missing production model hash file: ${model_dir}/model_hashes.json" >&2
+    echo "Generate it after placing model artifacts on the VPS so ML integrity checks can pass." >&2
+    return 1
+  fi
+}
+
 container_image() {
   local container="$1"
   docker inspect "${container}" --format '{{.Config.Image}}' 2>/dev/null || true
@@ -77,6 +92,7 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 
 mkdir -p logs
+verify_model_artifacts
 write_previous_images
 login_registry
 
