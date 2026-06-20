@@ -81,8 +81,9 @@ CORS_ORIGINS=http://localhost:4000
 ### Frontend (`frontend/.env.local`)
 ```bash
 VITE_API_BASE=http://localhost:8080
-VITE_ML_BASE=http://localhost:5001  # For direct ML calls
 ```
+
+Frontend ML requests use the backend proxy under `/api/v1/ml`; the Flask ML service is not exposed directly to browsers in production.
 
 ---
 

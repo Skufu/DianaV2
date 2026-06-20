@@ -2,6 +2,8 @@
 package router
 
 import (
+	"crypto/subtle"
+	"net/http"
 	"strings"
 	"time"
 
@@ -44,6 +46,9 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	}
 
 	r := gin.New()
+	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
+		panic("invalid TRUSTED_PROXIES configuration: " + err.Error())
+	}
 
 	// Recovery middleware (with Sentry integration)
 	r.Use(sentry.RecoveryMiddleware())
@@ -111,18 +116,18 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 	// Public routes (no authentication required)
 	// -------------------------------------------------------------------------
 
-	// Swagger documentation (publicly accessible)
-	// Re-doc alternative: r.GET("/api/v1/docs", gin.WrapH(redocHandler()))
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, func(c *ginSwagger.Config) {
-		c.Title = "DIANA API Documentation"
-		c.DefaultModelsExpandDepth = 1
-	}))
+	// Swagger documentation is disabled by default in strict environments.
+	if cfg.EnableSwagger {
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler, func(c *ginSwagger.Config) {
+			c.Title = "DIANA API Documentation"
+			c.DefaultModelsExpandDepth = 1
+		}))
+	}
 
 	// Health checks
 	handlers.RegisterHealth(api)
 
-	// Metrics endpoint (public for Prometheus scraping, but should be protected in production)
-	api.GET("/metrics", metrics.Handler())
+	registerMetricsRoute(api, cfg)
 
 	// Debug endpoints (only in non-production environments)
 	debugHandler := handlers.NewDebugHandler(cfg.Env != "production" && cfg.Env != "prod")
@@ -285,6 +290,45 @@ func newCORSConfig(origins []string) cors.Config {
 	}
 	corsConfig.AllowCredentials = true
 	return corsConfig
+}
+
+func registerMetricsRoute(api *gin.RouterGroup, cfg config.Config) {
+	if isStrictRouterEnvironment(cfg.Env) {
+		token := strings.TrimSpace(cfg.MetricsToken)
+		if token == "" {
+			return
+		}
+		api.GET("/metrics", requireMetricsToken(token), metrics.Handler())
+		return
+	}
+
+	api.GET("/metrics", metrics.Handler())
+}
+
+func requireMetricsToken(expected string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := strings.TrimSpace(c.GetHeader("X-Metrics-Token"))
+		if token == "" {
+			authz := c.GetHeader("Authorization")
+			if strings.HasPrefix(authz, "Bearer ") {
+				token = strings.TrimSpace(strings.TrimPrefix(authz, "Bearer "))
+			}
+		}
+		if subtle.ConstantTimeCompare([]byte(token), []byte(expected)) != 1 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "metrics token required"})
+			return
+		}
+		c.Next()
+	}
+}
+
+func isStrictRouterEnvironment(env string) bool {
+	switch strings.ToLower(strings.TrimSpace(env)) {
+	case "production", "prod", "staging":
+		return true
+	default:
+		return false
+	}
 }
 
 // printRoutes logs all registered routes (for debugging)

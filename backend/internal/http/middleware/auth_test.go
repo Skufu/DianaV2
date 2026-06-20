@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -38,6 +39,7 @@ func newMockUserFinder() UserFinder {
 		users: map[int32]*models.User{
 			123: {ID: 123, Email: "test@example.com", Role: "clinician", IsActive: true, AccountStatus: "active"},
 			1:   {ID: 1, Email: "user1@example.com", Role: "clinician", IsActive: true, AccountStatus: "active"},
+			999: {ID: 999, Email: "admin@example.com", Role: "admin", IsActive: true, AccountStatus: "active"},
 		},
 	}
 }
@@ -79,6 +81,64 @@ func TestAuth_ValidToken(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+}
+
+func TestAuth_UsesCurrentStoreRole(t *testing.T) {
+	secret := "test-secret"
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":     "admin@example.com",
+		"user_id": float64(999),
+		"role":    "clinician",
+		"scope":   "diana",
+		"exp":     time.Now().Add(time.Hour).Unix(),
+	})
+	signedToken, _ := token.SignedString([]byte(secret))
+
+	r := gin.New()
+	r.Use(Auth(secret, newMockUserFinder()))
+	r.GET("/test", func(c *gin.Context) {
+		claims := c.MustGet("user").(UserClaims)
+		c.JSON(http.StatusOK, gin.H{"role": claims.Role})
+	})
+
+	req, _ := http.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer "+signedToken)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), `"role":"admin"`) {
+		t.Fatalf("expected current store role, got body %s", w.Body.String())
+	}
+}
+
+func TestAuth_RejectsCookieOnlyToken(t *testing.T) {
+	secret := "test-secret"
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":     "test@example.com",
+		"user_id": float64(123),
+		"role":    "clinician",
+		"scope":   "diana",
+		"exp":     time.Now().Add(time.Hour).Unix(),
+	})
+	signedToken, _ := token.SignedString([]byte(secret))
+
+	r := gin.New()
+	r.Use(Auth(secret, newMockUserFinder()))
+	r.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
+	req, _ := http.NewRequest("GET", "/test", nil)
+	req.AddCookie(&http.Cookie{Name: "diana_token", Value: signedToken})
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", w.Code)
 	}
 }
 

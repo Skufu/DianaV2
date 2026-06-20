@@ -54,9 +54,11 @@ jobs:
 
       - name: Resolve deployment mode
         id: mode
+        env:
+          DEPLOY_TARGET_INPUT: ${{ inputs.deploy_target }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            DEPLOY_TARGET="${{ inputs.deploy_target }}"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            DEPLOY_TARGET="$DEPLOY_TARGET_INPUT"
           else
             DEPLOY_TARGET="production"
           fi

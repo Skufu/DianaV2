@@ -35,8 +35,9 @@ Rule: consume backend canonical fields (`risk_level`, `risk_label`, `cluster`, `
 ```bash
 # frontend/.env.local
 VITE_API_BASE=http://localhost:8080
-VITE_ML_BASE=http://localhost:5001
 ```
+
+ML calls go through the backend proxy under `/api/v1/ml`; no ML API key or direct ML URL belongs in frontend env.
 
 ## Running
 ```bash

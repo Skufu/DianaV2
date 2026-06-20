@@ -1,15 +1,13 @@
 # Frontend Dockerfile - Multi-stage build
 # Stage 1: Build React app
-FROM node:20-alpine3.20 AS build
+FROM node:20-alpine3.22 AS build
 
 WORKDIR /app
 
 # Accept build args for environment variables
 ARG VITE_API_BASE=http://localhost:8080
-ARG VITE_ML_BASE=http://localhost:5000
 
 ENV VITE_API_BASE=$VITE_API_BASE
-ENV VITE_ML_BASE=$VITE_ML_BASE
 
 RUN apk add --no-cache python3 make g++
 
@@ -24,7 +22,9 @@ WORKDIR /app/frontend
 RUN npm run build
 
 # Stage 2: Serve with Nginx
-FROM nginx:alpine3.20
+FROM nginx:1.29-alpine3.22
+
+RUN apk upgrade --no-cache
 
 # Copy custom nginx config
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
