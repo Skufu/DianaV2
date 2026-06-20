@@ -42,7 +42,7 @@ func (q *Queries) CountAuditEvents(ctx context.Context, arg CountAuditEventsPara
 
 const createAuditEvent = `-- name: CreateAuditEvent :exec
 INSERT INTO audit_events (actor, action, target_type, target_id, details, created_at)
-VALUES ($1, $2, $3, $4, $5, NOW())
+VALUES ($1, $2, $3, $4, $5::text::jsonb, NOW())
 `
 
 type CreateAuditEventParams struct {
@@ -50,7 +50,7 @@ type CreateAuditEventParams struct {
 	Action     pgtype.Text `json:"action"`
 	TargetType pgtype.Text `json:"target_type"`
 	TargetID   pgtype.Int4 `json:"target_id"`
-	Details    []byte      `json:"details"`
+	Details    string      `json:"details"`
 }
 
 func (q *Queries) CreateAuditEvent(ctx context.Context, arg CreateAuditEventParams) error {
