@@ -2,37 +2,100 @@ name: CD
 
 on:
   push:
+    branches:
+      - main
     tags:
-      - 'v*'  # Only run on version tags (e.g., v1.0.0)
+      - 'v*'
+    paths:
+      - '.github/workflows/cd.yml'
+      - 'backend/**'
+      - 'build/Dockerfile'
+      - 'Ian_ML/**'
+      - 'models/**'
+      - 'deployment/Caddyfile'
+      - 'deployment/vps/**'
   workflow_dispatch:
     inputs:
       deploy_target:
-        description: 'What to deploy after building images'
+        description: 'Build images only, or also deploy them to production'
         required: true
-        default: 'production'
+        default: production
         type: choice
         options:
           - production
-          - staging
           - build-only
+
+concurrency:
+  group: diana-production
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAMESPACE: skufu
-  BACKEND_IMAGE: skufu/diana-backend
-  FRONTEND_IMAGE: skufu/diana-frontend
-  ML_IMAGE: skufu/diana-ml
+  BACKEND_IMAGE: ghcr.io/skufu/diana-backend
+  ML_IMAGE: ghcr.io/skufu/diana-ml
+  DEPLOY_DIR: /opt/dianav2
+  PUBLIC_HEALTH_URL: https://diana-v2.duckdns.org/api/v1/healthz
 
 jobs:
   build-and-push:
+    name: Build backend and ML images
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    outputs:
+      deploy_target: ${{ steps.mode.outputs.deploy_target }}
+      image_tag: ${{ steps.version.outputs.image_tag }}
+      release_label: ${{ steps.version.outputs.release_label }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Resolve deployment mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            DEPLOY_TARGET="${{ inputs.deploy_target }}"
+          else
+            DEPLOY_TARGET="production"
+          fi
+          echo "deploy_target=${DEPLOY_TARGET}" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve image tags
+        id: version
+        run: |
+          SHORT_SHA="$(git rev-parse --short=12 HEAD)"
+          IMAGE_TAG="sha-${SHORT_SHA}"
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            RELEASE_LABEL="${GITHUB_REF_NAME}"
+            MOVING_TAG="${GITHUB_REF_NAME}"
+          else
+            RELEASE_LABEL="main-${SHORT_SHA}"
+            MOVING_TAG="main"
+          fi
+
+          {
+            echo "short_sha=${SHORT_SHA}"
+            echo "image_tag=${IMAGE_TAG}"
+            echo "release_label=${RELEASE_LABEL}"
+            echo "moving_tag=${MOVING_TAG}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build image tag lists
+        id: tags
+        run: |
+          {
+            echo 'backend_tags<<EOF'
+            echo "${BACKEND_IMAGE}:${{ steps.version.outputs.image_tag }}"
+            echo "${BACKEND_IMAGE}:${{ steps.version.outputs.moving_tag }}"
+            echo 'EOF'
+            echo 'ml_tags<<EOF'
+            echo "${ML_IMAGE}:${{ steps.version.outputs.image_tag }}"
+            echo "${ML_IMAGE}:${{ steps.version.outputs.moving_tag }}"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -44,745 +107,146 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Backend
-        id: meta-backend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=sha,prefix=
-
-      - name: Build and push Backend
+      - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
           context: .
           file: build/Dockerfile
           push: true
-          tags: ${{ steps.meta-backend.outputs.tags }}
-          labels: ${{ steps.meta-backend.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ steps.tags.outputs.backend_tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=DianaV2 Backend
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
 
-      - name: Extract metadata for ML
-        id: meta-ml
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.ML_IMAGE }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=sha,prefix=
-
-      - name: Build and push ML
+      - name: Build and push ML service
         uses: docker/build-push-action@v5
         with:
           context: .
           file: Ian_ML/Dockerfile
           push: true
-          tags: ${{ steps.meta-ml.outputs.tags }}
-          labels: ${{ steps.meta-ml.outputs.labels }}
+          tags: ${{ steps.tags.outputs.ml_tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=DianaV2 ML Service
+          cache-from: type=gha,scope=ml
+          cache-to: type=gha,mode=max,scope=ml
 
-      - name: Extract metadata for Frontend
-        id: meta-frontend
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=sha,prefix=
-
-      - name: Build and push Frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: frontend/Dockerfile
-          push: true
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
-          build-args: |
-            VITE_API_BASE=${{ secrets.VITE_API_BASE }}
-            VITE_ML_BASE=${{ secrets.VITE_ML_BASE }}
-
-  # Deployment to staging/production environment
-  # Requires GitHub secrets: DEPLOY_SSH_KEY, DEPLOY_HOST, DEPLOY_USER
-  deploy:
+  deploy-production:
+    name: Deploy backend and ML to VPS
     runs-on: ubuntu-latest
     needs: build-and-push
-    if: github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.deploy_target == 'production')
-    environment: production
+    if: needs.build-and-push.outputs.deploy_target == 'production'
+    environment:
+      name: Production
+      url: ${{ env.PUBLIC_HEALTH_URL }}
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Check required deployment secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+          TAILSCALE_AUTHKEY: ${{ secrets.TAILSCALE_AUTHKEY }}
+        run: |
+          missing=0
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY REGISTRY_USERNAME REGISTRY_PASSWORD TAILSCALE_AUTHKEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required GitHub secret: ${name}"
+              missing=1
+            fi
+          done
+          exit "${missing}"
+
+      - name: Connect runner to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          ping: ${{ secrets.DEPLOY_HOST }}
+
+      - name: Start SSH agent
         uses: webfactory/ssh-agent-action@v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Add SSH known hosts
+      - name: Trust deployment host key
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
 
-      - name: Get version from tag
-        id: version
-        run: |
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            # docker/metadata-action emits semver image tags without the leading v
-            # (e.g., v1.0.0 release tag -> 1.0.0 image tag).
-            RELEASE_TAG="${GITHUB_REF#refs/tags/}"
-            IMAGE_TAG="${RELEASE_TAG#v}"
-          else
-            SHORT_SHA="$(git rev-parse --short HEAD)"
-            RELEASE_TAG="manual-${SHORT_SHA}"
-            IMAGE_TAG="${SHORT_SHA}"
-          fi
-
-          {
-            echo "version=${RELEASE_TAG}"
-            echo "image_tag=${IMAGE_TAG}"
-            echo "short_sha=$(git rev-parse --short HEAD)"
-          } >> "${GITHUB_OUTPUT}"
-
-      - name: Store previous image tags for rollback
-        id: previous-images
+      - name: Install production deployment files
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          echo "=== Querying currently deployed image tags ==="
+          # shellcheck disable=SC2029
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DEPLOY_DIR}' '${DEPLOY_DIR}/logs'"
+          scp deployment/vps/docker-compose.yml "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/diana-docker-compose.yml"
+          scp deployment/Caddyfile "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/diana-Caddyfile"
+          scp deployment/vps/deploy-images.sh "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/diana-deploy-images.sh"
+          scp deployment/vps/rollback-images.sh "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/diana-rollback-images.sh"
+          # shellcheck disable=SC2029
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "\
+            cp /tmp/diana-docker-compose.yml '${DEPLOY_DIR}/docker-compose.yml' && \
+            cp /tmp/diana-Caddyfile '${DEPLOY_DIR}/Caddyfile' && \
+            cp /tmp/diana-deploy-images.sh '${DEPLOY_DIR}/deploy-images.sh' && \
+            cp /tmp/diana-rollback-images.sh '${DEPLOY_DIR}/rollback-images.sh' && \
+            chmod 700 '${DEPLOY_DIR}/deploy-images.sh' '${DEPLOY_DIR}/rollback-images.sh'"
 
-          # Query currently running images on the server
-          PREVIOUS_TAGS=$(ssh -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "cd /opt/diana && \
-             echo 'BACKEND:' && docker inspect diana-backend --format='{{.Config.Image}}' 2>/dev/null || echo 'none' && \
-             echo 'ML:' && docker inspect diana-ml --format='{{.Config.Image}}' 2>/dev/null || echo 'none' && \
-             echo 'FRONTEND:' && docker inspect diana-frontend --format='{{.Config.Image}}' 2>/dev/null || echo 'none'")
-
-          echo "Current deployed images:"
-          echo "$PREVIOUS_TAGS"
-
-          # Parse and store previous tags
-          PREVIOUS_BACKEND=$(echo "$PREVIOUS_TAGS" | grep 'BACKEND:' | cut -d: -f2- | tr -d ' ' || echo "none")
-          PREVIOUS_ML=$(echo "$PREVIOUS_TAGS" | grep 'ML:' | cut -d: -f2- | tr -d ' ' || echo "none")
-          PREVIOUS_FRONTEND=$(echo "$PREVIOUS_TAGS" | grep 'FRONTEND:' | cut -d: -f2- | tr -d ' ' || echo "none")
-
-          # Store previous tags as outputs for rollback step
-          {
-            echo "previous_backend=${PREVIOUS_BACKEND}"
-            echo "previous_ml=${PREVIOUS_ML}"
-            echo "previous_frontend=${PREVIOUS_FRONTEND}"
-          } >> "${GITHUB_OUTPUT}"
-
-          # Also save to a file on the server for rollback reference
-          ssh -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "cd /opt/diana && \
-             echo '${PREVIOUS_BACKEND}' > .previous_backend_tag && \
-             echo '${PREVIOUS_ML}' > .previous_ml_tag && \
-             echo '${PREVIOUS_FRONTEND}' > .previous_frontend_tag && \
-             echo 'Previous image tags stored successfully'"
-
-      - name: Deploy to production
+      - name: Deploy immutable image tag
+        id: deploy
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
-          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
-          ML_IMAGE: ${{ env.REGISTRY }}/${{ env.ML_IMAGE }}
-          REGISTRY: ${{ env.REGISTRY }}
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-          VERSION: ${{ steps.version.outputs.image_tag }}
-          RELEASE_TAG: ${{ steps.version.outputs.version }}
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
         run: |
-          echo "🚀 Deploying DianaV2 ${{ env.RELEASE_TAG }} to production..."
+          REGISTRY_PASSWORD_B64="$(printf '%s' "${REGISTRY_PASSWORD}" | base64 | tr -d '\n')"
+          # shellcheck disable=SC2029
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "\
+            cd '${DEPLOY_DIR}' && \
+            REGISTRY='${REGISTRY}' \
+            REGISTRY_USERNAME='${REGISTRY_USERNAME}' \
+            REGISTRY_PASSWORD=\"\$(printf '%s' '${REGISTRY_PASSWORD_B64}' | base64 -d)\" \
+            BACKEND_IMAGE='${BACKEND_IMAGE}' \
+            ML_IMAGE='${ML_IMAGE}' \
+            IMAGE_TAG='${IMAGE_TAG}' \
+            PUBLIC_HEALTH_URL='${PUBLIC_HEALTH_URL}' \
+            ./deploy-images.sh"
 
-          # Create deployment script
-          cat > deploy.sh << 'DEPLOY_SCRIPT'
-          #!/bin/bash
-          set -e
-
-          VERSION="${VERSION}"
-          BACKEND_IMAGE="${BACKEND_IMAGE}"
-          FRONTEND_IMAGE="${FRONTEND_IMAGE}"
-          ML_IMAGE="${ML_IMAGE}"
-          REGISTRY="${REGISTRY}"
-          REGISTRY_USERNAME="${REGISTRY_USERNAME}"
-          REGISTRY_PASSWORD="${REGISTRY_PASSWORD}"
-
-          if ! docker compose version >/dev/null 2>&1; then
-            echo "Docker Compose v2 is required for the production security overlay"
-            exit 1
-          fi
-
-          compose_cmd() {
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml "$@"
-          }
-
-          if [ -n "$REGISTRY_USERNAME" ] && [ -n "$REGISTRY_PASSWORD" ]; then
-            echo "=== Logging in to container registry on deploy host ==="
-            printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY" -u "$REGISTRY_USERNAME" --password-stdin
-          fi
-
-          echo "=== Pulling new images ==="
-          docker pull "${BACKEND_IMAGE}:${VERSION}" || docker pull "${BACKEND_IMAGE}:latest"
-          docker pull "${ML_IMAGE}:${VERSION}" || docker pull "${ML_IMAGE}:latest"
-          docker pull "${FRONTEND_IMAGE}:${VERSION}" || docker pull "${FRONTEND_IMAGE}:latest"
-
-          echo "=== Stopping existing services ==="
-          compose_cmd down --timeout 30 || true
-
-          echo "=== Starting services with new images ==="
-          export DIANA_BACKEND_IMAGE="${BACKEND_IMAGE}:${VERSION}"
-          export DIANA_ML_IMAGE="${ML_IMAGE}:${VERSION}"
-          export DIANA_FRONTEND_IMAGE="${FRONTEND_IMAGE}:${VERSION}"
-
-          compose_cmd up -d --no-build
-
-          echo "=== Waiting for services to be ready ==="
-          sleep 10
-
-          echo "=== Running health checks ==="
-          # Backend health check
-          for i in {1..30}; do
-            if compose_cmd exec -T backend curl -sf http://localhost:8080/api/v1/healthz > /dev/null 2>&1; then
-              echo "✅ Backend healthy"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "❌ Backend health check failed after 30 attempts"
-              exit 1
-            fi
-            sleep 2
-          done
-
-          # ML health check
-          for i in {1..30}; do
-            if compose_cmd exec -T ml curl -sf http://localhost:5000/health > /dev/null 2>&1; then
-              echo "✅ ML service healthy"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "❌ ML health check failed after 30 attempts"
-              exit 1
-            fi
-            sleep 2
-          done
-
-          # Frontend health check
-          for i in {1..30}; do
-            if compose_cmd exec -T frontend curl -sf http://localhost:80 > /dev/null 2>&1; then
-              echo "✅ Frontend healthy"
-              break
-            fi
-            if [ $i -eq 30 ]; then
-              echo "❌ Frontend health check failed after 30 attempts"
-              exit 1
-            fi
-            sleep 2
-          done
-
-          echo "=== Deployment complete ==="
-          compose_cmd ps
-          DEPLOY_SCRIPT
-
-          chmod +x deploy.sh
-
-          # Copy compose files and deploy script to server
-          scp -o StrictHostKeyChecking=no docker-compose.yml docker-compose.prod.yml deploy.sh "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/"
-          scp -o StrictHostKeyChecking=no frontend/nginx-ssl.conf "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/nginx-ssl.conf"
-
-          # Execute deployment on server
-          ssh -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "cd /opt/diana && \
-             cp /tmp/docker-compose.yml . && \
-             cp /tmp/docker-compose.prod.yml . && \
-             mkdir -p frontend && \
-             cp /tmp/nginx-ssl.conf frontend/nginx-ssl.conf && \
-             chmod +x /tmp/deploy.sh && \
-             VERSION='${VERSION}' \
-             BACKEND_IMAGE='${BACKEND_IMAGE}' \
-             FRONTEND_IMAGE='${FRONTEND_IMAGE}' \
-             ML_IMAGE='${ML_IMAGE}' \
-             REGISTRY='${REGISTRY}' \
-             REGISTRY_USERNAME='${REGISTRY_USERNAME}' \
-             REGISTRY_PASSWORD='${REGISTRY_PASSWORD}' \
-             /tmp/deploy.sh"
-
-      - name: Verify deployment
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-        run: |
-          echo "=== Verifying deployment from external view ==="
-
-          # Wait for services to stabilize
-          sleep 15
-
-          # Verify backend
-          BACKEND_STATUS=$(curl -sf "https://${DEPLOY_HOST}/api/v1/healthz" 2>/dev/null || echo "FAILED")
-          if [[ "$BACKEND_STATUS" == *"healthy"* ]] || [[ "$BACKEND_STATUS" == *"ok"* ]]; then
-            echo "✅ Backend verification passed"
-          else
-            echo "⚠️ Backend verification inconclusive: $BACKEND_STATUS"
-          fi
-
-          # Verify frontend (check for HTML response)
-          FRONTEND_STATUS=$(curl -sf "https://${DEPLOY_HOST}" 2>/dev/null | head -5 || echo "FAILED")
-          if [[ "$FRONTEND_STATUS" == *"html"* ]] || [[ "$FRONTEND_STATUS" == *"<!doctype"* ]]; then
-            echo "✅ Frontend verification passed"
-          else
-            echo "⚠️ Frontend verification inconclusive"
-          fi
-
-          echo "=== Deployment verification complete ==="
-
-      - name: Rollback on failure
-        if: failure()
+      - name: Roll back on failed deploy
+        if: failure() && steps.deploy.outcome == 'failure'
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          REGISTRY: ${{ env.REGISTRY }}
-          BACKEND_IMAGE: ${{ env.BACKEND_IMAGE }}
-          FRONTEND_IMAGE: ${{ env.FRONTEND_IMAGE }}
-          ML_IMAGE: ${{ env.ML_IMAGE }}
-          PREVIOUS_BACKEND: ${{ steps.previous-images.outputs.previous_backend }}
-          PREVIOUS_ML: ${{ steps.previous-images.outputs.previous_ml }}
-          PREVIOUS_FRONTEND: ${{ steps.previous-images.outputs.previous_frontend }}
-          NEW_VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          echo "❌ Deployment failed - initiating rollback..."
-          echo "=== Rollback Information ==="
-          echo "Failed version: ${NEW_VERSION}"
-          echo "Previous backend: ${PREVIOUS_BACKEND}"
-          echo "Previous ML: ${PREVIOUS_ML}"
-          echo "Previous frontend: ${PREVIOUS_FRONTEND}"
-
-          # Create rollback script
-          cat > rollback.sh << 'ROLLBACK_SCRIPT'
-          #!/bin/bash
-          set -e
-
-          PREVIOUS_BACKEND="${PREVIOUS_BACKEND}"
-          PREVIOUS_ML="${PREVIOUS_ML}"
-          PREVIOUS_FRONTEND="${PREVIOUS_FRONTEND}"
-
-          if ! docker compose version >/dev/null 2>&1; then
-            echo "Docker Compose v2 is required for the production security overlay"
-            exit 1
-          fi
-
-          compose_cmd() {
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml "$@"
-          }
-
-          echo "=== Reading stored previous tags from server ==="
-          cd /opt/diana
-
-          # Read stored previous tags if not provided via env
-          if [ -z "$PREVIOUS_BACKEND" ] || [ "$PREVIOUS_BACKEND" == "none" ]; then
-            PREVIOUS_BACKEND=$(cat .previous_backend_tag 2>/dev/null || echo "")
-          fi
-          if [ -z "$PREVIOUS_ML" ] || [ "$PREVIOUS_ML" == "none" ]; then
-            PREVIOUS_ML=$(cat .previous_ml_tag 2>/dev/null || echo "")
-          fi
-          if [ -z "$PREVIOUS_FRONTEND" ] || [ "$PREVIOUS_FRONTEND" == "none" ]; then
-            PREVIOUS_FRONTEND=$(cat .previous_frontend_tag 2>/dev/null || echo "")
-          fi
-
-          echo "Previous backend tag: ${PREVIOUS_BACKEND}"
-          echo "Previous ML tag: ${PREVIOUS_ML}"
-          echo "Previous frontend tag: ${PREVIOUS_FRONTEND}"
-
-          # Check if we have previous versions to rollback to
-          if [ -z "$PREVIOUS_BACKEND" ] && [ -z "$PREVIOUS_ML" ] && [ -z "$PREVIOUS_FRONTEND" ]; then
-            echo "⚠️ No previous versions stored - cannot rollback"
-            echo "Attempting restart with current images..."
-            compose_cmd down --timeout 30 || true
-            compose_cmd up -d --no-build
-            exit 1
-          fi
-
-          echo "=== Stopping failed deployment ==="
-          compose_cmd down --timeout 30 || true
-
-          echo "=== Pulling previous image versions ==="
-          if [ -n "$PREVIOUS_BACKEND" ] && [ "$PREVIOUS_BACKEND" != "none" ]; then
-            echo "Pulling previous backend: ${PREVIOUS_BACKEND}"
-            docker pull "${PREVIOUS_BACKEND}" || echo "⚠️ Could not pull previous backend"
-          fi
-          if [ -n "$PREVIOUS_ML" ] && [ "$PREVIOUS_ML" != "none" ]; then
-            echo "Pulling previous ML: ${PREVIOUS_ML}"
-            docker pull "${PREVIOUS_ML}" || echo "⚠️ Could not pull previous ML"
-          fi
-          if [ -n "$PREVIOUS_FRONTEND" ] && [ "$PREVIOUS_FRONTEND" != "none" ]; then
-            echo "Pulling previous frontend: ${PREVIOUS_FRONTEND}"
-            docker pull "${PREVIOUS_FRONTEND}" || echo "⚠️ Could not pull previous frontend"
-          fi
-
-          echo "=== Starting services with previous images ==="
-          export DIANA_BACKEND_IMAGE="${PREVIOUS_BACKEND}"
-          export DIANA_ML_IMAGE="${PREVIOUS_ML}"
-          export DIANA_FRONTEND_IMAGE="${PREVIOUS_FRONTEND}"
-
-          compose_cmd up -d --no-build
-
-          echo "=== Waiting for rollback services to be ready ==="
-          sleep 15
-
-          echo "=== Running rollback health checks ==="
-          ROLLBACK_SUCCESS=true
-
-          # Backend health check
-          for i in {1..20}; do
-            if compose_cmd exec -T backend curl -sf http://localhost:8080/api/v1/healthz > /dev/null 2>&1; then
-              echo "✅ Backend rollback healthy"
-              break
-            fi
-            if [ $i -eq 20 ]; then
-              echo "❌ Backend rollback health check failed"
-              ROLLBACK_SUCCESS=false
-            fi
-            sleep 2
-          done
-
-          # ML health check
-          for i in {1..20}; do
-            if compose_cmd exec -T ml curl -sf http://localhost:5000/health > /dev/null 2>&1; then
-              echo "✅ ML rollback healthy"
-              break
-            fi
-            if [ $i -eq 20 ]; then
-              echo "❌ ML rollback health check failed"
-              ROLLBACK_SUCCESS=false
-            fi
-            sleep 2
-          done
-
-          # Frontend health check
-          for i in {1..20}; do
-            if compose_cmd exec -T frontend curl -sf http://localhost:80 > /dev/null 2>&1; then
-              echo "✅ Frontend rollback healthy"
-              break
-            fi
-            if [ $i -eq 20 ]; then
-              echo "❌ Frontend rollback health check failed"
-              ROLLBACK_SUCCESS=false
-            fi
-            sleep 2
-          done
-
-          echo "=== Rollback status ==="
-          compose_cmd ps
-
-          if [ "$ROLLBACK_SUCCESS" = true ]; then
-            echo "✅ Rollback completed successfully"
-            echo "ROLLED_BACK=true" >> /tmp/rollback_status.txt
-          else
-            echo "❌ Rollback health checks failed"
-            echo "ROLLED_BACK=false" >> /tmp/rollback_status.txt
-            compose_cmd logs --tail=50
-            exit 1
-          fi
-          ROLLBACK_SCRIPT
-
-          chmod +x rollback.sh
-
-          # Copy rollback script to server
-          scp -o StrictHostKeyChecking=no rollback.sh "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/"
-
-          # Execute rollback on server
-          ssh -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "chmod +x /tmp/rollback.sh && \
-             PREVIOUS_BACKEND='${PREVIOUS_BACKEND}' \
-             PREVIOUS_ML='${PREVIOUS_ML}' \
-             PREVIOUS_FRONTEND='${PREVIOUS_FRONTEND}' \
-             /tmp/rollback.sh"
-
-          echo "=== Rollback process complete ==="
-
-      - name: Deployment notification
-        if: always()
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-        run: |
-          echo "=========================================="
-          echo "Deployment Status: ${{ job.status }}"
-          echo "Version: ${{ steps.version.outputs.version }}"
-          echo "Backend: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}"
-          echo "Frontend: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}"
-          echo "ML: ${{ env.REGISTRY }}/${{ env.ML_IMAGE }}"
-          echo "Target: ${{ secrets.DEPLOY_HOST }}"
-
-          if [ "${{ job.status }}" == "failure" ]; then
-            echo "=========================================="
-            echo "⚠️ ROLLBACK EVENT NOTIFICATION"
-            echo "=========================================="
-            echo "Failed Version: ${{ steps.version.outputs.version }}"
-            echo "Rolled Back To:"
-            echo "  Backend: ${{ steps.previous-images.outputs.previous_backend }}"
-            echo "  ML: ${{ steps.previous-images.outputs.previous_ml }}"
-            echo "  Frontend: ${{ steps.previous-images.outputs.previous_frontend }}"
-            echo "Target: ${DEPLOY_HOST}"
-            echo "=========================================="
-            echo "ACTION REQUIRED: Investigate deployment failure"
-            echo "Check server logs: ssh ${DEPLOY_HOST} 'docker-compose logs'"
-            echo "=========================================="
-          fi
-
-          echo "=========================================="
-
-  # Deployment to staging environment (optional)
-  deploy-staging:
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    environment: staging
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy_target == 'staging'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup SSH
-        uses: webfactory/ssh-agent-action@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
-
-      - name: Add SSH known hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Store previous image tags for rollback (staging)
-        id: previous-images-staging
-        env:
-          STAGING_HOST: ${{ secrets.STAGING_HOST }}
-          STAGING_USER: ${{ secrets.STAGING_USER }}
-        run: |
-          echo "=== Querying currently deployed image tags in staging ==="
-
-          # Query currently running images on the staging server
-          PREVIOUS_TAGS=$(ssh -o StrictHostKeyChecking=no "${STAGING_USER}@${STAGING_HOST}" \
-            "cd /opt/diana-staging && \
-             echo 'BACKEND:' && docker inspect diana-backend --format='{{.Config.Image}}' 2>/dev/null || echo 'none' && \
-             echo 'ML:' && docker inspect diana-ml --format='{{.Config.Image}}' 2>/dev/null || echo 'none' && \
-             echo 'FRONTEND:' && docker inspect diana-frontend --format='{{.Config.Image}}' 2>/dev/null || echo 'none'")
-
-          echo "Current staging images:"
-          echo "$PREVIOUS_TAGS"
-
-          # Parse and store previous tags
-          PREVIOUS_BACKEND=$(echo "$PREVIOUS_TAGS" | grep 'BACKEND:' | cut -d: -f2- | tr -d ' ' || echo "none")
-          PREVIOUS_ML=$(echo "$PREVIOUS_TAGS" | grep 'ML:' | cut -d: -f2- | tr -d ' ' || echo "none")
-          PREVIOUS_FRONTEND=$(echo "$PREVIOUS_TAGS" | grep 'FRONTEND:' | cut -d: -f2- | tr -d ' ' || echo "none")
-
-          # Store previous tags as outputs for rollback step
-          {
-            echo "previous_backend=${PREVIOUS_BACKEND}"
-            echo "previous_ml=${PREVIOUS_ML}"
-            echo "previous_frontend=${PREVIOUS_FRONTEND}"
-          } >> "${GITHUB_OUTPUT}"
-
-          # Also save to a file on the server for rollback reference
-          ssh -o StrictHostKeyChecking=no "${STAGING_USER}@${STAGING_HOST}" \
-            "cd /opt/diana-staging && \
-             echo '${PREVIOUS_BACKEND}' > .previous_backend_tag && \
-             echo '${PREVIOUS_ML}' > .previous_ml_tag && \
-             echo '${PREVIOUS_FRONTEND}' > .previous_frontend_tag && \
-             echo 'Previous image tags stored successfully'"
-
-      - name: Deploy to staging
-        env:
-          STAGING_HOST: ${{ secrets.STAGING_HOST }}
-          STAGING_USER: ${{ secrets.STAGING_USER }}
-          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
-          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
-          ML_IMAGE: ${{ env.REGISTRY }}/${{ env.ML_IMAGE }}
-          REGISTRY: ${{ env.REGISTRY }}
           REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
         run: |
-          echo "🚀 Deploying to staging environment..."
+          REGISTRY_PASSWORD_B64="$(printf '%s' "${REGISTRY_PASSWORD}" | base64 | tr -d '\n')"
+          # shellcheck disable=SC2029
+          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "\
+            cd '${DEPLOY_DIR}' && \
+            REGISTRY='${REGISTRY}' \
+            REGISTRY_USERNAME='${REGISTRY_USERNAME}' \
+            REGISTRY_PASSWORD=\"\$(printf '%s' '${REGISTRY_PASSWORD_B64}' | base64 -d)\" \
+            PUBLIC_HEALTH_URL='${PUBLIC_HEALTH_URL}' \
+            ./rollback-images.sh"
 
-          # Create deployment script for staging
-          cat > deploy-staging.sh << 'DEPLOY_SCRIPT'
-          #!/bin/bash
-          set -e
-
-          SHORT_SHA="${SHORT_SHA}"
-          BACKEND_IMAGE="${BACKEND_IMAGE}"
-          FRONTEND_IMAGE="${FRONTEND_IMAGE}"
-          ML_IMAGE="${ML_IMAGE}"
-          REGISTRY="${REGISTRY}"
-          REGISTRY_USERNAME="${REGISTRY_USERNAME}"
-          REGISTRY_PASSWORD="${REGISTRY_PASSWORD}"
-
-          if [ -n "$REGISTRY_USERNAME" ] && [ -n "$REGISTRY_PASSWORD" ]; then
-            echo "=== Logging in to container registry on staging host ==="
-            printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY" -u "$REGISTRY_USERNAME" --password-stdin
-          fi
-
-          echo "=== Pulling latest images for staging ==="
-          docker pull "${BACKEND_IMAGE}:${SHORT_SHA}" || docker pull "${BACKEND_IMAGE}:latest"
-          docker pull "${ML_IMAGE}:${SHORT_SHA}" || docker pull "${ML_IMAGE}:latest"
-          docker pull "${FRONTEND_IMAGE}:${SHORT_SHA}" || docker pull "${FRONTEND_IMAGE}:latest"
-
-          echo "=== Stopping existing services ==="
-          docker-compose down --timeout 15 || true
-
-          echo "=== Starting services with new images ==="
-          export DIANA_BACKEND_IMAGE="${BACKEND_IMAGE}:${SHORT_SHA}"
-          export DIANA_ML_IMAGE="${ML_IMAGE}:${SHORT_SHA}"
-          export DIANA_FRONTEND_IMAGE="${FRONTEND_IMAGE}:${SHORT_SHA}"
-
-          docker-compose up -d --no-build
-
-          echo "=== Waiting for health checks ==="
-          sleep 10
-
-          echo "=== Running health checks ==="
-          # Backend health check
-          for i in {1..20}; do
-            if curl -sf http://localhost:8080/api/v1/healthz > /dev/null 2>&1; then
-              echo "✅ Backend OK"
-              break
-            fi
-            if [ $i -eq 20 ]; then
-              echo "❌ Backend health check failed after 20 attempts"
-              exit 1
-            fi
-            sleep 2
-          done
-
-          # ML health check
-          for i in {1..20}; do
-            if curl -sf http://localhost:5000/health > /dev/null 2>&1; then
-              echo "✅ ML OK"
-              break
-            fi
-            if [ $i -eq 20 ]; then
-              echo "❌ ML health check failed after 20 attempts"
-              exit 1
-            fi
-            sleep 2
-          done
-
-          # Frontend health check
-          for i in {1..20}; do
-            if curl -sf http://localhost:80 > /dev/null 2>&1; then
-              echo "✅ Frontend OK"
-              break
-            fi
-            if [ $i -eq 20 ]; then
-              echo "❌ Frontend health check failed after 20 attempts"
-              exit 1
-            fi
-            sleep 2
-          done
-
-          echo "=== Staging deployment complete ==="
-          docker-compose ps
-          DEPLOY_SCRIPT
-
-          chmod +x deploy-staging.sh
-
-          # Get short SHA for this deployment
-          SHORT_SHA=$(git rev-parse --short HEAD)
-
-          # Deploy to staging server
-          scp -o StrictHostKeyChecking=no docker-compose.yml deploy-staging.sh "${STAGING_USER}@${STAGING_HOST}:/tmp/"
-          ssh -o StrictHostKeyChecking=no "${STAGING_USER}@${STAGING_HOST}" \
-            "cd /opt/diana-staging && \
-             cp /tmp/docker-compose.yml . && \
-             SHORT_SHA='${SHORT_SHA}' \
-             BACKEND_IMAGE='${BACKEND_IMAGE}' \
-             FRONTEND_IMAGE='${FRONTEND_IMAGE}' \
-             ML_IMAGE='${ML_IMAGE}' \
-             REGISTRY='${REGISTRY}' \
-             REGISTRY_USERNAME='${REGISTRY_USERNAME}' \
-             REGISTRY_PASSWORD='${REGISTRY_PASSWORD}' \
-             /tmp/deploy-staging.sh"
-
-      - name: Rollback staging on failure
-        if: failure()
-        env:
-          STAGING_HOST: ${{ secrets.STAGING_HOST }}
-          STAGING_USER: ${{ secrets.STAGING_USER }}
-          PREVIOUS_BACKEND: ${{ steps.previous-images-staging.outputs.previous_backend }}
-          PREVIOUS_ML: ${{ steps.previous-images-staging.outputs.previous_ml }}
-          PREVIOUS_FRONTEND: ${{ steps.previous-images-staging.outputs.previous_frontend }}
+      - name: Verify public backend health
         run: |
-          echo "❌ Staging deployment failed - initiating rollback..."
-          echo "=== Rollback Information ==="
-          echo "Previous backend: ${PREVIOUS_BACKEND}"
-          echo "Previous ML: ${PREVIOUS_ML}"
-          echo "Previous frontend: ${PREVIOUS_FRONTEND}"
-
-          ssh -o StrictHostKeyChecking=no "${STAGING_USER}@${STAGING_HOST}" \
-            "cd /opt/diana-staging && \
-             PREVIOUS_BACKEND='${PREVIOUS_BACKEND}' && \
-             PREVIOUS_ML='${PREVIOUS_ML}' && \
-             PREVIOUS_FRONTEND='${PREVIOUS_FRONTEND}' && \
-             \
-             echo '=== Reading stored previous tags ===' && \
-             PREVIOUS_BACKEND=\$(cat .previous_backend_tag 2>/dev/null || echo '') && \
-             PREVIOUS_ML=\$(cat .previous_ml_tag 2>/dev/null || echo '') && \
-             PREVIOUS_FRONTEND=\$(cat .previous_frontend_tag 2>/dev/null || echo '') && \
-             \
-             echo 'Previous backend: \$PREVIOUS_BACKEND' && \
-             echo 'Previous ML: \$PREVIOUS_ML' && \
-             echo 'Previous frontend: \$PREVIOUS_FRONTEND' && \
-             \
-             echo '=== Stopping failed deployment ===' && \
-             docker-compose down --timeout 15 || true && \
-             \
-             echo '=== Pulling previous images ===' && \
-             [ -n \"\$PREVIOUS_BACKEND\" ] && docker pull \"\$PREVIOUS_BACKEND\" || true && \
-             [ -n \"\$PREVIOUS_ML\" ] && docker pull \"\$PREVIOUS_ML\" || true && \
-             [ -n \"\$PREVIOUS_FRONTEND\" ] && docker pull \"\$PREVIOUS_FRONTEND\" || true && \
-             \
-             echo '=== Starting rollback services ===' && \
-             export DIANA_BACKEND_IMAGE=\"\$PREVIOUS_BACKEND\" && \
-             export DIANA_ML_IMAGE=\"\$PREVIOUS_ML\" && \
-             export DIANA_FRONTEND_IMAGE=\"\$PREVIOUS_FRONTEND\" && \
-             docker-compose up -d --no-build && \
-             \
-             echo '=== Waiting for rollback health checks ===' && \
-             sleep 10 && \
-             \
-             echo '=== Rollback health check results ===' && \
-             curl -sf http://localhost:8080/api/v1/healthz && echo ' ✅ Backend OK' || echo ' ⚠️ Backend check failed' && \
-             curl -sf http://localhost:5000/health && echo ' ✅ ML OK' || echo ' ⚠️ ML check failed' && \
-             curl -sf http://localhost:80 && echo ' ✅ Frontend OK' || echo ' ⚠️ Frontend check failed' && \
-             \
-             echo '=== Staging rollback complete ===' && \
-             docker-compose ps"
-
-          echo "⚠️ Staging rollback completed - check server logs"
-
-      - name: Staging deployment notification
-        if: always()
-        env:
-          STAGING_HOST: ${{ secrets.STAGING_HOST }}
-        run: |
-          echo "=========================================="
-          echo "Staging Deployment Status: ${{ job.status }}"
-          echo "Backend: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}"
-          echo "Frontend: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}"
-          echo "ML: ${{ env.REGISTRY }}/${{ env.ML_IMAGE }}"
-          echo "Target: ${STAGING_HOST}"
-
-          if [ "${{ job.status }}" == "failure" ]; then
-            echo "=========================================="
-            echo "⚠️ STAGING ROLLBACK EVENT NOTIFICATION"
-            echo "=========================================="
-            echo "Rolled Back To:"
-            echo "  Backend: ${{ steps.previous-images-staging.outputs.previous_backend }}"
-            echo "  ML: ${{ steps.previous-images-staging.outputs.previous_ml }}"
-            echo "  Frontend: ${{ steps.previous-images-staging.outputs.previous_frontend }}"
-            echo "Target: ${STAGING_HOST}"
-            echo "=========================================="
-          fi
-
-          echo "=========================================="
+          curl --retry 10 --retry-delay 3 --retry-all-errors --fail --show-error --silent "${PUBLIC_HEALTH_URL}"
+          echo
+          echo "Deployed ${{ needs.build-and-push.outputs.release_label }} (${{ needs.build-and-push.outputs.image_tag }}) to ${PUBLIC_HEALTH_URL}"
