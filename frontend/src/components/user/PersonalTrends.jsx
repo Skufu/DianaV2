@@ -37,9 +37,10 @@ const formatClusterName = cluster => clusterTransforms[cluster] || `${cluster} P
 const biomarkerMetrics = {
   bmi: {
     label: 'Body Mass Index (BMI)',
-    unit: '',
+    unit: 'kg/m²',
     normalMin: 18.5,
     normalMax: 24.9,
+    domainPadding: 0.8,
     tooltip: 'A measure of body fat. Post-menopausal changes often affect BMI baseline.',
     lowerIsBetter: true,
   },
@@ -48,6 +49,7 @@ const biomarkerMetrics = {
     unit: 'mg/dL',
     normalMin: 0,
     normalMax: 150,
+    domainPadding: 8,
     tooltip: 'A type of fat in your blood. Levels often rise during menopause.',
     lowerIsBetter: true,
   },
@@ -56,6 +58,7 @@ const biomarkerMetrics = {
     unit: 'mg/dL',
     normalMin: 0,
     normalMax: 100,
+    domainPadding: 8,
     tooltip: 'Often called "bad" cholesterol. Estrogen decline can cause this to rise.',
     lowerIsBetter: true,
   },
@@ -64,6 +67,7 @@ const biomarkerMetrics = {
     unit: 'mg/dL',
     normalMin: 50,
     normalMax: 100, // For women, >50 is good
+    domainPadding: 4,
     tooltip: 'Often called "good" cholesterol. It helps clear extra cholesterol from your blood.',
     lowerIsBetter: false, // higher is better
   },
@@ -72,10 +76,170 @@ const biomarkerMetrics = {
     unit: 'cm',
     normalMin: 0,
     normalMax: 88, // Typically < 88cm for women
+    domainPadding: 3,
     tooltip:
       'Measures abdominal fat. Fat redistribution to the waist is common during perimenopause.',
     lowerIsBetter: true,
   },
+};
+
+const RISK_THRESHOLDS = {
+  medium: 30,
+  high: 70,
+};
+
+const sortByDateAsc = items =>
+  [...items].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+const getNumericValue = value => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : null;
+};
+
+const formatNumericValue = value => {
+  const numericValue = getNumericValue(value);
+  if (numericValue === null) return `${value}`;
+  return Number.isInteger(numericValue)
+    ? `${numericValue}`
+    : numericValue.toFixed(1).replace(/\.0$/, '');
+};
+
+const formatValueWithUnit = (value, unit) => {
+  const displayValue = formatNumericValue(value);
+  return unit ? `${displayValue} ${unit}` : displayValue;
+};
+
+const formatDateLabel = date => {
+  const parsedDate = new Date(date);
+  if (Number.isNaN(parsedDate.getTime())) return `${date}`;
+
+  return parsedDate.toLocaleDateString(undefined, {
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+const getRangeLabel = months => {
+  const rangeLabels = {
+    0: 'All Time',
+    1: '1 Month',
+    3: '3 Months',
+    6: '6 Months',
+    12: '1 Year',
+    24: '2 Years',
+    60: '5 Years',
+  };
+  return rangeLabels[months] || `${months} Months`;
+};
+
+const getRangeSentenceLabel = label => (label === 'All Time' ? 'all-time' : label.toLowerCase());
+
+const getDateRangeText = history => {
+  if (!history.length) return 'No assessments in this range';
+
+  const firstDate = formatDateLabel(history[0].date);
+  const lastDate = formatDateLabel(history[history.length - 1].date);
+  return firstDate === lastDate ? firstDate : `${firstDate} to ${lastDate}`;
+};
+
+const pluralizeAssessments = count => `${count} assessment${count === 1 ? '' : 's'}`;
+
+const getMetricSeries = (history, metricKey) =>
+  history
+    .map(entry => ({
+      ...entry,
+      value: getNumericValue(entry[metricKey]),
+    }))
+    .filter(entry => entry.value !== null);
+
+const buildRiskTrendSummary = history => {
+  if (history.length < 2) return 'Log one more assessment to compare screening scores.';
+
+  const first = history[0];
+  const last = history[history.length - 1];
+  const diff = last.riskScore - first.riskScore;
+
+  if (Math.abs(diff) < 1) {
+    return `Screening score stayed at ${formatNumericValue(last.riskScore)} across ${pluralizeAssessments(history.length)}.`;
+  }
+
+  const trendVerb = diff < 0 ? 'improved' : 'increased';
+  return `Screening score ${trendVerb} from ${formatNumericValue(first.riskScore)} to ${formatNumericValue(last.riskScore)} across ${pluralizeAssessments(history.length)}.`;
+};
+
+const buildBiomarkerTrendSummary = (history, metricKey) => {
+  const metric = biomarkerMetrics[metricKey];
+  const metricSeries = getMetricSeries(history, metricKey);
+
+  if (metricSeries.length < 2) {
+    return `Log one more ${metric.label} value to compare this biomarker.`;
+  }
+
+  const first = metricSeries[0];
+  const last = metricSeries[metricSeries.length - 1];
+  const diff = last.value - first.value;
+
+  if (Math.abs(diff) < 0.01) {
+    return `${metric.label} stayed at ${formatValueWithUnit(last.value, metric.unit)}.`;
+  }
+
+  const trendVerb = diff < 0 ? 'decreased' : 'increased';
+  return `${metric.label} ${trendVerb} from ${formatValueWithUnit(first.value, metric.unit)} to ${formatValueWithUnit(last.value, metric.unit)}.`;
+};
+
+const buildBiggestMovers = (history, limit = 3) =>
+  Object.entries(biomarkerMetrics)
+    .map(([metricKey, metric]) => {
+      const metricSeries = getMetricSeries(history, metricKey);
+      if (metricSeries.length < 2) return null;
+
+      const first = metricSeries[0];
+      const last = metricSeries[metricSeries.length - 1];
+      const diff = last.value - first.value;
+      if (Math.abs(diff) < 0.01) return null;
+
+      const denominator = Math.max(Math.abs(first.value), 1);
+      const percentChange = (diff / denominator) * 100;
+      const changedDirection = diff < 0 ? 'decreased' : 'increased';
+      const isFavorable = (metric.lowerIsBetter && diff < 0) || (!metric.lowerIsBetter && diff > 0);
+
+      return {
+        key: metricKey,
+        label: metric.label,
+        summary: `${metric.label} ${changedDirection} from ${formatValueWithUnit(first.value, metric.unit)} to ${formatValueWithUnit(last.value, metric.unit)}.`,
+        percentChange,
+        isFavorable,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => Math.abs(b.percentChange) - Math.abs(a.percentChange))
+    .slice(0, limit);
+
+const roundDomainValue = (value, direction) => {
+  const roundedValue = direction === 'floor' ? Math.floor(value * 10) : Math.ceil(value * 10);
+  return Number((roundedValue / 10).toFixed(1));
+};
+
+const getBiomarkerDomain = (history, metricKey) => {
+  const metric = biomarkerMetrics[metricKey];
+  const values = getMetricSeries(history, metricKey).map(entry => entry.value);
+
+  if (!values.length) return ['auto', 'auto'];
+
+  const anchors = [...values];
+  if (metric.normalMin != null && metric.normalMin > 0) anchors.push(metric.normalMin);
+  if (metric.normalMax != null && metric.lowerIsBetter) anchors.push(metric.normalMax);
+
+  const minValue = Math.min(...anchors);
+  const maxValue = Math.max(...anchors);
+  const domainPadding = metric.domainPadding || 1;
+  const span = Math.max(maxValue - minValue, domainPadding);
+  const padding = Math.max(span * 0.12, domainPadding);
+
+  return [
+    Math.max(0, roundDomainValue(minValue - padding, 'floor')),
+    roundDomainValue(maxValue + padding, 'ceil'),
+  ];
 };
 
 const BiomarkerTooltip = ({ tooltip }) => (
@@ -97,8 +261,31 @@ const PersonalTrends = ({ onStartAssessment }) => {
   const { data: trends, isLoading } = useTrends(selectedMonths);
   const { mutate: exportPDF, isPending: isExporting } = useExportPDF();
 
-  const hasAssessmentData = trends?.clusterHistory && trends.clusterHistory.length > 0;
   const activeTrends = trends || {};
+  const clusterHistory = Array.isArray(activeTrends.clusterHistory)
+    ? activeTrends.clusterHistory
+    : [];
+  const biomarkerHistory = Array.isArray(activeTrends.biomarkerHistory)
+    ? activeTrends.biomarkerHistory
+    : [];
+  const chronologicalClusterHistory = sortByDateAsc(clusterHistory);
+  const chronologicalBiomarkerHistory = sortByDateAsc(biomarkerHistory);
+  const latestClusterHistory = [...chronologicalClusterHistory].reverse();
+  const latestBiomarkerHistory = [...chronologicalBiomarkerHistory].reverse();
+  const hasAssessmentData = clusterHistory.length > 0;
+  const selectedRangeLabel = getRangeLabel(selectedMonths);
+  const selectedRangeSentenceLabel = getRangeSentenceLabel(selectedRangeLabel);
+  const selectedBiomarkerMetric = biomarkerMetrics[selectedBiomarker];
+  const biomarkerDomain = getBiomarkerDomain(chronologicalBiomarkerHistory, selectedBiomarker);
+  const riskTrendSummary = buildRiskTrendSummary(chronologicalClusterHistory);
+  const biomarkerTrendSummary = buildBiomarkerTrendSummary(
+    chronologicalBiomarkerHistory,
+    selectedBiomarker
+  );
+  const biggestMovers = buildBiggestMovers(chronologicalBiomarkerHistory);
+  const hasBiomarkerChartData =
+    chronologicalBiomarkerHistory.length > 1 &&
+    chronologicalBiomarkerHistory.some(h => h[selectedBiomarker] != null);
 
   const toggleRow = assessmentKey => {
     setExpandedRows(prev => ({ ...prev, [assessmentKey]: !prev[assessmentKey] }));
@@ -131,34 +318,35 @@ const PersonalTrends = ({ onStartAssessment }) => {
   };
 
   const getRiskTier = score => {
-    if (score < 34) return 'low';
-    if (score < 67) return 'medium';
+    if (score < RISK_THRESHOLDS.medium) return 'low';
+    if (score < RISK_THRESHOLDS.high) return 'medium';
     return 'high';
   };
 
   const getBannerInsight = () => {
-    if (!hasAssessmentData || activeTrends.clusterHistory.length < 2) return null;
+    if (!hasAssessmentData || chronologicalClusterHistory.length < 2) return null;
 
-    const current = activeTrends.clusterHistory[0];
-    const previous = activeTrends.clusterHistory[1];
+    const current = chronologicalClusterHistory[chronologicalClusterHistory.length - 1];
+    const previous = chronologicalClusterHistory[chronologicalClusterHistory.length - 2];
     const riskDelta = current.riskScore - previous.riskScore;
 
-    const currentBio = activeTrends.biomarkerHistory?.[0] || {};
-    const prevBio = activeTrends.biomarkerHistory?.[1] || {};
+    const currentBio =
+      chronologicalBiomarkerHistory[chronologicalBiomarkerHistory.length - 1] || {};
+    const prevBio = chronologicalBiomarkerHistory[chronologicalBiomarkerHistory.length - 2] || {};
 
     if (riskDelta <= -10) {
       return {
         type: 'celebration',
         Icon: TrendingUp,
         color: 'emerald',
-        message: `Great job! Your risk score dropped by ${Math.abs(riskDelta)} points since your last assessment.`,
+        message: `Your screening score decreased by ${Math.abs(riskDelta)} points since your last assessment.`,
       };
     } else if (currentBio.hba1c && prevBio.hba1c && currentBio.hba1c < prevBio.hba1c) {
       return {
         type: 'celebration',
         Icon: TrendingUp,
         color: 'emerald',
-        message: `Your HbA1c dropped from ${prevBio.hba1c}% to ${currentBio.hba1c}% — that's getting closer to your doctor's target!`,
+        message: `Your HbA1c decreased from ${prevBio.hba1c}% to ${currentBio.hba1c}% since the previous assessment.`,
       };
     } else if (
       currentBio.systolic &&
@@ -169,21 +357,22 @@ const PersonalTrends = ({ onStartAssessment }) => {
         type: 'encouragement',
         Icon: Activity,
         color: 'blue',
-        message: `Blood pressure stable during menopause transition — excellent work!`,
+        message: 'Blood pressure values changed by 5 mmHg or less since the previous assessment.',
       };
     } else if (riskDelta >= 10) {
       return {
         type: 'action',
         Icon: AlertCircle,
         color: 'rose',
-        message: `Your risk score increased. Consider adding 20min walks — even gentle movement helps!`,
+        message:
+          'Your screening score increased. Review the trend and discuss it with your healthcare provider if it is unexpected.',
       };
     } else {
       return {
         type: 'encouragement',
         Icon: Activity,
         color: 'blue',
-        message: `Your health metrics are steady. Keep maintaining those healthy habits!`,
+        message: 'Your health metrics are relatively steady across recent assessments.',
       };
     }
   };
@@ -218,13 +407,18 @@ const PersonalTrends = ({ onStartAssessment }) => {
   }
 
   return (
-    <motion.div variants={fadeIn} initial="hidden" animate="visible" className="space-y-8">
+    <motion.div
+      variants={fadeIn}
+      initial="hidden"
+      animate="visible"
+      className="space-y-8 pt-16 lg:pt-0"
+    >
       {/* HEADER TILE */}
       <motion.div className="bg-gradient-to-br from-diana-forest to-[#1A365D] rounded-3xl p-6 md:p-10 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between">
         <div className="relative z-10 max-w-xl">
           <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3">Health Trends</h1>
           <p className="text-blue-100 text-lg leading-relaxed">
-            Track your health metrics over time and visualize your progress.
+            Track screening metrics over time for discussion with your healthcare provider.
           </p>
         </div>
 
@@ -290,21 +484,87 @@ const PersonalTrends = ({ onStartAssessment }) => {
         </motion.div>
       )}
 
+      {/* RANGE SUMMARY */}
+      {hasAssessmentData && (
+        <motion.div variants={fadeIn} className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-wide text-slate-500">
+              Selected Range
+            </p>
+            <p className="mt-1 text-lg font-bold text-slate-900">{selectedRangeLabel}</p>
+            <p className="mt-1 text-sm text-slate-500">
+              {pluralizeAssessments(chronologicalClusterHistory.length)} -{' '}
+              {getDateRangeText(chronologicalClusterHistory)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
+              Screening Trend
+            </p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-emerald-950">
+              {riskTrendSummary}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-wide text-blue-700">
+              Biomarker Trend
+            </p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-blue-950">
+              {biomarkerTrendSummary}
+            </p>
+          </div>
+
+          {biggestMovers.length > 0 && (
+            <div className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm md:col-span-3">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-500">
+                Biggest Movers
+              </p>
+              <ul className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                {biggestMovers.map(mover => (
+                  <li
+                    key={mover.key}
+                    className="flex min-h-[56px] items-start gap-3 border-t border-slate-100 pt-3 md:border-l md:border-t-0 md:pl-4 md:pt-0 first:border-l-0 first:pl-0"
+                  >
+                    <span
+                      className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
+                        mover.isFavorable ? 'bg-emerald-500' : 'bg-amber-500'
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <span className="text-sm font-semibold leading-6 text-slate-700">
+                      {mover.summary}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </motion.div>
+      )}
+
       {/* MAIN CHARTS SECTION */}
-      {activeTrends.clusterHistory && activeTrends.clusterHistory.length > 0 && (
+      {clusterHistory.length > 0 && (
         <React.Fragment>
           {/* RISK SCORE CHART */}
           <motion.div
             variants={fadeIn}
             className="p-5 sm:p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-slate-100"
           >
-            <h2 className="text-xl font-serif font-bold text-slate-900 mb-6">Risk Score History</h2>
+            <h2 className="text-xl font-serif font-bold text-slate-900 mb-2">
+              Screening Score History
+            </h2>
+            <p className="text-sm text-slate-500 mb-6">
+              Scores are screening estimates from 0-100 for the selected{' '}
+              {selectedRangeSentenceLabel} range, not diagnostic results.
+            </p>
             <div className="w-full overflow-x-auto pb-4">
               <div className="min-w-[280px] h-[300px] md:min-w-[500px]">
-                {activeTrends.clusterHistory.length > 1 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+                {chronologicalClusterHistory.length > 1 ? (
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <AreaChart
-                      data={activeTrends.clusterHistory}
+                      data={chronologicalClusterHistory}
                       margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                     >
                       <defs>
@@ -337,22 +597,22 @@ const PersonalTrends = ({ onStartAssessment }) => {
                       />
 
                       <ReferenceLine
-                        y={34}
+                        y={RISK_THRESHOLDS.medium}
                         stroke="#D97706"
                         strokeDasharray="4 4"
                         label={{
-                          value: 'Medium Risk',
+                          value: 'Moderate range',
                           position: 'insideTopLeft',
                           fill: '#D97706',
                           fontSize: 11,
                         }}
                       />
                       <ReferenceLine
-                        y={67}
+                        y={RISK_THRESHOLDS.high}
                         stroke="#E11D48"
                         strokeDasharray="4 4"
                         label={{
-                          value: 'High Risk',
+                          value: 'High range',
                           position: 'insideTopLeft',
                           fill: '#E11D48',
                           fontSize: 11,
@@ -368,7 +628,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
                         labelFormatter={val =>
                           new Date(val).toLocaleDateString(undefined, { dateStyle: 'long' })
                         }
-                        formatter={value => [`${value} / 100`, 'Risk Score']}
+                        formatter={value => [`${value} / 100`, 'Screening Score']}
                       />
                       <Area
                         type="monotone"
@@ -378,7 +638,8 @@ const PersonalTrends = ({ onStartAssessment }) => {
                         fillOpacity={1}
                         fill="url(#colorRisk)"
                         activeDot={{ r: 6, strokeWidth: 0, fill: '#059669' }}
-                        animationDuration={1500}
+                        isAnimationActive={!isReduced}
+                        animationDuration={isReduced ? 0 : 1500}
                         animationEasing="ease-out"
                       />
                     </AreaChart>
@@ -399,8 +660,24 @@ const PersonalTrends = ({ onStartAssessment }) => {
             variants={fadeIn}
             className="p-5 sm:p-6 md:p-8 bg-white rounded-3xl shadow-sm border border-slate-100"
           >
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-              <h2 className="text-xl font-serif font-bold text-slate-900">Key Biomarker Trends</h2>
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-xl font-serif font-bold text-slate-900">
+                  Key Biomarker Trends
+                </h2>
+                <p className="mt-2 text-sm text-slate-500">
+                  {selectedBiomarkerMetric.label} over the selected {selectedRangeSentenceLabel}{' '}
+                  range.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="inline-flex min-h-[32px] items-center rounded-full border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600">
+                    Unit: {selectedBiomarkerMetric.unit || 'unitless'}
+                  </span>
+                  <span className="inline-flex min-h-[32px] items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-700">
+                    Reference band shown
+                  </span>
+                </div>
+              </div>
               <select
                 value={selectedBiomarker}
                 onChange={e => setSelectedBiomarker(e.target.value)}
@@ -416,20 +693,20 @@ const PersonalTrends = ({ onStartAssessment }) => {
 
             <div className="w-full overflow-x-auto pb-4">
               <div className="min-w-[280px] h-[250px] md:min-w-[400px]">
-                {activeTrends.biomarkerHistory.length > 1 &&
-                Array.from(activeTrends.biomarkerHistory).some(
-                  h => h[selectedBiomarker] != null
-                ) ? (
-                  <ResponsiveContainer width="100%" height="100%">
+                {hasBiomarkerChartData ? (
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <AreaChart
-                      data={activeTrends.biomarkerHistory}
+                      data={chronologicalBiomarkerHistory}
                       margin={{ top: 20, right: 10, left: 0, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                       <XAxis
                         dataKey="date"
                         tickFormatter={val =>
-                          new Date(val).toLocaleDateString(undefined, { month: 'short' })
+                          new Date(val).toLocaleDateString(undefined, {
+                            month: 'short',
+                            year: 'numeric',
+                          })
                         }
                         axisLine={false}
                         tickLine={false}
@@ -441,19 +718,19 @@ const PersonalTrends = ({ onStartAssessment }) => {
                         axisLine={false}
                         tickLine={false}
                         tick={{ fill: '#64748B', fontSize: 12 }}
-                        domain={['dataMin - 1', 'dataMax + 1']}
-                        width={45}
+                        domain={biomarkerDomain}
+                        width={58}
                       />
 
-                      {biomarkerMetrics[selectedBiomarker].normalMin &&
-                        biomarkerMetrics[selectedBiomarker].normalMax && (
+                      {selectedBiomarkerMetric.normalMin != null &&
+                        selectedBiomarkerMetric.normalMax != null && (
                           <ReferenceArea
-                            y1={biomarkerMetrics[selectedBiomarker].normalMin}
-                            y2={biomarkerMetrics[selectedBiomarker].normalMax}
+                            y1={selectedBiomarkerMetric.normalMin}
+                            y2={selectedBiomarkerMetric.normalMax}
                             fill="#10B981"
                             fillOpacity={0.1}
                             label={{
-                              value: 'Healthy Range',
+                              value: 'Reference Range',
                               position: 'insideTopLeft',
                               fill: '#059669',
                               fontSize: 10,
@@ -472,8 +749,8 @@ const PersonalTrends = ({ onStartAssessment }) => {
                           new Date(val).toLocaleDateString(undefined, { dateStyle: 'long' })
                         }
                         formatter={value => [
-                          `${value} ${biomarkerMetrics[selectedBiomarker].unit}`,
-                          biomarkerMetrics[selectedBiomarker].label,
+                          formatValueWithUnit(value, selectedBiomarkerMetric.unit),
+                          selectedBiomarkerMetric.label,
                         ]}
                       />
                       <Area
@@ -485,7 +762,8 @@ const PersonalTrends = ({ onStartAssessment }) => {
                         fill="#3B82F6"
                         activeDot={{ r: 6, strokeWidth: 0, fill: '#2563EB' }}
                         connectNulls={true}
-                        animationDuration={1500}
+                        isAnimationActive={!isReduced}
+                        animationDuration={isReduced ? 0 : 1500}
                         animationEasing="ease-out"
                       />
                     </AreaChart>
@@ -493,7 +771,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
                 ) : (
                   <div className="h-full flex items-center justify-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
                     <p className="text-slate-500 font-medium text-center px-4">
-                      Not enough data to graph {biomarkerMetrics[selectedBiomarker].label}.
+                      Not enough data to graph {selectedBiomarkerMetric.label}.
                     </p>
                   </div>
                 )}
@@ -510,9 +788,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
               Previous Assessments Details
             </h2>
             <div className="space-y-3">
-              {[...activeTrends.clusterHistory]
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .map((entry, index) => {
+              {latestClusterHistory.map((entry, index) => {
                 // Use index in key to ensure uniqueness (same date + cluster can occur multiple times)
                 const uniqueKey = `${entry.date}-${entry.cluster}-${index}`;
 
@@ -521,9 +797,8 @@ const PersonalTrends = ({ onStartAssessment }) => {
                   riskTier === 'low' ? 'Low' : riskTier === 'medium' ? 'Medium' : 'High';
                 const isExpanded = expandedRows[uniqueKey];
 
-                const currentBio =
-                  activeTrends.biomarkerHistory.find(b => b.date === entry.date) || {};
-                const prevBio = activeTrends.biomarkerHistory[index + 1] || null;
+                const currentBio = latestBiomarkerHistory.find(b => b.date === entry.date) || {};
+                const prevBio = latestBiomarkerHistory[index + 1] || null;
 
                 return (
                   <div
@@ -602,7 +877,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
                                           <BiomarkerTooltip tooltip={metric.tooltip} />
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 font-bold text-slate-700 align-middle whitespace-nowrap">
-                                          {val} {metric.unit}
+                                          {formatValueWithUnit(val, metric.unit)}
                                         </td>
                                         <td className="px-3 sm:px-4 py-3 align-middle">
                                           {delta ? (
@@ -646,8 +921,8 @@ const PersonalTrends = ({ onStartAssessment }) => {
             Your Health Snapshot
           </h2>
           <p className="text-slate-500 mb-8 max-w-2xl">
-            A quick summary of your past assessments. The goal is to keep your numbers in the green
-            &quot;Healthy Baseline&quot; zone by maintaining steady habits.
+            A quick summary of the selected {selectedRangeSentenceLabel} range. Use these ranges to
+            notice changes and prepare questions for a healthcare provider.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 w-full">
             <div className="text-center p-6 bg-emerald-50 rounded-2xl border border-emerald-200 shadow-sm">
@@ -655,8 +930,10 @@ const PersonalTrends = ({ onStartAssessment }) => {
               <div className="text-4xl font-serif font-bold text-emerald-700 mb-1">
                 {activeTrends.riskLevels?.low || 0}
               </div>
-              <p className="text-sm font-bold text-emerald-900 uppercase tracking-wide">Low Risk</p>
-              <p className="text-xs text-emerald-700 mt-1 font-medium">Healthy Baseline</p>
+              <p className="text-sm font-bold text-emerald-900 uppercase tracking-wide">
+                Low Screening Risk
+              </p>
+              <p className="text-xs text-emerald-700 mt-1 font-medium">Lower range</p>
             </div>
             <div className="text-center p-6 bg-amber-50 rounded-2xl border border-amber-300 shadow-sm">
               <Activity size={28} className="mx-auto text-amber-600 mb-3" />
@@ -664,17 +941,19 @@ const PersonalTrends = ({ onStartAssessment }) => {
                 {activeTrends.riskLevels?.medium || 0}
               </div>
               <p className="text-sm font-bold text-amber-900 uppercase tracking-wide">
-                Medium Risk
+                Moderate Screening Risk
               </p>
-              <p className="text-xs text-amber-700 mt-1 font-medium">Monitor Closely</p>
+              <p className="text-xs text-amber-700 mt-1 font-medium">Review trend</p>
             </div>
             <div className="text-center p-6 bg-rose-50 rounded-2xl border border-rose-200 shadow-sm">
               <Activity size={28} className="mx-auto text-rose-600 mb-3" />
               <div className="text-4xl font-serif font-bold text-rose-800 mb-1">
                 {activeTrends.riskLevels?.high || 0}
               </div>
-              <p className="text-sm font-bold text-rose-900 uppercase tracking-wide">High Risk</p>
-              <p className="text-xs text-rose-700 mt-1 font-medium">Action Required</p>
+              <p className="text-sm font-bold text-rose-900 uppercase tracking-wide">
+                High Screening Risk
+              </p>
+              <p className="text-xs text-rose-700 mt-1 font-medium">Provider review</p>
             </div>
           </div>
         </motion.div>
@@ -692,7 +971,7 @@ const PersonalTrends = ({ onStartAssessment }) => {
           <h3 className="text-xl font-bold text-slate-900 mb-2">No Health Data Yet</h3>
           <p className="text-slate-500 mb-6 max-w-md mx-auto">
             Start tracking your health journey by logging your first assessment. You&apos;ll see
-            trends, risk analysis, and personalized insights here.
+            trends, risk summaries, and screening history here.
           </p>
           <motion.button
             whileHover={isReduced ? undefined : { scale: 1.02 }}

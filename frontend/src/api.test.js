@@ -6,6 +6,7 @@ import {
   fetchMLVisualizationApi,
   getErrorMessage,
   getFieldErrors,
+  invalidateAssessmentDependentQueries,
   loginApi,
   mapTrendsToContract,
   mlFetchJson,
@@ -107,6 +108,22 @@ describe('normalizeAssessmentContract', () => {
     const normalized = normalizeAssessmentContract({ risk_score: 20 });
     expect(normalized.risk_level).toBe('low');
     expect(normalized.risk_label).toBe('Low Risk');
+  });
+});
+
+describe('invalidateAssessmentDependentQueries', () => {
+  it('invalidates assessment-derived charts and profile caches', async () => {
+    const queryClient = {
+      invalidateQueries: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await invalidateAssessmentDependentQueries(queryClient);
+
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['assessments'] });
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['assessment'] });
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['trends'] });
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['user', 'profile'] });
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['insights'] });
   });
 });
 
