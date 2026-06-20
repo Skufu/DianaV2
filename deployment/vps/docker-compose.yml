@@ -1,0 +1,94 @@
+# DianaV2 production stack for the current VPS architecture.
+# Frontend is served by Vercel. PostgreSQL is external NeonDB via DATABASE_URL.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: diana-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - diana-network
+
+  backend:
+    image: ${DIANA_BACKEND_IMAGE:?DIANA_BACKEND_IMAGE is required}
+    container_name: diana-backend
+    restart: unless-stopped
+    environment:
+      ENV: production
+      PORT: 8080
+      DB_DSN: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      MODEL_URL: http://ml-service:5000
+      ML_SERVICE_URL: http://ml-service:5000
+      MODEL_VERSION: ${MODEL_VERSION:-binary_v2_no_bp}
+      ML_API_KEY: ${ML_API_KEY:?ML_API_KEY is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      CORS_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required}
+      DIANA_LOG_DIR: /var/log/diana
+      DIANA_LOG_MAX_BYTES: ${DIANA_LOG_MAX_BYTES:-5242880}
+      DIANA_LOG_MAX_BACKUPS: ${DIANA_LOG_MAX_BACKUPS:-3}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-600}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      ENABLE_SWAGGER: ${ENABLE_SWAGGER:-false}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.16.0.0/12}
+    expose:
+      - "8080"
+    volumes:
+      - ./logs:/var/log/diana
+    depends_on:
+      ml-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    networks:
+      - diana-network
+
+  ml-service:
+    image: ${DIANA_ML_IMAGE:?DIANA_ML_IMAGE is required}
+    container_name: diana-ml
+    restart: unless-stopped
+    environment:
+      ENV: production
+      FLASK_ENV: production
+      ML_PORT: 5000
+      PYTHONUNBUFFERED: 1
+      ML_API_KEY: ${ML_API_KEY:?ML_API_KEY is required}
+      CORS_ORIGINS: ${CORS_ALLOWED_ORIGINS:?CORS_ALLOWED_ORIGINS is required}
+      DIANA_LOG_DIR: /var/log/diana
+      DIANA_LOG_MAX_BYTES: ${DIANA_LOG_MAX_BYTES:-5242880}
+      DIANA_LOG_MAX_BACKUPS: ${DIANA_LOG_MAX_BACKUPS:-3}
+    expose:
+      - "5000"
+    volumes:
+      - ./logs:/var/log/diana
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    networks:
+      - diana-network
+
+networks:
+  diana-network:
+    driver: bridge
+
+volumes:
+  caddy-data:
+  caddy-config:

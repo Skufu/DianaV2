@@ -1,7 +1,7 @@
 # DIANA V2 Documentation Hub
 
 > Purpose: trusted entry point for current docs
-> Last Updated: 2026-03-08
+> Last Updated: 2026-06-20
 
 ## Start Here
 - Runtime assessment behavior and result semantics: `03-ml/assessment-contract.md`
@@ -64,7 +64,9 @@ Rule: when docs disagree, update non-canonical docs to match the canonical one.
 ### `06-operations/`
 - `deployment.md`: deployment guide
 - `deployment-internal.md`: internal deployment notes
+- `production-cd.md`: current Vercel + VPS/Caddy production CD source of truth
 - `logging-improvements.md`: logging and observability notes
+- `tls-ssl-deployment.md`: TLS setup and verification notes
 
 ### `07-research/`
 - `README.md`: research document index
