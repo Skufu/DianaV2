@@ -7,6 +7,7 @@ import {
   setAuthTokens,
   clearAuthTokens,
   getErrorMessage,
+  invalidateAssessmentDependentQueries,
 } from './api';
 import { useQueryClient } from '@tanstack/react-query';
 import Sidebar from './components/layout/Sidebar';
@@ -28,6 +29,7 @@ import {
 } from './utils/accessibilityPreferences';
 import { motion, AnimatePresence } from 'framer-motion';
 import { pageVariants, useReducedMotion, breathing } from './utils/animations';
+import { CheckCircle2 } from 'lucide-react';
 
 // Lazy load components for code splitting
 const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
@@ -73,6 +75,7 @@ const App = () => {
   const [authError, setAuthError] = useState(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [fontScale, setFontScale] = useState(() => getStoredFontScale());
+  const [assessmentSaveNotice, setAssessmentSaveNotice] = useState(null);
 
   const queryClient = useQueryClient();
   const {
@@ -157,6 +160,16 @@ const App = () => {
     persistFontScalePreference(fontScale);
   }, [fontScale]);
 
+  useEffect(() => {
+    if (!assessmentSaveNotice) return undefined;
+
+    const noticeTimer = window.setTimeout(() => {
+      setAssessmentSaveNotice(null);
+    }, 5000);
+
+    return () => window.clearTimeout(noticeTimer);
+  }, [assessmentSaveNotice]);
+
   const handleLogout = useCallback(async () => {
     clearAuthTokens();
     queryClient.cancelQueries({ queryKey: ['user'] });
@@ -167,6 +180,7 @@ const App = () => {
     setUserRole(null);
     setIsAdmin(false);
     setUserId(null);
+    setAssessmentSaveNotice(null);
 
     logoutMutation.mutate(null, {
       onError: err => {
@@ -444,6 +458,28 @@ const App = () => {
           <main
             className={`relative z-10 flex-1 transition-all duration-300 ${!showOnboarding ? `${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-72'} p-4 sm:p-6 lg:p-8` : ''}`}
           >
+            <AnimatePresence>
+              {assessmentSaveNotice && (
+                <motion.div
+                  role="status"
+                  aria-live="polite"
+                  initial={{ opacity: 0, y: isReduced ? 0 : -12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: isReduced ? 0 : -12 }}
+                  transition={{ duration: isReduced ? 0 : 0.2 }}
+                  className="fixed left-4 right-4 top-20 z-[90] flex items-start gap-3 rounded-2xl border border-emerald-200 bg-white p-4 text-emerald-900 shadow-xl shadow-emerald-950/10 lg:left-auto lg:right-8 lg:top-6 lg:w-[360px]"
+                >
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                  <div>
+                    <p className="text-sm font-black uppercase tracking-wide">Assessment saved</p>
+                    <p className="mt-1 text-sm font-medium leading-5 text-slate-600">
+                      Dashboard, charts, and insights are refreshing now.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <ErrorBoundary key={activeTab} section={activeTab}>
               <Suspense fallback={<LoadingSkeleton />}>
                 <AnimatePresence mode="wait">
@@ -483,9 +519,8 @@ const App = () => {
                       initialData={profile}
                       onSubmit={() => {
                         setShowAssessmentModal(false);
-                        // Refresh data by invalidating queries
-                        queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
-                        queryClient.invalidateQueries({ queryKey: ['user', 'assessments'] });
+                        setAssessmentSaveNotice(Date.now());
+                        void invalidateAssessmentDependentQueries(queryClient);
                       }}
                       onCancel={() => setShowAssessmentModal(false)}
                     />

@@ -730,6 +730,24 @@ export const useUpdateConsentSettings = () => {
 // ASSESSMENT HOOKS
 // ============================================================================
 
+const ASSESSMENT_DEPENDENT_QUERY_KEYS = [
+  ['assessments'],
+  ['assessment'],
+  ['trends'],
+  ['user', 'profile'],
+  ['insights'],
+  ['admin', 'dashboard'],
+  ['admin', 'stats'],
+];
+
+export const invalidateAssessmentDependentQueries = queryClient => {
+  if (!queryClient?.invalidateQueries) return Promise.resolve([]);
+
+  return Promise.all(
+    ASSESSMENT_DEPENDENT_QUERY_KEYS.map(queryKey => queryClient.invalidateQueries({ queryKey }))
+  );
+};
+
 export const useAssessments = (enabled = true) => {
   return useQuery({
     queryKey: ['assessments'],
@@ -744,8 +762,7 @@ export const useCreateAssessment = () => {
   return useMutation({
     mutationFn: data => createAssessmentApi(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessments'] });
-      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+      void invalidateAssessmentDependentQueries(queryClient);
     },
   });
 };
@@ -755,7 +772,7 @@ export const useUpdateAssessment = assessmentId => {
   return useMutation({
     mutationFn: data => updateAssessmentApi(assessmentId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      void invalidateAssessmentDependentQueries(queryClient);
     },
   });
 };
@@ -765,7 +782,7 @@ export const useDeleteAssessment = assessmentId => {
   return useMutation({
     mutationFn: () => deleteAssessmentApi(assessmentId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      void invalidateAssessmentDependentQueries(queryClient);
     },
   });
 };
