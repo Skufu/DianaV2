@@ -24,7 +24,6 @@ func safeInt32(i int) int32 {
 	return int32(i)
 }
 
-
 // ============================================================================
 // AuditEventRepository implementation
 // ============================================================================
@@ -49,7 +48,7 @@ func (r *pgAuditEventRepo) Create(ctx context.Context, event models.AuditEvent) 
 		Action:     pgtype.Text{String: event.Action, Valid: event.Action != ""},
 		TargetType: pgtype.Text{String: event.TargetType, Valid: event.TargetType != ""},
 		TargetID:   pgtype.Int4{Int32: safeInt32(event.TargetID), Valid: event.TargetID != 0},
-		Details:    detailsJSON,
+		Details:    string(detailsJSON),
 	})
 }
 

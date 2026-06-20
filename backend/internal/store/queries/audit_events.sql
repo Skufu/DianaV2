@@ -1,6 +1,6 @@
 -- name: CreateAuditEvent :exec
 INSERT INTO audit_events (actor, action, target_type, target_id, details, created_at)
-VALUES ($1, $2, $3, $4, $5, NOW());
+VALUES ($1, $2, $3, $4, sqlc.arg(details)::text::jsonb, NOW());
 
 -- name: ListAuditEvents :many
 SELECT id, actor, action, target_type, target_id, details, created_at
