@@ -1,13 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import {
-  BookOpen,
-  Activity,
-  HelpCircle,
-  Lightbulb,
-  Target,
-  ChevronDown,
-} from 'lucide-react';
+import { BookOpen, Activity, HelpCircle, Lightbulb, Target, ChevronDown } from 'lucide-react';
 
 import { clusterEducation } from './clusterData';
 import { useReducedMotion } from '../../utils/animations';
@@ -16,65 +9,75 @@ const biomarkerReference = [
   {
     name: 'Body Mass Index (BMI)',
     unit: 'kg/m²',
-    normal: '< 23.0',
-    prediabetic: '23.0 - 24.9',
-    diabetic: '≥ 25.0',
-    description: 'A measure of whether your weight is healthy for your height. Higher BMI increases diabetes risk, especially if you carry extra weight around your middle.',
+    lowerRisk: '< 23.0',
+    watch: '23.0 - 24.9',
+    attention: '≥ 25.0',
+    description:
+      'A measure of whether your weight is healthy for your height. Higher BMI increases diabetes risk, especially if you carry extra weight around your middle.',
   },
   {
     name: 'Waist Circumference',
     unit: 'cm',
-    normal: '< 80',
-    prediabetic: '80 - 87',
-    diabetic: '≥ 88',
-    description: 'How much belly fat you carry. Belly fat is more concerning than fat elsewhere because it affects how your body processes sugar and fats.',
+    lowerRisk: '< 80',
+    watch: '80 - 87',
+    attention: '≥ 88',
+    description:
+      'How much belly fat you carry. Belly fat is more concerning than fat elsewhere because it affects how your body processes sugar and fats.',
   },
   {
     name: 'Triglycerides',
     unit: 'mg/dL',
-    normal: '< 150',
-    prediabetic: '150 - 199',
-    diabetic: '≥ 200',
-    description: 'A type of fat in your blood. High levels are linked to insulin resistance and heart disease. Eating less sugar and refined carbs can help lower them.',
+    lowerRisk: '< 150',
+    watch: '150 - 199',
+    attention: '≥ 200',
+    description:
+      'A type of fat in your blood. High levels are linked to insulin resistance and heart disease. Eating less sugar and refined carbs can help lower them.',
   },
   {
     name: 'HDL Cholesterol',
     unit: 'mg/dL',
-    normal: '≥ 50',
-    prediabetic: '40 - 49',
-    diabetic: '< 40',
-    description: 'Your "good" cholesterol—it helps protect your heart. Higher is better. Exercise and healthy fats (like olive oil and fish) can raise HDL.',
+    lowerRisk: '≥ 50',
+    watch: '40 - 49',
+    attention: '< 40',
+    description:
+      'Your "good" cholesterol—it helps protect your heart. Higher is better. Exercise and healthy fats (like olive oil and fish) can raise HDL.',
   },
   {
     name: 'LDL Cholesterol',
     unit: 'mg/dL',
-    normal: '< 100',
-    prediabetic: '100 - 159',
-    diabetic: '≥ 160',
-    description: 'Your "bad" cholesterol—too much can clog arteries. Lower is better. Diet changes and medication can help bring it down.',
+    lowerRisk: '< 100',
+    watch: '100 - 159',
+    attention: '≥ 160',
+    description:
+      'Your "bad" cholesterol—too much can clog arteries. Lower is better. Diet changes and medication can help bring it down.',
   },
 ];
 
 const faqData = [
   {
-    question: 'What do the diabetes patterns mean for me?',
-    answer: 'Each pattern shows which health factors matter most for you. Insulin Resistant means your body struggles to use insulin well. Cholesterol-Focused means your cholesterol is the main concern. Weight-Related means losing weight could help the most. Mild Pattern means no single factor stands out—you\'re in the mildest group. Your doctor can use this to create a care plan that fits your specific situation.',
+    question: 'What do the screening patterns mean for me?',
+    answer:
+      'Each pattern points to the health factors that may matter most in your result. Insulin Resistant means your body may not be using insulin as well as expected. Cholesterol-Focused means your cholesterol numbers deserve attention. Weight-Related means weight and waist changes may be important. Mild Pattern means no single factor stands out strongly. These are screening patterns, not diagnoses, and your doctor can help decide what they mean for your care.',
   },
   {
     question: 'How reliable is this assessment?',
-    answer: 'DIANA was built using health data from thousands of women like you and tested across multiple time periods to make sure it works consistently. No screening tool is perfect, but this one is designed to catch risk early—even before blood sugar tests show problems. Use your results as one piece of the puzzle, and always discuss them with your doctor.',
+    answer:
+      'DIANA was built from health survey data and tested across different time periods, but no screening tool is perfect. It is meant to highlight possible risk patterns early, not confirm diabetes. Use your result as one piece of information and discuss it with your doctor, especially if the result says you may be at risk.',
   },
   {
     question: 'Can my pattern change over time?',
-    answer: 'Yes! Your pattern can shift as your health changes. If you lose weight, start exercising, or make other lifestyle changes, your metabolic profile may improve. That\'s actually good news—it means your actions matter. We recommend reassessing regularly to see how you\'re doing.',
+    answer:
+      "Yes! Your pattern can shift as your health changes. If you lose weight, start exercising, or make other lifestyle changes, your metabolic profile may improve. That's actually good news—it means your actions matter. We recommend reassessing regularly to see how you're doing.",
   },
   {
-    question: 'Why doesn\'t this use blood sugar tests?',
-    answer: 'Blood sugar tests like HbA1c tell you if you already have diabetes. DIANA looks at earlier warning signs—your weight, cholesterol, blood fats, and lifestyle—so it can flag risk before diabetes develops. This gives you and your doctor more time to prevent problems through lifestyle changes.',
+    question: 'Why does the main screening model avoid blood sugar tests?',
+    answer:
+      "HbA1c and fasting blood sugar tests are used to check for prediabetes or diabetes. DIANA's main screening model avoids using them as inputs because those tests help define the label it is trying to flag. Instead, it looks at related warning signs like weight, waist size, cholesterol, blood fats, and lifestyle. If DIANA flags you as at risk, your doctor may still order blood sugar testing to confirm what is happening.",
   },
   {
     question: 'Why focus on menopause?',
-    answer: 'Menopause changes your body in ways that affect diabetes risk. Hormonal shifts can lead to more belly fat, changes in cholesterol, and harder time managing weight. DIANA was specifically designed for women going through these changes, so it understands your unique situation and can give you more relevant guidance.',
+    answer:
+      'Menopause changes your body in ways that affect diabetes risk. Hormonal shifts can lead to more belly fat, changes in cholesterol, and harder time managing weight. DIANA was specifically designed for women going through these changes, so it understands your unique situation and can give you more relevant guidance.',
   },
 ];
 
@@ -146,7 +149,7 @@ const Education = () => {
   const [activeTab, setActiveTab] = useState('patterns');
   const [activeCluster, setActiveCluster] = useState('SIRD');
 
-  const motionProps = (props) => isReduced ? {} : props;
+  const motionProps = props => (isReduced ? {} : props);
 
   return (
     <div className="space-y-6 pb-6">
@@ -155,9 +158,13 @@ const Education = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={softSpring}
       >
-        <h4 className="text-diana-text-muted font-semibold text-sm mb-1 uppercase tracking-wider">Learn More</h4>
+        <h4 className="text-diana-text-muted font-semibold text-sm mb-1 uppercase tracking-wider">
+          Learn More
+        </h4>
         <h2 className="text-3xl font-bold text-diana-text-primary">Your Health Guide</h2>
-        <p className="text-diana-text-secondary text-base mt-1">Understanding your results and what you can do about them</p>
+        <p className="text-diana-text-secondary text-base mt-1">
+          Understanding your results and what you can do about them
+        </p>
       </motion.header>
 
       <motion.div
@@ -177,9 +184,10 @@ const Education = () => {
           <div className="space-y-1">
             <h3 className="text-lg font-bold text-white">How It Works</h3>
             <p className="text-blue-50 text-sm leading-relaxed">
-              <strong>Step 1:</strong> We check your overall diabetes risk based on your health measurements.
-              <strong> Step 2:</strong> If you&apos;re at higher risk, we identify which health pattern fits you best
-              —so you know exactly where to focus.
+              <strong>Step 1:</strong> We check your overall diabetes risk based on your health
+              measurements.
+              <strong> Step 2:</strong> If you&apos;re at higher risk, we show which health pattern
+              may fit you best, so you and your doctor have clearer focus areas to review.
             </p>
           </div>
         </div>
@@ -264,7 +272,9 @@ const Education = () => {
                           loading="lazy"
                         />
                         <div className="min-w-0 flex-1">
-                          <h4 className={`font-bold text-lg md:text-xl ${activeCluster === key ? 'text-diana-forest' : 'text-diana-text-primary'}`}>
+                          <h4
+                            className={`font-bold text-lg md:text-xl ${activeCluster === key ? 'text-diana-forest' : 'text-diana-text-primary'}`}
+                          >
                             {key}
                           </h4>
                           <p className="text-xs font-medium text-diana-text-secondary line-clamp-2 leading-tight mt-0.5">
@@ -286,7 +296,9 @@ const Education = () => {
                       transition={softSpring}
                       className={`bg-white rounded-2xl border-2 ${clusterEducation[activeCluster].borderColor} overflow-hidden shadow-sm`}
                     >
-                      <div className={`p-5 md:p-6 ${clusterEducation[activeCluster].bgColor} border-b border-gray-100/50`}>
+                      <div
+                        className={`p-5 md:p-6 ${clusterEducation[activeCluster].bgColor} border-b border-gray-100/50`}
+                      >
                         <div className="flex flex-col sm:flex-row items-center gap-4">
                           <motion.img
                             initial={motionProps({ scale: 0.7, rotate: -15, opacity: 0 })}
@@ -333,13 +345,21 @@ const Education = () => {
                         animate="visible"
                         className="p-5 md:p-6 space-y-6"
                       >
-                        <motion.p variants={isReduced ? {} : fadeUp} className="text-diana-text-primary text-base leading-relaxed">
+                        <motion.p
+                          variants={isReduced ? {} : fadeUp}
+                          className="text-diana-text-primary text-base leading-relaxed"
+                        >
                           {clusterEducation[activeCluster].fullDesc}
                         </motion.p>
 
-                        <motion.div variants={isReduced ? {} : fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <motion.div
+                          variants={isReduced ? {} : fadeUp}
+                          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                        >
                           <div>
-                            <h5 className="text-xs font-bold text-diana-text-muted uppercase tracking-wider mb-3">What This Means</h5>
+                            <h5 className="text-xs font-bold text-diana-text-muted uppercase tracking-wider mb-3">
+                              What This Means
+                            </h5>
                             <motion.ul
                               variants={isReduced ? {} : stagger}
                               initial="hidden"
@@ -347,15 +367,23 @@ const Education = () => {
                               className="space-y-2"
                             >
                               {clusterEducation[activeCluster].riskFactors.map(factor => (
-                                <motion.li key={factor} variants={isReduced ? {} : fadeUp} className="text-sm text-diana-text-secondary flex items-start gap-2">
-                                  <span className="text-diana-forest mt-0.5 min-w-[10px] text-base">•</span>
+                                <motion.li
+                                  key={factor}
+                                  variants={isReduced ? {} : fadeUp}
+                                  className="text-sm text-diana-text-secondary flex items-start gap-2"
+                                >
+                                  <span className="text-diana-forest mt-0.5 min-w-[10px] text-base">
+                                    •
+                                  </span>
                                   <span className="leading-relaxed">{factor}</span>
                                 </motion.li>
                               ))}
                             </motion.ul>
                           </div>
                           <div>
-                            <h5 className="text-xs font-bold text-diana-text-muted uppercase tracking-wider mb-3">Actionable Steps</h5>
+                            <h5 className="text-xs font-bold text-diana-text-muted uppercase tracking-wider mb-3">
+                              Actionable Steps
+                            </h5>
                             <motion.ul
                               variants={isReduced ? {} : stagger}
                               initial="hidden"
@@ -363,7 +391,11 @@ const Education = () => {
                               className="space-y-2"
                             >
                               {clusterEducation[activeCluster].recommendations.map(rec => (
-                                <motion.li key={rec} variants={isReduced ? {} : fadeUp} className="text-sm text-diana-text-secondary flex items-start gap-2">
+                                <motion.li
+                                  key={rec}
+                                  variants={isReduced ? {} : fadeUp}
+                                  className="text-sm text-diana-text-secondary flex items-start gap-2"
+                                >
                                   <span className="text-green-500 mt-0 font-bold text-base">✓</span>
                                   <span className="leading-relaxed">{rec}</span>
                                 </motion.li>
@@ -372,7 +404,10 @@ const Education = () => {
                           </div>
                         </motion.div>
 
-                        <motion.div variants={isReduced ? {} : fadeUp} className={`p-4 md:p-5 rounded-xl ${clusterEducation[activeCluster].bgColor} ${clusterEducation[activeCluster].borderColor} border`}>
+                        <motion.div
+                          variants={isReduced ? {} : fadeUp}
+                          className={`p-4 md:p-5 rounded-xl ${clusterEducation[activeCluster].bgColor} ${clusterEducation[activeCluster].borderColor} border`}
+                        >
                           <h5 className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-3 flex items-center gap-2">
                             <span style={{ color: clusterEducation[activeCluster].color }}>●</span>
                             Key Focus Areas
@@ -384,7 +419,12 @@ const Education = () => {
                                 variants={isReduced ? {} : fadeUp}
                                 className="text-sm text-gray-700 flex items-start gap-2"
                               >
-                                <span className="mt-0.5 text-base" style={{ color: clusterEducation[activeCluster].color }}>•</span>
+                                <span
+                                  className="mt-0.5 text-base"
+                                  style={{ color: clusterEducation[activeCluster].color }}
+                                >
+                                  •
+                                </span>
                                 <span className="leading-relaxed">{imp}</span>
                               </motion.li>
                             ))}
@@ -408,8 +448,12 @@ const Education = () => {
               className="bg-white rounded-2xl border border-diana-sand shadow-sm overflow-hidden"
             >
               <div className="p-5 md:p-6 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-diana-text-primary">Health Measurements Guide</h3>
-                <p className="text-sm text-diana-text-secondary mt-1">Understanding the key numbers in your health assessment</p>
+                <h3 className="text-xl font-bold text-diana-text-primary">
+                  Health Measurements Guide
+                </h3>
+                <p className="text-sm text-diana-text-secondary mt-1">
+                  Understanding the key numbers in your health assessment
+                </p>
               </div>
               <div className="p-5 md:p-6">
                 <motion.div
@@ -427,21 +471,34 @@ const Education = () => {
                     >
                       <div className="font-bold text-base text-diana-text-primary">
                         {bio.name}
-                        {bio.unit && <span className="text-xs font-medium text-diana-text-muted"> ({bio.unit})</span>}
+                        {bio.unit && (
+                          <span className="text-xs font-medium text-diana-text-muted">
+                            {' '}
+                            ({bio.unit})
+                          </span>
+                        )}
                       </div>
-                      <p className="text-sm text-diana-text-secondary leading-relaxed mt-1">{bio.description}</p>
+                      <p className="text-sm text-diana-text-secondary leading-relaxed mt-1">
+                        {bio.description}
+                      </p>
                       <div className="mt-3 grid grid-cols-1 gap-2">
                         <div className="flex items-center justify-between rounded-lg bg-green-50/70 px-3 py-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-green-700">Healthy</span>
-                          <span className="text-sm font-bold text-green-700">{bio.normal}</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-green-700">
+                            Lower risk
+                          </span>
+                          <span className="text-sm font-bold text-green-700">{bio.lowerRisk}</span>
                         </div>
                         <div className="flex items-center justify-between rounded-lg bg-amber-50/70 px-3 py-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-amber-700">Watch</span>
-                          <span className="text-sm font-bold text-amber-700">{bio.prediabetic}</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-amber-700">
+                            Watch
+                          </span>
+                          <span className="text-sm font-bold text-amber-700">{bio.watch}</span>
                         </div>
                         <div className="flex items-center justify-between rounded-lg bg-red-50/70 px-3 py-2">
-                          <span className="text-xs font-bold uppercase tracking-wider text-red-700">Action</span>
-                          <span className="text-sm font-bold text-red-700">{bio.diabetic}</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-red-700">
+                            Review
+                          </span>
+                          <span className="text-sm font-bold text-red-700">{bio.attention}</span>
                         </div>
                       </div>
                     </motion.div>
@@ -451,10 +508,18 @@ const Education = () => {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-diana-sand">
-                        <th className="text-left py-4 text-diana-text-secondary font-bold uppercase tracking-wider text-xs">Measurement</th>
-                        <th className="text-center py-4 text-green-700 font-bold whitespace-nowrap text-xs">Healthy Range</th>
-                        <th className="text-center py-4 text-amber-700 font-bold whitespace-nowrap text-xs">Watch Zone</th>
-                        <th className="text-center py-4 text-red-700 font-bold whitespace-nowrap text-xs">Needs Attention</th>
+                        <th className="text-left py-4 text-diana-text-secondary font-bold uppercase tracking-wider text-xs">
+                          Measurement
+                        </th>
+                        <th className="text-center py-4 text-green-700 font-bold whitespace-nowrap text-xs">
+                          Lower-Risk Range
+                        </th>
+                        <th className="text-center py-4 text-amber-700 font-bold whitespace-nowrap text-xs">
+                          Watch Zone
+                        </th>
+                        <th className="text-center py-4 text-red-700 font-bold whitespace-nowrap text-xs">
+                          Needs Attention
+                        </th>
                       </tr>
                     </thead>
                     <motion.tbody
@@ -471,18 +536,35 @@ const Education = () => {
                           <td className="py-4 pr-4">
                             <div className="font-bold text-base text-diana-text-primary mb-1">
                               {bio.name}
-                              {bio.unit && <span className="text-xs font-medium text-diana-text-muted"> ({bio.unit})</span>}
+                              {bio.unit && (
+                                <span className="text-xs font-medium text-diana-text-muted">
+                                  {' '}
+                                  ({bio.unit})
+                                </span>
+                              )}
                             </div>
-                            <div className="text-sm text-diana-text-secondary leading-relaxed max-w-lg">{bio.description}</div>
+                            <div className="text-sm text-diana-text-secondary leading-relaxed max-w-lg">
+                              {bio.description}
+                            </div>
                           </td>
-                          <td className="text-center py-4 text-green-700 font-semibold text-base">{bio.normal}</td>
-                          <td className="text-center py-4 text-amber-700 font-semibold text-base">{bio.prediabetic}</td>
-                          <td className="text-center py-4 text-red-700 font-semibold text-base">{bio.diabetic}</td>
+                          <td className="text-center py-4 text-green-700 font-semibold text-base">
+                            {bio.lowerRisk}
+                          </td>
+                          <td className="text-center py-4 text-amber-700 font-semibold text-base">
+                            {bio.watch}
+                          </td>
+                          <td className="text-center py-4 text-red-700 font-semibold text-base">
+                            {bio.attention}
+                          </td>
                         </motion.tr>
                       ))}
                     </motion.tbody>
                   </table>
                 </div>
+                <p className="mt-4 text-xs leading-relaxed text-diana-text-muted">
+                  These ranges are screening reference points, not a diagnosis. Your own target
+                  numbers may differ based on your medical history and your doctor&apos;s advice.
+                </p>
               </div>
             </motion.div>
           )}
@@ -497,8 +579,12 @@ const Education = () => {
               className="bg-white rounded-2xl border border-diana-sand shadow-sm overflow-hidden"
             >
               <div className="p-5 md:p-6 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-diana-text-primary">Understanding Your Risk Score</h3>
-                <p className="text-sm text-diana-text-secondary mt-1">What your number means and what to do next</p>
+                <h3 className="text-xl font-bold text-diana-text-primary">
+                  Understanding Your Risk Score
+                </h3>
+                <p className="text-sm text-diana-text-secondary mt-1">
+                  What your number means and what to do next
+                </p>
               </div>
               <motion.div
                 variants={isReduced ? {} : stagger}
@@ -506,41 +592,65 @@ const Education = () => {
                 animate="visible"
                 className="p-5 md:p-6 space-y-6"
               >
-                <motion.p variants={isReduced ? {} : fadeUp} className="text-diana-text-primary text-base leading-loose">
-                  Your risk score shows how likely you may be to develop Type 2 Diabetes based on your health measurements.
-                  It&apos;s not a diagnosis—it&apos;s an early warning that helps you and your doctor take action before problems develop.
+                <motion.p
+                  variants={isReduced ? {} : fadeUp}
+                  className="text-diana-text-primary text-base leading-loose"
+                >
+                  Your score shows how strongly your measurements match DIANA&apos;s at-risk
+                  screening pattern. It is not a diagnosis and it does not confirm that you will
+                  develop Type 2 Diabetes. It is a signal to help you and your doctor decide whether
+                  follow-up testing or lifestyle support makes sense.
                 </motion.p>
-                <motion.p variants={isReduced ? {} : fadeUp} className="text-diana-text-secondary text-base leading-relaxed">
-                  The score uses your weight, cholesterol, blood fats, and lifestyle factors—things you can actually change.
-                  It doesn&apos;t use blood sugar tests, so it catches risk patterns earlier.
+                <motion.p
+                  variants={isReduced ? {} : fadeUp}
+                  className="text-diana-text-secondary text-base leading-relaxed"
+                >
+                  The main screening model uses weight, waist size, cholesterol, blood fats, and
+                  lifestyle factors. It avoids HbA1c and fasting blood sugar as inputs so it is not
+                  simply repeating the same tests used to check for prediabetes or diabetes.
                 </motion.p>
 
-                <motion.div variants={isReduced ? {} : fadeUp} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <motion.div
+                  variants={isReduced ? {} : fadeUp}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                >
                   <motion.div
                     whileHover={motionProps({ y: -4, scale: 1.01 })}
                     transition={springTransition}
                     className="p-6 rounded-xl bg-green-50 border border-green-200 text-center shadow-sm"
                   >
-                    <div className="text-3xl font-bold text-green-600">Below 45%</div>
-                    <div className="text-base font-bold text-diana-text-primary mt-2">Normal</div>
-                    <div className="text-sm text-diana-text-muted mt-3">Your metabolic health looks good. Keep up your healthy habits!</div>
+                    <div className="text-3xl font-bold text-green-600">Below 46.5%</div>
+                    <div className="text-base font-bold text-diana-text-primary mt-2">
+                      Not at risk
+                    </div>
+                    <div className="text-sm text-diana-text-muted mt-3">
+                      Your result is below DIANA&apos;s follow-up threshold. Keep up regular
+                      checkups.
+                    </div>
                   </motion.div>
                   <motion.div
                     whileHover={motionProps({ y: -4, scale: 1.01 })}
                     transition={springTransition}
                     className="p-6 rounded-xl bg-amber-50 border border-amber-200 text-center shadow-sm"
                   >
-                    <div className="text-3xl font-bold text-amber-600">45% or Higher</div>
-                    <div className="text-base font-bold text-diana-text-primary mt-2">At-Risk</div>
-                    <div className="text-sm text-diana-text-muted mt-3">Worth discussing with your doctor. Small changes can make a big difference.</div>
+                    <div className="text-3xl font-bold text-amber-600">46.5% or Higher</div>
+                    <div className="text-base font-bold text-diana-text-primary mt-2">At risk</div>
+                    <div className="text-sm text-diana-text-muted mt-3">
+                      Schedule a doctor visit soon to review your result and possible follow-up
+                      tests.
+                    </div>
                   </motion.div>
                 </motion.div>
 
-                <motion.div variants={isReduced ? {} : fadeUp} className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <motion.div
+                  variants={isReduced ? {} : fadeUp}
+                  className="bg-blue-50 border border-blue-200 rounded-xl p-4"
+                >
                   <p className="text-sm text-blue-800 leading-relaxed">
-                    <strong>Remember:</strong> An &quot;At-Risk&quot; result doesn&apos;t mean you have diabetes. It means your body
-                    is showing early signs that could lead there—and catching it early is actually a good thing.
-                    Your doctor can help you figure out next steps.
+                    <strong>Remember:</strong> An &quot;At risk&quot; result does not mean you have
+                    diabetes. It means your measurements look similar to people DIANA flags for
+                    follow-up review. Catching this early can help you ask better questions. Your
+                    doctor can help you figure out next steps.
                   </p>
                 </motion.div>
               </motion.div>
@@ -557,8 +667,12 @@ const Education = () => {
               className="bg-white rounded-2xl border border-diana-sand shadow-sm overflow-hidden"
             >
               <div className="p-5 md:p-6 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-diana-text-primary">Frequently Asked Questions</h3>
-                <p className="text-sm text-diana-text-secondary mt-1">Common questions about your results</p>
+                <h3 className="text-xl font-bold text-diana-text-primary">
+                  Frequently Asked Questions
+                </h3>
+                <p className="text-sm text-diana-text-secondary mt-1">
+                  Common questions about your results
+                </p>
               </div>
               {faqData.map(faq => (
                 <FaqItem key={faq.question} faq={faq} isReduced={isReduced} />

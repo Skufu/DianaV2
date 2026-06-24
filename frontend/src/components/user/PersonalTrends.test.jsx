@@ -106,8 +106,10 @@ describe('PersonalTrends chart readiness', () => {
     expect(screen.getByText('Moderate range')).toBeInTheDocument();
     expect(screen.getByText('High range')).toBeInTheDocument();
     expect(screen.getByText('Reference Range')).toBeInTheDocument();
-    expect(screen.getByText('Moderate Screening Risk')).toBeInTheDocument();
-    expect(screen.getByText('High Screening Risk')).toBeInTheDocument();
+    expect(screen.getByText('Lower-risk results')).toBeInTheDocument();
+    expect(screen.getByText('Results to watch')).toBeInTheDocument();
+    expect(screen.getByText('Needs doctor review')).toBeInTheDocument();
+    expect(screen.getByText('Follow up soon')).toBeInTheDocument();
   });
 
   it('summarizes the selected range and selected biomarker with visible units', () => {

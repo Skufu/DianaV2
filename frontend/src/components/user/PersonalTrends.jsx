@@ -921,39 +921,43 @@ const PersonalTrends = ({ onStartAssessment }) => {
             Your Health Snapshot
           </h2>
           <p className="text-slate-500 mb-8 max-w-2xl">
-            A quick summary of the selected {selectedRangeSentenceLabel} range. Use these ranges to
-            notice changes and prepare questions for a healthcare provider.
+            A quick count of your saved results in the selected {selectedRangeSentenceLabel} range.
+            These are screening ranges, not a diagnosis. Use them to spot changes and prepare
+            questions for your doctor.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 w-full">
-            <div className="text-center p-6 bg-emerald-50 rounded-2xl border border-emerald-200 shadow-sm">
+            <div
+              aria-label={`${activeTrends.riskLevels?.low || 0} lower-risk results`}
+              className="text-center p-6 bg-emerald-50 rounded-2xl border border-emerald-200 shadow-sm"
+            >
               <Activity size={28} className="mx-auto text-emerald-600 mb-3" />
               <div className="text-4xl font-serif font-bold text-emerald-700 mb-1">
                 {activeTrends.riskLevels?.low || 0}
               </div>
-              <p className="text-sm font-bold text-emerald-900 uppercase tracking-wide">
-                Low Screening Risk
-              </p>
-              <p className="text-xs text-emerald-700 mt-1 font-medium">Lower range</p>
+              <p className="text-sm font-bold text-emerald-900 leading-snug">Lower-risk results</p>
+              <p className="text-xs text-emerald-700 mt-1 font-medium">Keep routine checkups</p>
             </div>
-            <div className="text-center p-6 bg-amber-50 rounded-2xl border border-amber-300 shadow-sm">
+            <div
+              aria-label={`${activeTrends.riskLevels?.medium || 0} results to watch`}
+              className="text-center p-6 bg-amber-50 rounded-2xl border border-amber-300 shadow-sm"
+            >
               <Activity size={28} className="mx-auto text-amber-600 mb-3" />
               <div className="text-4xl font-serif font-bold text-amber-800 mb-1">
                 {activeTrends.riskLevels?.medium || 0}
               </div>
-              <p className="text-sm font-bold text-amber-900 uppercase tracking-wide">
-                Moderate Screening Risk
-              </p>
-              <p className="text-xs text-amber-700 mt-1 font-medium">Review trend</p>
+              <p className="text-sm font-bold text-amber-900 leading-snug">Results to watch</p>
+              <p className="text-xs text-amber-700 mt-1 font-medium">Review changes</p>
             </div>
-            <div className="text-center p-6 bg-rose-50 rounded-2xl border border-rose-200 shadow-sm">
+            <div
+              aria-label={`${activeTrends.riskLevels?.high || 0} results needing doctor review`}
+              className="text-center p-6 bg-rose-50 rounded-2xl border border-rose-200 shadow-sm"
+            >
               <Activity size={28} className="mx-auto text-rose-600 mb-3" />
               <div className="text-4xl font-serif font-bold text-rose-800 mb-1">
                 {activeTrends.riskLevels?.high || 0}
               </div>
-              <p className="text-sm font-bold text-rose-900 uppercase tracking-wide">
-                High Screening Risk
-              </p>
-              <p className="text-xs text-rose-700 mt-1 font-medium">Provider review</p>
+              <p className="text-sm font-bold text-rose-900 leading-snug">Needs doctor review</p>
+              <p className="text-xs text-rose-700 mt-1 font-medium">Follow up soon</p>
             </div>
           </div>
         </motion.div>

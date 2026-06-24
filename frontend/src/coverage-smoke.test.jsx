@@ -642,6 +642,26 @@ const priorAssessment = {
   created_at: '2026-04-01T08:00:00Z',
 };
 
+const normalAssessment = {
+  ...assessment,
+  id: 102,
+  risk_score: 39,
+  risk_level: 'medium',
+  predicted_status: 'Normal',
+  at_risk_probability: 0.39,
+  cluster: 'N/A',
+  ldl: 40,
+  hdl: 56,
+  triglycerides: 150,
+  bmi: 22.4,
+  output_capabilities: {
+    at_risk_probability: true,
+    metabolic_subtype: false,
+    predicted_status: true,
+  },
+  cluster_capability: { supported: false },
+};
+
 const clusters = [
   { cluster: 'SIDD', count: 12 },
   { cluster: 'SIRD', count: 18 },
@@ -828,6 +848,46 @@ describe('coverage smoke tests', () => {
       />
     );
     expect(await screen.findByText(/Assessment Result/i)).toBeInTheDocument();
+    expect(screen.getByText(/Screening result: At risk - follow up/i)).toBeInTheDocument();
+    expect(screen.getByText(/Your result is in the at-risk range/i)).toBeInTheDocument();
+    expect(screen.getByText(/Important Caution/i)).toBeInTheDocument();
+    unmount();
+
+    unmount = renderOnce(
+      <MLResultModal
+        isOpen
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        result={normalAssessment}
+        isLoading={false}
+      />
+    );
+    expect(await screen.findByText(/Screening result: Not at risk/i)).toBeInTheDocument();
+    expect(screen.getByText(/39%/i)).toBeInTheDocument();
+    expect(screen.getByText(/At-risk estimate/i)).toBeInTheDocument();
+    expect(screen.getByText(/No subtype pattern shown/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Subtype information unavailable/i)).not.toBeInTheDocument();
+    unmount();
+
+    unmount = renderOnce(
+      <MLResultModal
+        isOpen
+        onClose={vi.fn()}
+        onConfirm={vi.fn()}
+        result={{
+          ...normalAssessment,
+          predicted_status: '',
+          at_risk_probability: 0.465,
+          output_capabilities: {
+            at_risk_probability: true,
+            metabolic_subtype: false,
+            predicted_status: false,
+          },
+        }}
+        isLoading={false}
+      />
+    );
+    expect(await screen.findByText(/Screening result: At risk - follow up/i)).toBeInTheDocument();
     unmount();
 
     unmount = renderOnce(<Education />);
