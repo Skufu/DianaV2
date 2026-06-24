@@ -20,6 +20,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
  * IMPORTANT MODEL NOTE: The primary model type for this application is now ALWAYS
  * "binary_v2_no_bp". The UI/UX is specifically optimized for output from this model.
  */
+const AT_RISK_SCREENING_THRESHOLD = 0.465;
+
 const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   const [showContent, setShowContent] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -56,7 +58,6 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   const {
     risk_level: overallRiskLevelRaw = 'unknown',
     cluster = 'Unknown',
-    validation_status = '',
     predicted_status = '',
     model_version = '',
     at_risk_probability,
@@ -103,47 +104,88 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
 
   const canRenderSubtypeProfile = hasCanonicalCluster && !capabilityExplicitlyDisabled;
 
-  // Section 1: The Verdict - Color Coding
-  const getRiskColor = (level, prob) => {
-    const normalizedLevel = level?.toLowerCase() || 'unknown';
-    // Let's also use the probability or predicted status for a more accurate color fallback
-    const isAtRisk =
-      predicted_status.toLowerCase().includes('at-risk') ||
-      (prob && prob > 0.5) ||
-      normalizedLevel === 'high';
+  const normalizedPredictedStatus =
+    typeof predicted_status === 'string' ? predicted_status.trim().toLowerCase() : '';
+  const isPredictedAtRisk = [
+    'at-risk',
+    'at risk',
+    'pre-diabetic',
+    'prediabetic',
+    'diabetic',
+  ].includes(normalizedPredictedStatus);
+  const isPredictedNotAtRisk = ['normal', 'not at risk', 'not-at-risk', 'low'].includes(
+    normalizedPredictedStatus
+  );
 
-    if (!isAtRisk && (normalizedLevel === 'low' || normalizedLevel === 'normal')) {
+  const deriveScreeningState = (level, prob) => {
+    const normalizedLevel = level?.toLowerCase() || 'unknown';
+
+    if (hasPredictedStatus) {
+      if (isPredictedAtRisk) return 'atRisk';
+      if (isPredictedNotAtRisk) return 'notAtRisk';
+    }
+
+    if (Number.isFinite(prob)) {
+      return prob >= AT_RISK_SCREENING_THRESHOLD ? 'atRisk' : 'notAtRisk';
+    }
+
+    if (['high', 'medium', 'moderate'].includes(normalizedLevel)) return 'atRisk';
+    if (['low', 'normal'].includes(normalizedLevel)) return 'notAtRisk';
+
+    return 'unknown';
+  };
+
+  // Section 1: The Verdict - Color Coding
+  const getRiskPresentation = screeningState => {
+    if (screeningState === 'notAtRisk') {
       return {
         bg: 'bg-teal-50',
         border: 'border-teal-100',
         text: 'text-teal-700',
-        badge: 'bg-teal-100 text-teal-800',
+        badge: 'bg-teal-100 text-teal-900 border-teal-200',
         icon: 'text-teal-500',
-        gradient: 'from-teal-400 to-emerald-500',
-        title: 'Looking Good',
+        gradient: 'from-teal-500 to-emerald-500',
+        statusLabel: 'Not at risk',
+        probabilityLabel: 'At-risk estimate',
         advice:
-          'Your screening indicates a normal risk profile right now. Keep up the wonderful work with your healthy habits!',
+          'Your result is in the not-at-risk range for this screening. Keep your regular checkups and healthy routines, and share these results with your doctor if you have concerns.',
+      };
+    }
+
+    if (screeningState === 'atRisk') {
+      return {
+        bg: 'bg-amber-50',
+        border: 'border-amber-200',
+        text: 'text-amber-800',
+        badge: 'bg-amber-100 text-amber-900 border-amber-200',
+        icon: 'text-amber-500',
+        gradient: 'from-amber-500 to-orange-500',
+        statusLabel: 'At risk - follow up',
+        probabilityLabel: 'At-risk estimate',
+        advice:
+          'Your result is in the at-risk range for this screening. This does not mean you have diabetes, but it is a good reason to schedule a checkup soon and review the numbers with your doctor.',
       };
     }
 
     return {
-      bg: 'bg-amber-50',
-      border: 'border-amber-100',
-      text: 'text-amber-800',
-      badge: 'bg-amber-100 text-amber-800',
-      icon: 'text-amber-500',
-      gradient: 'from-amber-400 to-orange-500',
-      title: 'Action Recommended',
+      bg: 'bg-slate-50',
+      border: 'border-slate-200',
+      text: 'text-slate-700',
+      badge: 'bg-slate-100 text-slate-800 border-slate-200',
+      icon: 'text-slate-500',
+      gradient: 'from-slate-500 to-slate-700',
+      statusLabel: 'Needs review',
+      probabilityLabel: 'At-risk estimate',
       advice:
-        "Your profile shows some elevated risk factors. Don't worry, but please do schedule a visit with your doctor soon to discuss these results.",
+        'We could not clearly place this result into an at-risk or not-at-risk range. Please review the numbers with your doctor or clinic.',
     };
   };
 
   // Section 3: Personal Profile Translations
   const getClusterInfo = clusterName => {
     const NEUTRAL_CLUSTER = {
-      fullName: 'Metabolic Profile Unavailable',
-      desc: "We couldn't determine a specific profile pattern from these results. This just means your values don't perfectly match our standard categories, which is completely okay. Please share these numbers with your doctor.",
+      fullName: 'No subtype pattern shown',
+      desc: 'This result did not include a specific subtype pattern. That is okay. DIANA is showing your main screening result and biomarker numbers without guessing a subtype.',
       color: 'bg-slate-100 text-slate-700',
       icon: <Activity className="text-slate-500" size={24} />,
     };
@@ -152,25 +194,25 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
     const clusters = {
       SIDD: {
         fullName: 'Atherogenic / Lipid-Driven Profile',
-        desc: 'Your results outline a lipid-driven profile. This beautifully unique body of yours is currently processing cholesterol and blood fats in a way that needs a little extra attention from your doctor, rather than focusing purely on weight.',
+        desc: 'Your pattern is mostly linked with cholesterol and blood fats. Your doctor can help review LDL, HDL, and triglycerides and decide what follow-up is needed.',
         color: 'bg-rose-100 text-rose-800',
         icon: <Droplets className="text-rose-600" size={24} />,
       },
       SIRD: {
         fullName: 'Insulin Resistance Profile',
-        desc: 'Your results show that your body is currently working harder than usual to process sugars. Please know this is incredibly common, especially during hormonal transitions, and it usually responds wonderfully to simple lifestyle changes.',
+        desc: 'Your pattern suggests your body may be working harder to handle sugar and insulin. This is common in midlife and can often improve with food, movement, sleep, and medical guidance.',
         color: 'bg-orange-100 text-orange-800',
         icon: <Flame className="text-orange-600" size={24} />,
       },
       MOD: {
-        fullName: 'Weight Harmony Profile',
-        desc: 'Your profile suggests that your lovely metabolism is closely linked to your current weight. Finding a balanced, sustainable routine that feels good for your body could be the key to supporting your long-term health.',
+        fullName: 'Weight-Linked Metabolic Profile',
+        desc: 'Your pattern suggests weight and metabolism are closely connected in this result. A realistic food and activity plan may help, but your doctor should guide what is appropriate for you.',
         color: 'bg-blue-100 text-blue-800',
         icon: <Leaf className="text-blue-600" size={24} />,
       },
       MARD: {
         fullName: 'Age-Related Changes',
-        desc: 'Your results reflect natural metabolic shifts as you mature. It is completely normal for our bodies to change equations over time! Staying reasonably active and eating vibrantly is your best path forward.',
+        desc: 'Your pattern is more related to age-linked metabolic changes. Regular checkups, strength activity, walking, and balanced meals can help you stay on track.',
         color: 'bg-teal-100 text-teal-800',
         icon: <Sparkles className="text-teal-600" size={24} />,
       },
@@ -183,51 +225,45 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   };
 
   // Section 4: tailored action steps based on cluster
-  const getActionSteps = (clusterCode, riskLevel) => {
-    // Regardless of cluster, if risk is normal/low, advice is positive maintenance
-    const isAtRisk =
-      predicted_status.toLowerCase().includes('at-risk') ||
-      (at_risk_probability && at_risk_probability > 0.5) ||
-      riskLevel === 'high';
-
+  const getActionSteps = (clusterCode, isAtRisk) => {
     if (!isAtRisk) {
       return [
-        'Keep up the wonderful work! Your current routine is serving your body beautifully.',
-        'Stay reasonably active. Dancing, walking, or gardening are joyful ways to keep moving.',
-        'See your doctor for routine wellness visits just to keep everything wonderfully on track.',
+        'Keep doing the healthy habits that are already working for you.',
+        'Stay active in a way you can keep up, such as walking, light strength exercises, or household movement.',
+        'Bring these results to your next routine checkup, especially if your symptoms or family history change.',
       ];
     }
 
     switch (clusterCode) {
       case 'SIDD':
         return [
-          'Book a chat with your doctor to discuss your cholesterol and lipid levels.',
-          'Focus on heart-healthy fats, like olive oil, avocados, and omega-3s (like salmon).',
-          'Be kind to yourself. Stress affects our hearts too, so take deep breaths and gentle steps forward!',
+          'Book a visit with your doctor to discuss your cholesterol and blood fat levels.',
+          'Ask whether LDL, HDL, and triglycerides need repeat testing or a treatment plan.',
+          'Choose heart-supportive meals and movement changes that you can realistically maintain.',
         ];
       case 'SIRD':
         return [
-          'Book a chat with your doctor to discuss strategies for insulin resistance.',
-          'Focus on complex carbs (like whole grains and veggies) to help your body process energy smoothly.',
-          'Try a gentle 10-minute walk after meals—it works wonders for balancing blood sugar!',
+          'Book a visit with your doctor to discuss insulin resistance and follow-up testing.',
+          'Ask what food, movement, sleep, or medication options are appropriate for you.',
+          'Try gentle activity after meals, such as a short walk, if your doctor says it is safe.',
         ];
       case 'MOD':
         return [
-          'Book a chat with your doctor to explore holistic, gentle approaches to metabolic balance.',
-          'Focus on sustainable, nourishing meals rather than restrictive diets.',
-          'Find joyful ways to move your body that celebrate what it can do!',
+          'Book a visit with your doctor to discuss weight and metabolic health together.',
+          'Focus on sustainable meals rather than strict or short-term diets.',
+          'Choose movement that fits your joints, energy level, and daily routine.',
         ];
       case 'MARD':
         return [
-          'Book a chat with your doctor to review these age-related metabolic changes.',
-          'Focus on maintaining muscle mass—gentle strength exercises or yoga are fantastic.',
-          'Prioritize vibrant, nutrient-dense foods to support your general vitality safely.',
+          'Book a visit with your doctor to review age-related metabolic changes.',
+          'Ask whether strength activity, walking, or nutrition changes would be useful for you.',
+          'Keep routine lab checks so changes can be followed over time.',
         ];
       default:
         return [
-          'Book a chat with your doctor to review these insights together safely.',
-          'Ask about routine wellness testing to get a fuller picture of your health.',
-          'Take simple, daily steps like staying hydrated and getting restful sleep.',
+          'Book a visit with your doctor to review this screening result.',
+          'Ask whether you need repeat labs or diagnostic testing.',
+          'Start with small daily steps, such as regular walking, balanced meals, and better sleep.',
         ];
     }
   };
@@ -273,21 +309,15 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
   };
 
   const overallRiskLevel = (overallRiskLevelRaw || 'unknown').toLowerCase();
-
-  const colors = getRiskColor(overallRiskLevel, at_risk_probability);
+  const screeningState = deriveScreeningState(overallRiskLevel, at_risk_probability);
+  const colors = getRiskPresentation(screeningState);
   const profileClusterInfo = canRenderSubtypeProfile
     ? getClusterInfo(normalizedCluster)
     : getClusterInfo('');
 
-  const actionSteps = getActionSteps(normalizedCluster, overallRiskLevel);
+  const actionSteps = getActionSteps(normalizedCluster, screeningState === 'atRisk');
 
   const isDoctorModel = typeof model_version === 'string' && model_version.length > 0;
-  const modelLabelMap = {
-    binary_v2_no_bp: 'Screening Model — Binary at‑Risk',
-    clinical: 'Screening Model — Binary at‑Risk',
-  };
-  const modelLabel = modelLabelMap[model_version] || 'Screening Model — Binary at‑Risk';
-
   const probabilityText = Number.isFinite(at_risk_probability)
     ? `${Math.round(at_risk_probability * 100)}%`
     : 'Unavailable';
@@ -422,19 +452,21 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                     <motion.div
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`${colors.bg} rounded-3xl p-6 sm:p-8 shadow-sm`}
+                      className={`${colors.bg} ${colors.border} rounded-3xl p-6 sm:p-8 shadow-sm border`}
                     >
-                      {hasPredictedStatus && (
-                        <div className="mb-4">
-                          <span className="inline-block px-3 py-1 rounded-[10px] bg-slate-800/5 text-slate-800 text-[13px] font-bold uppercase tracking-wider">
-                            Status: {predicted_status}
-                          </span>
-                        </div>
-                      )}
-                      
+                      <div className="mb-4">
+                        <span
+                          className={`inline-flex items-center rounded-[10px] border px-3 py-1 text-[13px] font-bold uppercase tracking-wider ${colors.badge}`}
+                        >
+                          Screening result: {colors.statusLabel}
+                        </span>
+                      </div>
+
                       <div className="flex items-baseline gap-2 mb-3">
                         {hasAtRiskProbability ? (
-                          <span className={`text-[64px] leading-none font-bold tracking-tighter ${colors.text}`}>
+                          <span
+                            className={`text-[64px] leading-none font-bold tracking-tighter ${colors.text}`}
+                          >
                             {probabilityText}
                           </span>
                         ) : (
@@ -443,7 +475,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                           </span>
                         )}
                         <span className="text-sm uppercase tracking-wider font-bold text-slate-500">
-                          Risk
+                          {colors.probabilityLabel}
                         </span>
                       </div>
 
@@ -531,9 +563,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                             transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.4 }}
                             className="font-bold text-slate-800 text-[20px] mb-2 leading-tight"
                           >
-                            {canRenderSubtypeProfile
-                              ? profileClusterInfo.fullName
-                              : 'Subtype information unavailable'}
+                            {profileClusterInfo.fullName}
                           </motion.div>
                           <motion.p
                             initial={{ opacity: 0 }}
@@ -541,9 +571,7 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                             transition={shouldReduceMotion ? { duration: 0 } : { delay: 0.5 }}
                             className="text-slate-600 text-[16px] leading-relaxed"
                           >
-                            {canRenderSubtypeProfile
-                              ? profileClusterInfo.desc
-                              : 'This assessment result does not include subtype/cluster output. We are showing a neutral summary without subtype-specific interpretation.'}
+                            {profileClusterInfo.desc}
                           </motion.p>
                         </div>
                       </div>
@@ -571,7 +599,11 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                                 key={warn}
                                 className="flex items-start gap-2 text-[14px] text-amber-800 bg-white/70 p-3 rounded-xl border border-amber-100/50"
                               >
-                                <span className="text-amber-500 mt-0.5">⚠️</span>
+                                <AlertCircle
+                                  size={16}
+                                  className="text-amber-500 mt-0.5 shrink-0"
+                                  aria-hidden="true"
+                                />
                                 <span>{warn}</span>
                               </li>
                             ))}
@@ -604,13 +636,14 @@ const MLResultModal = ({ isOpen, onClose, result, onConfirm, isLoading }) => {
                       </ul>
                     </motion.div>
 
-                    {/* Clinical Guardrails (Footer Context) */}
+                    {/* Screening Caution (Footer Context) */}
                     <div className="bg-slate-100/70 border border-slate-200/50 rounded-2xl p-4 sm:p-5 mb-4">
                       <h4 className="text-xs font-semibold text-slate-600 uppercase tracking-widest mb-2">
-                        Clinical Guardrails
+                        Important Caution
                       </h4>
                       <p className="text-[13px] text-slate-500 leading-relaxed font-medium">
-                        AI-assisted screening support — not a diagnosis. Use with clinical context.
+                        This is a screening result, not a diagnosis. Use it as a guide for a
+                        conversation with your doctor or clinic.
                       </p>
                     </div>
                   </motion.div>
