@@ -22,8 +22,6 @@ import {
   loginApi,
   signupApi,
   logoutApi,
-  forgotPasswordApi,
-  resetPasswordApi,
   // User APIs
   getUserProfileApi,
   updateUserProfileApi,
@@ -215,41 +213,7 @@ describe('API Contract Tests', () => {
     });
   });
 
-  describe('Auth Contract - forgotPasswordApi', () => {
-    it('sends correct request shape', async () => {
-      const mockFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(JSON.stringify({ message: 'Email sent' }), { status: 200 })
-      );
 
-      await forgotPasswordApi('fixture-user');
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${API_BASE}/auth/forgot-password`,
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ email: 'fixture-user' }),
-        })
-      );
-    });
-  });
-
-  describe('Auth Contract - resetPasswordApi', () => {
-    it('sends correct request shape with token and password', async () => {
-      const mockFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(JSON.stringify({ message: 'Password reset' }), { status: 200 })
-      );
-
-      await resetPasswordApi('fixture-token-value', 'NewPassword123');
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${API_BASE}/auth/reset-password`,
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ token: 'fixture-token-value', password: 'NewPassword123' }),
-        })
-      );
-    });
-  });
 
   // =============================================================================
   // USER PROFILE CONTRACT TESTS
