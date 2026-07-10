@@ -34,7 +34,6 @@ vi.mock('../common/Skeleton', () => ({
 describe('Login', () => {
   const mockOnLogin = vi.fn();
   const mockOnShowSignup = vi.fn();
-  const mockOnShowForgotPassword = vi.fn();
   const mockOnShowVerify = vi.fn();
 
   beforeEach(() => {
@@ -46,7 +45,6 @@ describe('Login', () => {
       <Login
         onLogin={mockOnLogin}
         onShowSignup={mockOnShowSignup}
-        onShowForgotPassword={mockOnShowForgotPassword}
         onShowVerify={mockOnShowVerify}
         {...props}
       />
@@ -82,18 +80,10 @@ describe('Login', () => {
     expect(mockOnShowSignup).toHaveBeenCalledTimes(1);
   });
 
-  it('shows forgot password button', () => {
+  it('does not show forgot password link', () => {
     renderLogin();
 
-    expect(screen.getByText(/forgot password/i)).toBeInTheDocument();
-  });
-
-  it('calls onShowForgotPassword when forgot password is clicked', async () => {
-    const user = userEvent.setup();
-    renderLogin();
-
-    await user.click(screen.getByText(/forgot password/i));
-    expect(mockOnShowForgotPassword).toHaveBeenCalled();
+    expect(screen.queryByText(/forgot password/i)).not.toBeInTheDocument();
   });
 
   it('validates required email field', async () => {

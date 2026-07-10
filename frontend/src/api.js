@@ -634,18 +634,6 @@ export const useLogin = () => {
   });
 };
 
-export const useForgotPassword = () => {
-  return useMutation({
-    mutationFn: ({ email }) => forgotPasswordApi(email),
-  });
-};
-
-export const useResetPassword = () => {
-  return useMutation({
-    mutationFn: ({ token, password }) => resetPasswordApi(token, password),
-  });
-};
-
 export const useVerifyEmail = () => {
   return useMutation({
     mutationFn: ({ token }) => verifyEmailApi(token),
@@ -1157,20 +1145,6 @@ export const loginApi = async (email, password) => {
   return apiFetch('/auth/login', {
     method: 'POST',
     body: { email, password },
-  });
-};
-
-export const forgotPasswordApi = async email => {
-  return apiFetch('/auth/forgot-password', {
-    method: 'POST',
-    body: { email },
-  });
-};
-
-export const resetPasswordApi = async (token, password) => {
-  return apiFetch('/auth/reset-password', {
-    method: 'POST',
-    body: { token, password },
   });
 };
 

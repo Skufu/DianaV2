@@ -17,8 +17,6 @@ import MobileDrawer from './components/layout/MobileDrawer';
 import AdminMobileHeader from './components/layout/AdminMobileHeader';
 import AdminMobileDrawer from './components/layout/AdminMobileDrawer';
 import Login from './components/auth/Login';
-import ForgotPassword from './components/auth/ForgotPassword';
-import ResetPassword from './components/auth/ResetPassword';
 import VerifyEmail from './components/auth/VerifyEmail';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import AssessmentForm from './components/user/AssessmentForm';
@@ -123,26 +121,19 @@ const App = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const resetToken = params.get('reset_token');
     const verifyToken = params.get('verify_token');
     const email = params.get('email');
     const error = params.get('error');
 
     // Clean up URL parameters after reading them
     // This prevents the error from persisting across refreshes
-    if (error || resetToken || verifyToken || email) {
+    if (error || verifyToken || email) {
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, '', cleanUrl);
     }
 
     if (error) {
       setAuthError(error === 'session_expired' ? 'Session expired. Please log in again.' : error);
-    }
-
-    if (resetToken) {
-      setAuthView('reset');
-      setAuthToken(resetToken);
-      return;
     }
 
     if (verifyToken) {
@@ -303,10 +294,6 @@ const App = () => {
             <Suspense fallback={<LoadingSkeleton />}>
               {authView === 'signup' ? (
                 <Signup onSignup={handleSignupSuccess} onShowLogin={() => setAuthView('login')} />
-              ) : authView === 'forgot' ? (
-                <ForgotPassword onShowLogin={() => setAuthView('login')} initialEmail={authEmail} />
-              ) : authView === 'reset' ? (
-                <ResetPassword onShowLogin={() => setAuthView('login')} initialToken={authToken} />
               ) : authView === 'verify' ? (
                 <VerifyEmail
                   onShowLogin={() => setAuthView('login')}
@@ -317,10 +304,6 @@ const App = () => {
                 <Login
                   onLogin={handleLogin}
                   onShowSignup={() => setAuthView('signup')}
-                  onShowForgotPassword={email => {
-                    if (email) setAuthEmail(email);
-                    setAuthView('forgot');
-                  }}
                   onShowVerify={email => {
                     if (email) setAuthEmail(email);
                     setAuthView('verify');

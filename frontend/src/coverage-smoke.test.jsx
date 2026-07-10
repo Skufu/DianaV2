@@ -366,7 +366,6 @@ vi.mock('./api', () => {
       total_pages: 1,
     }),
     fetchTrendInsightsApi: vi.fn().mockResolvedValue(trendInsights),
-    forgotPasswordApi: vi.fn().mockResolvedValue({ message: 'sent' }),
     getAssessmentsApi: vi.fn().mockResolvedValue(assessments),
     getConsentSettingsApi: vi.fn().mockResolvedValue({ consent_personal_data: true }),
     getErrorMessage: (error, fallback) => error?.message || fallback,
@@ -395,7 +394,6 @@ vi.mock('./api', () => {
     }),
     normalizeAssessmentContract: value => value,
     resendVerificationApi: vi.fn().mockResolvedValue({ message: 'resent' }),
-    resetPasswordApi: vi.fn().mockResolvedValue({ message: 'reset' }),
     setAuthTokens: vi.fn(),
     signupApi: vi
       .fn()
@@ -486,10 +484,6 @@ vi.mock('./api', () => {
     useDeleteAccount: () => ({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false }),
     useDeleteAssessment: () => ({ mutateAsync: vi.fn().mockResolvedValue({}), isPending: false }),
     useExportPDF: () => ({ mutate: vi.fn(), isPending: false }),
-    useForgotPassword: () => ({
-      mutateAsync: vi.fn().mockResolvedValue({ message: 'sent' }),
-      isPending: false,
-    }),
     useLogin: () => ({ mutateAsync, isPending: false }),
     useLogout: () => ({
       mutate: vi.fn(),
@@ -512,10 +506,6 @@ vi.mock('./api', () => {
     }),
     useResendVerification: () => ({
       mutateAsync: vi.fn().mockResolvedValue({ message: 'resent' }),
-      isPending: false,
-    }),
-    useResetPassword: () => ({
-      mutateAsync: vi.fn().mockResolvedValue({ message: 'reset' }),
       isPending: false,
     }),
     useTrendInsights: () => ({ data: trendInsights, isLoading: false }),
@@ -584,8 +574,6 @@ import AuditLogViewer from './components/admin/AuditLogViewer';
 import AuthEventLogViewer from './components/admin/AuthEventLogViewer';
 import ModelRationale from './components/admin/ModelRationale';
 import ModelTraceability from './components/admin/ModelTraceability';
-import ForgotPassword from './components/auth/ForgotPassword';
-import ResetPassword from './components/auth/ResetPassword';
 import VerifyEmail from './components/auth/VerifyEmail';
 import MLResultModal from './components/common/MLResultModal';
 import PDFExport from './components/common/PDFExport';
@@ -949,21 +937,7 @@ describe('coverage smoke tests', () => {
   });
 
   it('renders authentication recovery flows and export controls', async () => {
-    const user = userEvent.setup();
-
     let unmount = renderOnce(
-      <ForgotPassword initialEmail="patient@example.com" onShowLogin={vi.fn()} />
-    );
-    expect(screen.getByText(/Forgot your password/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /send reset link/i }));
-    expect(await screen.findByText(/reset link shortly/i)).toBeInTheDocument();
-    unmount();
-
-    unmount = renderOnce(<ResetPassword initialToken="reset-token" onShowLogin={vi.fn()} />);
-    expect(screen.getByText(/Reset your password/i)).toBeInTheDocument();
-    unmount();
-
-    unmount = renderOnce(
       <VerifyEmail
         initialToken="verify-token"
         initialEmail="patient@example.com"

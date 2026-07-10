@@ -7,7 +7,7 @@ import { getErrorMessage, getFieldErrors } from '../../api';
 import { fadeIn, getInputFocusVariants, useReducedMotion } from '../../utils/animations';
 import { LoginFormSkeleton } from '../common/Skeleton';
 
-const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, error: errorProp }) => {
+const Login = ({ onLogin, onShowSignup, onShowVerify, error: errorProp }) => {
   const isReduced = useReducedMotion();
   const inputFocusVariants = useMemo(() => getInputFocusVariants(isReduced), [isReduced]);
   const [email, setEmail] = useState('');
@@ -285,13 +285,6 @@ const Login = ({ onLogin, onShowSignup, onShowForgotPassword, onShowVerify, erro
                         >
                           Password
                         </label>
-                        <button
-                          type="button"
-                          onClick={() => onShowForgotPassword?.(email)}
-                          className="text-[14px] font-semibold text-blue-600 hover:text-blue-700 transition-colors focus:outline-none"
-                        >
-                          Forgot password?
-                        </button>
                       </div>
 
                       <div className="relative group">
