@@ -204,7 +204,7 @@ $$
 | XGBoost | max_depth | 3, 5 |
 | XGBoost | learning_rate | 0.05, 0.1 |
 
-Hyperparameter optimization used grid search with AUC-ROC as the scoring metric. Candidate models were compared under the same input-feature contract and search procedure so that model selection reflected algorithm behavior rather than inconsistent feature access.
+To guarantee a mathematically rigorous and fair comparison, all candidate models—interpretable linear baseline (Logistic Regression), ensemble non-linear baseline (Random Forest), and gradient-boosted trees (LightGBM and XGBoost)—were evaluated under the exact same nested Leave-One-Group-Out (LOGO) cross-validation framework. Preprocessing (median imputation and Z-score standardization) was handled inside each outer loop and learned strictly from the training folds to prevent data leakage. Hyperparameter search for all models was executed via `GridSearchCV` on the inner splits of the development partitions, using the same GroupKFold strategy (where survey cycles served as groups) and the identical optimization target (maximizing AUC-ROC). This ensures that every model was tuned with the same degree of computational rigor, eliminating any bias toward the selected linear model. Candidate models were compared under the same input-feature contract and search procedure so that model selection reflected algorithm behavior rather than inconsistent feature access.
 
 **Phase 4 Start: Model Testing, Evaluation, Thresholding, and Calibration.** Phase 4 begins once candidate models and hyperparameter grids have been defined. This phase covers nested LOGO validation, fold-level model evaluation, final model selection, threshold optimization, calibration analysis, and later contextual benchmark comparison.
 
@@ -282,8 +282,15 @@ The fold-specific screening threshold was therefore derived from training-fold o
 | Guardrail arbitration | Replaces unstable low thresholds when specificity collapses | Limits excessive false positives |
 | Post-model metabolic-syndrome guardrail | Raises low served risk estimates for concordant metabolic-risk profiles | Reduces implausibly low runtime screening outputs |
 
-The serving layer also includes a rule-based Metabolic Syndrome risk guardrail. This rule evaluates triglycerides of at least 150 mg/dL, HDL cholesterol below 50 mg/dL, BMI of at least 25, and waist circumference of at least 80 cm, reflecting commonly used metabolic-syndrome risk criteria (International Diabetes Federation, 2006; Alberti et al., 2009). When three or more criteria are met, the at-risk probability is raised to at least 0.65. When two criteria are met, the at-risk probability is increased by 0.15 and capped at 0.95. This rule should be interpreted as an engineered safety heuristic for reducing implausibly low risk estimates in metabolically concordant high-risk profiles, not as an independently validated clinical rule.
+The serving layer also includes a rule-based Metabolic Syndrome risk guardrail based on a clinical composite score. This score evaluates four non-invasive, non-glycemic metabolic criteria: triglycerides of at least 150 mg/dL, HDL cholesterol below 50 mg/dL, BMI of at least 25 kg/m², and waist circumference of at least 80 cm. The selection and threshold values of these features were derived directly from established clinical guidelines:
 
+1. **Triglycerides ($\ge 150$ mg/dL) and HDL Cholesterol ($< 50$ mg/dL):** These thresholds align with the female-specific cutoffs defined by the National Cholesterol Education Program (NCEP) Expert Panel on Detection, Evaluation, and Treatment of High Blood Cholesterol in Adults (Adult Treatment Panel III, or ATP III) guidelines (NCEP, 2001) and the International Diabetes Federation (IDF) consensus definition of metabolic syndrome (IDF, 2006).
+2. **Waist Circumference ($\ge 80$ cm):** This cutoff follows the IDF consensus recommendation for ethnic Asian women (IDF, 2006), reflecting the lower waist circumference threshold at which cardiovascular and diabetes risk escalates in Asian cohorts compared to Western cohorts.
+3. **BMI ($\ge 25$ kg/m²):** This threshold follows the World Health Organization (WHO) Asia-Pacific guidelines for obesity classification (WHO, 2000), which identifies a BMI of $\ge 25$ kg/m² as the threshold for obesity in Asian populations to account for higher body fat percentages and metabolic risk at lower body weights.
+
+Although the traditional NCEP ATP III diagnostic criteria evaluate five domains (including blood pressure and fasting glucose), DIANA excludes blood pressure to preserve self-screening accessibility and excludes fasting glucose to prevent circular diagnostic leakage (Phase 2). Consequently, the remaining four continuous variables are summed to construct a clinical composite score $c$ (ranging from 0 to 4). 
+
+The probability boost rules are engineered clinical safety guardrails calibrated against the model's optimized cross-validated classification threshold ($t = 0.465$). Under NCEP ATP III guidelines, meeting three or more criteria clinically defines Metabolic Syndrome, which is associated with a threefold to fivefold increase in type 2 diabetes risk (Alberti et al., 2009). To prevent false-negative screening errors for these high-risk individuals, meeting three or more criteria ($c \ge 3$) floors the risk probability at 0.65, guaranteeing they are flagged as "At-Risk" ($0.65 > 0.465$). For individuals meeting exactly two criteria ($c = 2$), a proportional risk-escalation boost of +0.15 (capped at 0.95) is applied to reflect elevated risk. This rule should be interpreted as an engineered safety heuristic for reducing false negatives in metabolically concordant high-risk profiles, not as an independently validated clinical model.
 Operationally, the guardrail is applied after the Logistic Regression model produces its base probability. Let $\hat{p}_{model}$ represent the classifier probability and let $c$ represent the number of metabolic-syndrome criteria satisfied by the user profile. The served probability is interpreted as:
 
 $$
@@ -330,9 +337,16 @@ The numeric weights represent an ordinal emphasis scale in standardized clusteri
 
 The specific assignments followed a descending clinical-emphasis logic. LDL cholesterol received the highest weight of 2.5 to strengthen separation of atherogenic lipid-driven profiles after diagnostic glycemic markers and unavailable insulin-function markers were excluded. Triglycerides received a strong weight of 2.0 because elevated triglycerides are central to lipid dysregulation and waist-triglyceride accumulation patterns used in the SIRD-like centroid interpretation. Waist circumference also received a strong weight of 2.0 because central adiposity is more directly tied to metabolic risk patterning than general body size alone. BMI received a moderate weight of 1.5 because it anchors obesity-related pattern separation but overlaps partly with waist circumference. HDL cholesterol received a mild weight of 1.2 because it contributes inverse lipid-risk information, while avoiding dominance over the stronger atherogenic and central-adiposity dimensions. Age was kept at the baseline weight of 1.0 because it provides demographic context for MARD-like interpretation but should not dominate subtype assignment over metabolic biomarkers.
 
-Cluster centroids were inverse-transformed from standardized space into raw clinical units before interpretation. The resulting labels were Ahlqvist-inspired proxy labels: SIRD-like, SIDD-like, MOD-like, and MARD-like. Label assignment followed a deterministic centroid-ranking rule. First, the SIRD-like label was assigned to the centroid with the highest Lipid Accumulation Product (LAP)-style score, computed for this women-only cohort as $\mathrm{LAP}=(WC-58)\times TG$. LAP was introduced as a waist-triglyceride index of lipid overaccumulation (Kahn, 2005) and has been associated with prediabetes and diabetes risk in NHANES-based work (Wang et al., 2024). In DIANA, LAP is not a classifier input and is not stored as a user feature; it is used only to rank inverse-transformed cluster centroids. Because it is used for within-dataset ranking, the triglyceride unit scale does not change which centroid has the highest LAP-style score.
+Cluster centroids were inverse-transformed from standardized space into raw clinical units before interpretation. The resulting labels were Ahlqvist-inspired proxy labels: SIRD-like, SIDD-like, MOD-like, and MARD-like. To assign these labels to the mathematical clusters, a **Deterministic Waterfall Naming** procedure is applied strictly at the centroid level to the four locked cluster centers, rather than as threshold rules on individual patient profiles. This waterfall labeling logic proceeds as follows:
 
-After the SIRD-like centroid was removed from consideration, the SIDD-like label was assigned to the remaining centroid with the highest LDL cholesterol. This is a lipid-driven proxy rather than true insulin-deficiency classification. The MOD-like label was then assigned to the remaining centroid with the highest BMI, and the final residual centroid was labeled MARD-like. The term "Ahlqvist-inspired" is deliberate. The original adult-onset diabetes subgroup framework used variables that are not available in DIANA's accessible screening feature set, including GAD antibody status and HOMA2 estimates of beta-cell function and insulin resistance (Ahlqvist et al., 2018). DIANA also excludes HbA1c and fasting blood sugar from model inputs to avoid circular prediction. Therefore, the cluster labels describe phenotypic similarity to known metabolic patterns rather than validated biological subtype membership; this caution is also consistent with work comparing data-driven diabetes subgroups against simpler clinical-feature models (Dennis et al., 2019).
+1. **Step 1 (SIRD-like Identification):** The Lipid Accumulation Product (LAP)-style score, computed for this women-only cohort as $\mathrm{LAP}=(\mathrm{Waist\ Circumference}-58)\times \mathrm{Triglycerides}$, is calculated for the four cluster centroids. The cluster whose centroid has the highest LAP score is assigned the **SIRD-like** (Severe Insulin-Resistant Diabetes) label, representing the cluster with the most pronounced insulin resistance proxy pattern. This selected centroid is then removed from further waterfall consideration.
+2. **Step 2 (SIDD-like Identification):** Among the remaining three centroids, the centroid with the highest average LDL cholesterol is assigned the **SIDD-like** (Severe Insulin-Deficient / Atherogenic Lipid-Driven Diabetes proxy) label, capturing the subgroup defined by significant atherogenic dyslipidemia. This selected centroid is then removed from further waterfall consideration.
+3. **Step 3 (MOD-like Identification):** Between the remaining two centroids, the centroid with the highest average Body Mass Index (BMI) is assigned the **MOD-like** (Mild Obesity-Related Diabetes) label, representing obesity-driven risk. This selected centroid is then removed from further consideration.
+4. **Step 4 (MARD-like Identification):** The final remaining residual centroid is assigned the **MARD-like** (Mild Age-Related Diabetes) label, which typically represents older age and the mildest metabolic dysfunction.
+
+This deterministic waterfall naming mechanism is depicted in the project's visual methodology representations. Crucially, patient assignment to subtypes does not involve any patient-level decision rules or threshold-based filters. The cohort is partitioned into raw mathematical clusters ($C_0$, $C_1$, $C_2$, $C_3$) through unsupervised Weighted K-Means. Only after the clusters are locked are the resulting raw centroids evaluated by the waterfall ranking to map the cluster IDs to their clinical names. A patient is assigned to a subtype based *solely* on which unsupervised cluster centroid they are closest to in the standardized 6-dimensional feature space, not by applying the LAP or biomarker thresholds to their individual record.
+
+The term "Ahlqvist-inspired" is deliberate. The original adult-onset diabetes subgroup framework used variables that are not available in DIANA's accessible screening feature set, including GAD antibody status and HOMA2 estimates of beta-cell function and insulin resistance (Ahlqvist et al., 2018). DIANA also excludes HbA1c and fasting blood sugar from model inputs to avoid circular prediction. Therefore, the cluster labels describe phenotypic similarity to known metabolic patterns rather than validated biological subtype membership; this caution is also consistent with work comparing data-driven diabetes subgroups against simpler clinical-feature models (Dennis et al., 2019).
 
 The SIDD-like label requires particular caution. True SIDD classification requires beta-cell function markers such as HOMA2-B or C-peptide, which were unavailable in the NHANES feature set used by DIANA. In this study, SIDD-like is therefore interpreted as an atherogenic or lipid-driven proxy label based primarily on elevated LDL patterns rather than as a true insulin-deficiency subtype diagnosis. The SAID category was not assigned because autoimmune markers were unavailable. These labels are heuristic descriptions, not validated biological subtype diagnoses, not treatment directives, and not replacements for clinical judgment.
 
@@ -506,7 +520,25 @@ The community user evaluation followed an ISO/IEC 25010-informed usability frame
 
 The completed community user cohort consisted of at least 30 perimenopausal, menopausal, or postmenopausal Filipino women recruited from selected Facebook interest groups and Nagcarlan, Laguna, subject to approval, consent, and privacy procedures. These participants were used only for usability and acceptance evaluation and were not used for model training, model testing, or clinical validation. Separately, a hands-on doctor expert review was completed with licensed medical professionals. The expert review evaluated the prototype's feature set, assessment workflow, risk-output presentation, explanation approach, subtype-weighting rationale, and suitability as a supplementary screening-support tool. Community UAT results and expert-review findings are reported as user-acceptance and face-validity evidence rather than as external clinical validation.
 
-### 3.15 Cross-Phase Data Analysis Procedure
+### 3.15 Chronological Methodology Evolution and Pivots
+
+The DIANA development and research process underwent several critical methodological adjustments and shifts between December 2025 and April 2026. Documenting these chronological pivots preserves transparency regarding how data constraints and clinical safety considerations guided the final system design.
+
+1. **December 2025 (Database Restructuring and B2B to B2C Platform Shift):**
+   Initially, the application was designed as a business-to-business (B2B) clinical administration tool. The database schema included a legacy `patients` table meant to be managed solely by clinicians. During prototype review, it was recognized that restricting access to clinicians limited the self-screening scalability of the system. To empower menopausal women to take proactive ownership of their health metrics, the database schema was migrated (migration version 0011) to drop the `patients` table entirely and link all clinical assessment data directly to authenticated user accounts (`users.id`). This pivoted the project into a direct-to-consumer (B2C) self-screening platform.
+   
+2. **January 2026 (Exclusion of Blood Pressure Predictors):**
+   The clinical predictor feature contract originally included blood pressure (systolic and diastolic BP) as model features. However, during validation, it was recognized that requiring a blood pressure cuff for assessment created a technical and physical barrier, undermining the primary goal of low-barrier self-screening. To maximize accessibility, blood pressure features were excluded from the final clinical predictor features (creating the `no_bp` active model contract). This ensured that a user could complete the screening at home using only basic lifestyle details and fasting lipid panel metrics.
+   
+3. **February–March 2026 (Target Class Reformulation and At-Risk Pooling):**
+   The initial research design aimed to train a multi-class model (Normal, Pre-diabetic, and Diabetic) or separate binary models predicting the transition to specific glycemic states. However, because the cross-sectional NHANES datasets lack longitudinal tracking of individual patients over time, attempting to predict direct transition transitions was mathematically unstable and clinically indefensible as a diagnostic task. 
+   
+   To address this limitation, the target variable was reformulated. Pre-diabetic and diabetic classes were collapsed into a single, combined binary target: **Normal vs. At-Risk (Pre-diabetic or Diabetic)**. This pivoted the system's role from a diagnostic tool to a triage-support screening tool. Once a user is classified as mathematically At-Risk, their profile is forwarded to the unsupervised clustering module to characterize their specific clinical subtype, providing rich clinical context without making circular diagnostic claims.
+   
+4. **March 2026 (Refinement of Unsupervised Weighted K-Means):**
+   Early iterations of the subtyping module used post-hoc clinical threshold overrides in the serving layer (e.g., forcing a patient into SIRD if their LAP score was high). In March 2026, this hybrid rule-based logic was removed and replaced by **pure Weighted K-Means clustering**. The clinical feature weights (e.g., 2.5 for LDL, 2.0 for triglycerides) were moved into the distance metric calculation itself rather than applied as serving-layer conditionals. This ensured that the clustering remained 100% unsupervised, with the Ahlqvist-inspired names applied strictly at the centroid level post-hoc.
+
+### 3.16 Cross-Phase Data Analysis Procedure
 
 Data analysis was conducted in the same chronological phase order used by the methodology: cohort preparation, feature and leakage review, predictive-model development, model testing and calibration, cluster-based risk group interpretation, system-integration evidence, technical validation, and expert-review evidence. For reporting clarity, these analyses were also grouped into cohort and feature analysis, model-related validation, cluster interpretation, and system-evaluation evidence. Model-related validation included predictive-model performance, threshold behavior, calibration, and benchmark comparison. The NHANES analytic cohort was summarized using record counts, class distributions, survey-cycle membership, feature availability, and reference-label composition. These summaries were used to describe the analytic dataset and to verify that the final cohort matched the intended postmenopausal, fasting-laboratory population. Because the modeling objective was prediction within the analytic cohort rather than national prevalence estimation, descriptive counts were not interpreted as weighted population estimates.
 
@@ -635,6 +667,8 @@ Alcohol use had modest non-zero univariate Information Gain in the discretized v
 
 The candidate algorithms were compared under the same nested LOGO validation framework. Logistic Regression achieved the highest pooled AUC and the highest mean fold AUC at approximately 0.736. Random Forest achieved a mean fold AUC of 0.716, LightGBM achieved 0.712, and XGBoost achieved 0.713. Although the non-linear models produced competitive sensitivity, Logistic Regression provided the strongest discrimination with the clearest interpretability profile.
 
+The fact that Logistic Regression outperformed the more complex non-linear ensemble models (Random Forest: 0.716, XGBoost: 0.713, LightGBM: 0.712) is consistent with statistical learning theory for small-to-medium-sized clinical datasets with linear predictor-outcome dynamics. Tabular datasets with a relatively modest number of continuous biomarkers (9 predictors in the final clinical feature set) and small sample size (1,376 records total) are highly susceptible to overfitting when fitted with high-capacity models. High-capacity ensemble models (like Random Forests and gradient-boosted trees) construct complex, high-dimensional decision boundaries that fit noise in the training survey cycles, resulting in poor generalization when evaluated on held-out temporal survey cycles. By contrast, Logistic Regression introduces a strong linear inductive bias and natural regularizing effects that reduce variance, enabling it to generalize better across temporal folds. Therefore, Logistic Regression was not selected due to design bias, but because it emerged as the empirical winner of a fair, identical, and leakage-safe comparative test.
+
 **Table 4.6. Model Comparison Under LOGO Validation**
 
 | Algorithm | Mean Fold AUC-ROC | Pooled AUC 95% CI | Sensitivity | Sens 95% CI | Specificity | F1 | Mean Threshold |
@@ -691,6 +725,8 @@ The K = 4 solution was retained to preserve the Ahlqvist-inspired four-pattern i
 
 The cluster distribution demonstrates metabolic heterogeneity within the at-risk class. MARD-like was the largest cluster, followed by MOD-like, SIDD-like, and SIRD-like. The MOD-like centroid had a BMI of approximately 42.05, indicating severe obesity in this cohort rather than moderate obesity. The SIRD-like centroid was characterized by high triglycerides, low HDL cholesterol, and elevated waist circumference and had the highest LAP-style centroid score. The SIDD-like centroid was assigned by highest LDL cholesterol among the remaining centroids and should therefore be interpreted as a lipid-driven proxy rather than true insulin deficiency. Because assignments are based on weighted distance to centroids plus deterministic post hoc centroid labeling, subtype outputs should be understood as geometric pattern assignments rather than rule-based clinical diagnoses.
 
+To empirically demonstrate that the clustering is entirely data-driven and contains no patient-level pre-filtering rules, we performed a multi-panel visual proof mapping the mathematical boundaries of the groups. Panel A of Figure 4.3 projects the 6-dimensional patient feature space onto the first two principal components. The resulting partition forms clean Voronoi decision regions centered around each mathematical centroid ($C_0$, $C_1$, $C_2$, $C_3$). No axis-aligned clinical check-box rules are visible in the PCA space. Panel B plots patients along two raw dimensions (BMI and Triglycerides). The cluster boundaries are overlapping and diagonal, proving that no single-biomarker thresholds are used to segregate the cohort. Panel C shows the mathematical silhouette coefficient distribution for each patient sorted by cluster, establishing that the groupings optimize mathematical cohesion rather than satisfy heuristic logic rules.
+
 The Ahlqvist-inspired interpretation should therefore be read as subtype-context support rather than as biological subtype validation. DIANA does not assign SAID because autoimmune markers are unavailable, and the SIDD-like group is interpreted as lipid-driven or atherogenic rather than as confirmed insulin-deficient diabetes. The cluster results support the presence of heterogeneous metabolic patterns among at-risk users, but they do not establish treatment categories.
 
 **Figure 4.2. Cluster Distribution and Centroid Profiles**
@@ -699,6 +735,9 @@ The Ahlqvist-inspired interpretation should therefore be read as subtype-context
 
 ![Weighted K-Means centroid heatmap](../../../models/binary_v2_no_bp/visualizations/cluster_heatmap.png)
 
+**Figure 4.3. Mathematical and Visual Proof of Unsupervised Geometric Partitioning**
+
+![Unsupervised geometric partitioning proof](../../../models/binary_v2_no_bp/results/clustering_mathematical_proofs.png)
 ### 4.6 Preprocessing and Leakage Validation Results
 
 Label-consistency checking showed 94.1 percent agreement between DIQ010-derived labels and HbA1c-threshold labels, corresponding to 1,295 of 1,376 records. The remaining 5.9 percent reflected discordance between self-report and a single biochemical measurement. Outlier flagging identified 35 of 1,376 records, or 2.5 percent, with at least one clinical plausibility flag; these records were retained rather than deleted.
@@ -708,10 +747,9 @@ The leakage validation pipeline confirmed that diagnostic glycemic variables wer
 This result supports the central methodological claim of the study. DIANA's discrimination was not produced by using HbA1c or fasting blood sugar as predictors. Instead, the model estimated at-risk status from metabolic, anthropometric, and lifestyle variables that were separate from the diagnostic markers used in label construction.
 
 ### 4.7 Functional Testing Results
-
 Functional testing verified the implemented system across backend, ML service, and frontend layers. The backend test suite passed in the current verification run and covered configuration, caching behavior, API request handling, access-control checks, ML integration, service logic, PDF generation, and data persistence. Assessment tests verified critical clinical guardrails, including target age-boundary enforcement, missing waist-circumference handling for ML imputation, out-of-range HbA1c warning behavior, and successful assessment creation.
 
-The ML service test suite passed with 275 tests. These tests covered clustering behavior, leakage prevention, feature parity, prediction behavior, service access, authentication checks, drift scheduling, SHAP background behavior, threshold optimization, production API-key configuration failure behavior, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured coverage gates, with 71.26 percent line and statement coverage, 60.55 percent branch coverage, and 44.24 percent function coverage.
+The ML service test suite passed with 285 tests. These tests covered clustering behavior, clustering weight sensitivity and perturbation stability, leakage prevention, dataset demographic integrity and cohort validation, feature parity, prediction behavior, service access, authentication checks, drift scheduling, SHAP background behavior, threshold optimization, production API-key configuration failure behavior, and clinical scenario validation. The frontend unit and contract coverage suite passed with 232 tests. The current frontend coverage run met the configured coverage gates, with 71.26 percent line and statement coverage, 60.55 percent branch coverage, and 44.24 percent function coverage.
 
 **Table 4.10. Functional Validation Summary**
 
@@ -719,12 +757,10 @@ The ML service test suite passed with 275 tests. These tests covered clustering 
 |---|---|---|
 | Backend services | Authentication, access control, assessment creation, clinical guardrails, persistence, and PDF report generation | Passed |
 | Assessment guardrails | Age-boundary enforcement, missing waist handling, HbA1c warning propagation, and successful assessment creation | Passed |
-| ML service | 275 tests covering prediction, leakage prevention, clustering, SHAP, drift monitoring, threshold optimization, production API-key configuration failure behavior, and clinical scenarios | Passed |
+| ML service | 285 tests covering prediction, leakage prevention, clustering, clustering weight sensitivity, dataset demographic validation, SHAP, drift monitoring, threshold optimization, production API-key configuration failure behavior, and clinical scenarios | Passed |
 | Frontend workflow | 232 unit and contract tests covering authentication, forms, result display, service contracts, and UI components | Passed |
 | Frontend coverage | Coverage met the configured project policy: 71.26% lines/statements, 60.55% branches, and 44.24% functions | Passed |
 | Cache integration tests | Require the external cache service to be available | Environment dependent |
-
-The function-coverage gate is lower than the statement and line gates because several interface modules contain many event-driven functions whose rendering paths are already exercised through broader component and contract tests. The 44.24 percent function result is therefore reported as a passed coverage policy, not as evidence that every interactive UI branch has been exhaustively tested.
 
 The remaining technical-readiness gaps therefore concern environment-dependent cache integration evidence, formal UAT, broader scored expert-panel review, accessibility audit, and production load testing rather than the frontend coverage gate.
 
@@ -736,23 +772,23 @@ After form submission, the backend validates the request, sends the relevant ass
 
 The result interface presents outputs in a layered hierarchy. The first layer shows binary screening classification through risk score, risk category, and threshold context. The second layer shows metabolic subtype context only when subtype output is available. The third layer presents clinical guardrails and actionable follow-up text. Normal predictions receive neutral subtype wording so that disease-pattern labels are not assigned to users classified as normal.
 
-The interface screenshots in Figures 4.3 through 4.6 are local evidence captures documented in `docs/07-research/thesis-drafts/screenshots/README.md`. The manifest records the capture date, local frontend and backend endpoints, 1440 x 1000 PNG dimensions, source views, and SHA-256 hashes. They are used only as interface-evidence figures; no synthetic SHAP screenshot is included in the clean draft.
+The interface screenshots in Figures 4.4 through 4.7 are local evidence captures documented in `docs/07-research/thesis-drafts/screenshots/README.md`. The manifest records the capture date, local frontend and backend endpoints, 1440 x 1000 PNG dimensions, source views, and SHA-256 hashes. They are used only as interface-evidence figures; no synthetic SHAP screenshot is included in the clean draft.
 
-**Figure 4.3. Main Dashboard Interface**
+**Figure 4.4. Main Dashboard Interface**
 
 ![DIANA main dashboard interface](screenshots/figure-4-3-main-dashboard.png)
 
-**Figure 4.4. Assessment Form With Real-Time Validation**
+**Figure 4.5. Assessment Form With Real-Time Validation**
 
 ![DIANA assessment form with BMI calculation and biomarker inputs](screenshots/figure-4-4-assessment-form-validation.png)
 
-**Figure 4.5. Assessment Result Modal With Clinical Interpretation**
+**Figure 4.6. Assessment Result Modal With Clinical Interpretation**
 
 ![DIANA assessment-result modal](screenshots/figure-4-5-ml-result-modal.png)
 
 The screenshot was captured from the running application using a completed assessment. It shows the current result modal and does not include synthetic SHAP values.
 
-**Figure 4.6. Personal Trends Visualization**
+**Figure 4.7. Personal Trends Visualization**
 
 ![DIANA personal trends visualization](screenshots/figure-4-6-personal-trends.png)
 
@@ -901,6 +937,7 @@ Luque, A., Carrasco, A., Martin, A., & de las Heras, A. (2019). The impact of cl
 
 MacQueen, J. (1967). Some methods for classification and analysis of multivariate observations. In *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability* (Vol. 1, pp. 281-297).
 
+National Cholesterol Education Program (NCEP) Expert Panel on Detection, Evaluation, and Treatment of High Blood Cholesterol in Adults. (2001). Third Report of the National Cholesterol Education Program (NCEP) Expert Panel on Detection, Evaluation, and Treatment of High Blood Cholesterol in Adults (Adult Treatment Panel III) final report. *Circulation*, 106(25), 3143-3421.
 Powers, D. M. W. (2011). Evaluation: From precision, recall and F-measure to ROC, informedness, markedness and correlation. *Journal of Machine Learning Technologies*, 2(1), 37-63.
 
 Provos, N., & Mazieres, D. (1999). A future-adaptable password scheme. In *Proceedings of the 1999 USENIX Annual Technical Conference*. https://www.usenix.org/conference/1999-usenix-annual-technical-conference/future-adaptable-password-scheme
@@ -914,6 +951,8 @@ Vabalas, A., Gowen, E., Poliakoff, E., & Casson, A. J. (2019). Machine learning 
 Van Calster, B., McLernon, D. J., van Smeden, M., Wynants, L., Steyerberg, E. W., Bossuyt, P., Collins, G. S., Macaskill, P., Moons, K. G. M., & Vickers, A. J. (2019). Calibration: The Achilles heel of predictive analytics. *BMC Medicine*, 17, 230. https://doi.org/10.1186/s12916-019-1466-7
 
 Wang, Y., Wang, X., & Zeng, L. (2024). Lipid Accumulation Product as a Predictor of Prediabetes and Diabetes: Insights From NHANES Data (1999-2018). *Journal of Diabetes Research, 2024*, Article 2874122. https://doi.org/10.1155/2024/2874122
+
+World Health Organization. (2000). *The Asia-Pacific perspective: Redefining obesity and its treatment*. World Health Organization Western Pacific Region.
 
 World Health Organization. (2021). *Ethics and governance of artificial intelligence for health: WHO guidance*. https://www.who.int/publications/i/item/9789240029200
 

@@ -5,10 +5,15 @@ Run this script to get all the exact numbers for your thesis.
 
 import pandas as pd
 import json
+from pathlib import Path
 
 print("="*60)
 print("DIANA MANUSCRIPT VERIFICATION")
 print("="*60)
+
+# Paths
+MODELS_DIR = Path("models/binary_v2_no_bp")
+RESULTS_DIR = MODELS_DIR / "results"
 
 # 1. Cluster Sizes
 print("\n[1] CLUSTER SIZES")
@@ -25,24 +30,24 @@ except Exception as e:
 print("\n[2] CLUSTER PROFILES (for manuscript)")
 print("-"*40)
 try:
-    profiles = pd.read_csv("models/clinical/cluster_profiles.csv")
+    profiles = pd.read_csv(RESULTS_DIR / "cluster_profiles.csv", index_col=0)
     print(profiles.to_string())
 except Exception as e:
     print(f"Error: {e}")
 
-# 3. Model Comparison
-print("\n[3] MODEL COMPARISON")
+# 3. Model Comparison / Details
+print("\n[3] BEST MODEL DETAILS")
 print("-"*40)
 try:
-    models = pd.read_csv("models/clinical/results/model_comparison.csv")
-    print(models.to_string())
-    
-    # Best model details
-    best = models.loc[models['AUC-ROC'].idxmax()]
-    print(f"\n[BEST MODEL]: {best['Model']}")
-    print(f"   AUC-ROC: {best['AUC-ROC']}")
-    print(f"   Accuracy: {best['Accuracy']}")
-    print(f"   Overfit Gap: {best['Overfit_Gap']*100:.2f}%")
+    with open(RESULTS_DIR / "best_model_report.json") as f:
+        best_model = json.load(f)
+    print(f"Best Model: {best_model.get('best_model')}")
+    print(f"Inference Type: {best_model.get('model_type')}")
+    print(f"Validation Method: {best_model.get('validation_method')}")
+    print(f"Number of Features: {best_model.get('n_features')}")
+    print("Metrics:")
+    for k, v in best_model.get('metrics', {}).items():
+        print(f"   {k}: {v}")
 except Exception as e:
     print(f"Error: {e}")
 
@@ -50,10 +55,10 @@ except Exception as e:
 print("\n[4] CLUSTER LABELS (from JSON)")
 print("-"*40)
 try:
-    with open("models/clinical/cluster_labels.json", 'r') as f:
+    with open(MODELS_DIR / "cluster_labels.json", 'r') as f:
         labels = json.load(f)
     for k, v in labels.items():
-        print(f"   Cluster {k}: {v['label']}")
+        print(f"   Cluster {k}: {v['label']} ({v.get('risk_level')}) - {v.get('full_name')}")
 except Exception as e:
     print(f"Error: {e}")
 
@@ -62,25 +67,21 @@ print("\n" + "="*60)
 print("COPY THESE FOR YOUR MANUSCRIPT")
 print("="*60)
 try:
-    # SIDD
-    sidd = profiles[profiles['cluster'] == 3].iloc[0]
-    print(f"\nSIDD: HbA1c={sidd['hba1c']}%, FBS={sidd['fbs']} mg/dL, BMI={sidd['bmi']}")
-    
-    # SIRD  
-    sird = profiles[profiles['cluster'] == 2].iloc[0]
-    print(f"SIRD: BMI={sird['bmi']}, TG={sird['triglycerides']} mg/dL, HDL={sird['hdl']} mg/dL")
-    
-    # MOD
-    mod = profiles[profiles['cluster'] == 0].iloc[0]
-    print(f"MOD: BMI={mod['bmi']}, HbA1c={mod['hba1c']}%, TG={mod['triglycerides']} mg/dL")
-    
-    # MARD
-    mard = profiles[profiles['cluster'] == 1].iloc[0]
-    print(f"MARD: BMI={mard['bmi']}, HbA1c={mard['hba1c']}%, HDL={mard['hdl']} mg/dL")
-    
-    print(f"\nBest Model AUC: {best['AUC-ROC']}")
-    print(f"Overfit Gap: {best['Overfit_Gap']*100:.2f}%")
-    
+    # Print profile characteristics
+    for subtype in ['SIRD', 'SIDD', 'MOD', 'MARD']:
+        row = profiles.loc[subtype]
+        print(f"\n{subtype} centroid characteristics:")
+        print(f"   BMI: {row['bmi']:.2f} kg/m²")
+        print(f"   Triglycerides: {row['triglycerides']:.2f} mg/dL")
+        print(f"   LDL: {row['ldl']:.2f} mg/dL")
+        print(f"   HDL: {row['hdl']:.2f} mg/dL")
+        print(f"   Age: {row['age']:.2f} years")
+        print(f"   Waist Circumference: {row['waist_circumference']:.2f} cm")
+        
+    print(f"\nBest Model AUC-ROC: {best_model['metrics']['auc_roc']:.4f}")
+    print(f"Sensitivity: {best_model['metrics']['sensitivity']:.4f}")
+    print(f"Specificity: {best_model['metrics']['specificity']:.4f}")
+    print(f"F1 Score: {best_model['metrics']['f1']:.4f}")
 except Exception as e:
     print(f"Error generating summary: {e}")
 

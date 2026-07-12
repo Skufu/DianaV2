@@ -1,0 +1,116 @@
+{
+  "dataset_details": {
+    "total_nhanes_records": 1376,
+    "at_risk_cohort_size": 734,
+    "clustering_features": [
+      "bmi",
+      "triglycerides",
+      "ldl",
+      "hdl",
+      "age",
+      "waist_circumference"
+    ]
+  },
+  "raw_standardized_centroids": {
+    "cluster_0": [
+      -0.5960868637048918,
+      -0.4924470811187587,
+      -0.5480554842774986,
+      0.5755164053398574,
+      0.14340527941451556,
+      -0.6811950717814512
+    ],
+    "cluster_1": [
+      1.091070718955625,
+      -0.2549309443411977,
+      -0.2749262476570786,
+      -0.1576540086808161,
+      -0.1419994820710951,
+      1.0690741793365155
+    ],
+    "cluster_2": [
+      -0.10639041997632835,
+      2.0870726854262944,
+      -0.36786063972927285,
+      -0.8743901283033786,
+      -0.08341250091236231,
+      0.09610327394934096
+    ],
+    "cluster_3": [
+      -0.5030038581219068,
+      0.056067936999186045,
+      1.093504892372026,
+      -0.15357768943528755,
+      0.026354877860058648,
+      -0.45715306518017296
+    ]
+  },
+  "inverse_transformed_clinical_centroids": {
+    "cluster_0": {
+      "bmi": 28.248922413793103,
+      "triglycerides": 97.7801724137931,
+      "ldl": 102.55172413793105,
+      "hdl": 62.400862068965516,
+      "age": 55.422413793103445,
+      "waist_circumference": 94.98189655172413
+    },
+    "cluster_1": {
+      "bmi": 42.04641592920353,
+      "triglycerides": 119.63716814159292,
+      "ldl": 113.13274336283186,
+      "hdl": 51.94690265486726,
+      "age": 54.269911504424776,
+      "waist_circumference": 123.52610619469027
+    },
+    "cluster_2": {
+      "bmi": 32.25363636363637,
+      "triglycerides": 335.1558441558442,
+      "ldl": 109.53246753246754,
+      "hdl": 41.727272727272734,
+      "age": 54.506493506493506,
+      "waist_circumference": 107.65844155844155
+    },
+    "cluster_3": {
+      "bmi": 29.010150753768844,
+      "triglycerides": 148.25628140703517,
+      "ldl": 166.14572864321605,
+      "hdl": 52.005025125628144,
+      "age": 54.949748743718594,
+      "waist_circumference": 98.6356783919598
+    }
+  },
+  "post_hoc_mapping_rules": {
+    "SIRD": "Cluster 2 (highest LAP: 16643.32)",
+    "SIDD": "Cluster 3 (highest LDL among remaining: 166.15)",
+    "MOD": "Cluster 1 (highest BMI among remaining: 42.05)",
+    "MARD": "Cluster 0 (remaining cluster)"
+  },
+  "label_mapping": {
+    "2": "SIRD",
+    "3": "SIDD",
+    "1": "MOD",
+    "0": "MARD"
+  },
+  "patient_distribution": {
+    "MARD": {
+      "cluster_id": 0,
+      "count": 213,
+      "percentage": 31.049562682215743
+    },
+    "MOD": {
+      "cluster_id": 1,
+      "count": 215,
+      "percentage": 31.341107871720116
+    },
+    "SIRD": {
+      "cluster_id": 2,
+      "count": 61,
+      "percentage": 8.892128279883382
+    },
+    "SIDD": {
+      "cluster_id": 3,
+      "count": 197,
+      "percentage": 28.717201166180757
+    }
+  }
+}
