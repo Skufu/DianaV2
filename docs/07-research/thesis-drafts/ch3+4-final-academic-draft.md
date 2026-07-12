@@ -47,14 +47,21 @@ Section 3.15 provides the cross-cutting data analysis procedure used to summariz
 
 The figures used in Chapter 3 are limited to methodological and system-design diagrams: the eight-phase framework, overall pipeline, two-stage screening and subtyping workflow, four-tier architecture, and assessment sequence. Quantitative model artifacts and application screenshots are presented in Chapter 4 so that visual evidence remains separated from procedural design.
 
-**Figure 3.1. Methodological Flow from NHANES Data to the Integrated DIANA System**
+**Figure 3.1. NHANES Dataset Selection and Cohort Filtering Pipeline**
 
 ```mermaid
-flowchart TB
-    A["NHANES data<br/>six survey releases"] --> B["Eligible postmenopausal cohort<br/>n = 1,376"]
-    B --> C["Reference labels and<br/>leakage-safe predictors"]
-    C --> D["Model development<br/>nested LOGO validation"]
-    D --> E["DIANA system integration<br/>risk, subtype, and explanation outputs"]
+flowchart TD
+    A["Raw NHANES Database (Six Survey Releases: 2009-2010 to 2021-2023)<br/>N = 61,626 raw records"] --> B["Gender Filter (Female Only)<br/>n = 31,518 female respondents"]
+    B --> C["Age Range Filter (45 <= Age <= 60 years)<br/>n = 4,922 midlife/menopausal age range"]
+    C --> D["Reproductive Health Filter (Postmenopausal)<br/>RHQ031 == 2 (no period in past 12 months)<br/>n = 2,826 postmenopausal women"]
+    D --> E["Reference Label Verification<br/>Complete HbA1c (LBXGH) available<br/>n = 2,736 (90 records excluded)"]
+    E --> F["Fasting Subsample Gating<br/>Fasting Plasma Glucose (LBXGLU) available<br/>n = 1,376 (1,360 records excluded)"]
+    F --> G["Final Analytic Cohort<br/>n = 1,376 postmenopausal women"]
+    
+    subgraph Target["DIANA Modeling Data Split"]
+        G --> H["Normal Glycemic Group<br/>(HbA1c < 5.7% & FBS < 100 mg/dL)<br/>n = 642 (46.7%)"]
+        G --> I["At-Risk Glycemic Group<br/>(HbA1c >= 5.7% or FBS >= 100 mg/dL)<br/>n = 734 (53.3%)"]
+    end
 ```
 
 Figure 3.1 summarizes the main methodological pathway used in the study. Detailed procedures for feature selection, model comparison, threshold optimization, subtype assignment, explainability, and system testing are discussed in the succeeding sections.
@@ -206,6 +213,31 @@ $$
 
 To guarantee a mathematically rigorous and fair comparison, all candidate models—interpretable linear baseline (Logistic Regression), ensemble non-linear baseline (Random Forest), and gradient-boosted trees (LightGBM and XGBoost)—were evaluated under the exact same nested Leave-One-Group-Out (LOGO) cross-validation framework. Preprocessing (median imputation and Z-score standardization) was handled inside each outer loop and learned strictly from the training folds to prevent data leakage. Hyperparameter search for all models was executed via `GridSearchCV` on the inner splits of the development partitions, using the same GroupKFold strategy (where survey cycles served as groups) and the identical optimization target (maximizing AUC-ROC). This ensures that every model was tuned with the same degree of computational rigor, eliminating any bias toward the selected linear model. Candidate models were compared under the same input-feature contract and search procedure so that model selection reflected algorithm behavior rather than inconsistent feature access.
 
+**Figure 3.2. Nested LOGO Cross-Validation and Hyperparameter Optimization Loop**
+
+```mermaid
+flowchart TD
+    A["Analytic Cohort (n = 1,376)<br/>Divided into 6 survey releases"] --> B["Outer Loop: Leave-One-Group-Out (LOGO)<br/>Iterate for each survey release j = 1 to 6"]
+    B --> C["Holdout Test Set: Cycle j<br/>(e.g., 2021-2023 cycle)"]
+    B --> D["Development Set: Remaining 5 Cycles<br/>(Used for Training & Tuning)"]
+    
+    subgraph InnerLoop["Inner Optimization Loop (GridSearchCV)"]
+        D --> E["Split Development Cycles using GroupKFold (3 splits)<br/>Respecting cycle boundaries"]
+        E --> F["Iterative Parameter Grid Search<br/>For each candidate model & hyperparameter combination"]
+        F --> G["Fit Pipeline on Training Folds:<br/>1. Impute missing values (median)<br/>2. Standardize features (Z-score)<br/>3. Train estimator (LR, RF, LGBM, XGB)"]
+        G --> H["Evaluate performance on validation folds<br/>Measure Inner CV Mean AUC-ROC"]
+        H -->|Next combo| F
+        H -->|All combos evaluated| I["Select Best Hyperparameter Configuration<br/>(Maximizes Inner CV AUC)"]
+    end
+    
+    I --> J["Fit Final Model Pipeline<br/>On full 5 development cycles using best params"]
+    J --> K["Generate Out-Of-Fold (OOF) predictions<br/>On development set for threshold optimization"]
+    K --> L["Determine Optimal Triage Threshold<br/>(e.g., Youden's J threshold = 0.465)"]
+    L --> M["Final Evaluation on Held-Out Test Set (Cycle j)<br/>Evaluate model performance and record test fold metrics"]
+    C --> M
+    M --> N["Aggregate Test Fold Results<br/>Calculate final cross-validated metrics (AUC, sensitivity, specificity)"]
+```
+
 **Phase 4 Start: Model Testing, Evaluation, Thresholding, and Calibration.** Phase 4 begins once candidate models and hyperparameter grids have been defined. This phase covers nested LOGO validation, fold-level model evaluation, final model selection, threshold optimization, calibration analysis, and later contextual benchmark comparison.
 
 The inner loop used grouped cross-validation so that NHANES survey-cycle boundaries were respected during model selection. The outer loop used Leave-One-Group-Out (LOGO) validation, holding out one entire NHANES release at a time. This nested LOGO design estimated whether a model trained on prior survey groups could generalize to a distinct temporal cohort. It is more conservative than random k-fold validation because observations from the same survey period are not split across training and testing (Vabalas et al., 2019).
@@ -350,7 +382,7 @@ The term "Ahlqvist-inspired" is deliberate. The original adult-onset diabetes su
 
 The SIDD-like label requires particular caution. True SIDD classification requires beta-cell function markers such as HOMA2-B or C-peptide, which were unavailable in the NHANES feature set used by DIANA. In this study, SIDD-like is therefore interpreted as an atherogenic or lipid-driven proxy label based primarily on elevated LDL patterns rather than as a true insulin-deficiency subtype diagnosis. The SAID category was not assigned because autoimmune markers were unavailable. These labels are heuristic descriptions, not validated biological subtype diagnoses, not treatment directives, and not replacements for clinical judgment.
 
-**Figure 3.2. Two-Stage Screening and Subtype Assignment Workflow**
+**Figure 3.3. Two-Stage Screening and Subtype Assignment Workflow**
 
 ```mermaid
 flowchart TB
@@ -366,7 +398,7 @@ flowchart TB
     I --> J["Feature-attribution explanation requested<br/>when available"]
 ```
 
-Figure 3.2 clarifies the separation between binary screening and subtype assignment. DIANA first determines whether the profile is normal or at risk. Only at-risk outputs proceed to weighted K-Means subtyping, which prevents the system from assigning disease-pattern labels to users classified as normal.
+Figure 3.3 clarifies the separation between binary screening and subtype assignment. DIANA first determines whether the profile is normal or at risk. Only at-risk outputs proceed to weighted K-Means subtyping, which prevents the system from assigning disease-pattern labels to users classified as normal.
 
 **Phase 6 Start: Web Application Integration and Visualization Development.** Phase 6 begins after the screening and clustering workflows have been defined. This phase integrates the trained model behavior into the web application, including assessment submission, risk-result presentation, subtype context, SHAP-based explanation handling, biomarker trend visualization, and report-support workflows.
 
@@ -409,7 +441,7 @@ The deployment design follows a reverse-proxy pattern in which public browser tr
 | Deployment | Managed or containerized deployment | Reverse-proxy ingress, separated services, and PostgreSQL-backed persistence |
 | Charts | Recharts | Interactive biomarker trends and explainability visualizations |
 
-**Figure 3.3. DIANA Four-Tier System Architecture**
+**Figure 3.4. DIANA Four-Tier System Architecture**
 
 ```mermaid
 flowchart TB
@@ -441,7 +473,7 @@ In both supported deployment variants, public traffic enters through a reverse p
 
 The backend and ML service were decoupled so routine API operations remain separate from model inference and explanation generation. During assessment creation, the backend authenticates the user, validates submitted biomarkers, sends the model-relevant payload to the ML service, receives prediction and lineage metadata, stores the assessment, refreshes affected cached data when applicable, and returns the result to the interface. Prediction failures are returned as structured errors rather than silently hidden by fallback behavior.
 
-**Figure 3.4. Assessment Prediction and Optional Explanation Sequence**
+**Figure 3.5. Assessment Prediction and Optional Explanation Sequence**
 
 ```mermaid
 sequenceDiagram
@@ -471,7 +503,7 @@ sequenceDiagram
     end
 ```
 
-Figure 3.4 separates the required assessment-creation path from the optional explanation path. The assessment is first validated, predicted, persisted, and returned to the interface. SHAP explanation is requested separately through the explanation workflow only when the interface needs feature-attribution output.
+Figure 3.5 separates the required assessment-creation path from the optional explanation path. The assessment is first validated, predicted, persisted, and returned to the interface. SHAP explanation is requested separately through the explanation workflow only when the interface needs feature-attribution output.
 
 The API design was organized around access-control boundaries rather than a single public service surface. Public access was limited to authentication and basic system-status functions. Authenticated users accessed profile, assessment, privacy, trends, analytics, and report-export workflows. Doctor and administrator roles provided controlled access to cohort insights, audit review, user management, model traceability, and drift-related monitoring. Table 3.10 summarizes these access levels without enumerating implementation-level routes.
 
@@ -725,7 +757,7 @@ The K = 4 solution was retained to preserve the Ahlqvist-inspired four-pattern i
 
 The cluster distribution demonstrates metabolic heterogeneity within the at-risk class. MARD-like was the largest cluster, followed by MOD-like, SIDD-like, and SIRD-like. The MOD-like centroid had a BMI of approximately 42.05, indicating severe obesity in this cohort rather than moderate obesity. The SIRD-like centroid was characterized by high triglycerides, low HDL cholesterol, and elevated waist circumference and had the highest LAP-style centroid score. The SIDD-like centroid was assigned by highest LDL cholesterol among the remaining centroids and should therefore be interpreted as a lipid-driven proxy rather than true insulin deficiency. Because assignments are based on weighted distance to centroids plus deterministic post hoc centroid labeling, subtype outputs should be understood as geometric pattern assignments rather than rule-based clinical diagnoses.
 
-To empirically demonstrate that the clustering is entirely data-driven and contains no patient-level pre-filtering rules, we performed a multi-panel visual proof mapping the mathematical boundaries of the groups. Panel A of Figure 4.3 projects the 6-dimensional patient feature space onto the first two principal components. The resulting partition forms clean Voronoi decision regions centered around each mathematical centroid ($C_0$, $C_1$, $C_2$, $C_3$). No axis-aligned clinical check-box rules are visible in the PCA space. Panel B plots patients along two raw dimensions (BMI and Triglycerides). The cluster boundaries are overlapping and diagonal, proving that no single-biomarker thresholds are used to segregate the cohort. Panel C shows the mathematical silhouette coefficient distribution for each patient sorted by cluster, establishing that the groupings optimize mathematical cohesion rather than satisfy heuristic logic rules.
+To empirically demonstrate that the clustering is entirely data-driven and contains no patient-level pre-filtering rules, we performed a multi-panel visual proof mapping the mathematical boundaries of the groups. Panel A of Figure 4.4 projects the 6-dimensional patient feature space onto the first two principal components. The resulting partition forms clean Voronoi decision regions centered around each mathematical centroid ($C_0$, $C_1$, $C_2$, $C_3$). No axis-aligned clinical check-box rules are visible in the PCA space. Panel B plots patients along two raw dimensions (BMI and Triglycerides). The cluster boundaries are overlapping and diagonal, proving that no single-biomarker thresholds are used to segregate the cohort. Panel C shows the mathematical silhouette coefficient distribution for each patient sorted by cluster, establishing that the groupings optimize mathematical cohesion rather than satisfy heuristic logic rules.
 
 The Ahlqvist-inspired interpretation should therefore be read as subtype-context support rather than as biological subtype validation. DIANA does not assign SAID because autoimmune markers are unavailable, and the SIDD-like group is interpreted as lipid-driven or atherogenic rather than as confirmed insulin-deficient diabetes. The cluster results support the presence of heterogeneous metabolic patterns among at-risk users, but they do not establish treatment categories.
 
@@ -735,7 +767,7 @@ The Ahlqvist-inspired interpretation should therefore be read as subtype-context
 
 ![Weighted K-Means centroid heatmap](../../../models/binary_v2_no_bp/visualizations/cluster_heatmap.png)
 
-**Figure 4.3. Mathematical and Visual Proof of Unsupervised Geometric Partitioning**
+**Figure 4.4. Mathematical and Visual Proof of Unsupervised Geometric Partitioning**
 
 ![Unsupervised geometric partitioning proof](../../../models/binary_v2_no_bp/results/clustering_mathematical_proofs.png)
 ### 4.6 Preprocessing and Leakage Validation Results
@@ -772,23 +804,23 @@ After form submission, the backend validates the request, sends the relevant ass
 
 The result interface presents outputs in a layered hierarchy. The first layer shows binary screening classification through risk score, risk category, and threshold context. The second layer shows metabolic subtype context only when subtype output is available. The third layer presents clinical guardrails and actionable follow-up text. Normal predictions receive neutral subtype wording so that disease-pattern labels are not assigned to users classified as normal.
 
-The interface screenshots in Figures 4.4 through 4.7 are local evidence captures documented in `docs/07-research/thesis-drafts/screenshots/README.md`. The manifest records the capture date, local frontend and backend endpoints, 1440 x 1000 PNG dimensions, source views, and SHA-256 hashes. They are used only as interface-evidence figures; no synthetic SHAP screenshot is included in the clean draft.
+The interface screenshots in Figures 4.5 through 4.8 are local evidence captures documented in `docs/07-research/thesis-drafts/screenshots/README.md`. The manifest records the capture date, local frontend and backend endpoints, 1440 x 1000 PNG dimensions, source views, and SHA-256 hashes. They are used only as interface-evidence figures; no synthetic SHAP screenshot is included in the clean draft.
 
-**Figure 4.4. Main Dashboard Interface**
+**Figure 4.5. Main Dashboard Interface**
 
 ![DIANA main dashboard interface](screenshots/figure-4-3-main-dashboard.png)
 
-**Figure 4.5. Assessment Form With Real-Time Validation**
+**Figure 4.6. Assessment Form With Real-Time Validation**
 
 ![DIANA assessment form with BMI calculation and biomarker inputs](screenshots/figure-4-4-assessment-form-validation.png)
 
-**Figure 4.6. Assessment Result Modal With Clinical Interpretation**
+**Figure 4.7. Assessment Result Modal With Clinical Interpretation**
 
 ![DIANA assessment-result modal](screenshots/figure-4-5-ml-result-modal.png)
 
 The screenshot was captured from the running application using a completed assessment. It shows the current result modal and does not include synthetic SHAP values.
 
-**Figure 4.7. Personal Trends Visualization**
+**Figure 4.8. Personal Trends Visualization**
 
 ![DIANA personal trends visualization](screenshots/figure-4-6-personal-trends.png)
 
@@ -879,7 +911,23 @@ Third, the subtype module uses weighted K-Means clustering and Ahlqvist-inspired
 
 Fifth, formal community UAT, accessibility testing, and production load testing remain incomplete. The completed doctor review provides initial qualitative expert face-validity support, but it did not collect formal scored ratings and does not replace external clinical validation. Sixth, although the live deployment audit verified public exposure limits, TLS, CORS, host firewall posture, database TLS behavior, and ML API-key enforcement, the interface navigation and browser-token handling still reflect prototype-stage implementation choices that would require further security and usability hardening before clinical production use. For these reasons, DIANA is presented as a screening-support prototype with promising internal validation and initial expert feedback, not as a clinically validated diagnostic system.
 
-### 4.14 Chapter Synthesis
+### 4.14 Recommendations for Future Action and Research
+
+Based on the empirical findings, validation metrics, and limitations identified in this study, the following actions and research pathways are strongly recommended to advance DIANA from a screening-support prototype to a validated clinical deployment:
+
+1. **Conduct Local Prospective Validation in Filipino Cohorts:**
+   Because the predictive models were trained on U.S. NHANES data, the transferability of the model coefficients and decision thresholds ($t=0.465$) to Filipina menopausal women must be validated. It is recommended to partner with local government units and barangay health centers (e.g., in Nagcarlan, Laguna) to conduct a prospective cohort study. Collecting local, non-invasive biomarker data (age, BMI, waist circumference, lipid panels) and comparing predictions against confirmatory HbA1c lab tests will support necessary ethnic-specific recalibration of model intercepts.
+   
+2. **Evaluate Low-Cost Screening Deployment Strategies:**
+   To address care access inequities in resource-limited rural clinics, future research should assess the cost-benefit ratio of DIANA's cuff-less, non-glycemic design. Because DIANA does not require expensive diagnostic equipment or blood pressure cuffs, it operates at near-zero incremental cost. Research should investigate integrating DIANA into existing community health worker workflows to evaluate whether digital pre-screening increases the rate of early diabetes detection and reduces overall diagnostic costs per patient.
+   
+3. **Pilot Longitudinal Risk Tracking:**
+   To validate the clinical effectiveness of screening, a longitudinal pilot study is recommended. By tracking risk scores over 12- to 36-month intervals, researchers can evaluate if showing users their personalized trends and SHAP explanations successfully drives lifestyle modifications (diet, exercise) and delays the onset of type 2 diabetes.
+   
+4. **Integrate Cardiovascular Co-Morbidities:**
+   Due to the high concurrence of cardiovascular disease and metabolic syndrome in postmenopausal women, it is recommended to expand the system’s scope. Future versions should investigate integrating non-invasive cardiovascular risk calculators (such as the ASCVD risk estimator) into the screening output to provide a more holistic metabolic-cardiovascular health report.
+
+### 4.15 Chapter Synthesis
 
 The results demonstrate that DIANA provides a technically implemented and methodologically conservative screening-support workflow for diabetes risk stratification among postmenopausal women. Its strongest methodological contribution is the separation of diagnostic label construction from predictor inputs, supported by an automated leakage validation pipeline. The final Logistic Regression model achieved acceptable discrimination under conservative temporal validation while preserving interpretability and deployment simplicity.
 
