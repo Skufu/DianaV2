@@ -840,22 +840,11 @@ class ClinicalPredictor:
                 "error": f"Missing required features: {missing}"
             }
         
-        # Make a mutable copy of data to apply clinical heuristics before feature extraction
+        # Keep missing numeric inputs missing here. The persisted classifier Pipeline
+        # owns imputation and applies medians learned from its training data. Filling
+        # waist from BMI at serving time would create an unevaluated training-serving
+        # mismatch because nested CV evaluated the Pipeline's fold-local median only.
         data_work = dict(data)
-        
-        # CLINICAL GUARDRAIL: BMI-Concordant Waist Imputation
-        # Scikit-learn's median imputer injects ~97cm for missing waist. For slim patients (e.g. BMI 21.5),
-        # this physiologically impossible value artificially inflates risk via false visceral adiposity.
-        # We intercept missing waist and estimate it using the NHANES postmenopausal average ratio (3.33).
-        waist = data_work.get('waist_circumference', np.nan)
-        if waist in (None, "", 0):
-            waist = np.nan
-            
-        bmi = data_work.get('bmi', 0)
-        if np.isnan(waist) and bmi and float(bmi) > 0:
-            estimated_waist = float(bmi) * 3.33
-            data_work['waist_circumference'] = estimated_waist
-            logger.info(f"Missing waist imputed from BMI ({bmi}) -> {estimated_waist:.1f} cm (prevents median imputer penalty)")
 
         # Prepare model feature vector in training order (features determined by features.json).
         X = self._build_feature_vector(data_work)
@@ -1092,13 +1081,13 @@ class ClinicalPredictor:
     
     def _apply_metabolic_syndrome_boost(self, probability, data):
         """
-        Boost probability for patients with metabolic syndrome markers.
+        Apply the DIANA post-model metabolic-risk heuristic.
 
-        Metabolic syndrome criteria (ATPIII):
+        DIANA indicators (not a clinical metabolic-syndrome diagnosis):
         - TG >= 150 mg/dL
-        - HDL < 50 mg/dL (female) or < 40 mg/dL (male)
+        - HDL < 50 mg/dL
         - BMI >= 25 (overweight)
-        - Age 45-60 (postmenopausal)
+        - Waist circumference >= 80 cm when supplied
 
         If 3+ criteria met, boost probability to at least 0.65
         If 2 criteria met, boost probability by +0.15
@@ -1111,11 +1100,14 @@ class ClinicalPredictor:
         Boost probability for patients with metabolic syndrome markers.
         Returns tuple of (boosted_probability, info_dict).
 
-        Metabolic syndrome criteria (ATPIII / WHO Asia-Pacific):
+        DIANA indicators using selected ATP III / WHO Asia-Pacific cutoffs:
         - TG >= 150 mg/dL
-        - HDL < 50 mg/dL (female) or < 40 mg/dL (male)
+        - HDL < 50 mg/dL
         - BMI >= 25 (overweight)
         - Waist Circumference >= 80 cm (Asian threshold for women)
+
+        Their four-item combination and probability changes are DIANA-specific
+        engineering choices, not a clinical metabolic-syndrome definition.
 
         If 3+ criteria met, boost probability to at least 0.65
         If 2 criteria met, boost probability by +0.15

@@ -16,7 +16,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -47,20 +46,17 @@ except ModuleNotFoundError:
 MODELS_ROOT = paths_module.MODELS_ROOT
 NHANES_PROCESSED_ROOT = paths_module.NHANES_PROCESSED_ROOT
 
-try:
-    feature_constants = importlib.import_module("Ian_ML.common.feature_constants")
-except ModuleNotFoundError:
-    feature_constants = importlib.import_module("..common.feature_constants", package=__package__)
-CLUSTER_FEATURES = feature_constants.CLUSTER_FEATURES
-CLUSTER_FEATURE_COUNT = feature_constants.CLUSTER_FEATURE_COUNT
-KMEANS_K = feature_constants.KMEANS_K
-
-
 warnings.filterwarnings("ignore")
 
 # Configuration
 DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
-MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp"
+_models_dir_override = os.environ.get("DIANA_MODEL_OUTPUT_DIR")
+if _models_dir_override:
+    MODELS_DIR = Path(_models_dir_override).expanduser()
+    if not MODELS_DIR.is_absolute():
+        MODELS_DIR = paths_module.REPO_ROOT / MODELS_DIR
+else:
+    MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp"
 RESULTS_DIR = MODELS_DIR / "results"
 VIZ_DIR = MODELS_DIR / "visualizations"
 
@@ -85,40 +81,6 @@ FEATURES_LEGACY = [
     # Enrichment features (1)
     "waist_circumference",
 ]
-
-# Ahlqvist et al. T2DM Subtype definitions
-AHLQVIST_SUBTYPES = {
-    'SIRD': {
-        'full_name': 'Severe Insulin-Resistant Diabetes',
-        'characteristics': 'High BMI, high TG, low HDL (metabolic syndrome pattern)',
-        'clinical_implication': 'Responds well to insulin sensitizers (metformin)',
-        'risk_level': 'HIGH',
-        'risk_label': 'High Risk'
-    },
-    'SIDD': {
-        'full_name': 'Atherogenic / Lipid-Driven Diabetes',
-        'subtype': 'ATH',
-        'characteristics': 'High LDL cholesterol, severe dyslipidemia (atherogenic phenotype)',
-        'clinical_implication': 'Statin therapy indicated; cardiovascular risk management primary; identified via LDL proxy without HOMA2 (adaptation per Tanabe 2024)',
-        'risk_level': 'HIGH',
-        'risk_label': 'High Risk'
-    },
-    'MOD': {
-        'full_name': 'Mild Obesity-Related Diabetes',
-        'characteristics': 'High BMI (>30), moderate metabolic markers',
-        'clinical_implication': 'Weight management primary intervention',
-        'risk_level': 'MODERATE',
-        'risk_label': 'Moderate Risk'
-    },
-    'MARD': {
-        'full_name': 'Mild Age-Related Diabetes',
-        'characteristics': 'Older age at diagnosis, mild metabolic dysfunction',
-        'clinical_implication': 'Conservative management, slower progression',
-        'risk_level': 'LOW',
-        'risk_label': 'Low Risk'
-    }
-}
-
 
 def normalize_alcohol_category(value: object) -> str:
     text = str(value).strip()
@@ -864,192 +826,6 @@ def bootstrap_auc_ci(
     )
 
 
-def assign_ahlqvist_labels(cluster_centers, feature_names, k=4) -> dict[int, str]:
-    centers_df = pd.DataFrame(cluster_centers, columns=feature_names)
-    available_clusters = list(range(k))
-    final_labels: dict[int, str] = {}
-    
-    # 1. Identify SIRD: Highest LAP score (validated insulin resistance proxy)
-    # LAP = (WC - 58) * TG — validated in Wang et al. (2024) BMC Endocrine Disorders
-    ir_scores: dict[int, float] = {}
-    for cid in available_clusters:
-        c = centers_df.iloc[cid]
-        waist = c.get('waist_circumference', 0)
-        tg = c.get('triglycerides', 0)
-        # LAP formula for women: (WC - 58) * TG (WC in cm, TG in mg/dL)
-        ir_scores[cid] = (waist - 58) * tg
-    
-    sird_id = max(ir_scores, key=lambda cid: float(ir_scores[cid]))
-    final_labels[sird_id] = 'SIRD'
-    available_clusters.remove(sird_id)
-    
-    # 2. Identify SIDD → Rebranded as "Atherogenic/Lipid-Driven" phenotype:
-    # Highest LDL among remaining (reflecting the atherogenic driver of this subtype)
-    # Note: True SIDD requires HOMA2-B/C-peptide for beta-cell function.
-    # Without insulin metrics, we use high LDL as a proxy for the atherogenic phenotype.
-    ldl_scores: dict[int, float] = {}
-    for cid in available_clusters:
-        c = centers_df.iloc[cid]
-        ldl_scores[cid] = c.get('ldl', 0)
-    
-    sidd_id = max(ldl_scores, key=lambda cid: float(ldl_scores[cid]))
-    final_labels[sidd_id] = 'SIDD'
-    available_clusters.remove(sidd_id)
-    
-    # 3. Identify MOD
-    mod_scores: dict[int, float] = {}
-    for cid in available_clusters:
-        mod_scores[cid] = centers_df.iloc[cid].get('bmi', 0)
-    
-    mod_id = max(mod_scores, key=lambda cid: float(mod_scores[cid]))
-    final_labels[mod_id] = 'MOD'
-    available_clusters.remove(mod_id)
-    
-    # 4. Identify MARD
-    mard_id = available_clusters[0]
-    final_labels[mard_id] = 'MARD'
-    
-    return final_labels
-
-
-def train_serving_kmeans(
-    X: np.ndarray,
-    y: np.ndarray,
-    features: list[str],
-    diabetes_labels: np.ndarray | None = None,
-) -> dict[int, dict[str, object]]:
-    """
-    Train K-Means clustering on at-risk patients for Ahlqvist subtype classification.
-
-    Args:
-        X: Feature matrix (n_samples, n_features)
-        y: Binary target array (n_samples,) where 1 = at-risk
-        features: List of feature names corresponding to X columns
-        diabetes_labels: Optional original 3-class labels for diabetic rate analysis
-
-    Returns:
-        Dictionary mapping cluster IDs to subtype profile dictionaries
-
-    Raises:
-        ValueError: If input array shapes are inconsistent or empty
-    """
-    # Input validation
-    if X.shape[0] == 0:
-        raise ValueError("X cannot be empty")
-    if len(y) == 0:
-        raise ValueError("y cannot be empty")
-    if X.shape[0] != len(y):
-        raise ValueError(f"X and y must have same number of samples: {X.shape[0]} != {len(y)}")
-    if diabetes_labels is not None and len(diabetes_labels) != len(y):
-        raise ValueError(
-            f"diabetes_labels must have same length as y: {len(diabetes_labels)} != {len(y)}"
-        )
-
-    # Use base clinical features for clustering (same as clinical_3class)
-    # IMPORTED from Ian_ML.common.feature_constants - DO NOT HARDCODE
-    cluster_features = CLUSTER_FEATURES
-
-    # Create feature index mapping
-    feature_idx = {f: i for i, f in enumerate(features)}
-    cluster_idx = [feature_idx[f] for f in cluster_features if f in feature_idx]
-
-    if len(cluster_idx) != len(cluster_features):
-        print(f"[WARNING] Missing cluster features, using all available")
-        cluster_idx = list(range(min(5, X.shape[1])))
-
-    # ── Filter to at-risk patients only ──────────────────────────────
-    at_risk_mask = (y == 1)
-    X_at_risk = X[at_risk_mask][:, cluster_idx].copy()
-
-    print(f"\n[CLUSTERING] Fitting on at-risk patients only: "
-          f"n={int(at_risk_mask.sum())} / {len(y)} total")
-
-    # Handle NaN values before clustering
-    imputer = SimpleImputer(strategy="median")
-    X_at_risk = imputer.fit_transform(X_at_risk)
-
-    # Scale for clustering (fitted on at-risk population only)
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X_at_risk)
-
-    # Train K-Means with K=4
-    kmeans = KMeans(n_clusters=4, random_state=42, n_init="auto")
-    clusters = kmeans.fit_predict(X_scaled)
-
-    # Assign Ahlqvist labels based on centroid characteristics
-    # Inverse transform Z-scores back to raw clinical values for proper LAP calculation
-    raw_cluster_centers = scaler.inverse_transform(kmeans.cluster_centers_)
-    label_map = assign_ahlqvist_labels(
-        raw_cluster_centers, cluster_features, k=4
-    )
-
-    # ── Build cluster profiles (at-risk patients only) ───────────────
-    # If we have original 3-class labels, compute diabetic rate within
-    # each cluster for richer clinical context.
-    if diabetes_labels is not None:
-        y_original_at_risk = diabetes_labels[at_risk_mask]
-    else:
-        y_original_at_risk = None
-
-    cluster_profiles: dict[int, dict[str, object]] = {}
-    for k in range(4):
-        mask = clusters == k
-        cluster_size = int(np.sum(mask))
-        subtype_key = label_map[k]
-        subtype_info = AHLQVIST_SUBTYPES[subtype_key]
-
-        profile: dict[str, object] = {
-            "label": subtype_key,
-            "subtype": subtype_key,
-            "subtype_full": subtype_info["full_name"],
-            "risk_level": subtype_info["risk_level"],
-            "risk_label": subtype_info["risk_label"],
-            "description": subtype_info["characteristics"],
-            "treatment_focus": subtype_info["clinical_implication"],
-            "size": cluster_size,
-            "population": "at_risk_only",
-        }
-
-        # Add diabetic vs pre-diabetic breakdown if available
-        if y_original_at_risk is not None:
-            cluster_labels = y_original_at_risk[mask]
-            diabetic_count = int(np.sum(cluster_labels == 2))
-            prediabetic_count = int(np.sum(cluster_labels == 1))
-            diabetic_rate = (
-                diabetic_count / cluster_size if cluster_size > 0 else 0.0
-            )
-            profile["diabetic_count"] = diabetic_count
-            profile["prediabetic_count"] = prediabetic_count
-            profile["diabetic_rate"] = float(diabetic_rate)
-            profile["severity_score"] = float(diabetic_rate)
-        else:
-            profile["severity_score"] = 0.5  # unknown
-
-        cluster_profiles[k] = profile
-
-    # Save clustering artifacts.
-    # NOTE: weighted_kmeans_model.joblib is saved by clustering.py (the active
-    # KMeans artifact used by ClinicalPredictor). Do NOT save a competing
-    # kmeans_model.joblib here — it would be a dead artifact.
-    joblib.dump(scaler, MODELS_DIR / "cluster_scaler.joblib")
-    joblib.dump(imputer, MODELS_DIR / "cluster_imputer.joblib")
-
-    with open(MODELS_DIR / "cluster_labels.json", 'w') as f:
-        json.dump(cluster_profiles, f, indent=2)
-
-    print(f"[CLUSTERING] K-Means K=4 trained with Ahlqvist subtypes (at-risk only)")
-    for k, prof in cluster_profiles.items():
-        severity = prof.get("diabetic_rate", "?")
-        sev_str = f", {severity:.0%} diabetic" if isinstance(severity, float) else ""
-        subtype_full = prof.get('subtype_full', prof['subtype'])
-        print(
-            f"  Cluster {k}: {prof['subtype']} / {subtype_full} "
-            f"(n={prof['size']}{sev_str})"
-        )
-
-    return cluster_profiles
-
-
 def save_feature_manifest() -> None:
     with open(MODELS_DIR / "features.json", "w") as f:
         json.dump({
@@ -1102,8 +878,13 @@ def save_fold_metrics(fold_df: pd.DataFrame) -> None:
     print(f"\n[DEFENSIBILITY] Saved fold metrics to {RESULTS_DIR}")
 
 
-def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) -> None:
+def save_best_model_report(
+    comparison_df: pd.DataFrame,
+    fold_df: pd.DataFrame,
+    best_model_name: str,
+) -> None:
     best_row = comparison_df[comparison_df["Model"] == best_model_name].iloc[0]
+    best_fold_rows = fold_df[fold_df["Model"] == best_model_name]
     
     report = {
         "model_type": "binary_v2_no_bp",
@@ -1111,6 +892,14 @@ def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) ->
         "best_model": best_model_name,
         "n_features": len(MODEL_FEATURES),
         "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
+        "model_selection": {
+            "primary_criterion": "highest mean outer-fold ROC-AUC",
+            "selection_scope": "four prespecified candidate families",
+            "mean_outer_fold_auc": float(best_fold_rows["AUC_ROC"].mean()),
+            "std_outer_fold_auc": float(best_fold_rows["AUC_ROC"].std(ddof=1)),
+            "n_outer_folds": int(len(best_fold_rows)),
+            "caution": "Outer-fold results informed family retention; selection optimism is possible.",
+        },
         "decision_thresholds": {
             "at_risk": float(best_row["Mean_Threshold"])
         },
@@ -1129,12 +918,27 @@ def save_best_model_report(comparison_df: pd.DataFrame, best_model_name: str) ->
             "inner_cv_auc_mean": float(best_row["Inner_CV_AUC_Mean"]),
             "inner_cv_auc_std": float(best_row["Inner_CV_AUC_Std"]),
         },
+        "metric_aggregation": {
+            "auc_roc": "pooled predictions from all outer held-out records",
+            "accuracy_sensitivity_specificity_ppv_npv_f1": (
+                "pooled outer held-out records using each fold's development-derived threshold"
+            ),
+            "auc_ci_95_and_sensitivity_ci_95": (
+                "conditional row bootstrap of fixed pooled held-out predictions"
+            ),
+            "mean_threshold": "unweighted mean of six fold-specific thresholds",
+        },
         "threshold_policy": {
             "strategy_mode": str(best_row.get("Threshold_Strategy_Mode", "unknown")),
             "guardrail_folds": int(best_row.get("Guardrail_Folds", 0)),
         },
         "features": MODEL_FEATURES,
-        "clinical_rationale": "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). Prioritizes sensitivity for screening. Uses 9 LR-safe features (continuous + ordinal only).",
+        "clinical_rationale": (
+            "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). "
+            "Model-family retention used mean outer-fold ROC-AUC; sensitivity was emphasized "
+            "only in the separate operating-threshold policy. Uses 9 LR-safe features "
+            "(continuous + ordinal only)."
+        ),
     }
     
     with open(RESULTS_DIR / "best_model_report.json", 'w') as f:
@@ -1408,17 +1212,16 @@ def main():
     X = df_clean[MODEL_FEATURES].values.astype(float)
     y = df_clean["at_risk_binary_v2_no_bp"].values.astype(int)
     groups = df_clean["cycle"].astype(str).to_numpy()
-    # Keep original 3-class labels for cluster profiling
-    diabetes_labels = df_clean["diabetes_label"].values.astype(int)
     
     print(f"\n[DATA]")
     print(f"       Features: {len(MODEL_FEATURES)}")
     print(f"       Samples: {len(X)}")
     print(f"       NHANES cycles: {list(np.unique(groups))}")
     
-    # Train clustering (at-risk patients only — scientifically correct)
-    cluster_profiles = train_serving_kmeans(X, y, MODEL_FEATURES, diabetes_labels)
-    
+    # Clustering is intentionally separate. scripts/dev/retrain-binary.sh runs
+    # training/clustering.py after classifier training so only one weighted K=4
+    # implementation can write cluster artifacts.
+
     # Build model registry
     model_registry = build_model_registry()
     
@@ -1486,7 +1289,7 @@ def main():
     joblib.dump(final_pipeline, MODELS_DIR / "best_model.joblib")
     save_feature_manifest()
     save_fold_metrics(fold_df)
-    save_best_model_report(comparison_df, str(best_model_name))
+    save_best_model_report(comparison_df, fold_df, str(best_model_name))
     generate_roc_curve(aggregated, str(best_model_name))
     
     # Save SHAP background BEFORE generating plots

@@ -455,9 +455,10 @@ def main():
     df = df[(df['RIDAGEYR'] >= 45) & (df['RIDAGEYR'] <= 60)]
     print(f"  After age 45-60 filter: {len(df)}")
     
-    # Postmenopausal (RHQ031 == 2 means no period in past 12 months)
+    # Operational no-period cohort. RHQ031 == 2 means no period in the
+    # past 12 months; it does not by itself establish natural menopause.
     df = df[df['RHQ031'] == 2]
-    print(f"  After postmenopausal filter: {len(df)}")
+    print(f"  After no-period (RHQ031=2) filter: {len(df)}")
     
     # Complete HbA1c is required for reference-label construction. Complete FBS
     # is used here as the fasting-lab availability gate because the active

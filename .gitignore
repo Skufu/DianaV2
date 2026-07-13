@@ -137,6 +137,9 @@ __pycache__/
 # MLflow
 mlruns/
 
+# Non-promoting local model retraining artifacts
+models/experiments/
+
 # Playwright test artifacts
 e2e/screenshots/*
 frontend/playwright-report/

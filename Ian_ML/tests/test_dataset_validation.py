@@ -1,6 +1,6 @@
 """
 Automated Dataset Integrity & Demographic Validation Tests.
-Validates the NHANES postmenopausal analytic cohort properties.
+Validates the NHANES operational no-period analytic cohort properties.
 
 Run: python -m pytest Ian_ML/tests/test_dataset_validation.py -v
 """
@@ -41,20 +41,22 @@ class TestDatasetStructure:
 
 
 class TestDemographicInclusionCriteria:
-    """Verify target population inclusion criteria (menopausal/postmenopausal women)."""
+    """Verify the operational no-period development-cohort contract."""
 
     def test_menopausal_status(self, dataset):
-        # Assert that all records belong to the target cohort of menopausal/postmenopausal women
+        # This legacy column name must not overstate natural-menopause evidence.
         statuses = dataset["menopausal_status"].unique()
         assert len(statuses) == 1, f"Expected only one status, found: {statuses}"
-        assert statuses[0] == "Postmenopausal", f"Expected 'Postmenopausal', found: {statuses[0]}"
+        assert statuses[0] == "Operational no-period cohort", (
+            f"Expected the operational no-period label, found: {statuses[0]}"
+        )
 
     def test_age_range(self, dataset):
-        # Inclusion criteria: midlife and older women (typically age >= 40)
+        # Inclusion criteria: women aged 45 to 60 in the processed cohort.
         min_age = dataset["age"].min()
         max_age = dataset["age"].max()
-        assert min_age >= 40, f"Expected minimum age of at least 40, found: {min_age}"
-        assert max_age <= 80, f"Expected maximum age within NHANES bounds, found: {max_age}"
+        assert min_age >= 45, f"Expected minimum age of at least 45, found: {min_age}"
+        assert max_age <= 60, f"Expected maximum age of at most 60, found: {max_age}"
 
 
 class TestClassBalanceAndPrevalence:

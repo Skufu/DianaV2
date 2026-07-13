@@ -1,0 +1,85 @@
+{
+  "dataset": {
+    "raw_n": 61626,
+    "analytic_n": 1376,
+    "at_risk_n": 734,
+    "reproductive_reason_counts": {
+      "2009-2012:RHD042:7": 402,
+      "2009-2012:RHD042:8": 6,
+      "2009-2012:RHD042:9": 3,
+      "2009-2012:RHD042:99": 1,
+      "2013-2023:RHD043:3": 310,
+      "2013-2023:RHD043:7": 581,
+      "2013-2023:RHD043:9": 70,
+      "2013-2023:RHD043:99": 3
+    },
+    "target_label_source_agreement": {
+      "DIQ010-only vs HbA1c-only": {
+        "eligible_valid_pair_n": 1376,
+        "agreement_n": 831,
+        "agreement_pct": 60.39244186046512
+      },
+      "Hybrid operational label vs HbA1c-only": {
+        "eligible_valid_pair_n": 1376,
+        "agreement_n": 1295,
+        "agreement_pct": 94.11337209302324
+      }
+    }
+  },
+  "information_gain": {
+    "target_entropy": 0.996772937609484,
+    "crp_corrected": 0.024211698997071096,
+    "fasting_insulin_corrected": 0.06045627086109551,
+    "family_history_corrected": 0.014425377483694324,
+    "family_history_missingness_indicator_ig": 0.00536218633381047
+  },
+  "clustering": {
+    "counts_sum": 734,
+    "weighted_k_scan": {
+      "2": {
+        "silhouette": 0.21760526222592197,
+        "davies_bouldin": 1.660545969200588,
+        "calinski_harabasz": 209.03067008558224
+      },
+      "3": {
+        "silhouette": 0.20683675999428147,
+        "davies_bouldin": 1.5582676465476382,
+        "calinski_harabasz": 193.2080925524167
+      },
+      "4": {
+        "silhouette": 0.20792131373852957,
+        "davies_bouldin": 1.383367214437819,
+        "calinski_harabasz": 187.4294665629346
+      },
+      "5": {
+        "silhouette": 0.17608107754519606,
+        "davies_bouldin": 1.4415339139712064,
+        "calinski_harabasz": 170.42361495912363
+      },
+      "6": {
+        "silhouette": 0.16321423194576923,
+        "davies_bouldin": 1.4960109190987996,
+        "calinski_harabasz": 155.52674087251407
+      }
+    },
+    "minimum_weight_perturbation_ari": 0.9185245198192938,
+    "minimum_weight_perturbation_semantic_agreement": 0.9700272479564033,
+    "minimum_seed_ari": 0.9535827860358327,
+    "at_risk_assignment_ari": 0.6852452347729856,
+    "mean_matched_centroid_shift_weighted_sd": 0.5858652886143978,
+    "maximum_normal_concentration_pct": 67.01244813278008
+  },
+  "menstrual_comparison": {
+    "development_eligible_n": 1376.0,
+    "development_at_risk_n": 734.0,
+    "menstruating_eligible_n": 591.0,
+    "menstruating_at_risk_n": 231.0,
+    "chi_square": 3.06246787641451,
+    "chi_square_p": 0.3820937798361046,
+    "cramers_v": 0.05633419779178587
+  },
+  "model_selection": {
+    "lr_outer_auc_wins": 6,
+    "lr_inner_selection_count": 6
+  }
+}

@@ -62,10 +62,10 @@ def load_nhanes_data() -> pd.DataFrame:
     # Create binary target (at-risk vs normal)
     df["at_risk"] = (df["diabetes_status"].isin(["Pre-diabetic", "Diabetic"])).astype(int)
     
-    # Filter to target population (postmenopausal women 45+)
+    # Filter to the modeled operational no-period cohort (legacy column name).
     df = df[
         (df["age"] >= 45) & 
-        (df["menopausal_status"] == "Postmenopausal")
+        (df["menopausal_status"] == "Operational no-period cohort")
     ].copy()
     
     print(f"  [OK] Loaded {len(df)} samples")
@@ -604,7 +604,7 @@ def generate_comparison_report(results: list[dict]) -> str:
     report.append("   - FINDRISC: Finnish-validated tool; may have population bias on NHANES")
     report.append("   - ADA Risk Test: Simple but binary output limits clinical utility")
     report.append("   - Simple Clinical: Minimal data requirements but lower discrimination")
-    report.append("   - DIANA: Optimized for US postmenopausal women; non-circular design")
+    report.append("   - DIANA: Developed in a US no-period cohort; non-circular predictor design")
     report.append("")
     
     report.append("3. METHODOLOGICAL NOTES:")

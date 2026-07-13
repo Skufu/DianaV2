@@ -151,13 +151,14 @@ def entropy(target: pd.Series) -> float:
 
 
 def information_gain(df: pd.DataFrame, feature: str, target: str) -> float:
-    """Information Gain: IG(X,Y) = H(Y) - H(Y|X)."""
+    """Information Gain with missing values treated as an explicit category."""
     total_entropy = entropy(df[target])
     total_samples = len(df)
 
+    partition = df[feature].astype(object).where(df[feature].notna(), "__MISSING__")
     weighted_entropy = 0.0
-    for value in df[feature].unique():
-        subset = df[df[feature] == value]
+    for value in partition.unique():
+        subset = df.loc[partition == value]
         weight = len(subset) / total_samples
         weighted_entropy += weight * entropy(subset[target])
 
@@ -166,6 +167,8 @@ def information_gain(df: pd.DataFrame, feature: str, target: str) -> float:
 
 def discretize(series: pd.Series, bins: int = 5) -> pd.Series:
     """Discretize continuous features into bins for IG calculation."""
+    if series.nunique(dropna=True) <= bins:
+        return series
     try:
         return pd.qcut(series, q=bins, duplicates="drop", labels=False)
     except Exception:
@@ -200,6 +203,8 @@ def rank_features_by_ig(df: pd.DataFrame, features: list[str], target: str) -> p
             results.append({
                 "Feature": feat,
                 "Type": "Numeric" if feat in numeric_cols else "Categorical",
+                "Missing_Percentage": round(float(df_work[feat].isna().mean() * 100), 2),
+                "Conditional_Entropy": round(target_entropy - ig, 6),
                 "Information_Gain": round(ig, 6),
                 "IG_Percentage": round(ig_pct, 2),
             })
@@ -207,13 +212,23 @@ def rank_features_by_ig(df: pd.DataFrame, features: list[str], target: str) -> p
             results.append({
                 "Feature": feat,
                 "Type": "Unknown",
+                "Missing_Percentage": round(float(df_work[feat].isna().mean() * 100), 2),
+                "Conditional_Entropy": round(target_entropy, 6),
                 "Information_Gain": 0.0,
                 "IG_Percentage": 0.0,
             })
 
     ig_df = pd.DataFrame(results).sort_values("Information_Gain", ascending=False)
     ig_df["Rank"] = range(1, len(ig_df) + 1)
-    return ig_df[["Rank", "Feature", "Type", "Information_Gain", "IG_Percentage"]]
+    return ig_df[[
+        "Rank",
+        "Feature",
+        "Type",
+        "Missing_Percentage",
+        "Conditional_Entropy",
+        "Information_Gain",
+        "IG_Percentage",
+    ]]
 
 
 # =============================================================================
@@ -293,7 +308,10 @@ def main() -> int:
         # Engineer derived features (same logic as train_binary_v2_no_bp.py)
         if "bmi" in df.columns:
             df["bmi_category"] = pd.cut(
-                df["bmi"], bins=[0, 18.5, 23, 25, 100], labels=[0, 1, 2, 3]
+                df["bmi"],
+                bins=[-np.inf, 18.5, 23, 25, np.inf],
+                labels=[0, 1, 2, 3],
+                right=False,
             ).astype(float)
         if "triglycerides" in df.columns and "hdl" in df.columns:
             df["tg_hdl_ratio"] = df["triglycerides"] / df["hdl"].replace(0, np.nan)
@@ -338,7 +356,7 @@ def main() -> int:
                 "bmi", "triglycerides", "ldl", "hdl", "age",
                 "waist_circumference",
                 "total_cholesterol", "systolic", "diastolic",
-                "fasting_insulin", "crp",
+                "fasting_insulin", "crp", "family_history_diabetes",
                 # Engineered features
                 "bmi_category", "tg_hdl_ratio",
                 "smoking_encoded", "activity_encoded", "alcohol_encoded",
@@ -357,13 +375,18 @@ def main() -> int:
         else:
             print(f"   [INFO] Using MODEL_FEATURES from features.json ({len(model_features)} features)")
 
-        print(f"\n   {'Rank':<6} {'Feature':<30} {'Type':<10} {'IG':<12} {'IG %':<8}")
-        print(f"   {'-'*70}")
+        print(
+            f"\n   {'Rank':<6} {'Feature':<30} {'Type':<11} "
+            f"{'Missing %':<11} {'H(Y|X)':<12} {'IG':<12} {'IG %':<8}"
+        )
+        print(f"   {'-'*96}")
         for _, row in ig_df.iterrows():
             in_model = " [IN MODEL]" if row["Feature"] in set(model_features) else ""
             in_cluster = " [CLUSTER]" if row["Feature"] in set(CLUSTER_FEATURES) else ""
             print(
-                f"   {row['Rank']:<6} {row['Feature']:<30} {row['Type']:<10} "
+                f"   {row['Rank']:<6} {row['Feature']:<30} {row['Type']:<11} "
+                f"{row['Missing_Percentage']:<11.2f} "
+                f"{row['Conditional_Entropy']:<12.6f} "
                 f"{row['Information_Gain']:<12.6f} {row['IG_Percentage']:<8.2f}"
                 f"{in_model}{in_cluster}"
             )

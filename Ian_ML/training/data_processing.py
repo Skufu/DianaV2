@@ -3,7 +3,7 @@
 DIANA Dataset Preparation Script
 Prepares final dataset with:
 - Diabetes status labels (Normal/Pre-diabetic/Diabetic)
-- Menopausal status column
+- Backward-compatible operational no-period cohort field
 - All required biomarkers
 - Data quality checks (outliers, duplicates)
 
@@ -98,6 +98,21 @@ def classify_diabetes_hba1c(hba1c):
         return "Diabetic"
 
 
+def classify_diabetes_diq010_only(diq010):
+    """Map DIQ010 alone for a non-circular source-agreement audit."""
+    if pd.isna(diq010):
+        return None
+
+    response = int(diq010)
+    if response == 1:
+        return "Diabetic"
+    if response == 2:
+        return "Normal"
+    if response == 3:
+        return "Pre-diabetic"
+    return None
+
+
 def classify_fbs(fbs):
     """Secondary classification using FBS for validation."""
     if pd.isna(fbs):
@@ -112,27 +127,18 @@ def classify_fbs(fbs):
 
 def assign_menopausal_status(age):
     """
-    Assign menopausal status.
+    Populate the legacy ``menopausal_status`` column with an honest cohort label.
 
-    DATASET LIMITATION: All women in this cohort were filtered by NHANES
-    RHQ031 == 2 ("no menstrual period in the past 12 months"), which by
-    WHO definition classifies them as postmenopausal. Therefore this
-    function returns a constant value — this is NOT an oversight.
+    RHQ031 == 2 establishes only that no menstrual period was reported in
+    the prior 12 months. Natural menopause additionally requires excluding
+    other physiological, pathological, surgical, medication, and treatment
+    causes. RHD043 shows that the analytic cohort includes hysterectomy and
+    other reasons, so this field must not claim clinical postmenopause.
 
-    Differentiating perimenopause from postmenopause would require at
-    least one of:
-      - FSH levels (>25 IU/L suggests perimenopause, >40 IU/L postmenopause)
-      - Menstrual cycle regularity data (variable cycle length = perimenopause)
-      - Anti-Müllerian hormone (AMH) levels
-    None of these are available in the NHANES variables used by DIANA.
-
-    This is explicitly acknowledged as a thesis limitation: DIANA does
-    not distinguish perimenopause from postmenopause in its current
-    data pipeline.
+    ``age`` is retained in the signature for backward compatibility; it does
+    not determine the returned label.
     """
-    # All subjects are postmenopausal per the RHQ031 == 2 inclusion filter.
-    # Perimenopause classification is not possible without FSH or cycle data.
-    return "Postmenopausal"
+    return "Operational no-period cohort"
 
 
 def detect_outliers_iqr(df, column, multiplier=1.5):
@@ -279,17 +285,31 @@ def main():
         print(f"   DIQ010 distribution: {diq_counts}")
         print(f"   (1=Diabetic, 2=No, 3=Borderline)")
         
-        # Add HbA1c-based status for validation comparison
+        # Compare the two source variables directly. Do not compare the final
+        # hybrid label with HbA1c as independent evidence because that label
+        # already incorporates HbA1c and would make the agreement circular.
+        df['diq010_status'] = df['DIQ010'].apply(classify_diabetes_diq010_only)
         df['hba1c_status'] = df['hba1c'].apply(classify_diabetes_hba1c)
-        
-        # Check agreement between self-reported and HbA1c
-        both_valid = df['diabetes_status'].notna() & df['hba1c_status'].notna()
+
+        both_valid = df['diq010_status'].notna() & df['hba1c_status'].notna()
         if both_valid.sum() > 0:
-            agreement = (df.loc[both_valid, 'diabetes_status'] == df.loc[both_valid, 'hba1c_status']).sum()
+            agreement = (
+                df.loc[both_valid, 'diq010_status']
+                == df.loc[both_valid, 'hba1c_status']
+            ).sum()
             total = both_valid.sum()
-            print(f"   Self-reported/HbA1c agreement: {agreement}/{total} ({agreement/total*100:.1f}%)")
-            print(f"   [NOTE] Disagreement reflects label noise (subjective self-report vs. objective HbA1c).")
-            print(f"          High agreement = more consistent, reliable labels.")
+            print(
+                "   DIQ010-only/HbA1c-only source agreement: "
+                f"{agreement}/{total} ({agreement/total*100:.1f}%)"
+            )
+            print(
+                "   [NOTE] This is a descriptive source comparison, not label "
+                "validity or diagnostic agreement."
+            )
+            print(
+                "          Discordance can reflect undiagnosed dysglycemia, "
+                "recall, treatment, timing, or measurement variability."
+            )
     else:
         # Fallback to HbA1c if DIQ010 not available
         print("   [WARN] DIQ010 not found - falling back to HbA1c-based labels")
@@ -299,9 +319,9 @@ def main():
     df['fbs_status'] = df['fbs'].apply(classify_fbs)
     
     # =========================================
-    # STEP 4: Add Menopausal Status
+    # STEP 4: Add backward-compatible reproductive-cohort field
     # =========================================
-    print("\n[LABEL] Adding menopausal_status...")
+    print("\n[COHORT] Adding operational no-period label to legacy menopausal_status field...")
     df['menopausal_status'] = df['age'].apply(assign_menopausal_status)
     
     # =========================================

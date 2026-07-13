@@ -580,7 +580,7 @@ const AssessmentForm = ({
 
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                  Enrichment (Optional - Estimated from BMI if blank)
+                  Enrichment (Optional - Model-imputed if blank)
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.2 }}>

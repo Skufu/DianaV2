@@ -1,0 +1,38 @@
+{
+  "purpose": "Tracked, dated evidence snapshot for the post-defense core retrain; not a production promotion",
+  "snapshot_created_utc": "2026-07-12T09:33:52Z",
+  "base_git_commit": "2b9797a58e7613aeeba42269d0503893c6f0689a",
+  "worktree_note": "The revision scripts were uncommitted at run time; their exact SHA-256 values are recorded below.",
+  "retrain_command": "DIANA_MODEL_OUTPUT_DIR=models/experiments/minor_revision_retest_20260712 ML_N_JOBS=2 ML_BOOTSTRAP_SAMPLES=1000 bash scripts/dev/retrain-binary.sh",
+  "figure_refresh_command": "DIANA_MODEL_OUTPUT_DIR=models/experiments/minor_revision_retest_20260712 python Ian_ML/training/clustering.py --k 4",
+  "output_isolation": "Model artifacts were written below ignored models/experiments; active models/binary_v2_no_bp was not overwritten.",
+  "dataset": {
+    "path": "data/nhanes/processed/diana_dataset_final.csv",
+    "sha256": "0e2d6990c7d3b4fd8f0c5bdfeb4c96a0ac2f511f64da98a916d31ba2e9c0702e",
+    "n_rows": 1376,
+    "semantic_change_note": "Relative to the previous tracked dataset, numeric features, targets, row order, and identifiers were unchanged; the legacy menopausal_status constant was narrowed to Operational no-period cohort."
+  },
+  "script_sha256": {
+    "Ian_ML/training/train_binary_v2_no_bp.py": "f52ce97902053035ee226685d6fa935c8e778825c7b860af93a5c6ece9eb102c",
+    "Ian_ML/training/clustering.py": "4c21e16f515d33b75f19ca1ccf86eb87f29d54a09cb0e688a00a9bbe8c5581b7",
+    "scripts/dev/retrain-binary.sh": "bab55ecbf87496201e3bcb57d5b038c2eb7779918bdf57276b76b0e8b208cc23"
+  },
+  "untracked_binary_artifact_sha256": {
+    "best_model.joblib": "a921f552b3a1899af6ed6e7f89fdbd5dadab992539e88d1d23a066440725b183",
+    "cluster_imputer.joblib": "e11f1b8116fcd849ed98e8537288754522d7ef456f92d6bd73d1cea80d5a4cf0",
+    "cluster_scaler.joblib": "d8e026a217b93977cb33baaafae8f490f80bb6ca54bad772f756cfe991a6b400",
+    "weighted_kmeans_model.joblib": "db4a1bb6c6dbc21509ac0dddd98503d0d11134e8c664ce0afc915c4ab140c2fc"
+  },
+  "production_safety": {
+    "active_directory_aggregate_sha256_before_and_after": "e84589115313a3dce2e1da73de79cc7e7016cf569bcae321a5b54b8966634443",
+    "isolated_classifier_matches_active_classifier": true
+  },
+  "snapshot_file_sha256": {
+    "results/best_model_report.json": "a3880d76a5878db51a80bf4532f578e8728b29d2c218e48553a8f4a2a10fdfb3",
+    "results/logo_fold_metrics.csv": "3e9bee354bc1ca35eb9a3c67e2a6682154189b8755d038f4d388649815c03d6d",
+    "visualizations/roc_curve.png": "26de3293e2658b72c18d641479e84cc86aafd61002d8d6f2c0964e18438587b7",
+    "visualizations/cluster_distribution.png": "09c8b7d4bb9b0cde496f739ebc6aca1025f378aa91f33828ed9f256d7ddd9585",
+    "visualizations/cluster_heatmap.png": "1198d2c1ed04c8fdddd20a63a3ffffeec3de388f237764e20ef727b5f6a519e1"
+  },
+  "interpretation_boundary": "This snapshot supports internal reproducibility only. It does not establish clinical menopause, future diabetes risk, external validity, calibrated served probabilities, biological subtypes, or treatment effects."
+}

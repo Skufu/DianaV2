@@ -286,7 +286,7 @@ if cycle_matches:
     check("Oldest cycle is 2009-2010", cycle_matches[-1] == ("F", "2009-2010"),
           f"got {cycle_matches[-1]}")
 
-check("RHQ031 == 2 for postmenopausal filter", "RHQ031" in pipeline_source and "== 2" in pipeline_source)
+check("RHQ031 == 2 for operational no-period filter", "RHQ031" in pipeline_source and "== 2" in pipeline_source)
 check("RIAGENDR == 2 for female filter", "RIAGENDR" in pipeline_source)
 
 # ============================================================
