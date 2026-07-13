@@ -1,0 +1,4 @@
+comparison,lr_wins_out_of_6,mean_auc_difference,bootstrap_95_ci_lower,bootstrap_95_ci_upper,exact_two_sided_sign_flip_p,bonferroni_adjusted_p_three_comparisons
+Logistic Regression - Random Forest,6,0.019603941854829426,0.009829054081564445,0.03227849264629203,0.03125,0.09375
+Logistic Regression - LightGBM,6,0.024255105100408087,0.008022562391301447,0.045200454528843116,0.03125,0.09375
+Logistic Regression - XGBoost,6,0.023163623141257972,0.010836552189873247,0.03956083355708364,0.03125,0.09375

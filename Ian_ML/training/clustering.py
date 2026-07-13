@@ -1,15 +1,11 @@
 # pyright: reportGeneralTypeIssues=false, reportArgumentType=false, reportCallIssue=false, reportIndexIssue=false, reportMissingTypeArgument=false, reportAttributeAccessIssue=false
 """
-DIANA Clinical Clustering Script (K=4 Ahlqvist-Inspired Subtype Classification)
-Weighted K-Means clustering for T2DM subtype identification adapted from Ahlqvist et al. (2018).
+DIANA weighted metabolic-profile clustering (legacy-serving K=4).
 
-Clusters: SIRD, SIDD, MOD, MARD (4 T2DM subtypes per Ahlqvist et al. 2018)
-Features: All biomarkers (standardized)
-*DEFENSE NOTE: This is an "Ahlqvist-inspired" approach. By excluding HOMA2/C-peptide 
-(unavailable in routine screening), SIDD and SIRD distinctions are approximate proxy 
-metrics, which aligns with findings from Tanabe et al. (2024).*
-
-Also generates K=2 through K=6 analysis for thesis documentation.
+Weighted K-Means assigns operational-label-positive records to raw centroids.
+The SIRD/SIDD/MOD/MARD strings are retained only for API compatibility; the
+defensible display names are descriptive proxy profiles, not validated diabetes
+subtypes. This script also generates a K=2 through K=6 sensitivity analysis.
 
 Usage: python Ian_ML/training/clustering.py [--k 4]
 """
@@ -19,6 +15,7 @@ import numpy as np
 import json
 import joblib
 import argparse
+import os
 from pathlib import Path
 from collections.abc import Mapping, Sequence
 from typing import Any, cast
@@ -33,14 +30,14 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score
 
 try:
-    from Ian_ML.common.paths import MODELS_ROOT, NHANES_PROCESSED_ROOT
+    from Ian_ML.common.paths import MODELS_ROOT, NHANES_PROCESSED_ROOT, REPO_ROOT
     from Ian_ML.common.feature_constants import CLUSTER_FEATURES, AHLQVIST_SUBTYPES
     from Ian_ML.common.weighted_kmeans import WeightedKMeans
 except ModuleNotFoundError:
     import sys
 
     sys.path.append(str(Path(__file__).resolve().parents[2]))
-    from Ian_ML.common.paths import MODELS_ROOT, NHANES_PROCESSED_ROOT
+    from Ian_ML.common.paths import MODELS_ROOT, NHANES_PROCESSED_ROOT, REPO_ROOT
     from Ian_ML.common.feature_constants import CLUSTER_FEATURES, AHLQVIST_SUBTYPES
     from Ian_ML.common.weighted_kmeans import WeightedKMeans
 
@@ -48,7 +45,13 @@ FloatArray = NDArray[np.float64]
 IntArray = NDArray[np.int64]
 
 DATA_PATH = NHANES_PROCESSED_ROOT / "diana_dataset_final.csv"
-MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp"
+_models_dir_override = os.environ.get("DIANA_MODEL_OUTPUT_DIR")
+if _models_dir_override:
+    MODELS_DIR = Path(_models_dir_override).expanduser()
+    if not MODELS_DIR.is_absolute():
+        MODELS_DIR = REPO_ROOT / MODELS_DIR
+else:
+    MODELS_DIR = MODELS_ROOT / "binary_v2_no_bp"
 RESULTS_DIR = MODELS_DIR / "results"
 VIZ_DIR = MODELS_DIR / "visualizations"
 
@@ -68,6 +71,13 @@ EXPERT_FEATURE_WEIGHTS = {
     'waist_circumference': 2.0,
 }
 
+PROFILE_DISPLAY_LABELS = {
+    "SIRD": "TG-waist dominant\n(SIRD-like legacy alias)",
+    "SIDD": "LDL-dominant\n(SIDD-like legacy alias)",
+    "MOD": "Obesity-dominant\n(MOD-like legacy alias)",
+    "MARD": "Lower-burden residual\n(MARD-like legacy alias)",
+}
+
 # Ahlqvist et al. T2DM Subtype definitions — imported from feature_constants.py
 # (single source of truth; do not redefine here)
 
@@ -85,8 +95,12 @@ def analyze_k_range(
     feature_weights: Sequence[float],
     k_range: tuple[int, int] = (2, 7),
 ) -> list[dict[str, Any]]:
-    """Test multiple K values and return metrics for optimal selection."""
+    """Test K values and score them in the same weighted geometry used for fitting."""
     results: list[dict[str, Any]] = []
+    # WeightedKMeans minimizes sum_j w_j * (x_j - c_j)^2. Standard cluster
+    # metrics must therefore see x_j * sqrt(w_j); scoring raw X_scaled would
+    # silently evaluate a different, unweighted distance function.
+    X_metric = X_scaled * np.sqrt(np.asarray(feature_weights, dtype=float))
     print("[ANALYZE] Testing K values for optimal cluster count...")
     
     for k in range(k_range[0], k_range[1]):
@@ -99,9 +113,9 @@ def analyze_k_range(
         labels = km.fit(X_scaled).labels_
         if labels is None:
             raise RuntimeError("WeightedKMeans returned no labels during K-range analysis.")
-        sil = silhouette_score(X_scaled, labels)
-        dbi = davies_bouldin_score(X_scaled, labels)
-        chi = calinski_harabasz_score(X_scaled, labels)
+        sil = silhouette_score(X_metric, labels)
+        dbi = davies_bouldin_score(X_metric, labels)
+        chi = calinski_harabasz_score(X_metric, labels)
         if km.inertia_ is None:
             raise RuntimeError("WeightedKMeans returned no inertia during K-range analysis.")
         wcss = float(km.inertia_)
@@ -125,8 +139,10 @@ def assign_ahlqvist_labels(
     k: int = 4,
 ) -> dict[int, str]:
     """
-    Assign Ahlqvist-inspired subtype labels to clusters based on centroid characteristics.
-    Uses proxy metrics since HbA1c/FBS are excluded from clustering features.
+    Map fixed centroids to legacy aliases using a deterministic naming waterfall.
+
+    These strings are retained for API compatibility. They are descriptive
+    proxy-profile aliases, not validated Ahlqvist biological subtypes.
 
     LIMITATION (AHLQVIST-INSPIRED ADAPTATION): DIANA lacks HOMA2-B, HOMA2-IR, 
     and C-peptide, which are the primary discriminators for SIDD vs SIRD in 
@@ -135,15 +151,12 @@ def assign_ahlqvist_labels(
     pragmatic adaptation.
 
     DIANA assignment strategy:
-    1. SIRD (Severe Insulin-Resistant): Highest LAP score
-       LAP = (WC - 58) * TG — validated insulin resistance proxy per
-       Wang et al. (2024) Journal of Diabetes Research.
-    2. SIDD → Rebranded as "Atherogenic/Lipid-Driven" phenotype:
-       Highest LDL cholesterol among remaining (atherogenic dyslipidemia marker).
-       This identifies the lipid-driven diabetes subtype without requiring
-       beta-cell function tests (HOMA2-B/C-peptide).
-    3. MOD (Mild Obesity-Related): Highest BMI of remaining
-    4. MARD (Mild Age-Related): Remaining (typically lowest metabolic risk)
+    1. SIRD legacy alias: highest LAP-style TG-waist ranking score.
+       The implementation uses TG in mg/dL, so the score is for centroid
+       ordering and is not a conventional clinical LAP magnitude.
+    2. SIDD legacy alias: highest LDL among the remaining centroids.
+    3. MOD legacy alias: highest BMI among the remaining centroids.
+    4. MARD legacy alias: the final residual centroid.
     """
     centers_df = pd.DataFrame(cast(Any, cluster_centers), columns=cast(Any, list(feature_names)))
     available_clusters: list[int] = list(range(k))
@@ -243,7 +256,7 @@ def create_cluster_profiles(
 
 
 def plot_k_optimization(k_results: Sequence[Mapping[str, Any]], selected_k: int, output_path: str | Any):
-    """Create elbow method and silhouette analysis plots."""
+    """Create K-sensitivity plots without implying that serving K is optimal."""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
     
     k_vals = [r['k'] for r in k_results]
@@ -252,10 +265,10 @@ def plot_k_optimization(k_results: Sequence[Mapping[str, Any]], selected_k: int,
     
     # Elbow plot
     ax1.plot(k_vals, wcss_vals, 'bo-', markersize=10, linewidth=2)
-    ax1.axvline(x=selected_k, color='r', linestyle='--', linewidth=2, label=f'Selected K={selected_k}')
+    ax1.axvline(x=selected_k, color='r', linestyle='--', linewidth=2, label=f'Serving design K={selected_k}')
     ax1.set_xlabel('Number of Clusters (K)', fontsize=12)
     ax1.set_ylabel('Within-Cluster Sum of Squares (WCSS)', fontsize=12)
-    ax1.set_title('Elbow Method for Optimal K', fontsize=14)
+    ax1.set_title('K Sensitivity: Weighted Inertia', fontsize=14)
     ax1.legend()
     ax1.grid(True, alpha=0.3)
     ax1.set_xticks(k_vals)
@@ -266,7 +279,7 @@ def plot_k_optimization(k_results: Sequence[Mapping[str, Any]], selected_k: int,
     ax2.axhline(y=sil_vals[selected_k-2], color='red', linestyle='--', alpha=0.5)
     ax2.set_xlabel('Number of Clusters (K)', fontsize=12)
     ax2.set_ylabel('Silhouette Score', fontsize=12)
-    ax2.set_title('Silhouette Analysis for Optimal K', fontsize=14)
+    ax2.set_title('K Sensitivity: Silhouette', fontsize=14)
     ax2.set_xticks(k_vals)
     ax2.grid(True, alpha=0.3, axis='y')
     
@@ -286,7 +299,7 @@ def plot_cluster_heatmap(
     features: Sequence[str],
     output_path: str | Any,
 ):
-    """Create heatmap of cluster centroid values."""
+    """Color feature-wise standardized centroids and annotate raw-unit centers."""
     # Build matrix of mean values
     labels: list[str] = list(profiles.keys())
     data: list[list[float]] = []
@@ -295,14 +308,29 @@ def plot_cluster_heatmap(
         row = [float(means.get(f, 0.0)) for f in features]
         data.append(row)
     
-    df_heat = pd.DataFrame(cast(Any, data), index=cast(Any, labels), columns=cast(Any, list(features)))
+    display_labels = [PROFILE_DISPLAY_LABELS.get(label, label) for label in labels]
+    df_raw = pd.DataFrame(
+        cast(Any, data),
+        index=cast(Any, display_labels),
+        columns=cast(Any, list(features)),
+    )
+    feature_sd = df_raw.std(axis=0, ddof=0).replace(0.0, 1.0)
+    df_standardized = (df_raw - df_raw.mean(axis=0)) / feature_sd
+    raw_annotations = df_raw.round(1).astype(str)
     
     fig, ax = plt.subplots(figsize=(10, 6))
-    sns.heatmap(df_heat, annot=True, fmt='.1f', cmap='RdYlGn_r',
-                ax=ax, cbar_kws={'label': 'Mean Value'})
-    ax.set_title('T2DM Subtype Cluster Profiles (Ahlqvist Classification)', fontsize=14)
-    ax.set_xlabel('Biomarker', fontsize=12)
-    ax.set_ylabel('Cluster (Subtype)', fontsize=12)
+    sns.heatmap(
+        df_standardized,
+        annot=raw_annotations,
+        fmt='',
+        center=0,
+        cmap='RdBu_r',
+        ax=ax,
+        cbar_kws={'label': 'Centroid deviation (SD from four-centroid mean)'},
+    )
+    ax.set_title('Operational-Positive Metabolic-Profile Centroids', fontsize=14)
+    ax.set_xlabel('Feature (annotations are raw clinical units)', fontsize=12)
+    ax.set_ylabel('Descriptive profile', fontsize=12)
     
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches='tight')
@@ -332,15 +360,16 @@ def plot_cluster_scatter(
     
     for cid in np.unique(cluster_labels):
         mask = cluster_labels == cid
-        label = label_map.get(cid, f'Cluster-{cid}')
-        color = colors.get(label, '#3498db')
+        legacy_label = label_map.get(cid, f'Cluster-{cid}')
+        display_label = PROFILE_DISPLAY_LABELS.get(legacy_label, legacy_label).replace("\n", " ")
+        color = colors.get(legacy_label, '#3498db')
         ax.scatter(X_pca[mask, 0], X_pca[mask, 1],
-                  c=color, label=label, alpha=0.6, s=50)
+                  c=color, label=display_label, alpha=0.6, s=50)
     
     ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]*100:.1f}% variance)', fontsize=12)
     ax.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]*100:.1f}% variance)', fontsize=12)
-    ax.set_title('T2DM Subtype Clusters (PCA Projection)', fontsize=14)
-    ax.legend(title='Subtype')
+    ax.set_title('Operational-Positive Metabolic Profiles (PCA Projection)', fontsize=14)
+    ax.legend(title='Descriptive profile')
     ax.grid(True, alpha=0.3)
     
     plt.tight_layout()
@@ -368,11 +397,13 @@ def plot_cluster_distribution(profiles: Mapping[str, Mapping[str, Any]], output_
     bar_colors = [colors.get(l, '#3498db') for l in labels]
     
     fig, ax = plt.subplots(figsize=(10, 6))
-    bars = ax.bar(labels, counts, color=bar_colors, edgecolor='black')
+    display_labels = [PROFILE_DISPLAY_LABELS.get(label, label) for label in labels]
+    bars = ax.bar(display_labels, counts, color=bar_colors, edgecolor='black')
     
-    ax.set_xlabel('T2DM Subtype', fontsize=12)
-    ax.set_ylabel('Number of Patients', fontsize=12)
-    ax.set_title('Distribution of T2DM Subtypes in Menopausal Population', fontsize=14)
+    ax.set_xlabel('Descriptive centroid profile', fontsize=12)
+    ax.set_ylabel('Operational-label-positive records', fontsize=12)
+    ax.set_title('Profile Distribution in the Operational No-Period Cohort', fontsize=14)
+    ax.set_ylim(0, max(counts) * 1.22)
     
     # Add count and percentage labels
     for bar, count, pct in zip(bars, counts, percentages):
@@ -392,8 +423,8 @@ def main(k: int = 4):
     VIZ_DIR.mkdir(parents=True, exist_ok=True)
     
     print("=" * 60)
-    print(f"DIANA T2DM Subtype Clustering (K={k})")
-    print("Based on Ahlqvist et al. (2018) Classification")
+    print(f"DIANA Weighted Metabolic-Profile Clustering (K={k})")
+    print("Legacy Ahlqvist-inspired aliases retained for API compatibility")
     print("=" * 60)
     
     # Load data
@@ -451,7 +482,10 @@ def main(k: int = 4):
     print(f"\n[RESULT] Optimal K by silhouette: {best_sil_k} (score: {k_results[best_sil_idx]['silhouette']:.4f})")
     
     if best_sil_k != k:
-        print(f"[NOTE] Using K={k} per Ahlqvist literature (silhouette: {k_results[k-2]['silhouette']:.4f})")
+        print(
+            f"[NOTE] Using theory-informed serving K={k}; it is not the silhouette leader "
+            f"(silhouette: {k_results[k-2]['silhouette']:.4f})"
+        )
     
     # =============================================
     # FINAL CLUSTERING WITH SELECTED K
@@ -470,9 +504,10 @@ def main(k: int = 4):
     if cluster_labels is None:
         raise RuntimeError("WeightedKMeans returned no labels for final clustering.")
     
-    final_silhouette = silhouette_score(X_scaled, cluster_labels)
-    final_dbi = davies_bouldin_score(X_scaled, cluster_labels)
-    final_chi = calinski_harabasz_score(X_scaled, cluster_labels)
+    X_metric = X_scaled * np.sqrt(np.asarray(feature_weights, dtype=float))
+    final_silhouette = silhouette_score(X_metric, cluster_labels)
+    final_dbi = davies_bouldin_score(X_metric, cluster_labels)
+    final_chi = calinski_harabasz_score(X_metric, cluster_labels)
     print(f"   Silhouette Score: {final_silhouette:.4f}")
     print(f"   Davies-Bouldin Index: {final_dbi:.4f}")
     print(f"   Calinski-Harabasz Index: {final_chi:.4f}")
@@ -539,7 +574,7 @@ def main(k: int = 4):
     
     # Save full analysis results
     cluster_analysis = {
-        "methodology": "Weighted K-Means clustering with Ahlqvist et al. (2018) subtype classification",
+        "methodology": "Weighted K-Means metabolic-profile clustering with post-hoc legacy aliases",
          "features_used": available_features,
          "feature_weights": {feature: float(EXPERT_FEATURE_WEIGHTS[feature]) for feature in available_features},
          "n_samples": len(X),
@@ -553,9 +588,9 @@ def main(k: int = 4):
             for r in k_results
         ],
         "cluster_profiles": profiles,
-        "note": f"K={k} selected to match Ahlqvist literature. "
-                f"Silhouette analysis suggested K={best_sil_k}. "
-                "This may indicate menopausal population-specific clustering patterns."
+        "note": f"K={k} is a theory-informed serving design; it is not uniquely optimal. "
+                f"Silhouette analysis suggested the coarser K={best_sil_k}. "
+                "No menopause-specific or biological-subtype claim is supported."
     }
     
     with open(RESULTS_DIR / "cluster_analysis.json", 'w') as f:

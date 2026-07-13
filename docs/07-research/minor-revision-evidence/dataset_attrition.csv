@@ -1,0 +1,7 @@
+stage,source_variable,criterion,previous_n,excluded_n,retained_n,retained_pct_of_raw
+Merged raw releases,SEQN,Six NHANES releases,61626,0,61626,100.0
+Female respondents,RIAGENDR,RIAGENDR = 2,61626,30108,31518,51.14399766332392
+Age 45-60,RIDAGEYR,45 <= RIDAGEYR <= 60,31518,26596,4922,7.986888650894103
+No-period operational cohort,RHQ031,RHQ031 = 2: no menstrual period in prior 12 months,4922,2096,2826,4.5857268036218475
+Complete HbA1c,LBXGH,LBXGH observed for label construction,2826,90,2736,4.439684548729432
+Final fasting-lab cohort,LBXGLU,LBXGLU observed as fasting-subsample linkage gate,2736,1360,1376,2.232823808132931

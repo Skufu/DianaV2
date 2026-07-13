@@ -1,0 +1,16 @@
+{
+  "features": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age",
+    "waist_circumference",
+    "smoking_encoded",
+    "activity_encoded",
+    "alcohol_encoded"
+  ],
+  "n_features": 9,
+  "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
+  "note": "Binary reformulation with 9 LR-safe features (continuous + ordinal), LOCO validation"
+}

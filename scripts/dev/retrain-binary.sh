@@ -2,7 +2,7 @@
 # =============================================================================
 # DIANA ML Pipeline - Binary Retrain Script
 # Runs all steps: process raw data → label → train binary_v2_no_bp model (At-Risk vs Normal)
-# → weighted K-Means clustering for Ahlqvist-inspired subtypes
+# → weighted K-Means clustering for descriptive metabolic profiles
 #
 # Usage: source venv/bin/activate (Mac/Linux) or source venv/Scripts/activate (Windows)
 #        Then run: ./scripts/dev/retrain-binary.sh
@@ -42,6 +42,11 @@ fi
 
 # Set PYTHONPATH to include project root (needed for Ian_ML imports)
 export PYTHONPATH="${PROJECT_DIR}:${PYTHONPATH}"
+
+# An explicit output directory makes audit/retest runs non-promoting. When unset,
+# the historical production path remains the default.
+MODELS_DIR="${DIANA_MODEL_OUTPUT_DIR:-models/binary_v2_no_bp}"
+export DIANA_MODEL_OUTPUT_DIR="$MODELS_DIR"
 
 # Check if virtual environment is activated
 if [ -z "$VIRTUAL_ENV" ]; then
@@ -142,12 +147,12 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}✓ Binary model training complete${NC}"
 
-# Step 5: Train Weighted K-Means clustering (Ahlqvist-inspired subtypes)
+# Step 5: Train the legacy-serving Weighted K-Means K=4 enrichment
 echo ""
-echo -e "${BLUE}Step 5/6: Training Weighted K-Means clustering...${NC}"
+echo -e "${BLUE}Step 5/6: Training legacy-serving Weighted K-Means K=4 enrichment...${NC}"
 echo "------------------------------------------------------------"
 echo ""
-echo -e "${CYAN}Literature-Derived Feature Weights:${NC}"
+echo -e "${CYAN}Researcher-Defined, Literature-Informed Feature Weights:${NC}"
 echo "  bmi=1.5, triglycerides=2.0, ldl=2.5, hdl=1.2, age=1.0, waist_circumference=2.0"
 echo "  Source: Systematic literature review (see docs/03-ml/rationale.md for citations)"
 echo ""
@@ -165,9 +170,6 @@ echo ""
 echo -e "${CYAN}Step 6/6: Validating outputs...${NC}"
 echo "------------------------------------------------------------"
 
-# Check which models were actually created
-MODELS_DIR="models/binary_v2_no_bp"
-
 echo ""
 echo "Classifier Artifacts:"
 
@@ -182,6 +184,63 @@ if [ -f "$MODELS_DIR/features.json" ]; then
 else
     echo -e "  ${RED}✗ Feature Manifest${NC}"
 fi
+
+# Validate the artifact written by this exact run, including isolated audit
+# directories. This proves BMI/waist medians belong to the saved training
+# Pipeline rather than a later serving-only calculation.
+python - "$MODELS_DIR" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+import joblib
+import numpy as np
+import pandas as pd
+
+from Ian_ML.common.paths import NHANES_PROCESSED_ROOT, REPO_ROOT
+from Ian_ML.training.train_binary_v2_no_bp import engineer_features
+
+models_dir = Path(sys.argv[1]).expanduser()
+if not models_dir.is_absolute():
+    models_dir = REPO_ROOT / models_dir
+
+artifact = joblib.load(models_dir / "best_model.joblib")
+if list(getattr(artifact, "named_steps", {}))[:2] != ["preprocessor", "model"]:
+    raise SystemExit("Saved classifier is not the expected preprocessing-and-model Pipeline")
+
+features = json.loads((models_dir / "features.json").read_text())["features"]
+frame = engineer_features(
+    pd.read_csv(NHANES_PROCESSED_ROOT / "diana_dataset_final.csv")
+)
+X = frame[features].to_numpy(dtype=float)
+statistics = np.asarray(
+    artifact.named_steps["preprocessor"]
+    .named_transformers_["continuous"]
+    .named_steps["imputer"]
+    .statistics_,
+    dtype=float,
+)
+for feature in ("bmi", "waist_circumference"):
+    index = features.index(feature)
+    expected = float(np.nanmedian(X[:, index]))
+    learned = float(statistics[index])
+    if not np.isclose(learned, expected):
+        raise SystemExit(
+            f"{feature} imputer mismatch: saved={learned}, training median={expected}"
+        )
+
+probe = X[:1].copy()
+probe[0, features.index("waist_circumference")] = np.nan
+if not np.isfinite(artifact.predict_proba(probe)).all():
+    raise SystemExit("Saved Pipeline failed to impute a missing waist value")
+
+print(
+    "  Saved Pipeline imputer verified: "
+    f"BMI={statistics[features.index('bmi')]:.2f}, "
+    f"waist={statistics[features.index('waist_circumference')]:.2f}"
+)
+PY
+echo -e "  ${GREEN}✓ Saved classifier owns training-fitted BMI/waist imputation${NC}"
 
 echo ""
 echo "Clustering Artifacts:"
@@ -266,6 +325,27 @@ if [ -f "$FOLD_METRICS_FILE" ]; then
     python -c "import csv, collections; rows=list(csv.DictReader(open('$FOLD_METRICS_FILE', newline=''))); ctr=collections.Counter((r.get('Model','Unknown'), r.get('Threshold_Strategy','unknown')) for r in rows); [print(f'  {model}: {strategy} x{count}') for (model, strategy), count in sorted(ctr.items())]" 2>/dev/null || true
 fi
 
+# Optional, non-promoting minor-revision evidence. These scripts save tables and
+# figures only; they never replace the classifier or serving K=4 artifacts.
+if [ "${DIANA_RUN_EXPANDED_FEATURE_TEST:-0}" = "1" ]; then
+    echo ""
+    echo -e "${CYAN}Audit A: Expanded non-circular feature test (includes CRP/insulin/BP)...${NC}"
+    EXPANDED_OUTPUT_DIR="${DIANA_EXPANDED_OUTPUT_DIR:-docs/07-research/model-experiments/expanded-non-circular}"
+    python Ian_ML/training/explore_expanded_non_circular.py \
+        --output-dir "$EXPANDED_OUTPUT_DIR"
+    echo -e "${GREEN}✓ Expanded feature evidence complete (not promoted)${NC}"
+fi
+
+if [ "${DIANA_RUN_UNLABELED_CLUSTER_TEST:-0}" = "1" ]; then
+    echo ""
+    echo -e "${CYAN}Audit B: Anonymous broad-K centroid scan (no subtype labels)...${NC}"
+    UNLABELED_OUTPUT_DIR="${DIANA_UNLABELED_OUTPUT_DIR:-docs/07-research/model-experiments/unlabeled-centroids}"
+    python Ian_ML/training/explore_unlabeled_centroids.py \
+        --output-dir "$UNLABELED_OUTPUT_DIR" \
+        --stability-runs "${DIANA_CLUSTER_STABILITY_RUNS:-30}"
+    echo -e "${GREEN}✓ Anonymous centroid evidence complete (not promoted)${NC}"
+fi
+
 # Summary
 echo ""
 echo "============================================================"
@@ -275,13 +355,13 @@ echo ""
 echo "Outputs:"
 echo "  - Processed data:  data/nhanes/processed/diana_training_data_multi.csv"
 echo "  - Final dataset:   data/nhanes/processed/diana_dataset_final.csv (leakage-safe)"
-echo "  - Binary Models:   models/binary_v2_no_bp/*.joblib"
-echo "  - Clustering:      models/binary_v2_no_bp/weighted_kmeans_model.joblib"
-echo "  - Feature Weights: models/binary_v2_no_bp/feature_weights.json"
-echo "  - Visualizations:  models/binary_v2_no_bp/visualizations/"
-echo "  - Results:         models/binary_v2_no_bp/results/"
+echo "  - Binary Models:   $MODELS_DIR/*.joblib"
+echo "  - Clustering:      $MODELS_DIR/weighted_kmeans_model.joblib"
+echo "  - Feature Weights: $MODELS_DIR/feature_weights.json"
+echo "  - Visualizations:  $MODELS_DIR/visualizations/"
+echo "  - Results:         $MODELS_DIR/results/"
 echo ""
-echo -e "${CYAN}Literature-Derived Weights Used for Clustering:${NC}"
+echo -e "${CYAN}Researcher-Defined, Literature-Informed Weights Used for Clustering:${NC}"
 echo "  bmi=1.5, triglycerides=2.0, ldl=2.5, hdl=1.2, age=1.0, waist_circumference=2.0"
 echo "  Source: Systematic literature review (Huang et al. 2023, Ahmed et al. 2021, Wei et al. 2024)"
 echo ""

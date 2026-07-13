@@ -1,0 +1,268 @@
+{
+  "purpose": "anonymous-centroid broad-K sensitivity analysis; no serving artifacts",
+  "generated_at_utc": "2026-07-12T09:24:34.125176+00:00",
+  "command": [
+    "/Users/adriangabriellfrancisco/workspace/github.com/Skufu/DianaV2/.venv/bin/python",
+    "/Users/adriangabriellfrancisco/workspace/github.com/Skufu/DianaV2/Ian_ML/training/explore_unlabeled_centroids.py",
+    "--stability-runs",
+    "30"
+  ],
+  "base_git_commit": "2b9797a58e7613aeeba42269d0503893c6f0689a",
+  "script_sha256": "23d51316c853f8769b7643a22a2afe6ea0dd6311ac30580a801fb0e2bfd00af3",
+  "worktree_note": "The script hash, not the base commit alone, identifies uncommitted revision code.",
+  "data_path": "/Users/adriangabriellfrancisco/workspace/github.com/Skufu/DianaV2/data/nhanes/processed/diana_dataset_final.csv",
+  "data_sha256": "0e2d6990c7d3b4fd8f0c5bdfeb4c96a0ac2f511f64da98a916d31ba2e9c0702e",
+  "specifications": {
+    "core6_all_equal": {
+      "features": [
+        "bmi",
+        "triglycerides",
+        "ldl",
+        "hdl",
+        "age",
+        "waist_circumference"
+      ],
+      "cohort": "all",
+      "weights": {
+        "bmi": 1.0,
+        "triglycerides": 1.0,
+        "ldl": 1.0,
+        "hdl": 1.0,
+        "age": 1.0,
+        "waist_circumference": 1.0
+      },
+      "log_features": [],
+      "k_max": 20
+    },
+    "core6_operational_positive_weighted": {
+      "features": [
+        "bmi",
+        "triglycerides",
+        "ldl",
+        "hdl",
+        "age",
+        "waist_circumference"
+      ],
+      "cohort": "operational_positive",
+      "weights": {
+        "bmi": 1.5,
+        "triglycerides": 2.0,
+        "ldl": 2.5,
+        "hdl": 1.2,
+        "age": 1.0,
+        "waist_circumference": 2.0
+      },
+      "log_features": [],
+      "k_max": 20
+    },
+    "expanded8_recent_equal": {
+      "features": [
+        "bmi",
+        "triglycerides",
+        "ldl",
+        "hdl",
+        "age",
+        "waist_circumference",
+        "fasting_insulin",
+        "crp"
+      ],
+      "cohort": "recent_assayed",
+      "weights": {
+        "bmi": 1.0,
+        "triglycerides": 1.0,
+        "ldl": 1.0,
+        "hdl": 1.0,
+        "age": 1.0,
+        "waist_circumference": 1.0,
+        "fasting_insulin": 1.0,
+        "crp": 1.0
+      },
+      "log_features": [
+        "triglycerides",
+        "fasting_insulin",
+        "crp"
+      ],
+      "k_max": 15
+    }
+  },
+  "results": {
+    "core6_all_equal": {
+      "n": 1376,
+      "features": [
+        "bmi",
+        "triglycerides",
+        "ldl",
+        "hdl",
+        "age",
+        "waist_circumference"
+      ],
+      "cohort": "all",
+      "weights": {
+        "bmi": 1.0,
+        "triglycerides": 1.0,
+        "ldl": 1.0,
+        "hdl": 1.0,
+        "age": 1.0,
+        "waist_circumference": 1.0
+      },
+      "log_features": [],
+      "k_range": [
+        2,
+        20
+      ],
+      "hopkins_median": 0.855307777089155,
+      "hopkins_iqr": 0.009088156850296292,
+      "metric_leaders_not_a_selected_k": {
+        "highest_silhouette": 2,
+        "lowest_davies_bouldin": 12,
+        "highest_calinski_harabasz": 2,
+        "highest_bootstrap_stability": 2,
+        "lowest_gmm_bic": 6
+      },
+      "missingness_percent": {
+        "bmi": 0.7994186046511629,
+        "triglycerides": 2.616279069767442,
+        "ldl": 3.997093023255814,
+        "hdl": 2.0348837209302326,
+        "age": 0.0,
+        "waist_circumference": 2.0348837209302326
+      },
+      "cycles": [
+        "2009-2010",
+        "2011-2012",
+        "2013-2014",
+        "2015-2016",
+        "2017-2018",
+        "2021-2023"
+      ]
+    },
+    "core6_operational_positive_weighted": {
+      "n": 734,
+      "features": [
+        "bmi",
+        "triglycerides",
+        "ldl",
+        "hdl",
+        "age",
+        "waist_circumference"
+      ],
+      "cohort": "operational_positive",
+      "weights": {
+        "bmi": 1.5,
+        "triglycerides": 2.0,
+        "ldl": 2.5,
+        "hdl": 1.2,
+        "age": 1.0,
+        "waist_circumference": 2.0
+      },
+      "log_features": [],
+      "k_range": [
+        2,
+        20
+      ],
+      "hopkins_median": 0.8411075420121387,
+      "hopkins_iqr": 0.011954775489697145,
+      "metric_leaders_not_a_selected_k": {
+        "highest_silhouette": 2,
+        "lowest_davies_bouldin": 14,
+        "highest_calinski_harabasz": 2,
+        "highest_bootstrap_stability": 2,
+        "lowest_gmm_bic": 3
+      },
+      "missingness_percent": {
+        "bmi": 0.8174386920980926,
+        "triglycerides": 2.452316076294278,
+        "ldl": 4.223433242506812,
+        "hdl": 2.316076294277929,
+        "age": 0.0,
+        "waist_circumference": 2.17983651226158
+      },
+      "cycles": [
+        "2009-2010",
+        "2011-2012",
+        "2013-2014",
+        "2015-2016",
+        "2017-2018",
+        "2021-2023"
+      ]
+    },
+    "expanded8_recent_equal": {
+      "n": 728,
+      "features": [
+        "bmi",
+        "triglycerides",
+        "ldl",
+        "hdl",
+        "age",
+        "waist_circumference",
+        "fasting_insulin",
+        "crp"
+      ],
+      "cohort": "recent_assayed",
+      "weights": {
+        "bmi": 1.0,
+        "triglycerides": 1.0,
+        "ldl": 1.0,
+        "hdl": 1.0,
+        "age": 1.0,
+        "waist_circumference": 1.0,
+        "fasting_insulin": 1.0,
+        "crp": 1.0
+      },
+      "log_features": [
+        "triglycerides",
+        "fasting_insulin",
+        "crp"
+      ],
+      "k_range": [
+        2,
+        15
+      ],
+      "hopkins_median": 0.7763129699531519,
+      "hopkins_iqr": 0.012162674718212085,
+      "metric_leaders_not_a_selected_k": {
+        "highest_silhouette": 2,
+        "lowest_davies_bouldin": 11,
+        "highest_calinski_harabasz": 2,
+        "highest_bootstrap_stability": 2,
+        "lowest_gmm_bic": 2
+      },
+      "missingness_percent": {
+        "bmi": 0.9615384615384616,
+        "triglycerides": 3.571428571428571,
+        "ldl": 4.945054945054945,
+        "hdl": 2.4725274725274726,
+        "age": 0.0,
+        "waist_circumference": 2.197802197802198,
+        "fasting_insulin": 3.021978021978022,
+        "crp": 2.197802197802198
+      },
+      "cycles": [
+        "2015-2016",
+        "2017-2018",
+        "2021-2023"
+      ]
+    }
+  },
+  "centroid_id_note": "Anonymous IDs are arbitrary PC1-ordered identifiers, not clinical labels.",
+  "selection_note": "All K values are reported. Metric leaders do not establish a uniquely correct biological K.",
+  "forbidden_cluster_features": [
+    "DIQ010",
+    "SEQN",
+    "at_risk_binary_v2_no_bp",
+    "cycle",
+    "diabetes_label",
+    "diabetes_status",
+    "diq010",
+    "fbs",
+    "has_outlier",
+    "hba1c",
+    "menopausal_status"
+  ],
+  "software": {
+    "python": "3.13.5",
+    "numpy": "2.4.2",
+    "pandas": "2.3.3",
+    "scikit_learn": "1.8.0"
+  }
+}

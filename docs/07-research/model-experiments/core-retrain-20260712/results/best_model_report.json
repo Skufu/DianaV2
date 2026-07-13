@@ -1,0 +1,61 @@
+{
+  "model_type": "binary_v2_no_bp",
+  "target": "at_risk_binary_v2_no_bp (0=Normal, 1=At-Risk)",
+  "best_model": "Logistic Regression",
+  "n_features": 9,
+  "validation_method": "Nested LOGO (outer) + GroupKFold Pipeline CV (inner)",
+  "model_selection": {
+    "primary_criterion": "highest mean outer-fold ROC-AUC",
+    "selection_scope": "four prespecified candidate families",
+    "mean_outer_fold_auc": 0.7360233363012879,
+    "std_outer_fold_auc": 0.027686561378265025,
+    "n_outer_folds": 6,
+    "caution": "Outer-fold results informed family retention; selection optimism is possible."
+  },
+  "decision_thresholds": {
+    "at_risk": 0.4649999999999998
+  },
+  "metrics": {
+    "auc_roc": 0.7365776227219096,
+    "auc_ci_95": [
+      0.7097872884975052,
+      0.7628064501938975
+    ],
+    "accuracy": 0.6744186046511628,
+    "sensitivity": 0.7479564032697548,
+    "sensitivity_ci_95": [
+      0.7173326287978864,
+      0.7764130196051232
+    ],
+    "specificity": 0.5903426791277259,
+    "ppv": 0.6761083743842364,
+    "npv": 0.6719858156028369,
+    "f1": 0.7102199223803363,
+    "mean_threshold": 0.4649999999999998,
+    "std_threshold": 0.025658007197234402,
+    "inner_cv_auc_mean": 0.735273375862531,
+    "inner_cv_auc_std": 0.004589360121815264
+  },
+  "metric_aggregation": {
+    "auc_roc": "pooled predictions from all outer held-out records",
+    "accuracy_sensitivity_specificity_ppv_npv_f1": "pooled outer held-out records using each fold's development-derived threshold",
+    "auc_ci_95_and_sensitivity_ci_95": "conditional row bootstrap of fixed pooled held-out predictions",
+    "mean_threshold": "unweighted mean of six fold-specific thresholds"
+  },
+  "threshold_policy": {
+    "strategy_mode": "youden",
+    "guardrail_folds": 1
+  },
+  "features": [
+    "bmi",
+    "triglycerides",
+    "ldl",
+    "hdl",
+    "age",
+    "waist_circumference",
+    "smoking_encoded",
+    "activity_encoded",
+    "alcohol_encoded"
+  ],
+  "clinical_rationale": "Binary reformulation: Normal vs At-Risk (Pre-diabetic + Diabetic). Model-family retention used mean outer-fold ROC-AUC; sensitivity was emphasized only in the separate operating-threshold policy. Uses 9 LR-safe features (continuous + ordinal only)."
+}
