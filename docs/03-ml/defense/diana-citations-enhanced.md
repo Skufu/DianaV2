@@ -157,11 +157,11 @@
 
 ## Section 6: Feature Importance & Threshold Justification (Existing Citations)
 
-See: `Literature-Backed Justification for DIANA's 0.4567 At-Risk Threshold and Feature Weight Rankings.md`
+See: `Literature-Backed Justification for DIANA's 0.4650 At-Risk Threshold and Feature Weight Rankings.md`
 
 Key citations already present:
 - BMI, Waist Circumference, Triglycerides, HDL-C validation
-- 0.4567 threshold justification via screening theory
+- 0.4650 threshold justification via screening theory
 - TG/HDL ratio as insulin resistance surrogate
 
 ---

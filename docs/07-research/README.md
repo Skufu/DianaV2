@@ -8,7 +8,7 @@ This directory contains all research-related documentation for the DIANA (Diabet
 07-research/
 ├── README.md                          # This file
 ├── analysis/                          # Analytical documents and justifications
-│   └── Literature-Backed Justification for DIANA's 0.4567 At-Risk Threshold and Feature Weight Rankings.md
+│   └── Literature-Backed Justification for DIANA's 0.4650 At-Risk Threshold and Feature Weight Rankings.md
 ├── external-sources/                  # External research sources and snapshots
 │   └── perplexity-snapshot.md
 ├── thesis-drafts/                     # Thesis manuscript drafts and chapters
