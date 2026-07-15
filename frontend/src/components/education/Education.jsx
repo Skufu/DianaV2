@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { BookOpen, Activity, HelpCircle, Lightbulb, Target, ChevronDown } from 'lucide-react';
+import { BookOpen, Activity, HelpCircle, Lightbulb, Target, ChevronDown, AlertCircle } from 'lucide-react';
 
 import { clusterEducation } from './clusterData';
 import { useReducedMotion } from '../../utils/animations';
@@ -243,6 +243,17 @@ const Education = () => {
               exit={motionProps({ opacity: 0, y: -8 })}
               transition={softSpring}
             >
+              <div className="mb-6 p-4 bg-amber-50/70 border-l-4 border-amber-500 rounded-r-xl flex items-start gap-3 shadow-sm text-left">
+                <AlertCircle className="h-6 w-6 text-amber-700 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="text-sm font-bold text-amber-900 uppercase tracking-wider">
+                    Clinical Disclaimer: Subgroup Proxies
+                  </h4>
+                  <p className="text-sm font-medium text-amber-950 leading-relaxed">
+                    DIANA's subgroup categories (SIRD, SIDD, MOD, MARD) represent dominant metabolic patterns in lipids, body size, and age, serving as screening proxies. They are <strong>not</strong> mechanistic diabetes subtypes or diagnostic categories. Unlike clinical research studies (e.g., Ahlqvist et al., 2018), DIANA operates without GAD antibodies, C-peptide, or HOMA insulin-function markers. Always review results with a physician.
+                  </p>
+                </div>
+              </div>
               <div className="flex flex-col lg:flex-row gap-5 items-start">
                 <motion.div
                   variants={isReduced ? {} : stagger}
