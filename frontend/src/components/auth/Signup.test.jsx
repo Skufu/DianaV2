@@ -405,4 +405,37 @@ describe('Signup', () => {
       expect(screen.getByTestId('signup-skeleton')).toBeInTheDocument();
     });
   });
+
+  it('toggles Guided Mode and displays instruction cards', async () => {
+    const user = userEvent.setup();
+    renderSignup();
+
+    // Guided Mode toggle is visible
+    const toggle = screen.getByTestId('guided-mode-toggle');
+    expect(toggle).toBeInTheDocument();
+
+    // Verify instructions are NOT visible initially
+    expect(screen.queryByText(/Step 1: Enter your email address/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Step 2: Enter your password/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Step 3: Type your password again/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Step 4: Click this button to proceed/i)).not.toBeInTheDocument();
+
+    // Turn Guided Mode ON
+    await user.click(toggle);
+
+    // Verify all helper cards are now rendered
+    expect(screen.getByText(/Step 1: Enter your email address/i)).toBeInTheDocument();
+    expect(screen.getByText(/Step 2: Enter your password/i)).toBeInTheDocument();
+    expect(screen.getByText(/Step 3: Type your password again/i)).toBeInTheDocument();
+    expect(screen.getByText(/Step 4: Click this button to proceed/i)).toBeInTheDocument();
+
+    // Turn Guided Mode OFF
+    await user.click(toggle);
+
+    // Verify instructions are gone again
+    expect(screen.queryByText(/Step 1: Enter your email address/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Step 2: Enter your password/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Step 3: Type your password again/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Step 4: Click this button to proceed/i)).not.toBeInTheDocument();
+  });
 });

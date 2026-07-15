@@ -1,5 +1,15 @@
 import { useState, useMemo, useRef, useCallback } from 'react';
-import { AlertCircle, Lock, Mail, Eye, EyeOff, Check, X, CheckCircle2 } from 'lucide-react';
+import {
+  AlertCircle,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Check,
+  X,
+  CheckCircle2,
+  HelpCircle,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoIcon from '../../assets/logo-icon.png';
 import Button from '../common/Button';
@@ -29,6 +39,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
 
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [guidedMode, setGuidedMode] = useState(false);
 
   // Field-level validation
   const [fieldErrors, setFieldErrors] = useState({ email: '', password: '', confirmPassword: '' });
@@ -202,6 +213,31 @@ const Signup = ({ onSignup, onShowLogin }) => {
           animate="onscreen"
           className="bg-white rounded-2xl shadow-xl border border-slate-200 p-5 sm:p-6 md:p-8"
         >
+          {/* Guided Mode Toggle */}
+          <div className="mb-6 p-3 bg-amber-50/50 border border-amber-200 rounded-xl flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-amber-600 shrink-0" />
+              <span className="text-[14px] font-bold text-amber-900">
+                Need Help? Turn on Guided Mode
+              </span>
+            </div>
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={guidedMode}
+              onClick={() => setGuidedMode(!guidedMode)}
+              className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+                guidedMode ? 'bg-amber-600' : 'bg-slate-300'
+              }`}
+              data-testid="guided-mode-toggle"
+            >
+              <div
+                className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ${
+                  guidedMode ? 'translate-x-6' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div
@@ -262,6 +298,15 @@ const Signup = ({ onSignup, onShowLogin }) => {
                       id="signup-email-error"
                       message={touched.email ? fieldErrors.email : ''}
                     />
+                    {guidedMode && (
+                      <div className="mt-2 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl flex items-start gap-2.5 shadow-sm">
+                        <HelpCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                        <span className="text-[15px] sm:text-[16px] font-bold text-amber-950 leading-relaxed">
+                          Step 1: Enter your email address. (e.g. name@example.com). This acts as
+                          your account name.
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Password Field */}
@@ -330,6 +375,15 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         ))}
                       </motion.div>
                     )}
+                    {guidedMode && (
+                      <div className="mt-2 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl flex items-start gap-2.5 shadow-sm">
+                        <HelpCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                        <span className="text-[15px] sm:text-[16px] font-bold text-amber-950 leading-relaxed">
+                          Step 2: Enter your password (minimum 8 characters). Tip: Click the eye
+                          icon on the right to see your characters and check for spelling errors.
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Confirm Password Field */}
@@ -395,6 +449,15 @@ const Signup = ({ onSignup, onShowLogin }) => {
                       id="signup-confirm-error"
                       message={touched.confirmPassword ? fieldErrors.confirmPassword : ''}
                     />
+                    {guidedMode && (
+                      <div className="mt-2 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl flex items-start gap-2.5 shadow-sm">
+                        <HelpCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                        <span className="text-[15px] sm:text-[16px] font-bold text-amber-950 leading-relaxed">
+                          Step 3: Type your password again to make sure you didn&apos;t make any
+                          spelling mistakes.
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Error Display (Banner for non-field errors) */}
@@ -423,6 +486,14 @@ const Signup = ({ onSignup, onShowLogin }) => {
                   >
                     Create Account
                   </Button>
+                  {guidedMode && (
+                    <div className="mt-3 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl flex items-start gap-2.5 shadow-sm">
+                      <HelpCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                      <span className="text-[15px] sm:text-[16px] font-bold text-amber-950 leading-relaxed">
+                        Step 4: Click this button to proceed once your details are entered.
+                      </span>
+                    </div>
+                  )}
                 </form>
 
                 {/* Login Link */}
