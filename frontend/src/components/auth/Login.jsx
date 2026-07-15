@@ -305,15 +305,27 @@ const Login = ({ onLogin, onShowSignup, onShowVerify, error: errorProp }) => {
                         )}
                       </AnimatePresence>
                     </div>
-                    {guidedMode && (
-                      <div className="mt-2 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl flex items-start gap-2.5 shadow-sm">
-                        <HelpCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
-                        <span className="text-[15px] sm:text-[16px] font-bold text-amber-950 leading-relaxed">
-                          Step 1: Enter your email address. (e.g. name@example.com). This acts as
-                          your account name.
-                        </span>
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {guidedMode && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0, y: -6 }}
+                          animate={{ opacity: 1, height: 'auto', y: 0 }}
+                          exit={{ opacity: 0, height: 0, y: -6 }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                          className="mt-2 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl flex items-start gap-2.5 shadow-sm overflow-hidden text-left"
+                        >
+                          <HelpCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                          <div className="flex-1 space-y-1">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                              Guided Step 1
+                            </div>
+                            <p className="text-sm font-medium text-amber-950 leading-relaxed">
+                              Enter your email address (e.g. <strong>name@example.com</strong>). This will serve as your unique username for accessing the platform.
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Password Field */}
                     <div className="space-y-2 pt-1">
@@ -372,15 +384,31 @@ const Login = ({ onLogin, onShowSignup, onShowVerify, error: errorProp }) => {
                         )}
                       </AnimatePresence>
                     </div>
-                    {guidedMode && (
-                      <div className="mt-2 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl flex items-start gap-2.5 shadow-sm">
-                        <HelpCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
-                        <span className="text-[15px] sm:text-[16px] font-bold text-amber-950 leading-relaxed">
-                          Step 2: Enter your password (minimum 8 characters). Tip: Click the eye
-                          icon on the right to see your characters and check for spelling errors.
-                        </span>
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {guidedMode && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0, y: -6 }}
+                          animate={{ opacity: 1, height: 'auto', y: 0 }}
+                          exit={{ opacity: 0, height: 0, y: -6 }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                          className="mt-2 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl flex items-start gap-2.5 shadow-sm overflow-hidden text-left"
+                        >
+                          <HelpCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                          <div className="flex-1 space-y-1">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                              Guided Step 2
+                            </div>
+                            <p className="text-sm font-medium text-amber-950 leading-relaxed">
+                              Enter your secret password (minimum 8 characters).
+                              <br />
+                              <span className="text-xs text-amber-800">
+                                <em>Tip: Click the eye icon on the right to see your characters and check for spelling errors.</em>
+                              </span>
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Remember Me */}
                     <div className="flex items-center pt-2 pb-2">
@@ -437,14 +465,27 @@ const Login = ({ onLogin, onShowSignup, onShowVerify, error: errorProp }) => {
                         Sign in to Dashboard
                       </Button>
                     </div>
-                    {guidedMode && (
-                      <div className="mt-3 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl flex items-start gap-2.5 shadow-sm">
-                        <HelpCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
-                        <span className="text-[15px] sm:text-[16px] font-bold text-amber-950 leading-relaxed">
-                          Step 3: Click this button to proceed once your details are entered.
-                        </span>
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {guidedMode && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0, y: -6 }}
+                          animate={{ opacity: 1, height: 'auto', y: 0 }}
+                          exit={{ opacity: 0, height: 0, y: -6 }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                          className="mt-3 p-3.5 bg-amber-50 border-2 border-amber-400 rounded-xl flex items-start gap-2.5 shadow-sm overflow-hidden text-left"
+                        >
+                          <HelpCircle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+                          <div className="flex-1 space-y-1">
+                            <div className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                              Guided Step 3
+                            </div>
+                            <p className="text-sm font-medium text-amber-950 leading-relaxed">
+                              Click the button above to log in and go to your dashboard once your details are entered.
+                            </p>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </form>
 
                   {/* Divider 

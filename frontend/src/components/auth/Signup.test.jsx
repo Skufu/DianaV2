@@ -415,27 +415,27 @@ describe('Signup', () => {
     expect(toggle).toBeInTheDocument();
 
     // Verify instructions are NOT visible initially
-    expect(screen.queryByText(/Step 1: Enter your email address/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Step 2: Enter your password/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Step 3: Type your password again/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Step 4: Click this button to proceed/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Guided Step 1/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Guided Step 2/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Guided Step 3/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Guided Step 4/i)).not.toBeInTheDocument();
 
     // Turn Guided Mode ON
     await user.click(toggle);
 
     // Verify all helper cards are now rendered
-    expect(screen.getByText(/Step 1: Enter your email address/i)).toBeInTheDocument();
-    expect(screen.getByText(/Step 2: Enter your password/i)).toBeInTheDocument();
-    expect(screen.getByText(/Step 3: Type your password again/i)).toBeInTheDocument();
-    expect(screen.getByText(/Step 4: Click this button to proceed/i)).toBeInTheDocument();
+    expect(screen.getByText(/Guided Step 1/i)).toBeInTheDocument();
+    expect(screen.getByText(/Guided Step 2/i)).toBeInTheDocument();
+    expect(screen.getByText(/Guided Step 3/i)).toBeInTheDocument();
+    expect(screen.getByText(/Guided Step 4/i)).toBeInTheDocument();
 
     // Turn Guided Mode OFF
     await user.click(toggle);
 
     // Verify instructions are gone again
-    expect(screen.queryByText(/Step 1: Enter your email address/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Step 2: Enter your password/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Step 3: Type your password again/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Step 4: Click this button to proceed/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Guided Step 1/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Guided Step 2/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Guided Step 3/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Guided Step 4/i)).not.toBeInTheDocument();
   });
 });
