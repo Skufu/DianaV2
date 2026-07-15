@@ -817,12 +817,11 @@ func TestContract_AssessmentValidationErrorResponse(t *testing.T) {
 
 	token := generateTestToken(1, "fixture-user", models.RoleUser)
 
-	// Invalid age (outside 45-60 range)
+	// Invalid BMI (negative value)
 	payload := `{
-		"age": 30,
-		"bmi": 24.5
+		"age": 55,
+		"bmi": -5.0
 	}`
-
 	req := httptest.NewRequest("POST", "/api/v1/users/me/assessments", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)

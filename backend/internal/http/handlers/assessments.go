@@ -433,8 +433,7 @@ func (h *AssessmentsHandler) Create(c *gin.Context) {
 		return
 	}
 	if age < canonicalAssessmentMinAge || age > canonicalAssessmentMaxAge {
-		ErrBadRequest(c, canonicalAssessmentAgeErr)
-		return
+		log.Printf("[WARN] User age %d is outside the canonical postmenopausal range of 45-60", age)
 	}
 
 	// Add user_id to assessment
@@ -686,8 +685,7 @@ func (h *AssessmentsHandler) Update(c *gin.Context) {
 	}
 	assessment.Age = resolvedAge
 	if assessment.Age < canonicalAssessmentMinAge || assessment.Age > canonicalAssessmentMaxAge {
-		ErrBadRequest(c, canonicalAssessmentAgeErr)
-		return
+		log.Printf("[WARN] User age %d is outside the canonical postmenopausal range of 45-60", assessment.Age)
 	}
 	if assessment.Alcohol == "" {
 		assessment.Alcohol = "Unknown"

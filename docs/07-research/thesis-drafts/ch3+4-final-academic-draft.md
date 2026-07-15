@@ -1004,6 +1004,14 @@ The predicted probabilities should therefore be communicated as approximate scre
 
 The diagnostics in Table 4.8 evaluate the base Logistic Regression output before the post-model metabolic-risk floor. In the deployed application, the served value may be higher for profiles meeting the heuristic indicators. A raised value is therefore a conservative screening alert rather than a recalibrated probability. Formal evaluation of the served value requires a separate held-out ablation.
 
+Figure 4.15 provides the apparent calibration curve for the final model. Because it evaluates predictions on the same 1,376 records used to fit the model parameters, it is an in-sample diagnostic that does not reflect generalization to held-out data.
+
+**Figure 4.15. Apparent (In-Sample) Calibration Curve**
+
+![Apparent (In-Sample) Calibration Curve](../minor-revision-evidence/calibration_curve.png)
+
+Figure 4.15 shows the observed fraction of positive cases in each probability decile plotted against the mean predicted probability. The Hosmer-Lemeshow statistic indicates a significant deviation from perfect calibration even in-sample (p < 0.05).
+
 ## 4.5 Clustering Validation and Metabolic-Profile Distribution
 
 Weighted K-Means with $K=4$ was evaluated on all 734 operational-label-positive records after applying the active clustering imputer and scaler. The earlier visualization that called `dropna()` represented only 686 records and is not used as proof of the active pipeline. Because the fitted objective scales each standardized dimension by the square root of its feature weight, primary metrics were recomputed in that geometry.
@@ -1064,6 +1072,8 @@ The expanded recent-cycle $K=5$ centroids provide a useful hypothesis-generating
 | C0 | Lower-metabolic-burden residual (MARD-like) | 232 (31.6%) | 28.25 | 97.78 | 102.55 | 62.40 | 55.42 | 94.98 | Final residual centroid |
 
 Table 4.10 is the direct proof of how names were assigned. Weighted K-Means generated the raw membership IDs; the deterministic waterfall then mapped the fixed centroids to semantic names. C2's code-level LAP-style score was 16,643 because the implementation used triglycerides in mg/dL. With triglycerides converted to mmol/L, the conventional-scale value is approximately 187.9; the constant conversion leaves C2 ranked first. The C3 alias does not demonstrate insulin deficiency, the C1 centroid represents severe rather than mild obesity, and the C0 alias is not supported as age-driven because the centroid ages span only about 1.15 years.
+
+To clarify a common methodological concern regarding patient-level annotation: the clustering process was entirely unsupervised at the individual record level. No patient record was pre-filtered or manually assigned to a metabolic profile. The clustering algorithm grouped the 734 operational-label-positive records based solely on mathematical proximity in the weighted, scaled feature space, with zero knowledge of the target labels. The clinical names (e.g., TG-waist dominant) were mapped only at the group (centroid) level after the mathematical boundaries were locked. When new data are submitted at runtime, the system calculates the Euclidean distance to these pre-defined, unsupervised centroids and assigns the patient to the nearest cluster, providing an automated, objective classification that does not involve manual annotation or supervised target-variable training during the clustering stage.
 
 **Figure 4.4. Operational-Label-Positive Cluster Distribution and Centroid Profiles**
 
@@ -1281,6 +1291,14 @@ DIANA and the reconstructed tools used the same cohort, binary outcome, and held
 
 The DIANA row uses pooled held-out records, whereas comparator point estimates are unweighted means across the six held-out cycles; Table 4.16 labels this difference rather than presenting the uncertainty summaries as interchangeable. The AUC results supply internal ranking context only. They do not establish operating-point superiority, because the comparator thresholds were test-label-tuned, and they do not establish published-tool superiority, because several tools required approximated or unavailable variables. A fair head-to-head study must freeze or derive every tool's threshold from development data before evaluating the held-out cycle and then validate the tools in an external target population.
 
+Figure 4.14 visualizes these area under the ROC curve results with uncertainty bars. The comparison is contextual and does not support diagnostic claims, because comparator thresholds were test-tuned and the FINDRISC-like baseline used a glycemic proxy.
+
+**Figure 4.14. Internal Benchmark Comparison (AUC-ROC)**
+
+![Internal Benchmark Comparison (AUC-ROC)](../minor-revision-evidence/benchmark_comparison.png)
+
+Figure 4.14 compares DIANA's pooled held-out AUC-ROC (error bar represents bootstrap 95% confidence interval) with the mean cycle AUC-ROC of the four reconstructed baselines (error bars represent survey-cycle standard deviation).
+
 ## 4.13 Study Limitations
 
 Several limitations define what can be concluded from the study.
@@ -1321,6 +1339,8 @@ Table 4.17 converts each major limitation into a specific next analysis and name
 | 6 | Do serving safeguards and presentation language support safe interpretation? | Validate saved-pipeline missing-input behavior in the intended population; ablate the metabolic-risk floor on held-out predictions; explain base-model and rule contributions separately; remove treatment-style cluster metadata and stale result, education, authentication, and administrator copy; blind clinicians to review changed cases | Changes in errors, calibration, explanation reconciliation, copy audit, net benefit, and clinician agreement |
 | 7 | Can people use the system safely and feasibly? | Execute community UAT; conduct scored multi-physician review, accessibility audit, security testing, and authenticated load testing | Task success, System Usability Scale scores, accessibility findings, expert agreement, and service performance |
 | 8 | Is deployment economically and behaviorally useful? | Measure total workflow cost, confirmatory testing and referral; then conduct a longitudinal impact study | Cost-effectiveness, referral yield, follow-up completion, behavior, and health outcomes |
+| 9 | Should glycemic predictors (HbA1c, FBS) be included in the primary screening model or post-screening triage? | Explore the inclusion or secondary role of glycemic predictors (HbA1c, FBS) in post-screening triage layers rather than the primary non-glycemic screening model | Information gain analysis, post-screening triage simulation, and comparative classification performance |
+| 10 | How does reproductive status influence model performance when evaluated as an explicit feature? | Expand future model development to include both menopausal and non-menopausal women to isolate and evaluate reproductive status as an explicit feature | Expanded dataset with balanced reproductive groups, stratified performance metrics, and feature importance/attribution comparison |
 
 The no-blood-pressure design may reduce one access barrier, but lipid panels, confirmatory testing, clinician review, infrastructure, and participant time still carry costs. Cost claims should therefore be measured rather than described as near zero. Cardiovascular-scope expansion should follow, not precede, validation of the current diabetes-screening contract.
 

@@ -215,6 +215,8 @@ These principles resolve into DIANA’s two-stage workflow: a binary Logistic Re
 4. **Do not use Appendix A sources** unless they are corrected first.
 5. **Add a “Verification Status” table to the thesis appendix** if the committee requests explicit provenance for all citations.
 6. **Optional:** Run a final cross-check that every in-text citation in Chapter 2 has a matching entry in this RRL and in the final-draft reference list.
+7. **Glycemic Predictor Triage (Priority 9):** Explore the inclusion or secondary role of glycemic predictors (HbA1c, FBS) in post-screening triage layers rather than the primary non-glycemic screening model to optimize information gain.
+8. **Dataset Expansion for Reproductive Status (Priority 10):** Expand future model development to include both menopausal and non-menopausal women to isolate and evaluate reproductive status as an explicit feature.
 
 ---
 

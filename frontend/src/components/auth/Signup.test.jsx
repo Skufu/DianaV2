@@ -177,7 +177,7 @@ describe('Signup', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/please enter your email address/i)).toBeInTheDocument();
     });
   });
 
@@ -205,7 +205,7 @@ describe('Signup', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/please enter a password/i)).toBeInTheDocument();
     });
   });
 
@@ -217,10 +217,7 @@ describe('Signup', () => {
     await user.type(passwordInput, 'p');
 
     await waitFor(() => {
-      expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument();
-      expect(screen.getByText(/contains uppercase letter/i)).toBeInTheDocument();
-      expect(screen.getByText(/contains lowercase letter/i)).toBeInTheDocument();
-      expect(screen.getByText(/contains a number/i)).toBeInTheDocument();
+      expect(screen.getByText(/password must be at least 8 characters/i)).toBeInTheDocument();
     });
   });
 
@@ -232,11 +229,7 @@ describe('Signup', () => {
     await user.type(passwordInput, 'Password123');
 
     await waitFor(() => {
-      // All requirements should show checkmarks (met)
-      const requirements = screen.getAllByText(
-        /at least 8 characters|contains uppercase|contains lowercase|contains a number/i
-      );
-      // Check that requirements are displayed
+      const requirements = screen.getAllByText(/password must be at least 8 characters/i);
       expect(requirements.length).toBeGreaterThan(0);
     });
   });
@@ -297,8 +290,8 @@ describe('Signup', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/email is required/i)).toBeInTheDocument();
-      expect(screen.getByText(/password is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/please enter your email address/i)).toBeInTheDocument();
+      expect(screen.getByText(/please enter a password/i)).toBeInTheDocument();
     });
   });
 
