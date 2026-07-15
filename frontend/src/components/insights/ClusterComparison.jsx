@@ -195,6 +195,10 @@ const ClusterComparison = React.memo(({ clusters = [], isLoading = false }) => {
           treatment strategies.
         </p>
       </div>
+
+      <div className="mt-4 pt-4 border-t border-diana-stone text-xs text-diana-text-secondary">
+        <strong>Reference:</strong> Ahlqvist, E. et al. (2018). Novel subgroups of adult-onset diabetes and their association with outcomes: a data-driven cluster analysis of six variables. <em>The Lancet Diabetes & Endocrinology</em>, 6(5), 361-371.
+      </div>
     </motion.div>
   );
 });

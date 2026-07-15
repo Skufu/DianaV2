@@ -159,7 +159,7 @@ func TestAssessmentsHandler_Create_UsesHTTPPredictor(t *testing.T) {
 	}
 }
 
-func TestAssessmentsHandler_Create_RejectsAgeOutsideCanonicalRange(t *testing.T) {
+func TestAssessmentsHandler_Create_AcceptsAgeOutsideCanonicalRange(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
@@ -195,14 +195,11 @@ func TestAssessmentsHandler_Create_RejectsAgeOutsideCanonicalRange(t *testing.T)
 			w := httptest.NewRecorder()
 			r.ServeHTTP(w, req)
 
-			if w.Code != http.StatusBadRequest {
-				t.Fatalf("expected status 400 for age=%d, got %d", tt.age, w.Code)
+			if w.Code != http.StatusCreated {
+				t.Fatalf("expected status 201 for age=%d, got %d", tt.age, w.Code)
 			}
-			if !strings.Contains(w.Body.String(), canonicalAssessmentAgeErr) {
-				t.Fatalf("expected canonical age policy message, got %s", w.Body.String())
-			}
-			if repo.last.ID != 0 {
-				t.Fatalf("expected no assessment to be persisted on invalid age")
+			if repo.last.Age != tt.age {
+				t.Fatalf("expected persisted age=%d, got %d", tt.age, repo.last.Age)
 			}
 		})
 	}
@@ -1406,24 +1403,24 @@ func TestAssessmentsHandler_Create_TableDriven(t *testing.T) {
 
 	tests := []testCase{
 		{
-			name: "TC-AGE-LO: age 44 rejected (below canonical minimum)",
+			name: "TC-AGE-LO: age 44 accepted (below canonical minimum)",
 			payload: map[string]any{
 				"age": 44, "bmi": 25.0, "triglycerides": 150,
 				"ldl": 120, "hdl": 50, "systolic": 120, "diastolic": 80,
 			},
-			wantStatus:        http.StatusBadRequest,
-			wantBodyContains:  canonicalAssessmentAgeErr,
-			wantPredictCalled: false,
+			wantStatus:        http.StatusCreated,
+			wantPredictCalled: true,
+			wantPersistedAge:  44,
 		},
 		{
-			name: "TC-AGE-HI: age 61 rejected (above canonical maximum)",
+			name: "TC-AGE-HI: age 61 accepted (above canonical maximum)",
 			payload: map[string]any{
 				"age": 61, "bmi": 25.0, "triglycerides": 150,
 				"ldl": 120, "hdl": 50, "systolic": 120, "diastolic": 80,
 			},
-			wantStatus:        http.StatusBadRequest,
-			wantBodyContains:  canonicalAssessmentAgeErr,
-			wantPredictCalled: false,
+			wantStatus:        http.StatusCreated,
+			wantPredictCalled: true,
+			wantPersistedAge:  61,
 		},
 		{
 			name: "TC-WC-IMP: missing waist_circumference accepted (imputation path)",

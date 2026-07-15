@@ -15,10 +15,7 @@ import { SignupFormSkeleton } from '../common/Skeleton';
 
 // Password requirements check
 const getPasswordRequirements = password => [
-  { key: 'length', label: 'At least 8 characters', met: password.length >= 8 },
-  { key: 'upper', label: 'Contains uppercase letter', met: /[A-Z]/.test(password) },
-  { key: 'lower', label: 'Contains lowercase letter', met: /[a-z]/.test(password) },
-  { key: 'digit', label: 'Contains a number', met: /\d/.test(password) },
+  { key: 'length', label: 'Password must be at least 8 characters', met: password.length >= 8 },
 ];
 
 const Signup = ({ onSignup, onShowLogin }) => {
@@ -54,15 +51,12 @@ const Signup = ({ onSignup, onShowLogin }) => {
     (field, value) => {
       switch (field) {
         case 'email':
-          if (!value.trim()) return 'Email is required';
+          if (!value.trim()) return 'Please enter your email address';
           if (!validateEmail(value)) return 'Please enter a valid email address';
           return '';
         case 'password':
-          if (!value) return 'Password is required';
+          if (!value) return 'Please enter a password';
           if (value.length < 8) return 'Password must be at least 8 characters';
-          if (!/[A-Z]/.test(value)) return 'Password must contain an uppercase letter';
-          if (!/[a-z]/.test(value)) return 'Password must contain a lowercase letter';
-          if (!/\d/.test(value)) return 'Password must contain a number';
           return '';
         case 'confirmPassword':
           if (!value) return 'Please confirm your password';
@@ -166,10 +160,10 @@ const Signup = ({ onSignup, onShowLogin }) => {
           initial={{ opacity: 0, height: 0, y: -4 }}
           animate={{ opacity: 1, height: 'auto', y: 0 }}
           exit={{ opacity: 0, height: 0, y: -4 }}
-          className="text-[13px] text-red-600 font-medium flex items-center gap-1.5 pl-1"
+          className="text-sm sm:text-base font-semibold text-red-600 flex items-center gap-2 pl-1 mt-1"
           role="alert"
         >
-          <AlertCircle size={14} className="shrink-0" />
+          <AlertCircle size={16} className="shrink-0" />
           {message}
         </motion.p>
       )}
@@ -319,17 +313,17 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="grid grid-cols-2 gap-x-3 gap-y-1 pt-1"
+                        className="flex flex-col gap-1.5 pt-1.5"
                       >
                         {passwordRequirements.map(req => (
                           <div
                             key={req.key}
-                            className={`flex items-center gap-1.5 text-[11px] font-medium transition-colors ${req.met ? 'text-emerald-600' : 'text-slate-400'}`}
+                            className={`flex items-center gap-2 text-sm sm:text-base font-semibold transition-colors ${req.met ? 'text-emerald-600' : 'text-slate-500'}`}
                           >
                             {req.met ? (
-                              <Check size={12} className="shrink-0" />
+                              <Check size={16} className="shrink-0" />
                             ) : (
-                              <X size={12} className="shrink-0" />
+                              <X size={16} className="shrink-0" />
                             )}
                             {req.label}
                           </div>
@@ -351,7 +345,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         <motion.span
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="text-[10px] font-bold uppercase tracking-wider text-emerald-500"
+                          className="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-500"
                         >
                           Match
                         </motion.span>
@@ -360,7 +354,7 @@ const Signup = ({ onSignup, onShowLogin }) => {
                         <motion.span
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="text-[10px] font-bold uppercase tracking-wider text-red-500"
+                          className="text-xs sm:text-sm font-bold uppercase tracking-wider text-red-500"
                         >
                           Mismatch
                         </motion.span>

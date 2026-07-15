@@ -368,7 +368,7 @@ const AssessmentForm = ({
 
         <div className="p-5 sm:p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-            {showModelSelector && !lockedModelType && (
+            {showModelSelector && !lockedModelType ? (
               <div>
                 <label
                   htmlFor="model_type"
@@ -387,7 +387,19 @@ const AssessmentForm = ({
                   <option value="binary_v2_bp">Screening (with BP)</option>
                   <option value="ada">ADA (HbA1c + FBS)</option>
                 </select>
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  * Clinical assessment criteria and models validated against the clinical standards in the American Diabetes Association (2026) guidelines.
+                </p>
               </div>
+            ) : (
+              lockedModelType && (
+                <div className="text-[11px] text-slate-500 mb-4">
+                  Active Model: <span className="font-semibold text-slate-700">{lockedModelType === 'ada' ? 'ADA (HbA1c + FBS)' : lockedModelType === 'binary_v2_bp' ? 'Screening (with BP)' : 'Screening (no BP)'}</span>
+                  <p className="mt-0.5">
+                    * Clinical assessment criteria and models validated against the clinical standards in the American Diabetes Association (2026) guidelines.
+                  </p>
+                </div>
+              )
             )}
             {/* Body Metrics Section */}
             <div>
