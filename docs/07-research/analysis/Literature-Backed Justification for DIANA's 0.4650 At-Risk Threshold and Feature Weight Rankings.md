@@ -153,6 +153,33 @@ DIANA's engineered MetS Score (sum of 0–4 risk factors: elevated TG, low HDL, 
 | **Lifestyle (Smoking, Activity, Alcohol)** | Binary Screening Predictors | Validated behavioral risk factors; ordinal inputs for LR generalizability.[^1] |
 | **TG/HDL & MetS Score** | Legacy Reference Features | TG/HDL AUC = 0.83–0.86 for insulin resistance prediction; MetS mirrors ATP III/IDF.[^23][^27] |
 
+### 2.9 Empirical Proof of Unsupervised Clustering (Centroids C0 to C3)
+
+To demonstrate that DIANA's profile clustering uses a purely data-driven, unsupervised partition of the patient space without hand-crafted mapping rules, we examine the raw centroids ($C_0$ to $C_3$) produced by the Weighted K-Means algorithm. 
+
+The clustering model is trained in the 6-dimensional standardized space of continuous metabolic risk factors on the at-risk menopausal subset (pre-diabetic or diabetic cohort, $n = 734$). The resulting mathematical coordinates ($Z$-scores) and their corresponding clinical (inverse-transformed) values are documented below:
+
+#### Centroid Feature Coordinate Values
+
+| Centroid | Associated Profile | BMI (kg/m²) | Triglycerides (mg/dL) | LDL-C (mg/dL) | HDL-C (mg/dL) | Age (years) | Waist Circumference (cm) |
+|---|---|---|---|---|---|---|---|
+| **C0** | MARD-like (lower-burden) | 28.25 (-0.60) | 97.78 (-0.49) | 102.55 (-0.55) | 62.40 (+0.58) | 55.42 (+0.14) | 94.98 (-0.68) |
+| **C1** | MOD-like (obesity-dominant) | 42.05 (+1.09) | 119.64 (-0.25) | 113.13 (-0.27) | 51.95 (-0.16) | 54.27 (-0.14) | 123.53 (+1.07) |
+| **C2** | SIRD-like (TG-waist dominant) | 32.25 (-0.11) | 335.16 (+2.09) | 109.53 (-0.37) | 41.73 (-0.87) | 54.51 (-0.08) | 107.66 (+0.10) |
+| **C3** | SIDD-like (LDL-dominant) | 29.01 (-0.50) | 148.26 (+0.06) | 166.15 (+1.09) | 52.01 (-0.15) | 54.95 (+0.03) | 98.64 (-0.46) |
+
+*Note: Values in parentheses indicate standardized Z-scores (deviations from cohort mean).*
+
+This mathematical segregation clearly shows distinct clinical phenotypes:
+- **C0 (MARD-like)**: Lowest overall metabolic burden, lowest waist circumference, lowest triglycerides, and highest protective HDL-C (62.40 mg/dL).
+- **C1 (MOD-like)**: Obesity-dominant marker, with massive BMI (42.05 kg/m²) and waist circumference (123.53 cm) but moderate lipid profile.
+- **C2 (SIRD-like)**: High insulin resistance profile with extremely high Triglycerides (335.16 mg/dL) and low HDL-C (41.73 mg/dL).
+- **C3 (SIDD-like)**: Severe dyslipidemia, marked by significantly elevated LDL-C (166.15 mg/dL).
+
+Below is the visualization of these mathematical centroids in both standardized and clinical spaces:
+
+![DIANA Cluster Centroids Proof of Clustering](centroids_proof.png)
+
 ***
 
 ## Part 3: Information Gain as Feature Selection — Published Validation

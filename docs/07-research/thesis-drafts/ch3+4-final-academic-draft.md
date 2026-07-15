@@ -1,3 +1,88 @@
+# Chapter 2: Review of Related Literature
+
+This chapter reviews the literature that motivates and frames DIANA. It proceeds from the global and Philippine burden of Type 2 Diabetes Mellitus (T2DM), through the metabolic transition of menopause and the biomarkers that signal risk, to data-driven diabetes subgroups, machine learning approaches, and the explainability and governance principles that shape a screening-support prototype. The chapter concludes with a synthesis linking these strands to DIANA's design.
+
+## 2.1 Diabetes Burden and the Need for Screening
+
+Diabetes mellitus is a leading chronic disease worldwide. The International Diabetes Federation estimated that approximately 537 million adults aged 20–79 were living with diabetes in 2021, a figure projected to exceed 780 million by 2045 (International Diabetes Federation, 2021). The World Health Organization identifies diabetes as a major cause of blindness, kidney failure, heart attacks, stroke, and lower-limb amputation, and emphasizes that early detection and lifestyle modification can delay or prevent complications (World Health Organization, 2024). A substantial fraction of cases remain undiagnosed: many individuals first present with complications rather than with a routine screening result.
+
+In the Philippines, the burden is growing but under-characterized. A national diabetes survey conducted in the 1980s established an early prevalence benchmark (Azurin et al., 1986), but more recent nationally representative data remain limited. Filipino migrants exhibit higher T2DM prevalence and distinct metabolic risk profiles compared with host populations, suggesting that genetic background, dietary transition, and abdominal adiposity interact to elevate risk in this group (Araneta, 2019). A Philippine-based predictive modeling study (n = 947) identified BMI, HbA1c, triglycerides, and LDL cholesterol as significant predictors of diabetes classification, reinforcing the relevance of anthropometric and lipid biomarkers in a Filipino context (Campugan & Aguaras, 2025).
+
+The gap between rising prevalence and limited screening infrastructure motivates the development of a tool that uses readily available clinical measurements to flag elevated risk among an underserved subpopulation. DIANA is designed as a screening-support prototype, not a diagnostic device; its positive output should prompt confirmatory testing and clinical review, consistent with health-AI governance principles that emphasize human oversight (World Health Organization, 2021).
+
+## 2.2 Menopause and Type 2 Diabetes Risk
+
+Menopause marks a metabolic transition. Declining estrogen levels are associated with altered fat distribution, increased visceral adiposity, reduced insulin sensitivity, and unfavorable lipid changes. These shifts place women transitioning through menopause at elevated risk for T2DM.
+
+The Rotterdam Study (n = 3,639 postmenopausal women; 348 incident T2DM cases) demonstrated that premature menopause (before age 40) was associated with a hazard ratio of 3.7 for T2DM, and early menopause (ages 40–44) with a hazard ratio of 2.4, relative to late menopause (Muka et al., 2017). Each additional year of later menopause reduced T2DM risk by approximately 4%. A meta-analysis confirmed that early menopause increases T2DM odds by approximately 24% (Yazdkhasti et al., 2024). NHANES-specific evidence corroborates this association: among U.S. postmenopausal women, premature menopause was associated with increased T2DM prevalence (Xing, Kirby, & Alman, 2022). The EPIC-InterAct study (n = 3,691 incident T2DM cases across 8 European countries) found that menopause before age 40 conferred a hazard ratio of 1.32 (95% CI: 1.04–1.69) for T2DM (Brand et al., 2013).
+
+Postmenopausal status also predicts metabolic syndrome. In an Iranian population, postmenopausal women exhibited high rates of low HDL cholesterol and abdominal obesity (Marjani & Moghasemi, 2012). Menopause-related lipid changes include higher triglycerides and lower HDL cholesterol, reflecting the loss of estrogen's protective lipid effects (Russo, Horvath, Di Benedetto, Giandalia, Cucinotta, & Asztalos, 2010). Clinical guidance from the Endocrine Society recognizes the metabolic implications of menopause and recommends individualized risk assessment and management (Stuenkel et al., 2015).
+
+The World Health Organization defines natural menopause as 12 consecutive months without menstruation when no other physiological or pathological cause is present (World Health Organization, 2024). This definition is relevant to DIANA's cohort construction: the implemented RHQ031 filter identifies a no-period cohort but does not by itself confirm natural postmenopause, as amenorrhea may also follow hysterectomy, medication, or other treatment.
+
+## 2.3 Biomarkers for T2DM Risk
+
+HbA1c and fasting plasma glucose are the diagnostic biomarkers that define diabetes status. The American Diabetes Association establishes HbA1c of 6.5% or higher as diagnostic of diabetes and 5.7–6.4% as prediabetic (American Diabetes Association Professional Practice Committee for Diabetes, 2026). Because these glycemic markers define the clinical outcome, using them as predictors in a screening model would create circular reasoning and artificially inflate performance. A defensible screening tool must rely on non-glycemic surrogates that carry independent metabolic signal.
+
+Body mass index (BMI), waist circumference, triglycerides, HDL cholesterol, and LDL cholesterol are established components of metabolic-syndrome definitions. The International Diabetes Federation consensus definition specifies triglycerides ≥ 150 mg/dL, HDL < 50 mg/dL for women, and ethnic-specific waist thresholds (International Diabetes Federation, 2006). The National Cholesterol Education Program Adult Treatment Panel III provides the female-specific lipid thresholds used in metabolic-syndrome criteria (National Cholesterol Education Program, 2001). For Asian populations, the World Health Organization Western Pacific Region identifies BMI ≥ 25 kg/m² as the obesity threshold, reflecting higher body fat and metabolic risk at lower weights than in Western populations (World Health Organization, 2000).
+
+The lipid accumulation product (LAP), computed as the product of triglycerides and waist circumference, outperforms BMI for recognizing cardiovascular risk in population-based data (Kahn, 2005). NHANES data confirm LAP as a predictor of both prediabetes and diabetes (Wang, Wang, & Zeng, 2024). Among menopausal women specifically, surrogate insulin resistance markers such as the triglyceride-glucose index, LAP, and visceral adiposity index distinguish prediabetes from diabetes (Cybulska, Schneider-Matyka, Wieder-Huszla, Jurczak, Szkup, & Grochans, 2023), and adiponectin is inversely associated with HbA1c, fasting glucose, insulin, and triglycerides (Cybulska, Schneider-Matyka, & Grochans, 2025). A Filipino logistic regression study independently identified BMI, HbA1c, triglycerides, and LDL as significant diabetes predictors (Campugan & Aguaras, 2025), reinforcing the cross-population relevance of these biomarkers.
+
+These findings support DIANA's decision to exclude HbA1c and FBS from the screening feature set while retaining BMI, waist circumference, triglycerides, HDL, and LDL as non-glycemic predictors. Lifestyle variables—smoking, physical activity, and alcohol use—are included as categorical proxies, consistent with their role as modifiable risk factors in clinical guidelines.
+
+## 2.4 Data-Driven Diabetes Subgroups and Clustering
+
+Adult-onset diabetes is heterogeneous. Ahlqvist et al. (2018) applied data-driven clustering to six clinical variables in 8,980 Swedish patients and identified five subgroups: severe autoimmune diabetes (SAID), severe insulin-deficient diabetes (SIDD), severe insulin-resistant diabetes (SIRD), mild obesity-related diabetes (MOD), and mild age-related diabetes (MARD). These subgroups differed in disease progression, complication risk, and treatment response.
+
+Subsequent research has tested the replicability and clinical utility of these subgroups. Dennis et al. (2019) showed that data-driven subgroups exhibited distinct treatment-response patterns compared with models based on simple clinical features. A five-year follow-up confirmed that the subgroups had distinct complication profiles: SIRD had the highest risk of chronic kidney disease, while SIDD had the highest risk of retinopathy (Zaharia et al., 2019). An epigenetic study found that the subgroups display different DNA methylation patterns associated with future diabetic complications (Schrader et al., 2022). A systematic review and meta-analysis of 19 studies quantified subgroup differences and confirmed the overall replicability of the cluster structure, though with variability across populations (Ao et al., 2025). A broader systematic review of 41 studies found that K-Means and hierarchical clustering were the most commonly applied methods, with cluster count and variable selection varying considerably (Taurbekova et al., 2025).
+
+Cross-population validation has been mixed but informative. A Ghanaian cluster analysis produced subgroups broadly consistent with the Ahlqvist framework, though the specific cluster count and metabolic patterns differed (Danquah et al., 2023). A review of subgroup-guided medication strategies cautioned that while subgroups may inform treatment selection, the evidence base remains insufficient for routine clinical application (Veelen, Erazo-Tapia, Oscarsson, & Schrauwen, 2021).
+
+DIANA draws on this literature for interpretability rather than biological replication. The platform uses Ahlqvist-inspired aliases (SIRD-like, SIDD-like, MOD-like, MARD-like) as descriptive labels for its weighted K-Means clusters, but the clustering features, cohort, and method differ from the original framework. DIANA uses current age rather than age at diagnosis, lacks glutamic acid decarboxylase antibodies and HOMA indices, and applies researcher-defined feature weights. The aliases are therefore communication tools, not validated biological diagnoses.
+
+## 2.5 Machine Learning, Feature Selection, and Validation in Diabetes Prediction
+
+Machine learning can capture non-linear relationships among biomarkers that traditional logistic regression may miss. Tree-based ensembles—Random Forest (Breiman, 2001), LightGBM (Ke et al., 2017), and XGBoost (Chen & Guestrin, 2016)—have been applied to diabetes prediction with comparable performance across datasets. A simulation study using electronic health record data found that tree-based ensembles and regularized linear models achieved similar discrimination, and that feature selection strategy often had more impact than algorithm choice (Kopitar, Kočbek, Cilar, Sheikh, & Štiglic, 2020). A scoping review of supervised ML for T2DM prevalence prediction noted a gap in Southeast Asian validation studies and called for population-specific models (Mohd Rizal, Abdul Maulud, Ganasegeran, Abdul Manaf, Safian, Mustapha, & Waller, 2024).
+
+Feature selection in diabetes prediction commonly uses filter-based methods. Information Gain (IG) and entropy provide a transparent univariate relevance audit that ranks features by their mutual information with the outcome. A comparative study found IG to be an effective filter-based method for diabetes classification across diverse datasets (Kaliappan et al., 2024), while another study evaluated IG alongside chi-square and recursive feature elimination, confirming its utility for identifying critical predictive factors (Sreehari & Babu, 2024).
+
+Validation discipline is critical in small-sample clinical ML. Vabalas et al. (2019) outlined principles for validating machine learning algorithms with limited sample sizes, including the need for nested cross-validation, leakage-safe preprocessing, and separation of tuning from evaluation. Survey data introduce additional complexities: NHANES survey weights are essential for population-level prevalence estimation but their role in prediction-model training depends on the target deployment population (Lumley, 2010). Class imbalance, common in medical screening datasets, can distort performance metrics; the geometric mean of sensitivity and specificity provides a robust alternative under imbalance (Luque, Carrasco, Martin, & de las Heras, 2019). Diagnostic accuracy definitions and likelihood ratios provide the clinical context for interpreting sensitivity, specificity, and predictive values (Shreffler & Huecker, 2023), and F1 offers a harmonic summary of precision and recall (Powers, 2011).
+
+DIANA applies these principles through nested leave-one-group-out (LOGO) validation by NHANES survey cycle, leakage-safe fold-local imputation, and a transparent Information Gain audit. The candidate algorithms include Logistic Regression, Random Forest, LightGBM, and XGBoost, evaluated under a shared data contract and AUC-ROC optimization objective.
+
+## 2.6 Explainability, Visualization, and Usability
+
+Model predictions in healthcare must be interpretable to be trusted and used. SHAP (SHapley Additive exPlanations) provides a unified framework for attributing model outputs to individual feature contributions, grounded in cooperative game theory (Lundberg & Lee, 2017). Patient-specific SHAP explanations can reveal why a particular risk score was assigned, supporting both clinician review and user understanding.
+
+Visualization design principles further guide effective risk communication. Empirical research demonstrates that decluttering and visual focusing improve graphic comprehension in data communication (Ajani, Lee, Xiong, Nussbaumer Knaflic, Kemper, & Franconeri, 2022). A systematic review found that data visualizations improve understanding and reduce tracking errors in public health practice (Park, Bekemeier, Flaxman, & Schultz, 2022). For single-patient health summaries, scoping reviews identify tables, scatterplot-line timelines, and event timelines as the most common and effective formats (Zerlik, Jung, Schuler, Sedlmayr, & Sedlmayr, 2024). Visualizing risk prediction models through patient-specific contribution charts and colorized risk bars can make individualized risk transparent (Van Belle & Van Calster, 2015). Interactive systems that link feature explanations with raw patient records help clinicians inspect model decisions (Cheng, Liu, Du, Lin, Zytek, Li, Qu, & Veeramachaneni, 2022), and human-centered visual explanations of modifiable risk factors improve cardiovascular risk communication (Rojo, Lamqaddam, Gosak, & Verbert, 2024).
+
+Usability evaluation is essential for health-IT tools. The System Usability Scale (SUS) is a widely used 10-item instrument for rapid usability assessment (Brooke, 1996), and benchmark data support interpreting scores above 68 as acceptable (Bangor, Kortum, & Miller, 2008). Accessibility standards, including the Web Content Accessibility Guidelines (WCAG) 2.2, ensure that digital health tools are usable by individuals with disabilities (World Wide Web Consortium, 2023).
+
+DIANA integrates these principles through SHAP-based feature-attribution explanations, a clean dashboard with trend visualizations, and a planned SUS-based usability evaluation. The interface uses decluttered visual design and risk-factor displays that link modifiable behaviors to model output.
+
+## 2.7 Security, Software Quality, and Health AI Governance
+
+A health-AI prototype must be secure, maintainable, and governed. Token-based authentication using JSON Web Tokens (JWT) supports stateless, scalable user verification (Jones, Bradley, & Sakimura, 2015). Password hashing with bcrypt provides adaptive resistance to brute-force attacks (Provos & Mazieres, 1999). The ISO/IEC 25010 quality model provides a framework for evaluating software quality characteristics including functional suitability, performance efficiency, security, and maintainability (International Organization for Standardization, 2023).
+
+Calibration—the agreement between predicted and observed probabilities—is a critical but often overlooked aspect of predictive analytics. The Brier score measures the mean squared difference between predicted probabilities and observed outcomes (Brier, 1950). The Hosmer-Lemeshow goodness-of-fit test assesses whether predicted probabilities match observed event rates across risk strata (Hosmer & Lemeshow, 1980). A tutorial review identifies calibration as the Achilles heel of predictive analytics and emphasizes that discrimination alone is insufficient for clinical deployment (Van Calster et al., 2019). Bootstrap resampling provides confidence intervals for performance estimates without strong distributional assumptions (Efron & Tibshirani, 1993).
+
+The World Health Organization's guidance on the ethics and governance of AI for health emphasizes that AI tools should support, not replace, clinical judgment, and that human oversight must be maintained throughout the deployment lifecycle (World Health Organization, 2021). DIANA positions itself accordingly: a screening-support prototype whose positive output prompts confirmatory review rather than autonomous diagnosis.
+
+## 2.8 Synthesis: From Literature to DIANA
+
+The reviewed literature converges on four design principles that shape DIANA:
+
+1. **Population relevance.** Menopause is associated with metabolic changes that increase T2DM risk, and earlier menopause confers higher risk. This justifies concentrating on women aged 45–60 who report no recent menstrual period (Muka et al., 2017; World Health Organization, 2024).
+
+2. **Non-circular predictor set.** HbA1c and FBS define the clinical outcome; using them as predictors would create a diagnostic lookup rather than a screening tool. The metabolic syndrome, LAP, and Filipino risk-modeling literature support the use of BMI, waist circumference, lipids, age, and lifestyle as non-glycemic predictors (International Diabetes Federation, 2006; Kahn, 2005; Campugan & Aguaras, 2025).
+
+3. **Subgroup heterogeneity.** Data-driven clustering reveals that adult-onset diabetes is not uniform. DIANA borrows Ahlqvist-inspired labels for interpretability but explicitly avoids claiming validated biological subtypes, consistent with cautions in the replication literature (Ahlqvist et al., 2018; Dennis et al., 2019; Veelen et al., 2021).
+
+4. **Validation discipline.** Small-sample clinical ML requires nested validation and leakage-safe preprocessing. Information Gain offers a transparent relevance audit, while nested LOGO by survey cycle supports between-cycle transportability assessment (Vabalas et al., 2019; Kaliappan et al., 2024).
+
+These principles resolve into DIANA's two-stage workflow: a binary Logistic Regression screening model followed by weighted K-Means profile assignment, presented through SHAP explanations and a usability-tested interface. The methodology that implements these principles is detailed in Chapter 3.
+
+---
 # Chapter 3: Methodology
 
 ## 3.1 Research Design
@@ -1251,11 +1336,21 @@ The study did not demonstrate a correctly phenotyped postmenopausal development 
 
 Ahlqvist, E., Storm, P., Karajamaki, A., Martinell, M., Dorkhan, M., Carlsson, A., ... & Groop, L. (2018). Novel subgroups of adult-onset diabetes and their association with outcomes: A data-driven cluster analysis of six variables. *The Lancet Diabetes & Endocrinology*, 6(5), 361-369. https://doi.org/10.1016/S2213-8587(18)30051-2
 
+Ajani, K., Lee, E., Xiong, C., Nussbaumer Knaflic, C., Kemper, W., & Franconeri, S. (2022). Declutter and focus: Empirically evaluating design guidelines for effective data communication. *IEEE Transactions on Visualization and Computer Graphics*, 28(10), 3351-3364. https://doi.org/10.1109/TVCG.2021.3068337
+
 Alberti, K. G. M. M., Eckel, R. H., Grundy, S. M., Zimmet, P. Z., Cleeman, J. I., Donato, K. A., ... & Smith, S. C. (2009). Harmonizing the metabolic syndrome. *Circulation*, 120(16), 1640-1645. https://doi.org/10.1161/CIRCULATIONAHA.109.192644
 
 American Diabetes Association Professional Practice Committee for Diabetes. (2026). 2. Diagnosis and classification of diabetes: Standards of Care in Diabetes--2026. *Diabetes Care, 49*(Supplement 1), S27-S49. https://doi.org/10.2337/dc26-S002
 
+Ao, N., Li, J., Wang, Q., Du, J., Jin, S., & Yang, J. (2025). Clinical and laboratory characteristics of novel diabetes subgroups: A systematic review and meta-analysis. *Scientific Reports, 15*, 38585. https://doi.org/10.1038/s41598-025-22556-4
+
+Araneta, M. R. G. (2019). Engaging the ASEAN diaspora: Type 2 diabetes prevalence, pathophysiology, and unique risk factors among Filipino migrants. *Journal of the ASEAN Federation of Endocrine Societies, 34*(2), 127-133. https://doi.org/10.15605/jafes.034.02.02
+
+Azurin, J. C., Basaca-Sevilla, V., Sumabat, L. M., Fernando, R. E., de Guzman, M. P., & Flores, C. L. (1986). Diabetes mellitus survey in the Philippines. *Philippine Journal of Public Health, 24*(1), 1-29.
+
 Bangor, A., Kortum, P. T., & Miller, J. T. (2008). An empirical evaluation of the System Usability Scale. *International Journal of Human-Computer Interaction*, 24(6), 574-594. https://doi.org/10.1080/10447310802205776
+
+Brand, J. S., van der Schouw, Y. T., Onland-Moret, N. C., Sharp, S. J., Ong, K. K., Khaw, K.-T., Ardanaz, E., Amiano, P., Boeing, H., Dowty, J. G., Ekstrom, S., Halkjaer, J., Krogh, V., Overvad, K., Redondo, M.-L., Rodriguez-Barranco, M., Sanchez, M.-J., Spijkerman, A. M. W., Tjonneland, A., ... Chirlaque, M.-D. (2013). Age at menopause, reproductive life span, and type 2 diabetes risk: The EPIC-InterAct study. *Diabetes Care, 36*(4), 1012-1019. https://doi.org/10.2337/dc12-1020
 
 Breiman, L. (2001). Random forests. *Machine Learning*, 45, 5-32. https://doi.org/10.1023/A:1010933404324
 
@@ -1264,6 +1359,8 @@ Brier, G. W. (1950). Verification of forecasts expressed in terms of probability
 Brooke, J. (1996). SUS: A quick and dirty usability scale. In P. W. Jordan, B. Thomas, B. A. Weerdmeester, & I. L. McClelland (Eds.), *Usability Evaluation in Industry* (pp. 189-194). Taylor & Francis.
 
 Calinski, T., & Harabasz, J. (1974). A dendrite method for cluster analysis. *Communications in Statistics - Theory and Methods*, 3(1), 1-27. https://doi.org/10.1080/03610927408827101
+
+Campugan, J. E., & Aguaras, M. G. (2025). Predictive modeling of diabetes classification using binomial logistic regression on biomedical indicators. *Journal of Interdisciplinary Perspectives*. https://ejournals.ph/article.php?id=28832
 
 Centers for Disease Control and Prevention, National Center for Health Statistics. (2012). *Reproductive Health Questionnaire: Data documentation, codebook, and frequencies: RHQ_F, NHANES 2009-2010*. https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2009/DataFiles/RHQ_F.htm
 
@@ -1279,6 +1376,14 @@ Centers for Disease Control and Prevention, National Center for Health Statistic
 
 Chen, T., & Guestrin, C. (2016). XGBoost: A scalable tree boosting system. *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*, 785-794. https://doi.org/10.1145/2939672.2939785
 
+Cheng, F., Liu, D., Du, F., Lin, Y., Zytek, A., Li, H., Qu, H., & Veeramachaneni, K. (2022). VBridge: Connecting the dots between features and data to explain healthcare models. *IEEE Transactions on Visualization and Computer Graphics*, 28(1), 378-388. https://doi.org/10.1109/TVCG.2021.3114836
+
+Cybulska, A. M., Schneider-Matyka, D., Wieder-Huszla, S., Jurczak, A., Szkup, M., & Grochans, E. (2023). Diagnostic markers of insulin resistance to discriminate between prediabetes and diabetes in menopausal women. *European Review for Medical and Pharmacological Sciences, 27*(6), 2453-2468. https://doi.org/10.26355/eurrev_202303_31779
+
+Cybulska, A. M., Schneider-Matyka, D., & Grochans, E. (2025). Predictive biomarkers for cardiometabolic risk in postmenopausal women: Insights into visfatin, adropin, and adiponectin. *Frontiers in Endocrinology, 16*, Article 1527567. https://doi.org/10.3389/fendo.2025.1527567
+
+Danquah, I., Mank, I., Hampe, C. S., Meeks, K. A. C., Agyemang, C., Owusu-Dabo, E., Smeeth, L., Klipstein-Grobusch, K., Bahendeka, S., Spranger, J., Mockenhaupt, F. P., Schulze, M. B., & Rolandsson, O. (2023). Subgroups of adult-onset diabetes: A data-driven cluster analysis in a Ghanaian population. *Scientific Reports, 13*(1), Article 10756. https://doi.org/10.1038/s41598-023-37494-2
+
 Davies, D. L., & Bouldin, D. W. (1979). A cluster separation measure. *IEEE Transactions on Pattern Analysis and Machine Intelligence*, PAMI-1(2), 224-227. https://doi.org/10.1109/TPAMI.1979.4766909
 
 Dennis, J. M., Shields, B. M., Henley, W. E., Jones, A. G., & Hattersley, A. T. (2019). Disease progression and treatment response in data-driven subgroups of type 2 diabetes compared with models based on simple clinical features: An analysis using clinical trial data. *The Lancet Diabetes & Endocrinology*, 7(6), 442-451. https://doi.org/10.1016/S2213-8587(19)30087-7
@@ -1289,13 +1394,19 @@ Hosmer, D. W., & Lemeshow, S. (1980). Goodness of fit tests for the multiple log
 
 International Diabetes Federation. (2006). *The IDF consensus worldwide definition of the metabolic syndrome*. https://idf.org/news-and-resources/resources/idf-consensus-worldwide-definition-of-the-metabolic-syndrome/
 
+International Diabetes Federation. (2021). *IDF Diabetes Atlas* (10th ed.). https://diabetesatlas.org/
+
 International Organization for Standardization. (2023). *ISO/IEC 25010:2023 Systems and software engineering - Systems and software Quality Requirements and Evaluation (SQuaRE) - Product quality model*. https://www.iso.org/standard/78176.html
 
 Jones, M., Bradley, J., & Sakimura, N. (2015). *JSON Web Token (JWT)* (RFC 7519). Internet Engineering Task Force. https://www.rfc-editor.org/rfc/rfc7519.html
 
 Kahn, H. S. (2005). The "lipid accumulation product" performs better than the body mass index for recognizing cardiovascular risk: A population-based comparison. *BMC Cardiovascular Disorders, 5*, 26. https://doi.org/10.1186/1471-2261-5-26
 
+Kaliappan, J., et al. (2024). Analyzing classification and feature selection strategies for diabetes prediction across diverse diabetes datasets. *Frontiers in Artificial Intelligence, 7*, 1421751. https://doi.org/10.3389/frai.2024.1421751
+
 Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., Ye, Q., & Liu, T.-Y. (2017). LightGBM: A highly efficient gradient boosting decision tree. *Advances in Neural Information Processing Systems*, 30. https://papers.nips.cc/paper/6907-lightgbm-a-highly-efficient-gradient-boosting-decision-tree
+
+Kopitar, L., Kocbek, P., Cilar, L., Sheikh, A., & Stiglic, G. (2020). Early detection of type 2 diabetes mellitus using machine learning-based prediction models. *Scientific Reports, 10*(1), Article 11981. https://doi.org/10.1038/s41598-020-68771-z
 
 Lumley, T. (2010). *Complex Surveys: A Guide to Analysis Using R*. John Wiley & Sons.
 
@@ -1305,19 +1416,43 @@ Luque, A., Carrasco, A., Martin, A., & de las Heras, A. (2019). The impact of cl
 
 MacQueen, J. (1967). Some methods for classification and analysis of multivariate observations. In *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability* (Vol. 1, pp. 281-297).
 
+Marjani, A., & Moghasemi, S. (2012). The metabolic syndrome among postmenopausal women in Gorgan. *International Journal of Endocrinology, 2012*, 953627. https://doi.org/10.1155/2012/953627
+
+Mohd Rizal, M. F., Abdul Maulud, K. N., Ganasegeran, K., Abdul Manaf, M. R., Safian, N., Mustapha, F. I., & Waller, L. A. (2024). A scoping review of supervised machine learning techniques in predicting the prevalence of type 2 diabetes mellitus. *Medicine & Health, 19*(2), 380-399. https://doi.org/10.17576/MH.2024.1902.03
+
+Muka, T., Asllanaj, E., Avazverdi, N., Jaspers, L., Bramer, W. M., Epureanu, R. I., ... & Franco, O. H. (2017). Age at natural menopause and risk of type 2 diabetes: A prospective cohort study. *Diabetologia, 60*(10), 1951-1960. https://doi.org/10.1007/s00125-017-4346-8
+
 National Cholesterol Education Program (NCEP) Expert Panel on Detection, Evaluation, and Treatment of High Blood Cholesterol in Adults. (2001). Third Report of the National Cholesterol Education Program (NCEP) Expert Panel on Detection, Evaluation, and Treatment of High Blood Cholesterol in Adults (Adult Treatment Panel III) final report. *Circulation*, 106(25), 3143-3421.
+
+Park, S., Bekemeier, B., Flaxman, A., & Schultz, M. (2022). Impact of data visualization on decision-making and its implications for public health practice: A systematic literature review. *Informatics for Health and Social Care, 47*(2), 175-193. https://doi.org/10.1080/17538157.2021.1982949
 
 Powers, D. M. W. (2011). Evaluation: From precision, recall and F-measure to ROC, informedness, markedness and correlation. *Journal of Machine Learning Technologies*, 2(1), 37-63.
 
 Provos, N., & Mazieres, D. (1999). A future-adaptable password scheme. In *Proceedings of the 1999 USENIX Annual Technical Conference*. https://www.usenix.org/conference/1999-usenix-annual-technical-conference/future-adaptable-password-scheme
 
+Rojo, D., Lamqaddam, H., Gosak, L., & Verbert, K. (2024). Petal-X: Human-centered visual explanations to improve cardiovascular risk communication. *arXiv preprint arXiv:2406.18690*. https://doi.org/10.48550/arXiv.2406.18690
+
 Rousseeuw, P. J. (1987). Silhouettes: A graphical aid to the interpretation and validation of cluster analysis. *Journal of Computational and Applied Mathematics*, 20, 53-65. https://doi.org/10.1016/0377-0427(87)90125-7
+
+Russo, G. T., Horvath, K. V., Di Benedetto, A., Giandalia, A., Cucinotta, D., & Asztalos, B. (2010). Influence of menopause and cholesteryl ester transfer protein (CETP) TaqIB polymorphism on lipid profile and HDL subpopulations distribution in women with and without type 2 diabetes. *Atherosclerosis, 210*(1), 294-301. https://doi.org/10.1016/j.atherosclerosis.2009.11.011
+
+Schrader, S., Perfilyev, A., Ahlqvist, E., Groop, L., Vaag, A., Martinell, M., Garcia-Calzon, S., & Ling, C. (2022). Novel subgroups of type 2 diabetes display different epigenetic patterns, which associate with future diabetic complications. *Diabetes Care, 45*(8), 1798-1806. https://doi.org/10.2337/dc21-2489
 
 Shreffler, J., & Huecker, M. R. (2023). Diagnostic testing accuracy: Sensitivity, specificity, predictive values and likelihood ratios. In *StatPearls*. StatPearls Publishing. https://www.ncbi.nlm.nih.gov/books/NBK557491/
 
+Sreehari, E., & Babu, L. D. D. (2024). Critical factor analysis for prediction of Diabetes Mellitus using an inclusive feature selection strategy. *Applied Artificial Intelligence, 38*(1), Article 2331919. https://doi.org/10.1080/08839514.2024.2331919
+
+Stuenkel, C. A., Davis, S. R., Gompel, A., Lumsden, M. A., Murad, M. H., Pinkerton, J. V., & Santen, R. J. (2015). Treatment of symptoms of the menopause: An Endocrine Society clinical practice guideline. *The Journal of Clinical Endocrinology & Metabolism, 100*(11), 3975-4011. https://doi.org/10.1210/jc.2015-2236
+
+Taurbekova, B., et al. (2025). Cluster analysis in diabetes research: A systematic review enhanced by a cross-sectional study. *Journal of Clinical Medicine, 14*(10), 3588. https://doi.org/10.3390/jcm14103588
+
 Vabalas, A., Gowen, E., Poliakoff, E., & Casson, A. J. (2019). Machine learning algorithm validation with a limited sample size. *PLOS ONE*, 14(11), e0224365. https://doi.org/10.1371/journal.pone.0224365
 
+Van Belle, V., & Van Calster, B. (2015). Visualizing risk prediction models. *PLOS ONE, 10*(7), e0132614. https://doi.org/10.1371/journal.pone.0132614
+
 Van Calster, B., McLernon, D. J., van Smeden, M., Wynants, L., Steyerberg, E. W., Bossuyt, P., Collins, G. S., Macaskill, P., Moons, K. G. M., & Vickers, A. J. (2019). Calibration: The Achilles heel of predictive analytics. *BMC Medicine*, 17, 230. https://doi.org/10.1186/s12916-019-1466-7
+
+Veelen, A., Erazo-Tapia, E., Oscarsson, J., & Schrauwen, P. (2021). Type 2 diabetes subgroups and potential medication strategies in relation to effects on insulin resistance and beta-cell function: A step toward personalised diabetes treatment? *Molecular Metabolism, 46*, Article 101158. https://doi.org/10.1016/j.molmet.2020.101158
 
 Wang, Y., Wang, X., & Zeng, L. (2024). Lipid Accumulation Product as a Predictor of Prediabetes and Diabetes: Insights From NHANES Data (1999-2018). *Journal of Diabetes Research, 2024*, Article 2874122. https://doi.org/10.1155/2024/2874122
 
@@ -1325,8 +1460,18 @@ World Health Organization. (2000). *The Asia-Pacific perspective: Redefining obe
 
 World Health Organization. (2021). *Ethics and governance of artificial intelligence for health: WHO guidance*. https://www.who.int/publications/i/item/9789240029200
 
-World Health Organization. (2024, October 16). *Menopause*. https://www.who.int/news-room/fact-sheets/detail/menopause
+World Health Organization. (2024a). *Diabetes* (Fact Sheet). https://www.who.int/news-room/fact-sheets/detail/diabetes
+
+World Health Organization. (2024b, October 16). *Menopause*. https://www.who.int/news-room/fact-sheets/detail/menopause
 
 World Wide Web Consortium. (2023). *Web Content Accessibility Guidelines (WCAG) 2.2*. https://www.w3.org/TR/WCAG22/
 
+Xing, Z., Kirby, R. S., & Alman, A. C. (2022). Association of age at menopause with type 2 diabetes mellitus in postmenopausal women in the United States: NHANES 2011-2018. *Przeglad Menopauzalny (Menopause Review), 21*(4), 244-251. https://doi.org/10.5114/pm.2022.122602
+
+Yazdkhasti, N., Jafarabady, K., Shafiee, A., Parvizi Omran, S., Mahmoodi, Z., Esmaeilzadeh, S., Bahrami Babaheidari, T., Kabir, K., Peisepar, M., & Bakhtiyari, M. (2024). The association between age of menopause and type 2 diabetes: A systematic review and meta-analysis. *Nutrition & Metabolism, 21*(1), 87. https://doi.org/10.1186/s12986-024-00858-0
+
 Youden, W. J. (1950). Index for rating diagnostic tests. *Cancer*, 3(1), 32-35. https://doi.org/10.1002/1097-0142(1950)3:1%3C32::AID-CNCR2820030106%3E3.0.CO;2-3
+
+Zaharia, O. P., Strassburger, K., Strom, A., Bohnhof, G. J., Karusheva, Y., Antoniou, S., Boidis, K., Markgraf, D. F., Burkart, V., Mussig, K., Hwang, J.-H., Asplund, O., Groop, L., Ahlqvist, E., Seissler, J., Nawroth, P., Kopf, S., Schmid, S. M., Stumvoll, M., ... Roden, M. (2019). Risk of diabetes-associated diseases in subgroups of patients with recent-onset diabetes: A 5-year follow-up study. *The Lancet Diabetes & Endocrinology, 7*(9), 684-694. https://doi.org/10.1016/S2213-8587(19)30187-1
+
+Zerlik, M., Jung, I. C., Schuler, K., Sedlmayr, M., & Sedlmayr, B. (2024). Visualization techniques for summarizing single patient health data to support physicians' clinical decisions - A scoping review. *Studies in Health Technology and Informatics, 317*, 314-323. https://doi.org/10.3233/SHTI240873

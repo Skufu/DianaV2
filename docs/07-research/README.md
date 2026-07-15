@@ -32,6 +32,7 @@ This directory contains all research-related documentation for the DIANA (Diabet
 ├── ml-pipeline-presentation.html      # Interactive ML pipeline presentation
 ├── paper-requirements.md              # Publication requirements
 └── ui_requirements.md                 # UI/UX research requirements
+└── RRL.md                             # Review of Related Literature (Chapter 2 source-of-truth)
 
 ```
 
@@ -41,6 +42,7 @@ This directory contains all research-related documentation for the DIANA (Diabet
 - **manuscript.md** - Complete thesis manuscript
 - **METHODOLOGY.md** - Detailed methodology documentation
 - **ch3+4.md** - Chapters covering research methodology
+- **RRL.md** - Consolidated Review of Related Literature with verified citations for Chapter 2
 
 ### Research Analysis
 - **Literature-Backed Justification** - Evidence-based justification for ML thresholds and feature rankings
