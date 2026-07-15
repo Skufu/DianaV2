@@ -11,10 +11,53 @@ vi.mock('../../assets/logo-icon.png', () => ({
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <div {...props}>{children}</div>,
-    input: ({ whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <input {...props} />,
-    button: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <button {...props}>{children}</button>,
-    p: ({ children, whileHover, whileTap, whileFocus, initial, layout, animate, transition, exit, ...props }) => <p {...props}>{children}</p>,
+    div: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <div {...props}>{children}</div>,
+    input: ({
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <input {...props} />,
+    button: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <button {...props}>{children}</button>,
+    p: ({
+      children,
+      whileHover,
+      whileTap,
+      whileFocus,
+      initial,
+      layout,
+      animate,
+      transition,
+      exit,
+      ...props
+    }) => <p {...props}>{children}</p>,
   },
   AnimatePresence: ({ children }) => <>{children}</>,
 }));
@@ -252,5 +295,35 @@ describe('Login', () => {
     await waitFor(() => {
       expect(screen.queryByText(/email is required/i)).not.toBeInTheDocument();
     });
+  });
+
+  it('toggles Guided Mode and displays instruction cards', async () => {
+    const user = userEvent.setup();
+    renderLogin();
+
+    // Guided Mode toggle is visible
+    const toggle = screen.getByTestId('guided-mode-toggle');
+    expect(toggle).toBeInTheDocument();
+
+    // Verify instructions are NOT visible initially
+    expect(screen.queryByText(/Step 1: Enter your email address/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Step 2: Enter your password/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Step 3: Click this button to proceed/i)).not.toBeInTheDocument();
+
+    // Turn Guided Mode ON
+    await user.click(toggle);
+
+    // Verify all helper cards are now rendered
+    expect(screen.getByText(/Step 1: Enter your email address/i)).toBeInTheDocument();
+    expect(screen.getByText(/Step 2: Enter your password/i)).toBeInTheDocument();
+    expect(screen.getByText(/Step 3: Click this button to proceed/i)).toBeInTheDocument();
+
+    // Turn Guided Mode OFF
+    await user.click(toggle);
+
+    // Verify instructions are gone again
+    expect(screen.queryByText(/Step 1: Enter your email address/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Step 2: Enter your password/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Step 3: Click this button to proceed/i)).not.toBeInTheDocument();
   });
 });
