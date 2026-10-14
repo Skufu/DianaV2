@@ -53,20 +53,10 @@ func main() {
 
 	var pool *pgxpool.Pool
 	if cfg.DBDSN != "" {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		var err error
+		dbCtx, dbCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer dbCancel()
 
-		// Ensure NeonDB pooler (PgBouncer) compatibility by using simple protocol
-		dsn := cfg.DBDSN
-		if !strings.Contains(dsn, "default_query_exec_mode") {
-			sep := "&"
-			if !strings.Contains(dsn, "?") {
-				sep = "?"
-			}
-			dsn += sep + "default_query_exec_mode=simple_protocol"
-		}
-
+		dsn := withSimpleProtocol(cfg.DBDSN)
 		poolConfig, err := pgxpool.ParseConfig(dsn)
 		if err != nil {
 			log.Fatalf("failed to parse DB config: %v", err)
@@ -78,11 +68,11 @@ func main() {
 		poolConfig.MaxConnIdleTime = 30 * time.Minute
 		poolConfig.HealthCheckPeriod = 1 * time.Minute
 
-		pool, err = pgxpool.NewWithConfig(ctx, poolConfig)
+		pool, err = pgxpool.NewWithConfig(dbCtx, poolConfig)
 		if err != nil {
 			log.Fatalf("failed to init pgx pool: %v", err)
 		}
-		if err := pool.Ping(ctx); err != nil {
+		if err := pool.Ping(dbCtx); err != nil {
 			log.Fatalf("failed to ping database: %v", err)
 		}
 
@@ -92,14 +82,7 @@ func main() {
 		// Auto-run database migrations using Goose
 		// Use simple protocol for NeonDB pooler (PgBouncer) compatibility
 		log.Printf("running database migrations...")
-		migrationDSN := cfg.DBDSN
-		if !strings.Contains(migrationDSN, "default_query_exec_mode") {
-			sep := "&"
-			if !strings.Contains(migrationDSN, "?") {
-				sep = "?"
-			}
-			migrationDSN += sep + "default_query_exec_mode=simple_protocol"
-		}
+		migrationDSN := withSimpleProtocol(cfg.DBDSN)
 		migrationDB, err := sql.Open("pgx", migrationDSN)
 		if err != nil {
 			log.Fatalf("failed to open migration DB connection: %v", err)
@@ -221,4 +204,15 @@ func main() {
 	log.Printf("waiting for pending audit logs...")
 	auditLogger.Shutdown()
 	log.Printf("shutdown complete")
+}
+
+func withSimpleProtocol(dsn string) string {
+	if strings.Contains(dsn, "default_query_exec_mode") {
+		return dsn
+	}
+	sep := "&"
+	if !strings.Contains(dsn, "?") {
+		sep = "?"
+	}
+	return dsn + sep + "default_query_exec_mode=simple_protocol"
 }

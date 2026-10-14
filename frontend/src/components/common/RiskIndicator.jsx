@@ -77,10 +77,6 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
     <motion.div variants={fadeInVariants} initial="hidden" animate="visible" className="space-y-3">
       {/* Risk Score */}
       <motion.div variants={scaleInVariants}>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xl font-semibold text-slate-800">Diabetes Risk Score</h3>
-        </div>
-
         <div className="flex items-baseline gap-2 mb-5">
           <motion.span className="text-[56px] leading-none font-light tracking-tighter text-slate-800 sm:text-[64px] md:text-[72px] lg:text-[80px]">
             {displayScore}
@@ -93,7 +89,7 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
           animate={{ opacity: 1 }}
           transition={isReduced ? { duration: 0 } : { delay: 0.3, duration: 0.3 }}
         >
-          <span className="text-base font-semibold text-slate-700">Risk Level:</span>
+          <span className="text-base font-semibold text-slate-700">Level</span>
           <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${getRiskColor(riskLevel)}`}>
             {riskLevel?.toUpperCase() || 'UNKNOWN'}
           </span>
@@ -110,7 +106,7 @@ const RiskIndicator = ({ riskScore, riskLevel, cluster }) => {
           transition={isReduced ? { duration: 0 } : { delay: 0.1, duration: 0.3 }}
         >
           <div className="flex items-center space-x-3">
-            <span className="text-base font-semibold text-slate-700">Metabolic Profile:</span>
+            <span className="text-base font-semibold text-slate-700">Profile</span>
             <span
               className={`px-4 py-1.5 rounded-full text-sm font-bold ${getClusterColor(cluster)}`}
             >

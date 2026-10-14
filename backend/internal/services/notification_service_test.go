@@ -106,3 +106,25 @@ func TestNotificationService_ProcessQueue(t *testing.T) {
 		t.Errorf("ProcessQueue() returned error: %v", result)
 	}
 }
+
+type countingStore struct {
+	mockStore
+	calls int
+}
+
+func (c *countingStore) Users() store.UserRepository {
+	c.calls++
+	return nil
+}
+
+func TestQueueAssessmentReminderDoesNotPersist(t *testing.T) {
+	store := &countingStore{}
+	service := NewNotificationService(store)
+
+	if err := service.QueueAssessmentReminder(123, 1); err != nil {
+		t.Fatalf("queue returned error: %v", err)
+	}
+	if store.calls != 0 {
+		t.Fatalf("store calls = %d, want 0", store.calls)
+	}
+}

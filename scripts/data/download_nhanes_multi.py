@@ -9,7 +9,11 @@ after the 2017-2020 pre-pandemic cycle.
 Usage: python scripts/data/download_nhanes_multi.py
 """
 
+import argparse
+import hashlib
+import json
 import ssl
+import sys
 import urllib.request
 from pathlib import Path
 
@@ -160,7 +164,53 @@ def download_file(url: str, dest: Path) -> tuple[bool, str]:
         return False, str(e)
 
 
+def verify_manifest() -> tuple[bool, list[str]]:
+    """Verify every manifest entry hashes correctly; also flag stale manifest.
+
+    Returns (ok, problems). Exit code reflects ok — CI relies on this.
+    """
+    manifest_path = Path("data/nhanes/manifest.json")
+    if not manifest_path.exists():
+        return False, ["manifest.json missing — run generate_nhanes_manifest.py first"]
+    manifest = json.loads(manifest_path.read_text())
+    problems = []
+    for rel, meta in manifest["files"].items():
+        path = DATA_DIR / rel
+        if not path.exists():
+            problems.append(f"missing on disk: {rel}")
+            continue
+        sha256 = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                sha256.update(chunk)
+        if sha256.hexdigest() != meta["sha256"]:
+            problems.append(f"SHA-256 mismatch: {rel}")
+    # Spec staleness: expected files not yet in manifest.
+    manifest_files = set(manifest["files"])
+    for name in expected_filenames():
+        if name not in manifest_files:
+            problems.append(f"manifest stale — {name} not in manifest (regen: generate_nhanes_manifest.py)")
+    return (len(problems) == 0, problems)
+
+
 def main():
+    parser = argparse.ArgumentParser(description="NHANES multi-cycle downloader")
+    parser.add_argument("--verify", action="store_true",
+                        help="verify raw lake against manifest.json (no downloads); exit 1 on mismatch")
+    args = parser.parse_args()
+
+    if args.verify:
+        print("Verifying raw lake against manifest.json ...")
+        ok, problems = verify_manifest()
+        if problems:
+            print(f"VERIFY FAIL — {len(problems)} problem(s):")
+            for p in problems:
+                print(f"  - {p}")
+            print("Run: python scripts/data/generate_nhanes_manifest.py (then re-verify)")
+            return 1
+        print(f"VERIFY OK — {len(problems)} problems, all files match manifest")
+        return 0
+
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     
     print("=" * 60)
@@ -202,4 +252,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

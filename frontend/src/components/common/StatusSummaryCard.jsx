@@ -63,25 +63,25 @@ const StatusSummaryCard = ({
         label: 'Lipid-Driven Profile',
         value: 'SIDD',
         color: 'bg-rose-50 text-rose-700 border-rose-200',
-        description: 'Focus on heart-healthy habits and lipid monitoring.',
+        description: 'Heart-healthy habits, lipid checks.',
       },
       SIRD: {
         label: 'Insulin Resistance Profile',
         value: 'SIRD',
         color: 'bg-orange-50 text-orange-700 border-orange-200',
-        description: 'Managing carbs and staying active can help significantly.',
+        description: 'Watch carbs, stay active.',
       },
       MOD: {
         label: 'Weight Harmony Profile',
         value: 'MOD',
         color: 'bg-blue-50 text-blue-700 border-blue-200',
-        description: 'Balanced weight management supports your metabolic health.',
+        description: 'Weight balance matters most.',
       },
       MARD: {
         label: 'Age-Related Changes',
         value: 'MARD',
         color: 'bg-teal-50 text-teal-700 border-teal-200',
-        description: 'Staying active and eating well are your best allies.',
+        description: 'Stay active, eat well.',
       },
     };
 
@@ -100,8 +100,7 @@ const StatusSummaryCard = ({
           iconColor: 'text-teal-500',
           badge: 'bg-teal-500 text-white shadow-md shadow-teal-500/20',
           statusText: 'Looking Good',
-          guidance:
-            'Your screening shows a healthy risk profile. Keep up your wonderful habits!',
+          guidance: 'Your risk profile looks healthy.',
           glow: 'shadow-[inset_0_0_40px_rgba(20,184,166,0.1)]'
         };
       case 'medium':
@@ -114,8 +113,7 @@ const StatusSummaryCard = ({
           iconColor: 'text-amber-500',
           badge: 'bg-amber-500 text-white shadow-md shadow-amber-500/20',
           statusText: 'Monitor Closely',
-          guidance:
-            'Some risk factors need attention. Small lifestyle adjustments can make a big difference.',
+          guidance: 'Some risk factors need attention.',
           glow: 'shadow-[inset_0_0_40px_rgba(245,158,11,0.1)]'
         };
       case 'high':
@@ -128,8 +126,7 @@ const StatusSummaryCard = ({
           iconColor: 'text-rose-500',
           badge: 'bg-rose-500 text-white shadow-md shadow-rose-500/20',
           statusText: 'Action Recommended',
-          guidance:
-            "Please schedule a visit with your doctor soon to discuss these results. Early action is powerful.",
+          guidance: 'Book a visit with your doctor to discuss these results.',
           glow: 'shadow-[inset_0_0_40px_rgba(244,63,94,0.1)]'
         };
       default:
@@ -171,8 +168,7 @@ const StatusSummaryCard = ({
           </div>
 
           <p className="text-white/90 text-lg max-w-xl leading-relaxed mb-8">
-            Check whether you may be at risk of Type 2 Diabetes during menopause.
-            Your first assessment takes just a few minutes.
+            Check your Type 2 diabetes risk during menopause. Takes a few minutes.
           </p>
 
           <motion.button
@@ -182,7 +178,7 @@ const StatusSummaryCard = ({
             className="inline-flex items-center gap-3 px-8 py-4 bg-white text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition-all shadow-lg text-lg"
           >
             <Activity size={22} />
-            Log Your First Assessment
+            Log Assessment
             <ChevronRight size={20} />
           </motion.button>
         </div>
@@ -282,7 +278,7 @@ const StatusSummaryCard = ({
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-slate-400">vs. previous assessment</div>
+                  <div className="text-xs text-slate-400">vs. previous</div>
                 </div>
               </div>
             )}
@@ -321,7 +317,7 @@ const StatusSummaryCard = ({
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white text-slate-700 font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all shadow-sm"
               >
                 <Activity size={18} />
-                View Full Results
+                Full Results
               </motion.button>
             </div>
           </div>
@@ -331,8 +327,8 @@ const StatusSummaryCard = ({
           <div className="flex items-start gap-3">
             <ShieldCheck size={18} className="text-slate-400 shrink-0 mt-0.5" />
             <p className="text-sm text-slate-500 leading-relaxed">
-              <span className="font-semibold">Screening support</span> — not a diagnosis.
-              Use these insights with clinical context and discuss with your healthcare provider.
+              <span className="font-semibold">Screening support</span>, not a diagnosis. Discuss
+              with your clinician.
             </p>
           </div>
         </div>

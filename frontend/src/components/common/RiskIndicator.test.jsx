@@ -25,7 +25,6 @@ describe('RiskIndicator', () => {
   it('renders risk score correctly', () => {
     render(<RiskIndicator riskScore={75} riskLevel="high" />);
     expect(screen.getByText('75')).toBeInTheDocument();
-    expect(screen.getByText('Diabetes Risk Score')).toBeInTheDocument();
   });
 
   it('displays low risk styling', () => {
@@ -54,7 +53,7 @@ describe('RiskIndicator', () => {
 
   it('displays risk level text', () => {
     render(<RiskIndicator riskScore={50} riskLevel="medium" />);
-    expect(screen.getByText('Risk Level:')).toBeInTheDocument();
+    expect(screen.getByText('Level')).toBeInTheDocument();
     expect(screen.getByText('MEDIUM')).toBeInTheDocument();
   });
 
@@ -65,12 +64,12 @@ describe('RiskIndicator', () => {
 
   it('does not render cluster section when cluster is not provided', () => {
     render(<RiskIndicator riskScore={50} riskLevel="medium" />);
-    expect(screen.queryByText('Metabolic Profile:')).not.toBeInTheDocument();
+    expect(screen.queryByText('Profile')).not.toBeInTheDocument();
   });
 
   it('renders cluster when provided', () => {
     render(<RiskIndicator riskScore={50} riskLevel="medium" cluster="SIRD" />);
-    expect(screen.getByText('Metabolic Profile:')).toBeInTheDocument();
+    expect(screen.getByText('Profile')).toBeInTheDocument();
     expect(screen.getByText('SIRD')).toBeInTheDocument();
   });
 

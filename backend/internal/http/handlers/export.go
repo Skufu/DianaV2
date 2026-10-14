@@ -32,10 +32,6 @@ func NewExportHandler(store store.Store) *ExportHandler {
 // Register registers the handler routes
 func (h *ExportHandler) Register(r *gin.RouterGroup) {
 	r.GET("/pdf", h.ExportPDF)
-	// Note: /research endpoint (h.ExportResearchData) is intentionally disabled
-	// The handler returns placeholder JSON and requires full implementation before registration
-	// See ExportResearchData() below for TODO items
-	// Uncomment only after implementing anonymized CSV generation
 }
 
 // ExportPDF generates a PDF health report for the logged-in user
@@ -85,57 +81,4 @@ func (h *ExportHandler) ExportPDF(c *gin.Context) {
 	c.Data(http.StatusOK, "application/pdf", pdfData)
 
 	log.Printf("PDF report generated and downloaded for user %d", userID)
-}
-
-// ExportResearchData exports anonymized data for research (admin only)
-func (h *ExportHandler) ExportResearchData(c *gin.Context) {
-	claims, err := getUserClaims(c)
-	if err != nil {
-		ErrUnauthorized(c)
-		return
-	}
-
-	if claims.Role != models.RoleAdmin {
-		ErrForbidden(c)
-		return
-	}
-
-	// Get users who consented to research
-	// Assuming GetUsersForNotification is available or using List
-	// Or maybe ListUsers?
-	// Based on errors, GetUsersForNotification was called.
-	// We'll use Users().GetUsersForNotification if it exists, otherwise placeholder
-	// For now, let's assume Users().List with filter?
-	// Or Users().GetUsersForNotification()
-	users, err := h.store.Users().GetUsersForNotification(c)
-	if err != nil {
-		ErrInternal(c, "Failed to fetch users")
-		return
-	}
-
-	// TODO: Generate CSV with anonymized data
-	// This would include:
-	// - Age range (not exact DOB)
-	// - Menopause status (not names)
-	// - Biomarker values (aggregated or per-user without identifying info)
-	// - Cluster assignments
-	// - Risk levels
-	// - Assessment dates (relative, not exact)
-
-	// For now, just return a placeholder
-	c.JSON(http.StatusOK, gin.H{
-		"message":     "Research data export feature - TODO: Implement anonymized CSV generation",
-		"total_users": len(users),
-	})
-}
-
-// Legacy methods from original export handler
-func (h *ExportHandler) PatientsCSV(c *gin.Context) {
-	// This is deprecated - users now export their own data
-	ErrNotImplemented(c, "Patient CSV export is deprecated. Users can export their own data via /users/me/export/pdf")
-}
-
-func (h *ExportHandler) AssessmentsCSV(c *gin.Context) {
-	// This is deprecated - use ExportPDF instead
-	ErrNotImplemented(c, "Assessment CSV export is deprecated. Use PDF export for professional reports")
 }
