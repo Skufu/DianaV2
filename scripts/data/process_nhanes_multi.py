@@ -39,6 +39,13 @@ INS_AVAILABLE_SUFFIXES = {"H", "I", "J", "L"}
 HSCRP_AVAILABLE_SUFFIXES = {"I", "J", "L"}
 NO_ALCOHOL_LABEL = "Never"
 
+# Files the canonical dataset cannot be reproduced without.
+# `fasting_insulin` (INS) and `family_history_diabetes` (MCQ300C) come from
+# these files; losing them silently degrades the training data (see the
+# 2026-08-09 incident: [SUCCESS] with 18 columns instead of 19).
+REQUIRED_FILE_BASES = ["INS", "MCQ"]
+MIN_COMBINED_RECORDS = 500
+
 
 def load_xpt(filename: str) -> pd.DataFrame:
     path = RAW_DIR / f"{filename}.XPT"
@@ -55,6 +62,30 @@ def load_xpt(filename: str) -> pd.DataFrame:
             print(f"  [ERROR] Failed to read {filename}.XPT: {e}")
             return pd.DataFrame()
     return df
+
+
+def check_required_files() -> bool:
+    """Fail loudly before processing if REQUIRED files are missing from raw root.
+
+    The pipeline used to WARN-and-continue: a missing INS/MCQ file silently
+    dropped fasting_insulin / family_history_diabetes while printing
+    [SUCCESS]. Required-file absence is now a hard stop.
+    """
+    missing: list[str] = []
+    for suffix, _ in CYCLES:
+        for base in REQUIRED_FILE_BASES:
+            if base in ("INS",) and suffix not in INS_AVAILABLE_SUFFIXES:
+                continue
+            path = RAW_DIR / f"{base}_{suffix}.XPT"
+            if not path.exists():
+                missing.append(f"{base}_{suffix}.XPT")
+    if missing:
+        print("[ERROR] REQUIRED files missing from raw root — pipeline refuses to run:")
+        for name in missing:
+            print(f"  - {name}")
+        print("  Fix: run scripts/data/download_nhanes_multi.py, then generate_nhanes_manifest.py")
+        return False
+    return True
 
 
 def first_existing_column(df: pd.DataFrame, candidates: list[str]) -> str | None:
@@ -428,6 +459,12 @@ def main():
     print("=" * 60)
     print("NHANES Multi-Cycle Data Processing (with Lifestyle Factors)")
     print("=" * 60)
+
+    # Fail loudly: do not start if required raw files are absent. The old
+    # behavior (WARN-and-continue) silently degraded the dataset while
+    # still printing [SUCCESS] — see the 2026-08-09 incident.
+    if not check_required_files():
+        sys.exit(1)
     
     # Process all cycles
     all_dfs: list[pd.DataFrame] = []
@@ -438,11 +475,17 @@ def main():
     
     if not all_dfs:
         print("[ERROR] No data processed!")
-        return
+        sys.exit(1)
     
     # Combine all cycles
     df = pd.concat(all_dfs, ignore_index=True)
     print(f"\n[COMBINED] Total raw records: {len(df)}")
+
+    # Record floor: below this the lake is too partial to trust (matches the
+    # canonical run's 1,376 rows by a wide margin).
+    if len(df) < MIN_COMBINED_RECORDS:
+        print(f"[ERROR] Combined records {len(df)} < floor {MIN_COMBINED_RECORDS} — refusing to write degraded output")
+        sys.exit(1)
     
     # Apply inclusion criteria
     print("\n[FILTER] Applying inclusion criteria...")

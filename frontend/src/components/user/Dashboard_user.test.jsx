@@ -114,16 +114,16 @@ describe('Dashboard_user', () => {
     expect(screen.getByText(/metabolic profile/i)).toBeInTheDocument();
   });
 
-  it('renders log new assessment button', () => {
+  it('renders log assessment button', () => {
     renderDashboard();
-    expect(screen.getByText(/log new assessment/i)).toBeInTheDocument();
+    expect(screen.getByText(/log assessment/i)).toBeInTheDocument();
   });
 
-  it('calls onStartAssessment when log new assessment is clicked', async () => {
+  it('calls onStartAssessment when log assessment is clicked', async () => {
     const user = userEvent.setup();
     renderDashboard();
 
-    await user.click(screen.getByText(/log new assessment/i));
+    await user.click(screen.getByText(/log assessment/i));
     expect(mockOnStartAssessment).toHaveBeenCalled();
   });
 

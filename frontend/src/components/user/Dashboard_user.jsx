@@ -240,9 +240,9 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
               <div className="text-5xl font-light tracking-tight text-slate-800 relative z-10">
                 {assessments.length}
               </div>
-              <div className="text-sm text-slate-500 mt-2 relative z-10">
-                {assessments.length === 0 ? 'No records yet' : 'Health records logged'}
-              </div>
+              {assessments.length === 0 && (
+                <div className="text-sm text-slate-500 mt-2 relative z-10">No records yet</div>
+              )}
             </motion.div>
 
             <motion.div
@@ -295,16 +295,14 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                     <div className="text-2xl font-semibold tracking-tight text-slate-800">
                       No Profile Yet
                     </div>
-                    <div className="text-sm text-slate-500 mt-2">
-                      Complete an assessment to see your profile
-                    </div>
+                    <div className="text-sm text-slate-500 mt-2">Log an assessment</div>
                   </>
                 ) : !canUseClusterSemantics ? (
                   <>
                     <div className="text-2xl font-semibold tracking-tight text-emerald-600">
                       Normal
                     </div>
-                    <div className="text-sm text-slate-500 mt-2">No metabolic subtype assigned</div>
+                    <div className="text-sm text-slate-500 mt-2">Not assigned</div>
                   </>
                 ) : (
                   <>
@@ -337,9 +335,8 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                 </div>
                 <div className="text-left">
                   <h3 className="text-lg font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors">
-                    Log New Assessment
+                    Log Assessment
                   </h3>
-                  <p className="text-slate-500 text-sm">Record your latest health measurements</p>
                 </div>
                 <ChevronRight
                   size={20}
@@ -364,7 +361,6 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                   <h3 className="text-lg font-semibold text-slate-800 group-hover:text-teal-600 transition-colors">
                     View Trends
                   </h3>
-                  <p className="text-slate-500 text-sm">Visualize your progress over time</p>
                 </div>
                 <ChevronRight
                   size={20}
@@ -414,7 +410,6 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                   <h3 className="text-lg font-semibold text-slate-800 transition-colors">
                     My Profile
                   </h3>
-                  <p className="text-slate-500 text-sm">Manage your personal information</p>
                 </div>
                 <ChevronRight
                   size={20}
@@ -570,18 +565,6 @@ const Dashboard_user = ({ setActiveTab, onStartAssessment }) => {
                   </tbody>
                 </table>
               </div>
-
-              {assessments.length > 5 && (
-                <div className="mt-4 text-center">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('trends')}
-                    className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-colors"
-                  >
-                    View all {assessments.length} assessments →
-                  </button>
-                </div>
-              )}
             </motion.div>
           )}
         </>

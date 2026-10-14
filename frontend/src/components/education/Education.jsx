@@ -162,9 +162,6 @@ const Education = () => {
           Learn More
         </h4>
         <h2 className="text-3xl font-bold text-diana-text-primary">Your Health Guide</h2>
-        <p className="text-diana-text-secondary text-base mt-1">
-          Understanding your results and what you can do about them
-        </p>
       </motion.header>
 
       <motion.div
@@ -184,10 +181,9 @@ const Education = () => {
           <div className="space-y-1">
             <h3 className="text-lg font-bold text-white">How It Works</h3>
             <p className="text-blue-50 text-sm leading-relaxed">
-              <strong>Step 1:</strong> We check your overall diabetes risk based on your health
-              measurements.
+              <strong>Step 1:</strong> We score your diabetes risk from your measurements.
               <strong> Step 2:</strong> If you&apos;re at higher risk, we show which health pattern
-              may fit you best, so you and your doctor have clearer focus areas to review.
+              fits best.
             </p>
           </div>
         </div>
@@ -250,7 +246,7 @@ const Education = () => {
                     Clinical Disclaimer: Subgroup Proxies
                   </h4>
                   <p className="text-sm font-medium text-amber-950 leading-relaxed">
-                    DIANA's subgroup categories (SIRD, SIDD, MOD, MARD) represent dominant metabolic patterns in lipids, body size, and age, serving as screening proxies. They are <strong>not</strong> mechanistic diabetes subtypes or diagnostic categories. Unlike clinical research studies (e.g., Ahlqvist et al., 2018), DIANA operates without GAD antibodies, C-peptide, or HOMA insulin-function markers. Always review results with a physician.
+                    DIANA&apos;s categories (SIRD, SIDD, MOD, MARD) are screening proxies built from lipids, body size, and age. They are <strong>not</strong> mechanistic diabetes subtypes or diagnostic categories. Unlike clinical studies (e.g., Ahlqvist et al., 2018), DIANA has no GAD antibodies, C-peptide, or HOMA insulin-function markers. Review results with a physician.
                   </p>
                 </div>
               </div>

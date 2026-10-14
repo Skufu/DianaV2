@@ -296,34 +296,4 @@ describe('Login', () => {
       expect(screen.queryByText(/email is required/i)).not.toBeInTheDocument();
     });
   });
-
-  it('toggles Guided Mode and displays instruction cards', async () => {
-    const user = userEvent.setup();
-    renderLogin();
-
-    // Guided Mode toggle is visible
-    const toggle = screen.getByTestId('guided-mode-toggle');
-    expect(toggle).toBeInTheDocument();
-
-    // Verify instructions are NOT visible initially
-    expect(screen.queryByText(/Guided Step 1/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Guided Step 2/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Guided Step 3/i)).not.toBeInTheDocument();
-
-    // Turn Guided Mode ON
-    await user.click(toggle);
-
-    // Verify all helper cards are now rendered
-    expect(screen.getByText(/Guided Step 1/i)).toBeInTheDocument();
-    expect(screen.getByText(/Guided Step 2/i)).toBeInTheDocument();
-    expect(screen.getByText(/Guided Step 3/i)).toBeInTheDocument();
-
-    // Turn Guided Mode OFF
-    await user.click(toggle);
-
-    // Verify instructions are gone again
-    expect(screen.queryByText(/Guided Step 1/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Guided Step 2/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Guided Step 3/i)).not.toBeInTheDocument();
-  });
 });

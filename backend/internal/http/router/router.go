@@ -3,6 +3,7 @@ package router
 
 import (
 	"crypto/subtle"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -32,9 +33,7 @@ func New(cfg config.Config, st store.Store, cache *cache.Cache) (*gin.Engine, *m
 
 	// Initialize Sentry (if configured)
 	if err := sentry.Init(sentry.LoadConfig()); err != nil {
-		// Log but don't fail - Sentry is optional
-		// Log is not available yet, will be logged later
-		_ = err
+		log.Printf("sentry init failed: %v", err)
 	}
 
 	// Initialize Prometheus metrics
