@@ -207,3 +207,11 @@ deploy.sh
 
 # Go cache
 backend/.gocache/
+
+# Thesis / research materials — kept local only; private archive at Skufu/DianaV2-thesis
+docs/07-research/
+docs/03-ml/defense/
+docs/03-ml/DEFENSIBILITY_OUTPUTS_GUIDE.md
+scripts/thesis/
+scripts/generate_defense_html.py
+research/
