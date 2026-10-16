@@ -1,7 +1,7 @@
 # DIANA V2 Documentation Hub
 
 > Purpose: trusted entry point for current docs
-> Last Updated: 2026-06-20
+> Last Updated: 2026-10-14
 
 ## Start Here
 - Runtime assessment behavior and result semantics: `03-ml/assessment-contract.md`
@@ -17,7 +17,7 @@ Use one canonical doc per domain:
 | Assessment output contract (cross-layer) | `03-ml/assessment-contract.md` |
 | Backend to ML transport contract | `03-ml/api-contract.md` |
 | Screening feature set and rationale | `03-ml/feature-documentation.md` |
-| Method narrative for thesis alignment | `03-ml/methodology.md` |
+| Model methodology and design narrative | `03-ml/methodology.md` |
 | Backend implementation guide | `02-guides/backend.md` |
 | Frontend implementation guide | `02-guides/frontend.md` |
 
@@ -54,7 +54,6 @@ Rule: when docs disagree, update non-canonical docs to match the canonical one.
 - `dataset-gap-analysis.md`: data availability and feature-gap analysis
 - `cluster_feature_audit_and_fix.md`: cluster feature audit history
 - `AUC_IMPROVEMENT_ANALYSIS.md`: performance analysis notes
-- `DEFENSIBILITY_OUTPUTS_GUIDE.md`: defense artifact guide
 - `DOCTOR_VALIDATION_GUIDE.md`: clinician validation notes
 - `api-doc-contract-alignment-inventory.md`: mismatch inventory used for cleanup
 
@@ -67,16 +66,8 @@ Rule: when docs disagree, update non-canonical docs to match the canonical one.
 - `production-cd.md`: current Vercel + VPS/Caddy production CD source of truth
 - `logging-improvements.md`: logging and observability notes
 - `tls-ssl-deployment.md`: TLS setup and verification notes
-
-### `07-research/`
-- `README.md`: research document index
-- `paper-requirements.md`: thesis/paper requirements
-- `manuscript-updates.md`: current manuscript update text
-- `ml_algorithms.md`: algorithm notes for manuscript context
-- `metrics.md`: metrics references
-- `data_pipeline.md`: data pipeline notes
-- `diabetes_subgroups.md`: subtype notes for manuscript context
-- `ui_requirements.md`: UI requirements for paper alignment
+- `data-lineage.md`: data lake → model training → serving lineage (DE)
+- `adr-001-sync-ml-inference.md`: ADR — synchronous ML inference decision
 
 ## Cross-Layer Assessment Flow
 ```
@@ -102,3 +93,4 @@ The following are kept for history and audit trail, but are intentionally exclud
 | Confirm active screening feature set | `03-ml/feature-documentation.md` |
 | Understand backend assessment handling | `02-guides/backend.md` |
 | Understand frontend result rendering boundary | `02-guides/frontend.md` |
+| Trace data lineage (raw → model → serving) | `06-operations/data-lineage.md` |
