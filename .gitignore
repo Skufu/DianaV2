@@ -215,3 +215,4 @@ docs/03-ml/DEFENSIBILITY_OUTPUTS_GUIDE.md
 scripts/thesis/
 scripts/generate_defense_html.py
 research/
+configs/.env.local.mac
